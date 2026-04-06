@@ -47,7 +47,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { parseAsString, useQueryState } from 'nuqs';
+import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
@@ -150,6 +150,8 @@ export function FormStudio({
   initialResponses,
   initialResponsesTotal,
   initialResponsesSummary,
+  initialResponsesPage = 1,
+  initialResponsesPageSize = 10,
   initialQuestionAnalytics,
   initialAnalytics,
 }: {
@@ -161,6 +163,8 @@ export function FormStudio({
   initialResponses?: FormResponseRecord[];
   initialResponsesTotal?: number;
   initialResponsesSummary?: FormResponseSummary;
+  initialResponsesPage?: number;
+  initialResponsesPageSize?: number;
   initialQuestionAnalytics?: FormResponsesQuestionAnalytics[];
   initialAnalytics?: FormAnalytics;
 }) {
@@ -175,6 +179,18 @@ export function FormStudio({
   const [activeTab, setActiveTab] = useQueryState(
     'tab',
     parseAsString.withDefault('build').withOptions({ shallow: true })
+  );
+  const [responsesPage, setResponsesPage] = useQueryState(
+    'responsesPage',
+    parseAsInteger
+      .withDefault(initialResponsesPage)
+      .withOptions({ shallow: true })
+  );
+  const [responsesPageSize] = useQueryState(
+    'responsesPageSize',
+    parseAsInteger
+      .withDefault(initialResponsesPageSize)
+      .withOptions({ shallow: true })
   );
   const [hasCopied, setHasCopied] = useState(false);
   const [duplicatePending, setDuplicatePending] = useState(false);
@@ -258,21 +274,27 @@ export function FormStudio({
   const responsesQuery = useFormResponsesQuery({
     wsId,
     formId: initialForm?.id ?? '',
+    page: responsesPage,
+    pageSize: responsesPageSize,
     enabled: mode === 'edit' && !!initialForm?.id,
-    initialData: {
-      total: initialResponsesTotal ?? 0,
-      records: initialResponses ?? [],
-      summary: initialResponsesSummary ?? {
-        anonymousSubmissions: 0,
-        authenticatedResponders: 0,
-        duplicateAuthenticatedResponders: 0,
-        duplicateAuthenticatedSubmissions: 0,
-        hasMultipleSubmissionsByUser: false,
-        totalResponders: 0,
-        totalSubmissions: 0,
-      },
-      questionAnalytics: initialQuestionAnalytics ?? [],
-    },
+    initialData:
+      responsesPage === initialResponsesPage &&
+      responsesPageSize === initialResponsesPageSize
+        ? {
+            total: initialResponsesTotal ?? 0,
+            records: initialResponses ?? [],
+            summary: initialResponsesSummary ?? {
+              anonymousSubmissions: 0,
+              authenticatedResponders: 0,
+              duplicateAuthenticatedResponders: 0,
+              duplicateAuthenticatedSubmissions: 0,
+              hasMultipleSubmissionsByUser: false,
+              totalResponders: 0,
+              totalSubmissions: 0,
+            },
+            questionAnalytics: initialQuestionAnalytics ?? [],
+          }
+        : undefined,
   });
   const analyticsQuery = useFormAnalyticsQuery({
     wsId,
@@ -312,6 +334,18 @@ export function FormStudio({
   };
   const resolvedActiveSectionId =
     values.sections.find((section) => section.id === activeSectionId)?.id ?? '';
+  const responseTotal =
+    responsesQuery.data?.total ?? initialResponsesTotal ?? 0;
+  const totalResponsePages = Math.max(
+    1,
+    Math.ceil(responseTotal / Math.max(responsesPageSize, 1))
+  );
+
+  useEffect(() => {
+    if (responsesPage > totalResponsePages) {
+      void setResponsesPage(totalResponsePages);
+    }
+  }, [responsesPage, setResponsesPage, totalResponsePages]);
 
   const scrollToSection = (sectionId: string) => {
     if (typeof document === 'undefined') {
@@ -784,7 +818,7 @@ export function FormStudio({
   return (
     <div
       className={cn(
-        'relative isolate -m-4 min-h-screen overflow-hidden bg-background [--form-studio-sticky-top:5rem]',
+        'relative isolate -m-2 min-h-screen min-w-0 overflow-x-clip bg-background [--form-studio-sticky-top:5rem] md:-m-4',
         FORM_FONT_VARIABLES
       )}
       style={studioBodyFontStyle}
@@ -817,7 +851,7 @@ export function FormStudio({
           }}
         />
       </div>
-      <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-8 px-4 py-8">
+      <div className="relative z-10 mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-8 px-4 py-8">
         <Card
           className={cn(
             'overflow-hidden border-border/60 bg-card/85 shadow-black/5 shadow-xl',
@@ -988,35 +1022,44 @@ export function FormStudio({
         <Tabs
           value={activeTab}
           onValueChange={handleTabChange}
-          className="space-y-6"
+          className="min-w-0 space-y-6"
         >
-          <div className="sticky top-(--form-studio-sticky-top) z-40 -mx-1 bg-background/80 px-1 backdrop-blur supports-backdrop-filter:bg-background/85">
+          <div className="sticky top-(--form-studio-sticky-top) z-40 -mx-1 min-w-0 bg-background/80 px-1 backdrop-blur supports-backdrop-filter:bg-background/85">
             <TabsList
               className={cn(
-                'grid h-auto w-full grid-cols-5 gap-1 rounded-2xl border border-border/60 p-1 shadow-sm',
+                'grid h-auto w-full max-w-full grid-cols-3 gap-1 rounded-2xl border border-border/60 p-1 shadow-sm sm:flex sm:items-center sm:justify-start sm:overflow-x-auto md:justify-center',
                 studioToneClasses.tabListClassName
               )}
             >
               <TabsTrigger
                 value="build"
-                className={studioToneClasses.tabTriggerClassName}
+                className={cn(
+                  'min-w-0 px-2 text-xs sm:shrink-0 sm:px-3 sm:text-sm',
+                  studioToneClasses.tabTriggerClassName
+                )}
               >
-                <LayoutTemplate className="mr-2 h-4 w-4" />
+                <LayoutTemplate className="hidden h-4 w-4 sm:block" />
                 {t('tabs.build')}
               </TabsTrigger>
               <TabsTrigger
                 value="preview"
-                className={studioToneClasses.tabTriggerClassName}
+                className={cn(
+                  'min-w-0 px-2 text-xs sm:shrink-0 sm:px-3 sm:text-sm',
+                  studioToneClasses.tabTriggerClassName
+                )}
               >
-                <Eye className="mr-2 h-4 w-4" />
+                <Eye className="hidden h-4 w-4 sm:block" />
                 {t('tabs.preview')}
               </TabsTrigger>
               <TabsTrigger
                 value="responses"
                 disabled={mode === 'create'}
-                className={studioToneClasses.tabTriggerClassName}
+                className={cn(
+                  'min-w-0 px-2 text-xs sm:shrink-0 sm:px-3 sm:text-sm',
+                  studioToneClasses.tabTriggerClassName
+                )}
               >
-                <Table2 className="mr-2 h-4 w-4" />
+                <Table2 className="hidden h-4 w-4 sm:block" />
                 {t('tabs.responses')}
                 <Badge
                   variant="outline"
@@ -1028,29 +1071,35 @@ export function FormStudio({
               <TabsTrigger
                 value="analytics"
                 disabled={mode === 'create'}
-                className={studioToneClasses.tabTriggerClassName}
+                className={cn(
+                  'min-w-0 px-2 text-xs sm:shrink-0 sm:px-3 sm:text-sm',
+                  studioToneClasses.tabTriggerClassName
+                )}
               >
-                <BarChart3 className="mr-2 h-4 w-4" />
+                <BarChart3 className="hidden h-4 w-4 sm:block" />
                 {t('tabs.analytics')}
               </TabsTrigger>
               <TabsTrigger
                 value="settings"
-                className={studioToneClasses.tabTriggerClassName}
+                className={cn(
+                  'min-w-0 px-2 text-xs sm:shrink-0 sm:px-3 sm:text-sm',
+                  studioToneClasses.tabTriggerClassName
+                )}
               >
-                <Settings2 className="mr-2 h-4 w-4" />
+                <Settings2 className="hidden h-4 w-4 sm:block" />
                 {t('tabs.settings')}
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <TabsContent value="build" className="mt-0">
-            <div className="grid items-start gap-6 lg:grid-cols-1 xl:grid-cols-[72px_minmax(0,1fr)]">
+          <TabsContent value="build" className="mt-0 min-w-0">
+            <div className="grid min-w-0 items-start gap-6 lg:grid-cols-1 xl:grid-cols-[72px_minmax(0,1fr)]">
               <FloatingBlockToolbar
                 toneClasses={studioToneClasses}
                 onAddSection={() => addSection()}
                 onAddBlock={addBlockToActiveSection}
               />
-              <div className="space-y-6">
+              <div className="min-w-0 space-y-6">
                 <Collapsible
                   open={isFormDetailsOpen}
                   onOpenChange={setIsFormDetailsOpen}
@@ -1060,7 +1109,7 @@ export function FormStudio({
                       <Button
                         type="button"
                         variant="ghost"
-                        className="h-auto w-full justify-start rounded-3xl px-5 py-4 hover:bg-transparent"
+                        className="h-auto w-full justify-start whitespace-normal rounded-3xl px-5 py-4 hover:bg-transparent"
                       >
                         <div className="flex w-full items-start gap-4 text-left">
                           <div className="min-w-0 flex-1 space-y-2">
@@ -1283,7 +1332,7 @@ export function FormStudio({
             </div>
           </TabsContent>
 
-          <TabsContent value="preview" className="mt-0">
+          <TabsContent value="preview" className="mt-0 min-w-0">
             <FormRuntime
               data-active="true"
               form={previewDefinition}
@@ -1295,7 +1344,7 @@ export function FormStudio({
             />
           </TabsContent>
 
-          <TabsContent value="responses" className="mt-0">
+          <TabsContent value="responses" className="mt-0 min-w-0">
             {initialForm ? (
               <ResponsesPanel
                 wsId={wsId}
@@ -1303,8 +1352,13 @@ export function FormStudio({
                 responses={
                   responsesQuery.data?.records ?? initialResponses ?? []
                 }
-                total={responsesQuery.data?.total ?? initialResponsesTotal ?? 0}
+                total={responseTotal}
                 summary={responseSummary}
+                page={responsesPage}
+                pageSize={responsesPageSize}
+                onPageChange={(nextPage) => {
+                  void setResponsesPage(nextPage);
+                }}
                 questionAnalytics={
                   responsesQuery.data?.questionAnalytics ??
                   initialQuestionAnalytics ??
@@ -1316,7 +1370,7 @@ export function FormStudio({
             ) : null}
           </TabsContent>
 
-          <TabsContent value="analytics" className="mt-0">
+          <TabsContent value="analytics" className="mt-0 min-w-0">
             {initialAnalytics ? (
               <AnalyticsPanel
                 wsId={wsId}
@@ -1328,7 +1382,7 @@ export function FormStudio({
             ) : null}
           </TabsContent>
 
-          <TabsContent value="settings" className="mt-0 space-y-6">
+          <TabsContent value="settings" className="mt-0 min-w-0 space-y-6">
             <ThemePickerPanel
               values={values}
               form={form}

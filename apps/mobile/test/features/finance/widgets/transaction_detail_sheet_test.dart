@@ -107,12 +107,12 @@ void main() {
       await tester.tap(find.text('Open details'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Transaction details'), findsOneWidget);
+      expect(find.text('Transaction details'), findsAtLeastNWidgets(1));
       expect(find.text('Consulting payment'), findsOneWidget);
-      expect(find.text('Income'), findsOneWidget);
-      expect(find.text('Main Wallet'), findsOneWidget);
+      expect(find.text('Income'), findsAtLeastNWidgets(1));
+      expect(find.text('Main Wallet'), findsAtLeastNWidgets(1));
 
-      await tester.tap(find.text('Edit transaction'));
+      await tester.tap(find.byIcon(Icons.edit_outlined).first);
       await tester.pumpAndSettle();
 
       expect(find.text('Edit transaction'), findsAtLeastNWidgets(1));
@@ -121,7 +121,12 @@ void main() {
       expect(find.text('Taken at'), findsWidgets);
 
       await tester.enterText(find.byType(EditableText).first, '');
-      await tester.tap(find.text('Save'));
+      tester
+          .widget<shad.PrimaryButton>(
+            find.widgetWithText(shad.PrimaryButton, 'Save').last,
+          )
+          .onPressed
+          ?.call();
       await tester.pumpAndSettle();
 
       expect(find.text('Enter a valid amount'), findsOneWidget);
@@ -142,10 +147,11 @@ void main() {
       expect(switches[2].value, isFalse);
       expect(switches[3].value, isFalse);
 
-      await tester.tap(find.byType(shad.Switch).at(0));
-      await tester.tap(find.byType(shad.Switch).at(1));
-      await tester.tap(find.byType(shad.Switch).at(2));
-      await tester.tap(find.byType(shad.Switch).at(3));
+      for (var index = 0; index < 4; index++) {
+        final switchFinder = find.byType(shad.Switch).at(index);
+        await tester.ensureVisible(switchFinder);
+        await tester.tap(switchFinder);
+      }
       await tester.pumpAndSettle();
 
       switches = tester
@@ -156,7 +162,12 @@ void main() {
       expect(switches[2].value, isTrue);
       expect(switches[3].value, isTrue);
 
-      await tester.tap(find.text('Save').last);
+      tester
+          .widget<shad.PrimaryButton>(
+            find.widgetWithText(shad.PrimaryButton, 'Save').last,
+          )
+          .onPressed
+          ?.call();
       await tester.pumpAndSettle();
 
       expect(didSave, isTrue);

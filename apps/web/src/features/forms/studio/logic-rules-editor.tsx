@@ -281,15 +281,15 @@ export function LogicRulesEditor({
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <Card className="overflow-hidden border-border/60 bg-card/80 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between gap-3">
+        <CardHeader className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CollapsibleTrigger asChild>
             <Button
               type="button"
               variant="ghost"
-              className="h-auto flex-1 justify-start px-0 hover:bg-transparent"
+              className="h-auto min-w-0 flex-1 justify-start px-0 hover:bg-transparent"
             >
-              <div className="flex flex-1 items-center justify-between gap-3">
-                <div className="text-left">
+              <div className="flex min-w-0 flex-1 flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 text-left">
                   <CardTitle className="text-base">
                     {t('studio.branching_rules')}
                   </CardTitle>
@@ -303,7 +303,7 @@ export function LogicRulesEditor({
                 </div>
                 <ChevronDown
                   className={cn(
-                    'h-4 w-4 transition-transform',
+                    'h-4 w-4 shrink-0 transition-transform',
                     open && 'rotate-180'
                   )}
                 />
@@ -314,7 +314,10 @@ export function LogicRulesEditor({
             type="button"
             variant="outline"
             size="sm"
-            className={toneClasses.secondaryButtonClassName}
+            className={cn(
+              'w-full sm:w-auto',
+              toneClasses.secondaryButtonClassName
+            )}
             onClick={appendRule}
             disabled={answerableQuestions.length === 0}
           >

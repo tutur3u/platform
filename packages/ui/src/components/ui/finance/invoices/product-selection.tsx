@@ -123,7 +123,7 @@ export function ProductSelection({
             options={products.map(
               (product): ComboboxOptions => ({
                 value: product.id,
-                label: `${product.name || t('ws-invoices.no_name')}${product.category ? ` (${product.category})` : ''}${product.manufacturer ? ` - ${product.manufacturer}` : ''}`,
+                label: `${product.name || t('ws-invoices.no_name')}${product.owner?.name ? ` · ${product.owner.name}` : ''}${product.category ? ` (${product.category})` : ''}${product.manufacturer ? ` - ${product.manufacturer}` : ''}`,
               })
             )}
             selected={selectedProductId}
@@ -190,6 +190,9 @@ export function ProductSelection({
                     <div className="min-w-0 flex-1">
                       <p className="font-medium">{item.product.name}</p>
                       <p className="text-muted-foreground text-xs">
+                        {item.product.owner?.name
+                          ? `${item.product.owner.name} · `
+                          : ''}
                         {item.inventory.warehouse_name} •{' '}
                         {item.inventory.unit_name}
                         {' · '}

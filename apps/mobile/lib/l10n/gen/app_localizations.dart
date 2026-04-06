@@ -556,31 +556,49 @@ abstract class AppLocalizations {
   /// No description provided for @appsHubTasksDescription.
   ///
   /// In en, this message translates to:
-  /// **'Assigned work, planning, and portfolio.'**
+  /// **'Assignments, boards, estimates, and portfolio planning.'**
   String get appsHubTasksDescription;
 
   /// No description provided for @appsHubHabitsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Shared habits, streaks, and recurring progress.'**
+  /// **'Track shared routines, streaks, and recurring progress.'**
   String get appsHubHabitsDescription;
 
   /// No description provided for @appsHubCalendarDescription.
   ///
   /// In en, this message translates to:
-  /// **'Agenda, upcoming events, and schedule views.'**
+  /// **'See your agenda, upcoming events, and calendar views.'**
   String get appsHubCalendarDescription;
 
   /// No description provided for @appsHubFinanceDescription.
   ///
   /// In en, this message translates to:
-  /// **'Wallets, categories, and transaction history.'**
+  /// **'Manage wallets, categories, tags, and transaction history.'**
   String get appsHubFinanceDescription;
+
+  /// No description provided for @appsHubInventoryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Run products, stock, sales, and booth operations in one place.'**
+  String get appsHubInventoryDescription;
+
+  /// No description provided for @appsHubNotificationsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Review inbox activity, alerts, and archived updates.'**
+  String get appsHubNotificationsDescription;
+
+  /// No description provided for @appsHubSettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust app, workspace, and personal preferences.'**
+  String get appsHubSettingsDescription;
 
   /// No description provided for @appsHubTimerDescription.
   ///
   /// In en, this message translates to:
-  /// **'Tracking sessions, stats, and requests.'**
+  /// **'Track sessions, review stats, and handle time requests.'**
   String get appsHubTimerDescription;
 
   /// No description provided for @habitsTitle.
@@ -3349,6 +3367,12 @@ abstract class AppLocalizations {
   /// **'Only one closed list is allowed per board.'**
   String get taskBoardDetailCannotCreateMoreClosedLists;
 
+  /// No description provided for @taskBoardDetailClosedListCapacityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'1 closed list max'**
+  String get taskBoardDetailClosedListCapacityHint;
+
   /// No description provided for @taskBoardDetailAddNewList.
   ///
   /// In en, this message translates to:
@@ -3366,6 +3390,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lists reordered.'**
   String get taskBoardDetailListsReordered;
+
+  /// No description provided for @taskBoardDetailMoveListDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move list down'**
+  String get taskBoardDetailMoveListDown;
+
+  /// No description provided for @taskBoardDetailMoveListUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move list up'**
+  String get taskBoardDetailMoveListUp;
 
   /// No description provided for @taskBoardDetailMovedToStatus.
   ///
@@ -4609,6 +4645,12 @@ abstract class AppLocalizations {
   /// **'Month'**
   String get calendarMonthView;
 
+  /// No description provided for @calendarYearView.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get calendarYearView;
+
   /// No description provided for @calendarAllDay.
   ///
   /// In en, this message translates to:
@@ -4825,6 +4867,840 @@ abstract class AppLocalizations {
   /// **'Finance'**
   String get financeTitle;
 
+  /// No description provided for @inventoryAddCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Add category'**
+  String get inventoryAddCategory;
+
+  /// No description provided for @inventoryAddOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Add owner'**
+  String get inventoryAddOwner;
+
+  /// No description provided for @inventoryAddUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Add unit'**
+  String get inventoryAddUnit;
+
+  /// No description provided for @inventoryAddWarehouse.
+  ///
+  /// In en, this message translates to:
+  /// **'Add warehouse'**
+  String get inventoryAddWarehouse;
+
+  /// No description provided for @inventoryAuditEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory activity will appear here after products, stock, and sales are updated.'**
+  String get inventoryAuditEmpty;
+
+  /// No description provided for @inventoryAuditEventArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get inventoryAuditEventArchived;
+
+  /// No description provided for @inventoryAuditEventCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get inventoryAuditEventCreated;
+
+  /// No description provided for @inventoryAuditEventDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted'**
+  String get inventoryAuditEventDeleted;
+
+  /// No description provided for @inventoryAuditEventReactivated.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactivated'**
+  String get inventoryAuditEventReactivated;
+
+  /// No description provided for @inventoryAuditEventSaleCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale created'**
+  String get inventoryAuditEventSaleCreated;
+
+  /// No description provided for @inventoryAuditEventUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated'**
+  String get inventoryAuditEventUpdated;
+
+  /// No description provided for @inventoryAuditLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Audit'**
+  String get inventoryAuditLabel;
+
+  /// No description provided for @inventoryAuditActorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Actor'**
+  String get inventoryAuditActorLabel;
+
+  /// No description provided for @inventoryAuditAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'After'**
+  String get inventoryAuditAfter;
+
+  /// No description provided for @inventoryAuditBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Before'**
+  String get inventoryAuditBefore;
+
+  /// No description provided for @inventoryAuditChangedFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed fields'**
+  String get inventoryAuditChangedFields;
+
+  /// No description provided for @inventoryAuditChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} changes'**
+  String inventoryAuditChanges(int count);
+
+  /// No description provided for @inventoryAuditRecentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow product, stock, setup, and sale changes across the workspace.'**
+  String get inventoryAuditRecentSubtitle;
+
+  /// No description provided for @inventoryAuditRecentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent activity'**
+  String get inventoryAuditRecentTitle;
+
+  /// No description provided for @inventoryAuditNoChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'No field changes'**
+  String get inventoryAuditNoChanges;
+
+  /// No description provided for @inventoryAuditOccurredAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Occurred at'**
+  String get inventoryAuditOccurredAt;
+
+  /// No description provided for @inventoryAuditSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Track who changed products, stock, setup, and sales.'**
+  String get inventoryAuditSubtitle;
+
+  /// No description provided for @inventoryAuditSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject'**
+  String get inventoryAuditSubject;
+
+  /// No description provided for @inventoryCheckoutAvailableProductsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust quantities directly from the available booth inventory.'**
+  String get inventoryCheckoutAvailableProductsSubtitle;
+
+  /// No description provided for @inventoryCheckoutAvailableProductsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Available products'**
+  String get inventoryCheckoutAvailableProductsTitle;
+
+  /// No description provided for @inventoryCheckoutAutoCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-linked category'**
+  String get inventoryCheckoutAutoCategory;
+
+  /// No description provided for @inventoryCheckoutAllCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'All categories'**
+  String get inventoryCheckoutAllCategories;
+
+  /// No description provided for @inventoryCheckoutBrowseTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse'**
+  String get inventoryCheckoutBrowseTab;
+
+  /// No description provided for @inventoryCheckoutCartEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Add products from the browse tab to review and submit the sale.'**
+  String get inventoryCheckoutCartEmpty;
+
+  /// No description provided for @inventoryCheckoutCartTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Cart'**
+  String get inventoryCheckoutCartTab;
+
+  /// No description provided for @inventoryCheckoutCartTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Cart total'**
+  String get inventoryCheckoutCartTotal;
+
+  /// No description provided for @inventoryCheckoutCheckoutDetailsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose where the sale lands before submitting the invoice.'**
+  String get inventoryCheckoutCheckoutDetailsSubtitle;
+
+  /// No description provided for @inventoryCheckoutCheckoutDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout details'**
+  String get inventoryCheckoutCheckoutDetailsTitle;
+
+  /// No description provided for @inventoryCheckoutCategoryOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Category override'**
+  String get inventoryCheckoutCategoryOverride;
+
+  /// No description provided for @inventoryCheckoutCategoryRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an income category before creating the sale.'**
+  String get inventoryCheckoutCategoryRequired;
+
+  /// No description provided for @inventoryCheckoutEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No sellable inventory is available yet.'**
+  String get inventoryCheckoutEmpty;
+
+  /// No description provided for @inventoryCheckoutManualCategoryRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an income category when the cart mixes linked categories or has no linked category.'**
+  String get inventoryCheckoutManualCategoryRequired;
+
+  /// No description provided for @inventoryCheckoutNoSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No products match the current search.'**
+  String get inventoryCheckoutNoSearchResults;
+
+  /// No description provided for @inventoryCheckoutNoWalletSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No wallet selected'**
+  String get inventoryCheckoutNoWalletSelected;
+
+  /// No description provided for @inventoryCheckoutProductsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one product before creating the sale.'**
+  String get inventoryCheckoutProductsRequired;
+
+  /// No description provided for @inventoryCheckoutSelectedItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected lines'**
+  String get inventoryCheckoutSelectedItems;
+
+  /// No description provided for @inventoryCheckoutSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Build a quick booth sale and send it through invoices.'**
+  String get inventoryCheckoutSubtitle;
+
+  /// No description provided for @inventoryCheckoutSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Create sale'**
+  String get inventoryCheckoutSubmit;
+
+  /// No description provided for @inventoryCheckoutTotalItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Total items'**
+  String get inventoryCheckoutTotalItems;
+
+  /// No description provided for @inventoryCheckoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell'**
+  String get inventoryCheckoutTitle;
+
+  /// No description provided for @inventoryCheckoutValidationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a wallet, resolve the category, and add at least one product.'**
+  String get inventoryCheckoutValidationError;
+
+  /// No description provided for @inventoryCheckoutWalletRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a wallet before creating the sale.'**
+  String get inventoryCheckoutWalletRequired;
+
+  /// No description provided for @inventoryCheckoutWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet'**
+  String get inventoryCheckoutWallet;
+
+  /// No description provided for @inventoryCreateProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Create product'**
+  String get inventoryCreateProduct;
+
+  /// No description provided for @inventoryEditProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit product'**
+  String get inventoryEditProduct;
+
+  /// No description provided for @inventoryManageCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Product categories'**
+  String get inventoryManageCategories;
+
+  /// No description provided for @inventoryManageCategoriesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Group products into clear shelves, menus, or collections.'**
+  String get inventoryManageCategoriesSubtitle;
+
+  /// No description provided for @inventoryManageEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing configured yet.'**
+  String get inventoryManageEmpty;
+
+  /// No description provided for @inventoryManageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get inventoryManageLabel;
+
+  /// No description provided for @inventoryManageNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name.'**
+  String get inventoryManageNameRequired;
+
+  /// No description provided for @inventoryManageOwners.
+  ///
+  /// In en, this message translates to:
+  /// **'Owners'**
+  String get inventoryManageOwners;
+
+  /// No description provided for @inventoryManageOwnersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep attribution separate from the staff member operating the booth.'**
+  String get inventoryManageOwnersSubtitle;
+
+  /// No description provided for @inventoryManageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure the owners and lookup data the booth depends on.'**
+  String get inventoryManageSubtitle;
+
+  /// No description provided for @inventoryManageUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'Units'**
+  String get inventoryManageUnits;
+
+  /// No description provided for @inventoryManageUnitsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Define how stock is counted, sold, and displayed.'**
+  String get inventoryManageUnitsSubtitle;
+
+  /// No description provided for @inventoryManageWarehouses.
+  ///
+  /// In en, this message translates to:
+  /// **'Warehouses'**
+  String get inventoryManageWarehouses;
+
+  /// No description provided for @inventoryManageWarehousesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Separate stock locations so low-stock checks stay accurate.'**
+  String get inventoryManageWarehousesSubtitle;
+
+  /// No description provided for @inventoryNoBreakdownData.
+  ///
+  /// In en, this message translates to:
+  /// **'No breakdown data yet.'**
+  String get inventoryNoBreakdownData;
+
+  /// No description provided for @inventoryNoLinkedFinanceCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'No linked finance category'**
+  String get inventoryNoLinkedFinanceCategory;
+
+  /// No description provided for @inventoryNoLowStockProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'No low-stock products right now.'**
+  String get inventoryNoLowStockProducts;
+
+  /// No description provided for @inventoryOverviewCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'By category'**
+  String get inventoryOverviewCategories;
+
+  /// No description provided for @inventoryOverviewCategoriesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'See which product groups are bringing in revenue.'**
+  String get inventoryOverviewCategoriesSubtitle;
+
+  /// No description provided for @inventoryOverviewExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense'**
+  String get inventoryOverviewExpense;
+
+  /// No description provided for @inventoryOverviewIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Income'**
+  String get inventoryOverviewIncome;
+
+  /// No description provided for @inventoryOverviewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get inventoryOverviewLabel;
+
+  /// No description provided for @inventoryOverviewLowStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Low stock'**
+  String get inventoryOverviewLowStock;
+
+  /// No description provided for @inventoryOverviewLowStockSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Products that need attention before the next sale.'**
+  String get inventoryOverviewLowStockSubtitle;
+
+  /// No description provided for @inventoryOverviewOwners.
+  ///
+  /// In en, this message translates to:
+  /// **'By owner'**
+  String get inventoryOverviewOwners;
+
+  /// No description provided for @inventoryOverviewOwnersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Break down sales by the owner assigned to each product.'**
+  String get inventoryOverviewOwnersSubtitle;
+
+  /// No description provided for @inventoryOverviewRecentSales.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent sales'**
+  String get inventoryOverviewRecentSales;
+
+  /// No description provided for @inventoryOverviewRecentSalesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest invoice-backed booth sales from inventory.'**
+  String get inventoryOverviewRecentSalesSubtitle;
+
+  /// No description provided for @inventoryOverviewSalesRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory revenue'**
+  String get inventoryOverviewSalesRevenue;
+
+  /// No description provided for @inventoryOverviewSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch revenue, inventory pressure, and owner performance together.'**
+  String get inventoryOverviewSubtitle;
+
+  /// No description provided for @inventoryOwnerArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get inventoryOwnerArchived;
+
+  /// No description provided for @inventoryProductAddInventoryRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Add stock row'**
+  String get inventoryProductAddInventoryRow;
+
+  /// No description provided for @inventoryProductAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get inventoryProductAmount;
+
+  /// No description provided for @inventoryProductAmountRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount.'**
+  String get inventoryProductAmountRequired;
+
+  /// No description provided for @inventoryProductCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Product category'**
+  String get inventoryProductCategory;
+
+  /// No description provided for @inventoryProductCategoryRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a product category.'**
+  String get inventoryProductCategoryRequired;
+
+  /// No description provided for @inventoryProductDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get inventoryProductDescription;
+
+  /// No description provided for @inventoryProductDetailsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the product, assign ownership, and link finance defaults.'**
+  String get inventoryProductDetailsSubtitle;
+
+  /// No description provided for @inventoryProductDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Product details'**
+  String get inventoryProductDetailsTitle;
+
+  /// No description provided for @inventoryProductEditorSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create booth-ready products with fixed prices and stock rows.'**
+  String get inventoryProductEditorSubtitle;
+
+  /// No description provided for @inventoryProductFinanceCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked finance category'**
+  String get inventoryProductFinanceCategory;
+
+  /// No description provided for @inventoryProductInventory.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory rows'**
+  String get inventoryProductInventory;
+
+  /// No description provided for @inventoryProductInventoryRows.
+  ///
+  /// In en, this message translates to:
+  /// **'Rows'**
+  String get inventoryProductInventoryRows;
+
+  /// No description provided for @inventoryProductInventorySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Each row represents a unit, warehouse, quantity, threshold, and price.'**
+  String get inventoryProductInventorySubtitle;
+
+  /// No description provided for @inventoryProductManufacturer.
+  ///
+  /// In en, this message translates to:
+  /// **'Manufacturer'**
+  String get inventoryProductManufacturer;
+
+  /// No description provided for @inventoryProductMinAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum amount'**
+  String get inventoryProductMinAmount;
+
+  /// No description provided for @inventoryProductMinAmountRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a minimum amount.'**
+  String get inventoryProductMinAmountRequired;
+
+  /// No description provided for @inventoryProductName.
+  ///
+  /// In en, this message translates to:
+  /// **'Product name'**
+  String get inventoryProductName;
+
+  /// No description provided for @inventoryProductNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a product name.'**
+  String get inventoryProductNameRequired;
+
+  /// No description provided for @inventoryProductNumberInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid number.'**
+  String get inventoryProductNumberInvalid;
+
+  /// No description provided for @inventoryProductOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get inventoryProductOwner;
+
+  /// No description provided for @inventoryProductOwnerRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an owner.'**
+  String get inventoryProductOwnerRequired;
+
+  /// No description provided for @inventoryProductPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get inventoryProductPrice;
+
+  /// No description provided for @inventoryProductPriceRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a price.'**
+  String get inventoryProductPriceRequired;
+
+  /// No description provided for @inventoryProductAvailableSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} available • {price}'**
+  String inventoryProductAvailableSummary(String amount, String price);
+
+  /// No description provided for @inventoryProductSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Product saved.'**
+  String get inventoryProductSaved;
+
+  /// No description provided for @inventoryProductUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled product'**
+  String get inventoryProductUntitled;
+
+  /// No description provided for @inventoryProductUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit'**
+  String get inventoryProductUnit;
+
+  /// No description provided for @inventoryProductUnitRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a unit.'**
+  String get inventoryProductUnitRequired;
+
+  /// No description provided for @inventoryProductUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage'**
+  String get inventoryProductUsage;
+
+  /// No description provided for @inventoryProductValidationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete the required product, owner, category, and stock fields.'**
+  String get inventoryProductValidationError;
+
+  /// No description provided for @inventoryProductWarehouse.
+  ///
+  /// In en, this message translates to:
+  /// **'Warehouse'**
+  String get inventoryProductWarehouse;
+
+  /// No description provided for @inventoryProductWarehouseRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a warehouse.'**
+  String get inventoryProductWarehouseRequired;
+
+  /// No description provided for @inventoryProductsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Create products to start tracking stock and selling from the booth.'**
+  String get inventoryProductsEmpty;
+
+  /// No description provided for @inventoryProductsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Products'**
+  String get inventoryProductsLabel;
+
+  /// No description provided for @inventoryProductsListSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a product to edit details, pricing, or stock rows.'**
+  String get inventoryProductsListSubtitle;
+
+  /// No description provided for @inventoryProductsListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Product catalog'**
+  String get inventoryProductsListTitle;
+
+  /// No description provided for @inventoryProductsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search, review, and edit products prepared for the booth.'**
+  String get inventoryProductsSubtitle;
+
+  /// No description provided for @inventoryRealtimeDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime is disabled for this workspace.'**
+  String get inventoryRealtimeDisabled;
+
+  /// No description provided for @inventoryRealtimeEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime enabled'**
+  String get inventoryRealtimeEnabled;
+
+  /// No description provided for @inventorySaleCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory sale created.'**
+  String get inventorySaleCreated;
+
+  /// No description provided for @inventorySaleDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale deleted.'**
+  String get inventorySaleDeleted;
+
+  /// No description provided for @inventorySaleUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale updated.'**
+  String get inventorySaleUpdated;
+
+  /// No description provided for @inventorySalesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales created from invoices will appear here.'**
+  String get inventorySalesEmpty;
+
+  /// No description provided for @inventorySalesDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete sale'**
+  String get inventorySalesDelete;
+
+  /// No description provided for @inventorySalesDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this sale and restore its stock?'**
+  String get inventorySalesDeleteConfirm;
+
+  /// No description provided for @inventorySalesEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit sale'**
+  String get inventorySalesEdit;
+
+  /// No description provided for @inventorySalesFallbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory sale'**
+  String get inventorySalesFallbackTitle;
+
+  /// No description provided for @inventorySalesItemsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items'**
+  String inventorySalesItemsCount(int count);
+
+  /// No description provided for @inventorySalesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales'**
+  String get inventorySalesLabel;
+
+  /// No description provided for @inventorySalesCreatorBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'By {name}'**
+  String inventorySalesCreatorBadge(String name);
+
+  /// No description provided for @inventorySalesLineItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Line items'**
+  String get inventorySalesLineItems;
+
+  /// No description provided for @inventorySalesNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get inventorySalesNote;
+
+  /// No description provided for @inventorySalesRecentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the latest invoice-backed inventory sales.'**
+  String get inventorySalesRecentSubtitle;
+
+  /// No description provided for @inventorySalesRecentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale history'**
+  String get inventorySalesRecentTitle;
+
+  /// No description provided for @inventorySalesSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save sale'**
+  String get inventorySalesSave;
+
+  /// No description provided for @inventorySalesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Monitor completed inventory sales and payment destinations.'**
+  String get inventorySalesSubtitle;
+
+  /// No description provided for @inventorySalesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get inventorySalesTitle;
+
+  /// No description provided for @inventorySaveProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Save product'**
+  String get inventorySaveProduct;
+
+  /// No description provided for @inventorySearchProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Search products'**
+  String get inventorySearchProducts;
+
+  /// No description provided for @inventoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory'**
+  String get inventoryTitle;
+
   /// No description provided for @financeOverviewLabel.
   ///
   /// In en, this message translates to:
@@ -4912,7 +5788,7 @@ abstract class AppLocalizations {
   /// No description provided for @financeOverviewWalletSectionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Wallet lineup'**
+  /// **'Wallets'**
   String get financeOverviewWalletSectionTitle;
 
   /// No description provided for @financeOverviewWalletSectionSubtitle.
@@ -4930,7 +5806,7 @@ abstract class AppLocalizations {
   /// No description provided for @financeOverviewActivityTitle.
   ///
   /// In en, this message translates to:
-  /// **'Recent activity'**
+  /// **'Activity'**
   String get financeOverviewActivityTitle;
 
   /// No description provided for @financeOverviewActivitySubtitle.
@@ -5257,6 +6133,12 @@ abstract class AppLocalizations {
   /// **'Expense'**
   String get financeExpense;
 
+  /// No description provided for @financeHideAmounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide amounts'**
+  String get financeHideAmounts;
+
   /// No description provided for @financeViewAll.
   ///
   /// In en, this message translates to:
@@ -5268,6 +6150,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search transactions'**
   String get financeSearchTransactions;
+
+  /// No description provided for @financeShowAmounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Show amounts'**
+  String get financeShowAmounts;
 
   /// No description provided for @financeNoSearchResults.
   ///
@@ -5431,6 +6319,12 @@ abstract class AppLocalizations {
   /// **'Transfer mode'**
   String get financeTransferMode;
 
+  /// No description provided for @financeTransferModeEditHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer mode can only be edited for existing transfers.'**
+  String get financeTransferModeEditHint;
+
   /// No description provided for @financeDestinationAmountOptional.
   ///
   /// In en, this message translates to:
@@ -5466,6 +6360,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter a valid destination amount'**
   String get financeInvalidDestinationAmount;
+
+  /// No description provided for @financeExcludedFromReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Excluded from reports'**
+  String get financeExcludedFromReports;
 
   /// No description provided for @financeReportOptIn.
   ///
@@ -7279,6 +8179,18 @@ abstract class AppLocalizations {
   /// **'Match your device appearance automatically.'**
   String get settingsThemeSystemDescription;
 
+  /// No description provided for @settingsFinanceAmounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance amounts'**
+  String get settingsFinanceAmounts;
+
+  /// No description provided for @settingsFinanceAmountsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Show or hide balances and transaction amounts across finance screens.'**
+  String get settingsFinanceAmountsDescription;
+
   /// No description provided for @settingsSwitchWorkspace.
   ///
   /// In en, this message translates to:
@@ -7476,6 +8388,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'See your current context and switch when needed.'**
   String get settingsWorkspaceSectionDescription;
+
+  /// No description provided for @settingsWorkspaceSectionManageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace setup'**
+  String get settingsWorkspaceSectionManageTitle;
+
+  /// No description provided for @settingsWorkspaceAccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Access'**
+  String get settingsWorkspaceAccessTitle;
+
+  /// No description provided for @settingsWorkspaceDefaultCurrencyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Default currency'**
+  String get settingsWorkspaceDefaultCurrencyTitle;
+
+  /// No description provided for @settingsWorkspaceDefaultCurrencyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use one currency as the default for finance and invoice flows in this workspace.'**
+  String get settingsWorkspaceDefaultCurrencyDescription;
+
+  /// No description provided for @settingsWorkspaceDefaultCurrencyField.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get settingsWorkspaceDefaultCurrencyField;
 
   /// No description provided for @settingsPreferencesSectionTitle.
   ///
@@ -8455,6 +9397,12 @@ abstract class AppLocalizations {
   /// **'Security check failed. Please try again.'**
   String get captchaError;
 
+  /// No description provided for @commonOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get commonOff;
+
   /// No description provided for @commonSomethingWentWrong.
   ///
   /// In en, this message translates to:
@@ -8550,6 +9498,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Get Started'**
   String get onboardingGetStarted;
+
+  /// No description provided for @settingsWorkspaceMembersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get settingsWorkspaceMembersTitle;
+
+  /// No description provided for @settingsWorkspaceMembersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite people, review access, and manage links.'**
+  String get settingsWorkspaceMembersSubtitle;
+
+  /// No description provided for @settingsWorkspaceMembersAccessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You need member access to manage this workspace.'**
+  String get settingsWorkspaceMembersAccessDenied;
+
+  /// No description provided for @settingsWorkspaceMembersActiveSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Members ({count})'**
+  String settingsWorkspaceMembersActiveSection(int count);
+
+  /// No description provided for @settingsWorkspaceMembersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No members yet.'**
+  String get settingsWorkspaceMembersEmpty;
+
+  /// No description provided for @settingsWorkspaceMembersPendingSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending ({count})'**
+  String settingsWorkspaceMembersPendingSection(int count);
+
+  /// No description provided for @settingsWorkspaceMembersPendingEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending invites.'**
+  String get settingsWorkspaceMembersPendingEmpty;
+
+  /// No description provided for @settingsWorkspaceMembersLinksSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite links'**
+  String get settingsWorkspaceMembersLinksSection;
+
+  /// No description provided for @settingsWorkspaceMembersLinksEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No invite links yet.'**
+  String get settingsWorkspaceMembersLinksEmpty;
+
+  /// No description provided for @settingsWorkspaceMembersInviteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get settingsWorkspaceMembersInviteAction;
+
+  /// No description provided for @settingsWorkspaceMembersLinkAction.
+  ///
+  /// In en, this message translates to:
+  /// **'New link'**
+  String get settingsWorkspaceMembersLinkAction;
+
+  /// No description provided for @settingsWorkspaceMembersLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link copied.'**
+  String get settingsWorkspaceMembersLinkCopied;
+
+  /// No description provided for @settingsWorkspaceMembersRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get settingsWorkspaceMembersRemoveTitle;
+
+  /// No description provided for @settingsWorkspaceMembersRemoveMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from this workspace?'**
+  String settingsWorkspaceMembersRemoveMessage(String name);
+
+  /// No description provided for @settingsWorkspaceMembersLinkDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete link'**
+  String get settingsWorkspaceMembersLinkDeleteTitle;
+
+  /// No description provided for @settingsWorkspaceMembersLinkDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this invite link?'**
+  String get settingsWorkspaceMembersLinkDeleteMessage;
+
+  /// No description provided for @settingsWorkspaceMembersEmailField.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get settingsWorkspaceMembersEmailField;
+
+  /// No description provided for @settingsWorkspaceMembersEmailPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'name@example.com'**
+  String get settingsWorkspaceMembersEmailPlaceholder;
+
+  /// No description provided for @settingsWorkspaceMembersEmailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address.'**
+  String get settingsWorkspaceMembersEmailInvalid;
+
+  /// No description provided for @settingsWorkspaceMembersInviteSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite sent.'**
+  String get settingsWorkspaceMembersInviteSent;
+
+  /// No description provided for @settingsWorkspaceMembersLinkLimitField.
+  ///
+  /// In en, this message translates to:
+  /// **'Max uses'**
+  String get settingsWorkspaceMembersLinkLimitField;
+
+  /// No description provided for @settingsWorkspaceMembersLinkLimitPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty for unlimited'**
+  String get settingsWorkspaceMembersLinkLimitPlaceholder;
+
+  /// No description provided for @settingsWorkspaceMembersLinkLimitInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a positive whole number.'**
+  String get settingsWorkspaceMembersLinkLimitInvalid;
+
+  /// No description provided for @settingsWorkspaceMembersLinkCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link created.'**
+  String get settingsWorkspaceMembersLinkCreated;
+
+  /// No description provided for @settingsWorkspaceMembersCreatorChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Creator'**
+  String get settingsWorkspaceMembersCreatorChip;
+
+  /// No description provided for @settingsWorkspaceMembersPendingChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get settingsWorkspaceMembersPendingChip;
+
+  /// No description provided for @settingsWorkspaceMembersLinkNever.
+  ///
+  /// In en, this message translates to:
+  /// **'No expiry'**
+  String get settingsWorkspaceMembersLinkNever;
+
+  /// No description provided for @settingsWorkspaceMembersLinkExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get settingsWorkspaceMembersLinkExpired;
+
+  /// No description provided for @settingsWorkspaceMembersLinkFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Full'**
+  String get settingsWorkspaceMembersLinkFull;
+
+  /// No description provided for @settingsWorkspaceMembersLinkActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get settingsWorkspaceMembersLinkActive;
+
+  /// No description provided for @settingsWorkspaceMembersLinkCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get settingsWorkspaceMembersLinkCopy;
+
+  /// No description provided for @settingsWorkspaceRolesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Roles'**
+  String get settingsWorkspaceRolesTitle;
+
+  /// No description provided for @settingsWorkspaceRolesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Control default access and workspace roles.'**
+  String get settingsWorkspaceRolesSubtitle;
+
+  /// No description provided for @settingsWorkspaceRolesAccessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You need role access to manage permissions.'**
+  String get settingsWorkspaceRolesAccessDenied;
+
+  /// No description provided for @settingsWorkspaceRolesCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create role'**
+  String get settingsWorkspaceRolesCreate;
+
+  /// No description provided for @settingsWorkspaceRolesDefaultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Default access'**
+  String get settingsWorkspaceRolesDefaultTitle;
+
+  /// No description provided for @settingsWorkspaceRolesListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Roles'**
+  String get settingsWorkspaceRolesListTitle;
+
+  /// No description provided for @settingsWorkspaceRolesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No custom roles yet.'**
+  String get settingsWorkspaceRolesEmpty;
+
+  /// No description provided for @settingsWorkspaceRolesDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete role'**
+  String get settingsWorkspaceRolesDeleteTitle;
+
+  /// No description provided for @settingsWorkspaceRolesDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String settingsWorkspaceRolesDeleteMessage(String name);
+
+  /// No description provided for @settingsWorkspaceRolesPermissionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} permissions enabled'**
+  String settingsWorkspaceRolesPermissionCount(int count);
+
+  /// No description provided for @settingsWorkspaceRolesEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit role'**
+  String get settingsWorkspaceRolesEdit;
+
+  /// No description provided for @settingsWorkspaceRolesSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get settingsWorkspaceRolesSave;
+
+  /// No description provided for @settingsWorkspaceRolesNameField.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get settingsWorkspaceRolesNameField;
+
+  /// No description provided for @settingsWorkspaceRolesNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Role name'**
+  String get settingsWorkspaceRolesNamePlaceholder;
+
+  /// No description provided for @settingsWorkspaceRolesNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a role name.'**
+  String get settingsWorkspaceRolesNameRequired;
+
+  /// No description provided for @settingsWorkspaceRolesPermissionsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions'**
+  String get settingsWorkspaceRolesPermissionsSection;
+
+  /// No description provided for @settingsWorkspaceRolesMembersSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned members'**
+  String get settingsWorkspaceRolesMembersSection;
+
+  /// No description provided for @settingsWorkspaceRolesMembersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No active members available.'**
+  String get settingsWorkspaceRolesMembersEmpty;
+
+  /// No description provided for @settingsWorkspaceRolesSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Role saved.'**
+  String get settingsWorkspaceRolesSaved;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

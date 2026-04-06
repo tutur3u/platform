@@ -14,6 +14,11 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createInventoryAuditLog } from '@/lib/inventory/audit';
+import {
+  canAdjustInventoryStock,
+  canManageInventoryCatalog,
+} from '@/lib/inventory/permissions';
 import { getStockChangeAmount } from '@/lib/inventory/stock-change';
 
 const InventoryItemSchema = z.object({
@@ -30,6 +35,8 @@ export const ProductCreateSchema = z.object({
   description: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
   usage: z.string().max(MAX_MEDIUM_TEXT_LENGTH).optional(),
   category_id: z.guid(),
+  owner_id: z.guid().optional(),
+  finance_category_id: z.guid().nullable().optional(),
   inventory: z.array(InventoryItemSchema).default([]),
 });
 
@@ -64,6 +71,100 @@ const getWorkspaceUserId = async ({
   return workspaceUser?.virtual_user_id ?? null;
 };
 
+const validateProductRelations = async ({
+  sbAdmin,
+  wsId,
+  categoryId,
+  ownerId,
+  financeCategoryId,
+}: {
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+  categoryId: string;
+  ownerId: string;
+  financeCategoryId?: string | null;
+}) => {
+  const [categoryResult, ownerResult, financeCategoryResult] =
+    await Promise.all([
+      sbAdmin
+        .from('product_categories')
+        .select('id')
+        .eq('id', categoryId)
+        .eq('ws_id', wsId)
+        .maybeSingle(),
+      sbAdmin
+        .from('inventory_owners')
+        .select('id')
+        .eq('id', ownerId)
+        .eq('ws_id', wsId)
+        .maybeSingle(),
+      financeCategoryId
+        ? sbAdmin
+            .from('transaction_categories')
+            .select('id')
+            .eq('id', financeCategoryId)
+            .eq('ws_id', wsId)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+
+  if (categoryResult.error || !categoryResult.data) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { message: 'Invalid product category' },
+        { status: 400 }
+      ),
+    };
+  }
+
+  if (ownerResult.error || !ownerResult.data) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { message: 'Invalid inventory owner' },
+        { status: 400 }
+      ),
+    };
+  }
+
+  if (
+    financeCategoryId &&
+    (financeCategoryResult.error || !financeCategoryResult.data)
+  ) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { message: 'Invalid finance transaction category' },
+        { status: 400 }
+      ),
+    };
+  }
+
+  return { ok: true as const };
+};
+
+const resolveDefaultOwnerId = async ({
+  sbAdmin,
+  wsId,
+}: {
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+}) => {
+  const { data, error } = await sbAdmin
+    .from('inventory_owners')
+    .select('id')
+    .eq('ws_id', wsId)
+    .eq('name', 'Unassigned')
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data.id;
+};
+
 export async function POST(req: Request, { params }: Params) {
   const { wsId: id } = await params;
   const supabase = await createClient(req);
@@ -84,23 +185,51 @@ export async function POST(req: Request, { params }: Params) {
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
-  const { withoutPermission } = permissions;
-  if (withoutPermission('create_inventory')) {
+  if (!canManageInventoryCatalog(permissions)) {
     return NextResponse.json(
       { message: 'Insufficient permissions to create products' },
       { status: 403 }
     );
   }
 
-  const { inventory, ...data } = parsed.data;
+  const { inventory, owner_id, ...data } = parsed.data;
+  const resolvedOwnerId =
+    owner_id ??
+    (await resolveDefaultOwnerId({
+      sbAdmin,
+      wsId,
+    }));
+  if (!resolvedOwnerId) {
+    return NextResponse.json(
+      { message: 'Missing inventory owner configuration' },
+      { status: 400 }
+    );
+  }
+  const validatedRelations = await validateProductRelations({
+    sbAdmin,
+    wsId,
+    categoryId: data.category_id,
+    ownerId: resolvedOwnerId,
+    financeCategoryId: data.finance_category_id,
+  });
+  if (!validatedRelations.ok) {
+    return validatedRelations.response;
+  }
+
+  const workspaceUserId = await getWorkspaceUserId({
+    supabase,
+    sbAdmin,
+    wsId,
+  });
 
   const product = await sbAdmin
     .from('workspace_products')
     .insert({
       ...data,
+      owner_id: resolvedOwnerId,
       ws_id: wsId,
     })
-    .select('id')
+    .select('id, name, owner_id, finance_category_id, category_id')
     .single();
 
   if (product.error) {
@@ -114,7 +243,7 @@ export async function POST(req: Request, { params }: Params) {
 
   // Only insert inventory if it exists and is an array
   if (inventory && Array.isArray(inventory) && inventory.length > 0) {
-    if (withoutPermission('update_stock_quantity')) {
+    if (!canAdjustInventoryStock(permissions)) {
       return NextResponse.json(
         { message: 'Insufficient permissions to update stock quantities' },
         { status: 403 }
@@ -135,12 +264,6 @@ export async function POST(req: Request, { params }: Params) {
         { status: 500 }
       );
     }
-
-    const workspaceUserId = await getWorkspaceUserId({
-      supabase,
-      sbAdmin,
-      wsId,
-    });
 
     if (workspaceUserId) {
       const stockChanges = inventory
@@ -174,6 +297,30 @@ export async function POST(req: Request, { params }: Params) {
       }
     }
   }
+
+  await createInventoryAuditLog(sbAdmin, {
+    wsId,
+    eventKind: 'created',
+    entityKind: 'product',
+    entityId: product.data.id,
+    entityLabel: product.data.name ?? data.name,
+    summary: `Created product ${data.name}`,
+    changedFields: [
+      'name',
+      'category_id',
+      'owner_id',
+      ...(data.finance_category_id ? ['finance_category_id'] : []),
+      ...(inventory.length > 0 ? ['inventory'] : []),
+    ],
+    after: {
+      ...data,
+      inventory,
+    },
+    actor: {
+      authUserId: (await supabase.auth.getUser()).data.user?.id ?? null,
+      workspaceUserId,
+    },
+  });
 
   return NextResponse.json({ message: 'success' });
 }

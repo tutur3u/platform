@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => {
   const inventoryDeleteWarehouseEq = vi.fn();
   const inventoryUpdateEq = vi.fn();
   const stockChangesInsert = vi.fn();
+  const relationMaybeSingle = vi.fn();
+  const inventoryAuditInsert = vi.fn();
 
   const sessionSupabase = {
     auth: {
@@ -53,6 +55,28 @@ const mocks = vi.hoisted(() => {
       if (table === 'product_stock_changes') {
         return {
           insert: stockChangesInsert,
+        };
+      }
+
+      if (table === 'inventory_audit_logs') {
+        return {
+          insert: inventoryAuditInsert,
+        };
+      }
+
+      if (
+        table === 'product_categories' ||
+        table === 'inventory_owners' ||
+        table === 'transaction_categories'
+      ) {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: relationMaybeSingle,
+              }),
+            }),
+          }),
         };
       }
 
@@ -124,6 +148,28 @@ const mocks = vi.hoisted(() => {
         };
       }
 
+      if (table === 'inventory_audit_logs') {
+        return {
+          insert: inventoryAuditInsert,
+        };
+      }
+
+      if (
+        table === 'product_categories' ||
+        table === 'inventory_owners' ||
+        table === 'transaction_categories'
+      ) {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: relationMaybeSingle,
+              }),
+            }),
+          }),
+        };
+      }
+
       throw new Error(`Unexpected admin table: ${table}`);
     }),
   };
@@ -147,7 +193,9 @@ const mocks = vi.hoisted(() => {
     inventoryDeleteWarehouseEq,
     inventorySelectEq,
     inventoryUpdateEq,
+    inventoryAuditInsert,
     permissions,
+    relationMaybeSingle,
     productCountSingle,
     productInsertSingle,
     productMaybeSingle,
@@ -188,6 +236,11 @@ describe('product routes', () => {
       eq: vi.fn().mockResolvedValue({ error: null }),
     });
     mocks.stockChangesInsert.mockResolvedValue({ error: null });
+    mocks.inventoryAuditInsert.mockResolvedValue({ error: null });
+    mocks.relationMaybeSingle.mockResolvedValue({
+      data: { id: 'relation-id' },
+      error: null,
+    });
   });
 
   it('loads product details from workspace_products with the admin client', async () => {

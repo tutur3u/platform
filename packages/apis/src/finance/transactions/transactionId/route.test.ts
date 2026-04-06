@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => {
   const verifyWorkspaceSingle = vi.fn();
   const confidentialSingle = vi.fn();
+  const linkedTransactionMaybeSingle = vi.fn();
   const deleteEq = vi.fn();
   const getPermissions = vi.fn();
 
@@ -35,6 +36,7 @@ const mocks = vi.hoisted(() => {
           return {
             eq: vi.fn(() => ({
               single: confidentialSingle,
+              maybeSingle: linkedTransactionMaybeSingle,
             })),
           };
         }),
@@ -50,6 +52,7 @@ const mocks = vi.hoisted(() => {
     confidentialSingle,
     deleteEq,
     getPermissions,
+    linkedTransactionMaybeSingle,
     sessionSupabase,
     verifyWorkspaceSingle,
   };
@@ -88,6 +91,10 @@ describe('transaction detail route', () => {
         is_description_confidential: false,
         is_category_confidential: false,
       },
+      error: null,
+    });
+    mocks.linkedTransactionMaybeSingle.mockResolvedValue({
+      data: null,
       error: null,
     });
     mocks.deleteEq.mockResolvedValue({

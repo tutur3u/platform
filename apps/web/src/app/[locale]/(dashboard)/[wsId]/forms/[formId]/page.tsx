@@ -17,6 +17,8 @@ interface PageProps {
     q?: string;
     page?: string;
     pageSize?: string;
+    responsesPage?: string;
+    responsesPageSize?: string;
   }>;
 }
 
@@ -67,11 +69,20 @@ export default async function FormDetailPage({
           notFound();
         }
 
+        const responsesPage = Number(
+          resolvedSearchParams.responsesPage ?? resolvedSearchParams.page ?? '1'
+        );
+        const responsesPageSize = Number(
+          resolvedSearchParams.responsesPageSize ??
+            resolvedSearchParams.pageSize ??
+            '10'
+        );
+
         const [responses, analytics] = await Promise.all([
           listFormResponses(adminClient, form, {
             query: resolvedSearchParams.q,
-            page: Number(resolvedSearchParams.page ?? '1'),
-            pageSize: Number(resolvedSearchParams.pageSize ?? '10'),
+            page: responsesPage,
+            pageSize: responsesPageSize,
           }),
           getFormAnalytics(adminClient, form),
         ]);
@@ -84,6 +95,8 @@ export default async function FormDetailPage({
             canManageForms={!!canManageForms}
             initialForm={form}
             initialResponses={responses.records}
+            initialResponsesPage={responsesPage}
+            initialResponsesPageSize={responsesPageSize}
             initialResponsesTotal={responses.total}
             initialResponsesSummary={responses.summary}
             initialQuestionAnalytics={responses.questionAnalytics}

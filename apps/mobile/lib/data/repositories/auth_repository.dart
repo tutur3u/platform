@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mobile/core/config/api_config.dart';
@@ -93,7 +94,34 @@ class AuthRepository {
       }
 
       final payload = AuthSessionPayload.fromJson(sessionJson);
-      await _client.auth.setSession(payload.refreshToken);
+      try {
+        final authResponse = await _client.auth.setSession(
+          payload.refreshToken,
+        );
+        developer.log(
+          'Password login session hydrated',
+          name: 'AuthRepository',
+          error: {
+            'supabaseUrl': Env.supabaseUrl,
+            'apiBaseUrl': Env.apiBaseUrl,
+            'hasSession': authResponse.session != null,
+            'userId': authResponse.user?.id,
+          },
+        );
+      } on AuthException catch (e, stackTrace) {
+        developer.log(
+          'Failed to hydrate mobile auth session after password login',
+          name: 'AuthRepository',
+          error: {
+            'supabaseUrl': Env.supabaseUrl,
+            'apiBaseUrl': Env.apiBaseUrl,
+            'message': e.message,
+          },
+          stackTrace: stackTrace,
+          level: 1000,
+        );
+        rethrow;
+      }
 
       return (success: true, error: null, retryAfter: null);
     } on ApiException catch (e) {
@@ -267,12 +295,12 @@ class AuthRepository {
       final tokens = await _googleIdentityClient.authenticate();
       return await _completeNativeGoogleSignIn(tokens);
     } on GoogleSignInException catch (e) {
-      if (e.code == GoogleSignInExceptionCode.canceled) {
-        return const AuthActionResult.cancelled();
-      }
-
       if (_shouldFallbackToBrowserFromNativeError(e.code)) {
         return null;
+      }
+
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        return const AuthActionResult.cancelled();
       }
 
       return AuthActionResult.failure(
@@ -414,10 +442,13 @@ class AuthRepository {
       GoogleSignInExceptionCode.clientConfigurationError ||
       GoogleSignInExceptionCode.providerConfigurationError ||
       GoogleSignInExceptionCode.uiUnavailable => true,
+      // google_sign_in on Android can surface Credential Manager
+      // configuration failures as "canceled" after the user picks an account.
+      // Fall back to browser OAuth there instead of silently doing nothing.
+      GoogleSignInExceptionCode.canceled => _devicePlatform.isAndroid,
       GoogleSignInExceptionCode.unknownError ||
       GoogleSignInExceptionCode.interrupted ||
-      GoogleSignInExceptionCode.userMismatch ||
-      GoogleSignInExceptionCode.canceled => false,
+      GoogleSignInExceptionCode.userMismatch => false,
     };
   }
 

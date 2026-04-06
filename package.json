@@ -4,7 +4,7 @@
     "@biomejs/biome": "^2.4.10",
     "@lingual/i18n-check": "0.9.3",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@typescript/native-preview": "^7.0.0-dev.20260401.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260405.1",
     "@vitest/coverage-v8": "^4.1.2",
     "lucide-static": "^1.7.0",
     "turbo": "^2.9.3",
@@ -152,6 +152,6 @@
   "workspaces": ["apps/*", "packages/*"],
   "overrides": {
     "google-auth-library": "^10.6.2",
-    "@polar-sh/sdk": "0.46.7"
+    "@polar-sh/sdk": "0.47.0"
   }
 }

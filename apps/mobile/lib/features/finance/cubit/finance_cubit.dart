@@ -10,6 +10,7 @@ import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/finance_cache.dart';
+import 'package:mobile/features/finance/utils/wallet_ordering.dart';
 
 part 'finance_state.dart';
 
@@ -69,8 +70,13 @@ class FinanceCubit extends Cubit<FinanceState> {
             .catchError(
               (_) => <ExchangeRate>[],
             );
+        final sortedWallets = sortWalletsForDisplay(
+          wallets: wallets,
+          workspaceCurrency: workspaceCurrency,
+          exchangeRates: exchangeRates,
+        );
         return {
-          'wallets': wallets
+          'wallets': sortedWallets
               .map((wallet) => wallet.toJson())
               .toList(growable: false),
           'recentTransactions': recentTransactions.data
@@ -149,12 +155,18 @@ class FinanceCubit extends Cubit<FinanceState> {
       final workspaceCurrency = await workspaceCurrencyFuture;
       final exchangeRates = await exchangeRatesFuture;
 
+      final sortedWallets = sortWalletsForDisplay(
+        wallets: wallets,
+        workspaceCurrency: workspaceCurrency,
+        exchangeRates: exchangeRates,
+      );
+
       final nextState = state.copyWith(
         status: FinanceStatus.loaded,
         isFromCache: false,
         isRefreshing: false,
         lastUpdatedAt: null,
-        wallets: wallets,
+        wallets: sortedWallets,
         recentTransactions: recentTransactionsPage.data,
         workspaceCurrency: workspaceCurrency,
         exchangeRates: exchangeRates,
@@ -207,27 +219,35 @@ class FinanceCubit extends Cubit<FinanceState> {
   }
 
   static FinanceState _stateFromCacheJson(Map<String, dynamic> json) {
+    final workspaceCurrency = json['workspaceCurrency'] as String? ?? 'USD';
+    final exchangeRates =
+        ((json['exchangeRates'] as List<dynamic>?) ?? const <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .map(ExchangeRate.fromJson)
+            .toList(growable: false);
+    final wallets = ((json['wallets'] as List<dynamic>?) ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .map(Wallet.fromJson)
+        .toList(growable: false);
+
     return FinanceState(
       status: FinanceStatus.loaded,
       isFromCache: true,
       lastUpdatedAt: json['lastUpdatedAt'] != null
           ? DateTime.tryParse(json['lastUpdatedAt'] as String)
           : null,
-      wallets: ((json['wallets'] as List<dynamic>?) ?? const <dynamic>[])
-          .whereType<Map<String, dynamic>>()
-          .map(Wallet.fromJson)
-          .toList(growable: false),
+      wallets: sortWalletsForDisplay(
+        wallets: wallets,
+        workspaceCurrency: workspaceCurrency,
+        exchangeRates: exchangeRates,
+      ),
       recentTransactions:
           ((json['recentTransactions'] as List<dynamic>?) ?? const <dynamic>[])
               .whereType<Map<String, dynamic>>()
               .map(Transaction.fromJson)
               .toList(growable: false),
-      workspaceCurrency: json['workspaceCurrency'] as String? ?? 'USD',
-      exchangeRates:
-          ((json['exchangeRates'] as List<dynamic>?) ?? const <dynamic>[])
-              .whereType<Map<String, dynamic>>()
-              .map(ExchangeRate.fromJson)
-              .toList(growable: false),
+      workspaceCurrency: workspaceCurrency,
+      exchangeRates: exchangeRates,
     );
   }
 }

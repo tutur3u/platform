@@ -198,6 +198,18 @@ export function StandardInvoice({
   const totalBeforeRounding = subtotal - discountAmount;
   const { roundedTotal, roundUp, roundDown, resetRounding } =
     useInvoiceRounding(totalBeforeRounding);
+  const linkedFinanceCategoryIds = useMemo(
+    () => [
+      ...new Set(
+        selectedProducts
+          .map((item) => item.product.finance_category_id)
+          .filter((value): value is string => Boolean(value))
+      ),
+    ],
+    [selectedProducts]
+  );
+  const hasMixedLinkedFinanceCategories = linkedFinanceCategoryIds.length > 1;
+  const hasSingleLinkedFinanceCategory = linkedFinanceCategoryIds.length === 1;
 
   // Auto-generate invoice content based on selected products
   useEffect(() => {
@@ -234,6 +246,21 @@ export function StandardInvoice({
     }
   }, [selectedUserId]);
 
+  useEffect(() => {
+    if (hasSingleLinkedFinanceCategory) {
+      setSelectedCategoryId(linkedFinanceCategoryIds[0] ?? '');
+      return;
+    }
+
+    if (hasMixedLinkedFinanceCategories) {
+      setSelectedCategoryId('');
+    }
+  }, [
+    hasMixedLinkedFinanceCategories,
+    hasSingleLinkedFinanceCategory,
+    linkedFinanceCategoryIds,
+  ]);
+
   useBestPromotionSelection({
     enabled: promotionsAllowed,
     selectedUserId,
@@ -246,7 +273,6 @@ export function StandardInvoice({
 
   const handleCreateInvoice = async () => {
     if (
-      !selectedUser ||
       selectedProducts.length === 0 ||
       !selectedWalletId ||
       !selectedCategoryId
@@ -259,7 +285,7 @@ export function StandardInvoice({
     try {
       // Prepare the request payload
       const requestPayload = {
-        customer_id: selectedUserId,
+        customer_id: selectedUserId || null,
         content: invoiceContent,
         notes: invoiceNotes,
         wallet_id: selectedWalletId,
@@ -501,6 +527,13 @@ export function StandardInvoice({
                       : t('ws-invoices.select_user_first')
                   }
                 />
+                {hasMixedLinkedFinanceCategories && (
+                  <p className="text-muted-foreground text-sm">
+                    This cart mixes products with different linked finance
+                    categories. Choose one invoice category override before
+                    checkout.
+                  </p>
+                )}
 
                 {selectedProducts.length > 0 && (
                   <>
@@ -540,7 +573,6 @@ export function StandardInvoice({
                         className="w-full"
                         onClick={handleCreateInvoice}
                         disabled={
-                          !selectedUser ||
                           selectedProducts.length === 0 ||
                           !selectedWalletId ||
                           !selectedCategoryId ||

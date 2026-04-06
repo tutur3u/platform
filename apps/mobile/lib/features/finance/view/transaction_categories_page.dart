@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/tag.dart';
@@ -15,7 +17,9 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/finance_cache.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
+import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -140,6 +144,36 @@ class _TransactionCategoriesViewState
         .toList(growable: false);
   }
 
+  void _switchTab(int value) {
+    setState(() {
+      _activeTab = value;
+      if (value == _tabCategories) {
+        _categoriesError = null;
+      } else {
+        _tagsError = null;
+      }
+    });
+
+    final workspaceId = context
+        .read<WorkspaceCubit>()
+        .state
+        .currentWorkspace
+        ?.id;
+    if (value == _tabCategories && _categoriesWorkspaceId != workspaceId) {
+      unawaited(_loadCategories());
+      return;
+    }
+    if (value == _tabTags && _tagsWorkspaceId != workspaceId) {
+      unawaited(_loadTags());
+      return;
+    }
+    if (value == _tabCategories) {
+      unawaited(_loadCategories());
+    } else {
+      unawaited(_loadTags());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -154,61 +188,50 @@ class _TransactionCategoriesViewState
             unawaited(_handleWorkspaceChanged(state.currentWorkspace?.id)),
         child: Stack(
           children: [
-            Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                  child: shad.Tabs(
-                    index: _activeTab,
-                    onChanged: (value) {
-                      setState(() {
-                        _activeTab = value;
-                        if (value == _tabCategories) {
-                          _categoriesError = null;
-                        } else {
-                          _tagsError = null;
-                        }
-                      });
-                      final workspaceId = context
-                          .read<WorkspaceCubit>()
-                          .state
-                          .currentWorkspace
-                          ?.id;
-                      if (value == _tabCategories &&
-                          _categoriesWorkspaceId != workspaceId) {
-                        unawaited(_loadCategories());
-                        return;
-                      }
-                      if (value == _tabTags &&
-                          _tagsWorkspaceId != workspaceId) {
-                        unawaited(_loadTags());
-                        return;
-                      }
-                      if (value == _tabCategories) {
-                        unawaited(_loadCategories());
-                      } else {
-                        unawaited(_loadTags());
-                      }
-                    },
-                    children: [
-                      shad.TabItem(child: Text(l10n.financeCategories)),
-                      shad.TabItem(child: Text(l10n.financeTags)),
-                    ],
-                  ),
+            const FinanceAmountVisibilityShellAction(
+              ownerId: 'finance-manage-amount-visibility',
+              locations: {Routes.categories},
+            ),
+            ShellMiniNav(
+              ownerId: 'finance-manage-mini-nav',
+              locations: const {Routes.categories},
+              deepLinkBackRoute: Routes.finance,
+              items: [
+                ShellMiniNavItemSpec(
+                  id: 'back',
+                  icon: Icons.chevron_left,
+                  label: l10n.navBack,
+                  callbackToken: 'back',
+                  onPressed: () => context.go(Routes.finance),
                 ),
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: () => _loadCurrentTab(forceRefresh: true),
-                    child: _activeTab == _tabCategories
-                        ? _buildCategoriesContent(l10n, listBottomPadding)
-                        : _buildTagsContent(l10n, listBottomPadding),
-                  ),
+                ShellMiniNavItemSpec(
+                  id: 'categories',
+                  icon: Icons.category_outlined,
+                  label: l10n.financeCategories,
+                  selected: _activeTab == _tabCategories,
+                  callbackToken: 'categories-$_activeTab',
+                  onPressed: () => _switchTab(_tabCategories),
+                ),
+                ShellMiniNavItemSpec(
+                  id: 'tags',
+                  icon: Icons.label_outline,
+                  label: l10n.financeTags,
+                  selected: _activeTab == _tabTags,
+                  callbackToken: 'tags-$_activeTab',
+                  onPressed: () => _switchTab(_tabTags),
                 ),
               ],
+            ),
+            RefreshIndicator(
+              onRefresh: () => _loadCurrentTab(forceRefresh: true),
+              child: _activeTab == _tabCategories
+                  ? _buildCategoriesContent(l10n, listBottomPadding)
+                  : _buildTagsContent(l10n, listBottomPadding),
             ),
             SpeedDialFab(
               label: l10n.financeCreateCategory,
               icon: Icons.add,
+              includeBottomSafeArea: false,
               actions: [
                 FabAction(
                   icon: Icons.category_outlined,
@@ -240,15 +263,6 @@ class _TransactionCategoriesViewState
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
         children: [
-          _ManageHeaderCard(
-            activeTab: _activeTab,
-            categoryCount: _categories.length,
-            tagCount: _tags.length,
-            onCreate: _activeTab == _tabCategories
-                ? _onCreateCategory
-                : _onCreateTag,
-          ),
-          const shad.Gap(14),
           FinanceEmptyState(
             icon: Icons.error_outline,
             title: l10n.commonSomethingWentWrong,
@@ -266,15 +280,6 @@ class _TransactionCategoriesViewState
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
         children: [
-          _ManageHeaderCard(
-            activeTab: _activeTab,
-            categoryCount: _categories.length,
-            tagCount: _tags.length,
-            onCreate: _activeTab == _tabCategories
-                ? _onCreateCategory
-                : _onCreateTag,
-          ),
-          const shad.Gap(14),
           FinanceEmptyState(
             icon: Icons.category_outlined,
             title: l10n.financeNoCategories,
@@ -290,20 +295,10 @@ class _TransactionCategoriesViewState
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
-      itemCount: _categories.length + 1,
+      itemCount: _categories.length,
       separatorBuilder: (context, index) => const shad.Gap(8),
       itemBuilder: (context, index) {
-        if (index == 0) {
-          return _ManageHeaderCard(
-            activeTab: _activeTab,
-            categoryCount: _categories.length,
-            tagCount: _tags.length,
-            onCreate: _activeTab == _tabCategories
-                ? _onCreateCategory
-                : _onCreateTag,
-          );
-        }
-        final category = _categories[index - 1];
+        final category = _categories[index];
         return _CategoryCard(
           category: category,
           onEdit: () => _onEdit(category),
@@ -325,15 +320,6 @@ class _TransactionCategoriesViewState
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
         children: [
-          _ManageHeaderCard(
-            activeTab: _activeTab,
-            categoryCount: _categories.length,
-            tagCount: _tags.length,
-            onCreate: _activeTab == _tabCategories
-                ? _onCreateCategory
-                : _onCreateTag,
-          ),
-          const shad.Gap(14),
           FinanceEmptyState(
             icon: Icons.error_outline,
             title: l10n.commonSomethingWentWrong,
@@ -351,15 +337,6 @@ class _TransactionCategoriesViewState
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
         children: [
-          _ManageHeaderCard(
-            activeTab: _activeTab,
-            categoryCount: _categories.length,
-            tagCount: _tags.length,
-            onCreate: _activeTab == _tabCategories
-                ? _onCreateCategory
-                : _onCreateTag,
-          ),
-          const shad.Gap(14),
           FinanceEmptyState(
             icon: Icons.sell_outlined,
             title: l10n.financeNoTags,
@@ -375,20 +352,10 @@ class _TransactionCategoriesViewState
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
-      itemCount: _tags.length + 1,
+      itemCount: _tags.length,
       separatorBuilder: (context, index) => const shad.Gap(8),
       itemBuilder: (context, index) {
-        if (index == 0) {
-          return _ManageHeaderCard(
-            activeTab: _activeTab,
-            categoryCount: _categories.length,
-            tagCount: _tags.length,
-            onCreate: _activeTab == _tabCategories
-                ? _onCreateCategory
-                : _onCreateTag,
-          );
-        }
-        final tag = _tags[index - 1];
+        final tag = _tags[index];
         return _TagCard(
           tag: tag,
           onEdit: () => _onEditTag(tag),
@@ -714,7 +681,7 @@ class _TransactionCategoriesViewState
     TransactionCategory? category,
   }) async {
     final repository = context.read<FinanceRepository>();
-    final createdOrUpdated = await showFinanceModal<bool>(
+    final createdOrUpdated = await showFinanceFullscreenModal<bool>(
       context: context,
       builder: (_) => _CategoryDialog(
         wsId: wsId,
@@ -728,7 +695,7 @@ class _TransactionCategoriesViewState
 
   Future<bool> _showTagDialog({required String wsId, FinanceTag? tag}) async {
     final repository = context.read<FinanceRepository>();
-    final createdOrUpdated = await showFinanceModal<bool>(
+    final createdOrUpdated = await showFinanceFullscreenModal<bool>(
       context: context,
       builder: (_) => _TagDialog(wsId: wsId, tag: tag, repository: repository),
     );
@@ -783,11 +750,11 @@ class _CategoryDialog extends StatefulWidget {
 }
 
 class _CategoryDialogState extends State<_CategoryDialog> {
-  final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late bool _isExpense;
   String? _icon;
   String? _colorHex;
+  String? _nameError;
   bool _isSaving = false;
 
   @override
@@ -817,190 +784,89 @@ class _CategoryDialogState extends State<_CategoryDialog> {
       fallback: _isExpense ? Icons.arrow_downward : Icons.arrow_upward,
     );
 
-    return FinanceModalScaffold(
+    return FinanceFullscreenFormScaffold(
       title: widget.category == null
           ? context.l10n.financeCreateCategory
           : context.l10n.financeEditCategory,
       subtitle: context.l10n.financeCategoryDialogSubtitle,
-      actions: [
-        shad.OutlineButton(
-          onPressed: _isSaving ? null : () => Navigator.of(context).pop(false),
-          child: Text(context.l10n.commonCancel),
-        ),
-        shad.PrimaryButton(
-          onPressed: _isSaving ? null : _saveCategory,
-          child: _isSaving
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: shad.CircularProgressIndicator(),
-                )
-              : Text(
-                  widget.category == null
-                      ? context.l10n.financeCreateCategory
-                      : context.l10n.timerSave,
-                ),
-        ),
-      ],
-      child: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(context.l10n.timerCategoryName),
-              const shad.Gap(4),
-              TextFormField(
-                controller: _nameController,
-                autofocus: true,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return context.l10n.financeCategoryNameRequired;
-                  }
-                  return null;
-                },
-              ),
-              const shad.Gap(12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: previewColor.withValues(alpha: 0.1),
-                  border: Border.all(
-                    color: previewColor.withValues(alpha: 0.35),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: previewColor.withValues(alpha: 0.16),
-                      ),
-                      child: Icon(previewIcon, size: 16, color: previewColor),
-                    ),
-                    const shad.Gap(10),
-                    Text(
-                      context.l10n.financePreview,
-                      style: shad.Theme.of(context).typography.small.copyWith(
-                        color: shad.Theme.of(
-                          context,
-                        ).colorScheme.mutedForeground,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const shad.Gap(12),
-              Text(context.l10n.financeType),
-              const shad.Gap(4),
-              Row(
-                children: [
-                  Expanded(
-                    child: _isExpense
-                        ? shad.PrimaryButton(
-                            onPressed: () => setState(() => _isExpense = true),
-                            child: Text(context.l10n.financeExpense),
-                          )
-                        : shad.OutlineButton(
-                            onPressed: () => setState(() => _isExpense = true),
-                            child: Text(context.l10n.financeExpense),
-                          ),
-                  ),
-                  const shad.Gap(8),
-                  Expanded(
-                    child: !_isExpense
-                        ? shad.PrimaryButton(
-                            onPressed: () => setState(() => _isExpense = false),
-                            child: Text(context.l10n.financeIncome),
-                          )
-                        : shad.OutlineButton(
-                            onPressed: () => setState(() => _isExpense = false),
-                            child: Text(context.l10n.financeIncome),
-                          ),
-                  ),
-                ],
-              ),
-              const shad.Gap(12),
-              Text(context.l10n.financeIcon),
-              const shad.Gap(4),
-              PlatformIconPickerField(
-                value: _icon,
-                title: context.l10n.financeSelectIcon,
-                searchPlaceholder: context.l10n.financeSearchIcons,
-                emptyText: context.l10n.financeNoIconsFound,
-                showLabel: false,
-                onChanged: (value) => setState(() => _icon = value),
-              ),
-              const shad.Gap(12),
-              Text(context.l10n.calendarEventColor),
-              const shad.Gap(4),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: previewColor,
-                        ),
-                      ),
-                      const shad.Gap(8),
-                      Expanded(
-                        child: Text(
-                          _colorHex ?? context.l10n.financeNoColor,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: shad.Theme.of(context).typography.small
-                              .copyWith(
-                                color: shad.Theme.of(
-                                  context,
-                                ).colorScheme.mutedForeground,
-                              ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const shad.Gap(8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      shad.OutlineButton(
-                        onPressed: _openColorPicker,
-                        child: Text(context.l10n.financePickColor),
-                      ),
-                      shad.OutlineButton(
-                        onPressed: () =>
-                            setState(() => _colorHex = randomHexColor()),
-                        child: Text(context.l10n.financeRandomizeColor),
-                      ),
-                      if (_colorHex != null)
-                        shad.GhostButton(
-                          density: shad.ButtonDensity.icon,
-                          onPressed: () => setState(() => _colorHex = null),
-                          child: const Icon(Icons.close, size: 14),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
+      primaryActionLabel: widget.category == null
+          ? context.l10n.financeCreateCategory
+          : context.l10n.timerSave,
+      onPrimaryPressed: _isSaving ? null : _saveCategory,
+      onClose: _isSaving ? null : () => Navigator.of(context).pop(false),
+      isSaving: _isSaving,
+      child: ListView(
+        children: [
+          _TaxonomyPreviewCard(
+            name: _nameController.text.trim().isEmpty
+                ? context.l10n.financeCreateCategory
+                : _nameController.text.trim(),
+            subtitle: _isExpense
+                ? context.l10n.financeExpense
+                : context.l10n.financeIncome,
+            previewColor: previewColor,
+            icon: previewIcon,
           ),
-        ),
+          const shad.Gap(12),
+          FinanceFormSection(
+            title: context.l10n.timerCategoryName,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _TaxonomyTextField(
+                  controller: _nameController,
+                  placeholder: context.l10n.timerCategoryName,
+                  autofocus: true,
+                  errorText: _nameError,
+                  onChanged: _onNameChanged,
+                ),
+                const shad.Gap(10),
+                _TaxonomyFieldLabel(label: context.l10n.financeType),
+                const shad.Gap(4),
+                _TaxonomySegmentedRow(
+                  leftLabel: context.l10n.financeExpense,
+                  rightLabel: context.l10n.financeIncome,
+                  leftSelected: _isExpense,
+                  onLeftPressed: () => setState(() => _isExpense = true),
+                  onRightPressed: () => setState(() => _isExpense = false),
+                ),
+              ],
+            ),
+          ),
+          const shad.Gap(12),
+          FinanceFormSection(
+            title: context.l10n.financeIcon,
+            child: PlatformIconPickerField(
+              value: _icon,
+              title: context.l10n.financeSelectIcon,
+              searchPlaceholder: context.l10n.financeSearchIcons,
+              emptyText: context.l10n.financeNoIconsFound,
+              showLabel: false,
+              onChanged: (value) => setState(() => _icon = value),
+            ),
+          ),
+          const shad.Gap(12),
+          FinanceFormSection(
+            title: context.l10n.calendarEventColor,
+            child: _TaxonomyColorSection(
+              colorHex: _colorHex ?? context.l10n.financeNoColor,
+              previewColor: previewColor,
+              onPickColor: _openColorPicker,
+              onRandomize: () => setState(() => _colorHex = randomHexColor()),
+              onClear: _colorHex == null
+                  ? null
+                  : () => setState(() => _colorHex = null),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Future<void> _saveCategory() async {
-    if (!(_formKey.currentState?.validate() ?? false)) {
+    final nameError = _validateName(_nameController.text);
+    setState(() => _nameError = nameError);
+    if (nameError != null) {
       return;
     }
 
@@ -1062,6 +928,17 @@ class _CategoryDialogState extends State<_CategoryDialog> {
         setState(() => _isSaving = false);
       }
     }
+  }
+
+  void _onNameChanged(String value) {
+    setState(() => _nameError = _validateName(value));
+  }
+
+  String? _validateName(String value) {
+    if (value.trim().isEmpty) {
+      return context.l10n.financeCategoryNameRequired;
+    }
+    return null;
   }
 
   Future<void> _openColorPicker() async {
@@ -1127,10 +1004,10 @@ class _TagDialog extends StatefulWidget {
 }
 
 class _TagDialogState extends State<_TagDialog> {
-  final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
   String? _colorHex;
+  String? _nameError;
   bool _isSaving = false;
 
   @override
@@ -1154,112 +1031,75 @@ class _TagDialogState extends State<_TagDialog> {
   Widget build(BuildContext context) {
     final previewColor = parseHex(_colorHex) ?? const Color(0xFF3B82F6);
 
-    return FinanceModalScaffold(
+    return FinanceFullscreenFormScaffold(
       title: widget.tag == null
           ? context.l10n.financeCreateTag
           : context.l10n.financeEditTag,
       subtitle: context.l10n.financeTagDialogSubtitle,
-      actions: [
-        shad.OutlineButton(
-          onPressed: _isSaving ? null : () => Navigator.of(context).pop(false),
-          child: Text(context.l10n.commonCancel),
-        ),
-        shad.PrimaryButton(
-          onPressed: _isSaving ? null : _saveTag,
-          child: _isSaving
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: shad.CircularProgressIndicator(),
-                )
-              : Text(
-                  widget.tag == null
-                      ? context.l10n.financeCreateTag
-                      : context.l10n.timerSave,
-                ),
-        ),
-      ],
-      child: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(context.l10n.financeTagName),
-              const shad.Gap(4),
-              TextFormField(
-                controller: _nameController,
-                autofocus: true,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return context.l10n.financeTagNameRequired;
-                  }
-                  return null;
-                },
-              ),
-              const shad.Gap(12),
-              Text(context.l10n.financeDescription),
-              const shad.Gap(4),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-                minLines: 2,
-                maxLines: 3,
-              ),
-              const shad.Gap(12),
-              Text(context.l10n.calendarEventColor),
-              const shad.Gap(4),
-              Row(
-                children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: previewColor,
-                    ),
-                  ),
-                  const shad.Gap(8),
-                  Expanded(
-                    child: Text(
-                      _colorHex ?? '#3B82F6',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: shad.Theme.of(context).typography.small.copyWith(
-                        color: shad.Theme.of(
-                          context,
-                        ).colorScheme.mutedForeground,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const shad.Gap(8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  shad.OutlineButton(
-                    onPressed: _openColorPicker,
-                    child: Text(context.l10n.financePickColor),
-                  ),
-                  shad.OutlineButton(
-                    onPressed: () =>
-                        setState(() => _colorHex = randomHexColor()),
-                    child: Text(context.l10n.financeRandomizeColor),
-                  ),
-                ],
-              ),
-            ],
+      primaryActionLabel: widget.tag == null
+          ? context.l10n.financeCreateTag
+          : context.l10n.timerSave,
+      onPrimaryPressed: _isSaving ? null : _saveTag,
+      onClose: _isSaving ? null : () => Navigator.of(context).pop(false),
+      isSaving: _isSaving,
+      child: ListView(
+        children: [
+          _TaxonomyPreviewCard(
+            name: _nameController.text.trim().isEmpty
+                ? context.l10n.financeCreateTag
+                : _nameController.text.trim(),
+            subtitle: _descriptionController.text.trim().isEmpty
+                ? context.l10n.financeTagDialogSubtitle
+                : _descriptionController.text.trim(),
+            previewColor: previewColor,
+            icon: Icons.sell_outlined,
           ),
-        ),
+          const shad.Gap(12),
+          FinanceFormSection(
+            title: context.l10n.financeTagName,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _TaxonomyTextField(
+                  controller: _nameController,
+                  placeholder: context.l10n.financeTagName,
+                  autofocus: true,
+                  errorText: _nameError,
+                  onChanged: _onNameChanged,
+                ),
+                const shad.Gap(10),
+                _TaxonomyFieldLabel(label: context.l10n.financeDescription),
+                const shad.Gap(4),
+                _TaxonomyTextArea(
+                  controller: _descriptionController,
+                  placeholder: context.l10n.financeDescription,
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
+            ),
+          ),
+          const shad.Gap(12),
+          FinanceFormSection(
+            title: context.l10n.calendarEventColor,
+            child: _TaxonomyColorSection(
+              colorHex: _colorHex ?? '#3B82F6',
+              previewColor: previewColor,
+              onPickColor: _openColorPicker,
+              onRandomize: () => setState(() => _colorHex = randomHexColor()),
+              onClear: _colorHex == null
+                  ? null
+                  : () => setState(() => _colorHex = '#3B82F6'),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Future<void> _saveTag() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final nameError = _validateName(_nameController.text);
+    setState(() => _nameError = nameError);
+    if (nameError != null) return;
 
     final rootNav = Navigator.of(context, rootNavigator: true);
     final toastContext = rootNav.context;
@@ -1319,6 +1159,17 @@ class _TagDialogState extends State<_TagDialog> {
     }
   }
 
+  void _onNameChanged(String value) {
+    setState(() => _nameError = _validateName(value));
+  }
+
+  String? _validateName(String value) {
+    if (value.trim().isEmpty) {
+      return context.l10n.financeTagNameRequired;
+    }
+    return null;
+  }
+
   Future<void> _openColorPicker() async {
     var selected = parseHex(_colorHex) ?? const Color(0xFF3B82F6);
 
@@ -1359,130 +1210,6 @@ class _TagDialogState extends State<_TagDialog> {
     if (result != null && mounted) {
       setState(() => _colorHex = colorToHexString(result));
     }
-  }
-}
-
-class _ManageHeaderCard extends StatelessWidget {
-  const _ManageHeaderCard({
-    required this.activeTab,
-    required this.categoryCount,
-    required this.tagCount,
-    required this.onCreate,
-  });
-
-  final int activeTab;
-  final int categoryCount;
-  final int tagCount;
-  final VoidCallback onCreate;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final palette = FinancePalette.of(context);
-
-    return FinancePanel(
-      backgroundColor: palette.elevatedPanel,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          FinanceSectionHeader(
-            title: activeTab == _TransactionCategoriesViewState._tabCategories
-                ? l10n.financeManageCategoriesTitle
-                : l10n.financeManageTagsTitle,
-            subtitle:
-                activeTab == _TransactionCategoriesViewState._tabCategories
-                ? l10n.financeManageCategoriesSubtitle
-                : l10n.financeManageTagsSubtitle,
-            action: shad.GhostButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: onCreate,
-              child: const Icon(Icons.add_circle_outline_rounded, size: 18),
-            ),
-          ),
-          const shad.Gap(14),
-          Row(
-            children: [
-              Expanded(
-                child: _ManageCountCard(
-                  color: palette.accent,
-                  icon: Icons.category_outlined,
-                  label: l10n.financeCategories,
-                  value: '$categoryCount',
-                ),
-              ),
-              const shad.Gap(10),
-              Expanded(
-                child: _ManageCountCard(
-                  color: palette.positive,
-                  icon: Icons.sell_outlined,
-                  label: l10n.financeTags,
-                  value: '$tagCount',
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ManageCountCard extends StatelessWidget {
-  const _ManageCountCard({
-    required this.color,
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final Color color;
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: color.withValues(alpha: 0.22)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 18),
-          const shad.Gap(12),
-          Expanded(
-            child: Column(
-              children: [
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.large.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: theme.colorScheme.foreground,
-                  ),
-                ),
-                const shad.Gap(2),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: theme.typography.textSmall.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -1672,6 +1399,364 @@ class _TagCard extends StatelessWidget {
             child: const Icon(Icons.delete_outline, size: 16),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TaxonomyPreviewCard extends StatelessWidget {
+  const _TaxonomyPreviewCard({
+    required this.name,
+    required this.subtitle,
+    required this.previewColor,
+    required this.icon,
+  });
+
+  final String name;
+  final String subtitle;
+  final Color previewColor;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return FinancePanel(
+      padding: const EdgeInsets.all(14),
+      radius: 22,
+      backgroundColor: FinancePalette.of(context).elevatedPanel,
+      borderColor: previewColor.withValues(alpha: 0.18),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: previewColor.withValues(alpha: 0.16),
+            ),
+            child: Icon(icon, size: 18, color: previewColor),
+          ),
+          const shad.Gap(12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.small.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const shad.Gap(4),
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.xSmall.copyWith(
+                    color: theme.colorScheme.mutedForeground,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaxonomySegmentedRow extends StatelessWidget {
+  const _TaxonomySegmentedRow({
+    required this.leftLabel,
+    required this.rightLabel,
+    required this.leftSelected,
+    required this.onLeftPressed,
+    required this.onRightPressed,
+  });
+
+  final String leftLabel;
+  final String rightLabel;
+  final bool leftSelected;
+  final VoidCallback onLeftPressed;
+  final VoidCallback onRightPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final accent = FinancePalette.of(context).accent;
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: theme.colorScheme.border.withValues(alpha: 0.72),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _TaxonomySegmentButton(
+              label: leftLabel,
+              selected: leftSelected,
+              accent: accent,
+              onPressed: onLeftPressed,
+            ),
+          ),
+          const shad.Gap(4),
+          Expanded(
+            child: _TaxonomySegmentButton(
+              label: rightLabel,
+              selected: !leftSelected,
+              accent: accent,
+              onPressed: onRightPressed,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaxonomySegmentButton extends StatelessWidget {
+  const _TaxonomySegmentButton({
+    required this.label,
+    required this.selected,
+    required this.accent,
+    required this.onPressed,
+  });
+
+  final String label;
+  final bool selected;
+  final Color accent;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          decoration: BoxDecoration(
+            color: selected
+                ? accent.withValues(alpha: 0.14)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.small.copyWith(
+                fontWeight: FontWeight.w700,
+                color: selected ? accent : theme.colorScheme.mutedForeground,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TaxonomyColorSection extends StatelessWidget {
+  const _TaxonomyColorSection({
+    required this.colorHex,
+    required this.previewColor,
+    required this.onPickColor,
+    required this.onRandomize,
+    this.onClear,
+  });
+
+  final String colorHex;
+  final Color previewColor;
+  final VoidCallback onPickColor;
+  final VoidCallback onRandomize;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.card,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: theme.colorScheme.border.withValues(alpha: 0.72),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: previewColor,
+                ),
+              ),
+              const shad.Gap(10),
+              Expanded(
+                child: Text(
+                  colorHex,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.small.copyWith(
+                    color: theme.colorScheme.mutedForeground,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const shad.Gap(10),
+        Row(
+          children: [
+            Expanded(
+              child: shad.OutlineButton(
+                onPressed: onPickColor,
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(context.l10n.financePickColor),
+                  ),
+                ),
+              ),
+            ),
+            const shad.Gap(8),
+            Expanded(
+              child: shad.OutlineButton(
+                onPressed: onRandomize,
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(context.l10n.financeRandomizeColor),
+                  ),
+                ),
+              ),
+            ),
+            if (onClear != null) ...[
+              const shad.Gap(8),
+              shad.GhostButton(
+                onPressed: onClear,
+                child: const Icon(Icons.close_rounded, size: 18),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _TaxonomyFieldLabel extends StatelessWidget {
+  const _TaxonomyFieldLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Text(
+      label,
+      style: theme.typography.xSmall.copyWith(
+        color: theme.colorScheme.mutedForeground,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.35,
+      ),
+    );
+  }
+}
+
+class _TaxonomyTextField extends StatelessWidget {
+  const _TaxonomyTextField({
+    required this.controller,
+    required this.placeholder,
+    required this.onChanged,
+    this.autofocus = false,
+    this.errorText,
+  });
+
+  final TextEditingController controller;
+  final String placeholder;
+  final ValueChanged<String> onChanged;
+  final bool autofocus;
+  final String? errorText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        shad.TextField(
+          controller: controller,
+          placeholder: Text(placeholder),
+          autofocus: autofocus,
+          onChanged: onChanged,
+        ),
+        if (errorText != null) ...[
+          const shad.Gap(4),
+          _TaxonomyFieldErrorText(message: errorText!),
+        ],
+      ],
+    );
+  }
+}
+
+class _TaxonomyTextArea extends StatelessWidget {
+  const _TaxonomyTextArea({
+    required this.controller,
+    required this.placeholder,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final String placeholder;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return shad.TextArea(
+      controller: controller,
+      placeholder: Text(placeholder),
+      initialHeight: 96,
+      minHeight: 96,
+      maxHeight: 156,
+      onChanged: onChanged,
+    );
+  }
+}
+
+class _TaxonomyFieldErrorText extends StatelessWidget {
+  const _TaxonomyFieldErrorText({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      message,
+      style: shad.Theme.of(context).typography.xSmall.copyWith(
+        color: shad.Theme.of(context).colorScheme.destructive,
+        fontWeight: FontWeight.w600,
       ),
     );
   }

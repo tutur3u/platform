@@ -203,6 +203,15 @@ class SettingsWorkspaceSection extends StatelessWidget {
     required this.canEditWorkspaceProperties,
     required this.isWorkspacePermissionLoading,
     required this.onEditWorkspaceProperties,
+    required this.defaultCurrency,
+    required this.canEditWorkspaceDefaultCurrency,
+    required this.isWorkspaceCurrencyLoading,
+    required this.onEditWorkspaceDefaultCurrency,
+    required this.canManageWorkspaceMembers,
+    required this.canManageWorkspaceRoles,
+    required this.onOpenWorkspaceMembers,
+    required this.onOpenWorkspaceRoles,
+    required this.showWorkspaceAccess,
     super.key,
   });
 
@@ -211,6 +220,15 @@ class SettingsWorkspaceSection extends StatelessWidget {
   final bool canEditWorkspaceProperties;
   final bool isWorkspacePermissionLoading;
   final ValueChanged<Workspace> onEditWorkspaceProperties;
+  final String defaultCurrency;
+  final bool canEditWorkspaceDefaultCurrency;
+  final bool isWorkspaceCurrencyLoading;
+  final VoidCallback onEditWorkspaceDefaultCurrency;
+  final bool canManageWorkspaceMembers;
+  final bool canManageWorkspaceRoles;
+  final VoidCallback onOpenWorkspaceMembers;
+  final VoidCallback onOpenWorkspaceRoles;
+  final bool showWorkspaceAccess;
 
   @override
   Widget build(BuildContext context) {
@@ -224,50 +242,93 @@ class SettingsWorkspaceSection extends StatelessWidget {
         ? l10n.settingsWorkspacePropertiesDescription
         : l10n.settingsWorkspacePropertiesNoAccess;
 
-    return SettingsSection(
-      title: l10n.settingsWorkspaceSectionTitle,
-      description: l10n.settingsWorkspaceSectionDescription,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         StaggeredEntry(
-          index: 0,
-          playOnceKey: 'settings-workspace-current',
-          child: SettingsTile(
-            icon: Icons.apartment_rounded,
-            title: l10n.settingsCurrentWorkspace,
-            subtitle: l10n.settingsCurrentWorkspaceDescription,
-            value: currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
-            onTap: onSelectCurrentWorkspace,
-          ),
-        ),
-        StaggeredEntry(
           index: 1,
-          playOnceKey: 'settings-workspace-default',
-          child: SettingsTile(
-            icon: Icons.home_work_outlined,
-            title: l10n.settingsDefaultWorkspace,
-            subtitle: l10n.settingsDefaultWorkspaceDescription,
-            value:
-                workspaceState.defaultWorkspace?.name ??
-                l10n.settingsNoWorkspaceSelected,
-            onTap: onSelectDefaultWorkspace,
+          playOnceKey: 'settings-workspace-context',
+          child: SettingsSection(
+            title: l10n.settingsWorkspaceSectionManageTitle,
+            children: [
+              SettingsTile(
+                icon: Icons.apartment_rounded,
+                title: l10n.settingsCurrentWorkspace,
+                subtitle: l10n.settingsCurrentWorkspaceDescription,
+                value:
+                    currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
+                onTap: onSelectCurrentWorkspace,
+              ),
+              SettingsTile(
+                icon: Icons.home_work_outlined,
+                title: l10n.settingsDefaultWorkspace,
+                subtitle: l10n.settingsDefaultWorkspaceDescription,
+                value:
+                    workspaceState.defaultWorkspace?.name ??
+                    l10n.settingsNoWorkspaceSelected,
+                onTap: onSelectDefaultWorkspace,
+              ),
+              SettingsTile(
+                icon: Icons.attach_money_rounded,
+                title: l10n.settingsWorkspaceDefaultCurrencyTitle,
+                subtitle: canEditWorkspaceDefaultCurrency
+                    ? l10n.settingsWorkspaceDefaultCurrencyDescription
+                    : l10n.settingsWorkspacePropertiesNoAccess,
+                value: isWorkspaceCurrencyLoading
+                    ? l10n.settingsWorkspacePropertiesPermissionLoading
+                    : defaultCurrency,
+                onTap:
+                    canEditWorkspaceDefaultCurrency &&
+                        !isWorkspaceCurrencyLoading
+                    ? onEditWorkspaceDefaultCurrency
+                    : null,
+              ),
+              SettingsTile(
+                icon: Icons.drive_file_rename_outline_rounded,
+                title: l10n.settingsWorkspacePropertiesTitle,
+                subtitle: workspacePropertiesSubtitle,
+                value:
+                    currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
+                onTap:
+                    currentWorkspace != null &&
+                        !isWorkspacePermissionLoading &&
+                        canEditWorkspaceProperties
+                    ? () => onEditWorkspaceProperties(currentWorkspace)
+                    : null,
+              ),
+            ],
           ),
         ),
-        StaggeredEntry(
-          index: 2,
-          playOnceKey: 'settings-workspace-properties',
-          child: SettingsTile(
-            icon: Icons.drive_file_rename_outline_rounded,
-            title: l10n.settingsWorkspacePropertiesTitle,
-            subtitle: workspacePropertiesSubtitle,
-            value: currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
-            onTap:
-                currentWorkspace != null &&
-                    !isWorkspacePermissionLoading &&
-                    canEditWorkspaceProperties
-                ? () => onEditWorkspaceProperties(currentWorkspace)
-                : null,
+        if (showWorkspaceAccess) ...[
+          const shad.Gap(18),
+          StaggeredEntry(
+            index: 2,
+            playOnceKey: 'settings-workspace-access',
+            child: SettingsSection(
+              title: l10n.settingsWorkspaceAccessTitle,
+              children: [
+                SettingsTile(
+                  icon: Icons.group_outlined,
+                  title: l10n.settingsWorkspaceMembersTitle,
+                  subtitle: canManageWorkspaceMembers
+                      ? l10n.settingsWorkspaceMembersSubtitle
+                      : l10n.settingsWorkspaceMembersAccessDenied,
+                  onTap: canManageWorkspaceMembers
+                      ? onOpenWorkspaceMembers
+                      : null,
+                ),
+                SettingsTile(
+                  icon: Icons.admin_panel_settings_outlined,
+                  title: l10n.settingsWorkspaceRolesTitle,
+                  subtitle: canManageWorkspaceRoles
+                      ? l10n.settingsWorkspaceRolesSubtitle
+                      : l10n.settingsWorkspaceRolesAccessDenied,
+                  onTap: canManageWorkspaceRoles ? onOpenWorkspaceRoles : null,
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }

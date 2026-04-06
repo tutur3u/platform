@@ -42,6 +42,7 @@ class _TimeTrackerAddEntryFabState extends State<TimeTrackerAddEntryFab> {
       label: context.l10n.timerAddMissedEntry,
       enabled: widget.enabled,
       loading: _isLoading,
+      includeBottomSafeArea: false,
       onPressed: _handlePressed,
     );
   }

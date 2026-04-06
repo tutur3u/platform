@@ -105,12 +105,20 @@ extension on _TaskBoardDetailPageViewState {
               required status,
               required color,
             }) async {
-              if (!_taskBoardCanCreateListInStatus(board.lists, status)) {
+              final currentBoard = context
+                  .read<TaskBoardDetailCubit>()
+                  .state
+                  .board;
+              if (currentBoard == null) return false;
+              if (!_taskBoardCanCreateListInStatus(
+                currentBoard.lists,
+                status,
+              )) {
                 final toastContext = Navigator.of(
                   context,
                   rootNavigator: true,
                 ).context;
-                if (!toastContext.mounted) return;
+                if (!toastContext.mounted) return false;
                 shad.showToast(
                   context: toastContext,
                   builder: (context, overlay) => shad.Alert.destructive(
@@ -119,13 +127,14 @@ extension on _TaskBoardDetailPageViewState {
                     ),
                   ),
                 );
-                return;
+                return false;
               }
               await context.read<TaskBoardDetailCubit>().createList(
                 name: name,
                 status: status,
                 color: color,
               );
+              return true;
             },
       ),
     );
@@ -150,6 +159,7 @@ extension on _TaskBoardDetailPageViewState {
             TaskBoardList.normalizeSupportedStatus(list.status) ?? 'active',
         initialColor:
             TaskBoardList.normalizeSupportedColor(list.color) ?? 'GRAY',
+        currentListId: list.id,
         existingLists: board.lists,
         onSubmit:
             ({
@@ -157,12 +167,21 @@ extension on _TaskBoardDetailPageViewState {
               required status,
               required color,
             }) async {
-              if (!_taskBoardCanCreateListInStatus(board.lists, status)) {
+              final currentBoard = context
+                  .read<TaskBoardDetailCubit>()
+                  .state
+                  .board;
+              if (currentBoard == null) return false;
+              if (!_taskBoardCanCreateListInStatus(
+                currentBoard.lists,
+                status,
+                excludingListId: list.id,
+              )) {
                 final toastContext = Navigator.of(
                   context,
                   rootNavigator: true,
                 ).context;
-                if (!toastContext.mounted) return;
+                if (!toastContext.mounted) return false;
                 shad.showToast(
                   context: toastContext,
                   builder: (context, overlay) => shad.Alert.destructive(
@@ -171,7 +190,7 @@ extension on _TaskBoardDetailPageViewState {
                     ),
                   ),
                 );
-                return;
+                return false;
               }
               await context.read<TaskBoardDetailCubit>().updateList(
                 listId: list.id,
@@ -179,6 +198,7 @@ extension on _TaskBoardDetailPageViewState {
                 status: status,
                 color: color,
               );
+              return true;
             },
       ),
     );

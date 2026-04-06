@@ -361,6 +361,7 @@ export async function DELETE(req: Request, { params }: Params) {
   }
   const { transactionId, wsId } = paramsValidation.data;
 
+  const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
 
   const permissions = await getPermissions({
@@ -419,6 +420,60 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
+  const { data: linkedTransaction } = await sbAdmin
+    .from('wallet_transactions')
+    .select('invoice_id')
+    .eq('id', transactionId)
+    .maybeSingle();
+
+  let inventorySaleAuditPayload: {
+    invoiceId: string;
+    entityLabel: string;
+    actorAuthUid: string | null;
+    actorWorkspaceUserId: string | null;
+  } | null = null;
+
+  if (linkedTransaction?.invoice_id) {
+    const [{ count: inventoryLineCount }, { data: invoice }, authResult] =
+      await Promise.all([
+        sbAdmin
+          .from('finance_invoice_products')
+          .select('invoice_id', { count: 'exact', head: true })
+          .eq('invoice_id', linkedTransaction.invoice_id),
+        sbAdmin
+          .from('finance_invoices')
+          .select('id, notice')
+          .eq('id', linkedTransaction.invoice_id)
+          .maybeSingle(),
+        supabase.auth.getUser(),
+      ]);
+
+    if ((inventoryLineCount ?? 0) > 0 && invoice) {
+      const authUserId = authResult.data.user?.id ?? null;
+      let workspaceUserId: string | null = null;
+
+      if (authUserId) {
+        const { data: linkedUser } = await sbAdmin
+          .from('workspace_user_linked_users')
+          .select('virtual_user_id')
+          .eq('platform_user_id', authUserId)
+          .eq('ws_id', wsId)
+          .maybeSingle();
+        workspaceUserId = linkedUser?.virtual_user_id ?? null;
+      }
+
+      inventorySaleAuditPayload = {
+        invoiceId: invoice.id,
+        entityLabel:
+          typeof invoice.notice === 'string' && invoice.notice.trim().length > 0
+            ? invoice.notice.trim()
+            : invoice.id,
+        actorAuthUid: authUserId,
+        actorWorkspaceUserId: workspaceUserId,
+      };
+    }
+  }
+
   const { error } = await sbAdmin
     .from('wallet_transactions')
     .delete()
@@ -433,6 +488,31 @@ export async function DELETE(req: Request, { params }: Params) {
       { message: 'Error deleting transaction' },
       { status: 500 }
     );
+  }
+
+  if (inventorySaleAuditPayload) {
+    await sbAdmin.from('inventory_audit_logs').insert([
+      {
+        ws_id: wsId,
+        event_kind: 'updated',
+        entity_kind: 'sale',
+        entity_id: inventorySaleAuditPayload.invoiceId,
+        entity_label: inventorySaleAuditPayload.entityLabel,
+        summary: `Removed linked finance transaction for sale ${inventorySaleAuditPayload.entityLabel}`,
+        changed_fields: ['transaction_id', 'transaction_missing'],
+        before: {
+          transaction_id: transactionId,
+          transaction_missing: false,
+        },
+        after: {
+          transaction_id: null,
+          transaction_missing: true,
+        },
+        actor_auth_uid: inventorySaleAuditPayload.actorAuthUid,
+        actor_workspace_user_id: inventorySaleAuditPayload.actorWorkspaceUserId,
+        source: 'live',
+      },
+    ]);
   }
 
   return NextResponse.json({ message: 'success' });

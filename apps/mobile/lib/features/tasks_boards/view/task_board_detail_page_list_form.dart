@@ -9,13 +9,14 @@ class _TaskBoardListFormSheet extends StatefulWidget {
     this.initialName = '',
     this.initialStatus = 'active',
     this.initialColor = 'BLUE',
+    this.currentListId,
     this.existingLists = const [],
   });
 
   final String title;
   final String confirmLabel;
   final String successMessage;
-  final Future<void> Function({
+  final Future<bool> Function({
     required String name,
     required String status,
     required String color,
@@ -24,6 +25,7 @@ class _TaskBoardListFormSheet extends StatefulWidget {
   final String initialName;
   final String initialStatus;
   final String initialColor;
+  final String? currentListId;
   final List<TaskBoardList> existingLists;
 
   @override
@@ -61,131 +63,135 @@ class _TaskBoardListFormSheetState extends State<_TaskBoardListFormSheet> {
     final statusOptions = _taskBoardListStatusOptions(context);
     final colorOptions = _taskBoardListColorOptions(context);
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Sheet handle indicator
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.mutedForeground.withValues(
-                    alpha: 0.3,
+    return PopScope(
+      canPop: !_isSubmitting,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Sheet handle indicator
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.mutedForeground.withValues(
+                      alpha: 0.3,
+                    ),
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ),
-            const shad.Gap(16),
-            // Title
-            Text(
-              widget.title,
-              style: theme.typography.h4,
-            ),
-            const shad.Gap(24),
-            // List name field
-            Text(
-              context.l10n.taskBoardDetailListNameLabel,
-              style: theme.typography.small.copyWith(
-                fontWeight: FontWeight.w600,
+              const shad.Gap(16),
+              // Title
+              Text(
+                widget.title,
+                style: theme.typography.h4,
               ),
-            ),
-            const shad.Gap(8),
-            shad.TextField(
-              controller: _nameController,
-              hintText: context.l10n.taskBoardDetailUntitledList,
-              autofocus: true,
-              enabled: !_isSubmitting,
-              onSubmitted: (_) => _submit(),
-            ),
-            const shad.Gap(16),
-            // Status category dropdown
-            Text(
-              context.l10n.taskBoardDetailStatusCategoryLabel,
-              style: theme.typography.small.copyWith(
-                fontWeight: FontWeight.w600,
+              const shad.Gap(24),
+              // List name field
+              Text(
+                context.l10n.taskBoardDetailListNameLabel,
+                style: theme.typography.small.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const shad.Gap(8),
-            IgnorePointer(
-              ignoring: _isSubmitting,
-              child: _StatusCategoryDropdown(
-                selectedStatus: _selectedStatus,
-                statusOptions: statusOptions,
-                existingLists: widget.existingLists,
-                onChanged: (status) {
-                  if (status != null) {
-                    setState(() => _selectedStatus = status);
-                  }
-                },
+              const shad.Gap(8),
+              shad.TextField(
+                controller: _nameController,
+                hintText: context.l10n.taskBoardDetailUntitledList,
+                autofocus: true,
+                enabled: !_isSubmitting,
+                onSubmitted: (_) => _submit(),
               ),
-            ),
-            const shad.Gap(16),
-            // Color dropdown
-            Text(
-              context.l10n.taskBoardDetailColorLabel,
-              style: theme.typography.small.copyWith(
-                fontWeight: FontWeight.w600,
+              const shad.Gap(16),
+              // Status category dropdown
+              Text(
+                context.l10n.taskBoardDetailStatusCategoryLabel,
+                style: theme.typography.small.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const shad.Gap(8),
-            IgnorePointer(
-              ignoring: _isSubmitting,
-              child: _ColorDropdown(
-                selectedColor: _selectedColor,
-                colorOptions: colorOptions,
-                onChanged: (color) {
-                  if (color != null) {
-                    setState(() => _selectedColor = color);
-                  }
-                },
+              const shad.Gap(8),
+              IgnorePointer(
+                ignoring: _isSubmitting,
+                child: _StatusCategoryDropdown(
+                  selectedStatus: _selectedStatus,
+                  statusOptions: statusOptions,
+                  excludingListId: widget.currentListId,
+                  existingLists: widget.existingLists,
+                  onChanged: (status) {
+                    if (status != null) {
+                      setState(() => _selectedStatus = status);
+                    }
+                  },
+                ),
               ),
-            ),
-            const shad.Gap(24),
-            // Action buttons row
-            Row(
-              children: [
-                Expanded(
-                  child: shad.OutlineButton(
-                    onPressed: _isSubmitting
-                        ? null
-                        : () => Navigator.of(context).pop(),
-                    child: Text(
-                      context.l10n.commonCancel,
-                      textAlign: TextAlign.center,
+              const shad.Gap(16),
+              // Color dropdown
+              Text(
+                context.l10n.taskBoardDetailColorLabel,
+                style: theme.typography.small.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const shad.Gap(8),
+              IgnorePointer(
+                ignoring: _isSubmitting,
+                child: _ColorDropdown(
+                  selectedColor: _selectedColor,
+                  colorOptions: colorOptions,
+                  onChanged: (color) {
+                    if (color != null) {
+                      setState(() => _selectedColor = color);
+                    }
+                  },
+                ),
+              ),
+              const shad.Gap(24),
+              // Action buttons row
+              Row(
+                children: [
+                  Expanded(
+                    child: shad.OutlineButton(
+                      onPressed: _isSubmitting
+                          ? null
+                          : () => Navigator.of(context).pop(),
+                      child: Text(
+                        context.l10n.commonCancel,
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
-                ),
-                const shad.Gap(12),
-                Expanded(
-                  child: shad.PrimaryButton(
-                    onPressed: _isSubmitting ? null : _submit,
-                    child: _isSubmitting
-                        ? const SizedBox(
-                            height: 16,
-                            width: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                  const shad.Gap(12),
+                  Expanded(
+                    child: shad.PrimaryButton(
+                      onPressed: _isSubmitting ? null : _submit,
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
+                            )
+                          : Text(
+                              widget.confirmLabel,
+                              textAlign: TextAlign.center,
                             ),
-                          )
-                        : Text(
-                            widget.confirmLabel,
-                            textAlign: TextAlign.center,
-                          ),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -208,12 +214,16 @@ class _TaskBoardListFormSheetState extends State<_TaskBoardListFormSheet> {
     setState(() => _isSubmitting = true);
 
     try {
-      await widget.onSubmit(
+      final didSubmit = await widget.onSubmit(
         name: name,
         status: _selectedStatus,
         color: _selectedColor,
       );
       if (!mounted) return;
+      if (!didSubmit) {
+        setState(() => _isSubmitting = false);
+        return;
+      }
       final toastContext = Navigator.of(context, rootNavigator: true).context;
       if (!toastContext.mounted) return;
       shad.showToast(
@@ -259,12 +269,14 @@ class _StatusCategoryDropdown extends StatelessWidget {
     required this.statusOptions,
     required this.onChanged,
     required this.existingLists,
+    this.excludingListId,
   });
 
   final String selectedStatus;
   final List<_TaskBoardListStatusOption> statusOptions;
   final ValueChanged<String?> onChanged;
   final List<TaskBoardList> existingLists;
+  final String? excludingListId;
 
   @override
   Widget build(BuildContext context) {
@@ -276,60 +288,23 @@ class _StatusCategoryDropdown extends StatelessWidget {
     final canCreateClosed = _taskBoardCanCreateListInStatus(
       existingLists,
       'closed',
+      excludingListId: excludingListId,
     );
 
     return shad.OutlineButton(
-      onPressed: () {
-        shad.showDropdown<void>(
+      onPressed: () async {
+        final selected = await showAdaptiveSheet<String>(
           context: context,
-          builder: (dropdownContext) {
-            return shad.DropdownMenu(
-              children: statusOptions
-                  .map((option) {
-                    final isSelected = option.value == selectedStatus;
-                    final isClosedDisabled =
-                        option.value == 'closed' && !canCreateClosed;
-                    return shad.MenuButton(
-                      leading: Icon(
-                        option.icon,
-                        size: 18,
-                        color: option.color,
-                      ),
-                      trailing: isSelected
-                          ? const Icon(Icons.check, size: 16)
-                          : const SizedBox(width: 16),
-                      onPressed: isClosedDisabled
-                          ? null
-                          : (_) => onChanged(option.value),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              option.label,
-                              style: theme.typography.small.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: isClosedDisabled
-                                    ? theme.colorScheme.mutedForeground
-                                    : null,
-                              ),
-                            ),
-                          ),
-                          if (isClosedDisabled)
-                            Text(
-                              ' (1 max)',
-                              style: theme.typography.small.copyWith(
-                                fontSize: 10,
-                                color: theme.colorScheme.mutedForeground,
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  })
-                  .toList(growable: false),
-            );
-          },
+          backgroundColor: theme.colorScheme.background,
+          builder: (_) => _StatusCategoryPickerSheet(
+            selectedStatus: selectedStatus,
+            statusOptions: statusOptions,
+            canCreateClosed: canCreateClosed,
+          ),
         );
+        if (selected != null) {
+          onChanged(selected);
+        }
       },
       child: Row(
         children: [
@@ -374,42 +349,18 @@ class _ColorDropdown extends StatelessWidget {
     );
 
     return shad.OutlineButton(
-      onPressed: () {
-        shad.showDropdown<void>(
+      onPressed: () async {
+        final selected = await showAdaptiveSheet<String>(
           context: context,
-          builder: (dropdownContext) {
-            return shad.DropdownMenu(
-              children: colorOptions
-                  .map((option) {
-                    final isSelected = option.value == selectedColor;
-                    return shad.MenuButton(
-                      leading: Container(
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          color: option.color,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: theme.colorScheme.border,
-                          ),
-                        ),
-                      ),
-                      trailing: isSelected
-                          ? const Icon(Icons.check, size: 16)
-                          : const SizedBox(width: 16),
-                      onPressed: (_) => onChanged(option.value),
-                      child: Text(
-                        option.label,
-                        style: theme.typography.small.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    );
-                  })
-                  .toList(growable: false),
-            );
-          },
+          backgroundColor: theme.colorScheme.background,
+          builder: (_) => _ColorPickerSheet(
+            selectedColor: selectedColor,
+            colorOptions: colorOptions,
+          ),
         );
+        if (selected != null) {
+          onChanged(selected);
+        }
       },
       child: Row(
         children: [
@@ -435,6 +386,202 @@ class _ColorDropdown extends StatelessWidget {
           ),
           const Icon(Icons.keyboard_arrow_down, size: 18),
         ],
+      ),
+    );
+  }
+}
+
+class _StatusCategoryPickerSheet extends StatelessWidget {
+  const _StatusCategoryPickerSheet({
+    required this.selectedStatus,
+    required this.statusOptions,
+    required this.canCreateClosed,
+  });
+
+  final String selectedStatus;
+  final List<_TaskBoardListStatusOption> statusOptions;
+  final bool canCreateClosed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return SafeArea(
+      top: false,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 420),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _TaskBoardPickerHandle(
+                color: theme.colorScheme.mutedForeground,
+              ),
+              const shad.Gap(16),
+              Text(
+                context.l10n.taskBoardDetailStatusCategoryLabel,
+                style: theme.typography.h4,
+              ),
+              const shad.Gap(16),
+              ...statusOptions.map((option) {
+                final isSelected = option.value == selectedStatus;
+                final isClosedDisabled =
+                    option.value == 'closed' && !canCreateClosed;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.border,
+                      ),
+                    ),
+                    leading: Icon(
+                      option.icon,
+                      size: 18,
+                      color: isClosedDisabled
+                          ? theme.colorScheme.mutedForeground
+                          : option.color,
+                    ),
+                    title: Text(
+                      option.label,
+                      style: theme.typography.small.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: isClosedDisabled
+                            ? theme.colorScheme.mutedForeground
+                            : null,
+                      ),
+                    ),
+                    subtitle: isClosedDisabled
+                        ? Text(
+                            context.l10n.taskBoardDetailClosedListCapacityHint,
+                            style: theme.typography.small.copyWith(
+                              color: theme.colorScheme.mutedForeground,
+                            ),
+                          )
+                        : null,
+                    trailing: isSelected
+                        ? Icon(
+                            Icons.check_rounded,
+                            size: 18,
+                            color: theme.colorScheme.primary,
+                          )
+                        : null,
+                    enabled: !isClosedDisabled,
+                    onTap: isClosedDisabled
+                        ? null
+                        : () => Navigator.of(context).pop(option.value),
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ColorPickerSheet extends StatelessWidget {
+  const _ColorPickerSheet({
+    required this.selectedColor,
+    required this.colorOptions,
+  });
+
+  final String selectedColor;
+  final List<_TaskBoardListColorOption> colorOptions;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return SafeArea(
+      top: false,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 520),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _TaskBoardPickerHandle(
+                color: theme.colorScheme.mutedForeground,
+              ),
+              const shad.Gap(16),
+              Text(
+                context.l10n.taskBoardDetailColorLabel,
+                style: theme.typography.h4,
+              ),
+              const shad.Gap(16),
+              ...colorOptions.map((option) {
+                final isSelected = option.value == selectedColor;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: isSelected
+                            ? option.color
+                            : theme.colorScheme.border,
+                      ),
+                    ),
+                    leading: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: option.color,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: theme.colorScheme.border),
+                      ),
+                    ),
+                    title: Text(
+                      option.label,
+                      style: theme.typography.small.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? Icon(
+                            Icons.check_rounded,
+                            size: 18,
+                            color: option.color,
+                          )
+                        : null,
+                    onTap: () => Navigator.of(context).pop(option.value),
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TaskBoardPickerHandle extends StatelessWidget {
+  const _TaskBoardPickerHandle({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 36,
+        height: 4,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(2),
+        ),
       ),
     );
   }

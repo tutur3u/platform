@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:io' show Platform;
 
 import 'package:mobile/core/config/env.dart';
@@ -16,6 +17,16 @@ Future<void> initSupabase() async {
   if (Platform.isAndroid && url.contains('localhost')) {
     url = url.replaceAll('localhost', '10.0.2.2');
   }
+
+  developer.log(
+    'Initializing Supabase client',
+    name: 'SupabaseClient',
+    error: {
+      'supabaseUrl': url,
+      'apiBaseUrl': Env.apiBaseUrl,
+      'isConfigured': Env.isConfigured,
+    },
+  );
 
   await Supabase.initialize(
     url: url,

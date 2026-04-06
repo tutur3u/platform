@@ -49,6 +49,7 @@ export type AbuseEvent = Tables<'abuse_events'>;
 export type Invoice = Tables<'finance_invoices'>;
 export type InvoiceProduct = Tables<'finance_invoice_products'>;
 export type InvoicePromotion = Tables<'finance_invoice_promotions'>;
+export type InventoryOwner = Tables<'inventory_owners'>;
 export type FinanceBudget = Tables<'finance_budgets'>;
 export interface FinanceBudgetStatus {
   budget_id: string;

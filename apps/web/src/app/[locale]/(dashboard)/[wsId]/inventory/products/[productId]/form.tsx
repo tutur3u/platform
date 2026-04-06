@@ -2,9 +2,11 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronsUpDown, Plus, Trash } from '@tuturuuu/icons';
+import type { InventoryOwner } from '@tuturuuu/types/primitives/InventoryOwner';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
+import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
@@ -60,6 +62,8 @@ const FormSchema = z
     description: z.string().optional(),
     usage: z.string().optional(),
     category_id: z.string(),
+    owner_id: z.string(),
+    finance_category_id: z.string().optional(),
     inventory: z.array(InventorySchema).optional(),
   })
   .superRefine((values, ctx) => {
@@ -90,6 +94,8 @@ interface Props {
   currency: string;
   data?: z.output<typeof FormSchema>;
   categories: ProductCategory[];
+  owners: InventoryOwner[];
+  financeCategories: TransactionCategory[];
   warehouses: ProductWarehouse[];
   units: ProductUnit[];
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
@@ -104,6 +110,8 @@ export function ProductForm({
   currency,
   data,
   categories,
+  owners,
+  financeCategories,
   warehouses,
   units,
   onFinish,
@@ -130,6 +138,8 @@ export function ProductForm({
       ...data,
       name: data?.name ?? '',
       category_id: data?.category_id ?? categories[0]?.id ?? '',
+      owner_id: data?.owner_id ?? owners[0]?.id ?? '',
+      finance_category_id: data?.finance_category_id ?? '',
       manufacturer: data?.manufacturer ?? '',
       description: data?.description ?? '',
       usage: data?.usage ?? '',
@@ -243,6 +253,8 @@ export function ProductForm({
         description: formData.description,
         usage: formData.usage,
         category_id: formData.category_id,
+        owner_id: formData.owner_id,
+        finance_category_id: formData.finance_category_id || null,
       };
 
       let inventoryPayload: any = normalizedInventory;
@@ -280,6 +292,20 @@ export function ProductForm({
 
         if (formData.category_id !== data.category_id) {
           productPayload.category_id = formData.category_id;
+          hasProductChanges = true;
+        }
+
+        if (formData.owner_id !== data.owner_id) {
+          productPayload.owner_id = formData.owner_id;
+          hasProductChanges = true;
+        }
+
+        if (
+          (formData.finance_category_id || '') !==
+          (data.finance_category_id || '')
+        ) {
+          productPayload.finance_category_id =
+            formData.finance_category_id || null;
           hasProductChanges = true;
         }
 
@@ -387,6 +413,8 @@ export function ProductForm({
           description: '',
           usage: '',
           category_id: categories[0]?.id ?? '',
+          owner_id: owners[0]?.id ?? '',
+          finance_category_id: '',
           inventory: [
             {
               unit_id: units[0]?.id ?? '',
@@ -843,6 +871,66 @@ export function ProductForm({
                 <div className="grid gap-4">
                   <FormField
                     control={form.control}
+                    name="owner_id"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Owner</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className="w-full justify-between"
+                              >
+                                {field.value
+                                  ? owners.find(
+                                      (owner) => owner.id === field.value
+                                    )?.name
+                                  : 'Select owner'}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="p-0">
+                            <Command>
+                              <CommandInput placeholder="Search owner..." />
+                              <CommandList>
+                                <CommandEmpty>Owner not found.</CommandEmpty>
+                                <CommandGroup>
+                                  {owners.map((owner) => (
+                                    <CommandItem
+                                      value={owner.name}
+                                      key={owner.id}
+                                      onSelect={() => {
+                                        form.setValue('owner_id', owner.id, {
+                                          shouldDirty: true,
+                                        });
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          'mr-2 h-4 w-4',
+                                          owner.id === field.value
+                                            ? 'opacity-100'
+                                            : 'opacity-0'
+                                        )}
+                                      />
+                                      {owner.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="category_id"
                     render={({ field }) => (
                       <FormItem className="flex-1">
@@ -891,6 +979,87 @@ export function ProductForm({
                                         form.setValue(
                                           'category_id',
                                           category.id
+                                        );
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          'mr-2 h-4 w-4',
+                                          category.id === field.value
+                                            ? 'opacity-100'
+                                            : 'opacity-0'
+                                        )}
+                                      />
+                                      {category.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="finance_category_id"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Finance Category</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className="w-full justify-between"
+                              >
+                                {field.value
+                                  ? financeCategories.find(
+                                      (category) => category.id === field.value
+                                    )?.name
+                                  : 'No linked finance category'}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="p-0">
+                            <Command>
+                              <CommandInput placeholder="Search finance category..." />
+                              <CommandList>
+                                <CommandEmpty>
+                                  Finance category not found.
+                                </CommandEmpty>
+                                <CommandGroup>
+                                  <CommandItem
+                                    onSelect={() => {
+                                      form.setValue('finance_category_id', '', {
+                                        shouldDirty: true,
+                                      });
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        'mr-2 h-4 w-4',
+                                        !field.value
+                                          ? 'opacity-100'
+                                          : 'opacity-0'
+                                      )}
+                                    />
+                                    No linked finance category
+                                  </CommandItem>
+                                  {financeCategories.map((category) => (
+                                    <CommandItem
+                                      value={category.name}
+                                      key={category.id}
+                                      onSelect={() => {
+                                        form.setValue(
+                                          'finance_category_id',
+                                          category.id,
+                                          { shouldDirty: true }
                                         );
                                       }}
                                     >

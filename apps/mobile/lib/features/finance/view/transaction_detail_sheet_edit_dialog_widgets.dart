@@ -1,6 +1,474 @@
 part of 'transaction_detail_sheet.dart';
 
-/// Outline button for selecting a wallet.
+class _FormSectionCard extends StatelessWidget {
+  const _FormSectionCard({
+    required this.title,
+    required this.child,
+  });
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return FinancePanel(
+      padding: const EdgeInsets.all(14),
+      radius: 22,
+      backgroundColor: FinancePalette.of(context).elevatedPanel,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: shad.Theme.of(context).typography.small.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const shad.Gap(10),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _ModeSelectorCard extends StatelessWidget {
+  const _ModeSelectorCard({
+    required this.isTransfer,
+    required this.canSwitchMode,
+    required this.onChanged,
+  });
+
+  final bool isTransfer;
+  final bool canSwitchMode;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = shad.Theme.of(context);
+    final accent = FinancePalette.of(context).accent;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.card,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: theme.colorScheme.border.withValues(alpha: 0.72),
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _ModeTabButton(
+                  label: l10n.financeTransactions,
+                  selected: !isTransfer,
+                  accent: accent,
+                  onPressed: () => onChanged(false),
+                ),
+              ),
+              const shad.Gap(4),
+              Expanded(
+                child: _ModeTabButton(
+                  label: l10n.financeTransfer,
+                  selected: isTransfer,
+                  accent: accent,
+                  onPressed: () => onChanged(true),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (!canSwitchMode) ...[
+          const shad.Gap(6),
+          Text(
+            l10n.financeTransferModeEditHint,
+            style: theme.typography.xSmall.copyWith(
+              color: theme.colorScheme.mutedForeground,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ModeTabButton extends StatelessWidget {
+  const _ModeTabButton({
+    required this.label,
+    required this.selected,
+    required this.accent,
+    required this.onPressed,
+  });
+
+  final String label;
+  final bool selected;
+  final Color accent;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          decoration: BoxDecoration(
+            color: selected
+                ? accent.withValues(alpha: 0.14)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.small.copyWith(
+                fontWeight: FontWeight.w700,
+                color: selected ? accent : theme.colorScheme.mutedForeground,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DraftPreviewCard extends StatelessWidget {
+  const _DraftPreviewCard({
+    required this.title,
+    required this.subtitle,
+    required this.amountLabel,
+    required this.accentColor,
+    required this.isTransfer,
+    this.walletName,
+    this.categoryName,
+    this.destinationWalletName,
+    this.tagLabel,
+  });
+
+  final String title;
+  final String subtitle;
+  final String amountLabel;
+  final Color accentColor;
+  final bool isTransfer;
+  final String? walletName;
+  final String? categoryName;
+  final String? destinationWalletName;
+  final String? tagLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final hasWalletName = walletName != null && walletName!.trim().isNotEmpty;
+    final hasCategoryName =
+        categoryName != null && categoryName!.trim().isNotEmpty;
+    final hasDestinationWalletName =
+        destinationWalletName != null &&
+        destinationWalletName!.trim().isNotEmpty;
+    final hasTagName = tagLabel != null && tagLabel!.trim().isNotEmpty;
+    final chips = <Widget>[
+      if (hasWalletName)
+        _PreviewChip(
+          icon: Icons.account_balance_wallet_outlined,
+          label: walletName!.trim(),
+          color: theme.colorScheme.foreground,
+        ),
+      if (!isTransfer && hasCategoryName)
+        _PreviewChip(
+          icon: Icons.category_outlined,
+          label: categoryName!.trim(),
+          color: accentColor,
+        ),
+      if (isTransfer && hasDestinationWalletName)
+        _PreviewChip(
+          icon: Icons.arrow_forward_rounded,
+          label: destinationWalletName!.trim(),
+          color: accentColor,
+        ),
+      if (hasTagName)
+        _PreviewChip(
+          icon: Icons.sell_outlined,
+          label: tagLabel!.trim(),
+          color: theme.colorScheme.mutedForeground,
+        ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: accentColor.withValues(alpha: 0.18)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            accentColor.withValues(alpha: 0.18),
+            FinancePalette.of(context).panel,
+            FinancePalette.of(context).elevatedPanel,
+          ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.small.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    if (subtitle.trim().isNotEmpty) ...[
+                      const shad.Gap(4),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.xSmall.copyWith(
+                          color: theme.colorScheme.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const shad.Gap(12),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 132),
+                child: Text(
+                  amountLabel,
+                  textAlign: TextAlign.right,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.large.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: accentColor,
+                    height: 1.05,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (chips.isNotEmpty) ...[
+            const shad.Gap(10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: chips,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PreviewChip extends StatelessWidget {
+  const _PreviewChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const shad.Gap(4),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 148),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: shad.Theme.of(context).typography.xSmall.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InlineAlertCard extends StatelessWidget {
+  const _InlineAlertCard({
+    required this.message,
+    required this.color,
+    required this.icon,
+  });
+
+  final String message;
+  final Color color;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const shad.Gap(10),
+          Expanded(
+            child: Text(
+              message,
+              style: shad.Theme.of(context).typography.textSmall.copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AmountEntryCard extends StatelessWidget {
+  const _AmountEntryCard({
+    required this.label,
+    required this.controller,
+    required this.currencyCode,
+    required this.placeholder,
+    required this.allowDecimal,
+    required this.inputFormatters,
+    required this.previewText,
+    required this.onChanged,
+  });
+
+  final String label;
+  final TextEditingController controller;
+  final String currencyCode;
+  final String placeholder;
+  final bool allowDecimal;
+  final List<TextInputFormatter> inputFormatters;
+  final String previewText;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: theme.colorScheme.border.withValues(alpha: 0.7),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                label,
+                style: theme.typography.xSmall.copyWith(
+                  color: theme.colorScheme.mutedForeground,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.35,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                currencyCode.toUpperCase(),
+                style: theme.typography.xSmall.copyWith(
+                  color: theme.colorScheme.mutedForeground,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.35,
+                ),
+              ),
+            ],
+          ),
+          const shad.Gap(6),
+          shad.TextField(
+            key: ValueKey(currencyCode),
+            controller: controller,
+            keyboardType: TextInputType.numberWithOptions(
+              decimal: allowDecimal,
+            ),
+            inputFormatters: inputFormatters,
+            placeholder: Text(placeholder),
+            onChanged: onChanged,
+          ),
+          const shad.Gap(6),
+          Text(
+            previewText,
+            style: theme.typography.xSmall.copyWith(
+              color: theme.colorScheme.mutedForeground,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DatePickerCard extends StatelessWidget {
+  const _DatePickerCard({
+    required this.label,
+    required this.value,
+    required this.onPressed,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SelectorSurface(
+      label: label,
+      title: value,
+      leading: const Icon(Icons.schedule_rounded, size: 20),
+      onPressed: onPressed,
+    );
+  }
+}
+
 class _WalletSelectorButton extends StatelessWidget {
   const _WalletSelectorButton({
     required this.label,
@@ -16,39 +484,21 @@ class _WalletSelectorButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: shad.Theme.of(context).typography.small),
-        const shad.Gap(4),
-        shad.OutlineButton(
-          onPressed: onPressed,
-          child: Row(
-            children: [
-              WalletVisualAvatar(
-                icon: wallet?.icon,
-                imageSrc: wallet?.imageSrc,
-                fallbackIcon: Icons.wallet_outlined,
-                size: 28,
-              ),
-              const shad.Gap(8),
-              Expanded(
-                child: Text(
-                  wallet?.name ?? placeholder ?? '-',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const Icon(Icons.expand_more, size: 16),
-            ],
-          ),
-        ),
-      ],
+    return _SelectorSurface(
+      label: label,
+      title: wallet?.name ?? placeholder ?? '-',
+      subtitle: wallet?.currency?.toUpperCase(),
+      leading: WalletVisualAvatar(
+        icon: wallet?.icon,
+        imageSrc: wallet?.imageSrc,
+        fallbackIcon: Icons.wallet_outlined,
+        size: 28,
+      ),
+      onPressed: onPressed,
     );
   }
 }
 
-/// Outline button for selecting a category.
 class _CategorySelectorButton extends StatelessWidget {
   const _CategorySelectorButton({
     required this.label,
@@ -66,42 +516,23 @@ class _CategorySelectorButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: shad.Theme.of(context).typography.small),
-        const shad.Gap(4),
-        shad.OutlineButton(
-          onPressed: onPressed,
-          child: Row(
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.16),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, size: 13, color: color),
-              ),
-              const shad.Gap(8),
-              Expanded(
-                child: Text(
-                  categoryName ?? '-',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const Icon(Icons.expand_more, size: 16),
-            ],
-          ),
+    return _SelectorSurface(
+      label: label,
+      title: categoryName ?? '-',
+      leading: Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.16),
+          borderRadius: BorderRadius.circular(10),
         ),
-      ],
+        child: Icon(icon, size: 15, color: color),
+      ),
+      onPressed: onPressed,
     );
   }
 }
 
-/// Outline button for selecting a tag.
 class _TagSelectorButton extends StatelessWidget {
   const _TagSelectorButton({
     required this.label,
@@ -117,37 +548,105 @@ class _TagSelectorButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: shad.Theme.of(context).typography.small),
-        const shad.Gap(4),
-        shad.OutlineButton(
-          onPressed: onPressed,
+    return _SelectorSurface(
+      label: label,
+      title: tagName ?? context.l10n.financeNoTag,
+      leading: Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.16),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(Icons.sell_outlined, size: 15, color: color),
+      ),
+      onPressed: onPressed,
+    );
+  }
+}
+
+class _SelectorSurface extends StatelessWidget {
+  const _SelectorSurface({
+    required this.label,
+    required this.title,
+    required this.leading,
+    required this.onPressed,
+    this.subtitle,
+  });
+
+  final String label;
+  final String title;
+  final String? subtitle;
+  final Widget leading;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onPressed,
+        child: Ink(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.card,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: theme.colorScheme.border.withValues(alpha: 0.72),
+            ),
+          ),
           child: Row(
             children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.16),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.sell_outlined, size: 13, color: color),
-              ),
-              const shad.Gap(8),
+              leading,
+              const shad.Gap(12),
               Expanded(
-                child: Text(
-                  tagName ?? '-',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: theme.typography.xSmall.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.35,
+                      ),
+                    ),
+                    const shad.Gap(4),
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.small.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
+                      const shad.Gap(3),
+                      Text(
+                        subtitle!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.textSmall.copyWith(
+                          color: theme.colorScheme.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              const Icon(Icons.expand_more, size: 16),
+              const shad.Gap(10),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: theme.colorScheme.mutedForeground,
+              ),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -259,16 +758,29 @@ class _CategoryPickerDialog extends StatelessWidget {
 }
 
 /// Tag picker dialog with a clear option.
-class _TagPickerDialog extends StatelessWidget {
+class _TagPickerDialog extends StatefulWidget {
   const _TagPickerDialog({
     required this.tags,
     required this.tagColor,
-    this.selectedTagId,
+    required this.selectedTagIds,
   });
 
   final List<FinanceTag> tags;
-  final String? selectedTagId;
+  final List<String> selectedTagIds;
   final Color Function(FinanceTag) tagColor;
+
+  @override
+  State<_TagPickerDialog> createState() => _TagPickerDialogState();
+}
+
+class _TagPickerDialogState extends State<_TagPickerDialog> {
+  late final Set<String> _selectedIds;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIds = widget.selectedTagIds.toSet();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -276,6 +788,10 @@ class _TagPickerDialog extends StatelessWidget {
       title: context.l10n.financeTags,
       subtitle: context.l10n.financePickerTagSubtitle,
       actions: [
+        shad.PrimaryButton(
+          onPressed: () => Navigator.of(context).pop(_selectedIds.toList()),
+          child: Text(context.l10n.profileSave),
+        ),
         shad.OutlineButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(context.l10n.commonCancel),
@@ -283,35 +799,51 @@ class _TagPickerDialog extends StatelessWidget {
       ],
       child: ListView.separated(
         shrinkWrap: true,
-        itemCount: tags.length + 1,
+        itemCount: widget.tags.length + 1,
         separatorBuilder: (_, _) => const shad.Gap(8),
         itemBuilder: (context, index) {
           if (index == 0) {
             return FinancePickerTile(
               title: context.l10n.financeNoTag,
-              isSelected: selectedTagId == null,
+              isSelected: _selectedIds.isEmpty,
               leading: Icon(
                 Icons.block_outlined,
                 size: 18,
                 color: shad.Theme.of(context).colorScheme.mutedForeground,
               ),
-              onTap: () => Navigator.of(context).pop(''),
+              onTap: () => setState(_selectedIds.clear),
             );
           }
 
-          final tag = tags[index - 1];
+          final tag = widget.tags[index - 1];
+          final isSelected = _selectedIds.contains(tag.id);
           return FinancePickerTile(
             title: tag.name,
-            isSelected: tag.id == selectedTagId,
+            isSelected: isSelected,
             leading: Container(
               width: 18,
               height: 18,
               decoration: BoxDecoration(
-                color: tagColor(tag),
+                color: widget.tagColor(tag),
                 shape: BoxShape.circle,
               ),
             ),
-            onTap: () => Navigator.of(context).pop(tag.id),
+            trailing: Icon(
+              isSelected
+                  ? Icons.check_circle_rounded
+                  : Icons.radio_button_unchecked_rounded,
+              size: 18,
+              color: isSelected
+                  ? widget.tagColor(tag)
+                  : shad.Theme.of(context).colorScheme.mutedForeground,
+            ),
+            onTap: () {
+              setState(() {
+                if (!_selectedIds.add(tag.id)) {
+                  _selectedIds.remove(tag.id);
+                }
+              });
+            },
           );
         },
       ),
@@ -358,90 +890,102 @@ class _TransferDestinationAmountSection extends StatelessWidget {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                l10n.financeDestinationAmountOptional,
-                style: theme.typography.small,
-              ),
-            ),
-            if (isCrossCurrency)
-              GestureDetector(
-                onTap: onToggleOverride,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isOverridden
-                        ? Colors.orange.withValues(alpha: 0.12)
-                        : Colors.blue.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isOverridden ? Icons.edit : Icons.auto_awesome,
-                        size: 11,
-                        color: isOverridden ? Colors.orange : Colors.blue,
-                      ),
-                      const shad.Gap(3),
-                      Text(
-                        isOverridden
-                            ? l10n.financeDestinationAmountOverride
-                            : l10n.financeDestinationAmountAuto,
-                        style: theme.typography.xSmall.copyWith(
-                          color: isOverridden ? Colors.orange : Colors.blue,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.colorScheme.border.withValues(alpha: 0.72),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.financeDestinationAmountOptional,
+                  style: theme.typography.small,
                 ),
               ),
-          ],
-        ),
-        const shad.Gap(4),
-        shad.TextField(
-          key: ValueKey(currencyCode),
-          controller: controller,
-          enabled: enabled,
-          keyboardType: TextInputType.numberWithOptions(decimal: allowDecimal),
-          inputFormatters: inputFormatters,
-          placeholder: Text(placeholder),
-        ),
-        const shad.Gap(6),
-        Text(
-          previewText,
-          style: theme.typography.xSmall.copyWith(
-            color: theme.colorScheme.mutedForeground,
+              if (isCrossCurrency)
+                GestureDetector(
+                  onTap: onToggleOverride,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isOverridden
+                          ? Colors.orange.withValues(alpha: 0.12)
+                          : Colors.blue.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isOverridden ? Icons.edit : Icons.auto_awesome,
+                          size: 11,
+                          color: isOverridden ? Colors.orange : Colors.blue,
+                        ),
+                        const shad.Gap(3),
+                        Text(
+                          isOverridden
+                              ? l10n.financeDestinationAmountOverride
+                              : l10n.financeDestinationAmountAuto,
+                          style: theme.typography.xSmall.copyWith(
+                            color: isOverridden ? Colors.orange : Colors.blue,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
           ),
-        ),
-        if (hintText.isNotEmpty) ...[
-          const shad.Gap(4),
+          const shad.Gap(10),
+          shad.TextField(
+            key: ValueKey(currencyCode),
+            controller: controller,
+            enabled: enabled,
+            keyboardType: TextInputType.numberWithOptions(
+              decimal: allowDecimal,
+            ),
+            inputFormatters: inputFormatters,
+            placeholder: Text(placeholder),
+          ),
+          const shad.Gap(6),
           Text(
-            hintText,
+            previewText,
             style: theme.typography.xSmall.copyWith(
               color: theme.colorScheme.mutedForeground,
-              fontStyle: FontStyle.italic,
             ),
           ),
+          if (hintText.isNotEmpty) ...[
+            const shad.Gap(4),
+            Text(
+              hintText,
+              style: theme.typography.xSmall.copyWith(
+                color: theme.colorScheme.mutedForeground,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+          if (isCrossCurrency && exchangeRateDisplay.isNotEmpty) ...[
+            const shad.Gap(8),
+            _ExchangeRateDisplay(
+              exchangeRateDisplay: exchangeRateDisplay,
+              onInvertRate: onInvertRate,
+              invertRateTooltip: invertRateTooltip,
+            ),
+          ],
         ],
-        if (isCrossCurrency && exchangeRateDisplay.isNotEmpty) ...[
-          const shad.Gap(8),
-          _ExchangeRateDisplay(
-            exchangeRateDisplay: exchangeRateDisplay,
-            onInvertRate: onInvertRate,
-            invertRateTooltip: invertRateTooltip,
-          ),
-        ],
-      ],
+      ),
     );
   }
 }
@@ -477,32 +1021,82 @@ class _TransactionFormSettingsTab extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _ToggleRow(
+        _FormToggleTile(
           label: l10n.financeReportOptIn,
           value: reportOptIn,
           onChanged: onReportOptInChanged,
         ),
         if (!isTransfer) ...[
           const shad.Gap(12),
-          _ToggleRow(
+          _FormToggleTile(
             label: l10n.financeConfidentialAmount,
             value: isAmountConfidential,
             onChanged: onAmountConfidentialChanged,
           ),
           const shad.Gap(12),
-          _ToggleRow(
+          _FormToggleTile(
             label: l10n.financeConfidentialDescription,
             value: isDescriptionConfidential,
             onChanged: onDescriptionConfidentialChanged,
           ),
           const shad.Gap(12),
-          _ToggleRow(
+          _FormToggleTile(
             label: l10n.financeConfidentialCategory,
             value: isCategoryConfidential,
             onChanged: onCategoryConfidentialChanged,
           ),
         ],
       ],
+    );
+  }
+}
+
+class _FormToggleTile extends StatelessWidget {
+  const _FormToggleTile({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final accent = value
+        ? FinancePalette.of(context).accent
+        : theme.colorScheme.mutedForeground;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: (value ? accent : theme.colorScheme.border).withValues(
+            alpha: value ? 0.36 : 0.72,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: theme.typography.small.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const shad.Gap(12),
+          shad.Switch(
+            value: value,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
     );
   }
 }

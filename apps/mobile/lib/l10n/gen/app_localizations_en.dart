@@ -240,19 +240,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsHubOpenApp => 'Open';
 
   @override
-  String get appsHubTasksDescription => 'Assigned work, planning, and portfolio.';
+  String get appsHubTasksDescription => 'Assignments, boards, estimates, and portfolio planning.';
 
   @override
-  String get appsHubHabitsDescription => 'Shared habits, streaks, and recurring progress.';
+  String get appsHubHabitsDescription => 'Track shared routines, streaks, and recurring progress.';
 
   @override
-  String get appsHubCalendarDescription => 'Agenda, upcoming events, and schedule views.';
+  String get appsHubCalendarDescription => 'See your agenda, upcoming events, and calendar views.';
 
   @override
-  String get appsHubFinanceDescription => 'Wallets, categories, and transaction history.';
+  String get appsHubFinanceDescription => 'Manage wallets, categories, tags, and transaction history.';
 
   @override
-  String get appsHubTimerDescription => 'Tracking sessions, stats, and requests.';
+  String get appsHubInventoryDescription => 'Run products, stock, sales, and booth operations in one place.';
+
+  @override
+  String get appsHubNotificationsDescription => 'Review inbox activity, alerts, and archived updates.';
+
+  @override
+  String get appsHubSettingsDescription => 'Adjust app, workspace, and personal preferences.';
+
+  @override
+  String get appsHubTimerDescription => 'Track sessions, review stats, and handle time requests.';
 
   @override
   String get habitsTitle => 'Habits';
@@ -1706,6 +1715,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailCannotCreateMoreClosedLists => 'Only one closed list is allowed per board.';
 
   @override
+  String get taskBoardDetailClosedListCapacityHint => '1 closed list max';
+
+  @override
   String get taskBoardDetailAddNewList => 'Add new list';
 
   @override
@@ -1713,6 +1725,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailListsReordered => 'Lists reordered.';
+
+  @override
+  String get taskBoardDetailMoveListDown => 'Move list down';
+
+  @override
+  String get taskBoardDetailMoveListUp => 'Move list up';
 
   @override
   String taskBoardDetailMovedToStatus(String status) {
@@ -2344,6 +2362,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarMonthView => 'Month';
 
   @override
+  String get calendarYearView => 'Year';
+
+  @override
   String get calendarAllDay => 'All day';
 
   @override
@@ -2456,6 +2477,431 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeTitle => 'Finance';
 
   @override
+  String get inventoryAddCategory => 'Add category';
+
+  @override
+  String get inventoryAddOwner => 'Add owner';
+
+  @override
+  String get inventoryAddUnit => 'Add unit';
+
+  @override
+  String get inventoryAddWarehouse => 'Add warehouse';
+
+  @override
+  String get inventoryAuditEmpty => 'Inventory activity will appear here after products, stock, and sales are updated.';
+
+  @override
+  String get inventoryAuditEventArchived => 'Archived';
+
+  @override
+  String get inventoryAuditEventCreated => 'Created';
+
+  @override
+  String get inventoryAuditEventDeleted => 'Deleted';
+
+  @override
+  String get inventoryAuditEventReactivated => 'Reactivated';
+
+  @override
+  String get inventoryAuditEventSaleCreated => 'Sale created';
+
+  @override
+  String get inventoryAuditEventUpdated => 'Updated';
+
+  @override
+  String get inventoryAuditLabel => 'Audit';
+
+  @override
+  String get inventoryAuditActorLabel => 'Actor';
+
+  @override
+  String get inventoryAuditAfter => 'After';
+
+  @override
+  String get inventoryAuditBefore => 'Before';
+
+  @override
+  String get inventoryAuditChangedFields => 'Changed fields';
+
+  @override
+  String inventoryAuditChanges(int count) {
+    return '$count changes';
+  }
+
+  @override
+  String get inventoryAuditRecentSubtitle => 'Follow product, stock, setup, and sale changes across the workspace.';
+
+  @override
+  String get inventoryAuditRecentTitle => 'Recent activity';
+
+  @override
+  String get inventoryAuditNoChanges => 'No field changes';
+
+  @override
+  String get inventoryAuditOccurredAt => 'Occurred at';
+
+  @override
+  String get inventoryAuditSubtitle => 'Track who changed products, stock, setup, and sales.';
+
+  @override
+  String get inventoryAuditSubject => 'Subject';
+
+  @override
+  String get inventoryCheckoutAvailableProductsSubtitle => 'Adjust quantities directly from the available booth inventory.';
+
+  @override
+  String get inventoryCheckoutAvailableProductsTitle => 'Available products';
+
+  @override
+  String get inventoryCheckoutAutoCategory => 'Auto-linked category';
+
+  @override
+  String get inventoryCheckoutAllCategories => 'All categories';
+
+  @override
+  String get inventoryCheckoutBrowseTab => 'Browse';
+
+  @override
+  String get inventoryCheckoutCartEmpty => 'Add products from the browse tab to review and submit the sale.';
+
+  @override
+  String get inventoryCheckoutCartTab => 'Cart';
+
+  @override
+  String get inventoryCheckoutCartTotal => 'Cart total';
+
+  @override
+  String get inventoryCheckoutCheckoutDetailsSubtitle => 'Choose where the sale lands before submitting the invoice.';
+
+  @override
+  String get inventoryCheckoutCheckoutDetailsTitle => 'Checkout details';
+
+  @override
+  String get inventoryCheckoutCategoryOverride => 'Category override';
+
+  @override
+  String get inventoryCheckoutCategoryRequired => 'Choose an income category before creating the sale.';
+
+  @override
+  String get inventoryCheckoutEmpty => 'No sellable inventory is available yet.';
+
+  @override
+  String get inventoryCheckoutManualCategoryRequired => 'Choose an income category when the cart mixes linked categories or has no linked category.';
+
+  @override
+  String get inventoryCheckoutNoSearchResults => 'No products match the current search.';
+
+  @override
+  String get inventoryCheckoutNoWalletSelected => 'No wallet selected';
+
+  @override
+  String get inventoryCheckoutProductsRequired => 'Add at least one product before creating the sale.';
+
+  @override
+  String get inventoryCheckoutSelectedItems => 'Selected lines';
+
+  @override
+  String get inventoryCheckoutSubtitle => 'Build a quick booth sale and send it through invoices.';
+
+  @override
+  String get inventoryCheckoutSubmit => 'Create sale';
+
+  @override
+  String get inventoryCheckoutTotalItems => 'Total items';
+
+  @override
+  String get inventoryCheckoutTitle => 'Sell';
+
+  @override
+  String get inventoryCheckoutValidationError => 'Select a wallet, resolve the category, and add at least one product.';
+
+  @override
+  String get inventoryCheckoutWalletRequired => 'Choose a wallet before creating the sale.';
+
+  @override
+  String get inventoryCheckoutWallet => 'Wallet';
+
+  @override
+  String get inventoryCreateProduct => 'Create product';
+
+  @override
+  String get inventoryEditProduct => 'Edit product';
+
+  @override
+  String get inventoryManageCategories => 'Product categories';
+
+  @override
+  String get inventoryManageCategoriesSubtitle => 'Group products into clear shelves, menus, or collections.';
+
+  @override
+  String get inventoryManageEmpty => 'Nothing configured yet.';
+
+  @override
+  String get inventoryManageLabel => 'Manage';
+
+  @override
+  String get inventoryManageNameRequired => 'Enter a name.';
+
+  @override
+  String get inventoryManageOwners => 'Owners';
+
+  @override
+  String get inventoryManageOwnersSubtitle => 'Keep attribution separate from the staff member operating the booth.';
+
+  @override
+  String get inventoryManageSubtitle => 'Configure the owners and lookup data the booth depends on.';
+
+  @override
+  String get inventoryManageUnits => 'Units';
+
+  @override
+  String get inventoryManageUnitsSubtitle => 'Define how stock is counted, sold, and displayed.';
+
+  @override
+  String get inventoryManageWarehouses => 'Warehouses';
+
+  @override
+  String get inventoryManageWarehousesSubtitle => 'Separate stock locations so low-stock checks stay accurate.';
+
+  @override
+  String get inventoryNoBreakdownData => 'No breakdown data yet.';
+
+  @override
+  String get inventoryNoLinkedFinanceCategory => 'No linked finance category';
+
+  @override
+  String get inventoryNoLowStockProducts => 'No low-stock products right now.';
+
+  @override
+  String get inventoryOverviewCategories => 'By category';
+
+  @override
+  String get inventoryOverviewCategoriesSubtitle => 'See which product groups are bringing in revenue.';
+
+  @override
+  String get inventoryOverviewExpense => 'Expense';
+
+  @override
+  String get inventoryOverviewIncome => 'Income';
+
+  @override
+  String get inventoryOverviewLabel => 'Overview';
+
+  @override
+  String get inventoryOverviewLowStock => 'Low stock';
+
+  @override
+  String get inventoryOverviewLowStockSubtitle => 'Products that need attention before the next sale.';
+
+  @override
+  String get inventoryOverviewOwners => 'By owner';
+
+  @override
+  String get inventoryOverviewOwnersSubtitle => 'Break down sales by the owner assigned to each product.';
+
+  @override
+  String get inventoryOverviewRecentSales => 'Recent sales';
+
+  @override
+  String get inventoryOverviewRecentSalesSubtitle => 'Latest invoice-backed booth sales from inventory.';
+
+  @override
+  String get inventoryOverviewSalesRevenue => 'Inventory revenue';
+
+  @override
+  String get inventoryOverviewSubtitle => 'Watch revenue, inventory pressure, and owner performance together.';
+
+  @override
+  String get inventoryOwnerArchived => 'Archived';
+
+  @override
+  String get inventoryProductAddInventoryRow => 'Add stock row';
+
+  @override
+  String get inventoryProductAmount => 'Amount';
+
+  @override
+  String get inventoryProductAmountRequired => 'Enter an amount.';
+
+  @override
+  String get inventoryProductCategory => 'Product category';
+
+  @override
+  String get inventoryProductCategoryRequired => 'Choose a product category.';
+
+  @override
+  String get inventoryProductDescription => 'Description';
+
+  @override
+  String get inventoryProductDetailsSubtitle => 'Name the product, assign ownership, and link finance defaults.';
+
+  @override
+  String get inventoryProductDetailsTitle => 'Product details';
+
+  @override
+  String get inventoryProductEditorSubtitle => 'Create booth-ready products with fixed prices and stock rows.';
+
+  @override
+  String get inventoryProductFinanceCategory => 'Linked finance category';
+
+  @override
+  String get inventoryProductInventory => 'Inventory rows';
+
+  @override
+  String get inventoryProductInventoryRows => 'Rows';
+
+  @override
+  String get inventoryProductInventorySubtitle => 'Each row represents a unit, warehouse, quantity, threshold, and price.';
+
+  @override
+  String get inventoryProductManufacturer => 'Manufacturer';
+
+  @override
+  String get inventoryProductMinAmount => 'Minimum amount';
+
+  @override
+  String get inventoryProductMinAmountRequired => 'Enter a minimum amount.';
+
+  @override
+  String get inventoryProductName => 'Product name';
+
+  @override
+  String get inventoryProductNameRequired => 'Enter a product name.';
+
+  @override
+  String get inventoryProductNumberInvalid => 'Enter a valid number.';
+
+  @override
+  String get inventoryProductOwner => 'Owner';
+
+  @override
+  String get inventoryProductOwnerRequired => 'Choose an owner.';
+
+  @override
+  String get inventoryProductPrice => 'Price';
+
+  @override
+  String get inventoryProductPriceRequired => 'Enter a price.';
+
+  @override
+  String inventoryProductAvailableSummary(String amount, String price) {
+    return '$amount available • $price';
+  }
+
+  @override
+  String get inventoryProductSaved => 'Product saved.';
+
+  @override
+  String get inventoryProductUntitled => 'Untitled product';
+
+  @override
+  String get inventoryProductUnit => 'Unit';
+
+  @override
+  String get inventoryProductUnitRequired => 'Choose a unit.';
+
+  @override
+  String get inventoryProductUsage => 'Usage';
+
+  @override
+  String get inventoryProductValidationError => 'Complete the required product, owner, category, and stock fields.';
+
+  @override
+  String get inventoryProductWarehouse => 'Warehouse';
+
+  @override
+  String get inventoryProductWarehouseRequired => 'Choose a warehouse.';
+
+  @override
+  String get inventoryProductsEmpty => 'Create products to start tracking stock and selling from the booth.';
+
+  @override
+  String get inventoryProductsLabel => 'Products';
+
+  @override
+  String get inventoryProductsListSubtitle => 'Tap a product to edit details, pricing, or stock rows.';
+
+  @override
+  String get inventoryProductsListTitle => 'Product catalog';
+
+  @override
+  String get inventoryProductsSubtitle => 'Search, review, and edit products prepared for the booth.';
+
+  @override
+  String get inventoryRealtimeDisabled => 'Realtime is disabled for this workspace.';
+
+  @override
+  String get inventoryRealtimeEnabled => 'Realtime enabled';
+
+  @override
+  String get inventorySaleCreated => 'Inventory sale created.';
+
+  @override
+  String get inventorySaleDeleted => 'Sale deleted.';
+
+  @override
+  String get inventorySaleUpdated => 'Sale updated.';
+
+  @override
+  String get inventorySalesEmpty => 'Sales created from invoices will appear here.';
+
+  @override
+  String get inventorySalesDelete => 'Delete sale';
+
+  @override
+  String get inventorySalesDeleteConfirm => 'Delete this sale and restore its stock?';
+
+  @override
+  String get inventorySalesEdit => 'Edit sale';
+
+  @override
+  String get inventorySalesFallbackTitle => 'Inventory sale';
+
+  @override
+  String inventorySalesItemsCount(int count) {
+    return '$count items';
+  }
+
+  @override
+  String get inventorySalesLabel => 'Sales';
+
+  @override
+  String inventorySalesCreatorBadge(String name) {
+    return 'By $name';
+  }
+
+  @override
+  String get inventorySalesLineItems => 'Line items';
+
+  @override
+  String get inventorySalesNote => 'Note';
+
+  @override
+  String get inventorySalesRecentSubtitle => 'Review the latest invoice-backed inventory sales.';
+
+  @override
+  String get inventorySalesRecentTitle => 'Sale history';
+
+  @override
+  String get inventorySalesSave => 'Save sale';
+
+  @override
+  String get inventorySalesSubtitle => 'Monitor completed inventory sales and payment destinations.';
+
+  @override
+  String get inventorySalesTitle => 'Title';
+
+  @override
+  String get inventorySaveProduct => 'Save product';
+
+  @override
+  String get inventorySearchProducts => 'Search products';
+
+  @override
+  String get inventoryTitle => 'Inventory';
+
+  @override
   String get financeOverviewLabel => 'Overview';
 
   @override
@@ -2502,7 +2948,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeOverviewManageHint => 'Shape categories, tags, and finance structure.';
 
   @override
-  String get financeOverviewWalletSectionTitle => 'Wallet lineup';
+  String get financeOverviewWalletSectionTitle => 'Wallets';
 
   @override
   String get financeOverviewWalletSectionSubtitle => 'Your most important balances at a glance.';
@@ -2511,7 +2957,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeOverviewNoWalletsBody => 'Create your first wallet to start tracking balances, transfers, and categories.';
 
   @override
-  String get financeOverviewActivityTitle => 'Recent activity';
+  String get financeOverviewActivityTitle => 'Activity';
 
   @override
   String get financeOverviewActivitySubtitle => 'The latest movement across your wallets.';
@@ -2685,10 +3131,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeExpense => 'Expense';
 
   @override
+  String get financeHideAmounts => 'Hide amounts';
+
+  @override
   String get financeViewAll => 'View all';
 
   @override
   String get financeSearchTransactions => 'Search transactions';
+
+  @override
+  String get financeShowAmounts => 'Show amounts';
 
   @override
   String get financeNoSearchResults => 'No matching transactions';
@@ -2781,6 +3233,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeTransferMode => 'Transfer mode';
 
   @override
+  String get financeTransferModeEditHint => 'Transfer mode can only be edited for existing transfers.';
+
+  @override
   String get financeDestinationAmountOptional => 'Destination amount';
 
   @override
@@ -2797,6 +3252,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeInvalidDestinationAmount => 'Enter a valid destination amount';
+
+  @override
+  String get financeExcludedFromReports => 'Excluded from reports';
 
   @override
   String get financeReportOptIn => 'Include in reports';
@@ -3807,6 +4265,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsThemeSystemDescription => 'Match your device appearance automatically.';
 
   @override
+  String get settingsFinanceAmounts => 'Finance amounts';
+
+  @override
+  String get settingsFinanceAmountsDescription => 'Show or hide balances and transaction amounts across finance screens.';
+
+  @override
   String get settingsSwitchWorkspace => 'Switch workspace';
 
   @override
@@ -3904,6 +4368,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsWorkspaceSectionDescription => 'See your current context and switch when needed.';
+
+  @override
+  String get settingsWorkspaceSectionManageTitle => 'Workspace setup';
+
+  @override
+  String get settingsWorkspaceAccessTitle => 'Access';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyTitle => 'Default currency';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyDescription => 'Use one currency as the default for finance and invoice flows in this workspace.';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyField => 'Currency';
 
   @override
   String get settingsPreferencesSectionTitle => 'Preferences';
@@ -4407,6 +4886,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get captchaError => 'Security check failed. Please try again.';
 
   @override
+  String get commonOff => 'Off';
+
+  @override
   String get commonSomethingWentWrong => 'Something went wrong';
 
   @override
@@ -4453,4 +4935,164 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingGetStarted => 'Get Started';
+
+  @override
+  String get settingsWorkspaceMembersTitle => 'Members';
+
+  @override
+  String get settingsWorkspaceMembersSubtitle => 'Invite people, review access, and manage links.';
+
+  @override
+  String get settingsWorkspaceMembersAccessDenied => 'You need member access to manage this workspace.';
+
+  @override
+  String settingsWorkspaceMembersActiveSection(int count) {
+    return 'Members ($count)';
+  }
+
+  @override
+  String get settingsWorkspaceMembersEmpty => 'No members yet.';
+
+  @override
+  String settingsWorkspaceMembersPendingSection(int count) {
+    return 'Pending ($count)';
+  }
+
+  @override
+  String get settingsWorkspaceMembersPendingEmpty => 'No pending invites.';
+
+  @override
+  String get settingsWorkspaceMembersLinksSection => 'Invite links';
+
+  @override
+  String get settingsWorkspaceMembersLinksEmpty => 'No invite links yet.';
+
+  @override
+  String get settingsWorkspaceMembersInviteAction => 'Invite';
+
+  @override
+  String get settingsWorkspaceMembersLinkAction => 'New link';
+
+  @override
+  String get settingsWorkspaceMembersLinkCopied => 'Invite link copied.';
+
+  @override
+  String get settingsWorkspaceMembersRemoveTitle => 'Remove';
+
+  @override
+  String settingsWorkspaceMembersRemoveMessage(String name) {
+    return 'Remove $name from this workspace?';
+  }
+
+  @override
+  String get settingsWorkspaceMembersLinkDeleteTitle => 'Delete link';
+
+  @override
+  String get settingsWorkspaceMembersLinkDeleteMessage => 'Delete this invite link?';
+
+  @override
+  String get settingsWorkspaceMembersEmailField => 'Email';
+
+  @override
+  String get settingsWorkspaceMembersEmailPlaceholder => 'name@example.com';
+
+  @override
+  String get settingsWorkspaceMembersEmailInvalid => 'Enter a valid email address.';
+
+  @override
+  String get settingsWorkspaceMembersInviteSent => 'Invite sent.';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitField => 'Max uses';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitPlaceholder => 'Leave empty for unlimited';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitInvalid => 'Enter a positive whole number.';
+
+  @override
+  String get settingsWorkspaceMembersLinkCreated => 'Invite link created.';
+
+  @override
+  String get settingsWorkspaceMembersCreatorChip => 'Creator';
+
+  @override
+  String get settingsWorkspaceMembersPendingChip => 'Pending';
+
+  @override
+  String get settingsWorkspaceMembersLinkNever => 'No expiry';
+
+  @override
+  String get settingsWorkspaceMembersLinkExpired => 'Expired';
+
+  @override
+  String get settingsWorkspaceMembersLinkFull => 'Full';
+
+  @override
+  String get settingsWorkspaceMembersLinkActive => 'Active';
+
+  @override
+  String get settingsWorkspaceMembersLinkCopy => 'Copy';
+
+  @override
+  String get settingsWorkspaceRolesTitle => 'Roles';
+
+  @override
+  String get settingsWorkspaceRolesSubtitle => 'Control default access and workspace roles.';
+
+  @override
+  String get settingsWorkspaceRolesAccessDenied => 'You need role access to manage permissions.';
+
+  @override
+  String get settingsWorkspaceRolesCreate => 'Create role';
+
+  @override
+  String get settingsWorkspaceRolesDefaultTitle => 'Default access';
+
+  @override
+  String get settingsWorkspaceRolesListTitle => 'Roles';
+
+  @override
+  String get settingsWorkspaceRolesEmpty => 'No custom roles yet.';
+
+  @override
+  String get settingsWorkspaceRolesDeleteTitle => 'Delete role';
+
+  @override
+  String settingsWorkspaceRolesDeleteMessage(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String settingsWorkspaceRolesPermissionCount(int count) {
+    return '$count permissions enabled';
+  }
+
+  @override
+  String get settingsWorkspaceRolesEdit => 'Edit role';
+
+  @override
+  String get settingsWorkspaceRolesSave => 'Save';
+
+  @override
+  String get settingsWorkspaceRolesNameField => 'Name';
+
+  @override
+  String get settingsWorkspaceRolesNamePlaceholder => 'Role name';
+
+  @override
+  String get settingsWorkspaceRolesNameRequired => 'Enter a role name.';
+
+  @override
+  String get settingsWorkspaceRolesPermissionsSection => 'Permissions';
+
+  @override
+  String get settingsWorkspaceRolesMembersSection => 'Assigned members';
+
+  @override
+  String get settingsWorkspaceRolesMembersEmpty => 'No active members available.';
+
+  @override
+  String get settingsWorkspaceRolesSaved => 'Role saved.';
 }

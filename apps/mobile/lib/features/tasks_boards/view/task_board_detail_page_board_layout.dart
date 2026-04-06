@@ -121,12 +121,20 @@ extension on _TaskBoardDetailPageViewState {
               required status,
               required color,
             }) async {
-              if (!_taskBoardCanCreateListInStatus(board.lists, status)) {
+              final currentBoard = context
+                  .read<TaskBoardDetailCubit>()
+                  .state
+                  .board;
+              if (currentBoard == null) return false;
+              if (!_taskBoardCanCreateListInStatus(
+                currentBoard.lists,
+                status,
+              )) {
                 final toastContext = Navigator.of(
                   context,
                   rootNavigator: true,
                 ).context;
-                if (!toastContext.mounted) return;
+                if (!toastContext.mounted) return false;
                 shad.showToast(
                   context: toastContext,
                   builder: (context, overlay) => shad.Alert.destructive(
@@ -135,13 +143,14 @@ extension on _TaskBoardDetailPageViewState {
                     ),
                   ),
                 );
-                return;
+                return false;
               }
               await context.read<TaskBoardDetailCubit>().createList(
                 name: name,
                 status: status,
                 color: color,
               );
+              return true;
             },
       ),
     );
@@ -151,8 +160,9 @@ extension on _TaskBoardDetailPageViewState {
     BuildContext context,
     TaskBoardList list,
   ) async {
-    final action = await shad.showDialog<_TaskBoardLayoutListAction>(
+    final action = await showAdaptiveSheet<_TaskBoardLayoutListAction>(
       context: context,
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
       builder: (dialogContext) => _TaskBoardListActionsDialog(
         onEdit: () => Navigator.of(dialogContext).pop(
           _TaskBoardLayoutListAction.edit,
@@ -172,10 +182,13 @@ extension on _TaskBoardDetailPageViewState {
     switch (action) {
       case _TaskBoardLayoutListAction.edit:
         await _openEditListDialog(context, list);
+        return;
       case _TaskBoardLayoutListAction.move:
         await _openMoveListStatusDialog(context, list);
+        return;
       case _TaskBoardLayoutListAction.delete:
         await _confirmDeleteList(context, list);
+        return;
     }
   }
 
@@ -183,8 +196,9 @@ extension on _TaskBoardDetailPageViewState {
     BuildContext context,
     TaskBoardList list,
   ) async {
-    final confirmed = await shad.showDialog<bool>(
+    final confirmed = await showAdaptiveSheet<bool>(
       context: context,
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
       builder: (_) => _TaskBoardDeleteListDialog(
         title: context.l10n.taskBoardDetailDeleteListTitle,
         description: context.l10n.taskBoardDetailDeleteListDescription,
@@ -208,8 +222,8 @@ extension on _TaskBoardDetailPageViewState {
     BuildContext context,
     TaskBoardList list,
   ) async {
-    final currentStatus = TaskBoardList.normalizeSupportedStatus(list.status);
-    if (currentStatus == null) return;
+    final currentStatus =
+        TaskBoardList.normalizeSupportedStatus(list.status) ?? 'active';
     if (currentStatus == 'closed') {
       final toastContext = Navigator.of(context, rootNavigator: true).context;
       if (!toastContext.mounted) return;
@@ -222,8 +236,9 @@ extension on _TaskBoardDetailPageViewState {
       return;
     }
 
-    final selectedStatus = await shad.showDialog<String>(
+    final selectedStatus = await showAdaptiveSheet<String>(
       context: context,
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
       builder: (_) => _TaskBoardMoveListStatusDialog(
         currentStatus: currentStatus,
       ),
@@ -251,14 +266,16 @@ extension on _TaskBoardDetailPageViewState {
     final board = context.read<TaskBoardDetailCubit>().state.board;
     if (board == null) return;
 
-    final currentStatus = TaskBoardList.normalizeSupportedStatus(list.status);
-    if (currentStatus == null || currentStatus == 'closed') return;
+    final currentStatus =
+        TaskBoardList.normalizeSupportedStatus(list.status) ?? 'active';
+    if (currentStatus == 'closed') return;
 
     final statusLists = _sortedLists(
       board.lists
           .where(
             (item) =>
-                TaskBoardList.normalizeSupportedStatus(item.status) ==
+                (TaskBoardList.normalizeSupportedStatus(item.status) ??
+                    'active') ==
                 currentStatus,
           )
           .toList(growable: false),
@@ -276,8 +293,7 @@ extension on _TaskBoardDetailPageViewState {
     final updates = <String, int>{};
     for (var i = 0; i < reordered.length; i++) {
       final item = reordered[i];
-      final currentPosition = item.position ?? i;
-      if (currentPosition != i) {
+      if (item.position != i) {
         updates[item.id] = i;
       }
     }
@@ -300,10 +316,18 @@ extension on _TaskBoardDetailPageViewState {
       board.lists
           .where(
             (item) =>
-                TaskBoardList.normalizeSupportedStatus(item.status) == status,
+                (TaskBoardList.normalizeSupportedStatus(item.status) ??
+                    'active') ==
+                status,
           )
           .toList(growable: false),
     );
-    return statusLists.length;
+    final maxPosition = statusLists.fold<int>(
+      -1,
+      (currentMax, item) => item.position != null && item.position! > currentMax
+          ? item.position!
+          : currentMax,
+    );
+    return maxPosition + 1;
   }
 }

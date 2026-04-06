@@ -41,6 +41,18 @@ class FinanceRepository {
     }
   }
 
+  Future<void> updateWorkspaceDefaultCurrency({
+    required String wsId,
+    required String currency,
+  }) async {
+    await _api.putJson(
+      FinanceEndpoints.workspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+      {
+        'value': currency.trim().toUpperCase(),
+      },
+    );
+  }
+
   Future<List<ExchangeRate>> getExchangeRates() async {
     final response = await _api.getJson(FinanceEndpoints.exchangeRates);
     final data = response['data'];
@@ -368,6 +380,7 @@ class FinanceRepository {
     String? description,
     double? destinationAmount,
     bool? reportOptIn,
+    List<String>? tagIds,
   }) async {
     final body = <String, dynamic>{
       'origin_wallet_id': originWalletId,
@@ -388,6 +401,10 @@ class FinanceRepository {
       body['report_opt_in'] = reportOptIn;
     }
 
+    if (tagIds != null) {
+      body['tag_ids'] = tagIds;
+    }
+
     await _api.postJson(FinanceEndpoints.transfers(wsId), body);
   }
 
@@ -403,6 +420,7 @@ class FinanceRepository {
     String? description,
     double? destinationAmount,
     bool? reportOptIn,
+    List<String>? tagIds,
   }) async {
     final body = <String, dynamic>{
       'origin_transaction_id': originTransactionId,
@@ -423,6 +441,10 @@ class FinanceRepository {
 
     if (reportOptIn != null) {
       body['report_opt_in'] = reportOptIn;
+    }
+
+    if (tagIds != null) {
+      body['tag_ids'] = tagIds;
     }
 
     await _api.putJson(FinanceEndpoints.transfers(wsId), body);

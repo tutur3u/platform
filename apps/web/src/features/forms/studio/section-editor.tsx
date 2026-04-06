@@ -228,7 +228,7 @@ export function SectionEditor({
               <Button
                 type="button"
                 variant="ghost"
-                className="h-auto flex-1 justify-start px-0 hover:bg-transparent"
+                className="h-auto flex-1 justify-start whitespace-normal px-0 hover:bg-transparent"
               >
                 <div className="flex min-w-0 flex-1 items-start gap-4 text-left">
                   <div
@@ -389,7 +389,7 @@ export function SectionEditor({
                     <Button
                       type="button"
                       variant="ghost"
-                      className="h-auto w-full justify-start rounded-none px-4 py-3 hover:bg-transparent"
+                      className="h-auto w-full justify-start whitespace-normal rounded-none px-4 py-3 hover:bg-transparent"
                     >
                       <div className="flex w-full items-center justify-between">
                         <div className="flex items-center gap-3">

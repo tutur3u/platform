@@ -388,7 +388,7 @@ export function QuestionEditor({
             <Button
               type="button"
               variant="ghost"
-              className="h-auto flex-1 justify-start px-0 hover:bg-transparent"
+              className="h-auto flex-1 justify-start whitespace-normal px-0 hover:bg-transparent"
             >
               <div className="flex min-w-0 flex-1 items-start gap-3">
                 <div

@@ -125,40 +125,45 @@ void main() {
       expect(find.text('Session'), findsOneWidget);
     });
 
-    testWidgets('workspace settings staggers each workspace action tile', (
-      tester,
-    ) async {
-      const workspace = Workspace(
-        id: 'personal-ws',
-        name: 'Alex Nguyen',
-        personal: true,
-      );
-      const state = WorkspaceState(
-        status: WorkspaceStatus.loaded,
-        workspaces: [workspace],
-        currentWorkspace: workspace,
-        defaultWorkspace: workspace,
-      );
-      when(() => workspaceCubit.state).thenReturn(state);
-      whenListen(
-        workspaceCubit,
-        const Stream<WorkspaceState>.empty(),
-        initialState: state,
-      );
+    testWidgets(
+      'workspace settings keeps personal workspace tiles in one section',
+      (
+        tester,
+      ) async {
+        const workspace = Workspace(
+          id: 'personal-ws',
+          name: 'Alex Nguyen',
+          personal: true,
+        );
+        const state = WorkspaceState(
+          status: WorkspaceStatus.loaded,
+          workspaces: [workspace],
+          currentWorkspace: workspace,
+          defaultWorkspace: workspace,
+        );
+        when(() => workspaceCubit.state).thenReturn(state);
+        whenListen(
+          workspaceCubit,
+          const Stream<WorkspaceState>.empty(),
+          initialState: state,
+        );
 
-      await tester.pumpApp(
-        BlocProvider<WorkspaceCubit>.value(
-          value: workspaceCubit,
-          child: const SettingsWorkspacePage(),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpApp(
+          BlocProvider<WorkspaceCubit>.value(
+            value: workspaceCubit,
+            child: const SettingsWorkspacePage(),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.byType(StaggeredEntry), findsNWidgets(3));
-      expect(find.text('Current workspace'), findsOneWidget);
-      expect(find.text('Default workspace'), findsOneWidget);
-      expect(find.text('Workspace information'), findsOneWidget);
-    });
+        expect(find.byType(StaggeredEntry), findsOneWidget);
+        expect(find.text('Workspace setup'), findsOneWidget);
+        expect(find.text('Current workspace'), findsOneWidget);
+        expect(find.text('Default workspace'), findsOneWidget);
+        expect(find.text('Workspace information'), findsOneWidget);
+        expect(find.text('Access'), findsNothing);
+      },
+    );
 
     testWidgets('profile screen keeps staggered top-level sections', (
       tester,

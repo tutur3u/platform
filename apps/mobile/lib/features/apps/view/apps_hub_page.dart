@@ -96,148 +96,42 @@ class _AppsHubPageState extends State<AppsHubPage> {
                   ),
                   sliver: const SliverToBoxAdapter(child: _AppsIntro()),
                 ),
-                if (context.deviceClass == DeviceClass.compact)
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(
-                      ResponsivePadding.horizontal(context.deviceClass),
-                      0,
-                      ResponsivePadding.horizontal(context.deviceClass),
-                      24 + MediaQuery.paddingOf(context).bottom,
-                    ),
-                    sliver: SliverToBoxAdapter(
-                      child: _CompactAppsGrid(
-                        modules: modules,
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    ResponsivePadding.horizontal(context.deviceClass),
+                    0,
+                    ResponsivePadding.horizontal(context.deviceClass),
+                    24 + MediaQuery.paddingOf(context).bottom,
+                  ),
+                  sliver: SliverGrid(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      return _SubproductCard(
+                        module: modules[index],
+                        index: index,
                         replayToken: widget.replayToken,
-                      ),
-                    ),
-                  )
-                else
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(
-                      ResponsivePadding.horizontal(context.deviceClass),
-                      0,
-                      ResponsivePadding.horizontal(context.deviceClass),
-                      24 + MediaQuery.paddingOf(context).bottom,
-                    ),
-                    sliver: SliverGrid(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        return _SubproductCard(
-                          module: modules[index],
-                          index: index,
-                          replayToken: widget.replayToken,
-                        );
-                      }, childCount: modules.length),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount:
-                            context.deviceClass == DeviceClass.expanded ? 4 : 3,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio:
-                            context.deviceClass == DeviceClass.expanded
-                            ? 1.1
-                            : 1.0,
-                      ),
+                      );
+                    }, childCount: modules.length),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: switch (context.deviceClass) {
+                        DeviceClass.compact => 2,
+                        DeviceClass.medium => 3,
+                        DeviceClass.expanded => 4,
+                      },
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: switch (context.deviceClass) {
+                        DeviceClass.compact => 0.98,
+                        DeviceClass.medium => 1.0,
+                        DeviceClass.expanded => 1.05,
+                      },
                     ),
                   ),
+                ),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-class _CompactAppsGrid extends StatelessWidget {
-  const _CompactAppsGrid({
-    required this.modules,
-    required this.replayToken,
-  });
-
-  final List<AppModule> modules;
-  final int replayToken;
-
-  @override
-  Widget build(BuildContext context) {
-    final featuredTaskIndex = modules.indexWhere(
-      (module) => module.id == 'tasks',
-    );
-    final featuredModule = featuredTaskIndex >= 0
-        ? modules[featuredTaskIndex]
-        : null;
-    final remainingModules = [
-      for (var index = 0; index < modules.length; index++)
-        if (index != featuredTaskIndex) (index, modules[index]),
-    ];
-    final rows = <Widget>[];
-
-    if (featuredModule != null) {
-      rows.add(
-        SizedBox(
-          height: 198,
-          child: _SubproductCard(
-            module: featuredModule,
-            index: featuredTaskIndex,
-            featured: true,
-            replayToken: replayToken,
-          ),
-        ),
-      );
-    }
-
-    for (var index = 0; index < remainingModules.length; index += 2) {
-      final first = remainingModules[index];
-      final second = index + 1 < remainingModules.length
-          ? remainingModules[index + 1]
-          : null;
-
-      if (second == null) {
-        rows.add(
-          SizedBox(
-            height: 196,
-            child: _SubproductCard(
-              module: first.$2,
-              index: first.$1,
-              replayToken: replayToken,
-            ),
-          ),
-        );
-        continue;
-      }
-
-      rows.add(
-        SizedBox(
-          height: 208,
-          child: Row(
-            children: [
-              Expanded(
-                child: _SubproductCard(
-                  module: first.$2,
-                  index: first.$1,
-                  replayToken: replayToken,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _SubproductCard(
-                  module: second.$2,
-                  index: second.$1,
-                  replayToken: replayToken,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      children: [
-        for (var index = 0; index < rows.length; index++) ...[
-          rows[index],
-          if (index < rows.length - 1) const SizedBox(height: 12),
-        ],
-      ],
     );
   }
 }
@@ -256,13 +150,11 @@ class _SubproductCard extends StatelessWidget {
     required this.module,
     required this.index,
     required this.replayToken,
-    this.featured = false,
   });
 
   final AppModule module;
   final int index;
   final int replayToken;
-  final bool featured;
 
   @override
   Widget build(BuildContext context) {
@@ -332,27 +224,21 @@ class _SubproductCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: featured ? 14 : 8),
+                const SizedBox(height: 10),
                 Text(
                   module.label(context.l10n),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style:
-                      (featured
-                              ? Theme.of(context).textTheme.headlineSmall
-                              : Theme.of(context).textTheme.titleMedium)
-                          ?.copyWith(
-                            color: palette.textColor,
-                            fontWeight: FontWeight.w800,
-                          ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: palette.textColor,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-                SizedBox(height: featured ? 10 : 8),
+                const SizedBox(height: 8),
                 Expanded(
                   child: Text(
                     _description(context, module.id),
-                    maxLines: featured
-                        ? 3
-                        : context.deviceClass == DeviceClass.compact
+                    maxLines: context.deviceClass == DeviceClass.compact
                         ? 5
                         : 4,
                     overflow: TextOverflow.fade,
@@ -376,6 +262,9 @@ class _SubproductCard extends StatelessWidget {
       'tasks' => context.l10n.appsHubTasksDescription,
       'calendar' => context.l10n.appsHubCalendarDescription,
       'finance' => context.l10n.appsHubFinanceDescription,
+      'inventory' => context.l10n.appsHubInventoryDescription,
+      'notifications' => context.l10n.appsHubNotificationsDescription,
+      'settings' => context.l10n.appsHubSettingsDescription,
       'timer' => context.l10n.appsHubTimerDescription,
       _ => '',
     };

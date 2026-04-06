@@ -2,6 +2,16 @@ import 'package:flutter/material.dart' hide Card;
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+const financeMaskedAmountPlaceholder = '••••••';
+
+String maskFinanceValue(
+  String value, {
+  required bool showAmounts,
+  String placeholder = financeMaskedAmountPlaceholder,
+}) {
+  return showAmounts ? value : placeholder;
+}
+
 class FinancePalette {
   factory FinancePalette.of(BuildContext context) {
     return FinancePalette._(shad.Theme.of(context));
@@ -220,6 +230,7 @@ class FinanceAmountText extends StatelessWidget {
     required this.currency,
     this.style,
     this.showPlus = true,
+    this.isVisible = true,
     this.forceColor,
     this.alignment = CrossAxisAlignment.end,
     super.key,
@@ -229,6 +240,7 @@ class FinanceAmountText extends StatelessWidget {
   final String currency;
   final TextStyle? style;
   final bool showPlus;
+  final bool isVisible;
   final Color? forceColor;
   final CrossAxisAlignment alignment;
 
@@ -240,12 +252,16 @@ class FinanceAmountText extends StatelessWidget {
     final prefix = !isNegative && showPlus ? '+' : '';
     final color =
         forceColor ?? (isNegative ? palette.negative : palette.positive);
+    final amountText = maskFinanceValue(
+      '$prefix${formatCurrency(amount, currency)}',
+      showAmounts: isVisible,
+    );
 
     return Column(
       crossAxisAlignment: alignment,
       children: [
         Text(
-          '$prefix${formatCurrency(amount, currency)}',
+          amountText,
           style: (style ?? theme.typography.large).copyWith(
             fontWeight: FontWeight.w700,
             color: color,

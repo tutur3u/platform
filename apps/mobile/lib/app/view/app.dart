@@ -11,6 +11,7 @@ import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/theme/colors.dart';
+import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
@@ -31,6 +32,7 @@ import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
+import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_state.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
@@ -86,6 +88,7 @@ class _AppState extends State<App> {
   late final LocaleCubit _localeCubit;
   late final ThemeCubit _themeCubit;
   late final CalendarSettingsCubit _calendarSettingsCubit;
+  late final FinancePreferencesCubit _financePreferencesCubit;
   late final AppTabCubit _appTabCubit;
   late final ShellChromeActionsCubit _shellChromeActionsCubit;
   late final ShellMiniNavCubit _shellMiniNavCubit;
@@ -130,6 +133,9 @@ class _AppState extends State<App> {
       initialThemeMode: widget.initialThemeMode,
     );
     _calendarSettingsCubit = CalendarSettingsCubit();
+    _financePreferencesCubit = FinancePreferencesCubit(
+      settingsRepository: _settingsRepo,
+    );
     _appTabCubit = AppTabCubit(settingsRepository: _settingsRepo);
     _shellChromeActionsCubit = ShellChromeActionsCubit();
     _shellMiniNavCubit = ShellMiniNavCubit();
@@ -153,6 +159,7 @@ class _AppState extends State<App> {
     );
     unawaited(_localeCubit.loadLocale());
     unawaited(_calendarSettingsCubit.loadUserPreference());
+    unawaited(_financePreferencesCubit.load());
     unawaited(_appVersionCubit.checkVersion());
     // If auth resolved synchronously to authenticated, load workspaces now.
     // BlocListener only fires on state *changes*, so it won't trigger for
@@ -376,6 +383,7 @@ class _AppState extends State<App> {
     unawaited(_localeCubit.close());
     unawaited(_themeCubit.close());
     unawaited(_calendarSettingsCubit.close());
+    unawaited(_financePreferencesCubit.close());
     unawaited(_appTabCubit.close());
     unawaited(_shellChromeActionsCubit.close());
     unawaited(_shellMiniNavCubit.close());
@@ -395,6 +403,7 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _localeCubit),
         BlocProvider.value(value: _themeCubit),
         BlocProvider.value(value: _calendarSettingsCubit),
+        BlocProvider.value(value: _financePreferencesCubit),
         BlocProvider.value(value: _appTabCubit),
         BlocProvider.value(value: _shellChromeActionsCubit),
         BlocProvider.value(value: _shellMiniNavCubit),
@@ -470,7 +479,9 @@ class _AppState extends State<App> {
                   routerConfig: _router,
                   builder: (context, child) {
                     return _ShadcnMaterialBridge(
-                      child: AppVersionGate(child: child!),
+                      child: DismissKeyboardOnPointerDown(
+                        child: AppVersionGate(child: child!),
+                      ),
                     );
                   },
                 );

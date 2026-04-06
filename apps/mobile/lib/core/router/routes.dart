@@ -26,9 +26,12 @@ abstract final class Routes {
   static const taskPortfolioProject = '/tasks/portfolio/projects/:projectId';
   static const calendar = '/calendar';
   static const finance = '/finance';
+  static const inventory = '/inventory';
   static const timer = '/timer';
   static const settings = '/settings';
   static const settingsWorkspace = '/settings/workspace';
+  static const settingsWorkspaceMembers = '/settings/workspace/members';
+  static const settingsWorkspaceRoles = '/settings/workspace/roles';
   static const settingsMobileVersions = '/settings/mobile-versions';
 
   // Detail pages
@@ -40,6 +43,13 @@ abstract final class Routes {
   static const transactions = '/finance/transactions';
   static const transactionDetail = '/finance/transactions/:transactionId';
   static const categories = '/finance/categories';
+  static const inventoryProducts = '/inventory/products';
+  static const inventoryProductCreate = '/inventory/products/create';
+  static const inventoryProductDetail = '/inventory/products/:productId';
+  static const inventorySales = '/inventory/sales';
+  static const inventoryManage = '/inventory/manage';
+  static const inventoryAuditLogs = '/inventory/audit-logs';
+  static const inventoryCheckout = '/inventory/checkout';
   static const timerHistory = '/timer/history';
   static const timerStats = '/timer/stats';
   static const timerRequests = '/timer/requests';
@@ -47,6 +57,9 @@ abstract final class Routes {
 
   static String walletDetailPath(String walletId) =>
       '/finance/wallets/$walletId';
+
+  static String inventoryProductDetailPath(String productId) =>
+      '/inventory/products/$productId';
 
   static String taskPortfolioProjectPath(String projectId) =>
       '/tasks/portfolio/projects/$projectId';
@@ -72,6 +85,9 @@ abstract final class Routes {
     }
     if (normalized == finance || normalized.startsWith('$finance/')) {
       return finance;
+    }
+    if (normalized == inventory || normalized.startsWith('$inventory/')) {
+      return inventory;
     }
     if (normalized == timer || normalized.startsWith('$timer/')) {
       return timer;

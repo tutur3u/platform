@@ -7,6 +7,7 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { canViewInventoryCatalog } from '@/lib/inventory/permissions';
 
 interface Params {
   params: Promise<{
@@ -49,14 +50,14 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     const permissions = await getPermissions({ wsId, request });
-    if (!permissions?.containsPermission('view_inventory')) {
+    if (!permissions || !canViewInventoryCatalog(permissions)) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const { data, error } = await sbAdmin
       .from('workspace_products')
       .select(
-        `id, name, description, manufacturer, category_id, inventory_products!inventory_products_product_id_fkey(unit_id, warehouse_id, inventory_units!inventory_products_unit_id_fkey(id, name), inventory_warehouses!inventory_products_warehouse_id_fkey(id, name))`
+        `id, name, description, manufacturer, category_id, owner_id, finance_category_id, product_categories(name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_units!inventory_products_unit_id_fkey(id, name), inventory_warehouses!inventory_products_warehouse_id_fkey(id, name))`
       )
       .filter('archived', 'eq', 'false')
       .eq('ws_id', wsId)

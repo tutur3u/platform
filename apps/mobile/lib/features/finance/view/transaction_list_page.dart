@@ -6,8 +6,10 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
+import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.dart';
+import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -148,6 +150,9 @@ class _TransactionListViewState extends State<_TransactionListView> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final showAmounts = context.select<FinancePreferencesCubit, bool>(
+      (cubit) => cubit.state.showAmounts,
+    );
     final listBottomPadding =
         _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
@@ -174,6 +179,11 @@ class _TransactionListViewState extends State<_TransactionListView> {
                   onPressed: () => setState(
                     () => _isSearchVisible = !_isSearchVisible,
                   ),
+                ),
+                financeAmountVisibilityAction(
+                  context,
+                  showAmounts: showAmounts,
+                  id: 'finance-transactions-amount-visibility',
                 ),
               ],
             ),
@@ -254,16 +264,21 @@ class _TransactionListViewState extends State<_TransactionListView> {
                   child: GroupedTransactionAccordion(
                     lazy: true,
                     scrollController: _scrollController,
-                    listPadding: EdgeInsets.only(
-                      left: 16,
-                      top: 12,
-                      right: 16,
-                      bottom: listBottomPadding,
+                    listPadding: EdgeInsets.fromLTRB(
+                      16,
+                      12,
+                      16,
+                      listBottomPadding,
                     ),
+                    compactHorizontalPadding: 0,
                     transactions: state.transactions,
                     workspaceCurrency: state.workspaceCurrency,
                     exchangeRates: state.exchangeRates,
                     showLoadingMore: state.isLoadingMore,
+                    usePanelChrome: false,
+                    emphasizeTransactionRows: true,
+                    collapseBreakdownByDefault: true,
+                    showAmounts: showAmounts,
                     headerChildren: [
                       _ActivityHeaderCard(
                         searchController: _searchController,
@@ -304,6 +319,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
             ExtendedFab(
               icon: Icons.add,
               label: l10n.financeCreateTransaction,
+              includeBottomSafeArea: false,
               onPressed: _onCreateTransaction,
             ),
           ],
@@ -330,42 +346,30 @@ class _ActivityHeaderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return FinancePanel(
-      backgroundColor: FinancePalette.of(context).elevatedPanel,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          FinanceSectionHeader(
-            title: l10n.financeOverviewActivityTitle,
-            subtitle: state.search.isNotEmpty
-                ? l10n.financeActivitySearchResults(state.transactions.length)
-                : (isSearchVisible
-                      ? l10n.financeActivitySearchHint
-                      : l10n.financeActivityDefaultHint),
+    if (!isSearchVisible) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: shad.TextField(
+        controller: searchController,
+        hintText: l10n.financeSearchTransactions,
+        onChanged: onChanged,
+        features: [
+          const shad.InputFeature.leading(
+            Icon(Icons.search_rounded, size: 18),
           ),
-          if (isSearchVisible) ...[
-            const shad.Gap(14),
-            shad.TextField(
-              controller: searchController,
-              hintText: l10n.financeSearchTransactions,
-              onChanged: onChanged,
-              features: [
-                const shad.InputFeature.leading(
-                  Icon(Icons.search_rounded, size: 18),
-                ),
-                if (state.search.isNotEmpty)
-                  shad.InputFeature.trailing(
-                    shad.IconButton.ghost(
-                      onPressed: () {
-                        searchController.clear();
-                        onChanged('');
-                      },
-                      icon: const Icon(Icons.close_rounded, size: 16),
-                    ),
-                  ),
-              ],
+          if (state.search.isNotEmpty)
+            shad.InputFeature.trailing(
+              shad.IconButton.ghost(
+                onPressed: () {
+                  searchController.clear();
+                  onChanged('');
+                },
+                icon: const Icon(Icons.close_rounded, size: 16),
+              ),
             ),
-          ],
         ],
       ),
     );

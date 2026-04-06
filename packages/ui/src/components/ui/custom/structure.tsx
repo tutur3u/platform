@@ -173,7 +173,7 @@ export function Structure({
           {/* Body element now handles page-level scrolling */}
           <main
             className={cn(
-              'relative flex h-full min-h-screen flex-col overflow-x-hidden transition-all duration-300 ease-in-out',
+              'relative flex h-full min-h-screen flex-col overflow-x-clip overflow-y-visible transition-all duration-300 ease-in-out',
               isCollapsed || overlayOnExpand ? 'md:pl-16' : 'md:pl-64'
             )}
           >
