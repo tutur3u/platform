@@ -245,6 +245,21 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                         ),
                       ),
                     ),
+                    if (widget.lists.length > 1)
+                      Tooltip(
+                        message: context.l10n.taskBoardDetailMoveTask,
+                        child: shad.IconButton.ghost(
+                          icon: const Icon(Icons.swap_horiz, size: 16),
+                          onPressed: _isBusy ? null : _moveTask,
+                        ),
+                      ),
+                    Tooltip(
+                      message: context.l10n.taskBoardDetailDeleteTask,
+                      child: shad.IconButton.ghost(
+                        icon: const Icon(Icons.delete_outline, size: 16),
+                        onPressed: _isBusy ? null : _deleteTask,
+                      ),
+                    ),
                     shad.IconButton.ghost(
                       icon: const Icon(Icons.close),
                       onPressed: _isBusy
@@ -283,34 +298,6 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                   _buildDetailsTab(context)
                 else
                   _buildRelationshipsTab(context),
-                if (!_isCreate && widget.lists.length > 1) ...[
-                  const shad.Gap(14),
-                  shad.OutlineButton(
-                    onPressed: _isBusy ? null : _moveTask,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.swap_horiz, size: 16),
-                        const shad.Gap(8),
-                        Text(context.l10n.taskBoardDetailMoveTask),
-                      ],
-                    ),
-                  ),
-                ],
-                if (!_isCreate) ...[
-                  const shad.Gap(10),
-                  shad.DestructiveButton(
-                    onPressed: _isBusy ? null : _deleteTask,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.delete_outline, size: 16),
-                        const shad.Gap(8),
-                        Text(context.l10n.taskBoardDetailDeleteTask),
-                      ],
-                    ),
-                  ),
-                ],
                 const shad.Gap(18),
                 Row(
                   children: [
