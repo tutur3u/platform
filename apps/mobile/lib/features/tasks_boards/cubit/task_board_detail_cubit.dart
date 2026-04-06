@@ -368,6 +368,15 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     );
   }
 
+  Future<void> deleteTask({required String taskId}) async {
+    final wsId = state.workspaceId;
+    if (wsId == null) {
+      throw StateError('Workspace not selected');
+    }
+
+    await _runMutation(() => _taskRepository.deleteTask(taskId, wsId: wsId));
+  }
+
   Future<void> loadTaskRelationships({required String taskId}) async {
     final wsId = state.workspaceId;
     final boardId = state.boardId;

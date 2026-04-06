@@ -1652,6 +1652,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailTaskCreated => 'Task created.';
 
   @override
+  String get taskBoardDetailTaskDeleted => 'Task deleted.';
+
+  @override
   String get taskBoardDetailNoMoveTargets => 'No other lists available for moving this task.';
 
   @override
@@ -1704,6 +1707,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailDeleteListDescription => 'Are you sure you want to delete this list? All tasks in this list will also be deleted. This action cannot be undone.';
+
+  @override
+  String get taskBoardDetailDeleteTask => 'Delete task';
+
+  @override
+  String get taskBoardDetailDeleteTaskTitle => 'Delete task?';
+
+  @override
+  String get taskBoardDetailDeleteTaskDescription => 'Move this task to the recycle bin?';
 
   @override
   String get taskBoardDetailMoveListToStatus => 'Move list to status';

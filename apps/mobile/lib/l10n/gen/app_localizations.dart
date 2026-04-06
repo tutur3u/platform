@@ -3241,6 +3241,12 @@ abstract class AppLocalizations {
   /// **'Task created.'**
   String get taskBoardDetailTaskCreated;
 
+  /// No description provided for @taskBoardDetailTaskDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Task deleted.'**
+  String get taskBoardDetailTaskDeleted;
+
   /// No description provided for @taskBoardDetailNoMoveTargets.
   ///
   /// In en, this message translates to:
@@ -3348,6 +3354,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Are you sure you want to delete this list? All tasks in this list will also be deleted. This action cannot be undone.'**
   String get taskBoardDetailDeleteListDescription;
+
+  /// No description provided for @taskBoardDetailDeleteTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete task'**
+  String get taskBoardDetailDeleteTask;
+
+  /// No description provided for @taskBoardDetailDeleteTaskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete task?'**
+  String get taskBoardDetailDeleteTaskTitle;
+
+  /// No description provided for @taskBoardDetailDeleteTaskDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Move this task to the recycle bin?'**
+  String get taskBoardDetailDeleteTaskDescription;
 
   /// No description provided for @taskBoardDetailMoveListToStatus.
   ///

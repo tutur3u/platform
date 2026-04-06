@@ -1652,6 +1652,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailTaskCreated => 'Đã tạo công việc.';
 
   @override
+  String get taskBoardDetailTaskDeleted => 'Đã xóa công việc.';
+
+  @override
   String get taskBoardDetailNoMoveTargets => 'Không có danh sách khác để di chuyển công việc này.';
 
   @override
@@ -1704,6 +1707,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailDeleteListDescription => 'Bạn có chắc chắn muốn xóa danh sách này không? Tất cả công việc trong danh sách này cũng sẽ bị xóa. Hành động này không thể hoàn tác.';
+
+  @override
+  String get taskBoardDetailDeleteTask => 'Xóa công việc';
+
+  @override
+  String get taskBoardDetailDeleteTaskTitle => 'Xóa công việc?';
+
+  @override
+  String get taskBoardDetailDeleteTaskDescription => 'Di chuyển công việc này vào thùng rác?';
 
   @override
   String get taskBoardDetailMoveListToStatus => 'Di chuyển danh sách sang trạng thái';
