@@ -73,18 +73,7 @@ export default function SponsorsList() {
         <h3 className="text-center font-bold text-2xl text-brand-teal uppercase shadow-text">
           Academic Sponsors
         </h3>
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-          <AnimatedSection>
-            <div className="glass-card card-hover h-25 rounded-xl p-4">
-              <Image
-                src="/sponsors/student-council.png"
-                alt="Student Council"
-                width={100}
-                height={100}
-                className="h-full w-full object-contain"
-              />
-            </div>
-          </AnimatedSection>
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-3">
           <AnimatedSection delay={0.1}>
             <div className="glass-card card-hover h-25 rounded-xl p-4">
               <Image
@@ -119,50 +108,6 @@ export default function SponsorsList() {
             </div>
           </AnimatedSection>
         </div>
-      </div>
-
-      {/* Media Supporters */}
-      <div className="mt-16 space-y-8">
-        <h3 className="text-center font-bold text-2xl text-brand-teal uppercase shadow-text">
-          Media Supporters
-        </h3>
-        <AnimatedSection>
-          <div className="px-12 md:px-16">
-            <Carousel
-              opts={{
-                align: 'start',
-                loop: false,
-              }}
-            >
-              <CarouselContent>
-                {partners.map((partner) => (
-                  <CarouselItem
-                    key={partner.id}
-                    className="basis-1/2 md:basis-1/3 lg:basis-1/5"
-                  >
-                    <div className="flex h-24 items-center justify-center p-4 md:h-28">
-                      <Image
-                        src={partner.src}
-                        alt={partner.alt}
-                        width={160}
-                        height={80}
-                        className="h-full w-full object-contain"
-                      />
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious
-                variant="link"
-                className="font-bold text-primary/50 hover:text-primary"
-              />
-              <CarouselNext
-                variant="link"
-                className="font-bold text-primary/50 hover:text-primary"
-              />
-            </Carousel>
-          </div>
-        </AnimatedSection>
       </div>
     </div>
   );
