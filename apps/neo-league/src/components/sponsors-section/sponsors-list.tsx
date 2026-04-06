@@ -1,18 +1,5 @@
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@ncthub/ui/carousel';
 import Image from 'next/image';
 import AnimatedSection from '../animated-section';
-
-const partners = Array.from({ length: 10 }, (_, index) => ({
-  id: index,
-  src: '/sponsors/fpt.png',
-  alt: 'FPT',
-}));
 
 export default function SponsorsList() {
   return (
