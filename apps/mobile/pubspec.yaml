@@ -18,7 +18,7 @@ dependencies:
   dart_quill_delta: ^10.8.3
   device_info_plus: 12.3.0
   equatable: ^2.0.8
-  file_picker: ^10.3.10
+  file_picker: ^11.0.2
   firebase_analytics: ^12.2.0
   firebase_core: ^4.6.0
   firebase_crashlytics: ^5.1.0
