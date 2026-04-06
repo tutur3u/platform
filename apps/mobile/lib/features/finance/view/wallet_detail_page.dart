@@ -55,7 +55,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
   TransactionStats? _stats;
   List<Transaction> _transactions = const [];
   List<ExchangeRate> _exchangeRates = const [];
-  String _workspaceCurrency = 'USD';
+  String _workspaceCurrency = '';
   String? _nextCursor;
   bool _hasMore = true;
   bool _isLoadingInitial = false;
@@ -247,9 +247,10 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         return;
       }
 
-      final workspaceCurrencyFuture = repository
-          .getWorkspaceDefaultCurrency(wsId)
-          .catchError((_) => 'USD');
+      final workspaceCurrencyFuture = repository.getWorkspaceDefaultCurrency(
+        wsId,
+        forceRefresh: showLoader,
+      );
       final exchangeRatesFuture = repository.getExchangeRates().catchError(
         (_) => const <ExchangeRate>[],
       );
@@ -394,7 +395,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
 
-    final changed = await openTransactionDetailSheet(
+    await openTransactionDetailSheet(
       context,
       wsId: wsId,
       transaction: transaction,
@@ -403,7 +404,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
       exchangeRates: _exchangeRates,
     );
 
-    if (!mounted || !changed) return;
+    if (!mounted) return;
     await _loadInitial(showLoader: false);
   }
 

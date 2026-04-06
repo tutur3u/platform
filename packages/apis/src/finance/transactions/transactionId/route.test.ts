@@ -6,6 +6,9 @@ const mocks = vi.hoisted(() => {
   const linkedTransactionMaybeSingle = vi.fn();
   const transactionTagsIn = vi.fn();
   const deleteEq = vi.fn();
+  const updateEq = vi.fn();
+  const tagDeleteEq = vi.fn();
+  const tagInsert = vi.fn();
   const getPermissions = vi.fn();
   const getUser = vi.fn();
   const transactionRpc = vi.fn();
@@ -25,6 +28,10 @@ const mocks = vi.hoisted(() => {
           select: vi.fn(() => ({
             in: transactionTagsIn,
           })),
+          delete: vi.fn(() => ({
+            eq: tagDeleteEq,
+          })),
+          insert: tagInsert,
         };
       }
 
@@ -54,6 +61,9 @@ const mocks = vi.hoisted(() => {
         delete: vi.fn(() => ({
           eq: deleteEq,
         })),
+        update: vi.fn(() => ({
+          eq: updateEq,
+        })),
       };
     }),
   };
@@ -66,8 +76,11 @@ const mocks = vi.hoisted(() => {
     getUser,
     linkedTransactionMaybeSingle,
     sessionSupabase,
+    tagDeleteEq,
+    tagInsert,
     transactionRpc,
     transactionTagsIn,
+    updateEq,
     verifyWorkspaceSingle,
   };
 });
@@ -127,6 +140,15 @@ describe('transaction detail route', () => {
       error: null,
     });
     mocks.deleteEq.mockResolvedValue({
+      error: null,
+    });
+    mocks.updateEq.mockResolvedValue({
+      error: null,
+    });
+    mocks.tagDeleteEq.mockResolvedValue({
+      error: null,
+    });
+    mocks.tagInsert.mockResolvedValue({
       error: null,
     });
   });
@@ -207,5 +229,50 @@ describe('transaction detail route', () => {
       'id',
       '8206f54b-4cae-4373-9a89-d09f80dd017d'
     );
+  });
+
+  it('updates transaction tags through sbAdmin tag tables', async () => {
+    const { PUT } = await import('./route.js');
+
+    const response = await PUT(
+      new Request('http://localhost/api/workspaces/ws-1/transactions/tx-1', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: -45,
+          tag_ids: ['tag-1', 'tag-2'],
+        }),
+      }),
+      {
+        params: Promise.resolve({
+          transactionId: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ message: 'success' });
+    expect(mocks.updateEq).toHaveBeenCalledWith(
+      'id',
+      '8206f54b-4cae-4373-9a89-d09f80dd017d'
+    );
+    expect(mocks.tagDeleteEq).toHaveBeenCalledWith(
+      'transaction_id',
+      '8206f54b-4cae-4373-9a89-d09f80dd017d'
+    );
+    expect(mocks.tagInsert).toHaveBeenCalledWith([
+      {
+        transaction_id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+        tag_id: 'tag-1',
+      },
+      {
+        transaction_id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+        tag_id: 'tag-2',
+      },
+    ]);
+    expect(mocks.sessionSupabase.from).not.toHaveBeenCalled();
   });
 });

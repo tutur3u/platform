@@ -96,6 +96,10 @@ class _FinanceView extends StatelessWidget {
               return _FinanceError(error: state.error);
             }
 
+            if (!state.hasWorkspaceCurrency) {
+              return const Center(child: NovaLoadingIndicator());
+            }
+
             return Stack(
               children: [
                 const FinanceAmountVisibilityShellAction(
@@ -544,7 +548,7 @@ class _ActivityTile extends StatelessWidget {
           return;
         }
 
-        final changed = await openTransactionDetailSheet(
+        await openTransactionDetailSheet(
           context,
           wsId: wsId,
           transaction: transaction,
@@ -553,7 +557,7 @@ class _ActivityTile extends StatelessWidget {
           exchangeRates: exchangeRates,
         );
 
-        if (!context.mounted || !changed) {
+        if (!context.mounted) {
           return;
         }
 

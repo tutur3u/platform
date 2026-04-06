@@ -10,7 +10,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   List<Wallet> _wallets = const [];
   List<TransactionCategory> _categories = const [];
   List<FinanceTag> _tags = const [];
-  String _workspaceCurrency = 'USD';
+  String _workspaceCurrency = '';
   String? _walletId;
   String? _destinationWalletId;
   String? _categoryId;
@@ -74,9 +74,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         widget.repository.getWallets(widget.wsId),
         widget.repository.getCategories(widget.wsId),
         widget.repository.getTags(widget.wsId),
-        widget.repository
-            .getWorkspaceDefaultCurrency(widget.wsId)
-            .catchError((_) => 'USD'),
+        widget.repository.getWorkspaceDefaultCurrency(widget.wsId),
       ]);
       final wallets = results[0] as List<Wallet>;
       final categories = results[1] as List<TransactionCategory>;

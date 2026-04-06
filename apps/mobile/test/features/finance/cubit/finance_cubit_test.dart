@@ -87,10 +87,12 @@ void main() {
               date: '2026-03-25',
             ),
           ],
+          workspaceCurrency: 'USD',
         ),
       ],
       verify: (_) {
         verify(() => repository.getWallets('ws_1')).called(1);
+        verify(() => repository.getWorkspaceDefaultCurrency('ws_1')).called(1);
         verify(
           () => repository.getTransactionsInfinite(
             wsId: 'ws_1',

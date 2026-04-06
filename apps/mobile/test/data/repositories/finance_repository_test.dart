@@ -11,8 +11,35 @@ void main() {
     late FinanceRepository repository;
 
     setUp(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      debugClearFinanceRepositoryWorkspaceCurrencyCache();
       apiClient = _MockApiClient();
       repository = FinanceRepository(apiClient: apiClient);
+    });
+
+    tearDown(debugClearFinanceRepositoryWorkspaceCurrencyCache);
+
+    test('getWorkspaceDefaultCurrency uses shared cache when fresh', () async {
+      when(
+        () => apiClient.getJson(
+          '/api/v1/workspaces/ws_1/settings/DEFAULT_CURRENCY',
+        ),
+      ).thenAnswer(
+        (_) async => {
+          'value': 'VND',
+        },
+      );
+
+      final first = await repository.getWorkspaceDefaultCurrency('ws_1');
+      final second = await repository.getWorkspaceDefaultCurrency('ws_1');
+
+      expect(first, 'VND');
+      expect(second, 'VND');
+      verify(
+        () => apiClient.getJson(
+          '/api/v1/workspaces/ws_1/settings/DEFAULT_CURRENCY',
+        ),
+      ).called(1);
     });
 
     test('getWallets maps list response', () async {
@@ -114,6 +141,47 @@ void main() {
         ).called(1);
       },
     );
+
+    test('getTransactionsInfinite parses tags from the list payload', () async {
+      when(
+        () => apiClient.getJson(
+          '/api/workspaces/ws_1/transactions/infinite?limit=20',
+        ),
+      ).thenAnswer(
+        (_) async => {
+          'data': [
+            {
+              'id': 'tx_1',
+              'amount': -12.5,
+              'wallet_id': 'wallet_1',
+              'wallet_currency': 'USD',
+              'tags': [
+                {
+                  'id': 'tag_1',
+                  'name': 'Urgent',
+                  'color': '#ff0000',
+                },
+              ],
+            },
+          ],
+          'hasMore': false,
+          'nextCursor': null,
+        },
+      );
+
+      final page = await repository.getTransactionsInfinite(wsId: 'ws_1');
+
+      expect(page.data, hasLength(1));
+      expect(page.data.first.tags, hasLength(1));
+      expect(page.data.first.tags.first.id, 'tag_1');
+      expect(page.data.first.tags.first.name, 'Urgent');
+      expect(page.data.first.tags.first.color, '#ff0000');
+      verify(
+        () => apiClient.getJson(
+          '/api/workspaces/ws_1/transactions/infinite?limit=20',
+        ),
+      ).called(1);
+    });
 
     test(
       'getTransactionStats maps stats response with wallet currency key',
@@ -460,6 +528,9 @@ void main() {
             'is_amount_confidential': true,
             'is_description_confidential': false,
             'is_category_confidential': true,
+            'tags': [
+              {'id': 'tag_1', 'name': 'Urgent', 'color': '#ff0000'},
+            ],
           },
         );
 
@@ -493,6 +564,9 @@ void main() {
         expect(transaction.reportOptIn, false);
         expect(transaction.isAmountConfidential, true);
         expect(transaction.isCategoryConfidential, true);
+        expect(transaction.tags, hasLength(1));
+        expect(transaction.tags.first.id, 'tag_1');
+        expect(transaction.tags.first.name, 'Urgent');
 
         verify(
           () => apiClient.putJson(

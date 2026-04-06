@@ -220,7 +220,7 @@ class SettingsWorkspaceSection extends StatelessWidget {
   final bool canEditWorkspaceProperties;
   final bool isWorkspacePermissionLoading;
   final ValueChanged<Workspace> onEditWorkspaceProperties;
-  final String defaultCurrency;
+  final String? defaultCurrency;
   final bool canEditWorkspaceDefaultCurrency;
   final bool isWorkspaceCurrencyLoading;
   final VoidCallback onEditWorkspaceDefaultCurrency;
@@ -276,7 +276,7 @@ class SettingsWorkspaceSection extends StatelessWidget {
                     : l10n.settingsWorkspacePropertiesNoAccess,
                 value: isWorkspaceCurrencyLoading
                     ? l10n.settingsWorkspacePropertiesPermissionLoading
-                    : defaultCurrency,
+                    : (defaultCurrency ?? ''),
                 onTap:
                     canEditWorkspaceDefaultCurrency &&
                         !isWorkspaceCurrencyLoading

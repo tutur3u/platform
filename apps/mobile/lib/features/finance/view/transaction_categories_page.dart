@@ -74,7 +74,7 @@ class _TransactionCategoriesViewState
   int _tagsRequestId = 0;
   String? _categoriesWorkspaceId;
   String? _tagsWorkspaceId;
-  String _workspaceCurrency = 'USD';
+  String? _workspaceCurrency;
 
   @override
   void initState() {
@@ -112,6 +112,9 @@ class _TransactionCategoriesViewState
           key: _categoriesStoreKey(wsId),
           decode: _decodeCategories,
         );
+    _workspaceCurrency = context
+        .read<FinanceRepository>()
+        .peekWorkspaceDefaultCurrency(wsId);
     if (cachedCategories.hasValue && cachedCategories.data != null) {
       _categories = cachedCategories.data!;
       _categoriesWorkspaceId = wsId;
@@ -307,6 +310,15 @@ class _TransactionCategoriesViewState
         ],
       );
     }
+    if (_workspaceCurrency == null || _workspaceCurrency!.trim().isEmpty) {
+      return ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
+        itemCount: _categories.length.clamp(1, 6),
+        separatorBuilder: (context, index) => const shad.Gap(8),
+        itemBuilder: (context, index) => const _ManageFinanceCardSkeleton(),
+      );
+    }
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
@@ -316,7 +328,7 @@ class _TransactionCategoriesViewState
         final category = _categories[index];
         return _CategoryCard(
           category: category,
-          currencyCode: _workspaceCurrency,
+          currencyCode: _workspaceCurrency!,
           showAmounts: showAmounts,
           onEdit: () => _onEdit(category),
           onDelete: () => _onDelete(category),
@@ -367,6 +379,15 @@ class _TransactionCategoriesViewState
         ],
       );
     }
+    if (_workspaceCurrency == null || _workspaceCurrency!.trim().isEmpty) {
+      return ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
+        itemCount: _tags.length.clamp(1, 6),
+        separatorBuilder: (context, index) => const shad.Gap(8),
+        itemBuilder: (context, index) => const _ManageFinanceCardSkeleton(),
+      );
+    }
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
@@ -376,7 +397,7 @@ class _TransactionCategoriesViewState
         final tag = _tags[index];
         return _TagCard(
           tag: tag,
-          currencyCode: _workspaceCurrency,
+          currencyCode: _workspaceCurrency!,
           showAmounts: showAmounts,
           onEdit: () => _onEditTag(tag),
           onDelete: () => _onDeleteTag(tag),
@@ -500,7 +521,7 @@ class _TransactionCategoriesViewState
         _tags = const [];
         _categoriesWorkspaceId = null;
         _tagsWorkspaceId = null;
-        _workspaceCurrency = 'USD';
+        _workspaceCurrency = null;
         _categoriesLoading = false;
         _tagsLoading = false;
         _categoriesError = null;
@@ -532,9 +553,10 @@ class _TransactionCategoriesViewState
     }
 
     final repository = context.read<FinanceRepository>();
-    final currencyFuture = repository
-        .getWorkspaceDefaultCurrency(wsId)
-        .catchError((_) => 'USD');
+    final currencyFuture = repository.getWorkspaceDefaultCurrency(
+      wsId,
+      forceRefresh: forceRefresh,
+    );
     final cached = _categoriesCache[wsId];
     final diskCached = await CacheStore.instance
         .read<List<TransactionCategory>>(
@@ -633,9 +655,10 @@ class _TransactionCategoriesViewState
     }
 
     final repository = context.read<FinanceRepository>();
-    final currencyFuture = repository
-        .getWorkspaceDefaultCurrency(wsId)
-        .catchError((_) => 'USD');
+    final currencyFuture = repository.getWorkspaceDefaultCurrency(
+      wsId,
+      forceRefresh: forceRefresh,
+    );
     final cached = _tagsCache[wsId];
     final diskCached = await CacheStore.instance.read<List<FinanceTag>>(
       key: _tagsStoreKey(wsId),
@@ -1249,6 +1272,38 @@ class _TagDialogState extends State<_TagDialog> {
     if (result != null && mounted) {
       setState(() => _colorHex = colorToHexString(result));
     }
+  }
+}
+
+class _ManageFinanceCardSkeleton extends StatelessWidget {
+  const _ManageFinanceCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const FinancePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              FinanceSkeletonBlock(width: 52, height: 52, radius: 18),
+              shad.Gap(14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FinanceSkeletonBlock(width: 140, height: 18),
+                    shad.Gap(10),
+                    FinanceSkeletonBlock(width: 112, height: 28, radius: 999),
+                  ],
+                ),
+              ),
+              FinanceSkeletonBlock(width: 88, height: 22),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

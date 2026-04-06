@@ -113,28 +113,45 @@ export async function GET(req: Request, { params }: Params) {
       }
     });
 
-    // Fetch tags for all transactions in a single query
-    const { data: transactionTags } =
+    const { data: enrichmentRows, error: enrichmentError } =
       allTransactionIds.length > 0
-        ? await supabase
-            .from('wallet_transaction_tags')
-            .select('transaction_id, tag:transaction_tags(id, name, color)')
-            .in('transaction_id', allTransactionIds)
-        : { data: [] };
+        ? await supabase.rpc('get_transaction_list_enrichment', {
+            p_ws_id: wsId,
+            p_transaction_ids: allTransactionIds,
+            p_user_id: user.id,
+          })
+        : { data: [], error: null };
 
-    // Group tags by transaction ID
-    const tagsByTransaction: Record<
+    if (enrichmentError) {
+      throw enrichmentError;
+    }
+
+    const tagsByTransaction = new Map<
       string,
       Array<{ id: string; name: string; color: string }>
-    > = {};
-    (transactionTags || []).forEach((tt: any) => {
-      if (!tagsByTransaction[tt.transaction_id]) {
-        tagsByTransaction[tt.transaction_id] = [];
-      }
-      if (tt.tag) {
-        tagsByTransaction[tt.transaction_id]!.push(tt.tag);
-      }
-    });
+    >();
+    for (const row of enrichmentRows || []) {
+      const tags = Array.isArray(row.tags)
+        ? row.tags
+            .filter(
+              (
+                tag
+              ): tag is { id: string; name: string; color?: string | null } =>
+                !!tag &&
+                typeof tag === 'object' &&
+                'id' in tag &&
+                'name' in tag &&
+                typeof tag.id === 'string' &&
+                typeof tag.name === 'string'
+            )
+            .map((tag) => ({
+              id: tag.id,
+              name: tag.name,
+              color: typeof tag.color === 'string' ? tag.color : '',
+            }))
+        : [];
+      tagsByTransaction.set(row.transaction_id, tags);
+    }
 
     // Collect all creator IDs for user info fetching
     const creatorIds = new Set<string>();
@@ -230,7 +247,7 @@ export async function GET(req: Request, { params }: Params) {
                   avatar_url: userInfo.avatar_url,
                 }
               : undefined,
-            tags: tagsByTransaction[tx.id] || [],
+            tags: tagsByTransaction.get(tx.id) || [],
           };
         }
       );

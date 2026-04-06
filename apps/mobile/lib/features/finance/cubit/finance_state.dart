@@ -10,7 +10,7 @@ class FinanceState extends Equatable {
     this.lastUpdatedAt,
     this.wallets = const [],
     this.recentTransactions = const [],
-    this.workspaceCurrency = 'USD',
+    this.workspaceCurrency = '',
     this.exchangeRates = const [],
     this.error,
   });
@@ -25,7 +25,12 @@ class FinanceState extends Equatable {
   final List<ExchangeRate> exchangeRates;
   final String? error;
 
+  bool get hasWorkspaceCurrency => workspaceCurrency.trim().isNotEmpty;
+
   double get totalBalance {
+    if (!hasWorkspaceCurrency) {
+      return 0;
+    }
     return wallets.fold(0, (sum, wallet) {
       final balance = wallet.balance ?? 0;
       final walletCurrency = (wallet.currency ?? workspaceCurrency)
@@ -50,6 +55,9 @@ class FinanceState extends Equatable {
   }
 
   bool get hasCrossCurrencyWallets {
+    if (!hasWorkspaceCurrency) {
+      return false;
+    }
     final target = workspaceCurrency.toUpperCase();
     return wallets.any((wallet) {
       final walletCurrency = (wallet.currency ?? target).toUpperCase();

@@ -41,8 +41,8 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
   bool _canManageWorkspaceMembers = false;
   bool _canManageWorkspaceRoles = false;
   bool _isWorkspacePermissionLoading = false;
-  bool _isWorkspaceCurrencyLoading = false;
-  String _workspaceDefaultCurrency = 'USD';
+  bool _isWorkspaceCurrencyLoading = true;
+  String? _workspaceDefaultCurrency;
 
   @override
   void initState() {
@@ -210,7 +210,7 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
         return;
       }
       setState(() {
-        _workspaceDefaultCurrency = 'USD';
+        _workspaceDefaultCurrency = null;
         _isWorkspaceCurrencyLoading = false;
       });
       return;
@@ -249,6 +249,7 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
     final workspaceId = workspace?.id;
     if (workspaceId == null ||
         workspaceId.isEmpty ||
+        _workspaceDefaultCurrency == null ||
         _isWorkspacePermissionLoading ||
         !_canManageWorkspaceSettings) {
       return;
@@ -259,7 +260,7 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
       builder: (_) => _WorkspaceDefaultCurrencyEditorPage(
         wsId: workspaceId,
         repository: _financeRepository,
-        initialCurrency: _workspaceDefaultCurrency,
+        initialCurrency: _workspaceDefaultCurrency!,
       ),
     );
 

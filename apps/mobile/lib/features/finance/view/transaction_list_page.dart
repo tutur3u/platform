@@ -219,6 +219,10 @@ class _TransactionListViewState extends State<_TransactionListView> {
                   );
                 }
 
+                if (!state.hasWorkspaceCurrency) {
+                  return const Center(child: NovaLoadingIndicator());
+                }
+
                 if (state.transactions.isEmpty) {
                   return ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -297,7 +301,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
                         return;
                       }
 
-                      final changed = await openTransactionDetailSheet(
+                      await openTransactionDetailSheet(
                         context,
                         wsId: wsId,
                         transaction: transaction,
@@ -306,7 +310,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
                         exchangeRates: state.exchangeRates,
                       );
 
-                      if (!context.mounted || !changed) {
+                      if (!context.mounted) {
                         return;
                       }
 

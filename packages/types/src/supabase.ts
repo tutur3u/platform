@@ -26415,6 +26415,21 @@ export type Database = {
           id: string;
         }[];
       };
+      get_transaction_list_enrichment: {
+        Args: {
+          p_transaction_ids: string[];
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          tags: Json;
+          transaction_id: string;
+          transfer: Json;
+          wallet_currency: string;
+          wallet_icon: string;
+          wallet_image_src: string;
+        }[];
+      };
       get_transaction_stats: {
         Args: {
           p_category_ids?: string[];
