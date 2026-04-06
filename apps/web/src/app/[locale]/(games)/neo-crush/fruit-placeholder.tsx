@@ -24,7 +24,7 @@ function FruitPlaceholder({
   return (
     <div
       className={cn(
-        'relative flex h-8 w-8 items-center justify-center rounded-full border-2 bg-foreground/10 font-bold text-white shadow-md md:h-9 md:w-9 lg:h-10 lg:w-10',
+        'relative flex h-9 w-9 items-center justify-center rounded-full border-2 bg-foreground/10 font-bold text-white shadow-md sm:h-12 sm:w-12 md:h-14 md:w-14 lg:h-16 lg:w-16',
         fruit
           ? fruit?.type !== 'normal'
             ? ''
@@ -70,7 +70,7 @@ function FruitPlaceholder({
           alt={fruit?.color}
           width={1400}
           height={1400}
-          className="pointer-events-none h-8 w-8 object-contain md:h-9 md:w-9 lg:h-10 lg:w-10"
+          className="pointer-events-none h-9 w-9 object-contain sm:h-12 sm:w-12 md:h-14 md:w-14 lg:h-16 lg:w-16"
           priority
         />
       )}
@@ -81,8 +81,8 @@ function FruitPlaceholder({
             className={cn(
               'pointer-events-none absolute -left-0.5',
               fruit?.type === 'plus'
-                ? 'h-3 w-3 md:h-4 md:w-4'
-                : 'h-5 w-5 md:h-6 md:w-6',
+                ? 'h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5'
+                : 'h-4 w-4 sm:h-6 sm:w-6 md:h-8 md:w-8',
               iconClassName
             )}
             style={{
@@ -94,8 +94,8 @@ function FruitPlaceholder({
             className={cn(
               'pointer-events-none absolute -right-0.5',
               fruit?.type === 'plus'
-                ? 'h-3 w-3 md:h-4 md:w-4'
-                : 'h-5 w-5 md:h-6 md:w-6',
+                ? 'h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5'
+                : 'h-4 w-4 sm:h-6 sm:w-6 md:h-8 md:w-8',
               iconClassName
             )}
             style={{
@@ -112,8 +112,8 @@ function FruitPlaceholder({
             className={cn(
               'pointer-events-none absolute -top-0.5',
               fruit?.type === 'plus'
-                ? 'h-3 w-3 md:h-4 md:w-4'
-                : 'h-5 w-5 md:h-6 md:w-6',
+                ? 'h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5'
+                : 'h-4 w-4 sm:h-6 sm:w-6 md:h-8 md:w-8',
               iconClassName
             )}
             style={{
@@ -125,8 +125,8 @@ function FruitPlaceholder({
             className={cn(
               'pointer-events-none absolute -bottom-0.5',
               fruit?.type === 'plus'
-                ? 'h-3 w-3 md:h-4 md:w-4'
-                : 'h-5 w-5 md:h-6 md:w-6',
+                ? 'h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5'
+                : 'h-4 w-4 sm:h-6 sm:w-6 md:h-8 md:w-8',
               iconClassName
             )}
             style={{
@@ -140,7 +140,7 @@ function FruitPlaceholder({
       {fruit?.type === 'explosive' && (
         <Bomb
           className={cn(
-            'pointer-events-none absolute h-4 w-4 md:h-6 md:w-6',
+            'pointer-events-none absolute h-4 w-4 sm:h-6 sm:w-6 md:h-8 md:w-8',
             iconClassName
           )}
           style={{
@@ -153,7 +153,7 @@ function FruitPlaceholder({
       {fruit?.type === 'big-explosive' && (
         <Sparkle
           className={cn(
-            'pointer-events-none absolute h-4 w-4 md:h-6 md:w-6',
+            'pointer-events-none absolute h-4 w-4 sm:h-6 sm:w-6 md:h-8 md:w-8',
             iconClassName
           )}
           style={{
@@ -166,7 +166,7 @@ function FruitPlaceholder({
       {fruit?.type === 'rainbow' && (
         <LoaderPinwheel
           className={cn(
-            'pointer-events-none absolute h-5 w-5 animate-spin text-foreground/70 md:h-6 md:w-6',
+            'pointer-events-none absolute h-5 w-5 animate-spin text-foreground/70 sm:h-7 sm:w-7 md:h-8 md:w-8',
             iconClassName
           )}
         />

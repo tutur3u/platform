@@ -100,8 +100,8 @@ export const NeoCrushGame: React.FC = () => {
   );
 
   return (
-    <div className="grid grid-cols-1 gap-2 font-mono md:grid-cols-2 md:gap-4">
-      <Card className="w-full p-2 md:p-4">
+    <div className="grid grid-cols-1 gap-4 font-mono xl:grid-cols-[auto_1fr]">
+      <Card className="w-full p-3 md:p-5">
         <div className={cn(turns <= 0 ? 'opacity-50' : '', 'relative')}>
           {turns === 0 && !unlimitedTurns && (
             <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-foreground/20 font-semibold text-5xl text-white">
@@ -168,7 +168,7 @@ export const NeoCrushGame: React.FC = () => {
         </div>
       </Card>
 
-      <div className="hidden gap-2 rounded-lg border bg-foreground/5 p-4 font-mono md:grid">
+      <div className="hidden gap-2 rounded-lg border bg-foreground/5 p-4 font-mono xl:grid">
         <div className="grid h-fit grid-cols-1 gap-2 md:grid-cols-3">
           {DEV_MODE && (
             <>
