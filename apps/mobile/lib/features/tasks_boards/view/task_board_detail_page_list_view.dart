@@ -426,9 +426,9 @@ class _TaskCard extends StatelessWidget {
     final isCompleted = task.closedAt != null;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         child: Material(
           color: theme.colorScheme.card,
           child: InkWell(
@@ -443,89 +443,50 @@ class _TaskCard extends StatelessWidget {
                 ),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _TaskStatusIcon(task: task),
-                        const shad.Gap(12),
+                        _TaskStatusIcon(task: task, list: list),
+                        const shad.Gap(8),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  shad.OutlineBadge(
-                                    child: Text(
-                                      _taskReference(task, board),
-                                      style: theme.typography.small.copyWith(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  const shad.Gap(8),
-                                  Expanded(
-                                    child: Text(
-                                      task.name?.trim().isNotEmpty == true
-                                          ? task.name!.trim()
-                                          : context
-                                                .l10n
-                                                .taskBoardDetailUntitledTask,
-                                      style: theme.typography.large.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        decoration: isCompleted
-                                            ? TextDecoration.lineThrough
-                                            : null,
-                                        color: isCompleted
-                                            ? theme.colorScheme.mutedForeground
-                                            : theme.colorScheme.foreground,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              if (task.labels.isNotEmpty) ...[
-                                const shad.Gap(8),
-                                Wrap(
-                                  spacing: 6,
-                                  runSpacing: 4,
-                                  children: task.labels
-                                      .take(3)
-                                      .map(
-                                        (label) =>
-                                            _CompactLabelChip(label: label),
-                                      )
-                                      .toList(),
-                                ),
-                              ],
-                            ],
+                          child: Text(
+                            task.name?.trim().isNotEmpty == true
+                                ? task.name!.trim()
+                                : context.l10n.taskBoardDetailUntitledTask,
+                            style: theme.typography.p.copyWith(
+                              fontWeight: FontWeight.w600,
+                              decoration: isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                              color: isCompleted
+                                  ? theme.colorScheme.mutedForeground
+                                  : theme.colorScheme.foreground,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        _TaskMoreButton(onTap: onTap, onMove: onMove),
                       ],
                     ),
-                    const shad.Gap(12),
+                    const shad.Gap(8),
                     const Divider(height: 1),
-                    const shad.Gap(12),
+                    const shad.Gap(8),
                     Row(
                       children: [
-                        _PriorityBadge(priority: task.priority),
-                        const shad.Gap(8),
-                        if (task.endDate != null) ...[
-                          Expanded(
-                            child: _DueDateDisplay(
-                              endDate: task.endDate,
-                              isOverdue: isOverdue,
-                              isCompleted: isCompleted,
-                            ),
+                        Expanded(
+                          child: _TaskMetadataRow(
+                            task: task,
+                            board: board,
+                            isOverdue: isOverdue,
+                            isCompleted: isCompleted,
                           ),
-                        ],
+                        ),
                         if (task.assignees.isNotEmpty) ...[
                           const shad.Gap(8),
                           _ListViewAssigneeAvatarStack(
@@ -546,39 +507,290 @@ class _TaskCard extends StatelessWidget {
 }
 
 class _TaskStatusIcon extends StatelessWidget {
-  const _TaskStatusIcon({required this.task});
+  const _TaskStatusIcon({required this.task, required this.list});
 
   final TaskBoardTask task;
+  final TaskBoardList list;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.dynamicColors;
 
+    // Closed/archived tasks always show solid green check
     if (task.closedAt != null) {
       return Icon(
         Icons.check_circle,
         color: colors.green,
-        size: 22,
+        size: 18,
       );
     }
 
-    if (task.completed == true) {
-      return Icon(
+    // List status determines icon/color for non-closed tasks
+    return switch (list.status?.toLowerCase()) {
+      'done' => Icon(
         Icons.check_circle_outline,
-        color: colors.yellow,
-        size: 22,
-      );
+        color: colors.green,
+        size: 18,
+      ),
+      'not_started' => Icon(
+        Icons.radio_button_unchecked,
+        color: colors.gray,
+        size: 18,
+      ),
+      'active' => Icon(
+        Icons.pending_outlined,
+        color: colors.blue,
+        size: 18,
+      ),
+      'closed' => Icon(
+        Icons.block_outlined,
+        color: colors.gray,
+        size: 18,
+      ),
+      _ =>
+        task.completed == true
+            ? Icon(
+                Icons.check_circle_outline,
+                color: colors.yellow,
+                size: 18,
+              )
+            : Icon(
+                Icons.circle_outlined,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.4),
+                size: 18,
+              ),
+    };
+  }
+}
+
+class _TaskMetadataRow extends StatelessWidget {
+  const _TaskMetadataRow({
+    required this.task,
+    required this.board,
+    required this.isOverdue,
+    required this.isCompleted,
+  });
+
+  final TaskBoardTask task;
+  final TaskBoardDetail board;
+  final bool isOverdue;
+  final bool isCompleted;
+
+  @override
+  Widget build(BuildContext context) {
+    final priority = task.priority;
+    final endDate = task.endDate;
+    final labels = task.labels;
+    final estimationLabel = _taskEstimationLabel(task, board);
+    final hasDescription = _taskHasDescription(task.description);
+    final relationshipIndicators = _taskRelationshipIndicators(task);
+
+    // Build list of metadata widgets to display (order matches web app)
+    final metadataWidgets = <Widget>[];
+
+    // 1. Priority badge
+    final chips = <Widget>[_PriorityBadge(priority: priority)];
+
+    // 2. Project
+    if (task.projects.isNotEmpty) {
+      chips
+        ..add(const shad.Gap(6))
+        ..add(_ProjectChip(project: task.projects.first));
     }
 
-    return Container(
-      width: 22,
-      height: 22,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-          width: 2,
-        ),
+    // 3. Estimation
+    if (estimationLabel != null) {
+      chips
+        ..add(const shad.Gap(6))
+        ..add(
+          _MetadataChip(
+            icon: Icons.timer_outlined,
+            label: estimationLabel,
+          ),
+        );
+    }
+
+    // 4. Labels
+    if (labels.isNotEmpty) {
+      chips.add(const shad.Gap(6));
+      final visibleLabels = labels.take(3).toList();
+      for (var i = 0; i < visibleLabels.length; i++) {
+        chips.add(_CompactLabelChip(label: visibleLabels[i]));
+        if (i < visibleLabels.length - 1 || labels.length > 3) {
+          chips.add(const shad.Gap(4));
+        }
+      }
+      if (labels.length > 3) {
+        chips.add(
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: shad.Theme.of(
+                context,
+              ).colorScheme.muted.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              '+${labels.length - 3}',
+              style: shad.Theme.of(context).typography.small.copyWith(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: shad.Theme.of(context).colorScheme.mutedForeground,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    // 5. Description indicator
+    if (hasDescription) {
+      chips
+        ..add(const shad.Gap(6))
+        ..add(
+          Tooltip(
+            message: context.l10n.taskBoardDetailTaskDescriptionLabel,
+            child: const Icon(
+              Icons.notes_outlined,
+              size: 14,
+              color: Colors.grey,
+            ),
+          ),
+        );
+    }
+
+    // 6. Due date
+    if (endDate != null) {
+      chips
+        ..add(const shad.Gap(6))
+        ..add(
+          _DueDateDisplay(
+            endDate: endDate,
+            isOverdue: isOverdue,
+            isCompleted: isCompleted,
+          ),
+        );
+    }
+
+    // 7. Relationships
+    if (relationshipIndicators.isNotEmpty) {
+      chips
+        ..add(const shad.Gap(6))
+        ..add(_RelationshipChip(indicator: relationshipIndicators.first));
+    }
+
+    metadataWidgets.addAll(chips);
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: metadataWidgets,
+      ),
+    );
+  }
+}
+
+class _MetadataChip extends StatelessWidget {
+  const _MetadataChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    return shad.OutlineBadge(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: theme.colorScheme.mutedForeground),
+          const shad.Gap(3),
+          Text(
+            label,
+            style: theme.typography.small.copyWith(fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProjectChip extends StatelessWidget {
+  const _ProjectChip({required this.project});
+
+  final TaskBoardTaskProject project;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = _taskProjectLabel(project);
+    final theme = shad.Theme.of(context);
+    return shad.OutlineBadge(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.folder_outlined,
+            size: 12,
+            color: theme.colorScheme.mutedForeground,
+          ),
+          const shad.Gap(3),
+          Text(
+            label,
+            style: theme.typography.small.copyWith(fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RelationshipChip extends StatelessWidget {
+  const _RelationshipChip({required this.indicator});
+
+  final _TaskRelationshipIndicator indicator;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final (icon, color) = switch (indicator.kind) {
+      _TaskRelationshipKind.parent => (
+        Icons.account_tree_outlined,
+        theme.colorScheme.mutedForeground,
+      ),
+      _TaskRelationshipKind.child => (
+        Icons.account_tree,
+        theme.colorScheme.mutedForeground,
+      ),
+      _TaskRelationshipKind.blockedBy => (Icons.block, const Color(0xFFDC2626)),
+      _TaskRelationshipKind.blocking => (
+        Icons.warning_amber_rounded,
+        const Color(0xFFF59E0B),
+      ),
+      _TaskRelationshipKind.related => (
+        Icons.link,
+        theme.colorScheme.mutedForeground,
+      ),
+    };
+
+    return shad.OutlineBadge(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          if (indicator.count > 1) ...[
+            const shad.Gap(2),
+            Text(
+              '${indicator.count}',
+              style: theme.typography.small.copyWith(
+                fontSize: 10,
+                color: color,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -621,67 +833,6 @@ class _CompactLabelChip extends StatelessWidget {
           color: color.withAlpha(240),
           fontWeight: FontWeight.w600,
         ),
-      ),
-    );
-  }
-}
-
-class _TaskMoreButton extends StatelessWidget {
-  const _TaskMoreButton({required this.onTap, required this.onMove});
-
-  final VoidCallback onTap;
-  final VoidCallback onMove;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 32,
-      height: 32,
-      child: shad.IconButton.ghost(
-        icon: const Icon(Icons.more_horiz, size: 20),
-        onPressed: () {
-          unawaited(
-            showAdaptiveSheet<void>(
-              context: context,
-              backgroundColor: shad.Theme.of(context).colorScheme.background,
-              builder: (context) => SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 4,
-                      margin: const EdgeInsets.only(top: 12, bottom: 8),
-                      decoration: BoxDecoration(
-                        color: shad.Theme.of(
-                          context,
-                        ).colorScheme.muted.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.open_in_new),
-                      title: Text(context.l10n.taskBoardDetailEditTask),
-                      onTap: () {
-                        Navigator.pop(context);
-                        onTap();
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.drive_file_move_outline),
-                      title: Text(context.l10n.taskBoardDetailMoveTask),
-                      onTap: () {
-                        Navigator.pop(context);
-                        onMove();
-                      },
-                    ),
-                    const shad.Gap(8),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
       ),
     );
   }
@@ -749,11 +900,18 @@ class _DueDateDisplay extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          Icons.calendar_today_outlined,
-          size: 12,
-          color: color,
-        ),
+        if (isOverdue && !isCompleted) ...[
+          Icon(
+            Icons.error_outline,
+            size: 12,
+            color: color,
+          ),
+        ] else
+          Icon(
+            Icons.calendar_today_outlined,
+            size: 12,
+            color: color,
+          ),
         const shad.Gap(4),
         Flexible(
           child: Text(
@@ -768,24 +926,6 @@ class _DueDateDisplay extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        if (isOverdue && !isCompleted) ...[
-          const shad.Gap(6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: const Color(0xFFDC2626),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              context.l10n.taskBoardDetailOverdue,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
       ],
     );
   }

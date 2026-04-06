@@ -5,6 +5,7 @@
     "dart-format": "dart format --set-exit-if-changed lib test",
     "flutter-analyze": "flutter analyze",
     "flutter-test": "flutter test -r failures-only",
-    "check:mobile": "node ../../scripts/check-mobile.js"
+    "check:mobile": "node ../../scripts/check-mobile.js",
+    "dev:mobile": "flutter run --dart-define-from-file=.env --flavor development --target lib/main_development.dart"
   }
 }
