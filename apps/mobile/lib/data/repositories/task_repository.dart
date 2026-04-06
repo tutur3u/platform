@@ -255,6 +255,22 @@ class TaskRepository {
     });
   }
 
+  Future<void> restoreTask({
+    required String wsId,
+    required String taskId,
+  }) async {
+    await _apiClient.patchJson('/api/v1/workspaces/$wsId/tasks/$taskId', {
+      'restore': true,
+    });
+  }
+
+  Future<void> permanentlyDeleteTask({
+    required String wsId,
+    required String taskId,
+  }) async {
+    await _apiClient.deleteJson('/api/v1/workspaces/$wsId/tasks/$taskId');
+  }
+
   Future<List<TaskEstimateBoard>> getTaskEstimateBoards(String wsId) async {
     final response = await _apiClient.getJson(
       '/api/v1/workspaces/$wsId/boards/estimation',
@@ -370,6 +386,46 @@ class TaskRepository {
       _hydrateTaskRelations(
         tasks: pageTasks,
         members: members,
+        labels: labels,
+        projects: projects,
+      ),
+    );
+  }
+
+  Future<List<TaskBoardTask>> getDeletedBoardTasks(
+    String wsId, {
+    required String boardId,
+    int limit = 100,
+    int offset = 0,
+    List<TaskLabel> labels = const <TaskLabel>[],
+    List<TaskProjectSummary> projects = const <TaskProjectSummary>[],
+  }) async {
+    final normalizedLimit = limit.clamp(1, 200);
+    final normalizedOffset = offset < 0 ? 0 : offset;
+    final query = _encodeQueryParameters({
+      'boardId': boardId,
+      'includeDeleted': 'only',
+      'limit': normalizedLimit.toString(),
+      'offset': normalizedOffset.toString(),
+    });
+
+    final response = await _apiClient.getJson(
+      '/api/v1/workspaces/$wsId/tasks?$query',
+    );
+    final taskRows = response['tasks'] as List<dynamic>? ?? const [];
+    final pageTasks = taskRows
+        .whereType<Map<String, dynamic>>()
+        .map(TaskBoardTask.fromJson)
+        .toList(growable: false);
+
+    if (labels.isEmpty && projects.isEmpty) {
+      return List.unmodifiable(pageTasks);
+    }
+
+    return List.unmodifiable(
+      _hydrateTaskRelations(
+        tasks: pageTasks,
+        members: const [],
         labels: labels,
         projects: projects,
       ),

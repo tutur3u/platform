@@ -3247,6 +3247,120 @@ abstract class AppLocalizations {
   /// **'Task deleted.'**
   String get taskBoardDetailTaskDeleted;
 
+  /// No description provided for @taskBoardDetailTaskDeletedForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Task permanently deleted.'**
+  String get taskBoardDetailTaskDeletedForever;
+
+  /// No description provided for @taskBoardDetailTaskRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Task restored.'**
+  String get taskBoardDetailTaskRestored;
+
+  /// No description provided for @taskBoardDetailRecycleBin.
+  ///
+  /// In en, this message translates to:
+  /// **'Recycle Bin'**
+  String get taskBoardDetailRecycleBin;
+
+  /// No description provided for @taskBoardDetailRecycleBinDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted tasks from this board. Select tasks to restore or permanently delete them.'**
+  String get taskBoardDetailRecycleBinDescription;
+
+  /// No description provided for @taskBoardDetailRecycleBinEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No deleted tasks'**
+  String get taskBoardDetailRecycleBinEmpty;
+
+  /// No description provided for @taskBoardDetailRecycleBinEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted tasks will appear here.'**
+  String get taskBoardDetailRecycleBinEmptyHint;
+
+  /// No description provided for @taskBoardDetailSelectAllTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all tasks'**
+  String get taskBoardDetailSelectAllTasks;
+
+  /// No description provided for @taskBoardDetailDeletedTasksCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} deleted task(s)'**
+  String taskBoardDetailDeletedTasksCount(Object count);
+
+  /// No description provided for @taskBoardDetailSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{selected} of {total} selected'**
+  String taskBoardDetailSelectedCount(Object selected, Object total);
+
+  /// No description provided for @taskBoardDetailRestoreTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore ({count})'**
+  String taskBoardDetailRestoreTasks(Object count);
+
+  /// No description provided for @taskBoardDetailDeleteTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete ({count})'**
+  String taskBoardDetailDeleteTasks(Object count);
+
+  /// No description provided for @taskBoardDetailFromList.
+  ///
+  /// In en, this message translates to:
+  /// **'from: {list}'**
+  String taskBoardDetailFromList(Object list);
+
+  /// No description provided for @taskBoardDetailDeletedAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {time}'**
+  String taskBoardDetailDeletedAgo(Object time);
+
+  /// No description provided for @taskBoardDetailPriorityCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get taskBoardDetailPriorityCritical;
+
+  /// No description provided for @taskBoardDetailPriorityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get taskBoardDetailPriorityHigh;
+
+  /// No description provided for @taskBoardDetailPriorityNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get taskBoardDetailPriorityNormal;
+
+  /// No description provided for @taskBoardDetailPriorityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get taskBoardDetailPriorityLow;
+
+  /// No description provided for @taskBoardDetailPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} pts'**
+  String taskBoardDetailPoints(Object count);
+
+  /// No description provided for @taskBoardDetailNProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} projects'**
+  String taskBoardDetailNProjects(Object count);
+
   /// No description provided for @taskBoardDetailNoMoveTargets.
   ///
   /// In en, this message translates to:
@@ -3360,6 +3474,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete task'**
   String get taskBoardDetailDeleteTask;
+
+  /// No description provided for @taskBoardDetailDeleteTaskForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete task forever'**
+  String get taskBoardDetailDeleteTaskForever;
+
+  /// No description provided for @taskBoardDetailDeleteTaskForeverDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete this task from the recycle bin? This action cannot be undone.'**
+  String get taskBoardDetailDeleteTaskForeverDescription;
+
+  /// No description provided for @taskBoardDetailDeleteForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete forever'**
+  String get taskBoardDetailDeleteForever;
 
   /// No description provided for @taskBoardDetailDeleteTaskTitle.
   ///

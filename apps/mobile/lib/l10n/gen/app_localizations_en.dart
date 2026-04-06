@@ -1655,6 +1655,79 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailTaskDeleted => 'Task deleted.';
 
   @override
+  String get taskBoardDetailTaskDeletedForever => 'Task permanently deleted.';
+
+  @override
+  String get taskBoardDetailTaskRestored => 'Task restored.';
+
+  @override
+  String get taskBoardDetailRecycleBin => 'Recycle Bin';
+
+  @override
+  String get taskBoardDetailRecycleBinDescription => 'Deleted tasks from this board. Select tasks to restore or permanently delete them.';
+
+  @override
+  String get taskBoardDetailRecycleBinEmpty => 'No deleted tasks';
+
+  @override
+  String get taskBoardDetailRecycleBinEmptyHint => 'Deleted tasks will appear here.';
+
+  @override
+  String get taskBoardDetailSelectAllTasks => 'Select all tasks';
+
+  @override
+  String taskBoardDetailDeletedTasksCount(Object count) {
+    return '$count deleted task(s)';
+  }
+
+  @override
+  String taskBoardDetailSelectedCount(Object selected, Object total) {
+    return '$selected of $total selected';
+  }
+
+  @override
+  String taskBoardDetailRestoreTasks(Object count) {
+    return 'Restore ($count)';
+  }
+
+  @override
+  String taskBoardDetailDeleteTasks(Object count) {
+    return 'Delete ($count)';
+  }
+
+  @override
+  String taskBoardDetailFromList(Object list) {
+    return 'from: $list';
+  }
+
+  @override
+  String taskBoardDetailDeletedAgo(Object time) {
+    return 'Deleted $time';
+  }
+
+  @override
+  String get taskBoardDetailPriorityCritical => 'Critical';
+
+  @override
+  String get taskBoardDetailPriorityHigh => 'High';
+
+  @override
+  String get taskBoardDetailPriorityNormal => 'Normal';
+
+  @override
+  String get taskBoardDetailPriorityLow => 'Low';
+
+  @override
+  String taskBoardDetailPoints(Object count) {
+    return '$count pts';
+  }
+
+  @override
+  String taskBoardDetailNProjects(Object count) {
+    return '$count projects';
+  }
+
+  @override
   String get taskBoardDetailNoMoveTargets => 'No other lists available for moving this task.';
 
   @override
@@ -1710,6 +1783,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailDeleteTask => 'Delete task';
+
+  @override
+  String get taskBoardDetailDeleteTaskForever => 'Delete task forever';
+
+  @override
+  String get taskBoardDetailDeleteTaskForeverDescription => 'Permanently delete this task from the recycle bin? This action cannot be undone.';
+
+  @override
+  String get taskBoardDetailDeleteForever => 'Delete forever';
 
   @override
   String get taskBoardDetailDeleteTaskTitle => 'Delete task?';
