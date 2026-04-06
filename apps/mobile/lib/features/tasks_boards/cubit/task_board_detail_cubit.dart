@@ -370,11 +370,41 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
   Future<void> deleteTask({required String taskId}) async {
     final wsId = state.workspaceId;
+    final board = state.board;
     if (wsId == null) {
       throw StateError('Workspace not selected');
     }
+    if (board == null) {
+      throw StateError('Board detail is not initialized');
+    }
 
-    await _runMutation(() => _taskRepository.deleteTask(taskId, wsId: wsId));
+    final sourceListId = _findTaskListId(taskId);
+    final pageSizeHint = sourceListId == null
+        ? null
+        : state.listPageSizeById[sourceListId];
+
+    await _runMutation(
+      () => _taskRepository.deleteTask(taskId, wsId: wsId),
+      reloadBoard: false,
+    );
+
+    if (sourceListId == null || isClosed) {
+      return;
+    }
+
+    if (state.workspaceId != wsId || state.boardId != board.id) {
+      return;
+    }
+
+    if (state.selectedTaskId == taskId) {
+      emit(state.copyWith(selectedTaskId: null));
+    }
+
+    await loadListTasks(
+      listId: sourceListId,
+      forceRefresh: true,
+      pageSizeHint: pageSizeHint,
+    );
   }
 
   Future<void> loadTaskRelationships({required String taskId}) async {
@@ -719,6 +749,27 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       );
       rethrow;
     }
+  }
+
+  String? _findTaskListId(String taskId) {
+    final board = state.board;
+    if (board == null) return null;
+
+    for (final task in board.tasks) {
+      if (task.id == taskId) {
+        return task.listId;
+      }
+    }
+
+    for (final entry in state.listTasksByListId.entries) {
+      for (final task in entry.value) {
+        if (task.id == taskId) {
+          return task.listId;
+        }
+      }
+    }
+
+    return null;
   }
 
   Future<void> _prefetchInitialLists({
