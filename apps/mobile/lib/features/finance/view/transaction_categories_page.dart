@@ -531,6 +531,10 @@ class _TransactionCategoriesViewState
       return;
     }
 
+    final repository = context.read<FinanceRepository>();
+    final currencyFuture = repository
+        .getWorkspaceDefaultCurrency(wsId)
+        .catchError((_) => 'USD');
     final cached = _categoriesCache[wsId];
     final diskCached = await CacheStore.instance
         .read<List<TransactionCategory>>(
@@ -543,9 +547,12 @@ class _TransactionCategoriesViewState
     if (!mounted || requestId != _categoriesRequestId) return;
 
     if (!forceRefresh && resolvedCategories != null) {
+      final currency = await currencyFuture;
+      if (!mounted || requestId != _categoriesRequestId) return;
       setState(() {
         _categories = resolvedCategories;
         _categoriesWorkspaceId = wsId;
+        _workspaceCurrency = currency;
         _categoriesLoading = false;
         _categoriesError = null;
       });
@@ -565,8 +572,7 @@ class _TransactionCategoriesViewState
     }
 
     try {
-      final repository = context.read<FinanceRepository>();
-      final currency = await repository.getWorkspaceDefaultCurrency(wsId);
+      final currency = await currencyFuture;
       final categories = await repository.getCategories(wsId);
       if (!mounted ||
           requestId != _categoriesRequestId ||
@@ -626,6 +632,10 @@ class _TransactionCategoriesViewState
       return;
     }
 
+    final repository = context.read<FinanceRepository>();
+    final currencyFuture = repository
+        .getWorkspaceDefaultCurrency(wsId)
+        .catchError((_) => 'USD');
     final cached = _tagsCache[wsId];
     final diskCached = await CacheStore.instance.read<List<FinanceTag>>(
       key: _tagsStoreKey(wsId),
@@ -637,9 +647,12 @@ class _TransactionCategoriesViewState
     if (!mounted || requestId != _tagsRequestId) return;
 
     if (!forceRefresh && resolvedTags != null) {
+      final currency = await currencyFuture;
+      if (!mounted || requestId != _tagsRequestId) return;
       setState(() {
         _tags = resolvedTags;
         _tagsWorkspaceId = wsId;
+        _workspaceCurrency = currency;
         _tagsLoading = false;
         _tagsError = null;
       });
@@ -659,8 +672,7 @@ class _TransactionCategoriesViewState
     }
 
     try {
-      final repository = context.read<FinanceRepository>();
-      final currency = await repository.getWorkspaceDefaultCurrency(wsId);
+      final currency = await currencyFuture;
       final tags = await repository.getTags(wsId);
       if (!mounted ||
           requestId != _tagsRequestId ||
