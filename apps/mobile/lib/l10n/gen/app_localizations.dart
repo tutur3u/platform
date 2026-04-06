@@ -487,6 +487,18 @@ abstract class AppLocalizations {
   /// **'Back'**
   String get navBack;
 
+  /// No description provided for @commonClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get commonClear;
+
+  /// No description provided for @commonDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get commonDone;
+
   /// No description provided for @navMore.
   ///
   /// In en, this message translates to:
@@ -9450,6 +9462,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Off'**
   String get commonOff;
+
+  /// No description provided for @commonOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get commonOn;
 
   /// No description provided for @commonSomethingWentWrong.
   ///

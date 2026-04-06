@@ -207,6 +207,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navBack => 'Back';
 
   @override
+  String get commonClear => 'Clear';
+
+  @override
+  String get commonDone => 'Done';
+
+  @override
   String get navMore => 'More';
 
   @override
@@ -4911,6 +4917,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonOff => 'Off';
+
+  @override
+  String get commonOn => 'On';
 
   @override
   String get commonSomethingWentWrong => 'Something went wrong';

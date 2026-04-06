@@ -124,16 +124,20 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Edit transaction'), findsAtLeastNWidgets(1));
-      expect(find.text('Amount'), findsWidgets);
+      expect(find.byKey(const ValueKey('money-key-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('money-key-C')), findsOneWidget);
+      expect(find.byKey(const ValueKey('money-key-=')), findsOneWidget);
       expect(find.text('Description'), findsWidgets);
       expect(find.text('Taken at'), findsWidgets);
 
-      final amountField = find.descendant(
-        of: find.byKey(const ValueKey('USD')),
-        matching: find.byType(EditableText),
+      await tester.tap(find.byKey(const ValueKey('money-key-C')));
+      await tester.pumpAndSettle();
+      final equalInkWellFinder = find.ancestor(
+        of: find.byKey(const ValueKey('money-key-=')),
+        matching: find.byType(InkWell),
       );
-
-      await tester.enterText(amountField, '');
+      await tester.tap(find.byKey(const ValueKey('money-key-hide')));
+      await tester.pumpAndSettle();
       tester
           .widget<shad.PrimaryButton>(
             find.widgetWithText(shad.PrimaryButton, 'Save').last,
@@ -145,7 +149,32 @@ void main() {
       expect(didSave, isFalse);
       expect(find.text('Edit transaction'), findsAtLeastNWidgets(1));
 
-      await tester.enterText(amountField, '42.5');
+      await tester.tap(find.byKey(const ValueKey('money-source-surface')));
+      await tester.pumpAndSettle();
+
+      void pressMoneyKey(String key) {
+        final inkWellFinder = find.ancestor(
+          of: find.byKey(ValueKey('money-key-$key')),
+          matching: find.byType(InkWell),
+        );
+        tester.widget<InkWell>(inkWellFinder).onTap?.call();
+      }
+
+      for (final key in ['4', '2', '.', '5']) {
+        pressMoneyKey(key);
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      tester.widget<InkWell>(equalInkWellFinder).onTap?.call();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('money-key-hide')));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Settings').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('settings-collapsed')));
+      await tester.pumpAndSettle();
+
       var switches = tester
           .widgetList<shad.Switch>(find.byType(shad.Switch))
           .toList(growable: false);

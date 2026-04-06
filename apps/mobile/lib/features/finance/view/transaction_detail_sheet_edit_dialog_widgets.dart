@@ -18,11 +18,17 @@ class _FormSectionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: shad.Theme.of(context).typography.small.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: shad.Theme.of(context).typography.small.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
           ),
           const shad.Gap(10),
           child,
@@ -134,23 +140,29 @@ class _ModeTabButton extends StatelessWidget {
   }
 }
 
-class _DraftPreviewCard extends StatelessWidget {
-  const _DraftPreviewCard({
-    required this.title,
-    required this.subtitle,
+class _PrimaryAmountComposer extends StatelessWidget {
+  const _PrimaryAmountComposer({
     required this.amountLabel,
+    required this.placeholderLabel,
+    required this.currencyCode,
     required this.accentColor,
+    required this.isFocused,
+    required this.onTap,
     required this.isTransfer,
+    this.surfaceKey,
     this.walletName,
     this.categoryName,
     this.destinationWalletName,
     this.tagLabel,
   });
 
-  final String title;
-  final String subtitle;
+  final Key? surfaceKey;
   final String amountLabel;
+  final String placeholderLabel;
+  final String currencyCode;
   final Color accentColor;
+  final bool isFocused;
+  final VoidCallback onTap;
   final bool isTransfer;
   final String? walletName;
   final String? categoryName;
@@ -160,6 +172,8 @@ class _DraftPreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+    final palette = FinancePalette.of(context);
+    final hasAmount = amountLabel.trim().isNotEmpty;
     final hasWalletName = walletName != null && walletName!.trim().isNotEmpty;
     final hasCategoryName =
         categoryName != null && categoryName!.trim().isNotEmpty;
@@ -194,79 +208,317 @@ class _DraftPreviewCard extends StatelessWidget {
         ),
     ];
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: accentColor.withValues(alpha: 0.18)),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            accentColor.withValues(alpha: 0.18),
-            FinancePalette.of(context).panel,
-            FinancePalette.of(context).elevatedPanel,
-          ],
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Semantics(
+      button: true,
+      focused: isFocused,
+      label: '$currencyCode $amountLabel',
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          key: surfaceKey,
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.fromLTRB(4, 8, 4, 14),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isFocused
+                    ? accentColor.withValues(alpha: 0.72)
+                    : theme.colorScheme.border.withValues(alpha: 0.68),
+                width: isFocused ? 2 : 1,
+              ),
+            ),
+          ),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.small.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Spacer(),
+                  const shad.Gap(12),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
                     ),
-                    if (subtitle.trim().isNotEmpty) ...[
-                      const shad.Gap(4),
-                      Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.xSmall.copyWith(
-                          color: theme.colorScheme.mutedForeground,
+                    decoration: BoxDecoration(
+                      color: (isFocused ? accentColor : palette.panel)
+                          .withValues(alpha: isFocused ? 0.14 : 0.72),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.edit_rounded,
+                          size: 12,
+                          color: isFocused
+                              ? accentColor
+                              : theme.colorScheme.mutedForeground,
                         ),
-                      ),
-                    ],
-                  ],
+                        const shad.Gap(6),
+                        Text(
+                          currencyCode.toUpperCase(),
+                          style: theme.typography.xSmall.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: isFocused
+                                ? accentColor
+                                : theme.colorScheme.mutedForeground,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const shad.Gap(14),
+              Text(
+                hasAmount ? amountLabel : placeholderLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.h2.copyWith(
+                  fontWeight: FontWeight.w900,
+                  height: 0.98,
+                  color: hasAmount
+                      ? accentColor
+                      : theme.colorScheme.mutedForeground.withValues(
+                          alpha: 0.72,
+                        ),
                 ),
               ),
-              const shad.Gap(12),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 132),
-                child: Text(
-                  amountLabel,
-                  textAlign: TextAlign.right,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.large.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: accentColor,
-                    height: 1.05,
+              if (chips.isNotEmpty) ...[
+                const shad.Gap(12),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: chips,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MoneyMultiplierRow extends StatelessWidget {
+  const _MoneyMultiplierRow({
+    required this.suggestions,
+    required this.onSelected,
+  });
+
+  final List<({int multiplier, String label})> suggestions;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: suggestions
+            .map(
+              (suggestion) => Padding(
+                padding: EdgeInsets.only(
+                  right: suggestion == suggestions.last ? 0 : 8,
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(999),
+                    onTap: () => onSelected(suggestion.multiplier),
+                    child: Ink(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 11,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.card,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: theme.colorScheme.border.withValues(
+                            alpha: 0.72,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.trending_up_rounded,
+                            size: 14,
+                            color: theme.colorScheme.mutedForeground,
+                          ),
+                          const shad.Gap(8),
+                          Text(
+                            suggestion.label,
+                            style: theme.typography.small.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
+            )
+            .toList(growable: false),
+      ),
+    );
+  }
+}
+
+class _MoneyKeypad extends StatelessWidget {
+  const _MoneyKeypad({
+    required this.decimalSeparator,
+    required this.onKeyPressed,
+    required this.onBackspacePressed,
+    required this.onClearPressed,
+    required this.onEvaluatePressed,
+    required this.onHidePressed,
+  });
+
+  final String decimalSeparator;
+  final ValueChanged<String> onKeyPressed;
+  final VoidCallback onBackspacePressed;
+  final VoidCallback onClearPressed;
+  final VoidCallback onEvaluatePressed;
+  final VoidCallback onHidePressed;
+
+  @override
+  Widget build(BuildContext context) {
+    const equalKey = '__equal__';
+    final rows = <List<String>>[
+      ['+', '-', '×', '÷'],
+      ['1', '2', '3', '⌫'],
+      ['4', '5', '6', '000'],
+      ['7', '8', '9', decimalSeparator],
+      ['0', 'C', equalKey],
+    ];
+
+    return FinancePanel(
+      padding: const EdgeInsets.all(12),
+      backgroundColor: FinancePalette.of(context).elevatedPanel,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Spacer(),
+              shad.IconButton.ghost(
+                key: const ValueKey('money-key-hide'),
+                density: shad.ButtonDensity.compact,
+                onPressed: onHidePressed,
+                icon: const Icon(Icons.keyboard_hide_rounded, size: 18),
+              ),
             ],
           ),
-          if (chips.isNotEmpty) ...[
-            const shad.Gap(10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: chips,
+          const shad.Gap(8),
+          for (final row in rows) ...[
+            Row(
+              children: row
+                  .map(
+                    (label) => Expanded(
+                      flex: label == equalKey ? 2 : 1,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: _MoneyKeypadButton(
+                          label: label == equalKey ? '=' : label,
+                          onPressed: switch (label) {
+                            '×' => () => onKeyPressed('*'),
+                            '÷' => () => onKeyPressed('/'),
+                            '⌫' => onBackspacePressed,
+                            'C' => onClearPressed,
+                            equalKey => onEvaluatePressed,
+                            _ => () => onKeyPressed(label),
+                          },
+                          isPrimary: label == equalKey,
+                          isOperator: const {
+                            '+',
+                            '-',
+                            '×',
+                            '÷',
+                          }.contains(label),
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(growable: false),
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _MoneyKeypadButton extends StatelessWidget {
+  const _MoneyKeypadButton({
+    required this.label,
+    required this.onPressed,
+    this.isPrimary = false,
+    this.isOperator = false,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final bool isPrimary;
+  final bool isOperator;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final foregroundColor = isPrimary
+        ? theme.colorScheme.primaryForeground
+        : isOperator
+        ? theme.colorScheme.primary
+        : theme.colorScheme.foreground;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(20),
+        child: Ink(
+          key: ValueKey('money-key-$label'),
+          height: 56,
+          decoration: BoxDecoration(
+            color: isPrimary
+                ? theme.colorScheme.primary
+                : isOperator
+                ? theme.colorScheme.card.withValues(alpha: 0.82)
+                : theme.colorScheme.card,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isPrimary
+                  ? theme.colorScheme.primary
+                  : isOperator
+                  ? theme.colorScheme.primary.withValues(alpha: 0.24)
+                  : theme.colorScheme.border.withValues(alpha: 0.72),
+            ),
+          ),
+          child: Center(
+            child: label == '⌫'
+                ? Icon(
+                    Icons.backspace_outlined,
+                    size: 22,
+                    color: foregroundColor,
+                  )
+                : Text(
+                    label,
+                    style: theme.typography.large.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: foregroundColor,
+                    ),
+                  ),
+          ),
+        ),
       ),
     );
   }
@@ -346,88 +598,6 @@ class _InlineAlertCard extends StatelessWidget {
                 color: color,
                 fontWeight: FontWeight.w600,
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AmountEntryCard extends StatelessWidget {
-  const _AmountEntryCard({
-    required this.label,
-    required this.controller,
-    required this.currencyCode,
-    required this.placeholder,
-    required this.allowDecimal,
-    required this.inputFormatters,
-    required this.previewText,
-    required this.onChanged,
-  });
-
-  final String label;
-  final TextEditingController controller;
-  final String currencyCode;
-  final String placeholder;
-  final bool allowDecimal;
-  final List<TextInputFormatter> inputFormatters;
-  final String previewText;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: theme.colorScheme.border.withValues(alpha: 0.7),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                label,
-                style: theme.typography.xSmall.copyWith(
-                  color: theme.colorScheme.mutedForeground,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.35,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                currencyCode.toUpperCase(),
-                style: theme.typography.xSmall.copyWith(
-                  color: theme.colorScheme.mutedForeground,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.35,
-                ),
-              ),
-            ],
-          ),
-          const shad.Gap(6),
-          shad.TextField(
-            key: ValueKey(currencyCode),
-            controller: controller,
-            keyboardType: TextInputType.numberWithOptions(
-              decimal: allowDecimal,
-            ),
-            inputFormatters: inputFormatters,
-            placeholder: Text(placeholder),
-            onChanged: onChanged,
-          ),
-          const shad.Gap(6),
-          Text(
-            previewText,
-            style: theme.typography.xSmall.copyWith(
-              color: theme.colorScheme.mutedForeground,
             ),
           ),
         ],
@@ -1239,145 +1409,6 @@ class _TagPickerDialogState extends State<_TagPickerDialog> {
   }
 }
 
-/// Transfer destination amount section: label, auto/manual toggle, field, rate.
-class _TransferDestinationAmountSection extends StatelessWidget {
-  const _TransferDestinationAmountSection({
-    required this.controller,
-    required this.currencyCode,
-    required this.enabled,
-    required this.previewText,
-    required this.isOverridden,
-    required this.onToggleOverride,
-    required this.hintText,
-    required this.inputFormatters,
-    required this.placeholder,
-    required this.allowDecimal,
-    required this.exchangeRateDisplay,
-    required this.onInvertRate,
-    required this.invertRateTooltip,
-    required this.isCrossCurrency,
-  });
-
-  final TextEditingController controller;
-  final String currencyCode;
-  final bool enabled;
-  final String previewText;
-  final bool isOverridden;
-  final VoidCallback onToggleOverride;
-  final String hintText;
-  final List<TextInputFormatter> inputFormatters;
-  final String placeholder;
-  final bool allowDecimal;
-  final String exchangeRateDisplay;
-  final VoidCallback onInvertRate;
-  final String invertRateTooltip;
-  final bool isCrossCurrency;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.colorScheme.border.withValues(alpha: 0.72),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  l10n.financeDestinationAmountOptional,
-                  style: theme.typography.small,
-                ),
-              ),
-              if (isCrossCurrency)
-                GestureDetector(
-                  onTap: onToggleOverride,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isOverridden
-                          ? Colors.orange.withValues(alpha: 0.12)
-                          : Colors.blue.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          isOverridden ? Icons.edit : Icons.auto_awesome,
-                          size: 11,
-                          color: isOverridden ? Colors.orange : Colors.blue,
-                        ),
-                        const shad.Gap(3),
-                        Text(
-                          isOverridden
-                              ? l10n.financeDestinationAmountOverride
-                              : l10n.financeDestinationAmountAuto,
-                          style: theme.typography.xSmall.copyWith(
-                            color: isOverridden ? Colors.orange : Colors.blue,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const shad.Gap(10),
-          shad.TextField(
-            key: ValueKey(currencyCode),
-            controller: controller,
-            enabled: enabled,
-            keyboardType: TextInputType.numberWithOptions(
-              decimal: allowDecimal,
-            ),
-            inputFormatters: inputFormatters,
-            placeholder: Text(placeholder),
-          ),
-          const shad.Gap(6),
-          Text(
-            previewText,
-            style: theme.typography.xSmall.copyWith(
-              color: theme.colorScheme.mutedForeground,
-            ),
-          ),
-          if (hintText.isNotEmpty) ...[
-            const shad.Gap(4),
-            Text(
-              hintText,
-              style: theme.typography.xSmall.copyWith(
-                color: theme.colorScheme.mutedForeground,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-          if (isCrossCurrency && exchangeRateDisplay.isNotEmpty) ...[
-            const shad.Gap(8),
-            _ExchangeRateDisplay(
-              exchangeRateDisplay: exchangeRateDisplay,
-              onInvertRate: onInvertRate,
-              invertRateTooltip: invertRateTooltip,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
 /// Settings tab: report opt-in and confidential toggles.
 class _TransactionFormSettingsTab extends StatelessWidget {
   const _TransactionFormSettingsTab({
@@ -1390,6 +1421,7 @@ class _TransactionFormSettingsTab extends StatelessWidget {
     required this.onDescriptionConfidentialChanged,
     required this.isCategoryConfidential,
     required this.onCategoryConfidentialChanged,
+    super.key,
   });
 
   final bool reportOptIn;
@@ -1439,6 +1471,167 @@ class _TransactionFormSettingsTab extends StatelessWidget {
   }
 }
 
+class _TransactionFormSettingsSummary extends StatelessWidget {
+  const _TransactionFormSettingsSummary({
+    required this.reportOptIn,
+    required this.isTransfer,
+    required this.isAmountConfidential,
+    required this.isDescriptionConfidential,
+    required this.isCategoryConfidential,
+    required this.onPressed,
+    super.key,
+  });
+
+  final bool reportOptIn;
+  final bool isTransfer;
+  final bool isAmountConfidential;
+  final bool isDescriptionConfidential;
+  final bool isCategoryConfidential;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.card,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: theme.colorScheme.border.withValues(alpha: 0.72),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _SettingsSummaryRow(
+                      icon: reportOptIn
+                          ? Icons.query_stats_rounded
+                          : Icons.query_stats_outlined,
+                      label: context.l10n.financeReportOptIn,
+                      enabled: reportOptIn,
+                      enabledLabel: reportOptIn
+                          ? context.l10n.commonOn
+                          : context.l10n.commonOff,
+                    ),
+                    if (!isTransfer) ...[
+                      const shad.Gap(10),
+                      _SettingsSummaryRow(
+                        icon: Icons.visibility_off_outlined,
+                        label: context.l10n.financeConfidentialAmount,
+                        enabled: isAmountConfidential,
+                        enabledLabel: isAmountConfidential
+                            ? context.l10n.commonOn
+                            : context.l10n.commonOff,
+                      ),
+                      const shad.Gap(10),
+                      _SettingsSummaryRow(
+                        icon: Icons.text_snippet_outlined,
+                        label: context.l10n.financeConfidentialDescription,
+                        enabled: isDescriptionConfidential,
+                        enabledLabel: isDescriptionConfidential
+                            ? context.l10n.commonOn
+                            : context.l10n.commonOff,
+                      ),
+                      const shad.Gap(10),
+                      _SettingsSummaryRow(
+                        icon: Icons.category_outlined,
+                        label: context.l10n.financeConfidentialCategory,
+                        enabled: isCategoryConfidential,
+                        enabledLabel: isCategoryConfidential
+                            ? context.l10n.commonOn
+                            : context.l10n.commonOff,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const shad.Gap(12),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: theme.colorScheme.mutedForeground,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsSummaryRow extends StatelessWidget {
+  const _SettingsSummaryRow({
+    required this.icon,
+    required this.label,
+    required this.enabled,
+    required this.enabledLabel,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool enabled;
+  final String enabledLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final accent = enabled
+        ? FinancePalette.of(context).accent
+        : theme.colorScheme.mutedForeground;
+
+    return Row(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: enabled ? 0.16 : 0.10),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 15, color: accent),
+        ),
+        const shad.Gap(10),
+        Expanded(
+          child: Text(
+            label,
+            style: theme.typography.small.copyWith(
+              fontWeight: FontWeight.w700,
+              color: enabled
+                  ? theme.colorScheme.foreground
+                  : theme.colorScheme.mutedForeground,
+            ),
+          ),
+        ),
+        const shad.Gap(10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: enabled ? 0.16 : 0.10),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            enabledLabel,
+            style: theme.typography.xSmall.copyWith(
+              fontWeight: FontWeight.w800,
+              color: accent,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _FormToggleTile extends StatelessWidget {
   const _FormToggleTile({
     required this.label,
@@ -1453,6 +1646,7 @@ class _FormToggleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+    final l10n = context.l10n;
     final accent = value
         ? FinancePalette.of(context).accent
         : theme.colorScheme.mutedForeground;
@@ -1479,71 +1673,24 @@ class _FormToggleTile extends StatelessWidget {
             ),
           ),
           const shad.Gap(12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: value ? 0.16 : 0.10),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              value ? l10n.commonOn : l10n.commonOff,
+              style: theme.typography.xSmall.copyWith(
+                fontWeight: FontWeight.w800,
+                color: accent,
+              ),
+            ),
+          ),
+          const shad.Gap(10),
           shad.Switch(
             value: value,
             onChanged: onChanged,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Exchange rate display chip with invert button.
-class _ExchangeRateDisplay extends StatelessWidget {
-  const _ExchangeRateDisplay({
-    required this.exchangeRateDisplay,
-    required this.onInvertRate,
-    required this.invertRateTooltip,
-  });
-
-  final String exchangeRateDisplay;
-  final VoidCallback onInvertRate;
-  final String invertRateTooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha: 0.06),
-        border: Border.all(
-          color: Colors.blue.withValues(alpha: 0.28),
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.currency_exchange, size: 14, color: Colors.blue),
-          const shad.Gap(6),
-          Text(
-            '${l10n.financeExchangeRate}: ',
-            style: theme.typography.xSmall.copyWith(
-              color: Colors.blue,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              exchangeRateDisplay,
-              style: theme.typography.xSmall.copyWith(
-                color: Colors.blue,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-          ),
-          GestureDetector(
-            onTap: onInvertRate,
-            child: Tooltip(
-              message: invertRateTooltip,
-              child: const Padding(
-                padding: EdgeInsets.all(4),
-                child: Icon(Icons.swap_horiz, size: 14, color: Colors.blue),
-              ),
-            ),
           ),
         ],
       ),

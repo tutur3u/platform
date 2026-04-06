@@ -73,6 +73,8 @@
     "navApps": "Ứng dụng",
     "navAssistant": "Trợ lý",
     "navBack": "Quay lại",
+    "commonClear": "Xóa",
+    "commonDone": "Xong",
     "navMore": "Thêm",
     "sort": "Sắp xếp",
     "sortBy": "Sắp xếp theo",
@@ -1988,6 +1990,7 @@
     "captchaError": "Kiểm tra bảo mật thất bại. Vui lòng thử lại.",
 
     "commonOff": "Tắt",
+    "commonOn": "Bật",
     "commonSomethingWentWrong": "Đã xảy ra lỗi",
     "selectImageSource": "Chọn nguồn ảnh",
     "camera": "Camera",

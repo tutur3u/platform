@@ -207,6 +207,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navBack => 'Quay lại';
 
   @override
+  String get commonClear => 'Xóa';
+
+  @override
+  String get commonDone => 'Xong';
+
+  @override
   String get navMore => 'Thêm';
 
   @override
@@ -4905,6 +4911,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get commonOff => 'Tắt';
+
+  @override
+  String get commonOn => 'Bật';
 
   @override
   String get commonSomethingWentWrong => 'Đã xảy ra lỗi';

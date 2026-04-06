@@ -73,6 +73,8 @@
     "navApps": "Apps",
     "navAssistant": "Assistant",
     "navBack": "Back",
+    "commonClear": "Clear",
+    "commonDone": "Done",
     "navMore": "More",
     "sort": "Sort",
     "sortBy": "Sort by",
@@ -1984,6 +1986,7 @@
     "captchaError": "Security check failed. Please try again.",
 
     "commonOff": "Off",
+    "commonOn": "On",
     "commonSomethingWentWrong": "Something went wrong",
     "selectImageSource": "Select image source",
     "camera": "Camera",
