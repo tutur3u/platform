@@ -1,5 +1,5 @@
 import { task } from '@trigger.dev/sdk/v3';
-import { google } from '@tuturuuu/google';
+import { type calendar_v3, google } from '@tuturuuu/google';
 import dayjs from 'dayjs';
 import {
   getGoogleAuthClient,
@@ -21,7 +21,8 @@ export async function performFullSyncForWorkspace(
     access_token,
     refresh_token: refresh_token || undefined,
   });
-  const calendar = google.calendar({ version: 'v3', auth });
+  const calendarAuth = auth as unknown as calendar_v3.Options['auth'];
+  const calendar = google.calendar({ version: 'v3', auth: calendarAuth });
 
   const now = dayjs();
   // Expand date range to include past events and future events

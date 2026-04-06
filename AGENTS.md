@@ -328,6 +328,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Published Source Entry Consumer Safety**: If a published package exposes raw `.ts` source entrypoints for Bun/workspace consumers, keep those files free of Node-only ambient type assumptions (`process`, `Error.captureStackTrace`, etc.) and avoid helper signatures that require overly specific third-party schema types when a structural `parse(...)` contract is sufficient. Consumer builds may typecheck package source inside `node_modules`.
 - **Package Clean Scripts Must Remove tsbuildinfo**: For publishable TypeScript packages that use incremental/composite builds, `clean` must remove the relevant `.tsbuildinfo` file in addition to `dist/`. Otherwise `prepack`/publish can report a successful `tsc` run while re-emitting nothing, producing tarballs with missing runtime files.
 - **Fixture Paths Must Be File-Relative In Tests**: For package tests that read fixture files, resolve paths from the test file directory (`__dirname` in CommonJS-compatible NodeNext packages) instead of `process.cwd()`. CI often runs from repo root, so cwd-based fixture paths can pass locally and fail in pipelines.
+- **Cross-Platform Path Assertions In Node Tests**: In root `scripts/*.test.js` suites, do not hardcode POSIX-style absolute paths in assertions (for example `/workspace/...`). Build expected paths with `path.resolve`/`path.join` from the same test input so Windows and POSIX runners assert identical behavior.
 
 ## 7. Continuous Improvement (Session Retrospective)
 
