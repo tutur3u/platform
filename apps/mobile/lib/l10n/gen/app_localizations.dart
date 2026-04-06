@@ -6133,6 +6133,12 @@ abstract class AppLocalizations {
   /// **'Describe the label and choose a color that is easy to scan.'**
   String get financeTagDialogSubtitle;
 
+  /// No description provided for @financeBasic.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic'**
+  String get financeBasic;
+
   /// No description provided for @financeIncome.
   ///
   /// In en, this message translates to:
@@ -6144,6 +6150,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Expense'**
   String get financeExpense;
+
+  /// No description provided for @financeFrequentlyUsedCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequently used'**
+  String get financeFrequentlyUsedCategories;
 
   /// No description provided for @financeHideAmounts.
   ///
@@ -6162,6 +6174,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search transactions'**
   String get financeSearchTransactions;
+
+  /// No description provided for @financeSearchCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Search categories'**
+  String get financeSearchCategories;
+
+  /// No description provided for @financeSearchWallets.
+  ///
+  /// In en, this message translates to:
+  /// **'Search wallets'**
+  String get financeSearchWallets;
 
   /// No description provided for @financeShowAmounts.
   ///
@@ -6306,6 +6330,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select an optional label for extra context.'**
   String get financePickerTagSubtitle;
+
+  /// No description provided for @financePickerLoadingOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading wallets, categories, and tags...'**
+  String get financePickerLoadingOptions;
 
   /// No description provided for @financeNoTag.
   ///
@@ -7836,6 +7866,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear search'**
   String get commonClearSearch;
+
+  /// No description provided for @commonNoSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching results'**
+  String get commonNoSearchResults;
 
   /// No description provided for @timerTotalSessions.
   ///
@@ -9444,6 +9480,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get commonRetry;
+
+  /// No description provided for @commonShowLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get commonShowLess;
+
+  /// No description provided for @commonShowMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more'**
+  String get commonShowMore;
 
   /// No description provided for @commonPressBackAgainToExit.
   ///

@@ -35,12 +35,10 @@ class _FormSectionCard extends StatelessWidget {
 class _ModeSelectorCard extends StatelessWidget {
   const _ModeSelectorCard({
     required this.isTransfer,
-    required this.canSwitchMode,
     required this.onChanged,
   });
 
   final bool isTransfer;
-  final bool canSwitchMode;
   final ValueChanged<bool> onChanged;
 
   @override
@@ -65,7 +63,7 @@ class _ModeSelectorCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _ModeTabButton(
-                  label: l10n.financeTransactions,
+                  label: l10n.financeBasic,
                   selected: !isTransfer,
                   accent: accent,
                   onPressed: () => onChanged(false),
@@ -83,15 +81,6 @@ class _ModeSelectorCard extends StatelessWidget {
             ],
           ),
         ),
-        if (!canSwitchMode) ...[
-          const shad.Gap(6),
-          Text(
-            l10n.financeTransferModeEditHint,
-            style: theme.typography.xSmall.copyWith(
-              color: theme.colorScheme.mutedForeground,
-            ),
-          ),
-        ],
       ],
     );
   }
@@ -475,11 +464,13 @@ class _WalletSelectorButton extends StatelessWidget {
     required this.onPressed,
     this.wallet,
     this.placeholder,
+    this.isLoading = false,
   });
 
   final String label;
   final Wallet? wallet;
   final String? placeholder;
+  final bool isLoading;
   final VoidCallback? onPressed;
 
   @override
@@ -494,6 +485,7 @@ class _WalletSelectorButton extends StatelessWidget {
         fallbackIcon: Icons.wallet_outlined,
         size: 28,
       ),
+      isLoading: isLoading,
       onPressed: onPressed,
     );
   }
@@ -506,12 +498,14 @@ class _CategorySelectorButton extends StatelessWidget {
     required this.color,
     required this.onPressed,
     this.categoryName,
+    this.isLoading = false,
   });
 
   final String label;
   final String? categoryName;
   final IconData icon;
   final Color color;
+  final bool isLoading;
   final VoidCallback? onPressed;
 
   @override
@@ -528,6 +522,7 @@ class _CategorySelectorButton extends StatelessWidget {
         ),
         child: Icon(icon, size: 15, color: color),
       ),
+      isLoading: isLoading,
       onPressed: onPressed,
     );
   }
@@ -539,11 +534,13 @@ class _TagSelectorButton extends StatelessWidget {
     required this.color,
     required this.onPressed,
     this.tagName,
+    this.isLoading = false,
   });
 
   final String label;
   final String? tagName;
   final Color color;
+  final bool isLoading;
   final VoidCallback? onPressed;
 
   @override
@@ -560,6 +557,7 @@ class _TagSelectorButton extends StatelessWidget {
         ),
         child: Icon(Icons.sell_outlined, size: 15, color: color),
       ),
+      isLoading: isLoading,
       onPressed: onPressed,
     );
   }
@@ -572,78 +570,88 @@ class _SelectorSurface extends StatelessWidget {
     required this.leading,
     required this.onPressed,
     this.subtitle,
+    this.isLoading = false,
   });
 
   final String label;
   final String title;
   final String? subtitle;
   final Widget leading;
+  final bool isLoading;
   final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onPressed,
-        child: Ink(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.card,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: theme.colorScheme.border.withValues(alpha: 0.72),
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 1, end: isLoading ? 0.62 : 1),
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      builder: (context, opacity, child) {
+        return Opacity(opacity: opacity, child: child);
+      },
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onPressed,
+          child: Ink(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.card,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: theme.colorScheme.border.withValues(alpha: 0.72),
+              ),
             ),
-          ),
-          child: Row(
-            children: [
-              leading,
-              const shad.Gap(12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: theme.typography.xSmall.copyWith(
-                        color: theme.colorScheme.mutedForeground,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.35,
-                      ),
-                    ),
-                    const shad.Gap(4),
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.small.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
-                      const shad.Gap(3),
+            child: Row(
+              children: [
+                leading,
+                const shad.Gap(12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        subtitle!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.textSmall.copyWith(
+                        label,
+                        style: theme.typography.xSmall.copyWith(
                           color: theme.colorScheme.mutedForeground,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.35,
                         ),
                       ),
+                      const shad.Gap(4),
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.small.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
+                        const shad.Gap(3),
+                        Text(
+                          subtitle!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.textSmall.copyWith(
+                            color: theme.colorScheme.mutedForeground,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const shad.Gap(10),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: theme.colorScheme.mutedForeground,
-              ),
-            ],
+                const shad.Gap(10),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: theme.colorScheme.mutedForeground,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -652,25 +660,61 @@ class _SelectorSurface extends StatelessWidget {
 }
 
 /// Wallet picker dialog. Optionally excludes a wallet (e.g. for destination).
-class _WalletPickerDialog extends StatelessWidget {
+class _WalletPickerDialog extends StatefulWidget {
   const _WalletPickerDialog({
     required this.wallets,
     required this.title,
     this.excludeWalletId,
+    this.selectedWalletId,
   });
 
   final List<Wallet> wallets;
   final String title;
   final String? excludeWalletId;
+  final String? selectedWalletId;
+
+  @override
+  State<_WalletPickerDialog> createState() => _WalletPickerDialogState();
+}
+
+class _WalletPickerDialogState extends State<_WalletPickerDialog> {
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final list = excludeWalletId != null
-        ? wallets.where((w) => w.id != excludeWalletId).toList()
-        : wallets;
+    final query = _searchController.text.trim().toLowerCase();
+    final list =
+        (widget.excludeWalletId != null
+                ? widget.wallets.where((w) => w.id != widget.excludeWalletId)
+                : widget.wallets)
+            .where((wallet) {
+              if (query.isEmpty) {
+                return true;
+              }
+
+              final haystack = [
+                wallet.name,
+                wallet.currency,
+                wallet.description,
+              ].whereType<String>().join(' ').toLowerCase();
+              return haystack.contains(query);
+            })
+            .toList(growable: false);
 
     return FinanceModalScaffold(
-      title: title,
+      title: widget.title,
       subtitle: context.l10n.financePickerWalletSubtitle,
       actions: [
         shad.OutlineButton(
@@ -678,41 +722,146 @@ class _WalletPickerDialog extends StatelessWidget {
           child: Text(context.l10n.commonCancel),
         ),
       ],
-      child: ListView.separated(
-        shrinkWrap: true,
-        itemCount: list.length,
-        separatorBuilder: (_, _) => const shad.Gap(8),
-        itemBuilder: (context, index) {
-          final wallet = list[index];
-          return FinancePickerTile(
-            title: wallet.name ?? '',
-            subtitle: wallet.currency ?? 'USD',
-            leading: WalletVisualAvatar(
-              icon: wallet.icon,
-              imageSrc: wallet.imageSrc,
-              fallbackIcon: Icons.wallet_outlined,
-              size: 30,
-            ),
-            onTap: () => Navigator.of(context).pop(wallet.id),
-          );
-        },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          shad.TextField(
+            controller: _searchController,
+            onChanged: (_) => setState(() {}),
+            placeholder: Text(context.l10n.financeSearchWallets),
+            features: const [
+              shad.InputFeature.leading(
+                Icon(Icons.search_rounded, size: 18),
+              ),
+            ],
+          ),
+          const shad.Gap(12),
+          Expanded(
+            child: list.isEmpty
+                ? _PickerEmptyState(
+                    title: context.l10n.financeNoWallets,
+                    message: context.l10n.commonNoSearchResults,
+                    icon: Icons.account_balance_wallet_outlined,
+                  )
+                : ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: list.length,
+                    separatorBuilder: (_, _) => const shad.Gap(8),
+                    itemBuilder: (context, index) {
+                      final wallet = list[index];
+                      return FinancePickerTile(
+                        title: wallet.name ?? '',
+                        subtitle: wallet.currency ?? 'USD',
+                        isSelected: wallet.id == widget.selectedWalletId,
+                        leading: WalletVisualAvatar(
+                          icon: wallet.icon,
+                          imageSrc: wallet.imageSrc,
+                          fallbackIcon: Icons.wallet_outlined,
+                          size: 30,
+                        ),
+                        onTap: () => Navigator.of(context).pop(wallet.id),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }
 }
 
 /// Category picker dialog.
-class _CategoryPickerDialog extends StatelessWidget {
+class _CategoryPickerDialog extends StatefulWidget {
   const _CategoryPickerDialog({
     required this.categories,
     required this.categoryColor,
+    this.selectedCategoryId,
+    this.initialShowsExpense,
   });
 
   final List<TransactionCategory> categories;
   final Color Function(TransactionCategory) categoryColor;
+  final String? selectedCategoryId;
+  final bool? initialShowsExpense;
+
+  @override
+  State<_CategoryPickerDialog> createState() => _CategoryPickerDialogState();
+}
+
+class _CategoryPickerDialogState extends State<_CategoryPickerDialog> {
+  late final TextEditingController _searchController;
+  late bool _showsExpense;
+  bool _showAllFrequent = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _showsExpense = widget.initialShowsExpense ?? true;
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final query = _searchController.text.trim().toLowerCase();
+    final filteredCategories =
+        widget.categories
+            .where((category) {
+              final matchesType =
+                  (category.isExpense != false) == _showsExpense;
+              if (!matchesType) {
+                return false;
+              }
+
+              if (query.isEmpty) {
+                return true;
+              }
+
+              final haystack = [
+                if (category.name != null) category.name!,
+                if (category.isExpense != false)
+                  context.l10n.financeExpense
+                else
+                  context.l10n.financeIncome,
+              ].join(' ').toLowerCase();
+              return haystack.contains(query);
+            })
+            .toList(growable: false)
+          ..sort((a, b) {
+            final nameA = a.name?.toLowerCase() ?? '';
+            final nameB = b.name?.toLowerCase() ?? '';
+            return nameA.compareTo(nameB);
+          });
+    final frequentCategories =
+        filteredCategories
+            .where((category) => (category.transactionCount ?? 0) > 0)
+            .toList(growable: false)
+          ..sort((a, b) {
+            final countCompare = (b.transactionCount ?? 0).compareTo(
+              a.transactionCount ?? 0,
+            );
+            if (countCompare != 0) {
+              return countCompare;
+            }
+            final nameA = a.name?.toLowerCase() ?? '';
+            final nameB = b.name?.toLowerCase() ?? '';
+            return nameA.compareTo(nameB);
+          });
+    final visibleFrequentCategories = _showAllFrequent
+        ? frequentCategories
+        : frequentCategories.take(5).toList(growable: false);
+    final frequentIds = frequentCategories
+        .map((category) => category.id)
+        .toSet();
+    final remainingCategories = filteredCategories
+        .where((category) => !frequentIds.contains(category.id))
+        .toList(growable: false);
+
     return FinanceModalScaffold(
       title: context.l10n.financeCategory,
       subtitle: context.l10n.financePickerCategorySubtitle,
@@ -722,36 +871,277 @@ class _CategoryPickerDialog extends StatelessWidget {
           child: Text(context.l10n.commonCancel),
         ),
       ],
-      child: ListView.separated(
-        shrinkWrap: true,
-        itemCount: categories.length,
-        separatorBuilder: (_, _) => const shad.Gap(8),
-        itemBuilder: (context, index) {
-          final category = categories[index];
-          final icon = resolvePlatformIcon(
-            category.icon,
-            fallback: category.isExpense != false
-                ? Icons.arrow_downward
-                : Icons.arrow_upward,
-          );
-          final color = categoryColor(category);
-          return FinancePickerTile(
-            title: category.name ?? '',
-            subtitle: category.isExpense != false
-                ? context.l10n.financeExpense
-                : context.l10n.financeIncome,
-            leading: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          shad.TextField(
+            controller: _searchController,
+            onChanged: (_) => setState(() {}),
+            placeholder: Text(context.l10n.financeSearchCategories),
+            features: const [
+              shad.InputFeature.leading(
+                Icon(Icons.search_rounded, size: 18),
               ),
-              child: Icon(icon, size: 16, color: color),
+            ],
+          ),
+          const shad.Gap(12),
+          _PickerSegmentedRow(
+            leftLabel: context.l10n.financeExpense,
+            rightLabel: context.l10n.financeIncome,
+            leftSelected: _showsExpense,
+            onLeftPressed: () => setState(() => _showsExpense = true),
+            onRightPressed: () => setState(() => _showsExpense = false),
+          ),
+          const shad.Gap(12),
+          Expanded(
+            child: filteredCategories.isEmpty
+                ? _PickerEmptyState(
+                    title: context.l10n.financeNoCategories,
+                    message: context.l10n.commonNoSearchResults,
+                    icon: Icons.category_outlined,
+                  )
+                : ListView(
+                    children: [
+                      if (query.isEmpty && frequentCategories.isNotEmpty) ...[
+                        _PickerSectionHeader(
+                          title: context.l10n.financeFrequentlyUsedCategories,
+                          trailing: frequentCategories.length > 5
+                              ? shad.GhostButton(
+                                  onPressed: () {
+                                    setState(
+                                      () =>
+                                          _showAllFrequent = !_showAllFrequent,
+                                    );
+                                  },
+                                  child: Text(
+                                    _showAllFrequent
+                                        ? context.l10n.commonShowLess
+                                        : context.l10n.commonShowMore,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        ...visibleFrequentCategories.map(
+                          (category) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _CategoryPickerTile(
+                              category: category,
+                              categoryColor: widget.categoryColor,
+                              isSelected:
+                                  category.id == widget.selectedCategoryId,
+                            ),
+                          ),
+                        ),
+                        if (remainingCategories.isNotEmpty) ...[
+                          const shad.Gap(4),
+                          _PickerSectionHeader(
+                            title: context.l10n.financeCategory,
+                          ),
+                        ],
+                      ],
+                      ...[
+                        if (query.isEmpty)
+                          ...remainingCategories
+                        else
+                          ...filteredCategories,
+                      ].map(
+                        (category) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _CategoryPickerTile(
+                            category: category,
+                            categoryColor: widget.categoryColor,
+                            isSelected:
+                                category.id == widget.selectedCategoryId,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryPickerTile extends StatelessWidget {
+  const _CategoryPickerTile({
+    required this.category,
+    required this.categoryColor,
+    required this.isSelected,
+  });
+
+  final TransactionCategory category;
+  final Color Function(TransactionCategory) categoryColor;
+  final bool isSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final typeLabel = category.isExpense != false
+        ? context.l10n.financeExpense
+        : context.l10n.financeIncome;
+    final subtitle =
+        category.transactionCount != null && category.transactionCount! > 0
+        ? '$typeLabel • ${category.transactionCount}'
+        : typeLabel;
+    final icon = resolvePlatformIcon(
+      category.icon,
+      fallback: category.isExpense != false
+          ? Icons.arrow_downward
+          : Icons.arrow_upward,
+    );
+    final color = categoryColor(category);
+
+    return FinancePickerTile(
+      title: category.name ?? '',
+      subtitle: subtitle,
+      isSelected: isSelected,
+      leading: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.16),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, size: 16, color: color),
+      ),
+      onTap: () => Navigator.of(context).pop(category.id),
+    );
+  }
+}
+
+class _PickerSectionHeader extends StatelessWidget {
+  const _PickerSectionHeader({
+    required this.title,
+    this.trailing,
+  });
+
+  final String title;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: theme.typography.xSmall.copyWith(
+                color: theme.colorScheme.mutedForeground,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.35,
+              ),
             ),
-            onTap: () => Navigator.of(context).pop(category.id),
-          );
-        },
+          ),
+          if (trailing != null) trailing!,
+        ],
+      ),
+    );
+  }
+}
+
+class _PickerEmptyState extends StatelessWidget {
+  const _PickerEmptyState({
+    required this.title,
+    required this.message,
+    required this.icon,
+  });
+
+  final String title;
+  final String message;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 28,
+              color: theme.colorScheme.mutedForeground,
+            ),
+            const shad.Gap(10),
+            Text(
+              title,
+              style: theme.typography.small.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const shad.Gap(4),
+            Text(
+              message,
+              style: theme.typography.xSmall.copyWith(
+                color: theme.colorScheme.mutedForeground,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PickerSegmentedRow extends StatelessWidget {
+  const _PickerSegmentedRow({
+    required this.leftLabel,
+    required this.rightLabel,
+    required this.leftSelected,
+    required this.onLeftPressed,
+    required this.onRightPressed,
+  });
+
+  final String leftLabel;
+  final String rightLabel;
+  final bool leftSelected;
+  final VoidCallback onLeftPressed;
+  final VoidCallback onRightPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final accent = FinancePalette.of(context).accent;
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: theme.colorScheme.border.withValues(alpha: 0.72),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _ModeTabButton(
+              label: leftLabel,
+              selected: leftSelected,
+              accent: accent,
+              onPressed: onLeftPressed,
+            ),
+          ),
+          const shad.Gap(4),
+          Expanded(
+            child: _ModeTabButton(
+              label: rightLabel,
+              selected: !leftSelected,
+              accent: accent,
+              onPressed: onRightPressed,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -788,10 +1178,6 @@ class _TagPickerDialogState extends State<_TagPickerDialog> {
       title: context.l10n.financeTags,
       subtitle: context.l10n.financePickerTagSubtitle,
       actions: [
-        shad.PrimaryButton(
-          onPressed: () => Navigator.of(context).pop(_selectedIds.toList()),
-          child: Text(context.l10n.profileSave),
-        ),
         shad.OutlineButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(context.l10n.commonCancel),
@@ -811,7 +1197,7 @@ class _TagPickerDialogState extends State<_TagPickerDialog> {
                 size: 18,
                 color: shad.Theme.of(context).colorScheme.mutedForeground,
               ),
-              onTap: () => setState(_selectedIds.clear),
+              onTap: () => Navigator.of(context).pop(const <String>[]),
             );
           }
 
@@ -838,11 +1224,13 @@ class _TagPickerDialogState extends State<_TagPickerDialog> {
                   : shad.Theme.of(context).colorScheme.mutedForeground,
             ),
             onTap: () {
-              setState(() {
-                if (!_selectedIds.add(tag.id)) {
-                  _selectedIds.remove(tag.id);
-                }
-              });
+              final nextSelectedIds = {..._selectedIds};
+              if (!nextSelectedIds.add(tag.id)) {
+                nextSelectedIds.remove(tag.id);
+              }
+              Navigator.of(
+                context,
+              ).pop(nextSelectedIds.toList(growable: false));
             },
           );
         },

@@ -23,7 +23,6 @@ import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'transaction_detail_sheet_amount_parsing.dart';
@@ -306,9 +305,11 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     TransactionCategory? category,
     DateTime? takenAt,
     bool? reportOptIn,
+    List<FinanceTag>? tags,
   }) async {
     await _runQuickUpdate(() async {
       final nextCategory = category;
+      final nextTagIds = tags?.map((tag) => tag.id).toList(growable: false);
       final nextAmount = nextCategory == null
           ? (_transaction.amount ?? 0)
           : (nextCategory.isExpense != false
@@ -322,7 +323,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
         takenAt: takenAt ?? _transaction.takenAt,
         walletId: wallet?.id ?? _transaction.walletId,
         categoryId: category?.id ?? _transaction.categoryId,
-        tagIds: _tagIds,
+        tagIds: nextTagIds ?? _tagIds,
         reportOptIn: reportOptIn ?? _transaction.reportOptIn,
         isAmountConfidential: _transaction.isAmountConfidential,
         isDescriptionConfidential: _transaction.isDescriptionConfidential,
@@ -347,6 +348,17 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
           categoryName: category?.name ?? _transaction.categoryName,
           categoryIcon: category?.icon ?? _transaction.categoryIcon,
           categoryColor: category?.color ?? _transaction.categoryColor,
+          tags:
+              tags
+                  ?.map(
+                    (tag) => TransactionTag(
+                      id: tag.id,
+                      name: tag.name,
+                      color: tag.color,
+                    ),
+                  )
+                  .toList(growable: false) ??
+              _transaction.tags,
         );
       });
     });
@@ -357,6 +369,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     Wallet? destinationWallet,
     DateTime? takenAt,
     bool? reportOptIn,
+    List<FinanceTag>? tags,
   }) async {
     final transfer = _transaction.transfer;
     if (transfer == null) {
@@ -379,6 +392,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     );
 
     await _runQuickUpdate(() async {
+      final nextTagIds = tags?.map((tag) => tag.id).toList(growable: false);
       await widget.repository.updateTransfer(
         wsId: widget.wsId,
         originTransactionId: _isTransferOrigin
@@ -394,7 +408,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
         description: _transaction.description,
         takenAt: takenAt ?? _effectiveTakenAt,
         reportOptIn: reportOptIn ?? _transaction.reportOptIn,
-        tagIds: _tagIds,
+        tagIds: nextTagIds ?? _tagIds,
         refreshedTransactionId: _transaction.id,
       );
 
@@ -460,6 +474,17 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                 _transaction.transfer?.linkedWalletCurrency,
             linkedAmount: _isTransferOrigin ? destinationAmount : -sourceAmount,
           ),
+          tags:
+              tags
+                  ?.map(
+                    (tag) => TransactionTag(
+                      id: tag.id,
+                      name: tag.name,
+                      color: tag.color,
+                    ),
+                  )
+                  .toList(growable: false) ??
+              _transaction.tags,
         );
       });
     });
@@ -610,6 +635,44 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     await _quickUpdateTransaction(takenAt: nextTakenAt);
   }
 
+  Future<void> _showTagQuickAction() async {
+    final tags = await widget.repository.getTags(widget.wsId);
+    if (!mounted || tags.isEmpty) {
+      return;
+    }
+
+    final selectedTagIds = await showFinanceModal<List<String>?>(
+      context: context,
+      builder: (_) => _TagPickerDialog(
+        tags: tags,
+        selectedTagIds: _tagIds,
+        tagColor: (tag) {
+          final parsed = _parseHexColor(tag.color);
+          if (parsed != null) {
+            return parsed;
+          }
+
+          return shad.Theme.of(context).colorScheme.primary;
+        },
+      ),
+    );
+    if (selectedTagIds == null || !mounted) {
+      return;
+    }
+
+    final selected = selectedTagIds.toSet();
+    final selectedTags = tags
+        .where((tag) => selected.contains(tag.id))
+        .toList(growable: false);
+
+    if (_transaction.isTransfer) {
+      await _quickUpdateTransfer(tags: selectedTags);
+      return;
+    }
+
+    await _quickUpdateTransaction(tags: selectedTags);
+  }
+
   Future<void> _toggleReportOptIn(bool value) async {
     if (_transaction.isTransfer) {
       await _quickUpdateTransfer(reportOptIn: value);
@@ -631,6 +694,9 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     final dateText = date != null
         ? DateFormat.yMMMd().add_jm().format(date.toLocal())
         : '-';
+    final tagText = _transaction.tags.isEmpty
+        ? l10n.financeNoTag
+        : _transaction.tags.map((tag) => tag.name).join(', ');
     final excludedReportColor = theme.colorScheme.mutedForeground.withValues(
       alpha: 0.72,
     );
@@ -745,6 +811,15 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                           : _showCategoryQuickAction,
                     ),
                   ],
+                  const shad.Gap(10),
+                  _QuickActionTile(
+                    icon: Icons.sell_outlined,
+                    label: l10n.financeTags,
+                    value: tagText,
+                    onTap: _isQuickSaving || isSyntheticTransfer
+                        ? null
+                        : _showTagQuickAction,
+                  ),
                   const shad.Gap(10),
                   _QuickActionTile(
                     icon: Icons.schedule_rounded,

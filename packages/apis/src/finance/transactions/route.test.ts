@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => {
   const walletMaybeSingle = vi.fn();
   const transactionSingle = vi.fn();
   const tagInsert = vi.fn();
+  const transactionRpc = vi.fn();
+  const transactionTagsIn = vi.fn();
 
   const sessionSupabase = {
     auth: {
@@ -39,6 +41,7 @@ const mocks = vi.hoisted(() => {
 
       throw new Error(`Unexpected session table: ${table}`);
     }),
+    rpc: transactionRpc,
   };
 
   const adminSupabase = {
@@ -68,6 +71,9 @@ const mocks = vi.hoisted(() => {
       if (table === 'wallet_transaction_tags') {
         return {
           insert: tagInsert,
+          select: vi.fn(() => ({
+            in: transactionTagsIn,
+          })),
         };
       }
 
@@ -82,6 +88,8 @@ const mocks = vi.hoisted(() => {
     linkedUserSingle,
     sessionSupabase,
     tagInsert,
+    transactionRpc,
+    transactionTagsIn,
     transactionSingle,
     walletMaybeSingle,
   };
@@ -133,6 +141,68 @@ describe('transactions route', () => {
     mocks.tagInsert.mockResolvedValue({
       error: null,
     });
+    mocks.transactionRpc.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    mocks.transactionTagsIn.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+  });
+
+  it('returns transactions enriched with tags', async () => {
+    const { GET } = await import('./route.js');
+
+    mocks.transactionRpc.mockResolvedValue({
+      data: [
+        {
+          id: 'transaction-1',
+          amount: -150,
+          taken_at: '2026-03-30T08:00:00.000Z',
+          description: 'Lunch',
+        },
+      ],
+      error: null,
+    });
+    mocks.transactionTagsIn.mockResolvedValue({
+      data: [
+        {
+          transaction_id: 'transaction-1',
+          transaction_tags: {
+            id: 'tag-1',
+            name: 'Food',
+            color: '#ff0000',
+          },
+        },
+      ],
+      error: null,
+    });
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/workspaces/00000000-0000-0000-0000-000000000000/transactions?page=1&itemsPerPage=25'
+      ),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual([
+      expect.objectContaining({
+        id: 'transaction-1',
+        tags: [
+          {
+            id: 'tag-1',
+            name: 'Food',
+            color: '#ff0000',
+          },
+        ],
+      }),
+    ]);
   });
 
   it('creates transactions and tags through sbAdmin after permission checks', async () => {

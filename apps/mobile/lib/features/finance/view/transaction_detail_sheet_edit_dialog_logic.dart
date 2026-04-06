@@ -70,13 +70,18 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     });
 
     try {
-      final workspaceCurrencyFuture = widget.repository
-          .getWorkspaceDefaultCurrency(widget.wsId)
-          .catchError((_) => 'USD');
-      final wallets = await widget.repository.getWallets(widget.wsId);
-      final categories = await widget.repository.getCategories(widget.wsId);
-      final tags = await widget.repository.getTags(widget.wsId);
-      final workspaceCurrency = await workspaceCurrencyFuture;
+      final results = await Future.wait<dynamic>([
+        widget.repository.getWallets(widget.wsId),
+        widget.repository.getCategories(widget.wsId),
+        widget.repository.getTags(widget.wsId),
+        widget.repository
+            .getWorkspaceDefaultCurrency(widget.wsId)
+            .catchError((_) => 'USD'),
+      ]);
+      final wallets = results[0] as List<Wallet>;
+      final categories = results[1] as List<TransactionCategory>;
+      final tags = results[2] as List<FinanceTag>;
+      final workspaceCurrency = results[3] as String;
 
       if (!mounted) return;
       setState(() {
@@ -186,7 +191,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         return;
       }
 
-      final selectedCategory = _selectedCategory;
+      final selectedCategory = _displaySelectedCategory;
       final isExpense = selectedCategory?.isExpense != false;
       final signedAmount = isExpense ? -amount.abs() : amount.abs();
 
@@ -307,6 +312,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       builder: (_) => _WalletPickerDialog(
         wallets: _wallets,
         title: context.l10n.financeWallet,
+        selectedWalletId: _walletId,
       ),
     );
 
@@ -328,6 +334,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         wallets: _wallets,
         title: context.l10n.financeDestinationWallet,
         excludeWalletId: _walletId,
+        selectedWalletId: _destinationWalletId,
       ),
     );
 
@@ -345,6 +352,8 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       builder: (_) => _CategoryPickerDialog(
         categories: _categories,
         categoryColor: _categoryColor,
+        selectedCategoryId: _categoryId,
+        initialShowsExpense: _displaySelectedCategory?.isExpense ?? true,
       ),
     );
 
@@ -397,12 +406,70 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     return _wallets.where((w) => w.id == _walletId).firstOrNull;
   }
 
+  Wallet? get _displaySelectedWallet {
+    final selected = _selectedWallet;
+    if (selected != null) {
+      return selected;
+    }
+
+    final transaction = widget.transaction;
+    if (transaction == null || transaction.walletId != _walletId) {
+      return null;
+    }
+
+    return Wallet(
+      id: transaction.walletId ?? '',
+      name: transaction.walletName,
+      currency: transaction.walletCurrency,
+      icon: transaction.walletIcon,
+      imageSrc: transaction.walletImageSrc,
+    );
+  }
+
   Wallet? get _selectedDestinationWallet {
     return _wallets.where((w) => w.id == _destinationWalletId).firstOrNull;
   }
 
+  Wallet? get _displaySelectedDestinationWallet {
+    final selected = _selectedDestinationWallet;
+    if (selected != null) {
+      return selected;
+    }
+
+    final transfer = widget.transaction?.transfer;
+    if (transfer == null || transfer.linkedWalletId != _destinationWalletId) {
+      return null;
+    }
+
+    return Wallet(
+      id: transfer.linkedWalletId,
+      name: transfer.linkedWalletName,
+      currency: transfer.linkedWalletCurrency,
+    );
+  }
+
   TransactionCategory? get _selectedCategory {
     return _categories.where((c) => c.id == _categoryId).firstOrNull;
+  }
+
+  TransactionCategory? get _displaySelectedCategory {
+    final selected = _selectedCategory;
+    if (selected != null) {
+      return selected;
+    }
+
+    final transaction = widget.transaction;
+    if (transaction == null || transaction.categoryId != _categoryId) {
+      return null;
+    }
+
+    return TransactionCategory(
+      id: transaction.categoryId ?? '',
+      name: transaction.categoryName,
+      icon: transaction.categoryIcon,
+      color: transaction.categoryColor,
+      isExpense: (transaction.amount ?? 0) < 0,
+    );
   }
 
   List<FinanceTag> get _selectedTags {
@@ -415,18 +482,42 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         .toList(growable: false);
   }
 
+  List<FinanceTag> get _displaySelectedTags {
+    final selectedTags = _selectedTags;
+    if (selectedTags.isNotEmpty) {
+      return selectedTags;
+    }
+
+    final fallbackTags = widget.transaction?.tags ?? const [];
+    if (fallbackTags.isEmpty || _tagIds.isEmpty) {
+      return const [];
+    }
+
+    final selected = _tagIds.toSet();
+    return fallbackTags
+        .where((tag) => selected.contains(tag.id))
+        .map(
+          (tag) => FinanceTag(
+            id: tag.id,
+            name: tag.name,
+            color: tag.color,
+          ),
+        )
+        .toList(growable: false);
+  }
+
   String get _selectedCurrency =>
-      _selectedWallet?.currency?.trim().isNotEmpty == true
-      ? _selectedWallet!.currency!.trim().toUpperCase()
+      _displaySelectedWallet?.currency?.trim().isNotEmpty == true
+      ? _displaySelectedWallet!.currency!.trim().toUpperCase()
       : _workspaceCurrency;
 
   String get _selectedDestinationCurrency =>
-      _selectedDestinationWallet?.currency?.trim().isNotEmpty == true
-      ? _selectedDestinationWallet!.currency!.trim().toUpperCase()
+      _displaySelectedDestinationWallet?.currency?.trim().isNotEmpty == true
+      ? _displaySelectedDestinationWallet!.currency!.trim().toUpperCase()
       : _selectedCurrency;
 
   IconData get _selectedCategoryIcon {
-    final category = _selectedCategory;
+    final category = _displaySelectedCategory;
     return resolvePlatformIcon(
       category?.icon,
       fallback: category?.isExpense != false
@@ -436,7 +527,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   }
 
   Color get _selectedCategoryColor {
-    final category = _selectedCategory;
+    final category = _displaySelectedCategory;
     if (category == null) {
       return shad.Theme.of(context).colorScheme.mutedForeground;
     }
@@ -444,7 +535,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   }
 
   Color get _selectedTagColor {
-    final tag = _selectedTags.firstOrNull;
+    final tag = _displaySelectedTags.firstOrNull;
     if (tag == null) {
       return shad.Theme.of(context).colorScheme.mutedForeground;
     }

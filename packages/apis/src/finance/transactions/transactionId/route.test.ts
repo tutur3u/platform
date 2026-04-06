@@ -4,19 +4,30 @@ const mocks = vi.hoisted(() => {
   const verifyWorkspaceSingle = vi.fn();
   const confidentialSingle = vi.fn();
   const linkedTransactionMaybeSingle = vi.fn();
+  const transactionTagsIn = vi.fn();
   const deleteEq = vi.fn();
   const getPermissions = vi.fn();
+  const getUser = vi.fn();
+  const transactionRpc = vi.fn();
 
   const sessionSupabase = {
     auth: {
-      getUser: vi.fn(),
+      getUser,
     },
     from: vi.fn(),
-    rpc: vi.fn(),
+    rpc: transactionRpc,
   };
 
   const adminSupabase = {
     from: vi.fn((table: string) => {
+      if (table === 'wallet_transaction_tags') {
+        return {
+          select: vi.fn(() => ({
+            in: transactionTagsIn,
+          })),
+        };
+      }
+
       if (table !== 'wallet_transactions') {
         throw new Error(`Unexpected admin table: ${table}`);
       }
@@ -52,8 +63,11 @@ const mocks = vi.hoisted(() => {
     confidentialSingle,
     deleteEq,
     getPermissions,
+    getUser,
     linkedTransactionMaybeSingle,
     sessionSupabase,
+    transactionRpc,
+    transactionTagsIn,
     verifyWorkspaceSingle,
   };
 });
@@ -76,6 +90,13 @@ describe('transaction detail route', () => {
     mocks.getPermissions.mockResolvedValue({
       withoutPermission: vi.fn(() => false),
     });
+    mocks.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: 'user-1',
+        },
+      },
+    });
     mocks.verifyWorkspaceSingle.mockResolvedValue({
       data: {
         id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
@@ -97,9 +118,70 @@ describe('transaction detail route', () => {
       data: null,
       error: null,
     });
+    mocks.transactionRpc.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    mocks.transactionTagsIn.mockResolvedValue({
+      data: [],
+      error: null,
+    });
     mocks.deleteEq.mockResolvedValue({
       error: null,
     });
+  });
+
+  it('returns a transaction enriched with tags', async () => {
+    const { GET } = await import('./route.js');
+
+    mocks.transactionRpc.mockResolvedValue({
+      data: [
+        {
+          id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+          amount: -120,
+          taken_at: '2026-03-30T08:00:00.000Z',
+          description: 'Lunch',
+        },
+      ],
+      error: null,
+    });
+    mocks.transactionTagsIn.mockResolvedValue({
+      data: [
+        {
+          transaction_id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+          transaction_tags: {
+            id: 'tag-1',
+            name: 'Food',
+            color: '#ff0000',
+          },
+        },
+      ],
+      error: null,
+    });
+
+    const response = await GET(
+      new Request('http://localhost/api/workspaces/ws-1/transactions/tx-1'),
+      {
+        params: Promise.resolve({
+          transactionId: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual(
+      expect.objectContaining({
+        id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+        tags: [
+          {
+            id: 'tag-1',
+            name: 'Food',
+            color: '#ff0000',
+          },
+        ],
+      })
+    );
   });
 
   it('deletes transactions through sbAdmin instead of the request client', async () => {
