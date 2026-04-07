@@ -1,3 +1,4 @@
+import { verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -212,6 +213,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: vi.fn(() => Promise.resolve(mocks.permissions)),
   normalizeWorkspaceId: vi.fn(() => Promise.resolve('normalized-ws')),
+  verifySecret: vi.fn(() => Promise.resolve(true)),
 }));
 
 vi.mock('next/headers', () => ({
@@ -430,5 +432,123 @@ describe('product routes', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toBe(7);
     expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
+  });
+
+  it('returns 404 when inventory is disabled for get product', async () => {
+    vi.mocked(verifySecret).mockResolvedValueOnce(false);
+
+    const { GET } = await import(
+      '@/app/api/v1/workspaces/[wsId]/products/[productId]/route'
+    );
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/products/product-1'
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
+      }
+    );
+
+    expect(response.status).toBe(404);
+    expect(mocks.adminSupabase.from).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when inventory is disabled for create product', async () => {
+    vi.mocked(verifySecret).mockResolvedValueOnce(false);
+
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/products/route'
+    );
+    const response = await POST(
+      new NextRequest('http://localhost/api/v1/workspaces/ws-1/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'Product',
+          category_id: '11111111-1111-4111-8111-111111111111',
+          inventory: [],
+        }),
+      }),
+      {
+        params: Promise.resolve({ wsId: 'ws-1' }),
+      }
+    );
+
+    expect(response.status).toBe(404);
+    expect(mocks.adminSupabase.from).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when inventory is disabled for add inventory', async () => {
+    vi.mocked(verifySecret).mockResolvedValueOnce(false);
+
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
+    );
+    const response = await POST(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/products/product-1/inventory',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            inventory: [
+              {
+                warehouse_id: '11111111-1111-4111-8111-111111111111',
+                unit_id: '22222222-2222-4222-8222-222222222222',
+                amount: 3,
+                min_amount: 1,
+                price: 10,
+              },
+            ],
+          }),
+        }
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
+      }
+    );
+
+    expect(response.status).toBe(404);
+    expect(mocks.adminSupabase.from).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when inventory is disabled for update inventory', async () => {
+    vi.mocked(verifySecret).mockResolvedValueOnce(false);
+
+    const { PATCH } = await import(
+      '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
+    );
+    const response = await PATCH(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/products/product-1/inventory',
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            inventory: [
+              {
+                warehouse_id: '11111111-1111-4111-8111-111111111111',
+                unit_id: '22222222-2222-4222-8222-222222222222',
+                amount: 5,
+                min_amount: 1,
+                price: 10,
+              },
+            ],
+          }),
+        }
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
+      }
+    );
+
+    expect(response.status).toBe(404);
+    expect(mocks.adminSupabase.from).not.toHaveBeenCalled();
   });
 });

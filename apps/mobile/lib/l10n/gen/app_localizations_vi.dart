@@ -207,6 +207,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navBack => 'Quay lại';
 
   @override
+  String get commonClear => 'Xóa';
+
+  @override
+  String get commonDone => 'Xong';
+
+  @override
   String get navMore => 'Thêm';
 
   @override
@@ -1658,6 +1664,82 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailTaskCreated => 'Đã tạo công việc.';
 
   @override
+  String get taskBoardDetailTaskDeleted => 'Đã xóa công việc.';
+
+  @override
+  String get taskBoardDetailTaskDeletedForever => 'Đã xóa vĩnh viễn công việc.';
+
+  @override
+  String get taskBoardDetailTaskRestored => 'Đã khôi phục công việc.';
+
+  @override
+  String get taskBoardDetailRecycleBin => 'Thùng rác';
+
+  @override
+  String get taskBoardDetailRecycleBinDescription => 'Các công việc đã xóa từ bảng này. Chọn công việc để khôi phục hoặc xóa vĩnh viễn.';
+
+  @override
+  String get taskBoardDetailRecycleBinEmpty => 'Không có công việc đã xóa';
+
+  @override
+  String get taskBoardDetailRecycleBinEmptyHint => 'Công việc đã xóa sẽ xuất hiện ở đây.';
+
+  @override
+  String get taskBoardDetailSelectAllTasks => 'Chọn tất cả công việc';
+
+  @override
+  String taskBoardDetailDeletedTasksCount(int count) {
+    return '$count công việc đã xóa';
+  }
+
+  @override
+  String taskBoardDetailSelectedCount(int selected, int total) {
+    return 'Đã chọn $selected/$total';
+  }
+
+  @override
+  String taskBoardDetailRestoreTasks(int count) {
+    return 'Khôi phục ($count)';
+  }
+
+  @override
+  String taskBoardDetailDeleteTasks(int count) {
+    return 'Xóa ($count)';
+  }
+
+  @override
+  String taskBoardDetailFromList(String list) {
+    return 'từ: $list';
+  }
+
+  @override
+  String taskBoardDetailDeletedAgo(String time) {
+    return 'Đã xóa $time';
+  }
+
+  @override
+  String get taskBoardDetailPriorityCritical => 'Nghiêm trọng';
+
+  @override
+  String get taskBoardDetailPriorityHigh => 'Cao';
+
+  @override
+  String get taskBoardDetailPriorityNormal => 'Bình thường';
+
+  @override
+  String get taskBoardDetailPriorityLow => 'Thấp';
+
+  @override
+  String taskBoardDetailPoints(int count) {
+    return '$count điểm';
+  }
+
+  @override
+  String taskBoardDetailNProjects(int count) {
+    return '$count dự án';
+  }
+
+  @override
   String get taskBoardDetailNoMoveTargets => 'Không có danh sách khác để di chuyển công việc này.';
 
   @override
@@ -1710,6 +1792,24 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailDeleteListDescription => 'Bạn có chắc chắn muốn xóa danh sách này không? Tất cả công việc trong danh sách này cũng sẽ bị xóa. Hành động này không thể hoàn tác.';
+
+  @override
+  String get taskBoardDetailDeleteTask => 'Xóa công việc';
+
+  @override
+  String get taskBoardDetailDeleteTaskForever => 'Xóa vĩnh viễn công việc';
+
+  @override
+  String get taskBoardDetailDeleteTaskForeverDescription => 'Xóa vĩnh viễn công việc này khỏi thùng rác? Hành động này không thể hoàn tác.';
+
+  @override
+  String get taskBoardDetailDeleteForever => 'Xóa vĩnh viễn';
+
+  @override
+  String get taskBoardDetailDeleteTaskTitle => 'Xóa công việc?';
+
+  @override
+  String get taskBoardDetailDeleteTaskDescription => 'Di chuyển công việc này vào thùng rác?';
 
   @override
   String get taskBoardDetailMoveListToStatus => 'Di chuyển danh sách sang trạng thái';
@@ -3246,6 +3346,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeDestinationWallet => 'Ví đích';
+
+  @override
+  String get financeSourceWallet => 'Ví nguồn';
 
   @override
   String get financeSelectDestinationWallet => 'Chọn ví đích';
@@ -4905,6 +5008,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get commonOff => 'Tắt';
+
+  @override
+  String get commonOn => 'Bật';
 
   @override
   String get commonSomethingWentWrong => 'Đã xảy ra lỗi';

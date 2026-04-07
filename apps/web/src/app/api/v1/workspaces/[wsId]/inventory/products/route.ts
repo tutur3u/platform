@@ -17,6 +17,10 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
+  inventoryNotFoundResponse,
+  isInventoryEnabled,
+} from '@/lib/inventory/access';
+import {
   canViewInventoryCatalog,
   canViewInventoryStock,
 } from '@/lib/inventory/permissions';
@@ -58,9 +62,6 @@ export async function GET(request: Request, { params }: Params) {
     const sbAdmin = await createAdminClient();
     const { wsId: id } = await params;
 
-    // Resolve workspace ID
-    const wsId = await normalizeWorkspaceId(id, supabase);
-
     const {
       data: { user },
       error: authError,
@@ -69,6 +70,9 @@ export async function GET(request: Request, { params }: Params) {
     if (authError || !user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    // Resolve workspace ID after authentication
+    const wsId = await normalizeWorkspaceId(id, supabase);
 
     const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
@@ -86,6 +90,10 @@ export async function GET(request: Request, { params }: Params) {
 
     if (!membership) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    if (!(await isInventoryEnabled(wsId))) {
+      return inventoryNotFoundResponse();
     }
 
     // Check permissions

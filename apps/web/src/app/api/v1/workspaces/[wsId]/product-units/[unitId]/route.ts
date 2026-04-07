@@ -1,6 +1,13 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import {
+  inventoryNotFoundResponse,
+  isInventoryEnabled,
+} from '@/lib/inventory/access';
 
 interface Params {
   params: Promise<{
@@ -11,7 +18,6 @@ interface Params {
 
 export async function PUT(req: Request, { params }: Params) {
   const { wsId, unitId: id } = await params;
-
   // Check permissions
   const permissions = await getPermissions({ wsId });
   if (!permissions) {
@@ -25,7 +31,12 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await createClient(req);
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  if (!(await isInventoryEnabled(normalizedWsId))) {
+    return inventoryNotFoundResponse();
+  }
+
   const data = await req.json();
 
   const { error } = await supabase
@@ -44,9 +55,8 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
+export async function DELETE(req: Request, { params }: Params) {
   const { wsId, unitId: id } = await params;
-
   // Check permissions
   const permissions = await getPermissions({ wsId });
   if (!permissions) {
@@ -60,7 +70,11 @@ export async function DELETE(_: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await createClient(req);
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  if (!(await isInventoryEnabled(normalizedWsId))) {
+    return inventoryNotFoundResponse();
+  }
 
   const { error } = await supabase
     .from('inventory_units')

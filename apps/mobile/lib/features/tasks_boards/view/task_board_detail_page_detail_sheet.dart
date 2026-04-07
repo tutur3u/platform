@@ -142,6 +142,13 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
                       onPressed: _moveTask,
                     ),
                   ),
+                Tooltip(
+                  message: context.l10n.taskBoardDetailDeleteTask,
+                  child: shad.IconButton.ghost(
+                    icon: const Icon(Icons.delete_outline, size: 16),
+                    onPressed: _deleteTask,
+                  ),
+                ),
               ],
             ),
             const shad.Gap(16),
@@ -562,5 +569,39 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
             shad.Alert.destructive(content: Text(fallbackErrorMessage)),
       );
     }
+  }
+
+  Future<void> _deleteTask() async {
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+
+    final deleted =
+        await shad.showDialog<bool>(
+          context: context,
+          builder: (_) => AsyncDeleteConfirmationDialog(
+            title: context.l10n.taskBoardDetailDeleteTaskTitle,
+            message: context.l10n.taskBoardDetailDeleteTaskDescription,
+            cancelLabel: context.l10n.commonCancel,
+            confirmLabel: context.l10n.taskBoardDetailDeleteTask,
+            toastContext: toastContext,
+            onConfirm: () async {
+              await context.read<TaskBoardDetailCubit>().deleteTask(
+                taskId: _task.id,
+              );
+            },
+          ),
+        ) ??
+        false;
+
+    if (!deleted || !mounted) return;
+
+    if (!toastContext.mounted) return;
+    shad.showToast(
+      context: toastContext,
+      builder: (context, overlay) => shad.Alert(
+        content: Text(context.l10n.taskBoardDetailTaskDeleted),
+      ),
+    );
+
+    await shad.closeOverlay<void>(context);
   }
 }

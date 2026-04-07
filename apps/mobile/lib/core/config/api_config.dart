@@ -169,6 +169,9 @@ abstract final class FinanceEndpoints {
 
 /// Inventory endpoint paths.
 abstract final class InventoryEndpoints {
+  static String access(String wsId) =>
+      '/api/v1/workspaces/$wsId/inventory/access';
+
   static String overview(String wsId) =>
       '/api/v1/workspaces/$wsId/inventory/overview';
 

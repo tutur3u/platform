@@ -124,16 +124,20 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Edit transaction'), findsAtLeastNWidgets(1));
-      expect(find.text('Amount'), findsWidgets);
+      expect(find.byKey(const ValueKey('money-key-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('money-key-C')), findsOneWidget);
+      expect(find.byKey(const ValueKey('money-key-Done')), findsOneWidget);
       expect(find.text('Description'), findsWidgets);
       expect(find.text('Taken at'), findsWidgets);
 
-      final amountField = find.descendant(
-        of: find.byKey(const ValueKey('USD')),
-        matching: find.byType(EditableText),
+      await tester.tap(find.byKey(const ValueKey('money-key-C')));
+      await tester.pumpAndSettle();
+      final doneInkWellFinder = find.ancestor(
+        of: find.byKey(const ValueKey('money-key-Done')),
+        matching: find.byType(InkWell),
       );
-
-      await tester.enterText(amountField, '');
+      tester.widget<InkWell>(doneInkWellFinder).onTap?.call();
+      await tester.pumpAndSettle();
       tester
           .widget<shad.PrimaryButton>(
             find.widgetWithText(shad.PrimaryButton, 'Save').last,
@@ -145,7 +149,38 @@ void main() {
       expect(didSave, isFalse);
       expect(find.text('Edit transaction'), findsAtLeastNWidgets(1));
 
-      await tester.enterText(amountField, '42.5');
+      await tester.tap(find.byKey(const ValueKey('money-source-surface')));
+      await tester.pumpAndSettle();
+
+      void pressMoneyKey(String key) {
+        final inkWellFinder = find.ancestor(
+          of: find.byKey(ValueKey('money-key-$key')),
+          matching: find.byType(InkWell),
+        );
+        tester.widget<InkWell>(inkWellFinder).onTap?.call();
+      }
+
+      for (final key in ['4', '0', '+', '2', '.', '5']) {
+        pressMoneyKey(key);
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('money-key-=')), findsOneWidget);
+      final equalInkWellFinder = find.ancestor(
+        of: find.byKey(const ValueKey('money-key-=')),
+        matching: find.byType(InkWell),
+      );
+      tester.widget<InkWell>(equalInkWellFinder).onTap?.call();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('money-key-Done')), findsOneWidget);
+      tester.widget<InkWell>(doneInkWellFinder).onTap?.call();
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Settings').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('settings-collapsed')));
+      await tester.pumpAndSettle();
+
       var switches = tester
           .widgetList<shad.Switch>(find.byType(shad.Switch))
           .toList(growable: false);
@@ -274,5 +309,101 @@ void main() {
       expect(await resultCompleter.future, isTrue);
       await tester.drainShadToastTimers();
     });
+
+    testWidgets(
+      'create mode restores report defaults across transfer mode changes '
+      'until settings are edited',
+      (tester) async {
+        await tester.pumpApp(
+          Scaffold(
+            body: Builder(
+              builder: (context) {
+                return ElevatedButton(
+                  onPressed: () {
+                    unawaited(
+                      showCreateTransactionSheet(
+                        context,
+                        wsId: 'ws_1',
+                        repository: _FakeFinanceRepository(),
+                        onCreate:
+                            ({
+                              required amount,
+                              description,
+                              takenAt,
+                              walletId,
+                              categoryId,
+                              tagIds,
+                              reportOptIn,
+                              isAmountConfidential,
+                              isDescriptionConfidential,
+                              isCategoryConfidential,
+                            }) async {},
+                      ),
+                    );
+                  },
+                  child: const Text('Open create'),
+                );
+              },
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('Open create'));
+        await tester.pumpAndSettle();
+
+        Future<void> tapMode(String label) async {
+          final finder = find.text(label).last;
+          await tester.ensureVisible(finder);
+          await tester.tap(finder);
+          await tester.pumpAndSettle();
+        }
+
+        await tapMode('Transfer');
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('settings-collapsed')),
+        );
+        await tester.tap(find.byKey(const ValueKey('settings-collapsed')));
+        await tester.pumpAndSettle();
+
+        var switches = tester
+            .widgetList<shad.Switch>(find.byType(shad.Switch))
+            .toList(growable: false);
+        expect(switches, hasLength(1));
+        expect(switches.first.value, isFalse);
+
+        await tapMode('Basic');
+        switches = tester
+            .widgetList<shad.Switch>(find.byType(shad.Switch))
+            .toList(growable: false);
+        expect(switches.first.value, isTrue);
+
+        await tapMode('Transfer');
+        switches = tester
+            .widgetList<shad.Switch>(find.byType(shad.Switch))
+            .toList(growable: false);
+        expect(switches.first.value, isFalse);
+
+        final reportSwitchFinder = find.byType(shad.Switch).first;
+        await tester.ensureVisible(reportSwitchFinder);
+        await tester.tap(reportSwitchFinder);
+        await tester.pumpAndSettle();
+        switches = tester
+            .widgetList<shad.Switch>(find.byType(shad.Switch))
+            .toList(growable: false);
+        expect(switches.first.value, isTrue);
+
+        await tapMode('Basic');
+        switches = tester
+            .widgetList<shad.Switch>(find.byType(shad.Switch))
+            .toList(growable: false);
+        expect(switches.first.value, isTrue);
+
+        await tapMode('Transfer');
+        switches = tester
+            .widgetList<shad.Switch>(find.byType(shad.Switch))
+            .toList(growable: false);
+        expect(switches.first.value, isTrue);
+      },
+    );
   });
 }
