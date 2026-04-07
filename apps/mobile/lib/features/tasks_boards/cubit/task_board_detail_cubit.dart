@@ -458,7 +458,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     return tasks;
   }
 
-  Future<void> restoreTask({required String taskId}) async {
+  Future<void> restoreTask({
+    required String taskId,
+    bool reloadBoard = true,
+  }) async {
     final wsId = state.workspaceId;
     if (wsId == null) {
       throw StateError('Workspace not selected');
@@ -466,12 +469,16 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
     await _runMutation(
       () => _taskRepository.restoreTask(wsId: wsId, taskId: taskId),
+      reloadBoard: reloadBoard,
     );
 
     _removeFromDeletedTasksCache(taskId);
   }
 
-  Future<void> permanentlyDeleteTask({required String taskId}) async {
+  Future<void> permanentlyDeleteTask({
+    required String taskId,
+    bool reloadBoard = true,
+  }) async {
     final wsId = state.workspaceId;
     if (wsId == null) {
       throw StateError('Workspace not selected');
@@ -479,6 +486,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
     await _runMutation(
       () => _taskRepository.permanentlyDeleteTask(wsId: wsId, taskId: taskId),
+      reloadBoard: reloadBoard,
     );
 
     _removeFromDeletedTasksCache(taskId);

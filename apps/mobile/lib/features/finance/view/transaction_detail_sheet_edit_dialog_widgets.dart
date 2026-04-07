@@ -382,6 +382,7 @@ class _MoneyKeypad extends StatelessWidget {
     required this.onClearPressed,
     required this.onEvaluatePressed,
     required this.onHidePressed,
+    required this.showsEvaluateAction,
   });
 
   final String decimalSeparator;
@@ -390,17 +391,19 @@ class _MoneyKeypad extends StatelessWidget {
   final VoidCallback onClearPressed;
   final VoidCallback onEvaluatePressed;
   final VoidCallback onHidePressed;
+  final bool showsEvaluateAction;
 
   @override
   Widget build(BuildContext context) {
-    const equalKey = '__equal__';
+    const primaryActionKey = '__primary__';
     final rows = <List<String>>[
       ['+', '-', '×', '÷'],
       ['1', '2', '3', '⌫'],
       ['4', '5', '6', '000'],
       ['7', '8', '9', decimalSeparator],
-      ['0', 'C', equalKey],
+      ['C', '0', primaryActionKey],
     ];
+    final primaryLabel = showsEvaluateAction ? '=' : context.l10n.commonDone;
 
     return FinancePanel(
       padding: const EdgeInsets.all(12),
@@ -425,26 +428,32 @@ class _MoneyKeypad extends StatelessWidget {
               children: row
                   .map(
                     (label) => Expanded(
-                      flex: label == equalKey ? 2 : 1,
+                      flex: label == primaryActionKey ? 2 : 1,
                       child: Padding(
                         padding: const EdgeInsets.all(4),
                         child: _MoneyKeypadButton(
-                          label: label == equalKey ? '=' : label,
+                          label: label == primaryActionKey
+                              ? primaryLabel
+                              : label,
                           onPressed: switch (label) {
                             '×' => () => onKeyPressed('*'),
                             '÷' => () => onKeyPressed('/'),
                             '⌫' => onBackspacePressed,
                             'C' => onClearPressed,
-                            equalKey => onEvaluatePressed,
+                            primaryActionKey =>
+                              showsEvaluateAction
+                                  ? onEvaluatePressed
+                                  : onHidePressed,
                             _ => () => onKeyPressed(label),
                           },
-                          isPrimary: label == equalKey,
+                          isPrimary: label == primaryActionKey,
                           isOperator: const {
                             '+',
                             '-',
                             '×',
                             '÷',
                           }.contains(label),
+                          isWarning: label == 'C',
                         ),
                       ),
                     ),
@@ -464,18 +473,23 @@ class _MoneyKeypadButton extends StatelessWidget {
     required this.onPressed,
     this.isPrimary = false,
     this.isOperator = false,
+    this.isWarning = false,
   });
 
   final String label;
   final VoidCallback onPressed;
   final bool isPrimary;
   final bool isOperator;
+  final bool isWarning;
 
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+    final warningColor = Colors.orange.shade300;
     final foregroundColor = isPrimary
         ? theme.colorScheme.primaryForeground
+        : isWarning
+        ? warningColor
         : isOperator
         ? theme.colorScheme.primary
         : theme.colorScheme.foreground;
@@ -491,6 +505,8 @@ class _MoneyKeypadButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: isPrimary
                 ? theme.colorScheme.primary
+                : isWarning
+                ? Colors.orange.withValues(alpha: 0.14)
                 : isOperator
                 ? theme.colorScheme.card.withValues(alpha: 0.82)
                 : theme.colorScheme.card,
@@ -498,6 +514,8 @@ class _MoneyKeypadButton extends StatelessWidget {
             border: Border.all(
               color: isPrimary
                   ? theme.colorScheme.primary
+                  : isWarning
+                  ? Colors.orange.withValues(alpha: 0.36)
                   : isOperator
                   ? theme.colorScheme.primary.withValues(alpha: 0.24)
                   : theme.colorScheme.border.withValues(alpha: 0.72),
@@ -634,12 +652,14 @@ class _WalletSelectorButton extends StatelessWidget {
     required this.onPressed,
     this.wallet,
     this.placeholder,
+    this.isPlaceholder = false,
     this.isLoading = false,
   });
 
   final String label;
   final Wallet? wallet;
   final String? placeholder;
+  final bool isPlaceholder;
   final bool isLoading;
   final VoidCallback? onPressed;
 
@@ -655,6 +675,7 @@ class _WalletSelectorButton extends StatelessWidget {
         fallbackIcon: Icons.wallet_outlined,
         size: 28,
       ),
+      isPlaceholder: wallet == null || isPlaceholder,
       isLoading: isLoading,
       onPressed: onPressed,
     );
@@ -692,6 +713,7 @@ class _CategorySelectorButton extends StatelessWidget {
         ),
         child: Icon(icon, size: 15, color: color),
       ),
+      isPlaceholder: categoryName == null || categoryName!.trim().isEmpty,
       isLoading: isLoading,
       onPressed: onPressed,
     );
@@ -727,6 +749,7 @@ class _TagSelectorButton extends StatelessWidget {
         ),
         child: Icon(Icons.sell_outlined, size: 15, color: color),
       ),
+      isPlaceholder: tagName == null || tagName!.trim().isEmpty,
       isLoading: isLoading,
       onPressed: onPressed,
     );
@@ -740,6 +763,7 @@ class _SelectorSurface extends StatelessWidget {
     required this.leading,
     required this.onPressed,
     this.subtitle,
+    this.isPlaceholder = false,
     this.isLoading = false,
   });
 
@@ -747,6 +771,7 @@ class _SelectorSurface extends StatelessWidget {
   final String title;
   final String? subtitle;
   final Widget leading;
+  final bool isPlaceholder;
   final bool isLoading;
   final VoidCallback? onPressed;
 
@@ -798,6 +823,11 @@ class _SelectorSurface extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: theme.typography.small.copyWith(
                           fontWeight: FontWeight.w700,
+                          color: isPlaceholder
+                              ? theme.colorScheme.foreground.withValues(
+                                  alpha: 0.58,
+                                )
+                              : theme.colorScheme.foreground,
                         ),
                       ),
                       if (subtitle != null && subtitle!.trim().isNotEmpty) ...[

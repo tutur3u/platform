@@ -3382,7 +3382,7 @@ abstract class AppLocalizations {
   /// No description provided for @taskBoardDetailNProjects.
   ///
   /// In en, this message translates to:
-  /// **'{count} projects'**
+  /// **'{count, plural, one{{count} project} other{{count} projects}}'**
   String taskBoardDetailNProjects(int count);
 
   /// No description provided for @taskBoardDetailNoMoveTargets.
@@ -6516,6 +6516,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Destination wallet'**
   String get financeDestinationWallet;
+
+  /// No description provided for @financeSourceWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Source wallet'**
+  String get financeSourceWallet;
 
   /// No description provided for @financeSelectDestinationWallet.
   ///

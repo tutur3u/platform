@@ -752,7 +752,7 @@
             }
         }
     },
-    "taskBoardDetailNProjects": "{count} projects",
+    "taskBoardDetailNProjects": "{count, plural, one{{count} project} other{{count} projects}}",
     "@taskBoardDetailNProjects": {
         "placeholders": {
             "count": {
@@ -1370,6 +1370,7 @@
     "financePickerLoadingOptions": "Loading wallets, categories, and tags...",
     "financeNoTag": "No tag",
     "financeDestinationWallet": "Destination wallet",
+    "financeSourceWallet": "Source wallet",
     "financeSelectDestinationWallet": "Select destination wallet",
     "financeTransferMode": "Transfer mode",
     "financeTransferModeEditHint": "Transfer mode can only be edited for existing transfers.",

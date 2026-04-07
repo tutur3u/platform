@@ -42,7 +42,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
       if (_isTransfer) {
         _categoryId = null;
         _activeMoneyField = _MoneyFieldTarget.source;
-        if (_isCreate) {
+        if (_isCreate && !_hasEditedSettings) {
           _reportOptIn = false;
         }
       } else {
@@ -50,6 +50,9 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
         _destinationAmountController.clear();
         _isDestinationOverridden = false;
         _activeMoneyField = _MoneyFieldTarget.source;
+        if (_isCreate && !_hasEditedSettings) {
+          _reportOptIn = true;
+        }
       }
     });
   }
@@ -108,53 +111,69 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                transitionBuilder: (child, animation) {
-                  final offset = Tween<Offset>(
-                    begin: const Offset(0, 0.18),
-                    end: Offset.zero,
-                  ).animate(animation);
-                  return FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(position: offset, child: child),
-                  );
-                },
-                child: _isMoneyKeypadVisible
-                    ? TapRegion(
-                        groupId: _moneyTapRegionGroup,
-                        onTapOutside: (_) => _dismissMoneyInput(),
-                        child: Padding(
-                          key: const ValueKey('money-keypad-dock'),
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (_moneySuggestions.isNotEmpty) ...[
-                                _MoneyMultiplierRow(
-                                  suggestions: _moneySuggestions,
-                                  onSelected: _applyMoneyMultiplier,
+              AnimatedCrossFade(
+                duration: const Duration(milliseconds: 320),
+                firstCurve: Curves.easeOutCubic,
+                secondCurve: Curves.easeOutCubic,
+                sizeCurve: Curves.easeInOutCubic,
+                crossFadeState: _isMoneyKeypadVisible
+                    ? CrossFadeState.showFirst
+                    : CrossFadeState.showSecond,
+                firstChild: TapRegion(
+                  groupId: _moneyTapRegionGroup,
+                  onTapOutside: (_) => _dismissMoneyInput(),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          height: 54,
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 180),
+                            switchInCurve: Curves.easeOutCubic,
+                            switchOutCurve: Curves.easeInCubic,
+                            transitionBuilder: (child, animation) {
+                              final offset = Tween<Offset>(
+                                begin: const Offset(0, 0.18),
+                                end: Offset.zero,
+                              ).animate(animation);
+                              return FadeTransition(
+                                opacity: animation,
+                                child: SlideTransition(
+                                  position: offset,
+                                  child: child,
                                 ),
-                                const shad.Gap(10),
-                              ],
-                              _MoneyKeypad(
-                                decimalSeparator: _localeDecimalSeparator,
-                                onKeyPressed: _appendMoneyInput,
-                                onBackspacePressed: _backspaceMoneyInput,
-                                onClearPressed: _clearMoneyInput,
-                                onEvaluatePressed: _evaluateMoneyInput,
-                                onHidePressed: _dismissMoneyInput,
-                              ),
-                            ],
+                              );
+                            },
+                            child: _moneySuggestions.isNotEmpty
+                                ? Padding(
+                                    key: const ValueKey('money-suggestions'),
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: _MoneyMultiplierRow(
+                                      suggestions: _moneySuggestions,
+                                      onSelected: _applyMoneyMultiplier,
+                                    ),
+                                  )
+                                : const SizedBox.shrink(
+                                    key: ValueKey('money-suggestions-empty'),
+                                  ),
                           ),
                         ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-              if (!_isMoneyKeypadVisible)
-                Row(
+                        _MoneyKeypad(
+                          decimalSeparator: _localeDecimalSeparator,
+                          onKeyPressed: _appendMoneyInput,
+                          onBackspacePressed: _backspaceMoneyInput,
+                          onClearPressed: _clearMoneyInput,
+                          onEvaluatePressed: _evaluateMoneyInput,
+                          onHidePressed: _dismissMoneyInput,
+                          showsEvaluateAction: _showsMoneyEvaluateAction,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                secondChild: Row(
                   children: [
                     Expanded(
                       child: shad.OutlineButton(
@@ -189,6 +208,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                     ),
                   ],
                 ),
+              ),
             ],
           ),
         ),
@@ -227,9 +247,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                       ),
                       placeholderLabel: l10n.financeAmount,
                       currencyCode: _selectedCurrency,
-                      accentColor: _isTransfer
-                          ? theme.colorScheme.primary
-                          : _selectedCategoryColor,
+                      accentColor: _selectedAmountColor,
                       isFocused: _isMoneyFieldActive(_MoneyFieldTarget.source),
                       onTap: () =>
                           _setActiveMoneyField(_MoneyFieldTarget.source),
@@ -259,7 +277,9 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _WalletSelectorButton(
-                        label: l10n.financeWallet,
+                        label: _isTransfer
+                            ? l10n.financeSourceWallet
+                            : l10n.financeWallet,
                         wallet: selectedWallet,
                         isLoading: _isLoadingOptions && _wallets.isEmpty,
                         onPressed: _wallets.isEmpty ? null : _pickWallet,
@@ -269,7 +289,8 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                         _WalletSelectorButton(
                           label: l10n.financeDestinationWallet,
                           wallet: selectedDestinationWallet,
-                          placeholder: l10n.financeSelectDestinationWallet,
+                          placeholder: '-',
+                          isPlaceholder: true,
                           isLoading: _isLoadingOptions && _wallets.isEmpty,
                           onPressed: _wallets.length < 2
                               ? null
@@ -329,19 +350,17 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                         ? _TransactionFormSettingsTab(
                             key: const ValueKey('settings-expanded'),
                             reportOptIn: _reportOptIn,
-                            onReportOptInChanged: (v) =>
-                                setState(() => _reportOptIn = v),
+                            onReportOptInChanged: _setReportOptIn,
                             isTransfer: _isTransfer,
                             isAmountConfidential: _isAmountConfidential,
-                            onAmountConfidentialChanged: (v) =>
-                                setState(() => _isAmountConfidential = v),
+                            onAmountConfidentialChanged: _setAmountConfidential,
                             isDescriptionConfidential:
                                 _isDescriptionConfidential,
-                            onDescriptionConfidentialChanged: (v) =>
-                                setState(() => _isDescriptionConfidential = v),
+                            onDescriptionConfidentialChanged:
+                                _setDescriptionConfidential,
                             isCategoryConfidential: _isCategoryConfidential,
-                            onCategoryConfidentialChanged: (v) =>
-                                setState(() => _isCategoryConfidential = v),
+                            onCategoryConfidentialChanged:
+                                _setCategoryConfidential,
                           )
                         : _TransactionFormSettingsSummary(
                             key: const ValueKey('settings-collapsed'),

@@ -117,8 +117,11 @@ extension on _TaskBoardDetailPageViewState {
 
         return StatefulBuilder(
           builder: (context, setState) {
-            Future<void> loadDeletedTasks({bool forceRefresh = false}) async {
-              if (isMutating) return;
+            Future<void> loadDeletedTasks({
+              bool forceRefresh = false,
+              bool allowDuringMutation = false,
+            }) async {
+              if (isMutating && !allowDuringMutation) return;
               setState(() {
                 isLoading = true;
                 errorMessage = '';
@@ -129,8 +132,12 @@ extension on _TaskBoardDetailPageViewState {
                   forceRefresh: forceRefresh,
                 );
                 if (!context.mounted) return;
+                final visibleIds = tasks.map((task) => task.id).toSet();
                 setState(() {
                   deletedTasks = tasks;
+                  selectedTaskIds = selectedTaskIds
+                      .where(visibleIds.contains)
+                      .toSet();
                   isLoading = false;
                 });
               } on ApiException catch (error) {
@@ -156,7 +163,10 @@ extension on _TaskBoardDetailPageViewState {
               setState(() => isMutating = true);
               try {
                 for (final taskId in taskIdsToRestore) {
-                  await cubit.restoreTask(taskId: taskId);
+                  await cubit.restoreTask(
+                    taskId: taskId,
+                    reloadBoard: false,
+                  );
                   if (!context.mounted) return;
                   setState(() {
                     deletedTasks = deletedTasks
@@ -176,9 +186,12 @@ extension on _TaskBoardDetailPageViewState {
                 await showSuccess(context.l10n.taskBoardDetailTaskRestored);
               } on ApiException catch (error) {
                 if (!context.mounted) return;
-                await loadDeletedTasks(forceRefresh: true);
-                if (!context.mounted) return;
                 setState(() => isMutating = false);
+                await loadDeletedTasks(
+                  forceRefresh: true,
+                  allowDuringMutation: true,
+                );
+                if (!context.mounted) return;
                 await showError(
                   error.message.trim().isEmpty
                       ? fallbackErrorMessage
@@ -186,9 +199,12 @@ extension on _TaskBoardDetailPageViewState {
                 );
               } on Exception {
                 if (!context.mounted) return;
-                await loadDeletedTasks(forceRefresh: true);
-                if (!context.mounted) return;
                 setState(() => isMutating = false);
+                await loadDeletedTasks(
+                  forceRefresh: true,
+                  allowDuringMutation: true,
+                );
+                if (!context.mounted) return;
                 await showError(fallbackErrorMessage);
               }
             }
@@ -209,7 +225,10 @@ extension on _TaskBoardDetailPageViewState {
                       toastContext: toastContext,
                       onConfirm: () async {
                         for (final taskId in selectedTaskIds) {
-                          await cubit.permanentlyDeleteTask(taskId: taskId);
+                          await cubit.permanentlyDeleteTask(
+                            taskId: taskId,
+                            reloadBoard: false,
+                          );
                         }
                       },
                     ),
@@ -218,6 +237,8 @@ extension on _TaskBoardDetailPageViewState {
 
               if (!confirmed || !context.mounted) return;
 
+              await cubit.reload();
+              if (!context.mounted) return;
               setState(() {
                 isMutating = false;
                 deletedTasks = deletedTasks
