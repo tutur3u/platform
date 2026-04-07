@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { posix } from 'node:path';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { getSecrets } from '@tuturuuu/utils/workspace-helper';
 import {
   DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET,
@@ -30,6 +31,29 @@ export interface WorkspaceStorageAutoExtractResult {
   destinationPrefix?: string;
   files?: number;
   folders?: number;
+}
+
+function resolveConfiguredOrigin(value?: string) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
+function resolveAutoExtractCallbackOrigin(requestOrigin: string) {
+  return (
+    resolveConfiguredOrigin(process.env.INTERNAL_WEB_API_ORIGIN) ||
+    resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
+    resolveConfiguredOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
+    resolveConfiguredOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
+    (DEV_MODE ? 'http://localhost:7803' : 'https://tuturuuu.com') ||
+    requestOrigin
+  );
 }
 
 function createSecretsMap(
@@ -156,9 +180,12 @@ export async function triggerWorkspaceStorageAutoExtract(
         expiresIn: 900,
       }
     );
+    const callbackOrigin = resolveAutoExtractCallbackOrigin(
+      options.requestOrigin
+    );
     const callbackUrl = new URL(
       `/api/v1/workspaces/${encodeURIComponent(wsId)}/storage/auto-extract`,
-      options.requestOrigin
+      callbackOrigin
     ).toString();
     const response = await fetch(config.proxyUrl, {
       method: 'POST',

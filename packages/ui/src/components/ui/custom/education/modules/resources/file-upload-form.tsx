@@ -193,6 +193,11 @@ export function StorageObjectForm({
     setLoading(true);
     const targetPath = normalizeWorkspaceStoragePath(wsId, path || uploadPath);
     let hasErrors = false;
+    const autoExtractResults: Array<{
+      status?: string;
+      message?: string;
+      originalName: string;
+    }> = [];
 
     await Promise.all(
       formData.files.map(async (file) => {
@@ -213,7 +218,7 @@ export function StorageObjectForm({
         );
 
         try {
-          await uploadWorkspaceStorageFile(
+          const result = await uploadWorkspaceStorageFile(
             wsId,
             uploadFile,
             {
@@ -224,6 +229,14 @@ export function StorageObjectForm({
               fetch,
             }
           );
+
+          if (result.autoExtract && result.autoExtract.status !== 'skipped') {
+            autoExtractResults.push({
+              status: result.autoExtract.status,
+              message: result.autoExtract.message,
+              originalName: file.name,
+            });
+          }
         } catch {
           hasErrors = true;
           setFileStatuses((prev) => ({
@@ -241,6 +254,23 @@ export function StorageObjectForm({
     );
 
     if (!hasErrors) {
+      const failedAutoExtract = autoExtractResults.find(
+        (result) => result.status && result.status !== 'completed'
+      );
+      const completedAutoExtract = autoExtractResults.find(
+        (result) => result.status === 'completed'
+      );
+
+      if (failedAutoExtract?.message) {
+        toast.warning(
+          `${failedAutoExtract.originalName}: ${failedAutoExtract.message}`
+        );
+      } else if (completedAutoExtract?.message) {
+        toast.success(
+          `${completedAutoExtract.originalName}: ${completedAutoExtract.message}`
+        );
+      }
+
       onComplete?.();
       router.refresh();
     } else {

@@ -28,6 +28,21 @@ interface WorkspaceStorageFinalizeUploadResponse {
   };
 }
 
+export interface WorkspaceStorageAutoExtractResult {
+  status?: string;
+  message?: string;
+  archivePath?: string;
+  destinationPrefix?: string;
+  files?: number;
+  folders?: number;
+}
+
+export interface WorkspaceStorageUploadResult {
+  path: string;
+  fullPath: string | null;
+  autoExtract?: WorkspaceStorageAutoExtractResult;
+}
+
 interface WorkspaceStorageMigrationResponse {
   data: {
     sourceProvider: 'supabase' | 'r2';
@@ -97,7 +112,9 @@ async function uploadFileWithSignedUrl(
     path: string;
     fullPath: string | null;
   }) => Promise<Record<string, unknown> | undefined>
-) {
+): Promise<
+  Record<string, unknown> & { path: string; fullPath: string | null }
+> {
   const headers: Record<string, string> = {
     ...(uploadUrlResult.headers ?? {}),
   };
@@ -170,7 +187,7 @@ export async function uploadWorkspaceStorageFile(
     upsert?: boolean;
   },
   clientOptions?: InternalApiClientOptions
-) {
+): Promise<WorkspaceStorageUploadResult> {
   const fetchImpl = clientOptions?.fetch ?? globalThis.fetch;
   const uploadUrlResult = await createWorkspaceStorageUploadUrl(
     workspaceId,
