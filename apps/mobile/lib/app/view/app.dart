@@ -16,6 +16,7 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/data/repositories/inventory_access_repository.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
@@ -29,6 +30,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
+import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
@@ -80,6 +82,7 @@ class _AppState extends State<App> {
   late final TaskRepository _taskRepository;
   late final CalendarRepository _calendarRepository;
   late final FinanceRepository _financeRepository;
+  late final InventoryAccessRepository _inventoryAccessRepository;
   late final TimeTrackerRepository _timeTrackerRepository;
   late final ProfileRepository _profileRepository;
   late final AuthCubit _authCubit;
@@ -89,6 +92,7 @@ class _AppState extends State<App> {
   late final ThemeCubit _themeCubit;
   late final CalendarSettingsCubit _calendarSettingsCubit;
   late final FinancePreferencesCubit _financePreferencesCubit;
+  late final InventoryAccessCubit _inventoryAccessCubit;
   late final AppTabCubit _appTabCubit;
   late final ShellChromeActionsCubit _shellChromeActionsCubit;
   late final ShellMiniNavCubit _shellMiniNavCubit;
@@ -107,6 +111,7 @@ class _AppState extends State<App> {
     _taskRepository = TaskRepository();
     _calendarRepository = CalendarRepository();
     _financeRepository = FinanceRepository();
+    _inventoryAccessRepository = InventoryAccessRepository();
     _timeTrackerRepository = TimeTrackerRepository();
     _profileRepository = ProfileRepository(
       ownsApiClient: true,
@@ -136,6 +141,9 @@ class _AppState extends State<App> {
     _financePreferencesCubit = FinancePreferencesCubit(
       settingsRepository: _settingsRepo,
     );
+    _inventoryAccessCubit = InventoryAccessCubit(
+      repository: _inventoryAccessRepository,
+    );
     _appTabCubit = AppTabCubit(settingsRepository: _settingsRepo);
     _shellChromeActionsCubit = ShellChromeActionsCubit();
     _shellMiniNavCubit = ShellMiniNavCubit();
@@ -154,6 +162,7 @@ class _AppState extends State<App> {
     _router = createAppRouter(
       _authCubit,
       _workspaceCubit,
+      _inventoryAccessCubit,
       _appTabCubit,
       initialLocation: widget.initialRoute,
     );
@@ -384,6 +393,7 @@ class _AppState extends State<App> {
     unawaited(_themeCubit.close());
     unawaited(_calendarSettingsCubit.close());
     unawaited(_financePreferencesCubit.close());
+    unawaited(_inventoryAccessCubit.close());
     unawaited(_appTabCubit.close());
     unawaited(_shellChromeActionsCubit.close());
     unawaited(_shellMiniNavCubit.close());
@@ -404,6 +414,7 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _themeCubit),
         BlocProvider.value(value: _calendarSettingsCubit),
         BlocProvider.value(value: _financePreferencesCubit),
+        BlocProvider.value(value: _inventoryAccessCubit),
         BlocProvider.value(value: _appTabCubit),
         BlocProvider.value(value: _shellChromeActionsCubit),
         BlocProvider.value(value: _shellMiniNavCubit),
@@ -440,6 +451,11 @@ class _AppState extends State<App> {
             listenWhen: (previous, current) =>
                 previous.currentWorkspace?.id != current.currentWorkspace?.id,
             listener: (context, state) {
+              unawaited(
+                context.read<InventoryAccessCubit>().syncWorkspace(
+                  state.currentWorkspace?.id,
+                ),
+              );
               if (state.currentWorkspace == null) {
                 return;
               }

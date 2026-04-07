@@ -19,6 +19,10 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  inventoryNotFoundResponse,
+  isInventoryEnabled,
+} from '@/lib/inventory/access';
 import { getInventoryActorContext } from '@/lib/inventory/actor';
 import { createInventoryAuditLog } from '@/lib/inventory/audit';
 import { canCreateInventorySales } from '@/lib/inventory/permissions';
@@ -232,6 +236,10 @@ export async function GET(request: Request, { params }: Params) {
     // Resolve workspace ID
     const wsId = await normalizeWorkspaceId(id);
 
+    if (!(await isInventoryEnabled(wsId))) {
+      return inventoryNotFoundResponse();
+    }
+
     // Check permissions
     const permissions = await getPermissions({ wsId });
     if (!permissions) {
@@ -408,6 +416,9 @@ export async function POST(req: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
   const { wsId: id } = await params;
   const wsId = await normalizeWorkspaceId(id, supabase);
+  if (!(await isInventoryEnabled(wsId))) {
+    return inventoryNotFoundResponse();
+  }
 
   const permissions = await getPermissions({
     wsId: id,

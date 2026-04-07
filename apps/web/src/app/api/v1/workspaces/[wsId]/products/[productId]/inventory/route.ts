@@ -9,6 +9,10 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  inventoryNotFoundResponse,
+  isInventoryEnabled,
+} from '@/lib/inventory/access';
 import { getStockChangeAmount } from '@/lib/inventory/stock-change';
 
 const InventoryItemSchema = z.object({
@@ -54,7 +58,6 @@ export async function POST(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
-  const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Check permissions
   const permissions = await getPermissions({ wsId: id, request: req });
@@ -67,6 +70,11 @@ export async function POST(req: Request, { params }: Params) {
       { message: 'Insufficient permissions to update stock quantities' },
       { status: 403 }
     );
+  }
+
+  const wsId = await normalizeWorkspaceId(id, supabase);
+  if (!(await isInventoryEnabled(wsId))) {
+    return inventoryNotFoundResponse();
   }
 
   const parsed = BodySchema.safeParse(await req.json());
@@ -161,7 +169,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
-  const wsId = await normalizeWorkspaceId(id, supabase);
+
   // Check permissions
   const permissions = await getPermissions({ wsId: id, request: req });
   if (!permissions) {
@@ -173,6 +181,11 @@ export async function PATCH(req: Request, { params }: Params) {
       { message: 'Insufficient permissions to update stock quantities' },
       { status: 403 }
     );
+  }
+
+  const wsId = await normalizeWorkspaceId(id, supabase);
+  if (!(await isInventoryEnabled(wsId))) {
+    return inventoryNotFoundResponse();
   }
 
   const {
@@ -463,6 +476,11 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
 
+  const wsId = await normalizeWorkspaceId(id, supabase);
+  if (!(await isInventoryEnabled(wsId))) {
+    return inventoryNotFoundResponse();
+  }
+
   // Get inventory for this product
   const { data: inventory, error } = await supabase
     .from('inventory_products')
@@ -484,7 +502,6 @@ export async function DELETE(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
-  const wsId = await normalizeWorkspaceId(id, supabase);
   // Check permissions
   const permissions = await getPermissions({ wsId: id, request: req });
   if (!permissions) {
@@ -496,6 +513,11 @@ export async function DELETE(req: Request, { params }: Params) {
       { message: 'Insufficient permissions to update stock quantities' },
       { status: 403 }
     );
+  }
+
+  const wsId = await normalizeWorkspaceId(id, supabase);
+  if (!(await isInventoryEnabled(wsId))) {
+    return inventoryNotFoundResponse();
   }
 
   // Check worksapce product exists
