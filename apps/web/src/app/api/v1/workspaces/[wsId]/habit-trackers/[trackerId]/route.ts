@@ -24,11 +24,11 @@ export async function GET(
   { params }: { params: Promise<RouteParams> }
 ) {
   try {
-    const { wsId, trackerId } = await params;
+    const { wsId: rawWsId, trackerId } = await params;
     assertValidTrackerId(trackerId);
-    const { user, sbAdmin } = await createHabitTrackerRouteContext(
+    const { user, sbAdmin, wsId } = await createHabitTrackerRouteContext(
       request,
-      wsId
+      rawWsId
     );
     const url = new URL(request.url);
     const query = habitTrackerListQuerySchema.parse({
@@ -55,9 +55,12 @@ export async function PATCH(
   { params }: { params: Promise<RouteParams> }
 ) {
   try {
-    const { wsId, trackerId } = await params;
+    const { wsId: rawWsId, trackerId } = await params;
     assertValidTrackerId(trackerId);
-    const { sbAdmin } = await createHabitTrackerRouteContext(request, wsId);
+    const { sbAdmin, wsId } = await createHabitTrackerRouteContext(
+      request,
+      rawWsId
+    );
     const body = habitTrackerUpdateSchema.parse(await request.json());
     const tracker = await updateHabitTracker(sbAdmin, wsId, trackerId, body);
 
@@ -72,9 +75,12 @@ export async function DELETE(
   { params }: { params: Promise<RouteParams> }
 ) {
   try {
-    const { wsId, trackerId } = await params;
+    const { wsId: rawWsId, trackerId } = await params;
     assertValidTrackerId(trackerId);
-    const { sbAdmin } = await createHabitTrackerRouteContext(request, wsId);
+    const { sbAdmin, wsId } = await createHabitTrackerRouteContext(
+      request,
+      rawWsId
+    );
     await archiveHabitTracker(sbAdmin, wsId, trackerId);
 
     return NextResponse.json({ success: true });

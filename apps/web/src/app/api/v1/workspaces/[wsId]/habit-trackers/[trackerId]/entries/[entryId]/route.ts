@@ -22,12 +22,12 @@ export async function PATCH(
   { params }: { params: Promise<RouteParams> }
 ) {
   try {
-    const { wsId, trackerId, entryId } = await params;
+    const { wsId: rawWsId, trackerId, entryId } = await params;
     assertValidTrackerId(trackerId);
     assertValidEntryId(entryId);
-    const { user, sbAdmin } = await createHabitTrackerRouteContext(
+    const { user, sbAdmin, wsId } = await createHabitTrackerRouteContext(
       request,
-      wsId
+      rawWsId
     );
     const body = habitTrackerEntryUpdateSchema.parse(await request.json());
     const entry = await updateHabitTrackerEntry(
@@ -50,12 +50,12 @@ export async function DELETE(
   { params }: { params: Promise<RouteParams> }
 ) {
   try {
-    const { wsId, trackerId, entryId } = await params;
+    const { wsId: rawWsId, trackerId, entryId } = await params;
     assertValidTrackerId(trackerId);
     assertValidEntryId(entryId);
-    const { user, sbAdmin } = await createHabitTrackerRouteContext(
+    const { user, sbAdmin, wsId } = await createHabitTrackerRouteContext(
       request,
-      wsId
+      rawWsId
     );
     await deleteHabitTrackerEntry(sbAdmin, wsId, trackerId, entryId, user.id);
 

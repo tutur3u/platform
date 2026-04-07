@@ -114,6 +114,7 @@ import type { NavLink } from '@/components/navigation';
 import { DEV_MODE } from '@/constants/common';
 import { resolveWorkspaceExternalProjectBinding } from '@/lib/external-projects/access';
 import { createTierRequirement } from '@/lib/feature-tiers';
+import { HABITS_ENABLED_SECRET } from '@/lib/habits/access';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -149,7 +150,7 @@ export async function WorkspaceNavigationLinks({
     getSecret(name, secrets)?.value === value;
 
   const ENABLE_AI_ONLY = hasSecret('ENABLE_AI_ONLY', 'true');
-  const ENABLE_HABITS = hasSecret('ENABLE_HABITS', 'true');
+  const ENABLE_HABITS = hasSecret(HABITS_ENABLED_SECRET, 'true');
 
   // Parallelize user-dependent queries
   const [

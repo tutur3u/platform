@@ -2,16 +2,11 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { isHabitsEnabled } from '@/lib/habits/access';
 import { HabitTrackerError, verifyWorkspaceMembership } from './service';
-
-export function assertValidWorkspaceId(wsId: string) {
-  if (!validate(wsId)) {
-    throw new HabitTrackerError('Invalid workspace ID');
-  }
-}
 
 export function assertValidTrackerId(trackerId: string) {
   if (!validate(trackerId)) {
@@ -29,12 +24,6 @@ export async function createHabitTrackerRouteContext(
   request: Request,
   wsId: string
 ) {
-  assertValidWorkspaceId(wsId);
-
-  if (!(await isHabitsEnabled(wsId))) {
-    throw new HabitTrackerError('Not found', 404);
-  }
-
   const supabase = await createClient(request);
   const sbAdmin = await createAdminClient();
   const {
@@ -46,9 +35,15 @@ export async function createHabitTrackerRouteContext(
     throw new HabitTrackerError('Please sign in to use habit trackers', 401);
   }
 
-  await verifyWorkspaceMembership(supabase, wsId, user.id);
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
-  return { supabase, sbAdmin, user };
+  await verifyWorkspaceMembership(supabase, normalizedWsId, user.id);
+
+  if (!(await isHabitsEnabled(normalizedWsId))) {
+    throw new HabitTrackerError('Not found', 404);
+  }
+
+  return { supabase, sbAdmin, user, wsId: normalizedWsId };
 }
 
 export function habitTrackerErrorResponse(error: unknown) {

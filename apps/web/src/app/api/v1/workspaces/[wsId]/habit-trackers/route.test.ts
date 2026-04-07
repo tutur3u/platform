@@ -35,6 +35,7 @@ describe('habit trackers route', () => {
     mocks.createHabitTrackerRouteContext.mockResolvedValue({
       user: { id: 'user-1' },
       sbAdmin: {},
+      wsId: 'ws-1',
     });
   });
 
@@ -137,7 +138,7 @@ describe('habit trackers route', () => {
       new HabitTrackerError('Not found', 404)
     );
 
-    const { GET } = await import(
+    const { GET, POST } = await import(
       '@/app/api/v1/workspaces/[wsId]/habit-trackers/route'
     );
 
@@ -150,5 +151,40 @@ describe('habit trackers route', () => {
 
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toEqual({ error: 'Not found' });
+
+    const postResponse = await POST(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/habit-trackers',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: 'Hydration',
+            tracking_mode: 'event_log',
+            target_period: 'daily',
+            target_operator: 'gte',
+            target_value: 1,
+            primary_metric_key: 'count',
+            aggregation_strategy: 'sum',
+            input_schema: [
+              {
+                key: 'count',
+                label: 'Count',
+                type: 'number',
+                required: true,
+              },
+            ],
+          }),
+        }
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1' }),
+      }
+    );
+
+    expect(postResponse.status).toBe(404);
+    await expect(postResponse.json()).resolves.toEqual({ error: 'Not found' });
   });
 });
