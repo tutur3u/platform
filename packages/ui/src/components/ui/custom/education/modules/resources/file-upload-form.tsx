@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Trash } from '@tuturuuu/icons';
+import { uploadWorkspaceStorageFile } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -211,21 +212,19 @@ export function StorageObjectForm({
           }
         );
 
-        const requestFormData = new FormData();
-        requestFormData.append('file', uploadFile);
-        requestFormData.append('path', targetPath);
-        requestFormData.append('upsert', 'false');
-
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/storage/upload`,
-          {
-            method: 'POST',
-            cache: 'no-store',
-            body: requestFormData,
-          }
-        );
-
-        if (!response.ok) {
+        try {
+          await uploadWorkspaceStorageFile(
+            wsId,
+            uploadFile,
+            {
+              path: targetPath,
+              upsert: false,
+            },
+            {
+              fetch,
+            }
+          );
+        } catch {
           hasErrors = true;
           setFileStatuses((prev) => ({
             ...prev,
