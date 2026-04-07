@@ -106,6 +106,75 @@ async function postExtractedEntry({
   }
 }
 
+async function requestExtractedFileUpload({
+  callbackToken,
+  callbackUrl,
+  contentType,
+  filePath,
+  size,
+}) {
+  const response = await fetch(callbackUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${callbackToken}`,
+      'Content-Type': 'application/json',
+      'x-drive-auto-extract-operation': 'file-upload-url',
+      'x-drive-auto-extract-path': filePath,
+    },
+    body: JSON.stringify({
+      contentType,
+      size,
+    }),
+  });
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => '');
+    throw new Error(
+      message || `Upload URL callback failed with status ${response.status}`
+    );
+  }
+
+  return response.json();
+}
+
+async function uploadExtractedFile({ body, contentType, uploadPayload }) {
+  const headers = {
+    ...(uploadPayload.headers || {}),
+  };
+
+  if (!headers['Content-Type']) {
+    headers['Content-Type'] = contentType || 'application/octet-stream';
+  }
+
+  if (uploadPayload.token) {
+    headers.Authorization = `Bearer ${uploadPayload.token}`;
+  }
+
+  let response = await fetch(uploadPayload.signedUrl, {
+    method: 'PUT',
+    headers,
+    body,
+  });
+
+  if (!response.ok) {
+    const fallbackHeaders = { ...headers };
+    delete fallbackHeaders['Content-Type'];
+
+    response = await fetch(uploadPayload.signedUrl, {
+      method: 'PUT',
+      headers: fallbackHeaders,
+      body,
+    });
+  }
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => '');
+    throw new Error(
+      message || `Direct upload failed with status ${response.status}`
+    );
+  }
+}
+
 async function extractArchive(payload) {
   const response = await fetch(payload.sourceUrl, {
     method: 'GET',
@@ -143,13 +212,18 @@ async function extractArchive(payload) {
     }
 
     const body = await entry.buffer();
-    await postExtractedEntry({
-      body,
+    const contentType = contentTypeForFile(entry.path);
+    const uploadPayload = await requestExtractedFileUpload({
       callbackToken: payload.callbackToken,
       callbackUrl: payload.callbackUrl,
+      contentType,
       filePath: targetPath,
-      operation: 'file',
-      contentType: contentTypeForFile(entry.path),
+      size: body.byteLength,
+    });
+    await uploadExtractedFile({
+      body,
+      contentType,
+      uploadPayload,
     });
     files += 1;
   }

@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { resolveWorkspaceStorageAutoExtractConfig } from '@/lib/workspace-storage-auto-extract';
 import {
   createWorkspaceStorageFolderObject,
-  uploadWorkspaceStorageFileDirect,
+  createWorkspaceStorageUploadPayload,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
 
@@ -65,21 +65,56 @@ export async function POST(
       return NextResponse.json({ message: 'Folder extracted successfully' });
     }
 
-    const arrayBuffer = await request.arrayBuffer();
-    const contentType =
-      request.headers.get('content-type') || 'application/octet-stream';
-
-    await uploadWorkspaceStorageFileDirect(
-      normalizedWsId,
-      sanitizedPath,
-      new Uint8Array(arrayBuffer),
-      {
-        contentType,
-        upsert: true,
+    if (operation === 'file-upload-url') {
+      let payload: unknown;
+      try {
+        payload = await request.json();
+      } catch {
+        return NextResponse.json(
+          { message: 'Invalid request body' },
+          { status: 400 }
+        );
       }
-    );
 
-    return NextResponse.json({ message: 'File extracted successfully' });
+      const contentType =
+        typeof payload === 'object' &&
+        payload !== null &&
+        'contentType' in payload &&
+        typeof payload.contentType === 'string'
+          ? payload.contentType
+          : 'application/octet-stream';
+      const size =
+        typeof payload === 'object' &&
+        payload !== null &&
+        'size' in payload &&
+        typeof payload.size === 'number'
+          ? payload.size
+          : undefined;
+
+      const parentPath = posix.dirname(sanitizedPath);
+      const fileName = posix.basename(sanitizedPath);
+      const uploadPayload = await createWorkspaceStorageUploadPayload(
+        normalizedWsId,
+        fileName,
+        {
+          path: parentPath === '.' ? '' : parentPath,
+          upsert: true,
+          contentType,
+          size,
+        }
+      );
+
+      return NextResponse.json({
+        message: 'Upload URL created successfully',
+        signedUrl: uploadPayload.signedUrl,
+        token: uploadPayload.token,
+        headers: uploadPayload.headers,
+        path: uploadPayload.path,
+        fullPath: uploadPayload.fullPath,
+      });
+    }
+
+    return NextResponse.json({ message: 'Invalid operation' }, { status: 400 });
   } catch (error) {
     if (error instanceof WorkspaceStorageError) {
       return NextResponse.json(
