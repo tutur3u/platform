@@ -1,14 +1,16 @@
 import { posix } from 'node:path';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import {
   getPermissions,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { triggerWorkspaceStorageAutoExtract } from '@/lib/workspace-storage-auto-extract';
+import {
+  uploadWorkspaceStorageFileDirect,
+  WorkspaceStorageError,
+} from '@/lib/workspace-storage-provider';
 
 const ALLOWED_MIME_TYPES = new Set([
   'image/png',
@@ -53,19 +55,6 @@ const ALLOWED_EXTENSIONS = new Set([
   '.json',
 ]);
 
-function isConflictStorageError(error: {
-  message?: string;
-  status?: number;
-  statusCode?: string | number;
-}) {
-  return (
-    error.status === 409 ||
-    error.statusCode === 409 ||
-    error.statusCode === '409' ||
-    /already exists|duplicate/i.test(error.message ?? '')
-  );
-}
-
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ wsId: string }> }
@@ -73,7 +62,6 @@ export async function POST(
   try {
     const { wsId } = await params;
     const supabase = await createClient(request);
-    const sbAdmin = await createAdminClient();
 
     const {
       data: { user },
@@ -155,48 +143,47 @@ export async function POST(
     }
 
     const storagePath = sanitizedPath
-      ? posix.join(normalizedWsId, sanitizedPath, sanitizedFilename)
-      : posix.join(normalizedWsId, sanitizedFilename);
+      ? posix.join(sanitizedPath, sanitizedFilename)
+      : sanitizedFilename;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = new Uint8Array(arrayBuffer);
 
-    const { data, error } = await sbAdmin.storage
-      .from('workspaces')
-      .upload(storagePath, buffer, {
+    const data = await uploadWorkspaceStorageFileDirect(
+      normalizedWsId,
+      storagePath,
+      buffer,
+      {
         contentType: file.type || 'application/octet-stream',
         upsert,
-      });
-
-    if (error) {
-      console.error('Error uploading file:', error);
-
-      if (isConflictStorageError(error)) {
-        return NextResponse.json(
-          { message: 'File already exists. Set upsert=true to overwrite.' },
-          { status: 409 }
-        );
       }
-
-      return NextResponse.json(
-        { message: 'Failed to upload file' },
-        { status: 500 }
-      );
-    }
-
-    const prefix = `${normalizedWsId}/`;
-    const relativePath = data.path.startsWith(prefix)
-      ? data.path.substring(prefix.length)
-      : data.path;
+    );
+    const autoExtract = await triggerWorkspaceStorageAutoExtract(
+      normalizedWsId,
+      {
+        path: data.path,
+        contentType: file.type || 'application/octet-stream',
+        originalFilename: sanitizedFilename,
+        requestOrigin: new URL(request.url).origin,
+      }
+    );
 
     return NextResponse.json({
       message: 'File uploaded successfully',
+      autoExtract,
       data: {
-        path: relativePath,
-        fullPath: data.fullPath ?? storagePath,
+        path: data.path,
+        fullPath: data.fullPath,
       },
     });
   } catch (error) {
+    if (error instanceof WorkspaceStorageError) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: error.status }
+      );
+    }
+
     console.error('Upload error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },

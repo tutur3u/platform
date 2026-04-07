@@ -1,22 +1,17 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
-import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import {
   getPermissions,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  createWorkspaceStorageUploadPayload,
-  WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
+import { triggerWorkspaceStorageAutoExtract } from '@/lib/workspace-storage-auto-extract';
 
-const uploadUrlSchema = z.object({
-  filename: z.string().min(1).max(255),
-  path: z.string().max(1024).optional(),
-  upsert: z.boolean().optional(),
-  size: z.number().int().min(0).optional(),
+const finalizeUploadSchema = z.object({
+  path: z.string().min(1).max(1024),
+  contentType: z.string().max(255).optional(),
+  originalFilename: z.string().max(255).optional(),
 });
 
 export async function POST(
@@ -26,7 +21,6 @@ export async function POST(
   try {
     const { wsId } = await params;
     const supabase = await createClient(request);
-
     const {
       data: { user },
       error: authError,
@@ -60,7 +54,7 @@ export async function POST(
       );
     }
 
-    const parsed = uploadUrlSchema.safeParse(payload);
+    const parsed = finalizeUploadSchema.safeParse(payload);
     if (!parsed.success) {
       return NextResponse.json(
         { message: 'Invalid request body', errors: parsed.error.issues },
@@ -68,50 +62,31 @@ export async function POST(
       );
     }
 
-    const sanitizedPath = sanitizePath(parsed.data.path || '');
+    const sanitizedPath = sanitizePath(parsed.data.path);
     if (sanitizedPath === null) {
       return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
     }
 
-    const sanitizedFilename = sanitizeFilename(parsed.data.filename);
-    if (!sanitizedFilename) {
-      return NextResponse.json(
-        { message: 'Invalid filename' },
-        { status: 400 }
-      );
-    }
+    const sanitizedFilename = parsed.data.originalFilename
+      ? sanitizeFilename(parsed.data.originalFilename) || undefined
+      : undefined;
 
-    const filenameWithSuffix =
-      parsed.data.upsert === true
-        ? sanitizedFilename
-        : `${generateRandomUUID()}-${sanitizedFilename}`;
-
-    const uploadPayload = await createWorkspaceStorageUploadPayload(
+    const autoExtract = await triggerWorkspaceStorageAutoExtract(
       normalizedWsId,
-      filenameWithSuffix,
       {
         path: sanitizedPath,
-        upsert: parsed.data.upsert ?? false,
-        size: parsed.data.size,
+        contentType: parsed.data.contentType,
+        originalFilename: sanitizedFilename,
+        requestOrigin: new URL(request.url).origin,
       }
     );
 
     return NextResponse.json({
-      signedUrl: uploadPayload.signedUrl,
-      token: uploadPayload.token,
-      headers: uploadPayload.headers,
-      path: uploadPayload.path,
-      fullPath: uploadPayload.fullPath,
+      message: 'Upload finalized successfully',
+      autoExtract,
     });
   } catch (error) {
-    if (error instanceof WorkspaceStorageError) {
-      return NextResponse.json(
-        { message: error.message },
-        { status: error.status }
-      );
-    }
-
-    console.error('Upload URL error:', error);
+    console.error('Finalize upload error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

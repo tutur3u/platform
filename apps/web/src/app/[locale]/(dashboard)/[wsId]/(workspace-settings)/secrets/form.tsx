@@ -30,6 +30,8 @@ interface Props {
   data?: WorkspaceSecret;
   existingSecrets?: string[];
   secretScope?: 'all' | 'rate-limits' | 'non-rate-limits';
+  initialValues?: Partial<z.infer<typeof FormSchema>>;
+  nameLocked?: boolean;
   onSubmitSecret?: (data: z.infer<typeof FormSchema>) => Promise<void> | void;
 
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
@@ -48,6 +50,8 @@ export default function SecretForm({
   data,
   existingSecrets = [],
   secretScope = 'all',
+  initialValues,
+  nameLocked = false,
   onSubmitSecret,
   onFinish,
 }: Props) {
@@ -65,10 +69,17 @@ export default function SecretForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id,
-      name: data?.name || '',
-      value: data?.value || (data?.id ? '' : 'true'),
+      name: data?.name || initialValues?.name || '',
+      value: data?.value || initialValues?.value || (data?.id ? '' : 'true'),
     },
   });
+
+  const selectedSecret = availableSecrets.find(
+    (secret) => secret.name === form.watch('name')
+  );
+  const valueOptions =
+    selectedSecret?.options ??
+    (selectedSecret?.type === 'boolean' ? ['true', 'false'] : undefined);
 
   const mutation = useMutation({
     mutationFn: async (payload: z.infer<typeof ApiConfigFormSchema>) => {
@@ -136,54 +147,55 @@ export default function SecretForm({
               <FormLabel>{t('ws-secrets.name')}</FormLabel>
               <div className="grid gap-2">
                 <FormControl>
-                  <Combobox
-                    t={t}
-                    mode="single"
-                    className="w-full"
-                    placeholder={t('ws-secrets.name')}
-                    options={availableSecrets
-                      .filter(
-                        (secret) =>
-                          !existingSecrets.includes(secret.name) ||
-                          data?.name === secret.name
-                      )
-                      .map((secret) => ({
-                        value: secret.name,
-                        label: secret.name,
-                      }))}
-                    selected={field.value}
-                    onChange={(val) => {
-                      const value = Array.isArray(val) ? val[0] : val;
-                      if (!value) return;
+                  {nameLocked ? (
+                    <Input {...field} disabled={true} />
+                  ) : (
+                    <Combobox
+                      t={t}
+                      mode="single"
+                      className="w-full"
+                      placeholder={t('ws-secrets.name')}
+                      options={availableSecrets
+                        .filter(
+                          (secret) =>
+                            !existingSecrets.includes(secret.name) ||
+                            data?.name === secret.name
+                        )
+                        .map((secret) => ({
+                          value: secret.name,
+                          label: secret.name,
+                        }))}
+                      selected={field.value}
+                      onChange={(val) => {
+                        const value = Array.isArray(val) ? val[0] : val;
+                        if (!value) return;
 
-                      field.onChange(value);
+                        field.onChange(value);
 
-                      // Prefill value if it's a known secret and current value is empty or default
-                      const secret = availableSecrets.find(
-                        (s) => s.name === value
-                      );
-                      const currentValue = form.getValues('value');
+                        const secret = availableSecrets.find(
+                          (item) => item.name === value
+                        );
 
-                      if (
-                        secret?.defaultValue &&
-                        (!currentValue || currentValue === 'true')
-                      ) {
-                        form.setValue('value', secret.defaultValue);
-                      }
-                    }}
-                    onCreate={(val) => {
-                      field.onChange(
-                        val.replace(/-/g, '_').replace(/\s/g, '_').toUpperCase()
-                      );
-                    }}
-                  />
+                        if (secret?.defaultValue) {
+                          form.setValue('value', secret.defaultValue, {
+                            shouldDirty: true,
+                          });
+                        }
+                      }}
+                      onCreate={(val) => {
+                        field.onChange(
+                          val
+                            .replace(/-/g, '_')
+                            .replace(/\s/g, '_')
+                            .toUpperCase()
+                        );
+                      }}
+                    />
+                  )}
                 </FormControl>
-                {availableSecrets.find((s) => s.name === field.value) && (
+                {selectedSecret && (
                   <p className="text-muted-foreground text-sm">
-                    {
-                      availableSecrets.find((s) => s.name === field.value)
-                        ?.description
-                    }
+                    {selectedSecret.description}
                   </p>
                 )}
               </div>
@@ -199,8 +211,37 @@ export default function SecretForm({
             <FormItem>
               <FormLabel>{t('ws-secrets.value')}</FormLabel>
               <FormControl>
-                <Input placeholder="Value" autoComplete="off" {...field} />
+                {valueOptions ? (
+                  <Combobox
+                    t={t}
+                    mode="single"
+                    className="w-full"
+                    placeholder={t('ws-secrets.value')}
+                    options={valueOptions.map((option) => ({
+                      value: option,
+                      label: option,
+                    }))}
+                    selected={field.value}
+                    onChange={(val) => {
+                      const value = Array.isArray(val) ? val[0] : val;
+                      if (!value) return;
+                      field.onChange(value);
+                    }}
+                  />
+                ) : (
+                  <Input
+                    placeholder={selectedSecret?.placeholder || 'Value'}
+                    autoComplete="off"
+                    type={selectedSecret?.sensitive ? 'password' : 'text'}
+                    {...field}
+                  />
+                )}
               </FormControl>
+              {selectedSecret?.placeholder && !valueOptions && (
+                <p className="text-muted-foreground text-sm">
+                  {selectedSecret.placeholder}
+                </p>
+              )}
               <FormMessage />
             </FormItem>
           )}

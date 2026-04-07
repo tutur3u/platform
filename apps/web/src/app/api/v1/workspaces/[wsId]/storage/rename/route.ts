@@ -1,9 +1,4 @@
-import { posix } from 'node:path';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import type { StorageDatabase } from '@tuturuuu/types/primitives/StorageObject';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   sanitizeFilename,
   sanitizeFolderName,
@@ -15,6 +10,10 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  renameWorkspaceStorageEntry,
+  WorkspaceStorageError,
+} from '@/lib/workspace-storage-provider';
 
 const renameStorageObjectSchema = z.object({
   path: z.string().default(''),
@@ -23,19 +22,6 @@ const renameStorageObjectSchema = z.object({
   isFolder: z.boolean().default(false),
 });
 
-function isConflictStorageError(error: {
-  message?: string;
-  status?: number;
-  statusCode?: string | number;
-}) {
-  return (
-    error.status === 409 ||
-    error.statusCode === 409 ||
-    error.statusCode === '409' ||
-    /already exists|duplicate/i.test(error.message ?? '')
-  );
-}
-
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ wsId: string }> }
@@ -43,8 +29,6 @@ export async function POST(
   try {
     const { wsId } = await params;
     const supabase = await createClient(request);
-    const sbAdmin = await createAdminClient();
-    const storageAdmin = await createAdminClient<StorageDatabase>();
 
     const {
       data: { user },
@@ -101,104 +85,27 @@ export async function POST(
       return NextResponse.json({ message: 'Nothing changed' });
     }
 
-    const currentBasePath = sanitizedPath
-      ? posix.join(normalizedWsId, sanitizedPath, currentName)
-      : posix.join(normalizedWsId, currentName);
-    const nextBasePath = sanitizedPath
-      ? posix.join(normalizedWsId, sanitizedPath, newName)
-      : posix.join(normalizedWsId, newName);
-
-    if (parsed.data.isFolder) {
-      const { data: existingObjects, error: existingError } = await storageAdmin
-        .schema('storage')
-        .from('objects')
-        .select('name')
-        .eq('bucket_id', 'workspaces')
-        .like('name', `${currentBasePath}/%`)
-        .order('name', { ascending: true });
-
-      if (existingError) {
-        return NextResponse.json(
-          { message: 'Failed to load folder contents' },
-          { status: 500 }
-        );
-      }
-
-      if (!existingObjects || existingObjects.length === 0) {
-        return NextResponse.json(
-          { message: 'Folder not found' },
-          { status: 404 }
-        );
-      }
-
-      const { data: conflictingObject, error: conflictError } =
-        await storageAdmin
-          .schema('storage')
-          .from('objects')
-          .select('name')
-          .eq('bucket_id', 'workspaces')
-          .like('name', `${nextBasePath}/%`)
-          .limit(1)
-          .maybeSingle();
-
-      if (conflictError) {
-        return NextResponse.json(
-          { message: 'Failed to validate destination folder' },
-          { status: 500 }
-        );
-      }
-
-      if (conflictingObject) {
-        return NextResponse.json(
-          { message: 'Folder already exists' },
-          { status: 409 }
-        );
-      }
-
-      for (const object of existingObjects) {
-        const destination = object.name.replace(currentBasePath, nextBasePath);
-        const { error } = await sbAdmin.storage
-          .from('workspaces')
-          .move(object.name, destination);
-
-        if (error) {
-          return NextResponse.json(
-            {
-              message: isConflictStorageError(error)
-                ? 'Folder already exists'
-                : 'Failed to rename folder',
-            },
-            { status: isConflictStorageError(error) ? 409 : 500 }
-          );
-        }
-      }
-
-      return NextResponse.json({
-        message: 'Folder renamed successfully',
-        data: { previousName: currentName, name: newName },
-      });
-    }
-
-    const { error } = await sbAdmin.storage
-      .from('workspaces')
-      .move(currentBasePath, nextBasePath);
-
-    if (error) {
-      return NextResponse.json(
-        {
-          message: isConflictStorageError(error)
-            ? 'File already exists'
-            : 'Failed to rename file',
-        },
-        { status: isConflictStorageError(error) ? 409 : 500 }
-      );
-    }
+    await renameWorkspaceStorageEntry(normalizedWsId, {
+      path: sanitizedPath,
+      currentName,
+      newName,
+      isFolder: parsed.data.isFolder,
+    });
 
     return NextResponse.json({
-      message: 'File renamed successfully',
+      message: parsed.data.isFolder
+        ? 'Folder renamed successfully'
+        : 'File renamed successfully',
       data: { previousName: currentName, name: newName },
     });
   } catch (error) {
+    if (error instanceof WorkspaceStorageError) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: error.status }
+      );
+    }
+
     console.error('Unexpected error renaming storage object:', error);
     return NextResponse.json(
       { message: 'Internal server error' },

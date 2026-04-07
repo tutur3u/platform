@@ -1,8 +1,4 @@
-import { posix } from 'node:path';
-import {
-  createClient,
-  createDynamicAdminClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_SEARCH_LENGTH,
@@ -14,7 +10,10 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { countWorkspaceStorageObjects } from '@/lib/storage-analytics';
+import {
+  listWorkspaceStorageDirectory,
+  WorkspaceStorageError,
+} from '@/lib/workspace-storage-provider';
 
 const listQuerySchema = z.object({
   path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).optional().default(''),
@@ -61,55 +60,31 @@ export async function GET(
     }
 
     const { path, search, limit, offset, sortBy, sortOrder } = parsed.data;
-    const trimmedPath = path.replace(/^\/+|\/+$/g, '');
-    const storagePath = trimmedPath
-      ? posix.join(normalizedWsId, trimmedPath)
-      : normalizedWsId;
-
-    const sbAdmin = await createDynamicAdminClient();
-    const { data: files, error } = await sbAdmin.storage
-      .from('workspaces')
-      .list(storagePath, {
-        limit,
-        offset,
-        sortBy: {
-          column: sortBy,
-          order: sortOrder,
-        },
-        search: search || undefined,
-      });
-
-    if (error) {
-      console.error('Error listing workspace storage objects:', error);
-      return NextResponse.json(
-        { message: 'Failed to list files' },
-        { status: 500 }
-      );
-    }
-
-    const filteredFiles = files?.filter(
-      (file) => file.name !== '.emptyFolderPlaceholder'
-    );
-
-    let totalCount = filteredFiles?.length || 0;
-    try {
-      totalCount = await countWorkspaceStorageObjects(sbAdmin, normalizedWsId, {
-        path,
-        search,
-      });
-    } catch (countError) {
-      console.error('Error counting workspace storage objects:', countError);
-    }
+    const result = await listWorkspaceStorageDirectory(normalizedWsId, {
+      path,
+      search,
+      limit,
+      offset,
+      sortBy,
+      sortOrder,
+    });
 
     return NextResponse.json({
-      data: filteredFiles || [],
+      data: result.data,
       pagination: {
         limit,
         offset,
-        total: totalCount,
+        total: result.total,
       },
     });
   } catch (error) {
+    if (error instanceof WorkspaceStorageError) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: error.status }
+      );
+    }
+
     console.error('Unexpected workspace storage list error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },

@@ -166,6 +166,7 @@ export {
   deleteWorkspaceStorageObject,
   deleteWorkspaceStorageObjects,
   listWorkspaceStorageObjects,
+  migrateWorkspaceStorage,
   renameWorkspaceStorageObject,
   uploadWorkspaceStorageFile,
   uploadWorkspaceTaskFile,

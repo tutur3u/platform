@@ -13656,6 +13656,81 @@
     "edit_secret": "Chỉnh sửa mã bí mật",
     "name": "Tên",
     "plural": "Mã bí mật",
+    "rollout": {
+      "add": "Thêm",
+      "auto_extract": {
+        "blocked": "Đang bị chặn",
+        "description": "Tùy chọn chuyển các tệp ZIP đã tải lên qua proxy tự lưu trữ để giải nén tệp trở lại backend đang hoạt động.",
+        "live": "Đang hoạt động",
+        "off": "Đang tắt",
+        "proxy_url": "URL proxy",
+        "shared_token": "Mã token dùng chung",
+        "switch": "Công tắc",
+        "title": "Tự động giải nén ZIP"
+      },
+      "backends": {
+        "active": "Đang hoạt động",
+        "copy_into": "Sao chép vào {provider}",
+        "inventory": "Dung lượng",
+        "missing_message": "Hoàn tất các secret bắt buộc trước khi dùng backend này.",
+        "needs_secrets": "Thiếu secret",
+        "objects": "Đối tượng",
+        "r2": {
+          "description": "Đích đến tương thích S3 với URL ký ở cấp nhà cung cấp."
+        },
+        "reachable": "Sẵn sàng",
+        "ready_message": "Sẵn sàng cho đọc, tải lên và di chuyển dữ liệu.",
+        "supabase": {
+          "description": "Đường lưu trữ hiện tại được quản lý. Phù hợp làm phương án dự phòng và nguồn di chuyển."
+        },
+        "unavailable": "Không khả dụng"
+      },
+      "configured": "Đã cấu hình",
+      "console": "Bảng điều phối triển khai nền tảng",
+      "description": "Cấu hình backend lưu trữ của workspace tại đây trước khi bật Cloudflare R2. Trang Drive sẽ tiếp tục dùng Supabase cho đến khi chuyển provider và các secret R2 bắt buộc đã được thiết lập.",
+      "dialog_add": "Thêm mã bí mật cho workspace",
+      "dialog_update": "Cập nhật mã bí mật cho workspace",
+      "edit": "Chỉnh sửa",
+      "metrics": {
+        "active_backend": "Backend đang hoạt động",
+        "provider_secrets": "Secret của backend",
+        "zip_automation": "Tự động ZIP"
+      },
+      "migration": {
+        "description": "Sao chép tệp giữa các backend trước khi đổi nhà cung cấp đang hoạt động. Các tệp lưu trữ hiện có vẫn được giữ nguyên; thao tác này chỉ sao chép kho tệp hiện tại của workspace sang backend đích.",
+        "r2_to_supabase": "Sao chép R2 sang Supabase",
+        "recommended": "Khuyến nghị: {source} sang {target}",
+        "supabase_to_r2": "Sao chép Supabase sang R2",
+        "title": "Di chuyển dữ liệu"
+      },
+      "migration_error": "Không thể di chuyển dữ liệu lưu trữ của workspace",
+      "migration_success": "Đã sao chép {files} tệp vào {target}.",
+      "missing": "Thiếu",
+      "no_value": "Chưa có giá trị",
+      "optional": "Tùy chọn",
+      "progress": "Secret bắt buộc cho rollout đã cấu hình: {configured}/{total}",
+      "provider": "Provider: {provider}",
+      "provider_secrets": {
+        "title": "Secret của backend"
+      },
+      "providers": {
+        "r2": "Cloudflare R2",
+        "supabase": "Supabase"
+      },
+      "proxy_secrets": {
+        "description": "Proxy mặc định bị tắt. Workspace phải chủ động bật và cung cấp cả URL proxy lẫn shared token trước khi ZIP tải lên được giải nén tự động.",
+        "title": "Secret của proxy ZIP"
+      },
+      "required": "Bắt buộc để rollout R2",
+      "states": {
+        "disabled": "Đã tắt",
+        "enabled": "Đã bật",
+        "missing": "Thiếu",
+        "needs_proxy_secrets": "Thiếu secret proxy",
+        "present": "Đã có"
+      },
+      "title": "Rollout lưu trữ Drive"
+    },
     "secrets": "Mã bí mật",
     "singular": "Mã bí mật",
     "value": "Giá trị",

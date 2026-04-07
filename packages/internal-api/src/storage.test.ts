@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  createWorkspaceStorageUploadUrl,
   createWorkspaceTaskUploadUrl,
+  uploadWorkspaceStorageFile,
   uploadWorkspaceTaskFile,
 } from './storage';
 
@@ -96,6 +98,114 @@ describe('workspace task upload helpers', () => {
     expect(result).toEqual({
       path: 'task-images/file.png',
       fullPath: 'ws-1/task-images/file.png',
+    });
+  });
+
+  it('supports tokenless signed uploads with provider headers', async () => {
+    const file = new File(['hello'], 'file.txt', { type: 'text/plain' });
+    const uploadUrlFetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        signedUrl: 'https://upload.example.com/r2-signed',
+        headers: {
+          'x-amz-acl': 'private',
+        },
+        path: 'documents/file.txt',
+        fullPath: 'ws-1/documents/file.txt',
+      })
+    );
+
+    const uploadUrl = await createWorkspaceStorageUploadUrl(
+      'ws-1',
+      'file.txt',
+      { path: 'documents', size: file.size },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: uploadUrlFetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(uploadUrl).toEqual({
+      signedUrl: 'https://upload.example.com/r2-signed',
+      headers: {
+        'x-amz-acl': 'private',
+      },
+      token: undefined,
+      path: 'documents/file.txt',
+      fullPath: 'ws-1/documents/file.txt',
+    });
+
+    const uploadFetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          signedUrl: 'https://upload.example.com/r2-signed',
+          headers: {
+            'x-amz-acl': 'private',
+          },
+          path: 'documents/file.txt',
+          fullPath: 'ws-1/documents/file.txt',
+        })
+      )
+      .mockResolvedValueOnce({ ok: true, status: 200, text: async () => '' })
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          autoExtract: {
+            status: 'disabled',
+            message: 'ZIP auto extraction is disabled for this workspace.',
+          },
+        })
+      );
+
+    const result = await uploadWorkspaceStorageFile('ws-1', file, undefined, {
+      baseUrl: 'https://internal.example.com',
+      fetch: uploadFetchMock as unknown as typeof fetch,
+    });
+
+    expect(uploadFetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://upload.example.com/r2-signed',
+      expect.objectContaining({
+        method: 'PUT',
+        headers: expect.objectContaining({
+          'Content-Type': expect.stringContaining('text/plain'),
+          'x-amz-acl': 'private',
+        }),
+      })
+    );
+
+    const secondCallOptions = uploadFetchMock.mock.calls[1]?.[1] as {
+      headers?: Record<string, string>;
+    };
+    const secondCallHeaders = secondCallOptions?.headers ?? {};
+    expect(secondCallHeaders.Authorization).toBeUndefined();
+
+    expect(uploadFetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/ws-1/storage/finalize-upload',
+      expect.objectContaining({
+        method: 'POST',
+        cache: 'no-store',
+      })
+    );
+    const thirdCallOptions = uploadFetchMock.mock.calls[2]?.[1] as {
+      body?: string;
+    };
+    const thirdCallBody = JSON.parse(thirdCallOptions?.body ?? '{}') as {
+      path?: string;
+      contentType?: string;
+      originalFilename?: string;
+    };
+    expect(thirdCallBody.path).toBe('documents/file.txt');
+    expect(thirdCallBody.contentType).toContain('text/plain');
+    expect(thirdCallBody.originalFilename).toBe('file.txt');
+
+    expect(result).toEqual({
+      autoExtract: {
+        status: 'disabled',
+        message: 'ZIP auto extraction is disabled for this workspace.',
+      },
+      path: 'documents/file.txt',
+      fullPath: 'ws-1/documents/file.txt',
     });
   });
 });

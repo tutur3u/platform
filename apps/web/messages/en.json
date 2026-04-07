@@ -13656,6 +13656,81 @@
     "edit_secret": "Edit Secret",
     "name": "Name",
     "plural": "Secrets",
+    "rollout": {
+      "add": "Add",
+      "auto_extract": {
+        "blocked": "Blocked",
+        "description": "Optionally route uploaded ZIP archives through a self-hosted proxy that extracts files back into the active backend.",
+        "live": "Live",
+        "off": "Off",
+        "proxy_url": "Proxy URL",
+        "shared_token": "Shared token",
+        "switch": "Switch",
+        "title": "ZIP automation"
+      },
+      "backends": {
+        "active": "Active",
+        "copy_into": "Copy into {provider}",
+        "inventory": "Inventory",
+        "missing_message": "Complete the required secrets before using this backend.",
+        "needs_secrets": "Needs secrets",
+        "objects": "Objects",
+        "r2": {
+          "description": "S3-compatible destination with provider-level signed URLs."
+        },
+        "reachable": "Reachable",
+        "ready_message": "Ready for reads, uploads, and migration.",
+        "supabase": {
+          "description": "Current managed storage path. Good fallback and migration source."
+        },
+        "unavailable": "Unavailable"
+      },
+      "configured": "Configured",
+      "console": "Platform rollout console",
+      "description": "Configure the workspace storage backend here before enabling Cloudflare R2. The Drive page will keep using Supabase until the provider is switched and the required R2 secrets are present.",
+      "dialog_add": "Add workspace secret",
+      "dialog_update": "Update workspace secret",
+      "edit": "Edit",
+      "metrics": {
+        "active_backend": "Active backend",
+        "provider_secrets": "Provider secrets",
+        "zip_automation": "ZIP automation"
+      },
+      "migration": {
+        "description": "Copy files between backends before you switch the active provider. Existing archives stay in place; this copies the current workspace inventory into the destination backend.",
+        "r2_to_supabase": "Copy R2 to Supabase",
+        "recommended": "Recommended: {source} to {target}",
+        "supabase_to_r2": "Copy Supabase to R2",
+        "title": "Migration"
+      },
+      "migration_error": "Failed to migrate workspace storage",
+      "migration_success": "Copied {files} file(s) into {target}.",
+      "missing": "Missing",
+      "no_value": "No value set",
+      "optional": "Optional",
+      "progress": "Required rollout secrets configured: {configured}/{total}",
+      "provider": "Provider: {provider}",
+      "provider_secrets": {
+        "title": "Provider secrets"
+      },
+      "providers": {
+        "r2": "Cloudflare R2",
+        "supabase": "Supabase"
+      },
+      "proxy_secrets": {
+        "description": "The proxy is disabled by default. A workspace must explicitly enable it and provide both the proxy URL and shared token before uploaded ZIPs are extracted automatically.",
+        "title": "ZIP proxy secrets"
+      },
+      "required": "Required for R2 rollout",
+      "states": {
+        "disabled": "Disabled",
+        "enabled": "Enabled",
+        "missing": "Missing",
+        "needs_proxy_secrets": "Needs proxy secrets",
+        "present": "Present"
+      },
+      "title": "Drive Storage Rollout"
+    },
     "secrets": "Secrets",
     "singular": "Secret",
     "value": "Value",

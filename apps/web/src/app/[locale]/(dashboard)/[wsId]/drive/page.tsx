@@ -1,4 +1,3 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   EMPTY_FOLDER_PLACEHOLDER_NAME,
   type StorageObject,
@@ -10,9 +9,11 @@ import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { getWorkspaceStorageMetrics } from '@/lib/storage-analytics';
+import {
+  getWorkspaceStorageOverview,
+  listWorkspaceStorageDirectory,
+} from '@/lib/workspace-storage-provider';
 import { formatBytes } from '@/utils/file-helper';
-import { joinPath } from '@/utils/path-helper';
 import DriveBreadcrumbs from './breadcrumbs';
 import NewActions from './new-actions';
 import StorageObjectsTable from './table';
@@ -52,14 +53,12 @@ export default async function WorkspaceStorageObjectsPage({
         if (withoutPermission('manage_drive')) redirect(`/${wsId}`);
 
         const { data } = await getData(wsId, await searchParams);
-        const storageMetrics = await getStorageMetrics(wsId);
-        const count = storageMetrics.fileCount ?? 0;
-        const totalSize = (await getTotalSize(wsId)) ?? 0;
-        const largestFile = storageMetrics.largestFile;
-        const smallestFile = storageMetrics.smallestFile;
-
-        // Get storage limit from workspace_secrets or use 100MB default
-        const STORAGE_LIMIT = (await getStorageLimit(wsId)) ?? 104857600; // 100MB default
+        const storageOverview = await getWorkspaceStorageOverview(wsId);
+        const count = storageOverview.fileCount ?? 0;
+        const totalSize = storageOverview.totalSize ?? 0;
+        const largestFile = storageOverview.largestFile;
+        const smallestFile = storageOverview.smallestFile;
+        const STORAGE_LIMIT = storageOverview.storageLimit ?? 104857600;
         const usagePercent = Math.min(
           100,
           Math.round((totalSize / STORAGE_LIMIT) * 100)
@@ -212,70 +211,21 @@ async function getData(
   wsId: string,
   { q, page = '1', pageSize = '10', path = '' }: Awaited<Props['searchParams']>
 ) {
-  const supabase = await createAdminClient();
-  const normalizedQuery = q?.trim();
-
-  const { data, error } = await supabase.storage
-    .from('workspaces')
-    .list(joinPath(wsId, path), {
-      limit: parseInt(pageSize, 10),
-      offset: (parseInt(page, 10) - 1) * parseInt(pageSize, 10),
-      sortBy: { column: 'created_at', order: 'desc' },
-      search: normalizedQuery || undefined,
-    });
-
-  if (error) {
-    console.error('Error fetching storage objects:', error);
-    throw error;
-  }
+  const result = await listWorkspaceStorageDirectory(wsId, {
+    path,
+    search: q?.trim(),
+    limit: parseInt(pageSize, 10),
+    offset: (parseInt(page, 10) - 1) * parseInt(pageSize, 10),
+    sortBy: 'created_at',
+    sortOrder: 'desc',
+  });
 
   return {
-    data: data.filter(
-      (object) => !object.name.match(EMPTY_FOLDER_PLACEHOLDER_NAME)
+    data: result.data.filter(
+      (object) =>
+        !!object.name && !object.name.match(EMPTY_FOLDER_PLACEHOLDER_NAME)
     ),
   } as {
     data: StorageObject[];
   };
-}
-
-async function getTotalSize(wsId: string) {
-  const supabase = await createAdminClient();
-
-  const { data, error } = await supabase.rpc('get_workspace_drive_size', {
-    ws_id: wsId,
-  });
-
-  if (error) {
-    console.error('Error fetching total size:', error);
-    return 0;
-  }
-  return data ?? 0;
-}
-
-async function getStorageLimit(wsId: string) {
-  const supabase = await createAdminClient();
-
-  const { data, error } = await supabase.rpc('get_workspace_storage_limit', {
-    p_ws_id: wsId,
-  });
-
-  if (error) {
-    console.error('Error fetching storage limit:', error);
-    return 104857600; // 100MB default
-  }
-  return data ?? 104857600; // 100MB default
-}
-
-async function getStorageMetrics(wsId: string) {
-  try {
-    const supabase = await createAdminClient();
-    return await getWorkspaceStorageMetrics(supabase, wsId);
-  } catch (error) {
-    console.error('Error fetching storage metrics:', error);
-    return {
-      fileCount: 0,
-      largestFile: null,
-      smallestFile: null,
-    };
-  }
 }

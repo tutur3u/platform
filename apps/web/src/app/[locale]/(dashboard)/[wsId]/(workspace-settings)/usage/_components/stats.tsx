@@ -11,6 +11,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import StatisticCard from '@/components/cards/StatisticCard';
+import { getWorkspaceStorageOverview } from '@/lib/workspace-storage-provider';
 
 // ============================================================================
 // Workspace Overview Stats
@@ -108,7 +109,6 @@ export async function DriveUsageStats({
   wsId: string;
   isRootWorkspace: boolean;
 }) {
-  const supabase = await createClient();
   const permissions = await getPermissions({ wsId });
   if (!permissions) notFound();
   const { containsPermission } = permissions;
@@ -120,20 +120,9 @@ export async function DriveUsageStats({
   }
 
   try {
-    const { data: files } = await supabase.storage
-      .from('workspaces')
-      .list(wsId, {
-        limit: 1000,
-        sortBy: { column: 'name', order: 'asc' },
-      });
-
-    const totalSize =
-      files?.reduce((acc, file) => acc + (file.metadata?.size || 0), 0) || 0;
-
-    const { data: storageLimit } = await supabase.rpc(
-      'get_workspace_storage_limit',
-      { p_ws_id: wsId }
-    );
+    const storageOverview = await getWorkspaceStorageOverview(wsId);
+    const totalSize = storageOverview.totalSize;
+    const storageLimit = storageOverview.storageLimit;
 
     const effectiveLimit = isRootWorkspace ? undefined : storageLimit;
     const displayValue = formatBytes(totalSize);
