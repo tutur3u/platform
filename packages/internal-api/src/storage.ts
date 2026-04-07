@@ -71,6 +71,27 @@ export interface WorkspaceStorageListResponse {
   };
 }
 
+export interface WorkspaceStorageExportFile {
+  path: string;
+  relativePath: string;
+  url: string;
+  size?: number;
+  contentType?: string | null;
+}
+
+export interface WorkspaceStorageExportLinksResponse {
+  folderName: string;
+  folderPath: string;
+  generatedAt: string;
+  indexFile: WorkspaceStorageExportFile | null;
+  files: WorkspaceStorageExportFile[];
+  loaderManifest: {
+    entryUrl: string | null;
+    assetUrls: Record<string, string>;
+  };
+  mode: 'rotating';
+}
+
 interface WorkspaceStorageFolderResponse {
   message: string;
   data?: {
@@ -390,6 +411,27 @@ export async function listWorkspaceStorageObjects(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/storage/list`,
     {
       query,
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function exportWorkspaceStorageLinks(
+  workspaceId: string,
+  payload: {
+    path: string;
+  },
+  clientOptions?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(clientOptions);
+  return client.json<WorkspaceStorageExportLinksResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/storage/export-links`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
       cache: 'no-store',
     }
   );

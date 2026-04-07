@@ -165,11 +165,13 @@ export {
   deleteWorkspaceStorageFolder,
   deleteWorkspaceStorageObject,
   deleteWorkspaceStorageObjects,
+  exportWorkspaceStorageLinks,
   listWorkspaceStorageObjects,
   migrateWorkspaceStorage,
   renameWorkspaceStorageObject,
   uploadWorkspaceStorageFile,
   uploadWorkspaceTaskFile,
+  type WorkspaceStorageExportLinksResponse,
 } from './storage';
 export {
   addWorkspaceTaskLabel,

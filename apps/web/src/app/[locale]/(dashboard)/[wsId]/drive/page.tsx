@@ -15,6 +15,7 @@ import {
 } from '@/lib/workspace-storage-provider';
 import { formatBytes } from '@/utils/file-helper';
 import DriveBreadcrumbs from './breadcrumbs';
+import { WorkspaceStorageExportLinksButton } from './export-links-dialog';
 import NewActions from './new-actions';
 import StorageObjectsTable from './table';
 
@@ -76,7 +77,18 @@ export default async function WorkspaceStorageObjectsPage({
               description={t('ws-storage-objects.description')}
               createTitle={t('ws-storage-objects.upload')}
               createDescription={t('ws-storage-objects.upload_description')}
-              action={<NewActions wsId={wsId} path={path} />}
+              action={
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {path ? (
+                    <WorkspaceStorageExportLinksButton
+                      wsId={wsId}
+                      folderPath={path}
+                      folderName={path.split('/').pop() || path}
+                    />
+                  ) : null}
+                  <NewActions wsId={wsId} path={path} />
+                </div>
+              }
             />
 
             <Separator className="my-6" />

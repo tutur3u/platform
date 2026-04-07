@@ -8,6 +8,7 @@ import {
   Ellipsis,
   ExternalLink,
   Eye,
+  PackageOpen,
   Share,
   Trash,
 } from '@tuturuuu/icons';
@@ -30,6 +31,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { joinPath } from '@/utils/path-helper';
+import { WorkspaceStorageExportLinksDialog } from './export-links-dialog';
 import { RenameStorageObjectDialog } from './rename-storage-object-dialog';
 
 interface Props {
@@ -57,6 +59,10 @@ export function StorageObjectRowActions({
   const router = useRouter();
   const storageObj = row.original;
   const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const exportFolderPath = storageObj.id
+    ? null
+    : joinPath(path, storageObj.name || '');
 
   const requestRename = () => {
     if (onRequestRename) {
@@ -211,6 +217,15 @@ export function StorageObjectRowActions({
           <ContextMenuSeparator />
         </>
       )}
+      {!storageObj.id && exportFolderPath ? (
+        <>
+          <ContextMenuItem onClick={() => setShowExportDialog(true)}>
+            <PackageOpen className="mr-2 h-4 w-4" />
+            {t('ws-storage-objects.export.folder_action')}
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+        </>
+      ) : null}
       <ContextMenuItem onClick={() => onRequestDelete?.(storageObj)}>
         <Trash className="mr-2 h-4 w-4" />
         {t('common.delete')}
@@ -258,6 +273,15 @@ export function StorageObjectRowActions({
           <DropdownMenuSeparator />
         </>
       )}
+      {!storageObj.id && exportFolderPath ? (
+        <>
+          <DropdownMenuItem onClick={() => setShowExportDialog(true)}>
+            <PackageOpen className="mr-2 h-4 w-4" />
+            {t('ws-storage-objects.export.folder_action')}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+        </>
+      ) : null}
       <DropdownMenuItem onClick={() => onRequestDelete?.(storageObj)}>
         <Trash className="mr-2 h-4 w-4" />
         {t('common.delete')}
@@ -277,6 +301,15 @@ export function StorageObjectRowActions({
           onOpenChange={setShowRenameDialog}
           onSuccess={() => router.refresh()}
         />
+        {exportFolderPath ? (
+          <WorkspaceStorageExportLinksDialog
+            wsId={wsId}
+            folderPath={exportFolderPath}
+            folderName={storageObj.name || ''}
+            open={showExportDialog}
+            onOpenChange={setShowExportDialog}
+          />
+        ) : null}
       </>
     );
   }
@@ -308,6 +341,15 @@ export function StorageObjectRowActions({
         onOpenChange={setShowRenameDialog}
         onSuccess={() => router.refresh()}
       />
+      {exportFolderPath ? (
+        <WorkspaceStorageExportLinksDialog
+          wsId={wsId}
+          folderPath={exportFolderPath}
+          folderName={storageObj.name || ''}
+          open={showExportDialog}
+          onOpenChange={setShowExportDialog}
+        />
+      ) : null}
     </>
   );
 }
