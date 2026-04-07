@@ -60,7 +60,7 @@ class _BoardTaskTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Top row: [badge + title | assignees + menu]
+                    // Top row: [badge + title | assignees]
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -81,36 +81,10 @@ class _BoardTaskTile extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const shad.Gap(8),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (task.assignees.isNotEmpty) ...[
-                              _AssigneeAvatarStack(assignees: task.assignees),
-                              const shad.Gap(4),
-                            ],
-                            PopupMenuButton<_BoardTaskMenuAction>(
-                              tooltip: context.l10n.taskBoardDetailTaskActions,
-                              onSelected: (action) {
-                                if (action == _BoardTaskMenuAction.move) {
-                                  onMove();
-                                }
-                              },
-                              itemBuilder: (context) => [
-                                PopupMenuItem<_BoardTaskMenuAction>(
-                                  value: _BoardTaskMenuAction.move,
-                                  child: Text(
-                                    context.l10n.taskBoardDetailMoveTask,
-                                  ),
-                                ),
-                              ],
-                              child: const Padding(
-                                padding: EdgeInsets.only(left: 4),
-                                child: Icon(Icons.more_horiz, size: 18),
-                              ),
-                            ),
-                          ],
-                        ),
+                        if (task.assignees.isNotEmpty) ...[
+                          const shad.Gap(8),
+                          _AssigneeAvatarStack(assignees: task.assignees),
+                        ],
                       ],
                     ),
                     // Start date (future only)
@@ -614,8 +588,6 @@ class _PaginatedPlaceholder extends StatelessWidget {
   }
 }
 
-enum _BoardTaskMenuAction { move }
-
 enum _BoardListMenuAction { edit }
 
 class _TaskPriorityChip extends StatelessWidget {
@@ -759,6 +731,7 @@ class _AssigneeAvatarStack extends StatelessWidget {
   Widget build(BuildContext context) {
     final visible = assignees.take(3).toList(growable: false);
     final overflowCount = assignees.length - visible.length;
+    // Width: first avatar is 20px, each additional adds 14px (with 6px overlap)
     final width = visible.length * 14 + 6 + (overflowCount > 0 ? 14 : 0);
     Widget child = SizedBox(
       height: 20,
