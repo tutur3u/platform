@@ -7,6 +7,8 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { enrichTransactionsWithTags } from '../tag-enrichment';
+
 // Helper function to verify transaction belongs to workspace
 async function verifyTransactionWorkspace(
   transactionId: string,
@@ -139,7 +141,29 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(data[0]);
+  const transactionRow = data[0];
+  if (!transactionRow) {
+    return NextResponse.json(
+      { message: 'Transaction not found' },
+      { status: 404 }
+    );
+  }
+
+  const { data: enrichedTransactions, error: tagError } =
+    await enrichTransactionsWithTags(sbAdmin, [transactionRow]);
+
+  if (tagError) {
+    console.error('Error enriching transaction tags:', {
+      transactionId,
+      error: tagError.message,
+    });
+    return NextResponse.json(
+      { message: 'Error fetching transaction tags' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json(enrichedTransactions?.[0] ?? transactionRow);
 }
 
 export async function PUT(req: Request, { params }: Params) {

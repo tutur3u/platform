@@ -11,6 +11,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/color_hex.dart';
+import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -19,6 +20,7 @@ import 'package:mobile/features/finance/finance_cache.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -72,6 +74,7 @@ class _TransactionCategoriesViewState
   int _tagsRequestId = 0;
   String? _categoriesWorkspaceId;
   String? _tagsWorkspaceId;
+  String? _workspaceCurrency;
 
   @override
   void initState() {
@@ -109,6 +112,9 @@ class _TransactionCategoriesViewState
           key: _categoriesStoreKey(wsId),
           decode: _decodeCategories,
         );
+    _workspaceCurrency = context
+        .read<FinanceRepository>()
+        .peekWorkspaceDefaultCurrency(wsId);
     if (cachedCategories.hasValue && cachedCategories.data != null) {
       _categories = cachedCategories.data!;
       _categoriesWorkspaceId = wsId;
@@ -177,6 +183,9 @@ class _TransactionCategoriesViewState
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final showAmounts = context.select<FinancePreferencesCubit, bool>(
+      (cubit) => cubit.state.showAmounts,
+    );
     final listBottomPadding =
         _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
@@ -225,8 +234,16 @@ class _TransactionCategoriesViewState
             RefreshIndicator(
               onRefresh: () => _loadCurrentTab(forceRefresh: true),
               child: _activeTab == _tabCategories
-                  ? _buildCategoriesContent(l10n, listBottomPadding)
-                  : _buildTagsContent(l10n, listBottomPadding),
+                  ? _buildCategoriesContent(
+                      l10n,
+                      listBottomPadding,
+                      showAmounts,
+                    )
+                  : _buildTagsContent(
+                      l10n,
+                      listBottomPadding,
+                      showAmounts,
+                    ),
             ),
             SpeedDialFab(
               label: l10n.financeCreateCategory,
@@ -254,6 +271,7 @@ class _TransactionCategoriesViewState
   Widget _buildCategoriesContent(
     AppLocalizations l10n,
     double listBottomPadding,
+    bool showAmounts,
   ) {
     if (_categoriesLoading) {
       return const Center(child: NovaLoadingIndicator());
@@ -292,6 +310,15 @@ class _TransactionCategoriesViewState
         ],
       );
     }
+    if (_workspaceCurrency == null || _workspaceCurrency!.trim().isEmpty) {
+      return ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
+        itemCount: _categories.length.clamp(1, 6),
+        separatorBuilder: (context, index) => const shad.Gap(8),
+        itemBuilder: (context, index) => const _ManageFinanceCardSkeleton(),
+      );
+    }
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
@@ -301,6 +328,8 @@ class _TransactionCategoriesViewState
         final category = _categories[index];
         return _CategoryCard(
           category: category,
+          currencyCode: _workspaceCurrency!,
+          showAmounts: showAmounts,
           onEdit: () => _onEdit(category),
           onDelete: () => _onDelete(category),
         );
@@ -311,6 +340,7 @@ class _TransactionCategoriesViewState
   Widget _buildTagsContent(
     AppLocalizations l10n,
     double listBottomPadding,
+    bool showAmounts,
   ) {
     if (_tagsLoading) {
       return const Center(child: NovaLoadingIndicator());
@@ -349,6 +379,15 @@ class _TransactionCategoriesViewState
         ],
       );
     }
+    if (_workspaceCurrency == null || _workspaceCurrency!.trim().isEmpty) {
+      return ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
+        itemCount: _tags.length.clamp(1, 6),
+        separatorBuilder: (context, index) => const shad.Gap(8),
+        itemBuilder: (context, index) => const _ManageFinanceCardSkeleton(),
+      );
+    }
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
@@ -358,6 +397,8 @@ class _TransactionCategoriesViewState
         final tag = _tags[index];
         return _TagCard(
           tag: tag,
+          currencyCode: _workspaceCurrency!,
+          showAmounts: showAmounts,
           onEdit: () => _onEditTag(tag),
           onDelete: () => _onDeleteTag(tag),
         );
@@ -480,6 +521,7 @@ class _TransactionCategoriesViewState
         _tags = const [];
         _categoriesWorkspaceId = null;
         _tagsWorkspaceId = null;
+        _workspaceCurrency = null;
         _categoriesLoading = false;
         _tagsLoading = false;
         _categoriesError = null;
@@ -510,6 +552,11 @@ class _TransactionCategoriesViewState
       return;
     }
 
+    final repository = context.read<FinanceRepository>();
+    final currencyFuture = repository.getWorkspaceDefaultCurrency(
+      wsId,
+      forceRefresh: forceRefresh,
+    );
     final cached = _categoriesCache[wsId];
     final diskCached = await CacheStore.instance
         .read<List<TransactionCategory>>(
@@ -522,9 +569,12 @@ class _TransactionCategoriesViewState
     if (!mounted || requestId != _categoriesRequestId) return;
 
     if (!forceRefresh && resolvedCategories != null) {
+      final currency = await currencyFuture;
+      if (!mounted || requestId != _categoriesRequestId) return;
       setState(() {
         _categories = resolvedCategories;
         _categoriesWorkspaceId = wsId;
+        _workspaceCurrency = currency;
         _categoriesLoading = false;
         _categoriesError = null;
       });
@@ -544,9 +594,8 @@ class _TransactionCategoriesViewState
     }
 
     try {
-      final categories = await context.read<FinanceRepository>().getCategories(
-        wsId,
-      );
+      final currency = await currencyFuture;
+      final categories = await repository.getCategories(wsId);
       if (!mounted ||
           requestId != _categoriesRequestId ||
           !_isWorkspaceRequestCurrent(wsId)) {
@@ -567,6 +616,7 @@ class _TransactionCategoriesViewState
       setState(() {
         _categories = categories;
         _categoriesWorkspaceId = wsId;
+        _workspaceCurrency = currency;
         _categoriesError = null;
       });
     } on Exception {
@@ -604,6 +654,11 @@ class _TransactionCategoriesViewState
       return;
     }
 
+    final repository = context.read<FinanceRepository>();
+    final currencyFuture = repository.getWorkspaceDefaultCurrency(
+      wsId,
+      forceRefresh: forceRefresh,
+    );
     final cached = _tagsCache[wsId];
     final diskCached = await CacheStore.instance.read<List<FinanceTag>>(
       key: _tagsStoreKey(wsId),
@@ -615,9 +670,12 @@ class _TransactionCategoriesViewState
     if (!mounted || requestId != _tagsRequestId) return;
 
     if (!forceRefresh && resolvedTags != null) {
+      final currency = await currencyFuture;
+      if (!mounted || requestId != _tagsRequestId) return;
       setState(() {
         _tags = resolvedTags;
         _tagsWorkspaceId = wsId;
+        _workspaceCurrency = currency;
         _tagsLoading = false;
         _tagsError = null;
       });
@@ -637,7 +695,8 @@ class _TransactionCategoriesViewState
     }
 
     try {
-      final tags = await context.read<FinanceRepository>().getTags(wsId);
+      final currency = await currencyFuture;
+      final tags = await repository.getTags(wsId);
       if (!mounted ||
           requestId != _tagsRequestId ||
           !_isWorkspaceRequestCurrent(wsId)) {
@@ -656,6 +715,7 @@ class _TransactionCategoriesViewState
       setState(() {
         _tags = tags;
         _tagsWorkspaceId = wsId;
+        _workspaceCurrency = currency;
         _tagsError = null;
       });
     } on Exception {
@@ -731,6 +791,8 @@ Map<String, dynamic> _tagToJson(FinanceTag tag) {
     'color': tag.color,
     'description': tag.description,
     'ws_id': tag.wsId,
+    'amount': tag.amount,
+    'transaction_count': tag.transactionCount,
   };
 }
 
@@ -1213,14 +1275,50 @@ class _TagDialogState extends State<_TagDialog> {
   }
 }
 
+class _ManageFinanceCardSkeleton extends StatelessWidget {
+  const _ManageFinanceCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const FinancePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              FinanceSkeletonBlock(width: 52, height: 52, radius: 18),
+              shad.Gap(14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FinanceSkeletonBlock(width: 140, height: 18),
+                    shad.Gap(10),
+                    FinanceSkeletonBlock(width: 112, height: 28, radius: 999),
+                  ],
+                ),
+              ),
+              FinanceSkeletonBlock(width: 88, height: 22),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CategoryCard extends StatelessWidget {
   const _CategoryCard({
     required this.category,
+    required this.currencyCode,
+    required this.showAmounts,
     required this.onEdit,
     required this.onDelete,
   });
 
   final TransactionCategory category;
+  final String currencyCode;
+  final bool showAmounts;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -1264,6 +1362,19 @@ class _CategoryCard extends StatelessWidget {
                   ),
                 ),
                 const shad.Gap(6),
+                if (category.amount != null) ...[
+                  Text(
+                    maskFinanceValue(
+                      formatCurrency(category.amount!, currencyCode),
+                      showAmounts: showAmounts,
+                    ),
+                    style: theme.typography.textSmall.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const shad.Gap(6),
+                ],
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -1333,11 +1444,15 @@ class _CategoryCard extends StatelessWidget {
 class _TagCard extends StatelessWidget {
   const _TagCard({
     required this.tag,
+    required this.currencyCode,
+    required this.showAmounts,
     required this.onEdit,
     required this.onDelete,
   });
 
   final FinanceTag tag;
+  final String currencyCode;
+  final bool showAmounts;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -1385,6 +1500,57 @@ class _TagCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                if (tag.amount != null || tag.transactionCount != null) ...[
+                  const shad.Gap(8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (tag.amount != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            color: color.withValues(alpha: 0.12),
+                          ),
+                          child: Text(
+                            maskFinanceValue(
+                              formatCurrency(tag.amount!, currencyCode),
+                              showAmounts: showAmounts,
+                            ),
+                            style: theme.typography.xSmall.copyWith(
+                              color: color,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      if (tag.transactionCount != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            color: theme.colorScheme.muted.withValues(
+                              alpha: 0.24,
+                            ),
+                          ),
+                          child: Text(
+                            '${tag.transactionCount} '
+                            '${context.l10n.financeTransactionCountShort}',
+                            style: theme.typography.xSmall.copyWith(
+                              color: theme.colorScheme.mutedForeground,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

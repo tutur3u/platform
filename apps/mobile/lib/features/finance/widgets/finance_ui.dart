@@ -224,6 +224,45 @@ class FinanceStatChip extends StatelessWidget {
   }
 }
 
+class FinanceSkeletonBlock extends StatelessWidget {
+  const FinanceSkeletonBlock({
+    required this.height,
+    this.width,
+    this.radius = 12,
+    this.margin,
+    super.key,
+  });
+
+  final double? width;
+  final double height;
+  final double radius;
+  final EdgeInsetsGeometry? margin;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final baseColor = theme.colorScheme.muted.withValues(
+      alpha: theme.brightness == Brightness.dark ? 0.38 : 0.65,
+    );
+
+    return Container(
+      width: width,
+      height: height,
+      margin: margin,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        gradient: LinearGradient(
+          colors: [
+            baseColor.withValues(alpha: 0.72),
+            baseColor,
+            baseColor.withValues(alpha: 0.72),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class FinanceAmountText extends StatelessWidget {
   const FinanceAmountText({
     required this.amount,

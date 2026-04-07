@@ -54,6 +54,7 @@ class _WalletsViewState extends State<_WalletsView> {
   static final Map<String, _WalletsCacheEntry> _cache = {};
 
   List<Wallet> _wallets = const [];
+  String? _workspaceCurrency;
   bool _isLoading = false;
   String? _error;
   int _currentWalletsRequestToken = 0;
@@ -97,12 +98,22 @@ class _WalletsViewState extends State<_WalletsView> {
       key: _cacheKey(resolvedWsId),
       decode: _decodeWallets,
     );
+    final cachedCurrency = context
+        .read<FinanceRepository>()
+        .peekWorkspaceDefaultCurrency(resolvedWsId);
     if (!cached.hasValue || cached.data == null) {
+      if (cachedCurrency != null && mounted) {
+        setState(() => _workspaceCurrency = cachedCurrency);
+      }
       return;
     }
 
     setState(() {
-      _wallets = cached.data!;
+      _workspaceCurrency = cachedCurrency;
+      _wallets = _sortWallets(
+        cached.data!,
+        workspaceCurrency: cachedCurrency,
+      );
       _loadedWorkspaceId = resolvedWsId;
       _isLoading = false;
       _error = null;
@@ -113,13 +124,22 @@ class _WalletsViewState extends State<_WalletsView> {
     if (json is! List) {
       throw const FormatException('Invalid wallets cache payload.');
     }
-    final wallets = json
+    return json
         .whereType<Map<String, dynamic>>()
         .map(Wallet.fromJson)
         .toList(growable: false);
+  }
+
+  List<Wallet> _sortWallets(
+    List<Wallet> wallets, {
+    required String? workspaceCurrency,
+  }) {
+    if (workspaceCurrency == null || workspaceCurrency.trim().isEmpty) {
+      return wallets;
+    }
     return sortWalletsForDisplay(
       wallets: wallets,
-      workspaceCurrency: 'USD',
+      workspaceCurrency: workspaceCurrency,
       exchangeRates: const <ExchangeRate>[],
     );
   }
@@ -176,6 +196,17 @@ class _WalletsViewState extends State<_WalletsView> {
 
     if (_isLoading) {
       return const Center(child: NovaLoadingIndicator());
+    }
+
+    if (_wallets.isNotEmpty &&
+        (_workspaceCurrency == null || _workspaceCurrency!.trim().isEmpty)) {
+      return ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
+        itemCount: _wallets.length.clamp(1, 4),
+        separatorBuilder: (context, index) => const shad.Gap(12),
+        itemBuilder: (context, index) => const _WalletCardSkeleton(),
+      );
     }
 
     if (_error != null) {
@@ -306,6 +337,7 @@ class _WalletsViewState extends State<_WalletsView> {
       }
       setState(() {
         _wallets = const [];
+        _workspaceCurrency = null;
         _loadedWorkspaceId = null;
         _seededWorkspaceId = null;
         _isLoading = false;
@@ -321,13 +353,21 @@ class _WalletsViewState extends State<_WalletsView> {
     );
     final resolvedWallets = cached?.wallets ?? diskCached.data;
     final hasVisibleData = _loadedWorkspaceId == wsId;
+    final cachedCurrency = await repository
+        .readWorkspaceDefaultCurrencyFromCache(
+          wsId,
+        );
 
     if (!forceRefresh && resolvedWallets != null) {
       if (!mounted || requestToken != _currentWalletsRequestToken) {
         return;
       }
       setState(() {
-        _wallets = resolvedWallets;
+        _wallets = _sortWallets(
+          resolvedWallets,
+          workspaceCurrency: cachedCurrency,
+        );
+        _workspaceCurrency = cachedCurrency;
         _loadedWorkspaceId = wsId;
         _isLoading = false;
         _error = null;
@@ -342,6 +382,7 @@ class _WalletsViewState extends State<_WalletsView> {
       }
       setState(() {
         _wallets = const [];
+        _workspaceCurrency = cachedCurrency;
         _loadedWorkspaceId = wsId;
         _isLoading = true;
         _error = null;
@@ -351,10 +392,18 @@ class _WalletsViewState extends State<_WalletsView> {
     }
 
     try {
-      final wallets = await repository.getWallets(wsId);
+      final results = await Future.wait<dynamic>([
+        repository.getWallets(wsId),
+        repository.getWorkspaceDefaultCurrency(
+          wsId,
+          forceRefresh: forceRefresh,
+        ),
+      ]);
+      final wallets = results[0] as List<Wallet>;
+      final workspaceCurrency = results[1] as String;
       final sortedWallets = sortWalletsForDisplay(
         wallets: wallets,
-        workspaceCurrency: 'USD',
+        workspaceCurrency: workspaceCurrency,
         exchangeRates: const [],
       );
       if (!mounted || requestToken != _currentWalletsRequestToken) {
@@ -374,6 +423,7 @@ class _WalletsViewState extends State<_WalletsView> {
       );
       setState(() {
         _wallets = sortedWallets;
+        _workspaceCurrency = workspaceCurrency;
         _loadedWorkspaceId = wsId;
         _error = null;
       });
@@ -418,6 +468,48 @@ class _WalletsCacheEntry {
 
   final List<Wallet> wallets;
   final DateTime fetchedAt;
+}
+
+class _WalletCardSkeleton extends StatelessWidget {
+  const _WalletCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const FinancePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              FinanceSkeletonBlock(width: 44, height: 44, radius: 16),
+              shad.Gap(12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FinanceSkeletonBlock(width: 148, height: 18),
+                    shad.Gap(8),
+                    FinanceSkeletonBlock(width: 196, height: 12, radius: 10),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          shad.Gap(18),
+          FinanceSkeletonBlock(width: 176, height: 30, radius: 14),
+          shad.Gap(12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FinanceSkeletonBlock(width: 82, height: 28, radius: 999),
+              FinanceSkeletonBlock(width: 70, height: 28, radius: 999),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _WalletCard extends StatelessWidget {

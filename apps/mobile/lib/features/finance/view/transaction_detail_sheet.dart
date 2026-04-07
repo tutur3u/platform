@@ -23,7 +23,6 @@ import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'transaction_detail_sheet_amount_parsing.dart';
@@ -158,6 +157,8 @@ class _TransactionDetailSheet extends StatefulWidget {
 class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
   late Transaction _transaction;
   bool _isQuickSaving = false;
+  bool _didMutate = false;
+  bool _isClosing = false;
 
   List<String> get _tagIds =>
       _transaction.tags.map((tag) => tag.id).toList(growable: false);
@@ -174,22 +175,6 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
   String? get _transferDestinationWalletId => _isTransferOrigin
       ? _transaction.transfer?.linkedWalletId
       : _transaction.walletId;
-
-  String get _transferOriginWalletName => _isTransferOrigin
-      ? (_transaction.walletName ?? '-')
-      : (_transaction.transfer?.linkedWalletName ?? '-');
-
-  String get _transferDestinationWalletName => _isTransferOrigin
-      ? (_transaction.transfer?.linkedWalletName ?? '-')
-      : (_transaction.walletName ?? '-');
-
-  String? get _transferOriginCurrency => _isTransferOrigin
-      ? _transaction.walletCurrency
-      : _transaction.transfer?.linkedWalletCurrency;
-
-  String? get _transferDestinationCurrency => _isTransferOrigin
-      ? _transaction.transfer?.linkedWalletCurrency
-      : _transaction.walletCurrency;
 
   String _transferRouteLabel(Transaction transaction) {
     final transfer = transaction.transfer;
@@ -301,28 +286,39 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     }
   }
 
+  void _closeSheet([bool? result]) {
+    if (_isClosing || !mounted) {
+      return;
+    }
+
+    _isClosing = true;
+    Navigator.of(context).pop(result ?? _didMutate);
+  }
+
   Future<void> _quickUpdateTransaction({
     Wallet? wallet,
     TransactionCategory? category,
     DateTime? takenAt,
     bool? reportOptIn,
+    List<FinanceTag>? tags,
   }) async {
     await _runQuickUpdate(() async {
       final nextCategory = category;
+      final nextTagIds = tags?.map((tag) => tag.id).toList(growable: false);
       final nextAmount = nextCategory == null
           ? (_transaction.amount ?? 0)
           : (nextCategory.isExpense != false
                 ? -(_transaction.amount ?? 0).abs()
                 : (_transaction.amount ?? 0).abs());
 
-      await widget.onSave(
+      final updated = await widget.onSave(
         transactionId: _transaction.id,
         amount: nextAmount,
         description: _transaction.description,
         takenAt: takenAt ?? _transaction.takenAt,
         walletId: wallet?.id ?? _transaction.walletId,
         categoryId: category?.id ?? _transaction.categoryId,
-        tagIds: _tagIds,
+        tagIds: nextTagIds ?? _tagIds,
         reportOptIn: reportOptIn ?? _transaction.reportOptIn,
         isAmountConfidential: _transaction.isAmountConfidential,
         isDescriptionConfidential: _transaction.isDescriptionConfidential,
@@ -334,20 +330,8 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
       }
 
       setState(() {
-        _transaction = _transaction.copyWith(
-          amount: nextAmount,
-          takenAt: takenAt ?? _transaction.takenAt,
-          reportOptIn: reportOptIn ?? _transaction.reportOptIn,
-          walletId: wallet?.id ?? _transaction.walletId,
-          walletName: wallet?.name ?? _transaction.walletName,
-          walletCurrency: wallet?.currency ?? _transaction.walletCurrency,
-          walletIcon: wallet?.icon ?? _transaction.walletIcon,
-          walletImageSrc: wallet?.imageSrc ?? _transaction.walletImageSrc,
-          categoryId: category?.id ?? _transaction.categoryId,
-          categoryName: category?.name ?? _transaction.categoryName,
-          categoryIcon: category?.icon ?? _transaction.categoryIcon,
-          categoryColor: category?.color ?? _transaction.categoryColor,
-        );
+        _transaction = updated;
+        _didMutate = true;
       });
     });
   }
@@ -357,6 +341,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     Wallet? destinationWallet,
     DateTime? takenAt,
     bool? reportOptIn,
+    List<FinanceTag>? tags,
   }) async {
     final transfer = _transaction.transfer;
     if (transfer == null) {
@@ -379,7 +364,8 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     );
 
     await _runQuickUpdate(() async {
-      await widget.repository.updateTransfer(
+      final nextTagIds = tags?.map((tag) => tag.id).toList(growable: false);
+      final updated = await widget.repository.updateTransfer(
         wsId: widget.wsId,
         originTransactionId: _isTransferOrigin
             ? _transaction.id
@@ -394,7 +380,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
         description: _transaction.description,
         takenAt: takenAt ?? _effectiveTakenAt,
         reportOptIn: reportOptIn ?? _transaction.reportOptIn,
-        tagIds: _tagIds,
+        tagIds: nextTagIds ?? _tagIds,
         refreshedTransactionId: _transaction.id,
       );
 
@@ -402,65 +388,9 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
         return;
       }
 
-      final nextOriginWalletId = originWallet?.id ?? _transferOriginWalletId;
-      final nextDestinationWalletId =
-          destinationWallet?.id ?? _transferDestinationWalletId;
-      final nextOriginWalletName =
-          originWallet?.name ?? _transferOriginWalletName;
-      final nextDestinationWalletName =
-          destinationWallet?.name ?? _transferDestinationWalletName;
-      final nextOriginCurrency =
-          originWallet?.currency ?? _transferOriginCurrency;
-      final nextDestinationCurrency =
-          destinationWallet?.currency ?? _transferDestinationCurrency;
-      final nextDisplayedWalletId = _isTransferOrigin
-          ? nextOriginWalletId
-          : nextDestinationWalletId;
-      final nextDisplayedWalletName = _isTransferOrigin
-          ? nextOriginWalletName
-          : nextDestinationWalletName;
-      final nextDisplayedWalletCurrency = _isTransferOrigin
-          ? nextOriginCurrency
-          : nextDestinationCurrency;
-      final nextLinkedWalletId = _isTransferOrigin
-          ? nextDestinationWalletId
-          : nextOriginWalletId;
-      final nextLinkedWalletName = _isTransferOrigin
-          ? nextDestinationWalletName
-          : nextOriginWalletName;
-      final nextLinkedWalletCurrency = _isTransferOrigin
-          ? nextDestinationCurrency
-          : nextOriginCurrency;
-
       setState(() {
-        _transaction = _transaction.copyWith(
-          amount: _isTransferOrigin ? -sourceAmount : destinationAmount,
-          takenAt: takenAt ?? _effectiveTakenAt,
-          reportOptIn: reportOptIn ?? _transaction.reportOptIn,
-          walletId: nextDisplayedWalletId ?? _transaction.walletId,
-          walletName: nextDisplayedWalletName,
-          walletCurrency:
-              nextDisplayedWalletCurrency ?? _transaction.walletCurrency,
-          walletIcon:
-              (_isTransferOrigin
-                  ? originWallet?.icon
-                  : destinationWallet?.icon) ??
-              _transaction.walletIcon,
-          walletImageSrc:
-              (_isTransferOrigin
-                  ? originWallet?.imageSrc
-                  : destinationWallet?.imageSrc) ??
-              _transaction.walletImageSrc,
-          transfer: transfer.copyWith(
-            linkedWalletId:
-                nextLinkedWalletId ?? _transaction.transfer?.linkedWalletId,
-            linkedWalletName: nextLinkedWalletName,
-            linkedWalletCurrency:
-                nextLinkedWalletCurrency ??
-                _transaction.transfer?.linkedWalletCurrency,
-            linkedAmount: _isTransferOrigin ? destinationAmount : -sourceAmount,
-          ),
-        );
+        _transaction = updated;
+        _didMutate = true;
       });
     });
   }
@@ -610,6 +540,44 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     await _quickUpdateTransaction(takenAt: nextTakenAt);
   }
 
+  Future<void> _showTagQuickAction() async {
+    final tags = await widget.repository.getTags(widget.wsId);
+    if (!mounted || tags.isEmpty) {
+      return;
+    }
+
+    final selectedTagIds = await showFinanceModal<List<String>?>(
+      context: context,
+      builder: (_) => _TagPickerDialog(
+        tags: tags,
+        selectedTagIds: _tagIds,
+        tagColor: (tag) {
+          final parsed = _parseHexColor(tag.color);
+          if (parsed != null) {
+            return parsed;
+          }
+
+          return shad.Theme.of(context).colorScheme.primary;
+        },
+      ),
+    );
+    if (selectedTagIds == null || !mounted) {
+      return;
+    }
+
+    final selected = selectedTagIds.toSet();
+    final selectedTags = tags
+        .where((tag) => selected.contains(tag.id))
+        .toList(growable: false);
+
+    if (_transaction.isTransfer) {
+      await _quickUpdateTransfer(tags: selectedTags);
+      return;
+    }
+
+    await _quickUpdateTransaction(tags: selectedTags);
+  }
+
   Future<void> _toggleReportOptIn(bool value) async {
     if (_transaction.isTransfer) {
       await _quickUpdateTransfer(reportOptIn: value);
@@ -631,6 +599,9 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     final dateText = date != null
         ? DateFormat.yMMMd().add_jm().format(date.toLocal())
         : '-';
+    final tagText = _transaction.tags.isEmpty
+        ? l10n.financeNoTag
+        : _transaction.tags.map((tag) => tag.name).join(', ');
     final excludedReportColor = theme.colorScheme.mutedForeground.withValues(
       alpha: 0.72,
     );
@@ -668,129 +639,147 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
         ),
     ];
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.background,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.mutedForeground.withValues(
-                    alpha: 0.4,
+    return PopScope<bool>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop || _isClosing) {
+          return;
+        }
+        _closeSheet(result is bool ? result : null);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.background,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.mutedForeground.withValues(
+                      alpha: 0.4,
+                    ),
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ),
-            const shad.Gap(18),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    l10n.financeTransactionDetails,
-                    style: theme.typography.h4.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                shad.GhostButton(
-                  onPressed: isSyntheticTransfer ? null : _showEditDialog,
-                  child: const Icon(Icons.edit_outlined, size: 18),
-                ),
-              ],
-            ),
-            const shad.Gap(16),
-            _TransactionSummaryCard(
-              transaction: _transaction,
-              workspaceCurrency: widget.workspaceCurrency ?? 'USD',
-              exchangeRates: widget.exchangeRates ?? const [],
-              showAmounts: showAmounts,
-            ),
-            const shad.Gap(14),
-            _DetailSectionCard(
-              title: l10n.financeQuickActions,
-              child: Column(
+              const shad.Gap(18),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _QuickActionTile(
-                    icon: _transaction.isTransfer
-                        ? Icons.swap_horiz_rounded
-                        : Icons.account_balance_wallet_outlined,
-                    label: _transaction.isTransfer
-                        ? l10n.financeWallets
-                        : l10n.financeWallet,
-                    value: _transaction.isTransfer
-                        ? _transferRouteLabel(_transaction)
-                        : (_transaction.walletName ?? '-'),
-                    onTap: _isQuickSaving || isSyntheticTransfer
-                        ? null
-                        : _showWalletQuickAction,
-                  ),
-                  if (!_transaction.isTransfer) ...[
-                    const shad.Gap(10),
-                    _QuickActionTile(
-                      icon: categoryIcon,
-                      label: l10n.financeCategory,
-                      value: _transaction.categoryName ?? '-',
-                      onTap: _isQuickSaving || isSyntheticTransfer
-                          ? null
-                          : _showCategoryQuickAction,
+                  Expanded(
+                    child: Text(
+                      l10n.financeTransactionDetails,
+                      style: theme.typography.h4.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                  ],
-                  const shad.Gap(10),
-                  _QuickActionTile(
-                    icon: Icons.schedule_rounded,
-                    label: l10n.financeTakenAt,
-                    value: dateText,
-                    onTap: _isQuickSaving || isSyntheticTransfer
-                        ? null
-                        : _showTakenAtQuickAction,
                   ),
-                  const shad.Gap(10),
-                  _QuickActionToggleTile(
-                    icon: Icons.insights_outlined,
-                    label: l10n.financeReportOptIn,
-                    value: _transaction.reportOptIn == true,
-                    enabled: !_isQuickSaving && !isSyntheticTransfer,
-                    activeLabel: l10n.financeReportOptIn,
-                    inactiveLabel: l10n.financeExcludedFromReports,
-                    onChanged: _toggleReportOptIn,
+                  shad.GhostButton(
+                    onPressed: isSyntheticTransfer ? null : _showEditDialog,
+                    child: const Icon(Icons.edit_outlined, size: 18),
                   ),
                 ],
               ),
-            ),
-            if (privacyChips.isNotEmpty) ...[
+              const shad.Gap(16),
+              _TransactionSummaryCard(
+                transaction: _transaction,
+                workspaceCurrency: widget.workspaceCurrency ?? 'USD',
+                exchangeRates: widget.exchangeRates ?? const [],
+                showAmounts: showAmounts,
+              ),
               const shad.Gap(14),
               _DetailSectionCard(
-                title: l10n.settingsTitle,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: privacyChips,
+                title: l10n.financeQuickActions,
+                child: Column(
+                  children: [
+                    _QuickActionTile(
+                      icon: _transaction.isTransfer
+                          ? Icons.swap_horiz_rounded
+                          : Icons.account_balance_wallet_outlined,
+                      label: _transaction.isTransfer
+                          ? l10n.financeWallets
+                          : l10n.financeWallet,
+                      value: _transaction.isTransfer
+                          ? _transferRouteLabel(_transaction)
+                          : (_transaction.walletName ?? '-'),
+                      onTap: _isQuickSaving || isSyntheticTransfer
+                          ? null
+                          : _showWalletQuickAction,
+                    ),
+                    if (!_transaction.isTransfer) ...[
+                      const shad.Gap(10),
+                      _QuickActionTile(
+                        icon: categoryIcon,
+                        label: l10n.financeCategory,
+                        value: _transaction.categoryName ?? '-',
+                        onTap: _isQuickSaving || isSyntheticTransfer
+                            ? null
+                            : _showCategoryQuickAction,
+                      ),
+                    ],
+                    const shad.Gap(10),
+                    _QuickActionTile(
+                      icon: Icons.sell_outlined,
+                      label: l10n.financeTags,
+                      value: tagText,
+                      onTap: _isQuickSaving || isSyntheticTransfer
+                          ? null
+                          : _showTagQuickAction,
+                    ),
+                    const shad.Gap(10),
+                    _QuickActionTile(
+                      icon: Icons.schedule_rounded,
+                      label: l10n.financeTakenAt,
+                      value: dateText,
+                      onTap: _isQuickSaving || isSyntheticTransfer
+                          ? null
+                          : _showTakenAtQuickAction,
+                    ),
+                    const shad.Gap(10),
+                    _QuickActionToggleTile(
+                      icon: Icons.insights_outlined,
+                      label: l10n.financeReportOptIn,
+                      value: _transaction.reportOptIn == true,
+                      enabled: !_isQuickSaving && !isSyntheticTransfer,
+                      activeLabel: l10n.financeReportOptIn,
+                      inactiveLabel: l10n.financeExcludedFromReports,
+                      onChanged: _toggleReportOptIn,
+                    ),
+                  ],
+                ),
+              ),
+              if (privacyChips.isNotEmpty) ...[
+                const shad.Gap(14),
+                _DetailSectionCard(
+                  title: l10n.settingsTitle,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: privacyChips,
+                  ),
+                ),
+              ],
+              const shad.Gap(18),
+              shad.DestructiveButton(
+                onPressed: _showDeleteConfirmation,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.delete_outline, size: 16),
+                    const shad.Gap(8),
+                    Text(l10n.financeDeleteTransaction),
+                  ],
                 ),
               ),
             ],
-            const shad.Gap(18),
-            shad.DestructiveButton(
-              onPressed: _showDeleteConfirmation,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.delete_outline, size: 16),
-                  const shad.Gap(8),
-                  Text(l10n.financeDeleteTransaction),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -804,7 +793,6 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
 
   Future<void> _showDeleteConfirmation() async {
     final l10n = context.l10n;
-    final sheetNavigator = Navigator.of(context);
 
     await shad.showDialog<bool>(
       context: context,
@@ -825,7 +813,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
               content: Text(ctx.l10n.financeTransactionDeleted),
             ),
           );
-          sheetNavigator.pop(true);
+          _closeSheet(true);
         },
       ),
     );
@@ -856,7 +844,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
         ),
       );
     }
-    Navigator.of(context).pop(true);
+    _closeSheet(true);
   }
 }
 

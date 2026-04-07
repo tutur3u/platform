@@ -207,7 +207,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navBack => 'Quay lại';
 
   @override
+  String get commonClear => 'Xóa';
+
+  @override
+  String get commonDone => 'Xong';
+
+  @override
   String get navMore => 'Thêm';
+
+  @override
+  String get sort => 'Sắp xếp';
+
+  @override
+  String get sortBy => 'Sắp xếp theo';
 
   @override
   String get appsHubSearchHint => 'Tìm kiếm ứng dụng';
@@ -3219,10 +3231,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeTagDialogSubtitle => 'Đặt tên nhãn và chọn màu để dễ nhận biết.';
 
   @override
+  String get financeBasic => 'Cơ bản';
+
+  @override
   String get financeIncome => 'Thu nhập';
 
   @override
   String get financeExpense => 'Chi tiêu';
+
+  @override
+  String get financeFrequentlyUsedCategories => 'Dùng nhiều';
 
   @override
   String get financeHideAmounts => 'Ẩn số tiền';
@@ -3232,6 +3250,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeSearchTransactions => 'Tìm kiếm giao dịch';
+
+  @override
+  String get financeSearchCategories => 'Tìm danh mục';
+
+  @override
+  String get financeSearchWallets => 'Tìm ví';
 
   @override
   String get financeShowAmounts => 'Hiện số tiền';
@@ -3313,6 +3337,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financePickerTagSubtitle => 'Chọn nhãn tùy chọn để thêm ngữ cảnh.';
+
+  @override
+  String get financePickerLoadingOptions => 'Đang tải ví, danh mục và thẻ...';
 
   @override
   String get financeNoTag => 'Không gắn thẻ';
@@ -4160,6 +4187,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get commonClearSearch => 'Xóa tìm kiếm';
 
   @override
+  String get commonNoSearchResults => 'Không có kết quả phù hợp';
+
+  @override
   String get timerTotalSessions => 'Tổng số phiên';
 
   @override
@@ -4977,6 +5007,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get commonOff => 'Tắt';
 
   @override
+  String get commonOn => 'Bật';
+
+  @override
   String get commonSomethingWentWrong => 'Đã xảy ra lỗi';
 
   @override
@@ -4990,6 +5023,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get commonRetry => 'Thử lại';
+
+  @override
+  String get commonShowLess => 'Thu gọn';
+
+  @override
+  String get commonShowMore => 'Xem thêm';
 
   @override
   String get commonPressBackAgainToExit => 'Nhấn quay lại lần nữa để thoát';

@@ -7,6 +7,8 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { enrichTransactionsWithTags } from './tag-enrichment';
+
 interface Params {
   params: Promise<{
     wsId: string;
@@ -27,6 +29,7 @@ const TransactionSchema = z.object({
 });
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
+  const sbAdmin = await createAdminClient();
 
   const permissions = await getPermissions({
     wsId,
@@ -95,13 +98,24 @@ export async function GET(req: Request, { params }: Params) {
   // The RPC function should ideally handle sorting.
   // If not, sorting here will only sort the current page of results.
   // This preserves existing behavior of sorting the returned data.
-  const sortedData = data?.sort((a, b) => {
+  const sortedData = (data ?? []).sort((a, b) => {
     const dateA = new Date(a.taken_at).getTime();
     const dateB = new Date(b.taken_at).getTime();
     return dateB - dateA;
   });
 
-  return NextResponse.json(sortedData || []);
+  const { data: enrichedData, error: tagError } =
+    await enrichTransactionsWithTags(sbAdmin, sortedData);
+
+  if (tagError) {
+    console.error('Error enriching transaction tags:', tagError.message);
+    return NextResponse.json(
+      { message: 'Error fetching transaction tags' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json(enrichedData ?? []);
 }
 
 export async function POST(req: Request, { params }: Params) {

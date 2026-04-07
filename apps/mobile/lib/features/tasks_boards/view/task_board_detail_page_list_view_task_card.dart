@@ -123,6 +123,10 @@ class _TaskStatusIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.dynamicColors;
 
+    // The model can carry both `task.closedAt` and `task.completed`.
+    // We treat `task.closedAt != null` as the authoritative completion signal,
+    // then only consult `task.completed` in the default branch when the list
+    // status value is unrecognized.
     if (task.closedAt != null) {
       return Icon(
         Icons.check_circle,

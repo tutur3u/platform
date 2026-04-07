@@ -63,8 +63,7 @@ class FinanceCubit extends Cubit<FinanceState> {
               limit: 10,
             );
         final workspaceCurrency = await financeRepository
-            .getWorkspaceDefaultCurrency(wsId)
-            .catchError((_) => 'USD');
+            .getWorkspaceDefaultCurrency(wsId);
         final exchangeRates = await financeRepository
             .getExchangeRates()
             .catchError(
@@ -104,7 +103,7 @@ class FinanceCubit extends Cubit<FinanceState> {
     if (!forceRefresh && diskCached.hasValue && diskCached.data != null) {
       _loadedWorkspaceId = wsId;
       emit(diskCached.data!);
-      if (diskCached.isFresh) {
+      if (diskCached.isFresh && diskCached.data!.hasWorkspaceCurrency) {
         return;
       }
     }
@@ -112,7 +111,8 @@ class FinanceCubit extends Cubit<FinanceState> {
     if (!forceRefresh && cached != null) {
       _loadedWorkspaceId = wsId;
       emit(cached.state);
-      if (isFinanceCacheFresh(cached.fetchedAt)) {
+      if (isFinanceCacheFresh(cached.fetchedAt) &&
+          cached.state.hasWorkspaceCurrency) {
         return;
       }
     } else if (!hasVisibleData) {
@@ -143,9 +143,7 @@ class FinanceCubit extends Cubit<FinanceState> {
         wsId: wsId,
         limit: 10,
       );
-      final workspaceCurrencyFuture = _repo
-          .getWorkspaceDefaultCurrency(wsId)
-          .catchError((_) => 'USD');
+      final workspaceCurrencyFuture = _repo.getWorkspaceDefaultCurrency(wsId);
       final exchangeRatesFuture = _repo.getExchangeRates().catchError(
         (_) => <ExchangeRate>[],
       );
@@ -219,7 +217,7 @@ class FinanceCubit extends Cubit<FinanceState> {
   }
 
   static FinanceState _stateFromCacheJson(Map<String, dynamic> json) {
-    final workspaceCurrency = json['workspaceCurrency'] as String? ?? 'USD';
+    final workspaceCurrency = json['workspaceCurrency'] as String? ?? '';
     final exchangeRates =
         ((json['exchangeRates'] as List<dynamic>?) ?? const <dynamic>[])
             .whereType<Map<String, dynamic>>()

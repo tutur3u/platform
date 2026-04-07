@@ -61,6 +61,9 @@ class _TaskBoardEnhancedListViewState
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final sortedTasks = _sortedTasks;
+    final hasMoreTasks = widget.lists.any(
+      (list) => widget.state.listHasMoreById[list.id] ?? true,
+    );
 
     if (sortedTasks.isEmpty) {
       return ListView(
@@ -103,7 +106,7 @@ class _TaskBoardEnhancedListViewState
       primary: false,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16, 0, 16, widget.bottomPadding),
-      itemCount: sortedTasks.length + 1,
+      itemCount: sortedTasks.length + 1 + (hasMoreTasks ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == 0) {
           return _buildSortChip();
@@ -111,20 +114,19 @@ class _TaskBoardEnhancedListViewState
 
         final taskIndex = index - 1;
 
-        if (taskIndex >= sortedTasks.length) {
-          if (widget.state.filteredTasks.length > sortedTasks.length) {
-            return Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Center(
-                child: shad.OutlineButton(
-                  onPressed: widget.onLoadMore,
-                  child: Text(context.l10n.timerHistoryLoadMore),
-                ),
+        if (taskIndex == sortedTasks.length && hasMoreTasks) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Center(
+              child: shad.OutlineButton(
+                onPressed: widget.onLoadMore,
+                child: Text(context.l10n.timerHistoryLoadMore),
               ),
-            );
-          }
-          return const SizedBox.shrink();
+            ),
+          );
         }
+
+        if (taskIndex >= sortedTasks.length) return const SizedBox.shrink();
 
         final task = sortedTasks[taskIndex];
         final isLast = taskIndex == sortedTasks.length - 1;
@@ -170,7 +172,7 @@ class _TaskBoardEnhancedListViewState
               ),
               const shad.Gap(6),
               Text(
-                'Sort: $sortLabel',
+                '${context.l10n.sort}: $sortLabel',
                 style: theme.typography.small.copyWith(
                   fontWeight: FontWeight.w500,
                   color: theme.colorScheme.foreground,

@@ -6,7 +6,7 @@ class TransactionListState extends Equatable {
   const TransactionListState({
     this.status = TransactionListStatus.initial,
     this.transactions = const [],
-    this.workspaceCurrency = 'USD',
+    this.workspaceCurrency = '',
     this.exchangeRates = const [],
     this.hasMore = true,
     this.cursor,
@@ -22,6 +22,7 @@ class TransactionListState extends Equatable {
   final String? cursor;
   final String search;
   final String? error;
+  bool get hasWorkspaceCurrency => workspaceCurrency.trim().isNotEmpty;
 
   /// Whether we are fetching the next page (not initial load).
   bool get isLoadingMore =>

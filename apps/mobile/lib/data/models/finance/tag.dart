@@ -7,6 +7,8 @@ class FinanceTag extends Equatable {
     this.color,
     this.description,
     this.wsId,
+    this.amount,
+    this.transactionCount,
   });
 
   factory FinanceTag.fromJson(Map<String, dynamic> json) => FinanceTag(
@@ -15,6 +17,8 @@ class FinanceTag extends Equatable {
     color: json['color'] as String?,
     description: json['description'] as String?,
     wsId: json['ws_id'] as String?,
+    amount: (json['amount'] as num?)?.toDouble(),
+    transactionCount: json['transaction_count'] as int?,
   );
 
   final String id;
@@ -22,7 +26,17 @@ class FinanceTag extends Equatable {
   final String? color;
   final String? description;
   final String? wsId;
+  final double? amount;
+  final int? transactionCount;
 
   @override
-  List<Object?> get props => [id, name, color, description, wsId];
+  List<Object?> get props => [
+    id,
+    name,
+    color,
+    description,
+    wsId,
+    amount,
+    transactionCount,
+  ];
 }

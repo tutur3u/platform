@@ -304,6 +304,9 @@ List<_DateGroup> _groupByDate(
     var hasConvertedAmounts = false;
 
     for (final tx in txList) {
+      if (tx.isTransfer) {
+        continue;
+      }
       final amount = tx.amount ?? 0;
       final walletCurrency = tx.walletCurrency ?? workspaceCurrency;
       final isWorkspaceCurrency =

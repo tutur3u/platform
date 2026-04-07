@@ -15,30 +15,25 @@ List<TaskBoardTask> sortTaskBoardListViewTasks(
         return aCompleted ? 1 : -1;
       }
 
-      var comparison = 0;
-
-      switch (sort.field) {
-        case 'name':
-          comparison = (a.name ?? '').compareTo(b.name ?? '');
-        case 'priority':
-          comparison = _taskBoardListViewPriorityValue(
-            a.priority,
-          ).compareTo(_taskBoardListViewPriorityValue(b.priority));
-        case 'start_date':
-          comparison = _taskBoardListViewDateValue(
-            a.startDate,
-          ).compareTo(_taskBoardListViewDateValue(b.startDate));
-        case 'end_date':
-          comparison = _taskBoardListViewDateValue(
-            a.endDate,
-          ).compareTo(_taskBoardListViewDateValue(b.endDate));
-        case 'created_at':
-          comparison = _taskBoardListViewDateValue(
-            a.createdAt,
-          ).compareTo(_taskBoardListViewDateValue(b.createdAt));
-        case 'assignees':
-          comparison = a.assignees.length.compareTo(b.assignees.length);
-      }
+      final comparison = switch (sort.field) {
+        'name' => (a.name ?? '').compareTo(b.name ?? ''),
+        'priority' => _taskBoardListViewPriorityValue(
+          a.priority,
+        ).compareTo(_taskBoardListViewPriorityValue(b.priority)),
+        'start_date' => _taskBoardListViewDateValue(
+          a.startDate,
+        ).compareTo(_taskBoardListViewDateValue(b.startDate)),
+        'end_date' => _taskBoardListViewDateValue(
+          a.endDate,
+        ).compareTo(_taskBoardListViewDateValue(b.endDate)),
+        'created_at' => _taskBoardListViewDateValue(
+          a.createdAt,
+        ).compareTo(_taskBoardListViewDateValue(b.createdAt)),
+        'assignees' => a.assignees.length.compareTo(b.assignees.length),
+        _ => _taskBoardListViewDateValue(
+          a.createdAt,
+        ).compareTo(_taskBoardListViewDateValue(b.createdAt)),
+      };
 
       return sort.ascending ? comparison : -comparison;
     });

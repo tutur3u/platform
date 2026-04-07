@@ -74,8 +74,9 @@ class TransactionListCubit extends Cubit<TransactionListState> {
     if (!forceRefresh && hasResolvedCache) {
       _loadedWorkspaceId = wsId;
       emit(resolvedCached);
-      if ((cached != null && isFinanceCacheFresh(cached.fetchedAt)) ||
-          diskCached.isFresh) {
+      if (((cached != null && isFinanceCacheFresh(cached.fetchedAt)) ||
+              diskCached.isFresh) &&
+          resolvedCached.hasWorkspaceCurrency) {
         return;
       }
       emit(
@@ -91,7 +92,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
         state.copyWith(
           status: TransactionListStatus.loading,
           transactions: [],
-          workspaceCurrency: 'USD',
+          workspaceCurrency: '',
           exchangeRates: const <ExchangeRate>[],
           hasMore: true,
           clearCursor: true,
@@ -108,9 +109,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
       );
     }
 
-    final workspaceCurrencyFuture = _repo
-        .getWorkspaceDefaultCurrency(wsId)
-        .catchError((_) => 'USD');
+    final workspaceCurrencyFuture = _repo.getWorkspaceDefaultCurrency(wsId);
     final exchangeRatesFuture = _repo.getExchangeRates().catchError(
       (_) => <ExchangeRate>[],
     );
@@ -155,8 +154,9 @@ class TransactionListCubit extends Cubit<TransactionListState> {
     final resolvedCached = cached?.state ?? diskCached.data;
     if (resolvedCached != null) {
       emit(resolvedCached);
-      if ((cached != null && isFinanceCacheFresh(cached.fetchedAt)) ||
-          diskCached.isFresh) {
+      if (((cached != null && isFinanceCacheFresh(cached.fetchedAt)) ||
+              diskCached.isFresh) &&
+          resolvedCached.hasWorkspaceCurrency) {
         return;
       }
       emit(
@@ -280,7 +280,7 @@ TransactionListState _stateFromCacheJson(Map<String, dynamic> json) {
             .whereType<Map<String, dynamic>>()
             .map(Transaction.fromJson)
             .toList(growable: false),
-    workspaceCurrency: json['workspaceCurrency'] as String? ?? 'USD',
+    workspaceCurrency: json['workspaceCurrency'] as String? ?? '',
     exchangeRates:
         ((json['exchangeRates'] as List<dynamic>?) ?? const <dynamic>[])
             .whereType<Map<String, dynamic>>()

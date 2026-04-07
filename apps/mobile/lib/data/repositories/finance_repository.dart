@@ -1,3 +1,10 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
@@ -13,6 +20,120 @@ class FinanceRepository {
   FinanceRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
 
   final ApiClient _api;
+  static const CachePolicy _workspaceCurrencyCachePolicy =
+      CachePolicies.metadata;
+  static const _workspaceCurrencyCacheTag = 'finance:workspace-currency';
+  static final Map<String, _WorkspaceCurrencyCacheEntry>
+  _workspaceCurrencyCache = {};
+  static final Map<String, Future<String>> _workspaceCurrencyInFlight = {};
+
+  static CacheKey _workspaceCurrencyCacheKey(String wsId) {
+    return CacheKey(
+      namespace: 'finance.workspaceCurrency',
+      userId: currentCacheUserId(),
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+    );
+  }
+
+  static String _decodeWorkspaceCurrency(Object? json) {
+    if (json is! String) {
+      throw const FormatException(
+        'Invalid workspace currency cache payload.',
+      );
+    }
+    return json.trim().toUpperCase();
+  }
+
+  static bool _isWorkspaceCurrencyFresh(DateTime fetchedAt) {
+    return DateTime.now().difference(fetchedAt) <
+        _workspaceCurrencyCachePolicy.staleAfter;
+  }
+
+  static String _normalizeWorkspaceCurrencyValue(String? value) {
+    final resolved = value?.trim().toUpperCase();
+    if (resolved == null || resolved.isEmpty) {
+      return 'USD';
+    }
+    return resolved;
+  }
+
+  String? peekWorkspaceDefaultCurrency(String wsId) {
+    final cached = _workspaceCurrencyCache[wsId];
+    return cached?.currency;
+  }
+
+  Future<String?> readWorkspaceDefaultCurrencyFromCache(String wsId) async {
+    final memoryCached = _workspaceCurrencyCache[wsId];
+    if (memoryCached != null) {
+      return memoryCached.currency;
+    }
+
+    final diskCached = await CacheStore.instance.read<String>(
+      key: _workspaceCurrencyCacheKey(wsId),
+      decode: _decodeWorkspaceCurrency,
+    );
+    if (!diskCached.hasValue || diskCached.data == null) {
+      return null;
+    }
+
+    _workspaceCurrencyCache[wsId] = _WorkspaceCurrencyCacheEntry(
+      currency: diskCached.data!,
+      fetchedAt: diskCached.fetchedAt ?? DateTime.now(),
+    );
+    return diskCached.data;
+  }
+
+  Future<void> _storeWorkspaceDefaultCurrencyCache({
+    required String wsId,
+    required String currency,
+  }) async {
+    final normalized = _normalizeWorkspaceCurrencyValue(currency);
+    final now = DateTime.now();
+    _workspaceCurrencyCache[wsId] = _WorkspaceCurrencyCacheEntry(
+      currency: normalized,
+      fetchedAt: now,
+    );
+    await CacheStore.instance.write(
+      key: _workspaceCurrencyCacheKey(wsId),
+      policy: _workspaceCurrencyCachePolicy,
+      payload: normalized,
+      tags: [
+        _workspaceCurrencyCacheTag,
+        'workspace:$wsId',
+        'module:finance',
+      ],
+    );
+  }
+
+  Future<String> _fetchWorkspaceDefaultCurrencyRemote(String wsId) async {
+    try {
+      final response = await _api.getJson(
+        FinanceEndpoints.workspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+      );
+      return _normalizeWorkspaceCurrencyValue(response['value'] as String?);
+    } on ApiException catch (error) {
+      if (error.statusCode == 404) {
+        return 'USD';
+      }
+      rethrow;
+    }
+  }
+
+  Future<String> _refreshWorkspaceDefaultCurrency(String wsId) {
+    return _workspaceCurrencyInFlight.putIfAbsent(wsId, () async {
+      try {
+        final currency = await _fetchWorkspaceDefaultCurrencyRemote(wsId);
+        await _storeWorkspaceDefaultCurrencyCache(
+          wsId: wsId,
+          currency: currency,
+        );
+        return currency;
+      } finally {
+        unawaited(_workspaceCurrencyInFlight.remove(wsId));
+      }
+    });
+  }
 
   // ── Wallets ─────────────────────────────────────
 
@@ -24,21 +145,39 @@ class FinanceRepository {
         .toList();
   }
 
-  Future<String> getWorkspaceDefaultCurrency(String wsId) async {
-    try {
-      final response = await _api.getJson(
-        FinanceEndpoints.workspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+  Future<String> getWorkspaceDefaultCurrency(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh) {
+      final memoryCached = _workspaceCurrencyCache[wsId];
+      if (memoryCached != null) {
+        if (_isWorkspaceCurrencyFresh(memoryCached.fetchedAt)) {
+          return memoryCached.currency;
+        }
+        unawaited(_refreshWorkspaceDefaultCurrency(wsId));
+        return memoryCached.currency;
+      }
+
+      final diskCached = await CacheStore.instance.read<String>(
+        key: _workspaceCurrencyCacheKey(wsId),
+        decode: _decodeWorkspaceCurrency,
       );
-      final value = response['value'] as String?;
-      if (value == null || value.trim().isEmpty) return 'USD';
-      return value.trim().toUpperCase();
-    } on ApiException {
-      // Fallback to USD on API errors (e.g., 404)
-      return 'USD';
-    } on Exception {
-      // Fallback to USD on any unexpected error
-      return 'USD';
+      if (diskCached.hasValue && diskCached.data != null) {
+        _workspaceCurrencyCache[wsId] = _WorkspaceCurrencyCacheEntry(
+          currency: diskCached.data!,
+          fetchedAt: diskCached.fetchedAt ?? DateTime.now(),
+        );
+        if (diskCached.fetchedAt != null &&
+            _isWorkspaceCurrencyFresh(diskCached.fetchedAt!)) {
+          return diskCached.data!;
+        }
+        unawaited(_refreshWorkspaceDefaultCurrency(wsId));
+        return diskCached.data!;
+      }
     }
+
+    return _refreshWorkspaceDefaultCurrency(wsId);
   }
 
   Future<void> updateWorkspaceDefaultCurrency({
@@ -50,6 +189,10 @@ class FinanceRepository {
       {
         'value': currency.trim().toUpperCase(),
       },
+    );
+    await _storeWorkspaceDefaultCurrencyCache(
+      wsId: wsId,
+      currency: currency,
     );
   }
 
@@ -553,4 +696,20 @@ class FinanceRepository {
   Future<void> deleteTag({required String wsId, required String tagId}) async {
     await _api.deleteJson(FinanceEndpoints.tag(wsId, tagId));
   }
+}
+
+class _WorkspaceCurrencyCacheEntry {
+  const _WorkspaceCurrencyCacheEntry({
+    required this.currency,
+    required this.fetchedAt,
+  });
+
+  final String currency;
+  final DateTime fetchedAt;
+}
+
+@visibleForTesting
+void debugClearFinanceRepositoryWorkspaceCurrencyCache() {
+  FinanceRepository._workspaceCurrencyCache.clear();
+  FinanceRepository._workspaceCurrencyInFlight.clear();
 }

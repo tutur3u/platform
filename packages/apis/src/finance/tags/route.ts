@@ -40,7 +40,19 @@ export async function GET(req: Request, { params }: Params) {
 
   const { data, error } = await sbAdmin
     .from('transaction_tags')
-    .select('*')
+    .select(
+      `
+        id,
+        name,
+        color,
+        description,
+        ws_id,
+        wallet_transaction_tags(
+          transaction_id,
+          wallet_transactions(amount, wallet_id)
+        )
+      `
+    )
     .eq('ws_id', normalizedWsId)
     .order('name');
 
@@ -52,7 +64,40 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(data);
+  const normalizedData = (data ?? []).map((tag) => {
+    const taggedTransactions = Array.isArray(tag.wallet_transaction_tags)
+      ? tag.wallet_transaction_tags
+      : [];
+    var amount = 0;
+    var transactionCount = 0;
+
+    for (const taggedTransaction of taggedTransactions) {
+      const walletTransaction = Array.isArray(
+        taggedTransaction.wallet_transactions
+      )
+        ? taggedTransaction.wallet_transactions[0]
+        : taggedTransaction.wallet_transactions;
+
+      if (walletTransaction == null) {
+        continue;
+      }
+
+      amount += Math.abs(Number(walletTransaction.amount ?? 0));
+      transactionCount += 1;
+    }
+
+    return {
+      id: tag.id,
+      name: tag.name,
+      color: tag.color,
+      description: tag.description,
+      ws_id: tag.ws_id,
+      amount,
+      transaction_count: transactionCount,
+    };
+  });
+
+  return NextResponse.json(normalizedData);
 }
 
 const TagSchema = z.object({

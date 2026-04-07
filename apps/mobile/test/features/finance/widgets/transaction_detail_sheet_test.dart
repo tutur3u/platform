@@ -14,6 +14,14 @@ import '../../../helpers/helpers.dart';
 
 class _FakeFinanceRepository extends FinanceRepository {
   @override
+  Future<String> getWorkspaceDefaultCurrency(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async {
+    return 'USD';
+  }
+
+  @override
   Future<List<Wallet>> getWallets(String wsId) async {
     return const [Wallet(id: 'wallet_1', name: 'Main Wallet')];
   }
@@ -116,11 +124,20 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Edit transaction'), findsAtLeastNWidgets(1));
-      expect(find.text('Amount'), findsWidgets);
+      expect(find.byKey(const ValueKey('money-key-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('money-key-C')), findsOneWidget);
+      expect(find.byKey(const ValueKey('money-key-=')), findsOneWidget);
       expect(find.text('Description'), findsWidgets);
       expect(find.text('Taken at'), findsWidgets);
 
-      await tester.enterText(find.byType(EditableText).first, '');
+      await tester.tap(find.byKey(const ValueKey('money-key-C')));
+      await tester.pumpAndSettle();
+      final equalInkWellFinder = find.ancestor(
+        of: find.byKey(const ValueKey('money-key-=')),
+        matching: find.byType(InkWell),
+      );
+      await tester.tap(find.byKey(const ValueKey('money-key-hide')));
+      await tester.pumpAndSettle();
       tester
           .widget<shad.PrimaryButton>(
             find.widgetWithText(shad.PrimaryButton, 'Save').last,
@@ -129,13 +146,33 @@ void main() {
           ?.call();
       await tester.pumpAndSettle();
 
-      expect(find.text('Enter a valid amount'), findsOneWidget);
       expect(didSave, isFalse);
+      expect(find.text('Edit transaction'), findsAtLeastNWidgets(1));
 
-      await tester.enterText(find.byType(EditableText).first, '42.5');
-      final settingsTab = find.text('Settings').last;
-      await tester.ensureVisible(settingsTab);
-      await tester.tap(settingsTab);
+      await tester.tap(find.byKey(const ValueKey('money-source-surface')));
+      await tester.pumpAndSettle();
+
+      void pressMoneyKey(String key) {
+        final inkWellFinder = find.ancestor(
+          of: find.byKey(ValueKey('money-key-$key')),
+          matching: find.byType(InkWell),
+        );
+        tester.widget<InkWell>(inkWellFinder).onTap?.call();
+      }
+
+      for (final key in ['4', '2', '.', '5']) {
+        pressMoneyKey(key);
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      tester.widget<InkWell>(equalInkWellFinder).onTap?.call();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('money-key-hide')));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Settings').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('settings-collapsed')));
       await tester.pumpAndSettle();
 
       var switches = tester
@@ -177,6 +214,93 @@ void main() {
       expect(savedIsDescriptionConfidential, isTrue);
       expect(savedIsCategoryConfidential, isTrue);
 
+      await tester.drainShadToastTimers();
+    });
+
+    testWidgets('quick tag updates return true when the sheet is dismissed', (
+      tester,
+    ) async {
+      final resultCompleter = Completer<bool>();
+      List<String>? savedTagIds;
+
+      final transaction = Transaction(
+        id: 'tx_1',
+        amount: -120.5,
+        description: 'Tagged expense',
+        categoryId: 'cat_1',
+        walletId: 'wallet_1',
+        categoryName: 'Expense',
+        walletName: 'Main Wallet',
+        walletCurrency: 'USD',
+        takenAt: DateTime(2026, 2, 15, 9, 30),
+        reportOptIn: true,
+      );
+
+      await tester.pumpApp(
+        Scaffold(
+          body: Builder(
+            builder: (context) {
+              return ElevatedButton(
+                onPressed: () {
+                  final future = showTransactionDetailSheet(
+                    context,
+                    wsId: 'ws_1',
+                    transaction: transaction,
+                    repository: _FakeFinanceRepository(),
+                    onSave:
+                        ({
+                          required transactionId,
+                          required amount,
+                          description,
+                          takenAt,
+                          walletId,
+                          categoryId,
+                          tagIds,
+                          reportOptIn,
+                          isAmountConfidential,
+                          isDescriptionConfidential,
+                          isCategoryConfidential,
+                        }) async {
+                          savedTagIds = tagIds;
+                          return transaction.copyWith(
+                            tags: const [
+                              TransactionTag(
+                                id: 'tag_1',
+                                name: 'Work',
+                                color: '#3366ff',
+                              ),
+                            ],
+                          );
+                        },
+                    onDelete: (_) async {},
+                  );
+                  unawaited(future.then(resultCompleter.complete));
+                },
+                child: const Text('Open details'),
+              );
+            },
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open details'));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Tags'));
+      await tester.tap(find.text('Tags'));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Work').first);
+      await tester.tap(find.text('Work').first);
+      await tester.pumpAndSettle();
+
+      expect(savedTagIds, ['tag_1']);
+      expect(find.text('Work'), findsWidgets);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(await resultCompleter.future, isTrue);
       await tester.drainShadToastTimers();
     });
   });

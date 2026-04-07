@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -15,7 +12,6 @@ export async function GET(req: Request, { params }: Params) {
   try {
     const { wsId } = await params;
     const supabase = await createClient(req);
-    const sbAdmin = await createAdminClient();
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const { searchParams } = new URL(req.url);
 
@@ -98,164 +94,101 @@ export async function GET(req: Request, { params }: Params) {
     // Check if there are more results
     const hasMore = (data || []).length > limit;
     const rawTransactions = hasMore ? data.slice(0, limit) : data || [];
+    const transactionIds = rawTransactions.map((t) => t.id);
+    const { data: enrichmentRows, error: enrichmentError } =
+      transactionIds.length > 0
+        ? await supabase.rpc('get_transaction_list_enrichment', {
+            p_ws_id: normalizedWsId,
+            p_transaction_ids: transactionIds,
+            p_user_id: user.id,
+          })
+        : { data: [], error: null };
 
-    // Batch fetch wallet details used by clients
-    const uniqueWalletIds = [
-      ...new Set(
-        rawTransactions.map((t) => t.wallet_id).filter(Boolean) as string[]
-      ),
-    ];
-    const walletCurrencyMap: Record<string, string> = {};
-    const walletIconMap: Record<string, string> = {};
-    const walletImageSrcMap: Record<string, string> = {};
-    if (uniqueWalletIds.length > 0) {
-      const { data: walletDetails } = await sbAdmin
-        .from('workspace_wallets')
-        .select('id, currency, icon, image_src')
-        .eq('ws_id', normalizedWsId)
-        .in('id', uniqueWalletIds);
-      (walletDetails || []).forEach((w) => {
-        if (w.currency) walletCurrencyMap[w.id] = w.currency;
-        if (w.icon) walletIconMap[w.id] = w.icon;
-        if (w.image_src) walletImageSrcMap[w.id] = w.image_src;
-      });
+    if (enrichmentError) {
+      throw enrichmentError;
     }
 
-    // Get transaction IDs for fetching tags
-    const transactionIds = rawTransactions.map((t) => t.id);
-
-    // Fetch tags for all transactions in a single query
-    const { data: transactionTags } =
-      transactionIds.length > 0
-        ? await supabase
-            .from('wallet_transaction_tags')
-            .select('transaction_id, tag:transaction_tags(id, name, color)')
-            .in('transaction_id', transactionIds)
-        : { data: [] };
-
-    // Group tags by transaction ID
-    const tagsByTransaction: Record<
-      string,
-      Array<{ id: string; name: string; color: string }>
-    > = {};
-    (transactionTags || []).forEach((tt: any) => {
-      if (!tagsByTransaction[tt.transaction_id]) {
-        tagsByTransaction[tt.transaction_id] = [];
-      }
-      if (tt.tag) {
-        tagsByTransaction[tt.transaction_id]!.push(tt.tag);
-      }
-    });
-
-    // Batch fetch transfer metadata for all transactions
-    const transfersByTxId: Record<
+    const enrichmentByTransactionId = new Map<
       string,
       {
-        linked_transaction_id: string;
-        linked_wallet_id: string;
-        linked_wallet_name: string;
-        linked_wallet_currency?: string;
-        linked_amount?: number;
-        is_origin: boolean;
+        wallet_currency: string | null;
+        wallet_icon: string | null;
+        wallet_image_src: string | null;
+        tags: Array<{ id: string; name: string; color: string }>;
+        transfer:
+          | {
+              linked_transaction_id: string;
+              linked_wallet_id: string;
+              linked_wallet_name: string;
+              linked_wallet_currency?: string;
+              linked_amount?: number;
+              is_origin: boolean;
+            }
+          | undefined;
       }
-    > = {};
+    >();
 
-    if (transactionIds.length > 0) {
-      const { data: transferLinks } = await supabase
-        .from('workspace_wallet_transfers')
-        .select('from_transaction_id, to_transaction_id')
-        .or(
-          `from_transaction_id.in.(${transactionIds.join(',')}),to_transaction_id.in.(${transactionIds.join(',')})`
-        );
+    for (const row of enrichmentRows || []) {
+      const tags = Array.isArray(row.tags)
+        ? row.tags
+            .filter(
+              (
+                tag
+              ): tag is { id: string; name: string; color?: string | null } =>
+                !!tag &&
+                typeof tag === 'object' &&
+                'id' in tag &&
+                'name' in tag &&
+                typeof tag.id === 'string' &&
+                typeof tag.name === 'string'
+            )
+            .map((tag) => ({
+              id: tag.id,
+              name: tag.name,
+              color: typeof tag.color === 'string' ? tag.color : '',
+            }))
+        : [];
 
-      if (transferLinks && transferLinks.length > 0) {
-        // Collect all linked transaction IDs we need to look up
-        const linkedTxIds = new Set<string>();
-        for (const link of transferLinks) {
-          linkedTxIds.add(link.from_transaction_id);
-          linkedTxIds.add(link.to_transaction_id);
-        }
-
-        // Fetch linked transactions with wallet info
-        const { data: linkedTxs } = await supabase
-          .from('wallet_transactions')
-          .select('id, amount, wallet_id')
-          .in('id', [...linkedTxIds]);
-
-        // Build wallet name/currency map (reuse existing map + fetch missing)
-        const allWalletIds = new Set(uniqueWalletIds);
-        (linkedTxs || []).forEach((tx) => {
-          if (tx.wallet_id) allWalletIds.add(tx.wallet_id);
-        });
-
-        const walletNameMap: Record<string, string> = {};
-        // Fetch wallet names + currencies for all relevant wallets
-        if (allWalletIds.size > 0) {
-          const { data: walletDetails } = await sbAdmin
-            .from('workspace_wallets')
-            .select('id, name, currency')
-            .eq('ws_id', normalizedWsId)
-            .in('id', [...allWalletIds]);
-
-          (walletDetails || []).forEach((w) => {
-            walletNameMap[w.id] = w.name || '';
-            if (w.currency && !walletCurrencyMap[w.id]) {
-              walletCurrencyMap[w.id] = w.currency;
+      const transfer =
+        row.transfer &&
+        typeof row.transfer === 'object' &&
+        'linked_transaction_id' in row.transfer &&
+        'linked_wallet_id' in row.transfer &&
+        'linked_wallet_name' in row.transfer
+          ? {
+              linked_transaction_id: String(row.transfer.linked_transaction_id),
+              linked_wallet_id: String(row.transfer.linked_wallet_id),
+              linked_wallet_name: String(row.transfer.linked_wallet_name),
+              linked_wallet_currency:
+                typeof row.transfer.linked_wallet_currency === 'string'
+                  ? row.transfer.linked_wallet_currency
+                  : undefined,
+              linked_amount:
+                typeof row.transfer.linked_amount === 'number'
+                  ? row.transfer.linked_amount
+                  : undefined,
+              is_origin: Boolean(row.transfer.is_origin),
             }
-          });
-        }
+          : undefined;
 
-        // Build lookup from transaction ID → wallet/amount
-        const txLookup: Record<string, { amount: number; wallet_id: string }> =
-          {};
-        (linkedTxs || []).forEach((tx) => {
-          txLookup[tx.id] = {
-            amount: tx.amount ?? 0,
-            wallet_id: tx.wallet_id,
-          };
-        });
-
-        // Map each transfer link to both sides
-        for (const link of transferLinks) {
-          const fromId = link.from_transaction_id;
-          const toId = link.to_transaction_id;
-          const fromTx = txLookup[fromId];
-          const toTx = txLookup[toId];
-
-          if (fromTx && toTx) {
-            // For from-transaction: linked to the to-transaction
-            if (transactionIds.includes(fromId)) {
-              transfersByTxId[fromId] = {
-                linked_transaction_id: toId,
-                linked_wallet_id: toTx.wallet_id,
-                linked_wallet_name: walletNameMap[toTx.wallet_id] || '',
-                linked_wallet_currency: walletCurrencyMap[toTx.wallet_id],
-                linked_amount: toTx.amount,
-                is_origin: true,
-              };
-            }
-            // For to-transaction: linked to the from-transaction
-            if (transactionIds.includes(toId)) {
-              transfersByTxId[toId] = {
-                linked_transaction_id: fromId,
-                linked_wallet_id: fromTx.wallet_id,
-                linked_wallet_name: walletNameMap[fromTx.wallet_id] || '',
-                linked_wallet_currency: walletCurrencyMap[fromTx.wallet_id],
-                linked_amount: fromTx.amount,
-                is_origin: false,
-              };
-            }
-          }
-        }
-      }
+      enrichmentByTransactionId.set(row.transaction_id, {
+        wallet_currency: row.wallet_currency,
+        wallet_icon: row.wallet_icon,
+        wallet_image_src: row.wallet_image_src,
+        tags,
+        transfer,
+      });
     }
 
     const transactions = rawTransactions.map((t) => ({
       ...t,
       wallet: t.wallet_name,
-      wallet_currency: walletCurrencyMap[t.wallet_id] || undefined,
-      wallet_icon: walletIconMap[t.wallet_id] || undefined,
-      wallet_image_src: walletImageSrcMap[t.wallet_id] || undefined,
+      wallet_currency:
+        enrichmentByTransactionId.get(t.id)?.wallet_currency || undefined,
+      wallet_icon:
+        enrichmentByTransactionId.get(t.id)?.wallet_icon || undefined,
+      wallet_image_src:
+        enrichmentByTransactionId.get(t.id)?.wallet_image_src || undefined,
       category: t.category_name,
       category_icon: t.category_icon,
       category_color: t.category_color,
@@ -264,8 +197,8 @@ export async function GET(req: Request, { params }: Params) {
         email: t.creator_email,
         avatar_url: t.creator_avatar_url,
       },
-      tags: tagsByTransaction[t.id] || [],
-      transfer: transfersByTxId[t.id] || undefined,
+      tags: enrichmentByTransactionId.get(t.id)?.tags || [],
+      transfer: enrichmentByTransactionId.get(t.id)?.transfer,
     }));
 
     // Generate next cursor

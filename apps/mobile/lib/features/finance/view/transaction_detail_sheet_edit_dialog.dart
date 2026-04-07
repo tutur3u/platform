@@ -1,5 +1,7 @@
 part of 'transaction_detail_sheet.dart';
 
+enum _MoneyFieldTarget { source, destination }
+
 class _TransactionFormDialog extends StatefulWidget {
   const _TransactionFormDialog({
     required this.wsId,
@@ -35,15 +37,11 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
   }
 
   void _onModeChanged(bool isTransfer) {
-    final canSwitchMode = _isCreate || widget.transaction?.isTransfer == true;
-    if (!canSwitchMode && isTransfer) {
-      return;
-    }
-
     setState(() {
       _isTransfer = isTransfer;
       if (_isTransfer) {
         _categoryId = null;
+        _activeMoneyField = _MoneyFieldTarget.source;
         if (_isCreate) {
           _reportOptIn = false;
         }
@@ -51,6 +49,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
         _destinationWalletId = null;
         _destinationAmountController.clear();
         _isDestinationOverridden = false;
+        _activeMoneyField = _MoneyFieldTarget.source;
       }
     });
   }
@@ -60,42 +59,11 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
     final palette = FinancePalette.of(context);
-    final selectedWallet = _selectedWallet;
-    final selectedDestinationWallet = _selectedDestinationWallet;
-    final selectedCategory = _selectedCategory;
-    final selectedTags = _selectedTags;
+    final selectedWallet = _displaySelectedWallet;
+    final selectedDestinationWallet = _displaySelectedDestinationWallet;
+    final selectedCategory = _displaySelectedCategory;
+    final selectedTags = _displaySelectedTags;
     final selectedTagLabel = selectedTags.map((tag) => tag.name).join(', ');
-    final canSwitchMode = _isCreate || widget.transaction?.isTransfer == true;
-    final destPlaceholder = '${currencySymbol(_selectedDestinationCurrency)}0';
-    final destinationHintText = _isCrossCurrency
-        ? (_isDestinationOverridden
-              ? l10n.financeDestinationAmountOverrideHint
-              : l10n.financeDestinationAmountAutoHint)
-        : '';
-    final hasSelectedCategoryName =
-        selectedCategory?.name != null &&
-        selectedCategory!.name!.trim().isNotEmpty;
-    final hasSelectedWalletName =
-        selectedWallet?.name != null && selectedWallet!.name!.trim().isNotEmpty;
-    final draftTitle = _isTransfer
-        ? _transferDraftTitle(l10n)
-        : (_descriptionController.text.trim().isNotEmpty
-              ? _descriptionController.text.trim()
-              : hasSelectedCategoryName
-              ? selectedCategory.name!.trim()
-              : l10n.financeCreateTransaction);
-    final draftSubtitle = _isTransfer
-        ? _transferDraftSubtitle()
-        : [
-            if (hasSelectedWalletName) selectedWallet.name!.trim(),
-            if (hasSelectedCategoryName) selectedCategory.name!.trim(),
-            DateFormat.MMMd().add_jm().format(_takenAt),
-          ].join(' • ');
-    final previewAmountLabel = _isTransfer
-        ? (_destinationAmountController.text.trim().isNotEmpty
-              ? _destinationAmountPreview
-              : _amountPreview)
-        : _amountPreview;
     final actionLabel = _isCreate
         ? (_isTransfer ? l10n.financeTransfer : l10n.financeCreateTransaction)
         : l10n.timerSave;
@@ -107,6 +75,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
             _isCreate
                 ? l10n.financeCreateTransaction
                 : l10n.financeEditTransaction,
+            style: theme.typography.large.copyWith(fontWeight: FontWeight.w600),
           ),
           trailing: [
             shad.GhostButton(
@@ -136,39 +105,90 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
               ),
             ),
           ),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: shad.OutlineButton(
-                  onPressed: _isSaving
-                      ? null
-                      : () => Navigator.of(context).pop(),
-                  child: Center(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(l10n.commonCancel, maxLines: 1),
-                    ),
-                  ),
-                ),
-              ),
-              const shad.Gap(12),
-              Expanded(
-                child: shad.PrimaryButton(
-                  onPressed: _isSaving ? null : _handleSave,
-                  child: _isSaving
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: shad.CircularProgressIndicator(),
-                        )
-                      : Center(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(actionLabel, maxLines: 1),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) {
+                  final offset = Tween<Offset>(
+                    begin: const Offset(0, 0.18),
+                    end: Offset.zero,
+                  ).animate(animation);
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(position: offset, child: child),
+                  );
+                },
+                child: _isMoneyKeypadVisible
+                    ? TapRegion(
+                        groupId: _moneyTapRegionGroup,
+                        onTapOutside: (_) => _dismissMoneyInput(),
+                        child: Padding(
+                          key: const ValueKey('money-keypad-dock'),
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_moneySuggestions.isNotEmpty) ...[
+                                _MoneyMultiplierRow(
+                                  suggestions: _moneySuggestions,
+                                  onSelected: _applyMoneyMultiplier,
+                                ),
+                                const shad.Gap(10),
+                              ],
+                              _MoneyKeypad(
+                                decimalSeparator: _localeDecimalSeparator,
+                                onKeyPressed: _appendMoneyInput,
+                                onBackspacePressed: _backspaceMoneyInput,
+                                onClearPressed: _clearMoneyInput,
+                                onEvaluatePressed: _evaluateMoneyInput,
+                                onHidePressed: _dismissMoneyInput,
+                              ),
+                            ],
                           ),
                         ),
-                ),
+                      )
+                    : const SizedBox.shrink(),
               ),
+              if (!_isMoneyKeypadVisible)
+                Row(
+                  children: [
+                    Expanded(
+                      child: shad.OutlineButton(
+                        onPressed: _isSaving
+                            ? null
+                            : () => Navigator.of(context).pop(),
+                        child: Center(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(l10n.commonCancel, maxLines: 1),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const shad.Gap(12),
+                    Expanded(
+                      child: shad.PrimaryButton(
+                        onPressed: _isSaving ? null : _handleSave,
+                        child: _isSaving
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: shad.CircularProgressIndicator(),
+                              )
+                            : Center(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(actionLabel, maxLines: 1),
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
@@ -176,39 +196,54 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
       child: SafeArea(
         top: false,
         bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _ModeSelectorCard(
-                isTransfer: _isTransfer,
-                canSwitchMode: canSwitchMode,
-                onChanged: _onModeChanged,
-              ),
-              const shad.Gap(12),
-              _DraftPreviewCard(
-                title: draftTitle,
-                subtitle: draftSubtitle,
-                amountLabel: previewAmountLabel,
-                accentColor: _isTransfer
-                    ? theme.colorScheme.primary
-                    : _selectedCategoryColor,
-                isTransfer: _isTransfer,
-                walletName: selectedWallet?.name,
-                categoryName: selectedCategory?.name,
-                destinationWalletName: selectedDestinationWallet?.name,
-                tagLabel: selectedTagLabel.trim().isEmpty
-                    ? null
-                    : selectedTagLabel,
-              ),
-              const shad.Gap(12),
-              if (_isLoadingOptions)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(child: NovaLoadingIndicator()),
-                )
-              else ...[
+        child: NotificationListener<UserScrollNotification>(
+          onNotification: (notification) {
+            if (_isMoneyKeypadVisible) {
+              _dismissMoneyInput();
+            }
+            return false;
+          },
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_isCreate) ...[
+                  _ModeSelectorCard(
+                    isTransfer: _isTransfer,
+                    onChanged: _onModeChanged,
+                  ),
+                  const shad.Gap(12),
+                ],
+                TapRegion(
+                  groupId: _moneyTapRegionGroup,
+                  onTapOutside: (_) => _dismissMoneyInput(),
+                  child: Focus(
+                    focusNode: _sourceAmountFocusNode,
+                    child: _PrimaryAmountComposer(
+                      surfaceKey: const ValueKey('money-source-surface'),
+                      amountLabel: _formattedMoneyFieldLabel(
+                        _MoneyFieldTarget.source,
+                      ),
+                      placeholderLabel: l10n.financeAmount,
+                      currencyCode: _selectedCurrency,
+                      accentColor: _isTransfer
+                          ? theme.colorScheme.primary
+                          : _selectedCategoryColor,
+                      isFocused: _isMoneyFieldActive(_MoneyFieldTarget.source),
+                      onTap: () =>
+                          _setActiveMoneyField(_MoneyFieldTarget.source),
+                      isTransfer: _isTransfer,
+                      walletName: selectedWallet?.name,
+                      categoryName: selectedCategory?.name,
+                      destinationWalletName: selectedDestinationWallet?.name,
+                      tagLabel: selectedTagLabel.trim().isEmpty
+                          ? null
+                          : selectedTagLabel,
+                    ),
+                  ),
+                ),
+                const shad.Gap(12),
                 if (_optionsError != null)
                   _InlineAlertCard(
                     message: _optionsError!,
@@ -226,6 +261,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                       _WalletSelectorButton(
                         label: l10n.financeWallet,
                         wallet: selectedWallet,
+                        isLoading: _isLoadingOptions && _wallets.isEmpty,
                         onPressed: _wallets.isEmpty ? null : _pickWallet,
                       ),
                       const shad.Gap(12),
@@ -234,6 +270,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                           label: l10n.financeDestinationWallet,
                           wallet: selectedDestinationWallet,
                           placeholder: l10n.financeSelectDestinationWallet,
+                          isLoading: _isLoadingOptions && _wallets.isEmpty,
                           onPressed: _wallets.length < 2
                               ? null
                               : _pickDestinationWallet,
@@ -244,6 +281,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                           categoryName: selectedCategory?.name,
                           icon: _selectedCategoryIcon,
                           color: _selectedCategoryColor,
+                          isLoading: _isLoadingOptions && _categories.isEmpty,
                           onPressed: _categories.isEmpty ? null : _pickCategory,
                         ),
                       const shad.Gap(12),
@@ -253,69 +291,9 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                             ? null
                             : selectedTagLabel,
                         color: _selectedTagColor,
+                        isLoading: _isLoadingOptions && _tags.isEmpty,
                         onPressed: _tags.isEmpty ? null : _pickTag,
                       ),
-                    ],
-                  ),
-                ),
-                const shad.Gap(12),
-                _FormSectionCard(
-                  title: l10n.financeAmount,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _AmountEntryCard(
-                        label: l10n.financeAmount,
-                        controller: _amountController,
-                        currencyCode: _selectedCurrency,
-                        placeholder: '${currencySymbol(_selectedCurrency)}0',
-                        allowDecimal:
-                            _currencyFractionDigits(_selectedCurrency) > 0,
-                        inputFormatters: _amountInputFormatters(
-                          _selectedCurrency,
-                        ),
-                        previewText: _amountPreview,
-                        onChanged: (_) => _onAmountChanged(),
-                      ),
-                      if (_isTransfer) ...[
-                        const shad.Gap(10),
-                        _TransferDestinationAmountSection(
-                          controller: _destinationAmountController,
-                          currencyCode: _selectedDestinationCurrency,
-                          enabled: _destinationWalletId != null && !_isAutoMode,
-                          previewText: _destinationAmountPreview,
-                          isOverridden: _isDestinationOverridden,
-                          onToggleOverride: () {
-                            setState(() {
-                              _isDestinationOverridden =
-                                  !_isDestinationOverridden;
-                            });
-                            if (!_isDestinationOverridden) {
-                              _tryAutoFillDestinationAmount();
-                            }
-                          },
-                          hintText: _destinationWalletId == null
-                              ? l10n.financeSelectDestinationWallet
-                              : destinationHintText,
-                          inputFormatters: _amountInputFormatters(
-                            _selectedDestinationCurrency,
-                          ),
-                          placeholder: destPlaceholder,
-                          allowDecimal:
-                              _currencyFractionDigits(
-                                _selectedDestinationCurrency,
-                              ) >
-                              0,
-                          exchangeRateDisplay: _exchangeRateDisplay,
-                          onInvertRate: () {
-                            setState(
-                              () => _isRateInverted = !_isRateInverted,
-                            );
-                          },
-                          invertRateTooltip: l10n.financeInvertRate,
-                          isCrossCurrency: _isCrossCurrency,
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -343,50 +321,47 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                 const shad.Gap(12),
                 _FormSectionCard(
                   title: l10n.settingsTitle,
-                  child: _TransactionFormSettingsTab(
-                    reportOptIn: _reportOptIn,
-                    onReportOptInChanged: (v) =>
-                        setState(() => _reportOptIn = v),
-                    isTransfer: _isTransfer,
-                    isAmountConfidential: _isAmountConfidential,
-                    onAmountConfidentialChanged: (v) =>
-                        setState(() => _isAmountConfidential = v),
-                    isDescriptionConfidential: _isDescriptionConfidential,
-                    onDescriptionConfidentialChanged: (v) =>
-                        setState(() => _isDescriptionConfidential = v),
-                    isCategoryConfidential: _isCategoryConfidential,
-                    onCategoryConfidentialChanged: (v) =>
-                        setState(() => _isCategoryConfidential = v),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    child: _showSettings
+                        ? _TransactionFormSettingsTab(
+                            key: const ValueKey('settings-expanded'),
+                            reportOptIn: _reportOptIn,
+                            onReportOptInChanged: (v) =>
+                                setState(() => _reportOptIn = v),
+                            isTransfer: _isTransfer,
+                            isAmountConfidential: _isAmountConfidential,
+                            onAmountConfidentialChanged: (v) =>
+                                setState(() => _isAmountConfidential = v),
+                            isDescriptionConfidential:
+                                _isDescriptionConfidential,
+                            onDescriptionConfidentialChanged: (v) =>
+                                setState(() => _isDescriptionConfidential = v),
+                            isCategoryConfidential: _isCategoryConfidential,
+                            onCategoryConfidentialChanged: (v) =>
+                                setState(() => _isCategoryConfidential = v),
+                          )
+                        : _TransactionFormSettingsSummary(
+                            key: const ValueKey('settings-collapsed'),
+                            reportOptIn: _reportOptIn,
+                            isTransfer: _isTransfer,
+                            isAmountConfidential: _isAmountConfidential,
+                            isDescriptionConfidential:
+                                _isDescriptionConfidential,
+                            isCategoryConfidential: _isCategoryConfidential,
+                            onPressed: () =>
+                                setState(() => _showSettings = true),
+                          ),
                   ),
                 ),
               ],
-            ],
+            ),
           ),
         ),
       ),
     );
-  }
-
-  String _transferDraftTitle(AppLocalizations l10n) {
-    final from = _selectedWallet?.name?.trim();
-    final to = _selectedDestinationWallet?.name?.trim();
-    if ((from?.isNotEmpty ?? false) && (to?.isNotEmpty ?? false)) {
-      return '$from → $to';
-    }
-    return l10n.financeTransfer;
-  }
-
-  String _transferDraftSubtitle() {
-    final parts = <String>[
-      if (_selectedWallet?.currency != null &&
-          _selectedWallet!.currency!.trim().isNotEmpty)
-        _selectedWallet!.currency!.trim().toUpperCase(),
-      if (_selectedDestinationWallet?.currency != null &&
-          _selectedDestinationWallet!.currency!.trim().isNotEmpty)
-        _selectedDestinationWallet!.currency!.trim().toUpperCase(),
-      DateFormat.MMMd().add_jm().format(_takenAt),
-    ];
-    return parts.join(' • ');
   }
 
   @override
@@ -398,15 +373,21 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
       ..removeListener(_onAmountChanged)
       ..dispose();
     _descriptionController.dispose();
+    _sourceAmountFocusNode.removeListener(_handleMoneyFocusChanged);
+    _destinationAmountFocusNode.removeListener(_handleMoneyFocusChanged);
+    _sourceAmountFocusNode.dispose();
+    _destinationAmountFocusNode.dispose();
     super.dispose();
   }
 
   @override
   void initState() {
     super.initState();
-    final amount = widget.transaction?.amount ?? 0;
+    _workspaceCurrency =
+        widget.repository.peekWorkspaceDefaultCurrency(widget.wsId) ?? '';
+    final amount = widget.transaction?.amount;
     _amountController = TextEditingController(
-      text: formatInitialAmount(amount.abs()),
+      text: amount == null ? '' : formatInitialAmount(amount.abs()),
     );
     final destinationAmount = widget.transaction?.transfer?.linkedAmount;
     _destinationAmountController = TextEditingController(
@@ -417,6 +398,8 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
     _descriptionController = TextEditingController(
       text: widget.transaction?.description ?? '',
     );
+    _sourceAmountFocusNode = FocusNode(debugLabel: 'source-amount');
+    _destinationAmountFocusNode = FocusNode(debugLabel: 'destination-amount');
     _takenAt =
         widget.transaction?.takenAt ??
         widget.transaction?.createdAt ??
@@ -442,11 +425,17 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
         widget.transaction?.isCategoryConfidential ?? false;
     // When editing an existing transfer, preserve the stored amounts
     // (override). For new transfers, auto-fill from the exchange rate.
-    _isDestinationOverridden = widget.transaction?.isTransfer ?? false;
+    _isDestinationOverridden = false;
 
     _amountController.addListener(_onAmountChanged);
     _destinationAmountController.addListener(_onAmountChanged);
+    _sourceAmountFocusNode.addListener(_handleMoneyFocusChanged);
+    _destinationAmountFocusNode.addListener(_handleMoneyFocusChanged);
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _setActiveMoneyField(_MoneyFieldTarget.source);
+    });
     unawaited(_loadOptions());
   }
 }

@@ -102,6 +102,7 @@ test('resolveKeystoreInput mirrors repo mobile signing defaults', () => {
 
 test('inspectAndroidSigningCertificate parses keytool output for a keystore', () => {
   const executed = [];
+  const workspaceCwd = '/workspace';
   const result = inspectAndroidSigningCertificate(
     {
       alias: 'upload',
@@ -109,7 +110,7 @@ test('inspectAndroidSigningCertificate parses keytool output for a keystore', ()
       storePassword: 'store-secret',
     },
     {
-      cwd: '/workspace',
+      cwd: workspaceCwd,
       env: {},
       execFileSync: (command, args) => {
         executed.push({ args, command });
@@ -131,7 +132,7 @@ test('inspectAndroidSigningCertificate parses keytool output for a keystore', ()
         '-alias',
         'upload',
         '-keystore',
-        '/workspace/release.jks',
+        path.resolve(workspaceCwd, './release.jks'),
         '-storepass',
         'store-secret',
       ],

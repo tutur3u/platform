@@ -5,12 +5,15 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   late final TextEditingController _amountController;
   late final TextEditingController _destinationAmountController;
   late final TextEditingController _descriptionController;
+  late final FocusNode _sourceAmountFocusNode;
+  late final FocusNode _destinationAmountFocusNode;
+  final Object _moneyTapRegionGroup = Object();
   late DateTime _takenAt;
 
   List<Wallet> _wallets = const [];
   List<TransactionCategory> _categories = const [];
   List<FinanceTag> _tags = const [];
-  String _workspaceCurrency = 'USD';
+  String _workspaceCurrency = '';
   String? _walletId;
   String? _destinationWalletId;
   String? _categoryId;
@@ -24,11 +27,64 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   bool _isLoadingOptions = false;
   String? _optionsError;
   bool _isSaving = false;
+  bool _showSettings = false;
 
   bool _isDestinationOverridden = false;
-  bool _isRateInverted = false;
+  _MoneyFieldTarget _activeMoneyField = _MoneyFieldTarget.source;
 
   bool get _isCreate => widget.transaction == null;
+
+  FocusNode get _activeMoneyFocusNode => switch (_activeMoneyField) {
+    _MoneyFieldTarget.source => _sourceAmountFocusNode,
+    _MoneyFieldTarget.destination => _destinationAmountFocusNode,
+  };
+
+  TextEditingController get _activeMoneyController =>
+      switch (_activeMoneyField) {
+        _MoneyFieldTarget.source => _amountController,
+        _MoneyFieldTarget.destination => _destinationAmountController,
+      };
+
+  String get _activeMoneyCurrency => switch (_activeMoneyField) {
+    _MoneyFieldTarget.source => _selectedCurrency,
+    _MoneyFieldTarget.destination => _selectedDestinationCurrency,
+  };
+
+  bool get _canEditDestinationAmount =>
+      _isTransfer && _destinationWalletId != null && !_isAutoMode;
+
+  bool get _isMoneyKeypadVisible =>
+      _sourceAmountFocusNode.hasFocus || _destinationAmountFocusNode.hasFocus;
+
+  bool _isMoneyFieldActive(_MoneyFieldTarget target) =>
+      _activeMoneyField == target &&
+      switch (target) {
+        _MoneyFieldTarget.source => true,
+        _MoneyFieldTarget.destination => _canEditDestinationAmount,
+      };
+
+  void _setActiveMoneyField(_MoneyFieldTarget target) {
+    final nextTarget =
+        target == _MoneyFieldTarget.destination && !_canEditDestinationAmount
+        ? _MoneyFieldTarget.source
+        : target;
+    if (_activeMoneyField == nextTarget && _activeMoneyFocusNode.hasFocus) {
+      return;
+    }
+    setState(() => _activeMoneyField = nextTarget);
+    _activeMoneyFocusNode.requestFocus();
+  }
+
+  void _handleMoneyFocusChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  void _dismissMoneyInput() {
+    if (!_isMoneyKeypadVisible) return;
+    _sourceAmountFocusNode.unfocus();
+    _destinationAmountFocusNode.unfocus();
+  }
 
   /// Auto-fills the destination amount from source × exchange rate.
   void _tryAutoFillDestinationAmount() {
@@ -43,7 +99,10 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     if (src == null || src <= 0) return;
     final calculated = _roundTransferAmount(src * rate);
     if (!calculated.isFinite || calculated <= 0) return;
-    final formatted = formatInitialAmount(calculated);
+    final formatted = _formatEditableAmountForInput(
+      calculated,
+      currencyCode: _selectedDestinationCurrency,
+    );
     if (_destinationAmountController.text != formatted) {
       _destinationAmountController.text = formatted;
     }
@@ -70,13 +129,16 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     });
 
     try {
-      final workspaceCurrencyFuture = widget.repository
-          .getWorkspaceDefaultCurrency(widget.wsId)
-          .catchError((_) => 'USD');
-      final wallets = await widget.repository.getWallets(widget.wsId);
-      final categories = await widget.repository.getCategories(widget.wsId);
-      final tags = await widget.repository.getTags(widget.wsId);
-      final workspaceCurrency = await workspaceCurrencyFuture;
+      final results = await Future.wait<dynamic>([
+        widget.repository.getWallets(widget.wsId),
+        widget.repository.getCategories(widget.wsId),
+        widget.repository.getTags(widget.wsId),
+        widget.repository.getWorkspaceDefaultCurrency(widget.wsId),
+      ]);
+      final wallets = results[0] as List<Wallet>;
+      final categories = results[1] as List<TransactionCategory>;
+      final tags = results[2] as List<FinanceTag>;
+      final workspaceCurrency = results[3] as String;
 
       if (!mounted) return;
       setState(() {
@@ -101,6 +163,8 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     final rootCtx = Navigator.of(context, rootNavigator: true).context;
     _reconcileSelectedIds();
     final amount = _parseAmount(_amountController.text);
+    final destinationAmountText = _destinationAmountController.text.trim();
+    double? destinationAmount;
     if (_isTransfer) {
       if (_walletId == null || _destinationWalletId == null) {
         shad.showToast(
@@ -141,24 +205,30 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       return;
     }
 
-    final destinationAmountText = _destinationAmountController.text.trim();
-    final destinationAmount = _isTransfer && destinationAmountText.isNotEmpty
-        ? _parseAmount(
-            destinationAmountText,
-            currencyCode: _selectedDestinationCurrency,
-          )
-        : null;
-
-    if (_isTransfer &&
-        destinationAmountText.isNotEmpty &&
-        (destinationAmount == null || destinationAmount <= 0)) {
-      shad.showToast(
-        context: rootCtx,
-        builder: (ctx, overlay) => shad.Alert.destructive(
-          content: Text(ctx.l10n.financeInvalidDestinationAmount),
-        ),
+    if (_isTransfer && _isCrossCurrency) {
+      destinationAmount = _parseAmount(
+        destinationAmountText,
+        currencyCode: _selectedDestinationCurrency,
       );
-      return;
+      if (destinationAmount == null || destinationAmount <= 0) {
+        final rate = _suggestedExchangeRate;
+        if (rate != null && rate.isFinite && rate > 0) {
+          destinationAmount = _roundTransferAmount(amount.abs() * rate);
+          _destinationAmountController.text = _formatEditableAmountForInput(
+            destinationAmount,
+            currencyCode: _selectedDestinationCurrency,
+          );
+        }
+      }
+      if (destinationAmount == null || destinationAmount <= 0) {
+        shad.showToast(
+          context: rootCtx,
+          builder: (ctx, overlay) => shad.Alert.destructive(
+            content: Text(ctx.l10n.financeInvalidDestinationAmount),
+          ),
+        );
+        return;
+      }
     }
 
     setState(() => _isSaving = true);
@@ -186,7 +256,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         return;
       }
 
-      final selectedCategory = _selectedCategory;
+      final selectedCategory = _displaySelectedCategory;
       final isExpense = selectedCategory?.isExpense != false;
       final signedAmount = isExpense ? -amount.abs() : amount.abs();
 
@@ -307,6 +377,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       builder: (_) => _WalletPickerDialog(
         wallets: _wallets,
         title: context.l10n.financeWallet,
+        selectedWalletId: _walletId,
       ),
     );
 
@@ -328,6 +399,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         wallets: _wallets,
         title: context.l10n.financeDestinationWallet,
         excludeWalletId: _walletId,
+        selectedWalletId: _destinationWalletId,
       ),
     );
 
@@ -335,6 +407,9 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     setState(() {
       _destinationWalletId = selectedWalletId;
       if (_isCreate) _isDestinationOverridden = false;
+      if (!_canEditDestinationAmount) {
+        _activeMoneyField = _MoneyFieldTarget.source;
+      }
     });
     _tryAutoFillDestinationAmount();
   }
@@ -345,6 +420,8 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       builder: (_) => _CategoryPickerDialog(
         categories: _categories,
         categoryColor: _categoryColor,
+        selectedCategoryId: _categoryId,
+        initialShowsExpense: _displaySelectedCategory?.isExpense ?? true,
       ),
     );
 
@@ -397,12 +474,70 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     return _wallets.where((w) => w.id == _walletId).firstOrNull;
   }
 
+  Wallet? get _displaySelectedWallet {
+    final selected = _selectedWallet;
+    if (selected != null) {
+      return selected;
+    }
+
+    final transaction = widget.transaction;
+    if (transaction == null || transaction.walletId != _walletId) {
+      return null;
+    }
+
+    return Wallet(
+      id: transaction.walletId ?? '',
+      name: transaction.walletName,
+      currency: transaction.walletCurrency,
+      icon: transaction.walletIcon,
+      imageSrc: transaction.walletImageSrc,
+    );
+  }
+
   Wallet? get _selectedDestinationWallet {
     return _wallets.where((w) => w.id == _destinationWalletId).firstOrNull;
   }
 
+  Wallet? get _displaySelectedDestinationWallet {
+    final selected = _selectedDestinationWallet;
+    if (selected != null) {
+      return selected;
+    }
+
+    final transfer = widget.transaction?.transfer;
+    if (transfer == null || transfer.linkedWalletId != _destinationWalletId) {
+      return null;
+    }
+
+    return Wallet(
+      id: transfer.linkedWalletId,
+      name: transfer.linkedWalletName,
+      currency: transfer.linkedWalletCurrency,
+    );
+  }
+
   TransactionCategory? get _selectedCategory {
     return _categories.where((c) => c.id == _categoryId).firstOrNull;
+  }
+
+  TransactionCategory? get _displaySelectedCategory {
+    final selected = _selectedCategory;
+    if (selected != null) {
+      return selected;
+    }
+
+    final transaction = widget.transaction;
+    if (transaction == null || transaction.categoryId != _categoryId) {
+      return null;
+    }
+
+    return TransactionCategory(
+      id: transaction.categoryId ?? '',
+      name: transaction.categoryName,
+      icon: transaction.categoryIcon,
+      color: transaction.categoryColor,
+      isExpense: (transaction.amount ?? 0) < 0,
+    );
   }
 
   List<FinanceTag> get _selectedTags {
@@ -415,18 +550,42 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         .toList(growable: false);
   }
 
+  List<FinanceTag> get _displaySelectedTags {
+    final selectedTags = _selectedTags;
+    if (selectedTags.isNotEmpty) {
+      return selectedTags;
+    }
+
+    final fallbackTags = widget.transaction?.tags ?? const [];
+    if (fallbackTags.isEmpty || _tagIds.isEmpty) {
+      return const [];
+    }
+
+    final selected = _tagIds.toSet();
+    return fallbackTags
+        .where((tag) => selected.contains(tag.id))
+        .map(
+          (tag) => FinanceTag(
+            id: tag.id,
+            name: tag.name,
+            color: tag.color,
+          ),
+        )
+        .toList(growable: false);
+  }
+
   String get _selectedCurrency =>
-      _selectedWallet?.currency?.trim().isNotEmpty == true
-      ? _selectedWallet!.currency!.trim().toUpperCase()
+      _displaySelectedWallet?.currency?.trim().isNotEmpty == true
+      ? _displaySelectedWallet!.currency!.trim().toUpperCase()
       : _workspaceCurrency;
 
   String get _selectedDestinationCurrency =>
-      _selectedDestinationWallet?.currency?.trim().isNotEmpty == true
-      ? _selectedDestinationWallet!.currency!.trim().toUpperCase()
+      _displaySelectedDestinationWallet?.currency?.trim().isNotEmpty == true
+      ? _displaySelectedDestinationWallet!.currency!.trim().toUpperCase()
       : _selectedCurrency;
 
   IconData get _selectedCategoryIcon {
-    final category = _selectedCategory;
+    final category = _displaySelectedCategory;
     return resolvePlatformIcon(
       category?.icon,
       fallback: category?.isExpense != false
@@ -436,7 +595,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   }
 
   Color get _selectedCategoryColor {
-    final category = _selectedCategory;
+    final category = _displaySelectedCategory;
     if (category == null) {
       return shad.Theme.of(context).colorScheme.mutedForeground;
     }
@@ -444,26 +603,11 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   }
 
   Color get _selectedTagColor {
-    final tag = _selectedTags.firstOrNull;
+    final tag = _displaySelectedTags.firstOrNull;
     if (tag == null) {
       return shad.Theme.of(context).colorScheme.mutedForeground;
     }
     return _tagColor(tag);
-  }
-
-  String get _amountPreview {
-    final parsed = _parseAmount(
-      _amountController.text,
-      currencyCode: _selectedCurrency,
-    );
-    if (parsed == null) {
-      return '--';
-    }
-    final isExpense = _selectedCategory?.isExpense;
-    final signed = isExpense == null
-        ? parsed.abs()
-        : (isExpense ? -parsed.abs() : parsed.abs());
-    return formatCurrency(signed, _selectedCurrency);
   }
 
   bool get _isCrossCurrency {
@@ -487,50 +631,245 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     return converted;
   }
 
-  double? get _effectiveRate {
-    if (!_isCrossCurrency) return null;
-    final suggested = _suggestedExchangeRate;
-    if (suggested != null && suggested > 0) return suggested;
-    final src = _parseAmount(
-      _amountController.text,
-      currencyCode: _selectedCurrency,
-    );
-    final dst = _parseAmount(
-      _destinationAmountController.text,
-      currencyCode: _selectedDestinationCurrency,
-    );
-    if (src == null || dst == null || src == 0) return null;
-    return dst / src;
-  }
-
   bool get _isAutoMode =>
       _isCrossCurrency &&
       !_isDestinationOverridden &&
       _suggestedExchangeRate != null;
 
-  String get _exchangeRateDisplay {
-    final rate = _effectiveRate;
-    if (rate == null || !rate.isFinite) return '';
-    final originCur = _selectedCurrency;
-    final destCur = _selectedDestinationCurrency;
-    if (_isRateInverted) {
-      final inv = 1 / rate;
-      return '1 $destCur = ${inv.toStringAsFixed(4)} $originCur';
+  bool get _hasMoneyExpression => containsAmountOperator(
+    _activeMoneyController.text,
+    decimalSeparator: _localeDecimalSeparator,
+    groupingSeparator: _localeGroupingSeparator,
+  );
+
+  String _formattedMoneyFieldLabel(_MoneyFieldTarget target) {
+    final currency = switch (target) {
+      _MoneyFieldTarget.source => _selectedCurrency,
+      _MoneyFieldTarget.destination => _selectedDestinationCurrency,
+    };
+    final rawText = switch (target) {
+      _MoneyFieldTarget.source => _amountController.text.trim(),
+      _MoneyFieldTarget.destination => _destinationAmountController.text.trim(),
+    };
+    if (rawText.isEmpty) {
+      return '';
     }
-    return '1 $originCur = ${rate.toStringAsFixed(4)} $destCur';
+    if (containsAmountOperator(
+      rawText,
+      decimalSeparator: _localeDecimalSeparator,
+      groupingSeparator: _localeGroupingSeparator,
+    )) {
+      return formatAmountExpressionPreview(
+        rawText,
+        currencyCode: currency,
+        decimalSeparator: _localeDecimalSeparator,
+        groupingSeparator: _localeGroupingSeparator,
+        locale: Localizations.localeOf(context).toString(),
+      );
+    }
+    final parsed = _parseAmount(rawText, currencyCode: currency);
+    if (parsed == null) {
+      return formatAmountExpressionPreview(
+        rawText,
+        currencyCode: currency,
+        decimalSeparator: _localeDecimalSeparator,
+        groupingSeparator: _localeGroupingSeparator,
+        locale: Localizations.localeOf(context).toString(),
+      );
+    }
+    return formatCurrency(parsed.abs(), currency);
   }
 
-  String get _destinationAmountPreview {
-    final parsed = _parseAmount(
-      _destinationAmountController.text,
-      currencyCode: _selectedDestinationCurrency,
-    );
+  String _formatMoneySuggestion(
+    double value, {
+    required String currencyCode,
+  }) {
+    final locale = Localizations.localeOf(context).toString();
+    final digits = _currencyFractionDigits(currencyCode);
+    final formatter = NumberFormat.decimalPattern(locale)
+      ..minimumFractionDigits = 0
+      ..maximumFractionDigits = digits;
+    return formatter.format(value);
+  }
 
-    if (parsed == null) {
-      return '--';
+  List<({int multiplier, String label})> get _moneySuggestions {
+    if (_hasMoneyExpression) {
+      return const [];
+    }
+    final parsed = _parseAmount(
+      _activeMoneyController.text,
+      currencyCode: _activeMoneyCurrency,
+    );
+    if (parsed == null || parsed <= 0) {
+      return const [];
     }
 
-    return formatCurrency(parsed.abs(), _selectedDestinationCurrency);
+    return [10, 100, 1000]
+        .map((multiplier) {
+          final value = parsed * multiplier;
+          return (
+            multiplier: multiplier,
+            label: _formatMoneySuggestion(
+              value,
+              currencyCode: _activeMoneyCurrency,
+            ),
+          );
+        })
+        .toList(growable: false);
+  }
+
+  String _formatEditableAmountForInput(
+    double value, {
+    String? currencyCode,
+  }) {
+    final digits = _currencyFractionDigits(currencyCode ?? _selectedCurrency);
+    final factor = _pow10(digits);
+    final rounded = (value * factor).roundToDouble() / factor;
+    return formatEditableAmount(
+      rounded,
+      decimalSeparator: _localeDecimalSeparator,
+    );
+  }
+
+  void _replaceMoneyInput(
+    TextEditingController controller,
+    String nextValue, {
+    bool syncDestinationOverride = false,
+  }) {
+    controller.value = TextEditingValue(
+      text: nextValue,
+      selection: TextSelection.collapsed(offset: nextValue.length),
+    );
+    if (syncDestinationOverride && _isTransfer && !_isDestinationOverridden) {
+      setState(() => _isDestinationOverridden = true);
+    }
+  }
+
+  void _appendMoneyInput(String token) {
+    final controller = _activeMoneyController;
+    final current = controller.text.trim();
+    final decimalSeparator = _localeDecimalSeparator;
+    const operators = {'+', '-', '*', '/'};
+    final lastChar = current.isEmpty ? '' : current[current.length - 1];
+
+    if (operators.contains(token)) {
+      if (current.isEmpty) return;
+      if (operators.contains(lastChar) || lastChar == decimalSeparator) return;
+      _replaceMoneyInput(
+        controller,
+        '$current$token',
+        syncDestinationOverride:
+            _activeMoneyField == _MoneyFieldTarget.destination,
+      );
+      return;
+    }
+
+    if (token == decimalSeparator) {
+      final lastOperatorIndex = current.lastIndexOf(RegExp(r'[+\-*/]'));
+      final currentSegment = lastOperatorIndex >= 0
+          ? current.substring(lastOperatorIndex + 1)
+          : current;
+      if (currentSegment.contains(decimalSeparator)) return;
+      final next = currentSegment.isEmpty
+          ? '${current}0$decimalSeparator'
+          : '$current$token';
+      _replaceMoneyInput(
+        controller,
+        next,
+        syncDestinationOverride:
+            _activeMoneyField == _MoneyFieldTarget.destination,
+      );
+      return;
+    }
+
+    final lastOperatorIndex = current.lastIndexOf(RegExp(r'[+\-*/]'));
+    final currentSegment = lastOperatorIndex >= 0
+        ? current.substring(lastOperatorIndex + 1)
+        : current;
+    final next =
+        currentSegment == '0' && !currentSegment.contains(decimalSeparator)
+        ? current.substring(0, current.length - 1) + token
+        : (current.isEmpty && RegExp(r'^0+$').hasMatch(token)
+              ? '0'
+              : '$current$token');
+    final parsed = evaluateAmountExpression(
+      next,
+      decimalSeparator: _localeDecimalSeparator,
+      groupingSeparator: _localeGroupingSeparator,
+    );
+    final allowsTrailingIncompleteToken =
+        next.endsWith(decimalSeparator) || operators.contains(lastChar);
+    if (parsed == null && !allowsTrailingIncompleteToken) {
+      return;
+    }
+    _replaceMoneyInput(
+      controller,
+      next,
+      syncDestinationOverride:
+          _activeMoneyField == _MoneyFieldTarget.destination,
+    );
+  }
+
+  void _backspaceMoneyInput() {
+    final controller = _activeMoneyController;
+    if (controller.text.isEmpty) return;
+    final next = controller.text.substring(0, controller.text.length - 1);
+    _replaceMoneyInput(
+      controller,
+      next,
+      syncDestinationOverride:
+          _activeMoneyField == _MoneyFieldTarget.destination,
+    );
+  }
+
+  void _clearMoneyInput() {
+    _replaceMoneyInput(
+      _activeMoneyController,
+      '',
+      syncDestinationOverride:
+          _activeMoneyField == _MoneyFieldTarget.destination,
+    );
+  }
+
+  void _evaluateMoneyInput() {
+    final controller = _activeMoneyController;
+    final evaluated = evaluateAmountExpression(
+      controller.text,
+      decimalSeparator: _localeDecimalSeparator,
+      groupingSeparator: _localeGroupingSeparator,
+    );
+    if (evaluated == null || !evaluated.isFinite || evaluated <= 0) {
+      return;
+    }
+    final nextValue = _formatEditableAmountForInput(
+      evaluated,
+      currencyCode: _activeMoneyCurrency,
+    );
+    _replaceMoneyInput(
+      controller,
+      nextValue,
+      syncDestinationOverride:
+          _activeMoneyField == _MoneyFieldTarget.destination,
+    );
+  }
+
+  void _applyMoneyMultiplier(int multiplier) {
+    final controller = _activeMoneyController;
+    final parsed = _parseAmount(
+      controller.text,
+      currencyCode: _activeMoneyCurrency,
+    );
+    if (parsed == null) return;
+    final nextValue = _formatEditableAmountForInput(
+      parsed * multiplier,
+      currencyCode: _activeMoneyCurrency,
+    );
+    _replaceMoneyInput(
+      controller,
+      nextValue,
+      syncDestinationOverride:
+          _activeMoneyField == _MoneyFieldTarget.destination,
+    );
   }
 
   void _reconcileSelectedIds() {
@@ -588,11 +927,6 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       groupingSeparator: _localeGroupingSeparator,
       fractionDigitsFn: currencyFractionDigitsForCode,
     );
-  }
-
-  List<TextInputFormatter> _amountInputFormatters(String currencyCode) {
-    final digits = currencyFractionDigitsForCode(currencyCode);
-    return buildAmountInputFormatters(digits, _localeDecimalSeparator);
   }
 
   Color _categoryColor(TransactionCategory category) {

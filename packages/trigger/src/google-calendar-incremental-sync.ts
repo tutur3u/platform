@@ -1,5 +1,5 @@
 import { schedules, task } from '@trigger.dev/sdk/v3';
-import { google } from '@tuturuuu/google';
+import { type calendar_v3, google } from '@tuturuuu/google';
 import {
   getGoogleAuthClient,
   getSyncToken,
@@ -19,7 +19,8 @@ async function performIncrementalSyncForWorkspace(
     access_token,
     refresh_token: refresh_token || undefined,
   });
-  const calendar = google.calendar({ version: 'v3', auth });
+  const calendarAuth = auth as unknown as calendar_v3.Options['auth'];
+  const calendar = google.calendar({ version: 'v3', auth: calendarAuth });
 
   try {
     const syncToken = await getSyncToken(ws_id, calendarId);

@@ -207,7 +207,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navBack => 'Back';
 
   @override
+  String get commonClear => 'Clear';
+
+  @override
+  String get commonDone => 'Done';
+
+  @override
   String get navMore => 'More';
+
+  @override
+  String get sort => 'Sort';
+
+  @override
+  String get sortBy => 'Sort by';
 
   @override
   String get appsHubSearchHint => 'Search apps';
@@ -3231,10 +3243,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeTagDialogSubtitle => 'Describe the label and choose a color that is easy to scan.';
 
   @override
+  String get financeBasic => 'Basic';
+
+  @override
   String get financeIncome => 'Income';
 
   @override
   String get financeExpense => 'Expense';
+
+  @override
+  String get financeFrequentlyUsedCategories => 'Frequently used';
 
   @override
   String get financeHideAmounts => 'Hide amounts';
@@ -3244,6 +3262,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeSearchTransactions => 'Search transactions';
+
+  @override
+  String get financeSearchCategories => 'Search categories';
+
+  @override
+  String get financeSearchWallets => 'Search wallets';
 
   @override
   String get financeShowAmounts => 'Show amounts';
@@ -3325,6 +3349,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financePickerTagSubtitle => 'Select an optional label for extra context.';
+
+  @override
+  String get financePickerLoadingOptions => 'Loading wallets, categories, and tags...';
 
   @override
   String get financeNoTag => 'No tag';
@@ -4178,6 +4205,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonClearSearch => 'Clear search';
 
   @override
+  String get commonNoSearchResults => 'No matching results';
+
+  @override
   String get timerTotalSessions => 'Total sessions';
 
   @override
@@ -4995,6 +5025,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonOff => 'Off';
 
   @override
+  String get commonOn => 'On';
+
+  @override
   String get commonSomethingWentWrong => 'Something went wrong';
 
   @override
@@ -5008,6 +5041,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonRetry => 'Retry';
+
+  @override
+  String get commonShowLess => 'Show less';
+
+  @override
+  String get commonShowMore => 'Show more';
 
   @override
   String get commonPressBackAgainToExit => 'Press back again to exit';
