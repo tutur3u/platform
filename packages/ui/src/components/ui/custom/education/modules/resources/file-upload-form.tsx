@@ -154,7 +154,7 @@ export function StorageObjectForm({
   wsId,
   path,
   uploadPath = '',
-  accept = '*',
+  accept,
   onComplete,
   submitLabel,
 }: Props) {
@@ -175,6 +175,7 @@ export function StorageObjectForm({
 
   const [editingFile, setEditingFile] = useState<File | null>(null);
   const [newFileName, setNewFileName] = useState<string>('');
+  const normalizedAccept = accept && accept.trim() !== '*' ? accept : undefined;
 
   async function onSubmit(formData: z.infer<typeof ObjectFormSchema>) {
     if (loading || editingFile) return;
@@ -271,7 +272,7 @@ export function StorageObjectForm({
                     value={undefined}
                     type="file"
                     placeholder="Files"
-                    accept={accept}
+                    accept={normalizedAccept}
                     onChange={(e) => {
                       onChange(e.target.files && Array.from(e.target.files));
                     }}

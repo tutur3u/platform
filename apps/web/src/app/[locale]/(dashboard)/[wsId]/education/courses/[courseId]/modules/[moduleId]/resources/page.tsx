@@ -49,7 +49,6 @@ export default async function ModuleResourcesPage({ params }: Props) {
             wsId={wsId}
             submitLabel={t('common.upload')}
             path={storagePath}
-            accept="*"
           />
         }
       />

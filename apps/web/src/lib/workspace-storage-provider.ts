@@ -13,6 +13,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   EMPTY_FOLDER_PLACEHOLDER_NAME,
   type StorageObject,
@@ -336,8 +337,12 @@ async function resolveWorkspaceStorageConfig(
   return resolveWorkspaceStorageConfigForProvider(wsId, secretMap, provider);
 }
 
-async function getStorageLimit(wsId: string, supabase?: any): Promise<number> {
-  const client = supabase ?? (await createDynamicAdminClient());
+async function getStorageLimit(
+  wsId: string,
+  supabase?: TypedSupabaseClient
+): Promise<number> {
+  const client =
+    supabase ?? ((await createDynamicAdminClient()) as TypedSupabaseClient);
   const { data, error } = await client.rpc('get_workspace_storage_limit', {
     p_ws_id: wsId,
   });
@@ -1142,7 +1147,11 @@ export async function deleteWorkspaceStorageFolderByPath(
         })
       );
 
-      keys.push(...(response.Contents ?? []).flatMap((item) => item.Key ?? []));
+      keys.push(
+        ...(response.Contents ?? []).flatMap((item: { Key?: string }) =>
+          item.Key ? [item.Key] : []
+        )
+      );
 
       continuationToken = response.IsTruncated
         ? response.NextContinuationToken
@@ -1241,7 +1250,9 @@ export async function renameWorkspaceStorageEntry(
         );
 
         sourceKeys.push(
-          ...(source.Contents ?? []).flatMap((item) => item.Key ?? [])
+          ...(source.Contents ?? []).flatMap((item: { Key?: string }) =>
+            item.Key ? [item.Key] : []
+          )
         );
 
         continuationToken = source.IsTruncated
