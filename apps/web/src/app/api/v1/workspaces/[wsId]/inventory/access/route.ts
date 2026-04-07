@@ -15,8 +15,6 @@ interface Params {
 export async function GET(req: Request, { params }: Params) {
   const { wsId: id } = await params;
   const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
-  const wsId = await normalizeWorkspaceId(id, supabase);
 
   const {
     data: { user },
@@ -26,6 +24,9 @@ export async function GET(req: Request, { params }: Params) {
   if (authError || !user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
+
+  const sbAdmin = await createAdminClient();
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   const { data: membership, error: membershipError } = await sbAdmin
     .from('workspace_members')

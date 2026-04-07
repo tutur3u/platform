@@ -282,7 +282,7 @@ class AppRegistry {
           (cubit) => cubit?.state,
         );
     if (accessState == null) {
-      return true;
+      return false;
     }
 
     return accessState.status == InventoryAccessStatus.loaded &&

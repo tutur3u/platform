@@ -9,6 +9,21 @@ class InventoryAccessRepository {
 
   Future<bool> isInventoryEnabled(String wsId) async {
     final response = await _api.getJson(InventoryEndpoints.access(wsId));
-    return response['enabled'] == true;
+    if (!response.containsKey('enabled')) {
+      throw FormatException(
+        'Invalid inventory access payload: '
+        'missing "enabled" key. Response: $response',
+      );
+    }
+
+    final enabled = response['enabled'];
+    if (enabled is bool) {
+      return enabled;
+    }
+
+    throw FormatException(
+      'Invalid inventory access payload: '
+      '"enabled" must be a bool. Response: $response',
+    );
   }
 }

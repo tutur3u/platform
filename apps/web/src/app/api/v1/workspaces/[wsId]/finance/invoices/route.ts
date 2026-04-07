@@ -236,6 +236,10 @@ export async function GET(request: Request, { params }: Params) {
     // Resolve workspace ID
     const wsId = await normalizeWorkspaceId(id);
 
+    if (!(await isInventoryEnabled(wsId))) {
+      return inventoryNotFoundResponse();
+    }
+
     // Check permissions
     const permissions = await getPermissions({ wsId });
     if (!permissions) {

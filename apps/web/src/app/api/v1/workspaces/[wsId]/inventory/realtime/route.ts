@@ -1,4 +1,8 @@
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import {
   inventoryNotFoundResponse,
@@ -15,9 +19,6 @@ interface Params {
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
-  if (!(await isInventoryEnabled(wsId))) {
-    return inventoryNotFoundResponse();
-  }
   const permissions = await getPermissions({ wsId, request: req });
 
   if (!permissions) {
@@ -28,6 +29,12 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
-  const enabled = await isInventoryRealtimeEnabled(wsId);
+  const supabase = await createClient(req);
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  if (!(await isInventoryEnabled(normalizedWsId))) {
+    return inventoryNotFoundResponse();
+  }
+
+  const enabled = await isInventoryRealtimeEnabled(normalizedWsId);
   return NextResponse.json({ enabled });
 }

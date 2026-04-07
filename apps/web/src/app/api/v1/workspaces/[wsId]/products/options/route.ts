@@ -24,10 +24,6 @@ export async function GET(request: Request, { params }: Params) {
     const { wsId: id } = await params;
     const supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
-    const wsId = await normalizeWorkspaceId(id, supabase);
-    if (!(await isInventoryEnabled(wsId))) {
-      return inventoryNotFoundResponse();
-    }
 
     const {
       data: { user },
@@ -37,6 +33,8 @@ export async function GET(request: Request, { params }: Params) {
     if (authError || !user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(id, supabase);
 
     const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
@@ -54,6 +52,10 @@ export async function GET(request: Request, { params }: Params) {
 
     if (!membership) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    if (!(await isInventoryEnabled(wsId))) {
+      return inventoryNotFoundResponse();
     }
 
     const permissions = await getPermissions({ wsId, request });

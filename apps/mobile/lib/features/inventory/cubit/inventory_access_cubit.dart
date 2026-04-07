@@ -46,6 +46,7 @@ class InventoryAccessCubit extends Cubit<InventoryAccessState> {
       emit(
         state.copyWith(
           status: InventoryAccessStatus.loaded,
+          enabled: false,
           wsId: null,
         ),
       );
@@ -66,7 +67,7 @@ class InventoryAccessCubit extends Cubit<InventoryAccessState> {
 
     try {
       final enabled = await _repository.isInventoryEnabled(trimmed);
-      if (state.wsId != trimmed) {
+      if (isClosed || state.wsId != trimmed) {
         return;
       }
       emit(
@@ -77,7 +78,7 @@ class InventoryAccessCubit extends Cubit<InventoryAccessState> {
         ),
       );
     } on Exception {
-      if (state.wsId != trimmed) {
+      if (isClosed || state.wsId != trimmed) {
         return;
       }
       emit(
