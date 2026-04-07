@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import { isHabitsEnabled } from '@/lib/habits/access';
 import { HabitTrackerError, verifyWorkspaceMembership } from './service';
 
 export function assertValidWorkspaceId(wsId: string) {
@@ -29,6 +30,10 @@ export async function createHabitTrackerRouteContext(
   wsId: string
 ) {
   assertValidWorkspaceId(wsId);
+
+  if (!(await isHabitsEnabled(wsId))) {
+    throw new HabitTrackerError('Not found', 404);
+  }
 
   const supabase = await createClient(request);
   const sbAdmin = await createAdminClient();

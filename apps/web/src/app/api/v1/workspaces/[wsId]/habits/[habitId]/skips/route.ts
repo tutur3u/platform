@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { z } from 'zod';
 import { revokeHabitSkip, upsertHabitSkip } from '@/lib/calendar/habit-skips';
+import { habitsNotFoundResponse, isHabitsEnabled } from '@/lib/habits/access';
 
 const bodySchema = z.object({
   occurrenceDate: z.string().date(),
@@ -97,6 +98,10 @@ export async function POST(
       );
     }
 
+    if (!(await isHabitsEnabled(wsId))) {
+      return habitsNotFoundResponse();
+    }
+
     const access = await verifyAccess(request, wsId, habitId);
     if ('error' in access) {
       return access.error;
@@ -143,6 +148,10 @@ export async function DELETE(
         { error: 'Invalid workspace or habit ID' },
         { status: 400 }
       );
+    }
+
+    if (!(await isHabitsEnabled(wsId))) {
+      return habitsNotFoundResponse();
     }
 
     const access = await verifyAccess(request, wsId, habitId);

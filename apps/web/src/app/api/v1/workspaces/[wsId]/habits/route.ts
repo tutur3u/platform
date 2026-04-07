@@ -16,6 +16,7 @@ import {
   normalizeHabitDependencyType,
   validateHabitDependencyGraph,
 } from '@/lib/calendar/habit-dependencies';
+import { habitsNotFoundResponse, isHabitsEnabled } from '@/lib/habits/access';
 
 interface RouteParams {
   wsId: string;
@@ -33,6 +34,10 @@ export async function GET(
         { error: 'Invalid workspace ID' },
         { status: 400 }
       );
+    }
+
+    if (!(await isHabitsEnabled(wsId))) {
+      return habitsNotFoundResponse();
     }
 
     const supabase = await createClient();
@@ -126,6 +131,10 @@ export async function POST(
         { error: 'Invalid workspace ID' },
         { status: 400 }
       );
+    }
+
+    if (!(await isHabitsEnabled(wsId))) {
+      return habitsNotFoundResponse();
     }
 
     const supabase = await createClient();

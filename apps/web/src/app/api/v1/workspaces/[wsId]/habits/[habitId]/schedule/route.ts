@@ -19,6 +19,7 @@ import {
   scheduleHabit,
 } from '@/lib/calendar/habit-scheduler';
 import { listHabitSkipHistory } from '@/lib/calendar/habit-skips';
+import { habitsNotFoundResponse, isHabitsEnabled } from '@/lib/habits/access';
 
 interface RouteParams {
   wsId: string;
@@ -37,6 +38,10 @@ export async function POST(
         { error: 'Invalid workspace or habit ID' },
         { status: 400 }
       );
+    }
+
+    if (!(await isHabitsEnabled(wsId))) {
+      return habitsNotFoundResponse();
     }
 
     const supabase = await createClient();
@@ -150,6 +155,10 @@ export async function GET(
         { error: 'Invalid workspace or habit ID' },
         { status: 400 }
       );
+    }
+
+    if (!(await isHabitsEnabled(wsId))) {
+      return habitsNotFoundResponse();
     }
 
     const supabase = await createClient();

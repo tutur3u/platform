@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 
@@ -12,6 +13,9 @@ import '../../../helpers/helpers.dart';
 
 class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
     implements WorkspaceCubit {}
+
+class _MockHabitsAccessCubit extends MockCubit<HabitsAccessState>
+    implements HabitsAccessCubit {}
 
 void main() {
   group('AppRegistry timer mini nav visibility', () {
@@ -120,6 +124,71 @@ void main() {
 
       await tester.pump();
       expect(find.text('no-requests'), findsOneWidget);
+    });
+  });
+
+  group('AppRegistry habits module visibility', () {
+    testWidgets('shows habits module when habits access is enabled', (
+      tester,
+    ) async {
+      final habitsAccessCubit = _MockHabitsAccessCubit();
+      whenListen(
+        habitsAccessCubit,
+        const Stream<HabitsAccessState>.empty(),
+        initialState: const HabitsAccessState(
+          status: HabitsAccessStatus.loaded,
+          enabled: true,
+          wsId: 'team-1',
+        ),
+      );
+      addTearDown(habitsAccessCubit.close);
+
+      late bool isVisible;
+      await tester.pumpApp(
+        BlocProvider<HabitsAccessCubit>.value(
+          value: habitsAccessCubit,
+          child: Builder(
+            builder: (context) {
+              final module = AppRegistry.moduleById('habits')!;
+              isVisible = module.visibleIn(context);
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+
+      expect(isVisible, isTrue);
+    });
+
+    testWidgets('hides habits module when habits access is disabled', (
+      tester,
+    ) async {
+      final habitsAccessCubit = _MockHabitsAccessCubit();
+      whenListen(
+        habitsAccessCubit,
+        const Stream<HabitsAccessState>.empty(),
+        initialState: const HabitsAccessState(
+          status: HabitsAccessStatus.loaded,
+          wsId: 'team-1',
+        ),
+      );
+      addTearDown(habitsAccessCubit.close);
+
+      late bool isVisible;
+      await tester.pumpApp(
+        BlocProvider<HabitsAccessCubit>.value(
+          value: habitsAccessCubit,
+          child: Builder(
+            builder: (context) {
+              final module = AppRegistry.moduleById('habits')!;
+              isVisible = module.visibleIn(context);
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+
+      expect(isVisible, isFalse);
     });
   });
 }

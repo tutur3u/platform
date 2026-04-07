@@ -22,6 +22,7 @@ import {
   deleteFutureHabitEvents,
   fetchHabitStreak,
 } from '@/lib/calendar/habit-scheduler';
+import { habitsNotFoundResponse, isHabitsEnabled } from '@/lib/habits/access';
 
 interface RouteParams {
   wsId: string;
@@ -53,6 +54,10 @@ export async function GET(
         { error: 'Invalid workspace or habit ID' },
         { status: 400 }
       );
+    }
+
+    if (!(await isHabitsEnabled(wsId))) {
+      return habitsNotFoundResponse();
     }
 
     const supabase = await createClient();
@@ -157,6 +162,10 @@ export async function PUT(
         { error: 'Invalid workspace or habit ID' },
         { status: 400 }
       );
+    }
+
+    if (!(await isHabitsEnabled(wsId))) {
+      return habitsNotFoundResponse();
     }
 
     const supabase = await createClient();
@@ -489,6 +498,10 @@ export async function DELETE(
         { error: 'Invalid workspace or habit ID' },
         { status: 400 }
       );
+    }
+
+    if (!(await isHabitsEnabled(wsId))) {
+      return habitsNotFoundResponse();
     }
 
     const supabase = await createClient();

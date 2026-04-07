@@ -12,6 +12,7 @@ import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { fetchHabitStreak } from '@/lib/calendar/habit-scheduler';
+import { habitsNotFoundResponse, isHabitsEnabled } from '@/lib/habits/access';
 
 interface RouteParams {
   wsId: string;
@@ -35,6 +36,10 @@ export async function POST(
         { error: 'Invalid workspace or habit ID' },
         { status: 400 }
       );
+    }
+
+    if (!(await isHabitsEnabled(wsId))) {
+      return habitsNotFoundResponse();
     }
 
     const supabase = await createClient();

@@ -197,6 +197,12 @@ export const KNOWN_SECRETS: SecretDefinition[] = [
     defaultValue: 'false',
   },
   {
+    name: 'ENABLE_HABITS',
+    description: 'Enables habits features.',
+    type: 'boolean',
+    defaultValue: 'false',
+  },
+  {
     name: 'ENABLE_INVENTORY',
     description: 'Enables inventory management features.',
     type: 'boolean',

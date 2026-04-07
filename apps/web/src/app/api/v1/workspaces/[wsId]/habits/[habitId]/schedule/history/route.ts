@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { z } from 'zod';
 import { listHabitSkipHistory } from '@/lib/calendar/habit-skips';
+import { habitsNotFoundResponse, isHabitsEnabled } from '@/lib/habits/access';
 
 const querySchema = z.object({
   start: z.string().date().optional(),
@@ -31,6 +32,10 @@ export async function GET(
         { error: 'Invalid workspace or habit ID' },
         { status: 400 }
       );
+    }
+
+    if (!(await isHabitsEnabled(wsId))) {
+      return habitsNotFoundResponse();
     }
 
     const supabase = await createClient(request);

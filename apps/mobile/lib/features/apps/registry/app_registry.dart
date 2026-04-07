@@ -4,6 +4,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/calendar/view/calendar_page.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
+import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/inventory/view/inventory_page.dart';
@@ -27,6 +28,7 @@ class AppRegistry {
       pageBuilder: _pageHabits,
       miniAppNavItems: _habitsMiniNav,
       isPinned: true,
+      isVisible: _showHabitsModule,
     ),
     AppModule(
       id: 'tasks',
@@ -286,6 +288,18 @@ class AppRegistry {
     }
 
     return accessState.status == InventoryAccessStatus.loaded &&
+        accessState.enabled;
+  }
+
+  static bool _showHabitsModule(BuildContext context) {
+    final accessState = context.select<HabitsAccessCubit?, HabitsAccessState?>(
+      (cubit) => cubit?.state,
+    );
+    if (accessState == null) {
+      return false;
+    }
+
+    return accessState.status == HabitsAccessStatus.loaded &&
         accessState.enabled;
   }
 
