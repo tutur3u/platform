@@ -34,6 +34,7 @@ import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
 import 'package:mobile/features/tasks_boards/utils/task_description_payload.dart';
 import 'package:mobile/features/tasks_boards/utils/task_description_tiptap_converter.dart';
+import 'package:mobile/features/tasks_boards/widgets/recycle_bin_task_row.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_embed_builders.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_viewer.dart';
 

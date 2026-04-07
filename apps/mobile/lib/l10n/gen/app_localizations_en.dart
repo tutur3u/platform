@@ -1676,32 +1676,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailSelectAllTasks => 'Select all tasks';
 
   @override
-  String taskBoardDetailDeletedTasksCount(Object count) {
-    return '$count deleted task(s)';
+  String taskBoardDetailDeletedTasksCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count deleted tasks',
+      one: '$count deleted task',
+    );
+    return '$_temp0';
   }
 
   @override
-  String taskBoardDetailSelectedCount(Object selected, Object total) {
+  String taskBoardDetailSelectedCount(int selected, int total) {
     return '$selected of $total selected';
   }
 
   @override
-  String taskBoardDetailRestoreTasks(Object count) {
+  String taskBoardDetailRestoreTasks(int count) {
     return 'Restore ($count)';
   }
 
   @override
-  String taskBoardDetailDeleteTasks(Object count) {
+  String taskBoardDetailDeleteTasks(int count) {
     return 'Delete ($count)';
   }
 
   @override
-  String taskBoardDetailFromList(Object list) {
+  String taskBoardDetailFromList(String list) {
     return 'from: $list';
   }
 
   @override
-  String taskBoardDetailDeletedAgo(Object time) {
+  String taskBoardDetailDeletedAgo(String time) {
     return 'Deleted $time';
   }
 
@@ -1718,12 +1724,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailPriorityLow => 'Low';
 
   @override
-  String taskBoardDetailPoints(Object count) {
-    return '$count pts';
+  String taskBoardDetailPoints(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pts',
+      one: '$count pt',
+    );
+    return '$_temp0';
   }
 
   @override
-  String taskBoardDetailNProjects(Object count) {
+  String taskBoardDetailNProjects(int count) {
     return '$count projects';
   }
 

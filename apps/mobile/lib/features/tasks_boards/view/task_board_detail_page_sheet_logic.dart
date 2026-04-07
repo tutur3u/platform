@@ -619,16 +619,6 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
       ),
     );
     await state._closeEditor();
-  } on ApiException catch (error) {
-    if (!state.mounted || !toastContext.mounted) return;
-    shad.showToast(
-      context: toastContext,
-      builder: (context, overlay) => shad.Alert.destructive(
-        content: Text(
-          error.message.trim().isEmpty ? fallbackErrorMessage : error.message,
-        ),
-      ),
-    );
   } on Object catch (error) {
     final message = error.toString().trim();
     if (!state.mounted || !toastContext.mounted) return;

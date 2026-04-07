@@ -1676,32 +1676,32 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailSelectAllTasks => 'Chọn tất cả công việc';
 
   @override
-  String taskBoardDetailDeletedTasksCount(Object count) {
+  String taskBoardDetailDeletedTasksCount(int count) {
     return '$count công việc đã xóa';
   }
 
   @override
-  String taskBoardDetailSelectedCount(Object selected, Object total) {
+  String taskBoardDetailSelectedCount(int selected, int total) {
     return 'Đã chọn $selected/$total';
   }
 
   @override
-  String taskBoardDetailRestoreTasks(Object count) {
+  String taskBoardDetailRestoreTasks(int count) {
     return 'Khôi phục ($count)';
   }
 
   @override
-  String taskBoardDetailDeleteTasks(Object count) {
+  String taskBoardDetailDeleteTasks(int count) {
     return 'Xóa ($count)';
   }
 
   @override
-  String taskBoardDetailFromList(Object list) {
+  String taskBoardDetailFromList(String list) {
     return 'từ: $list';
   }
 
   @override
-  String taskBoardDetailDeletedAgo(Object time) {
+  String taskBoardDetailDeletedAgo(String time) {
     return 'Đã xóa $time';
   }
 
@@ -1718,12 +1718,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailPriorityLow => 'Thấp';
 
   @override
-  String taskBoardDetailPoints(Object count) {
+  String taskBoardDetailPoints(int count) {
     return '$count điểm';
   }
 
   @override
-  String taskBoardDetailNProjects(Object count) {
+  String taskBoardDetailNProjects(int count) {
     return '$count dự án';
   }
 

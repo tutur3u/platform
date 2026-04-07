@@ -152,21 +152,31 @@ extension on _TaskBoardDetailPageViewState {
 
             Future<void> restoreSelectedTasks() async {
               if (isMutating || selectedTaskIds.isEmpty) return;
+              final taskIdsToRestore = selectedTaskIds.toList(growable: false);
               setState(() => isMutating = true);
               try {
-                for (final taskId in selectedTaskIds) {
+                for (final taskId in taskIdsToRestore) {
                   await cubit.restoreTask(taskId: taskId);
+                  if (!context.mounted) return;
+                  setState(() {
+                    deletedTasks = deletedTasks
+                        .where((task) => task.id != taskId)
+                        .toList(growable: false);
+                    selectedTaskIds = selectedTaskIds
+                        .where((id) => id != taskId)
+                        .toSet();
+                  });
                 }
+                await cubit.reload();
                 if (!context.mounted) return;
                 setState(() {
-                  deletedTasks = deletedTasks
-                      .where((task) => !selectedTaskIds.contains(task.id))
-                      .toList(growable: false);
                   selectedTaskIds = {};
                   isMutating = false;
                 });
                 await showSuccess(context.l10n.taskBoardDetailTaskRestored);
               } on ApiException catch (error) {
+                if (!context.mounted) return;
+                await loadDeletedTasks(forceRefresh: true);
                 if (!context.mounted) return;
                 setState(() => isMutating = false);
                 await showError(
@@ -175,6 +185,8 @@ extension on _TaskBoardDetailPageViewState {
                       : error.message,
                 );
               } on Exception {
+                if (!context.mounted) return;
+                await loadDeletedTasks(forceRefresh: true);
                 if (!context.mounted) return;
                 setState(() => isMutating = false);
                 await showError(fallbackErrorMessage);
@@ -708,321 +720,4 @@ extension on _TaskBoardDetailPageViewState {
   }
 }
 
-/// A widget that displays a deleted task row in the recycle bin.
-/// Mirrors the web design with selection checkbox, badges, and metadata.
-class _RecycleBinTaskRow extends StatelessWidget {
-  const _RecycleBinTaskRow({
-    required this.task,
-    required this.isSelected,
-    required this.onSelected,
-    this.listName,
-    this.disabled = false,
-  });
-
-  final TaskBoardTask task;
-  final String? listName;
-  final bool isSelected;
-  final ValueChanged<bool> onSelected;
-  final bool disabled;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final taskName = task.name?.trim().isNotEmpty == true
-        ? task.name!.trim()
-        : context.l10n.taskBoardDetailUntitledTask;
-
-    // Get priority color and label
-    final priorityConfig = _getPriorityConfig(context, task.priority);
-
-    return Opacity(
-      opacity: disabled ? 0.5 : 1.0,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: isSelected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.border,
-              width: 3,
-            ),
-          ),
-          color: isSelected
-              ? theme.colorScheme.primary.withValues(alpha: 0.05)
-              : null,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Checkbox
-            shad.Checkbox(
-              state: isSelected
-                  ? shad.CheckboxState.checked
-                  : shad.CheckboxState.unchecked,
-              onChanged: disabled
-                  ? null
-                  : (v) => onSelected(v == shad.CheckboxState.checked),
-            ),
-            const shad.Gap(12),
-            // Content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Task name
-                  Text(
-                    taskName,
-                    style: theme.typography.small.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const shad.Gap(6),
-                  // Badges row
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      // Priority badge
-                      if (priorityConfig != null)
-                        _buildBadge(
-                          context,
-                          label: priorityConfig.label,
-                          backgroundColor: priorityConfig.backgroundColor,
-                          foregroundColor: priorityConfig.foregroundColor,
-                        ),
-                      // List badge (purple like web)
-                      if (listName != null && listName!.isNotEmpty)
-                        _buildBadge(
-                          context,
-                          label: context.l10n.taskBoardDetailFromList(
-                            listName!,
-                          ),
-                          backgroundColor: Colors.purple.withValues(
-                            alpha: 0.15,
-                          ),
-                          foregroundColor: Colors.purple,
-                          icon: Icons.folder_open_outlined,
-                        ),
-                      // Labels
-                      ..._buildLabelBadges(context, theme),
-                      // Points badge (sky/blue like web)
-                      if (task.estimationPoints != null)
-                        _buildBadge(
-                          context,
-                          label: context.l10n.taskBoardDetailPoints(
-                            task.estimationPoints!,
-                          ),
-                          backgroundColor: const Color(0x334BADD1),
-                          foregroundColor: const Color(0xFF7DD3FC),
-                        ),
-                      // Projects badge (sky like web)
-                      if (task.projects.isNotEmpty)
-                        _buildBadge(
-                          context,
-                          label: task.projects.length == 1
-                              ? (task.projects.first.name ?? '')
-                              : context.l10n.taskBoardDetailNProjects(
-                                  task.projects.length,
-                                ),
-                          backgroundColor: const Color(0x334BADD1),
-                          foregroundColor: const Color(0xFF7DD3FC),
-                          icon: Icons.folder_outlined,
-                        ),
-                    ],
-                  ),
-                  const shad.Gap(6),
-                  // Deleted timestamp
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.delete_outline,
-                        size: 12,
-                        color: theme.colorScheme.mutedForeground,
-                      ),
-                      const shad.Gap(4),
-                      Text(
-                        _formatDeletedTime(context),
-                        style: theme.typography.small.copyWith(
-                          color: theme.colorScheme.mutedForeground,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  _PriorityConfig? _getPriorityConfig(BuildContext context, String? priority) {
-    if (priority == null) return null;
-
-    switch (priority.toLowerCase()) {
-      case 'critical':
-        return _PriorityConfig(
-          label: context.l10n.taskBoardDetailPriorityCritical,
-          // Red/pink tones matching web
-          backgroundColor: const Color(0x33FF4444),
-          foregroundColor: const Color(0xFFFF6B6B),
-        );
-      case 'high':
-        return _PriorityConfig(
-          label: context.l10n.taskBoardDetailPriorityHigh,
-          // Orange tones matching web
-          backgroundColor: const Color(0x33FF8C42),
-          foregroundColor: const Color(0xFFFFA726),
-        );
-      case 'normal':
-        return _PriorityConfig(
-          label: context.l10n.taskBoardDetailPriorityNormal,
-          // Blue tones matching web
-          backgroundColor: const Color(0x334285F4),
-          foregroundColor: const Color(0xFF6699FF),
-        );
-      case 'low':
-        return _PriorityConfig(
-          label: context.l10n.taskBoardDetailPriorityLow,
-          // Gray tones
-          backgroundColor: const Color(0x33666666),
-          foregroundColor: const Color(0xFFAAAAAA),
-        );
-      default:
-        return null;
-    }
-  }
-
-  List<Widget> _buildLabelBadges(BuildContext context, shad.ThemeData theme) {
-    // Filter out labels with empty/null names
-    final validLabels = task.labels
-        .where((l) => l.name?.trim().isNotEmpty == true)
-        .take(3)
-        .toList();
-
-    if (validLabels.isEmpty) return [];
-
-    return validLabels.map((label) {
-      final color = _parseColor(label.color);
-      return _buildBadge(
-        context,
-        label: label.name!.trim(),
-        backgroundColor: color.withValues(alpha: 0.15),
-        foregroundColor: color,
-      );
-    }).toList();
-  }
-
-  Widget _buildBadge(
-    BuildContext context, {
-    required String label,
-    required Color backgroundColor,
-    required Color foregroundColor,
-    IconData? icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(
-              icon,
-              size: 10,
-              color: foregroundColor,
-            ),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            label.trim(),
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: foregroundColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatDeletedTime(BuildContext context) {
-    final deletedAt = task.closedAt;
-    if (deletedAt == null) {
-      return context.l10n.taskBoardDetailDeletedAgo('');
-    }
-
-    final now = DateTime.now();
-    final difference = now.difference(deletedAt);
-
-    String timeAgo;
-    if (difference.inDays > 0) {
-      timeAgo = '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      timeAgo = '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      timeAgo = '${difference.inMinutes}m ago';
-    } else {
-      timeAgo = 'just now';
-    }
-
-    return context.l10n.taskBoardDetailDeletedAgo(timeAgo);
-  }
-
-  Color _parseColor(String? colorString) {
-    if (colorString == null || colorString.isEmpty) {
-      return const Color(0xFFAAAAAA);
-    }
-
-    // Named colors with vibrant tones for dark mode
-    switch (colorString.toUpperCase()) {
-      case 'RED':
-        return const Color(0xFFFF6B6B);
-      case 'ORANGE':
-        return const Color(0xFFFFA726);
-      case 'YELLOW':
-        return const Color(0xFFFFD54F);
-      case 'GREEN':
-        return const Color(0xFF66BB6A);
-      case 'BLUE':
-      case 'SKY':
-        return const Color(0xFF6699FF);
-      case 'PURPLE':
-        return const Color(0xFFB388FF);
-      case 'PINK':
-        return const Color(0xFFFF8A80);
-      case 'GRAY':
-      case 'GREY':
-        return const Color(0xFFAAAAAA);
-      default:
-        // Try to parse as hex
-        try {
-          final hex = colorString.replaceFirst('#', '');
-          return Color(int.parse('FF$hex', radix: 16));
-        } on FormatException catch (_) {
-          return const Color(0xFFAAAAAA);
-        }
-    }
-  }
-}
-
-class _PriorityConfig {
-  const _PriorityConfig({
-    required this.label,
-    required this.backgroundColor,
-    required this.foregroundColor,
-  });
-
-  final String label;
-  final Color backgroundColor;
-  final Color foregroundColor;
-}
+typedef _RecycleBinTaskRow = RecycleBinTaskRow;

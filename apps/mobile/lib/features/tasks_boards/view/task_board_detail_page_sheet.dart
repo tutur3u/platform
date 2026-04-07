@@ -245,7 +245,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                         ),
                       ),
                     ),
-                    if (widget.lists.length > 1)
+                    if (!_isCreate && widget.lists.length > 1)
                       Tooltip(
                         message: context.l10n.taskBoardDetailMoveTask,
                         child: shad.IconButton.ghost(
@@ -253,13 +253,14 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                           onPressed: _isBusy ? null : _moveTask,
                         ),
                       ),
-                    Tooltip(
-                      message: context.l10n.taskBoardDetailDeleteTask,
-                      child: shad.IconButton.ghost(
-                        icon: const Icon(Icons.delete_outline, size: 16),
-                        onPressed: _isBusy ? null : _deleteTask,
+                    if (!_isCreate)
+                      Tooltip(
+                        message: context.l10n.taskBoardDetailDeleteTask,
+                        child: shad.IconButton.ghost(
+                          icon: const Icon(Icons.delete_outline, size: 16),
+                          onPressed: _isBusy ? null : _deleteTask,
+                        ),
                       ),
-                    ),
                     shad.IconButton.ghost(
                       icon: const Icon(Icons.close),
                       onPressed: _isBusy

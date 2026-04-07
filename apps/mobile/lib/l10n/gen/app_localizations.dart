@@ -3292,38 +3292,38 @@ abstract class AppLocalizations {
   /// No description provided for @taskBoardDetailDeletedTasksCount.
   ///
   /// In en, this message translates to:
-  /// **'{count} deleted task(s)'**
-  String taskBoardDetailDeletedTasksCount(Object count);
+  /// **'{count, plural, one{{count} deleted task} other{{count} deleted tasks}}'**
+  String taskBoardDetailDeletedTasksCount(int count);
 
   /// No description provided for @taskBoardDetailSelectedCount.
   ///
   /// In en, this message translates to:
   /// **'{selected} of {total} selected'**
-  String taskBoardDetailSelectedCount(Object selected, Object total);
+  String taskBoardDetailSelectedCount(int selected, int total);
 
   /// No description provided for @taskBoardDetailRestoreTasks.
   ///
   /// In en, this message translates to:
   /// **'Restore ({count})'**
-  String taskBoardDetailRestoreTasks(Object count);
+  String taskBoardDetailRestoreTasks(int count);
 
   /// No description provided for @taskBoardDetailDeleteTasks.
   ///
   /// In en, this message translates to:
   /// **'Delete ({count})'**
-  String taskBoardDetailDeleteTasks(Object count);
+  String taskBoardDetailDeleteTasks(int count);
 
   /// No description provided for @taskBoardDetailFromList.
   ///
   /// In en, this message translates to:
   /// **'from: {list}'**
-  String taskBoardDetailFromList(Object list);
+  String taskBoardDetailFromList(String list);
 
   /// No description provided for @taskBoardDetailDeletedAgo.
   ///
   /// In en, this message translates to:
   /// **'Deleted {time}'**
-  String taskBoardDetailDeletedAgo(Object time);
+  String taskBoardDetailDeletedAgo(String time);
 
   /// No description provided for @taskBoardDetailPriorityCritical.
   ///
@@ -3352,14 +3352,14 @@ abstract class AppLocalizations {
   /// No description provided for @taskBoardDetailPoints.
   ///
   /// In en, this message translates to:
-  /// **'{count} pts'**
-  String taskBoardDetailPoints(Object count);
+  /// **'{count, plural, one{{count} pt} other{{count} pts}}'**
+  String taskBoardDetailPoints(int count);
 
   /// No description provided for @taskBoardDetailNProjects.
   ///
   /// In en, this message translates to:
   /// **'{count} projects'**
-  String taskBoardDetailNProjects(Object count);
+  String taskBoardDetailNProjects(int count);
 
   /// No description provided for @taskBoardDetailNoMoveTargets.
   ///

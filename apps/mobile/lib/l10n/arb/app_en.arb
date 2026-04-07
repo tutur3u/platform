@@ -685,18 +685,77 @@
     "taskBoardDetailRecycleBinEmpty": "No deleted tasks",
     "taskBoardDetailRecycleBinEmptyHint": "Deleted tasks will appear here.",
     "taskBoardDetailSelectAllTasks": "Select all tasks",
-    "taskBoardDetailDeletedTasksCount": "{count} deleted task(s)",
+    "taskBoardDetailDeletedTasksCount": "{count, plural, one{{count} deleted task} other{{count} deleted tasks}}",
+    "@taskBoardDetailDeletedTasksCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "taskBoardDetailSelectedCount": "{selected} of {total} selected",
+    "@taskBoardDetailSelectedCount": {
+        "placeholders": {
+            "selected": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    },
     "taskBoardDetailRestoreTasks": "Restore ({count})",
+    "@taskBoardDetailRestoreTasks": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "taskBoardDetailDeleteTasks": "Delete ({count})",
+    "@taskBoardDetailDeleteTasks": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "taskBoardDetailFromList": "from: {list}",
+    "@taskBoardDetailFromList": {
+        "placeholders": {
+            "list": {
+                "type": "String"
+            }
+        }
+    },
     "taskBoardDetailDeletedAgo": "Deleted {time}",
+    "@taskBoardDetailDeletedAgo": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
     "taskBoardDetailPriorityCritical": "Critical",
     "taskBoardDetailPriorityHigh": "High",
     "taskBoardDetailPriorityNormal": "Normal",
     "taskBoardDetailPriorityLow": "Low",
-    "taskBoardDetailPoints": "{count} pts",
+    "taskBoardDetailPoints": "{count, plural, one{{count} pt} other{{count} pts}}",
+    "@taskBoardDetailPoints": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "taskBoardDetailNProjects": "{count} projects",
+    "@taskBoardDetailNProjects": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "taskBoardDetailNoMoveTargets": "No other lists available for moving this task.",
     "taskBoardDetailBoardActions": "Board actions",
     "taskBoardDetailManageBoardLayout": "Manage board layout",
