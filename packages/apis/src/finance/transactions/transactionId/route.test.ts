@@ -96,6 +96,9 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 describe('transaction detail route', () => {
+  const firstTagId = '11111111-1111-4111-8111-111111111111';
+  const secondTagId = '22222222-2222-4222-8222-222222222222';
+
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -242,7 +245,7 @@ describe('transaction detail route', () => {
         },
         body: JSON.stringify({
           amount: -45,
-          tag_ids: ['tag-1', 'tag-2'],
+          tag_ids: [firstTagId, secondTagId],
         }),
       }),
       {
@@ -266,11 +269,11 @@ describe('transaction detail route', () => {
     expect(mocks.tagInsert).toHaveBeenCalledWith([
       {
         transaction_id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
-        tag_id: 'tag-1',
+        tag_id: firstTagId,
       },
       {
         transaction_id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
-        tag_id: 'tag-2',
+        tag_id: secondTagId,
       },
     ]);
     expect(mocks.sessionSupabase.from).not.toHaveBeenCalled();

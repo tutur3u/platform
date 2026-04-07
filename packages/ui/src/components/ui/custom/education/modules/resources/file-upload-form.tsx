@@ -176,6 +176,15 @@ export function StorageObjectForm({
   const [editingFile, setEditingFile] = useState<File | null>(null);
   const [newFileName, setNewFileName] = useState<string>('');
   const normalizedAccept = accept && accept.trim() !== '*' ? accept : undefined;
+  const files = form.watch('files') ?? [];
+
+  function updateFiles(nextFiles: File[]) {
+    form.setValue('files', nextFiles, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  }
 
   async function onSubmit(formData: z.infer<typeof ObjectFormSchema>) {
     if (loading || editingFile) return;
@@ -242,11 +251,9 @@ export function StorageObjectForm({
     setLoading(false);
   }
 
-  const files = form.watch('files');
-
   const uploadedAllFiles =
     // at least one file is uploaded
-    form.watch('files').length > 0 &&
+    files.length > 0 &&
     // all files match the uploaded status
     files.every((file) => fileStatuses[file.name] === 'uploaded') &&
     // all file statuses are uploaded
@@ -259,7 +266,7 @@ export function StorageObjectForm({
           control={form.control}
           name="files"
           disabled={loading}
-          render={({ field: { onChange, ...fieldProps } }) => (
+          render={({ field: { onBlur, name, ref, ...fieldProps } }) => (
             <FormItem>
               <FormLabel>
                 {t('storage-object-data-table.files')}
@@ -269,12 +276,15 @@ export function StorageObjectForm({
                 <FormControl>
                   <Input
                     {...fieldProps}
+                    ref={ref}
+                    name={name}
+                    onBlur={onBlur}
                     value={undefined}
                     type="file"
                     placeholder="Files"
                     accept={normalizedAccept}
                     onChange={(e) => {
-                      onChange(e.target.files && Array.from(e.target.files));
+                      updateFiles(Array.from(e.target.files ?? []));
                     }}
                     multiple
                   />
@@ -320,7 +330,7 @@ export function StorageObjectForm({
                                   }
 
                                   setEditingFile(null);
-                                  onChange(
+                                  updateFiles(
                                     files.map((f) =>
                                       f.name === file.name
                                         ? new File([file], newFileName)
@@ -380,8 +390,7 @@ export function StorageObjectForm({
                                   return next;
                                 });
 
-                                form.setValue(
-                                  'files',
+                                updateFiles(
                                   files.filter((_, index) => index !== i)
                                 );
                               }}
@@ -408,7 +417,7 @@ export function StorageObjectForm({
               className="w-fit"
               onClick={() => {
                 setFileStatuses({});
-                form.setValue('files', []);
+                updateFiles([]);
               }}
               variant="ghost"
               disabled={loading || files.length === 0 || uploadedAllFiles}
