@@ -34,6 +34,11 @@ const ALLOWED_MIME_TYPES = new Set([
   'application/json',
 ]);
 
+const GENERIC_ALLOWED_MIME_TYPES = new Set([
+  'application/octet-stream',
+  'binary/octet-stream',
+]);
+
 const ALLOWED_EXTENSIONS = new Set([
   '.png',
   '.jpg',
@@ -111,16 +116,16 @@ export async function POST(
         ? ''
         : file.name.substring(lastDotIndex).toLowerCase();
 
-    let isValid = false;
-    if (file.type && fileExtension) {
-      isValid =
-        ALLOWED_MIME_TYPES.has(file.type) &&
-        ALLOWED_EXTENSIONS.has(fileExtension);
-    } else if (file.type) {
-      isValid = ALLOWED_MIME_TYPES.has(file.type);
-    } else if (fileExtension) {
-      isValid = ALLOWED_EXTENSIONS.has(fileExtension);
-    }
+    const hasAllowedExtension =
+      !!fileExtension && ALLOWED_EXTENSIONS.has(fileExtension);
+    const hasAllowedMimeType = !!file.type && ALLOWED_MIME_TYPES.has(file.type);
+    const hasGenericMimeType =
+      !!file.type && GENERIC_ALLOWED_MIME_TYPES.has(file.type);
+
+    const isValid =
+      (hasAllowedExtension && (hasAllowedMimeType || hasGenericMimeType)) ||
+      hasAllowedMimeType ||
+      hasAllowedExtension;
 
     if (!isValid) {
       return NextResponse.json(
