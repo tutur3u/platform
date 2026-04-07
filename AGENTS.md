@@ -333,6 +333,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Package Clean Scripts Must Remove tsbuildinfo**: For publishable TypeScript packages that use incremental/composite builds, `clean` must remove the relevant `.tsbuildinfo` file in addition to `dist/`. Otherwise `prepack`/publish can report a successful `tsc` run while re-emitting nothing, producing tarballs with missing runtime files.
 - **Fixture Paths Must Be File-Relative In Tests**: For package tests that read fixture files, resolve paths from the test file directory (`__dirname` in CommonJS-compatible NodeNext packages) instead of `process.cwd()`. CI often runs from repo root, so cwd-based fixture paths can pass locally and fail in pipelines.
 - **Cross-Platform Path Assertions In Node Tests**: In root `scripts/*.test.js` suites, do not hardcode POSIX-style absolute paths in assertions (for example `/workspace/...`). Build expected paths with `path.resolve`/`path.join` from the same test input so Windows and POSIX runners assert identical behavior.
+- **Self-Hosted Service Dockerfiles Should Be Multi-Stage**: For small helper services (for example proxy/unzip workers), use a multi-stage Dockerfile that installs dependencies in one stage and copies only runtime artifacts into the final image. Do not ship single-stage images that keep the full install/build context by default.
 
 ## 7. Continuous Improvement (Session Retrospective)
 
