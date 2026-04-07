@@ -759,9 +759,10 @@ class _AssigneeAvatarStack extends StatelessWidget {
   Widget build(BuildContext context) {
     final visible = assignees.take(3).toList(growable: false);
     final overflowCount = assignees.length - visible.length;
+    final width = visible.length * 14 + 6 + (overflowCount > 0 ? 14 : 0);
     Widget child = SizedBox(
       height: 20,
-      width: visible.length * 14 + 14,
+      width: width.toDouble(),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -817,7 +818,6 @@ class _AssigneeAvatar extends StatelessWidget {
       radius: 10,
       backgroundImage: NetworkImage(avatarUrl),
       onBackgroundImageError: (error, stackTrace) {},
-      child: fallback,
     );
   }
 }

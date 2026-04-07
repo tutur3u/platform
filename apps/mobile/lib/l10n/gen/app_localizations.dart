@@ -3265,6 +3265,126 @@ abstract class AppLocalizations {
   /// **'Task created.'**
   String get taskBoardDetailTaskCreated;
 
+  /// No description provided for @taskBoardDetailTaskDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Task deleted.'**
+  String get taskBoardDetailTaskDeleted;
+
+  /// No description provided for @taskBoardDetailTaskDeletedForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Task permanently deleted.'**
+  String get taskBoardDetailTaskDeletedForever;
+
+  /// No description provided for @taskBoardDetailTaskRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Task restored.'**
+  String get taskBoardDetailTaskRestored;
+
+  /// No description provided for @taskBoardDetailRecycleBin.
+  ///
+  /// In en, this message translates to:
+  /// **'Recycle Bin'**
+  String get taskBoardDetailRecycleBin;
+
+  /// No description provided for @taskBoardDetailRecycleBinDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted tasks from this board. Select tasks to restore or permanently delete them.'**
+  String get taskBoardDetailRecycleBinDescription;
+
+  /// No description provided for @taskBoardDetailRecycleBinEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No deleted tasks'**
+  String get taskBoardDetailRecycleBinEmpty;
+
+  /// No description provided for @taskBoardDetailRecycleBinEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted tasks will appear here.'**
+  String get taskBoardDetailRecycleBinEmptyHint;
+
+  /// No description provided for @taskBoardDetailSelectAllTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all tasks'**
+  String get taskBoardDetailSelectAllTasks;
+
+  /// No description provided for @taskBoardDetailDeletedTasksCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} deleted task} other{{count} deleted tasks}}'**
+  String taskBoardDetailDeletedTasksCount(int count);
+
+  /// No description provided for @taskBoardDetailSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{selected} of {total} selected'**
+  String taskBoardDetailSelectedCount(int selected, int total);
+
+  /// No description provided for @taskBoardDetailRestoreTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore ({count})'**
+  String taskBoardDetailRestoreTasks(int count);
+
+  /// No description provided for @taskBoardDetailDeleteTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete ({count})'**
+  String taskBoardDetailDeleteTasks(int count);
+
+  /// No description provided for @taskBoardDetailFromList.
+  ///
+  /// In en, this message translates to:
+  /// **'from: {list}'**
+  String taskBoardDetailFromList(String list);
+
+  /// No description provided for @taskBoardDetailDeletedAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {time}'**
+  String taskBoardDetailDeletedAgo(String time);
+
+  /// No description provided for @taskBoardDetailPriorityCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get taskBoardDetailPriorityCritical;
+
+  /// No description provided for @taskBoardDetailPriorityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get taskBoardDetailPriorityHigh;
+
+  /// No description provided for @taskBoardDetailPriorityNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get taskBoardDetailPriorityNormal;
+
+  /// No description provided for @taskBoardDetailPriorityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get taskBoardDetailPriorityLow;
+
+  /// No description provided for @taskBoardDetailPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} pt} other{{count} pts}}'**
+  String taskBoardDetailPoints(int count);
+
+  /// No description provided for @taskBoardDetailNProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} project} other{{count} projects}}'**
+  String taskBoardDetailNProjects(int count);
+
   /// No description provided for @taskBoardDetailNoMoveTargets.
   ///
   /// In en, this message translates to:
@@ -3372,6 +3492,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Are you sure you want to delete this list? All tasks in this list will also be deleted. This action cannot be undone.'**
   String get taskBoardDetailDeleteListDescription;
+
+  /// No description provided for @taskBoardDetailDeleteTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete task'**
+  String get taskBoardDetailDeleteTask;
+
+  /// No description provided for @taskBoardDetailDeleteTaskForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete task forever'**
+  String get taskBoardDetailDeleteTaskForever;
+
+  /// No description provided for @taskBoardDetailDeleteTaskForeverDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete this task from the recycle bin? This action cannot be undone.'**
+  String get taskBoardDetailDeleteTaskForeverDescription;
+
+  /// No description provided for @taskBoardDetailDeleteForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete forever'**
+  String get taskBoardDetailDeleteForever;
+
+  /// No description provided for @taskBoardDetailDeleteTaskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete task?'**
+  String get taskBoardDetailDeleteTaskTitle;
+
+  /// No description provided for @taskBoardDetailDeleteTaskDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Move this task to the recycle bin?'**
+  String get taskBoardDetailDeleteTaskDescription;
 
   /// No description provided for @taskBoardDetailMoveListToStatus.
   ///
@@ -6360,6 +6516,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Destination wallet'**
   String get financeDestinationWallet;
+
+  /// No description provided for @financeSourceWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Source wallet'**
+  String get financeSourceWallet;
 
   /// No description provided for @financeSelectDestinationWallet.
   ///

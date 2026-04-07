@@ -19,9 +19,14 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
   static const int _listTaskPageSize = 50;
   static const int _initialPrefetchListCount = 3;
+  static const Duration _deletedTasksCacheTtl = Duration(minutes: 3);
 
   final TaskRepository _taskRepository;
   int _loadRequestToken = 0;
+  List<TaskBoardTask>? _cachedDeletedTasks;
+  DateTime? _cachedDeletedTasksAt;
+  String? _cachedDeletedTasksWorkspaceId;
+  String? _cachedDeletedTasksBoardId;
 
   Future<void> loadBoardDetail({
     required String wsId,
@@ -29,6 +34,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
   }) async {
     final requestToken = ++_loadRequestToken;
     final targetChanged = state.workspaceId != wsId || state.boardId != boardId;
+
+    if (targetChanged) {
+      _invalidateDeletedTasksCache();
+    }
 
     emit(
       state.copyWith(
@@ -366,6 +375,176 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         listId: listId,
       ),
     );
+  }
+
+  Future<void> deleteTask({required String taskId}) async {
+    final wsId = state.workspaceId;
+    final board = state.board;
+    if (wsId == null) {
+      throw StateError('Workspace not selected');
+    }
+    if (board == null) {
+      throw StateError('Board detail is not initialized');
+    }
+
+    final sourceListId = _findTaskListId(taskId);
+    final pageSizeHint = sourceListId == null
+        ? null
+        : state.listPageSizeById[sourceListId];
+
+    await _runMutation(
+      () => _taskRepository.deleteTask(taskId, wsId: wsId),
+      reloadBoard: false,
+    );
+
+    _invalidateDeletedTasksCache();
+
+    if (sourceListId == null || isClosed) {
+      return;
+    }
+
+    if (state.workspaceId != wsId || state.boardId != board.id) {
+      return;
+    }
+
+    if (state.selectedTaskId == taskId) {
+      emit(state.copyWith(selectedTaskId: null));
+    }
+
+    await loadListTasks(
+      listId: sourceListId,
+      forceRefresh: true,
+      pageSizeHint: pageSizeHint,
+    );
+  }
+
+  Future<List<TaskBoardTask>> loadDeletedTasks({
+    int limit = 100,
+    int offset = 0,
+    bool forceRefresh = false,
+  }) async {
+    final wsId = state.workspaceId;
+    final boardId = state.boardId;
+    final board = state.board;
+    if (wsId == null || boardId == null) {
+      throw StateError('Board detail is not initialized');
+    }
+
+    if (!forceRefresh) {
+      final cached = _getCachedDeletedTasks(
+        wsId: wsId,
+        boardId: boardId,
+        limit: limit,
+        offset: offset,
+      );
+      if (cached != null) {
+        return cached;
+      }
+    }
+
+    final tasks = await _taskRepository.getDeletedBoardTasks(
+      wsId,
+      boardId: boardId,
+      limit: limit,
+      offset: offset,
+      labels: board?.labels ?? const [],
+      projects: board?.projects ?? const [],
+    );
+
+    if (offset == 0) {
+      _cacheDeletedTasks(wsId: wsId, boardId: boardId, tasks: tasks);
+    }
+
+    return tasks;
+  }
+
+  Future<void> restoreTask({
+    required String taskId,
+    bool reloadBoard = true,
+  }) async {
+    final wsId = state.workspaceId;
+    if (wsId == null) {
+      throw StateError('Workspace not selected');
+    }
+
+    await _runMutation(
+      () => _taskRepository.restoreTask(wsId: wsId, taskId: taskId),
+      reloadBoard: reloadBoard,
+    );
+
+    _removeFromDeletedTasksCache(taskId);
+  }
+
+  Future<void> permanentlyDeleteTask({
+    required String taskId,
+    bool reloadBoard = true,
+  }) async {
+    final wsId = state.workspaceId;
+    if (wsId == null) {
+      throw StateError('Workspace not selected');
+    }
+
+    await _runMutation(
+      () => _taskRepository.permanentlyDeleteTask(wsId: wsId, taskId: taskId),
+      reloadBoard: reloadBoard,
+    );
+
+    _removeFromDeletedTasksCache(taskId);
+  }
+
+  List<TaskBoardTask>? _getCachedDeletedTasks({
+    required String wsId,
+    required String boardId,
+    required int limit,
+    required int offset,
+  }) {
+    final cached = _cachedDeletedTasks;
+    final cachedAt = _cachedDeletedTasksAt;
+    if (cached == null || cachedAt == null) {
+      return null;
+    }
+    if (_cachedDeletedTasksWorkspaceId != wsId ||
+        _cachedDeletedTasksBoardId != boardId) {
+      return null;
+    }
+    if (DateTime.now().difference(cachedAt) > _deletedTasksCacheTtl) {
+      return null;
+    }
+    if (offset < 0 || limit <= 0 || offset > cached.length) {
+      return null;
+    }
+
+    final end = (offset + limit).clamp(offset, cached.length);
+    return List<TaskBoardTask>.unmodifiable(cached.sublist(offset, end));
+  }
+
+  void _cacheDeletedTasks({
+    required String wsId,
+    required String boardId,
+    required List<TaskBoardTask> tasks,
+  }) {
+    _cachedDeletedTasks = List<TaskBoardTask>.unmodifiable(tasks);
+    _cachedDeletedTasksAt = DateTime.now();
+    _cachedDeletedTasksWorkspaceId = wsId;
+    _cachedDeletedTasksBoardId = boardId;
+  }
+
+  void _removeFromDeletedTasksCache(String taskId) {
+    final cached = _cachedDeletedTasks;
+    if (cached == null) {
+      return;
+    }
+    _cachedDeletedTasks = List<TaskBoardTask>.unmodifiable(
+      cached.where((task) => task.id != taskId),
+    );
+    _cachedDeletedTasksAt = DateTime.now();
+  }
+
+  void _invalidateDeletedTasksCache() {
+    _cachedDeletedTasks = null;
+    _cachedDeletedTasksAt = null;
+    _cachedDeletedTasksWorkspaceId = null;
+    _cachedDeletedTasksBoardId = null;
   }
 
   Future<void> loadTaskRelationships({required String taskId}) async {
@@ -710,6 +889,27 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       );
       rethrow;
     }
+  }
+
+  String? _findTaskListId(String taskId) {
+    final board = state.board;
+    if (board == null) return null;
+
+    for (final task in board.tasks) {
+      if (task.id == taskId) {
+        return task.listId;
+      }
+    }
+
+    for (final entry in state.listTasksByListId.entries) {
+      for (final task in entry.value) {
+        if (task.id == taskId) {
+          return task.listId;
+        }
+      }
+    }
+
+    return null;
   }
 
   Future<void> _prefetchInitialLists({
