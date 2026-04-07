@@ -3254,6 +3254,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeDestinationWallet => 'Destination wallet';
 
   @override
+  String get financeSourceWallet => 'Source wallet';
+
+  @override
   String get financeSelectDestinationWallet => 'Select destination wallet';
 
   @override

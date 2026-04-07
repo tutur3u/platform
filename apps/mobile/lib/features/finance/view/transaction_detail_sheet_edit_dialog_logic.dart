@@ -28,6 +28,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   String? _optionsError;
   bool _isSaving = false;
   bool _showSettings = false;
+  bool _hasEditedSettings = false;
 
   bool _isDestinationOverridden = false;
   _MoneyFieldTarget _activeMoneyField = _MoneyFieldTarget.source;
@@ -597,7 +598,18 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   Color get _selectedCategoryColor {
     final category = _displaySelectedCategory;
     if (category == null) {
-      return shad.Theme.of(context).colorScheme.mutedForeground;
+      return shad.Theme.of(context).colorScheme.foreground;
+    }
+    return _categoryColor(category);
+  }
+
+  Color get _selectedAmountColor {
+    if (_isTransfer) {
+      return shad.Theme.of(context).colorScheme.foreground;
+    }
+    final category = _displaySelectedCategory;
+    if (category == null) {
+      return shad.Theme.of(context).colorScheme.foreground;
     }
     return _categoryColor(category);
   }
@@ -691,6 +703,8 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       ..maximumFractionDigits = digits;
     return formatter.format(value);
   }
+
+  bool get _showsMoneyEvaluateAction => _hasMoneyExpression;
 
   List<({int multiplier, String label})> get _moneySuggestions {
     if (_hasMoneyExpression) {
@@ -870,6 +884,38 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       syncDestinationOverride:
           _activeMoneyField == _MoneyFieldTarget.destination,
     );
+  }
+
+  void _setReportOptIn(bool value) {
+    if (_reportOptIn == value) return;
+    setState(() {
+      _reportOptIn = value;
+      _hasEditedSettings = true;
+    });
+  }
+
+  void _setAmountConfidential(bool value) {
+    if (_isAmountConfidential == value) return;
+    setState(() {
+      _isAmountConfidential = value;
+      _hasEditedSettings = true;
+    });
+  }
+
+  void _setDescriptionConfidential(bool value) {
+    if (_isDescriptionConfidential == value) return;
+    setState(() {
+      _isDescriptionConfidential = value;
+      _hasEditedSettings = true;
+    });
+  }
+
+  void _setCategoryConfidential(bool value) {
+    if (_isCategoryConfidential == value) return;
+    setState(() {
+      _isCategoryConfidential = value;
+      _hasEditedSettings = true;
+    });
   }
 
   void _reconcileSelectedIds() {

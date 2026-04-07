@@ -3254,6 +3254,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeDestinationWallet => 'Ví đích';
 
   @override
+  String get financeSourceWallet => 'Ví nguồn';
+
+  @override
   String get financeSelectDestinationWallet => 'Chọn ví đích';
 
   @override

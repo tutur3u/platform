@@ -1286,6 +1286,7 @@
     "financePickerLoadingOptions": "Đang tải ví, danh mục và thẻ...",
     "financeNoTag": "Không gắn thẻ",
     "financeDestinationWallet": "Ví đích",
+    "financeSourceWallet": "Ví nguồn",
     "financeSelectDestinationWallet": "Chọn ví đích",
     "financeTransferMode": "Chế độ chuyển khoản",
     "financeTransferModeEditHint": "Chỉ có thể đổi chế độ chuyển khoản khi đang sửa một giao dịch chuyển khoản.",

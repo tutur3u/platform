@@ -6361,6 +6361,12 @@ abstract class AppLocalizations {
   /// **'Destination wallet'**
   String get financeDestinationWallet;
 
+  /// No description provided for @financeSourceWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Source wallet'**
+  String get financeSourceWallet;
+
   /// No description provided for @financeSelectDestinationWallet.
   ///
   /// In en, this message translates to:

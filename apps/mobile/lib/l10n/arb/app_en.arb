@@ -1285,6 +1285,7 @@
     "financePickerLoadingOptions": "Loading wallets, categories, and tags...",
     "financeNoTag": "No tag",
     "financeDestinationWallet": "Destination wallet",
+    "financeSourceWallet": "Source wallet",
     "financeSelectDestinationWallet": "Select destination wallet",
     "financeTransferMode": "Transfer mode",
     "financeTransferModeEditHint": "Transfer mode can only be edited for existing transfers.",
