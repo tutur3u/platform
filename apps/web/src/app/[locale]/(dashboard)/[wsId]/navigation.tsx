@@ -149,6 +149,7 @@ export async function WorkspaceNavigationLinks({
     getSecret(name, secrets)?.value === value;
 
   const ENABLE_AI_ONLY = hasSecret('ENABLE_AI_ONLY', 'true');
+  const ENABLE_HABITS = hasSecret('ENABLE_HABITS', 'true');
 
   // Parallelize user-dependent queries
   const [
@@ -326,6 +327,7 @@ export async function WorkspaceNavigationLinks({
       href: `/${personalOrWsId}/habits`,
       aliases: [`/${personalOrWsId}/habits`, `/${personalOrWsId}/tasks/habits`],
       icon: <Repeat className="h-5 w-5" />,
+      disabled: !ENABLE_HABITS,
     },
     {
       title: t('sidebar_tabs.calendar'),
