@@ -34,6 +34,7 @@ import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
 import 'package:mobile/features/tasks_boards/utils/task_description_payload.dart';
 import 'package:mobile/features/tasks_boards/utils/task_description_tiptap_converter.dart';
+import 'package:mobile/features/tasks_boards/widgets/recycle_bin_task_row.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_embed_builders.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_viewer.dart';
 
@@ -41,6 +42,7 @@ import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/fab/fab_action.dart';
 import 'package:mobile/widgets/fab/speed_dial_fab.dart';
 import 'package:mobile/widgets/image_source_picker_dialog.dart';

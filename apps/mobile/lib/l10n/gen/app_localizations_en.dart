@@ -1664,6 +1664,94 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailTaskCreated => 'Task created.';
 
   @override
+  String get taskBoardDetailTaskDeleted => 'Task deleted.';
+
+  @override
+  String get taskBoardDetailTaskDeletedForever => 'Task permanently deleted.';
+
+  @override
+  String get taskBoardDetailTaskRestored => 'Task restored.';
+
+  @override
+  String get taskBoardDetailRecycleBin => 'Recycle Bin';
+
+  @override
+  String get taskBoardDetailRecycleBinDescription => 'Deleted tasks from this board. Select tasks to restore or permanently delete them.';
+
+  @override
+  String get taskBoardDetailRecycleBinEmpty => 'No deleted tasks';
+
+  @override
+  String get taskBoardDetailRecycleBinEmptyHint => 'Deleted tasks will appear here.';
+
+  @override
+  String get taskBoardDetailSelectAllTasks => 'Select all tasks';
+
+  @override
+  String taskBoardDetailDeletedTasksCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count deleted tasks',
+      one: '$count deleted task',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String taskBoardDetailSelectedCount(int selected, int total) {
+    return '$selected of $total selected';
+  }
+
+  @override
+  String taskBoardDetailRestoreTasks(int count) {
+    return 'Restore ($count)';
+  }
+
+  @override
+  String taskBoardDetailDeleteTasks(int count) {
+    return 'Delete ($count)';
+  }
+
+  @override
+  String taskBoardDetailFromList(String list) {
+    return 'from: $list';
+  }
+
+  @override
+  String taskBoardDetailDeletedAgo(String time) {
+    return 'Deleted $time';
+  }
+
+  @override
+  String get taskBoardDetailPriorityCritical => 'Critical';
+
+  @override
+  String get taskBoardDetailPriorityHigh => 'High';
+
+  @override
+  String get taskBoardDetailPriorityNormal => 'Normal';
+
+  @override
+  String get taskBoardDetailPriorityLow => 'Low';
+
+  @override
+  String taskBoardDetailPoints(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pts',
+      one: '$count pt',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String taskBoardDetailNProjects(int count) {
+    return '$count projects';
+  }
+
+  @override
   String get taskBoardDetailNoMoveTargets => 'No other lists available for moving this task.';
 
   @override
@@ -1716,6 +1804,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailDeleteListDescription => 'Are you sure you want to delete this list? All tasks in this list will also be deleted. This action cannot be undone.';
+
+  @override
+  String get taskBoardDetailDeleteTask => 'Delete task';
+
+  @override
+  String get taskBoardDetailDeleteTaskForever => 'Delete task forever';
+
+  @override
+  String get taskBoardDetailDeleteTaskForeverDescription => 'Permanently delete this task from the recycle bin? This action cannot be undone.';
+
+  @override
+  String get taskBoardDetailDeleteForever => 'Delete forever';
+
+  @override
+  String get taskBoardDetailDeleteTaskTitle => 'Delete task?';
+
+  @override
+  String get taskBoardDetailDeleteTaskDescription => 'Move this task to the recycle bin?';
 
   @override
   String get taskBoardDetailMoveListToStatus => 'Move list to status';

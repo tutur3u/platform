@@ -681,6 +681,85 @@
     "taskBoardDetailInvalidDateRange": "Ngày kết thúc phải cùng hoặc sau ngày bắt đầu",
     "taskBoardDetailTaskSaved": "Đã cập nhật công việc.",
     "taskBoardDetailTaskCreated": "Đã tạo công việc.",
+    "taskBoardDetailTaskDeleted": "Đã xóa công việc.",
+    "taskBoardDetailTaskDeletedForever": "Đã xóa vĩnh viễn công việc.",
+    "taskBoardDetailTaskRestored": "Đã khôi phục công việc.",
+    "taskBoardDetailRecycleBin": "Thùng rác",
+    "taskBoardDetailRecycleBinDescription": "Các công việc đã xóa từ bảng này. Chọn công việc để khôi phục hoặc xóa vĩnh viễn.",
+    "taskBoardDetailRecycleBinEmpty": "Không có công việc đã xóa",
+    "taskBoardDetailRecycleBinEmptyHint": "Công việc đã xóa sẽ xuất hiện ở đây.",
+    "taskBoardDetailSelectAllTasks": "Chọn tất cả công việc",
+    "taskBoardDetailDeletedTasksCount": "{count} công việc đã xóa",
+    "@taskBoardDetailDeletedTasksCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardDetailSelectedCount": "Đã chọn {selected}/{total}",
+    "@taskBoardDetailSelectedCount": {
+        "placeholders": {
+            "selected": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardDetailRestoreTasks": "Khôi phục ({count})",
+    "@taskBoardDetailRestoreTasks": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardDetailDeleteTasks": "Xóa ({count})",
+    "@taskBoardDetailDeleteTasks": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardDetailFromList": "từ: {list}",
+    "@taskBoardDetailFromList": {
+        "placeholders": {
+            "list": {
+                "type": "String"
+            }
+        }
+    },
+    "taskBoardDetailDeletedAgo": "Đã xóa {time}",
+    "@taskBoardDetailDeletedAgo": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "taskBoardDetailPriorityCritical": "Nghiêm trọng",
+    "taskBoardDetailPriorityHigh": "Cao",
+    "taskBoardDetailPriorityNormal": "Bình thường",
+    "taskBoardDetailPriorityLow": "Thấp",
+    "taskBoardDetailPoints": "{count} điểm",
+    "@taskBoardDetailPoints": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardDetailNProjects": "{count} dự án",
+    "@taskBoardDetailNProjects": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "taskBoardDetailNoMoveTargets": "Không có danh sách khác để di chuyển công việc này.",
     "taskBoardDetailBoardActions": "Thao tác bảng",
     "taskBoardDetailManageBoardLayout": "Quản lý bố cục bảng",
@@ -699,6 +778,12 @@
     "taskBoardDetailDeleteList": "Xóa danh sách",
     "taskBoardDetailDeleteListTitle": "Xóa danh sách?",
     "taskBoardDetailDeleteListDescription": "Bạn có chắc chắn muốn xóa danh sách này không? Tất cả công việc trong danh sách này cũng sẽ bị xóa. Hành động này không thể hoàn tác.",
+    "taskBoardDetailDeleteTask": "Xóa công việc",
+    "taskBoardDetailDeleteTaskForever": "Xóa vĩnh viễn công việc",
+    "taskBoardDetailDeleteTaskForeverDescription": "Xóa vĩnh viễn công việc này khỏi thùng rác? Hành động này không thể hoàn tác.",
+    "taskBoardDetailDeleteForever": "Xóa vĩnh viễn",
+    "taskBoardDetailDeleteTaskTitle": "Xóa công việc?",
+    "taskBoardDetailDeleteTaskDescription": "Di chuyển công việc này vào thùng rác?",
     "taskBoardDetailMoveListToStatus": "Di chuyển danh sách sang trạng thái",
     "taskBoardDetailCannotMoveToClosedStatus": "Không thể di chuyển danh sách đến hoặc khỏi trạng thái đã đóng",
     "taskBoardDetailCannotCreateMoreClosedLists": "Mỗi bảng chỉ được phép có một danh sách đã đóng.",

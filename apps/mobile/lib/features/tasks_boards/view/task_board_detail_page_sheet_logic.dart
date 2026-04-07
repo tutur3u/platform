@@ -619,16 +619,6 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
       ),
     );
     await state._closeEditor();
-  } on ApiException catch (error) {
-    if (!state.mounted || !toastContext.mounted) return;
-    shad.showToast(
-      context: toastContext,
-      builder: (context, overlay) => shad.Alert.destructive(
-        content: Text(
-          error.message.trim().isEmpty ? fallbackErrorMessage : error.message,
-        ),
-      ),
-    );
   } on Object catch (error) {
     final message = error.toString().trim();
     if (!state.mounted || !toastContext.mounted) return;
@@ -707,6 +697,71 @@ Future<void> _moveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
   } finally {
     if (state.mounted) {
       state._updateState(() => state._isMoving = false);
+    }
+  }
+}
+
+Future<void> _deleteTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
+  final task = state.widget.task;
+  if (task == null) return;
+
+  final toastContext = Navigator.of(state.context, rootNavigator: true).context;
+  final fallbackErrorMessage = state.context.l10n.commonSomethingWentWrong;
+
+  final deleted =
+      await shad.showDialog<bool>(
+        context: state.context,
+        builder: (_) => AsyncDeleteConfirmationDialog(
+          title: state.context.l10n.taskBoardDetailDeleteTaskTitle,
+          message: state.context.l10n.taskBoardDetailDeleteTaskDescription,
+          cancelLabel: state.context.l10n.commonCancel,
+          confirmLabel: state.context.l10n.taskBoardDetailDeleteTask,
+          toastContext: toastContext,
+          onConfirm: () async {
+            await state.context.read<TaskBoardDetailCubit>().deleteTask(
+              taskId: task.id,
+            );
+          },
+        ),
+      ) ??
+      false;
+
+  if (!deleted || !state.mounted) {
+    return;
+  }
+
+  state._updateState(() => state._isDeleting = true);
+  try {
+    if (!toastContext.mounted) return;
+    shad.showToast(
+      context: toastContext,
+      builder: (context, overlay) => shad.Alert(
+        content: Text(context.l10n.taskBoardDetailTaskDeleted),
+      ),
+    );
+    await state._closeEditor();
+  } on ApiException catch (error) {
+    if (!state.mounted || !toastContext.mounted) return;
+    shad.showToast(
+      context: toastContext,
+      builder: (context, overlay) => shad.Alert.destructive(
+        content: Text(
+          error.message.trim().isEmpty ? fallbackErrorMessage : error.message,
+        ),
+      ),
+    );
+  } on Object catch (error) {
+    final message = error.toString().trim();
+    if (!state.mounted || !toastContext.mounted) return;
+    shad.showToast(
+      context: toastContext,
+      builder: (context, overlay) => shad.Alert.destructive(
+        content: Text(message.isEmpty ? fallbackErrorMessage : message),
+      ),
+    );
+  } finally {
+    if (state.mounted) {
+      state._updateState(() => state._isDeleting = false);
     }
   }
 }
