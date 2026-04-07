@@ -21,6 +21,7 @@ import 'package:mobile/features/finance/view/transaction_list_page.dart';
 import 'package:mobile/features/finance/view/wallet_detail_page.dart';
 import 'package:mobile/features/finance/view/wallets_page.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
+import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/inventory/view/inventory_audit_logs_page.dart';
 import 'package:mobile/features/inventory/view/inventory_checkout_page.dart';
 import 'package:mobile/features/inventory/view/inventory_manage_page.dart';
@@ -82,16 +83,22 @@ DateTime? _parseHistoryDate(String? value) {
 GoRouter createAppRouter(
   AuthCubit authCubit,
   WorkspaceCubit workspaceCubit,
+  InventoryAccessCubit inventoryAccessCubit,
   AppTabCubit appTabCubit, {
   String? initialLocation,
 }) {
   return GoRouter(
     debugLogDiagnostics: true,
     initialLocation: initialLocation ?? Routes.home,
-    refreshListenable: _AppRefreshNotifier(authCubit, workspaceCubit),
+    refreshListenable: _AppRefreshNotifier(
+      authCubit,
+      workspaceCubit,
+      inventoryAccessCubit,
+    ),
     redirect: (context, state) {
       final authState = authCubit.state;
       final wsState = workspaceCubit.state;
+      final inventoryAccessState = inventoryAccessCubit.state;
 
       if (kDebugMode) {
         debugPrint(
@@ -159,6 +166,13 @@ GoRouter createAppRouter(
       // Personal workspace cannot access timer requests page.
       if (shouldRedirectPersonalTimerRequests(state.matchedLocation, wsState)) {
         return Routes.timer;
+      }
+
+      if (Routes.miniAppRootForLocation(state.matchedLocation) ==
+              Routes.inventory &&
+          (inventoryAccessState.status != InventoryAccessStatus.loaded ||
+              !inventoryAccessState.enabled)) {
+        return Routes.apps;
       }
 
       // On workspace-select but already has a workspace → go home
@@ -386,7 +400,11 @@ GoRouter createAppRouter(
 /// Notifies [GoRouter] when auth or workspace state changes so it can
 /// re-evaluate redirects.
 class _AppRefreshNotifier extends ChangeNotifier {
-  _AppRefreshNotifier(AuthCubit authCubit, WorkspaceCubit workspaceCubit) {
+  _AppRefreshNotifier(
+    AuthCubit authCubit,
+    WorkspaceCubit workspaceCubit,
+    InventoryAccessCubit inventoryAccessCubit,
+  ) {
     _authSub = authCubit.stream.listen((state) {
       if (kDebugMode) {
         debugPrint('Router refresh: auth=${state.status}');
@@ -403,15 +421,20 @@ class _AppRefreshNotifier extends ChangeNotifier {
       }
       notifyListeners();
     });
+    _inventoryAccessSub = inventoryAccessCubit.stream.listen((_) {
+      notifyListeners();
+    });
   }
 
   late final StreamSubscription<AuthState> _authSub;
   late final StreamSubscription<WorkspaceState> _wsSub;
+  late final StreamSubscription<InventoryAccessState> _inventoryAccessSub;
 
   @override
   Future<void> dispose() async {
     await _authSub.cancel();
     await _wsSub.cancel();
+    await _inventoryAccessSub.cancel();
     super.dispose();
   }
 }

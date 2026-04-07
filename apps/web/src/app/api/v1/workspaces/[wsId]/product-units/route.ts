@@ -4,6 +4,10 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import {
+  inventoryNotFoundResponse,
+  isInventoryEnabled,
+} from '@/lib/inventory/access';
 
 interface Params {
   params: Promise<{
@@ -15,6 +19,9 @@ export async function GET(req: Request, { params }: Params) {
   const { wsId: id } = await params;
   const supabase = await createClient(req);
   const wsId = await normalizeWorkspaceId(id, supabase);
+  if (!(await isInventoryEnabled(wsId))) {
+    return inventoryNotFoundResponse();
+  }
 
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req });
@@ -48,6 +55,9 @@ export async function POST(req: Request, { params }: Params) {
   const { wsId: id } = await params;
   const supabase = await createClient(req);
   const wsId = await normalizeWorkspaceId(id, supabase);
+  if (!(await isInventoryEnabled(wsId))) {
+    return inventoryNotFoundResponse();
+  }
 
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req });

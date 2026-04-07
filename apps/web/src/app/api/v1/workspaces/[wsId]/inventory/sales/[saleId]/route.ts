@@ -9,6 +9,10 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  inventoryNotFoundResponse,
+  isInventoryEnabled,
+} from '@/lib/inventory/access';
 import { getInventoryActorContext } from '@/lib/inventory/actor';
 import {
   createInventoryAuditLog,
@@ -512,6 +516,9 @@ export async function GET(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
   const wsId = await normalizeWorkspaceId(id, supabase);
+  if (!(await isInventoryEnabled(wsId))) {
+    return inventoryNotFoundResponse();
+  }
   const permissions = await getPermissions({ wsId: id, request: req });
 
   if (!permissions) {
@@ -544,6 +551,9 @@ export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
   const wsId = await normalizeWorkspaceId(id, supabase);
+  if (!(await isInventoryEnabled(wsId))) {
+    return inventoryNotFoundResponse();
+  }
   const permissions = await getPermissions({ wsId: id, request: req });
 
   if (!permissions) {
@@ -875,6 +885,9 @@ export async function DELETE(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
   const wsId = await normalizeWorkspaceId(id, supabase);
+  if (!(await isInventoryEnabled(wsId))) {
+    return inventoryNotFoundResponse();
+  }
   const permissions = await getPermissions({ wsId: id, request: req });
 
   if (!permissions) {

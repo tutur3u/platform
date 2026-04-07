@@ -5,6 +5,7 @@ import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/calendar/view/calendar_page.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
+import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/inventory/view/inventory_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
@@ -62,6 +63,7 @@ class AppRegistry {
       pageBuilder: _pageInventory,
       miniAppNavItems: _inventoryMiniNav,
       isPinned: true,
+      isVisible: _showInventoryModule,
     ),
     AppModule(
       id: 'notifications',
@@ -272,6 +274,19 @@ class AppRegistry {
       (cubit) => cubit.state.currentWorkspace?.personal ?? false,
     );
     return !isPersonalWorkspace;
+  }
+
+  static bool _showInventoryModule(BuildContext context) {
+    final accessState = context
+        .select<InventoryAccessCubit?, InventoryAccessState?>(
+          (cubit) => cubit?.state,
+        );
+    if (accessState == null) {
+      return true;
+    }
+
+    return accessState.status == InventoryAccessStatus.loaded &&
+        accessState.enabled;
   }
 
   static bool _hideNotificationsFromAppsHub(BuildContext context) => false;

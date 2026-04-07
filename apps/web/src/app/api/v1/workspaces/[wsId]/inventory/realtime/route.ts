@@ -1,5 +1,9 @@
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import {
+  inventoryNotFoundResponse,
+  isInventoryEnabled,
+} from '@/lib/inventory/access';
 import { canViewInventoryDashboard } from '@/lib/inventory/permissions';
 import { isInventoryRealtimeEnabled } from '@/lib/inventory/realtime';
 
@@ -11,6 +15,9 @@ interface Params {
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
+  if (!(await isInventoryEnabled(wsId))) {
+    return inventoryNotFoundResponse();
+  }
   const permissions = await getPermissions({ wsId, request: req });
 
   if (!permissions) {

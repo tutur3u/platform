@@ -1,6 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import {
+  inventoryNotFoundResponse,
+  isInventoryEnabled,
+} from '@/lib/inventory/access';
 
 interface Params {
   params: Promise<{
@@ -11,6 +15,9 @@ interface Params {
 
 export async function PUT(req: Request, { params }: Params) {
   const { wsId, unitId: id } = await params;
+  if (!(await isInventoryEnabled(wsId))) {
+    return inventoryNotFoundResponse();
+  }
 
   // Check permissions
   const permissions = await getPermissions({ wsId });
@@ -46,6 +53,9 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(_: Request, { params }: Params) {
   const { wsId, unitId: id } = await params;
+  if (!(await isInventoryEnabled(wsId))) {
+    return inventoryNotFoundResponse();
+  }
 
   // Check permissions
   const permissions = await getPermissions({ wsId });

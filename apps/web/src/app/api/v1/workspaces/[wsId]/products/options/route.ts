@@ -7,6 +7,10 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import {
+  inventoryNotFoundResponse,
+  isInventoryEnabled,
+} from '@/lib/inventory/access';
 import { canViewInventoryCatalog } from '@/lib/inventory/permissions';
 
 interface Params {
@@ -21,6 +25,9 @@ export async function GET(request: Request, { params }: Params) {
     const supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
     const wsId = await normalizeWorkspaceId(id, supabase);
+    if (!(await isInventoryEnabled(wsId))) {
+      return inventoryNotFoundResponse();
+    }
 
     const {
       data: { user },

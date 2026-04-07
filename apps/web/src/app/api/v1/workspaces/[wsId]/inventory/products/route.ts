@@ -17,6 +17,10 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
+  inventoryNotFoundResponse,
+  isInventoryEnabled,
+} from '@/lib/inventory/access';
+import {
   canViewInventoryCatalog,
   canViewInventoryStock,
 } from '@/lib/inventory/permissions';
@@ -60,6 +64,9 @@ export async function GET(request: Request, { params }: Params) {
 
     // Resolve workspace ID
     const wsId = await normalizeWorkspaceId(id, supabase);
+    if (!(await isInventoryEnabled(wsId))) {
+      return inventoryNotFoundResponse();
+    }
 
     const {
       data: { user },
