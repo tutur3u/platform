@@ -3,6 +3,10 @@ import unzipper from 'unzipper';
 
 const PORT = Number(process.env.PORT || 8788);
 const SHARED_TOKEN = process.env.DRIVE_UNZIP_PROXY_SHARED_TOKEN || '';
+const MAX_ARCHIVE_DOWNLOAD_BYTES = 100 * 1024 * 1024;
+const MAX_ARCHIVE_ENTRIES = 2000;
+const MAX_EXTRACTED_ENTRY_BYTES = 50 * 1024 * 1024;
+const MAX_TOTAL_EXTRACTED_BYTES = 250 * 1024 * 1024;
 
 const MIME_TYPES = {
   '.csv': 'text/csv',
@@ -77,6 +81,14 @@ function joinArchivePath(prefix, value) {
 function contentTypeForFile(filePath) {
   const extension = path.extname(filePath).toLowerCase();
   return MIME_TYPES[extension] || 'application/octet-stream';
+}
+
+async function drainResponseBody(response) {
+  try {
+    await response.arrayBuffer();
+  } catch {
+    await response.body?.cancel?.().catch(() => {});
+  }
 }
 
 async function postExtractedEntry({
@@ -157,6 +169,7 @@ async function uploadExtractedFile({ body, contentType, uploadPayload }) {
   });
 
   if (!response.ok) {
+    await drainResponseBody(response);
     const fallbackHeaders = { ...headers };
     delete fallbackHeaders['Content-Type'];
 
@@ -185,11 +198,27 @@ async function extractArchive(payload) {
     throw new Error(`Failed to download ZIP source (${response.status})`);
   }
 
-  const archive = await unzipper.Open.buffer(
-    Buffer.from(await response.arrayBuffer())
-  );
+  const contentLength = Number(response.headers.get('content-length') || 0);
+  if (
+    Number.isFinite(contentLength) &&
+    contentLength > MAX_ARCHIVE_DOWNLOAD_BYTES
+  ) {
+    throw new Error('ZIP archive exceeds maximum allowed download size.');
+  }
+
+  const archiveBuffer = Buffer.from(await response.arrayBuffer());
+  if (archiveBuffer.byteLength > MAX_ARCHIVE_DOWNLOAD_BYTES) {
+    throw new Error('ZIP archive exceeds maximum allowed download size.');
+  }
+
+  const archive = await unzipper.Open.buffer(archiveBuffer);
+  if (archive.files.length > MAX_ARCHIVE_ENTRIES) {
+    throw new Error('ZIP archive contains too many entries.');
+  }
+
   let files = 0;
   let folders = 0;
+  let totalExtractedBytes = 0;
 
   for (const entry of archive.files) {
     const targetPath = joinArchivePath(payload.destinationPrefix, entry.path);
@@ -211,7 +240,31 @@ async function extractArchive(payload) {
       continue;
     }
 
+    const declaredEntrySize = Number(entry.uncompressedSize ?? 0);
+    if (
+      Number.isFinite(declaredEntrySize) &&
+      declaredEntrySize > MAX_EXTRACTED_ENTRY_BYTES
+    ) {
+      throw new Error(`ZIP entry "${entry.path}" exceeds the allowed size.`);
+    }
+
+    if (
+      Number.isFinite(declaredEntrySize) &&
+      totalExtractedBytes + declaredEntrySize > MAX_TOTAL_EXTRACTED_BYTES
+    ) {
+      throw new Error('Extracted archive exceeds the total allowed size.');
+    }
+
     const body = await entry.buffer();
+    if (body.byteLength > MAX_EXTRACTED_ENTRY_BYTES) {
+      throw new Error(`ZIP entry "${entry.path}" exceeds the allowed size.`);
+    }
+
+    totalExtractedBytes += body.byteLength;
+    if (totalExtractedBytes > MAX_TOTAL_EXTRACTED_BYTES) {
+      throw new Error('Extracted archive exceeds the total allowed size.');
+    }
+
     const contentType = contentTypeForFile(entry.path);
     const uploadPayload = await requestExtractedFileUpload({
       callbackToken: payload.callbackToken,

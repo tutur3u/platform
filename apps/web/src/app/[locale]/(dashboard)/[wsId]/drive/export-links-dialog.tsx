@@ -55,8 +55,31 @@ function createLoaderManifest(data: WorkspaceStorageExportLinksResponse) {
 }
 
 async function copyText(value: string, successMessage: string) {
-  await navigator.clipboard.writeText(value);
-  toast.success(successMessage);
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      toast.success(successMessage);
+      return;
+    }
+  } catch {}
+
+  const fallback = document.createElement('textarea');
+  fallback.value = value;
+  fallback.setAttribute('readonly', '');
+  fallback.style.position = 'fixed';
+  fallback.style.opacity = '0';
+  document.body.appendChild(fallback);
+  fallback.select();
+
+  try {
+    if (!document.execCommand('copy')) {
+      throw new Error('Clipboard copy failed');
+    }
+
+    toast.success(successMessage);
+  } finally {
+    document.body.removeChild(fallback);
+  }
 }
 
 export function WorkspaceStorageExportLinksDialog({

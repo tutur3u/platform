@@ -121,11 +121,12 @@ export async function POST(
     const hasAllowedMimeType = !!file.type && ALLOWED_MIME_TYPES.has(file.type);
     const hasGenericMimeType =
       !!file.type && GENERIC_ALLOWED_MIME_TYPES.has(file.type);
+    const hasExplicitMimeType = !!file.type;
 
     const isValid =
       (hasAllowedExtension && (hasAllowedMimeType || hasGenericMimeType)) ||
       hasAllowedMimeType ||
-      hasAllowedExtension;
+      (!hasExplicitMimeType && hasAllowedExtension);
 
     if (!isValid) {
       return NextResponse.json(

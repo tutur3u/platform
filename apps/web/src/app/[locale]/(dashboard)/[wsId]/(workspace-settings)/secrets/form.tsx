@@ -12,7 +12,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -64,18 +64,27 @@ export default function SecretForm({
       : secretScope === 'non-rate-limits'
         ? NON_RATE_LIMIT_SECRETS
         : KNOWN_SECRETS;
+  const initialSecretName = data?.name || initialValues?.name || '';
+  const initialSelectedSecret = availableSecrets.find(
+    (secret) => secret.name === initialSecretName
+  );
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id,
-      name: data?.name || initialValues?.name || '',
-      value: data?.value || initialValues?.value || (data?.id ? '' : 'true'),
+      name: initialSecretName,
+      value:
+        data?.value ||
+        initialValues?.value ||
+        initialSelectedSecret?.defaultValue ||
+        '',
     },
   });
 
+  const watchedName = useWatch({ control: form.control, name: 'name' });
   const selectedSecret = availableSecrets.find(
-    (secret) => secret.name === form.watch('name')
+    (secret) => secret.name === watchedName
   );
   const valueOptions =
     selectedSecret?.options ??
@@ -177,9 +186,12 @@ export default function SecretForm({
                         );
 
                         if (secret?.defaultValue) {
-                          form.setValue('value', secret.defaultValue, {
-                            shouldDirty: true,
-                          });
+                          const currentValue = form.getValues('value');
+                          if (!currentValue || currentValue === 'true') {
+                            form.setValue('value', secret.defaultValue, {
+                              shouldDirty: true,
+                            });
+                          }
                         }
                       }}
                       onCreate={(val) => {

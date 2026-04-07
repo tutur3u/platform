@@ -37,10 +37,16 @@ export interface WorkspaceStorageAutoExtractResult {
   folders?: number;
 }
 
+export interface WorkspaceStorageFinalizeStatus {
+  success: boolean;
+  error?: string;
+}
+
 export interface WorkspaceStorageUploadResult {
   path: string;
   fullPath: string | null;
   autoExtract?: WorkspaceStorageAutoExtractResult;
+  finalize?: WorkspaceStorageFinalizeStatus;
 }
 
 interface WorkspaceStorageMigrationResponse {
@@ -225,19 +231,34 @@ export async function uploadWorkspaceStorageFile(
     uploadUrlResult,
     fetchImpl,
     async (result) => {
-      const finalized = await finalizeWorkspaceStorageUpload(
-        workspaceId,
-        {
-          path: result.path,
-          contentType: file.type || 'application/octet-stream',
-          originalFilename: file.name,
-        },
-        clientOptions
-      );
+      try {
+        const finalized = await finalizeWorkspaceStorageUpload(
+          workspaceId,
+          {
+            path: result.path,
+            contentType: file.type || 'application/octet-stream',
+            originalFilename: file.name,
+          },
+          clientOptions
+        );
 
-      return finalized.autoExtract
-        ? { autoExtract: finalized.autoExtract }
-        : {};
+        return {
+          autoExtract: finalized.autoExtract,
+          finalize: {
+            success: true,
+          },
+        };
+      } catch (error) {
+        return {
+          finalize: {
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to finalize upload',
+          },
+        };
+      }
     }
   );
 }

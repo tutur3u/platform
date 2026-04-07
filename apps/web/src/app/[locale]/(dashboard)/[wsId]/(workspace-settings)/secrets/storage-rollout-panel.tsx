@@ -501,6 +501,7 @@ export function StorageRolloutPanel({
                   }
                   disabled={
                     migrationMutation.isPending ||
+                    !rolloutState.backends.supabase.available ||
                     !rolloutState.backends.r2.available
                   }
                 >
@@ -526,6 +527,7 @@ export function StorageRolloutPanel({
                   }
                   disabled={
                     migrationMutation.isPending ||
+                    !rolloutState.backends.supabase.available ||
                     !rolloutState.backends.r2.available
                   }
                 >

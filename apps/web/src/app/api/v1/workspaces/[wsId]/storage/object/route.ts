@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -50,9 +51,17 @@ export async function DELETE(
   const relativePath = rawPath.startsWith(prefix)
     ? rawPath.substring(prefix.length)
     : rawPath;
+  const sanitizedPath = sanitizePath(relativePath);
+
+  if (!sanitizedPath) {
+    return NextResponse.json(
+      { message: 'Invalid request path' },
+      { status: 400 }
+    );
+  }
 
   try {
-    await deleteWorkspaceStorageObjectByPath(normalizedWsId, relativePath);
+    await deleteWorkspaceStorageObjectByPath(normalizedWsId, sanitizedPath);
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof WorkspaceStorageError) {

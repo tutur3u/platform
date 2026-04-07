@@ -53,9 +53,9 @@ export default async function WorkspaceStorageObjectsPage({
 
         if (withoutPermission('manage_drive')) redirect(`/${wsId}`);
 
-        const { data } = await getData(wsId, await searchParams);
+        const { data, total } = await getData(wsId, await searchParams);
         const storageOverview = await getWorkspaceStorageOverview(wsId);
-        const count = storageOverview.fileCount ?? 0;
+        const workspaceFileCount = storageOverview.fileCount ?? 0;
         const totalSize = storageOverview.totalSize ?? 0;
         const largestFile = storageOverview.largestFile;
         const smallestFile = storageOverview.smallestFile;
@@ -149,7 +149,7 @@ export default async function WorkspaceStorageObjectsPage({
                     {t('ws-storage-objects.total_files')}
                   </h3>
                   <div className="mt-2 font-bold text-3xl text-foreground">
-                    {count}
+                    {workspaceFileCount}
                   </div>
                   <p className="mt-1 text-muted-foreground text-xs">
                     {t('ws-storage-objects.files_in_workspace')}
@@ -210,7 +210,7 @@ export default async function WorkspaceStorageObjectsPage({
                 ws_id: wsId,
               }))}
               path={path}
-              count={count ?? 0}
+              count={total}
             />
           </>
         );
@@ -223,11 +223,16 @@ async function getData(
   wsId: string,
   { q, page = '1', pageSize = '10', path = '' }: Awaited<Props['searchParams']>
 ) {
+  const parsedPage = Math.max(1, Number.parseInt(page, 10) || 1);
+  const parsedPageSize = Math.max(
+    1,
+    Math.min(100, Number.parseInt(pageSize, 10) || 10)
+  );
   const result = await listWorkspaceStorageDirectory(wsId, {
     path,
     search: q?.trim(),
-    limit: parseInt(pageSize, 10),
-    offset: (parseInt(page, 10) - 1) * parseInt(pageSize, 10),
+    limit: parsedPageSize,
+    offset: (parsedPage - 1) * parsedPageSize,
     sortBy: 'created_at',
     sortOrder: 'desc',
   });
@@ -237,7 +242,9 @@ async function getData(
       (object) =>
         !!object.name && !object.name.match(EMPTY_FOLDER_PLACEHOLDER_NAME)
     ),
+    total: result.total,
   } as {
     data: StorageObject[];
+    total: number;
   };
 }

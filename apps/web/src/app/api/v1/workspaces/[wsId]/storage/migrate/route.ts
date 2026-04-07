@@ -6,10 +6,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  WORKSPACE_STORAGE_PROVIDER_OPTIONS,
-  type WorkspaceStorageProvider,
-} from '@/lib/workspace-storage-config';
+import { WORKSPACE_STORAGE_PROVIDER_OPTIONS } from '@/lib/workspace-storage-config';
 import { migrateWorkspaceStorageBetweenProviders } from '@/lib/workspace-storage-migration';
 import { WorkspaceStorageError } from '@/lib/workspace-storage-provider';
 
@@ -26,8 +23,7 @@ function canManageSecretsForWorkspace(
   return (
     workspacePermissions?.containsPermission('manage_workspace_secrets') ||
     rootPermissions?.containsPermission('manage_workspace_roles') ||
-    rootPermissions?.containsPermission('manage_workspace_secrets') ||
-    false
+    rootPermissions?.containsPermission('manage_workspace_secrets')
   );
 }
 
@@ -81,9 +77,9 @@ export async function POST(
     const result = await migrateWorkspaceStorageBetweenProviders(
       normalizedWsId,
       {
-        sourceProvider: parsed.data.sourceProvider as WorkspaceStorageProvider,
-        targetProvider: parsed.data.targetProvider as WorkspaceStorageProvider,
-        overwrite: parsed.data.overwrite ?? true,
+        sourceProvider: parsed.data.sourceProvider,
+        targetProvider: parsed.data.targetProvider,
+        overwrite: parsed.data.overwrite ?? false,
       }
     );
 

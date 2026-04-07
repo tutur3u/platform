@@ -198,6 +198,10 @@ export function StorageObjectForm({
       message?: string;
       originalName: string;
     }> = [];
+    const finalizeResults: Array<{
+      error?: string;
+      originalName: string;
+    }> = [];
 
     await Promise.all(
       formData.files.map(async (file) => {
@@ -237,6 +241,13 @@ export function StorageObjectForm({
               originalName: file.name,
             });
           }
+
+          if (!result.finalize?.success && result.finalize?.error) {
+            finalizeResults.push({
+              error: result.finalize.error,
+              originalName: file.name,
+            });
+          }
         } catch {
           hasErrors = true;
           setFileStatuses((prev) => ({
@@ -254,21 +265,21 @@ export function StorageObjectForm({
     );
 
     if (!hasErrors) {
-      const failedAutoExtract = autoExtractResults.find(
-        (result) => result.status && result.status !== 'completed'
-      );
-      const completedAutoExtract = autoExtractResults.find(
-        (result) => result.status === 'completed'
-      );
+      for (const result of finalizeResults) {
+        toast.warning(`${result.originalName}: ${result.error}`);
+      }
 
-      if (failedAutoExtract?.message) {
-        toast.warning(
-          `${failedAutoExtract.originalName}: ${failedAutoExtract.message}`
-        );
-      } else if (completedAutoExtract?.message) {
-        toast.success(
-          `${completedAutoExtract.originalName}: ${completedAutoExtract.message}`
-        );
+      for (const result of autoExtractResults) {
+        if (!result.status || result.status === 'skipped' || !result.message) {
+          continue;
+        }
+
+        if (result.status === 'completed') {
+          toast.success(`${result.originalName}: ${result.message}`);
+          continue;
+        }
+
+        toast.warning(`${result.originalName}: ${result.message}`);
       }
 
       onComplete?.();

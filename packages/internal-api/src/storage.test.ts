@@ -204,6 +204,43 @@ describe('workspace task upload helpers', () => {
         status: 'disabled',
         message: 'ZIP auto extraction is disabled for this workspace.',
       },
+      finalize: {
+        success: true,
+      },
+      path: 'documents/file.txt',
+      fullPath: 'ws-1/documents/file.txt',
+    });
+  });
+
+  it('keeps successful uploads successful when finalize fails', async () => {
+    const file = new File(['hello'], 'file.txt', { type: 'text/plain' });
+    const uploadFetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          signedUrl: 'https://upload.example.com/r2-signed',
+          path: 'documents/file.txt',
+          fullPath: 'ws-1/documents/file.txt',
+        })
+      )
+      .mockResolvedValueOnce({ ok: true, status: 200, text: async () => '' })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ message: 'Finalize failed' }),
+        text: async () => 'Finalize failed',
+      });
+
+    const result = await uploadWorkspaceStorageFile('ws-1', file, undefined, {
+      baseUrl: 'https://internal.example.com',
+      fetch: uploadFetchMock as unknown as typeof fetch,
+    });
+
+    expect(result).toEqual({
+      finalize: {
+        success: false,
+        error: 'Finalize failed',
+      },
       path: 'documents/file.txt',
       fullPath: 'ws-1/documents/file.txt',
     });

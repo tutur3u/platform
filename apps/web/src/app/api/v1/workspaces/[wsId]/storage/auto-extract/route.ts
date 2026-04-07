@@ -2,6 +2,7 @@ import { posix } from 'node:path';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { resolveWorkspaceStorageAutoExtractConfig } from '@/lib/workspace-storage-auto-extract';
 import {
   createWorkspaceStorageFolderObject,
@@ -17,6 +18,11 @@ function getBearerToken(request: Request) {
 
   return header.slice(7).trim();
 }
+
+const fileUploadPayloadSchema = z.object({
+  contentType: z.string().optional().default('application/octet-stream'),
+  size: z.number().optional(),
+});
 
 export async function POST(
   request: Request,
@@ -76,20 +82,13 @@ export async function POST(
         );
       }
 
-      const contentType =
-        typeof payload === 'object' &&
-        payload !== null &&
-        'contentType' in payload &&
-        typeof payload.contentType === 'string'
-          ? payload.contentType
-          : 'application/octet-stream';
-      const size =
-        typeof payload === 'object' &&
-        payload !== null &&
-        'size' in payload &&
-        typeof payload.size === 'number'
-          ? payload.size
-          : undefined;
+      const parsed = fileUploadPayloadSchema.safeParse(payload);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { message: 'Invalid request body' },
+          { status: 400 }
+        );
+      }
 
       const parentPath = posix.dirname(sanitizedPath);
       const fileName = posix.basename(sanitizedPath);
@@ -99,8 +98,8 @@ export async function POST(
         {
           path: parentPath === '.' ? '' : parentPath,
           upsert: true,
-          contentType,
-          size,
+          contentType: parsed.data.contentType,
+          size: parsed.data.size,
         }
       );
 

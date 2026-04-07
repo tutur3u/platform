@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { posix } from 'node:path';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
@@ -12,6 +12,8 @@ interface WorkspaceStorageExportTokenPayload {
   v: number;
   wsId: string;
   folderPath: string;
+  iat: number;
+  nonce: string;
 }
 
 function encodeBase64Url(value: string) {
@@ -24,9 +26,7 @@ function decodeBase64Url(value: string) {
 
 function getExportSigningSecret() {
   const secret =
-    process.env.SUPABASE_SECRET_KEY?.trim() ||
-    process.env.CRON_SECRET?.trim() ||
-    process.env.VERCEL_CRON_SECRET?.trim() ||
+    process.env.DRIVE_EXPORT_SIGNING_SECRET?.trim() ||
     (DEV_MODE ? 'dev-drive-export-links-secret' : '');
 
   if (!secret) {
@@ -80,6 +80,8 @@ export function createWorkspaceStorageExportToken(input: {
     v: EXPORT_LINK_VERSION,
     wsId: input.wsId,
     folderPath: sanitizedFolderPath,
+    iat: Math.floor(Date.now() / 1000),
+    nonce: randomUUID(),
   };
   const encodedPayload = encodeBase64Url(JSON.stringify(payload));
   const signature = signPayload(encodedPayload);
@@ -118,7 +120,9 @@ export function verifyWorkspaceStorageExportToken(token: string) {
   if (
     parsed.v !== EXPORT_LINK_VERSION ||
     typeof parsed.wsId !== 'string' ||
-    typeof parsed.folderPath !== 'string'
+    typeof parsed.folderPath !== 'string' ||
+    typeof parsed.iat !== 'number' ||
+    typeof parsed.nonce !== 'string'
   ) {
     throw new WorkspaceStorageError('Invalid export token.', 401);
   }

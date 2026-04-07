@@ -74,7 +74,11 @@ export async function POST(
       await resolveWorkspaceStorageProvider(normalizedWsId);
     const objects = await listWorkspaceStorageRawObjectsForProvider(
       normalizedWsId,
-      resolvedProvider.provider
+      resolvedProvider.provider,
+      {
+        pathPrefix: sanitizedPath,
+        limit: 501,
+      }
     );
     const prefix = `${sanitizedPath}/`;
     const files = objects

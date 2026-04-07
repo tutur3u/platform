@@ -43,7 +43,7 @@ export interface WorkspaceStorageSecretDefinition {
   rolloutRequired?: boolean;
 }
 
-export const WORKSPACE_STORAGE_PROVIDER_SECRET_DEFINITIONS: WorkspaceStorageSecretDefinition[] =
+export const WORKSPACE_STORAGE_PROVIDER_SECRET_DEFINITIONS: readonly WorkspaceStorageSecretDefinition[] =
   [
     {
       name: DRIVE_STORAGE_PROVIDER_SECRET,
@@ -93,9 +93,9 @@ export const WORKSPACE_STORAGE_PROVIDER_SECRET_DEFINITIONS: WorkspaceStorageSecr
       sensitive: true,
       rolloutRequired: true,
     },
-  ];
+  ] as const;
 
-export const WORKSPACE_STORAGE_AUTO_EXTRACT_SECRET_DEFINITIONS: WorkspaceStorageSecretDefinition[] =
+export const WORKSPACE_STORAGE_AUTO_EXTRACT_SECRET_DEFINITIONS: readonly WorkspaceStorageSecretDefinition[] =
   [
     {
       name: DRIVE_AUTO_EXTRACT_ZIP_SECRET,
@@ -122,10 +122,10 @@ export const WORKSPACE_STORAGE_AUTO_EXTRACT_SECRET_DEFINITIONS: WorkspaceStorage
       placeholder: 'Shared proxy token',
       sensitive: true,
     },
-  ];
+  ] as const;
 
-export const WORKSPACE_STORAGE_SECRET_DEFINITIONS: WorkspaceStorageSecretDefinition[] =
+export const WORKSPACE_STORAGE_SECRET_DEFINITIONS: readonly WorkspaceStorageSecretDefinition[] =
   [
     ...WORKSPACE_STORAGE_PROVIDER_SECRET_DEFINITIONS,
     ...WORKSPACE_STORAGE_AUTO_EXTRACT_SECRET_DEFINITIONS,
-  ];
+  ] as const;

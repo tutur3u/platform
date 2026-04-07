@@ -51,8 +51,8 @@ function resolveAutoExtractCallbackOrigin(requestOrigin: string) {
     resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
     resolveConfiguredOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
     resolveConfiguredOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
-    (DEV_MODE ? 'http://localhost:7803' : 'https://tuturuuu.com') ||
-    requestOrigin
+    requestOrigin ||
+    (DEV_MODE ? 'http://localhost:7803' : 'https://tuturuuu.com')
   );
 }
 

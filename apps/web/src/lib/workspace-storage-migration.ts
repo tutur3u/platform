@@ -185,20 +185,11 @@ export async function migrateWorkspaceStorageBetweenProviders(
           new Uint8Array(0),
           {
             contentType: 'text/plain',
-            upsert: options.overwrite ?? true,
+            upsert: options.overwrite === true,
             skipCapacityCheck: true,
           }
         );
       } catch (error) {
-        if (
-          error instanceof WorkspaceStorageError &&
-          error.status === 409 &&
-          options.overwrite
-        ) {
-          skipped += 1;
-          continue;
-        }
-
         if (error instanceof WorkspaceStorageError && error.status === 409) {
           skipped += 1;
           continue;
@@ -228,7 +219,7 @@ export async function migrateWorkspaceStorageBetweenProviders(
             downloaded.contentType ||
             object.contentType ||
             'application/octet-stream',
-          upsert: options.overwrite ?? true,
+          upsert: options.overwrite === true,
           skipCapacityCheck: true,
         }
       );
