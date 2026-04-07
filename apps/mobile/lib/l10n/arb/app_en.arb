@@ -752,7 +752,7 @@
             }
         }
     },
-    "taskBoardDetailNProjects": "{count} projects",
+    "taskBoardDetailNProjects": "{count, plural, one{{count} project} other{{count} projects}}",
     "@taskBoardDetailNProjects": {
         "placeholders": {
             "count": {

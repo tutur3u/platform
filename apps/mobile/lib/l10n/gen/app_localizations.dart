@@ -3382,7 +3382,7 @@ abstract class AppLocalizations {
   /// No description provided for @taskBoardDetailNProjects.
   ///
   /// In en, this message translates to:
-  /// **'{count} projects'**
+  /// **'{count, plural, one{{count} project} other{{count} projects}}'**
   String taskBoardDetailNProjects(int count);
 
   /// No description provided for @taskBoardDetailNoMoveTargets.

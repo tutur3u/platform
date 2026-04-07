@@ -25,6 +25,9 @@ class RecycleBinTaskRow extends StatelessWidget {
     final taskName = task.name?.trim().isNotEmpty == true
         ? task.name!.trim()
         : context.l10n.taskBoardDetailUntitledTask;
+    final firstProjectName = task.projects.isNotEmpty
+        ? task.projects.first.name?.trim()
+        : null;
     final priorityConfig = _getPriorityConfig(context, task.priority);
 
     return Opacity(
@@ -101,8 +104,11 @@ class RecycleBinTaskRow extends StatelessWidget {
                         ),
                       if (task.projects.isNotEmpty)
                         _buildBadge(
-                          label: task.projects.length == 1
-                              ? (task.projects.first.name ?? '')
+                          label:
+                              task.projects.length == 1 &&
+                                  firstProjectName != null &&
+                                  firstProjectName.isNotEmpty
+                              ? firstProjectName
                               : context.l10n.taskBoardDetailNProjects(
                                   task.projects.length,
                                 ),

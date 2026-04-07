@@ -1748,7 +1748,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String taskBoardDetailNProjects(int count) {
-    return '$count projects';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count projects',
+      one: '$count project',
+    );
+    return '$_temp0';
   }
 
   @override
