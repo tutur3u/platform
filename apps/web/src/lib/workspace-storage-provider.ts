@@ -19,7 +19,11 @@ import {
   EMPTY_FOLDER_PLACEHOLDER_NAME,
   type StorageObject,
 } from '@tuturuuu/types/primitives/StorageObject';
-import { sanitizePath } from '@tuturuuu/utils/storage-path';
+import {
+  sanitizeFilename,
+  sanitizeFolderName,
+  sanitizePath,
+} from '@tuturuuu/utils/storage-path';
 import { getSecrets } from '@tuturuuu/utils/workspace-helper';
 import { getWorkspaceStorageMetrics } from './storage-analytics';
 import {
@@ -138,6 +142,26 @@ function normalizeRelativePath(path = '') {
   }
 
   return sanitizedPath;
+}
+
+function normalizeFilename(filename: string) {
+  const sanitizedFilename = sanitizeFilename(filename);
+
+  if (!sanitizedFilename) {
+    throw new WorkspaceStorageError('Invalid filename', 400);
+  }
+
+  return sanitizedFilename;
+}
+
+function normalizeEntryName(name: string) {
+  const sanitizedName = sanitizeFolderName(name);
+
+  if (!sanitizedName) {
+    throw new WorkspaceStorageError('Invalid entry name', 400);
+  }
+
+  return sanitizedName;
 }
 
 function buildWorkspaceStorageKey(wsId: string, path = '') {
@@ -512,7 +536,12 @@ async function getR2Overview(
 
 async function ensureWorkspaceCapacity(
   wsId: string,
-  incomingBytes?: number
+  incomingBytes?: number,
+  options?: {
+    provider?: WorkspaceStorageProvider;
+    fullPath?: string;
+    upsert?: boolean;
+  }
 ): Promise<void> {
   if (
     incomingBytes === undefined ||
@@ -530,8 +559,57 @@ async function ensureWorkspaceCapacity(
   }
 
   const overview = await getWorkspaceStorageOverview(wsId);
+  let existingBytes = 0;
 
-  if (overview.totalSize + incomingBytes > overview.storageLimit) {
+  if (options?.upsert && options.provider && options.fullPath) {
+    if (options.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
+      const config = await resolveWorkspaceStorageBackendConfig(
+        wsId,
+        options.provider
+      );
+
+      if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
+        try {
+          const response = await createR2Client(config).send(
+            new HeadObjectCommand({
+              Bucket: config.bucket,
+              Key: options.fullPath,
+            })
+          );
+          existingBytes = Number(response.ContentLength ?? 0);
+        } catch (error) {
+          if (!isNotFoundError(error)) {
+            throw error;
+          }
+        }
+      }
+    } else {
+      const supabase = await createDynamicAdminClient();
+      const { data, error } = await supabase
+        .schema('storage')
+        .from('objects')
+        .select('metadata')
+        .eq('bucket_id', 'workspaces')
+        .eq('name', options.fullPath)
+        .maybeSingle();
+
+      if (error) {
+        throw new WorkspaceStorageError(
+          error.message || 'Failed to inspect storage usage'
+        );
+      }
+
+      const metadata = (data?.metadata ?? {}) as {
+        size?: number | string | null;
+      };
+      existingBytes = toNumber(metadata.size);
+    }
+  }
+
+  if (
+    overview.totalSize - existingBytes + incomingBytes >
+    overview.storageLimit
+  ) {
     throw new WorkspaceStorageError(
       'Workspace storage limit exceeded. Please free up space or upgrade your plan.',
       413
@@ -962,10 +1040,6 @@ export async function uploadWorkspaceStorageFileDirectToProvider(
       );
     }
 
-    if (!options?.skipCapacityCheck) {
-      await ensureWorkspaceCapacity(wsId, buffer.byteLength);
-    }
-
     const client = createR2Client(config);
 
     if (!(options?.upsert ?? false)) {
@@ -976,6 +1050,14 @@ export async function uploadWorkspaceStorageFileDirectToProvider(
           409
         );
       }
+    }
+
+    if (!options?.skipCapacityCheck) {
+      await ensureWorkspaceCapacity(wsId, buffer.byteLength, {
+        provider,
+        fullPath,
+        upsert: options?.upsert,
+      });
     }
 
     await client.send(
@@ -994,11 +1076,38 @@ export async function uploadWorkspaceStorageFileDirectToProvider(
     };
   }
 
-  if (!options?.skipCapacityCheck) {
-    await ensureWorkspaceCapacity(wsId, buffer.byteLength);
+  const supabase = await createDynamicAdminClient();
+  if (!(options?.upsert ?? false)) {
+    const { data: existingObject, error: existingObjectError } = await supabase
+      .schema('storage')
+      .from('objects')
+      .select('id')
+      .eq('bucket_id', 'workspaces')
+      .eq('name', fullPath)
+      .maybeSingle();
+
+    if (existingObjectError) {
+      throw new WorkspaceStorageError(
+        existingObjectError.message || 'Failed to inspect destination object'
+      );
+    }
+
+    if (existingObject) {
+      throw new WorkspaceStorageError(
+        'File already exists. Set upsert=true to overwrite.',
+        409
+      );
+    }
   }
 
-  const supabase = await createDynamicAdminClient();
+  if (!options?.skipCapacityCheck) {
+    await ensureWorkspaceCapacity(wsId, buffer.byteLength, {
+      provider,
+      fullPath,
+      upsert: options?.upsert,
+    });
+  }
+
   const { data, error } = await supabase.storage
     .from('workspaces')
     .upload(fullPath, buffer, {
@@ -1091,12 +1200,12 @@ export async function createWorkspaceStorageUploadPayload(
 ): Promise<WorkspaceStorageUploadPayload> {
   const config = await resolveWorkspaceStorageConfig(wsId);
   const relativePath = normalizeRelativePath(options?.path);
+  const sanitizedFilename = normalizeFilename(filename);
   const fullPath = relativePath
-    ? posix.join(wsId, relativePath, filename)
-    : posix.join(wsId, filename);
+    ? posix.join(wsId, relativePath, sanitizedFilename)
+    : posix.join(wsId, sanitizedFilename);
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
-    await ensureWorkspaceCapacity(wsId, options?.size);
     const client = createR2Client(config);
 
     if (!(options?.upsert ?? false)) {
@@ -1109,6 +1218,12 @@ export async function createWorkspaceStorageUploadPayload(
       }
     }
 
+    await ensureWorkspaceCapacity(wsId, options?.size, {
+      provider: config.provider,
+      fullPath,
+      upsert: options?.upsert,
+    });
+
     const signedUrl = await getSignedUrl(
       client,
       new PutObjectCommand({
@@ -1120,13 +1235,43 @@ export async function createWorkspaceStorageUploadPayload(
 
     return {
       signedUrl,
-      path: relativePath ? posix.join(relativePath, filename) : filename,
+      path: relativePath
+        ? posix.join(relativePath, sanitizedFilename)
+        : sanitizedFilename,
       fullPath,
     };
   }
 
-  await ensureWorkspaceCapacity(wsId, options?.size);
   const supabase = await createDynamicAdminClient();
+
+  if (!(options?.upsert ?? false)) {
+    const { data: existingObject, error: existingObjectError } = await supabase
+      .schema('storage')
+      .from('objects')
+      .select('id')
+      .eq('bucket_id', 'workspaces')
+      .eq('name', fullPath)
+      .maybeSingle();
+
+    if (existingObjectError) {
+      throw new WorkspaceStorageError(
+        existingObjectError.message || 'Failed to inspect destination object'
+      );
+    }
+
+    if (existingObject) {
+      throw new WorkspaceStorageError(
+        'File already exists. Set upsert=true to overwrite.',
+        409
+      );
+    }
+  }
+
+  await ensureWorkspaceCapacity(wsId, options?.size, {
+    provider: config.provider,
+    fullPath,
+    upsert: options?.upsert,
+  });
   const { data, error } = await supabase.storage
     .from('workspaces')
     .createSignedUploadUrl(fullPath, {
@@ -1140,7 +1285,9 @@ export async function createWorkspaceStorageUploadPayload(
   return {
     signedUrl: data.signedUrl,
     token: data.token,
-    path: relativePath ? posix.join(relativePath, filename) : filename,
+    path: relativePath
+      ? posix.join(relativePath, sanitizedFilename)
+      : sanitizedFilename,
     fullPath,
   };
 }
@@ -1171,9 +1318,15 @@ export async function createWorkspaceStorageFolderObject(
 ) {
   const config = await resolveWorkspaceStorageConfig(wsId);
   const relativePath = normalizeRelativePath(path);
+  const sanitizedFolderName = normalizeEntryName(folderName);
   const folderPath = relativePath
-    ? posix.join(wsId, relativePath, folderName, EMPTY_FOLDER_PLACEHOLDER_NAME)
-    : posix.join(wsId, folderName, EMPTY_FOLDER_PLACEHOLDER_NAME);
+    ? posix.join(
+        wsId,
+        relativePath,
+        sanitizedFolderName,
+        EMPTY_FOLDER_PLACEHOLDER_NAME
+      )
+    : posix.join(wsId, sanitizedFolderName, EMPTY_FOLDER_PLACEHOLDER_NAME);
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
     const client = createR2Client(config);
@@ -1192,7 +1345,9 @@ export async function createWorkspaceStorageFolderObject(
     );
 
     return {
-      path: relativePath ? posix.join(relativePath, folderName) : folderName,
+      path: relativePath
+        ? posix.join(relativePath, sanitizedFolderName)
+        : sanitizedFolderName,
       fullPath: folderPath,
       provider: WORKSPACE_STORAGE_PROVIDER_R2,
     };
@@ -1216,7 +1371,9 @@ export async function createWorkspaceStorageFolderObject(
   }
 
   return {
-    path: relativePath ? posix.join(relativePath, folderName) : folderName,
+    path: relativePath
+      ? posix.join(relativePath, sanitizedFolderName)
+      : sanitizedFolderName,
     fullPath: data.path,
     provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   };
@@ -1265,8 +1422,12 @@ export async function deleteWorkspaceStorageFolderByPath(
 ) {
   const config = await resolveWorkspaceStorageConfig(wsId);
   const folderPrefix = path
-    ? posix.join(wsId, normalizeRelativePath(path), folderName)
-    : posix.join(wsId, folderName);
+    ? posix.join(
+        wsId,
+        normalizeRelativePath(path),
+        normalizeEntryName(folderName)
+      )
+    : posix.join(wsId, normalizeEntryName(folderName));
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
     const client = createR2Client(config);
@@ -1318,8 +1479,8 @@ export async function deleteWorkspaceStorageFolderByPath(
 
   const supabase = await createDynamicAdminClient();
   const relativeFolderPrefix = path
-    ? posix.join(normalizeRelativePath(path), folderName)
-    : folderName;
+    ? posix.join(normalizeRelativePath(path), normalizeEntryName(folderName))
+    : normalizeEntryName(folderName);
   const paths = (
     await listWorkspaceStorageRawObjectsForProvider(
       wsId,
@@ -1365,12 +1526,18 @@ export async function renameWorkspaceStorageEntry(
 ) {
   const config = await resolveWorkspaceStorageConfig(wsId);
   const relativePath = normalizeRelativePath(options.path);
+  const currentName = options.isFolder
+    ? normalizeEntryName(options.currentName)
+    : normalizeFilename(options.currentName);
+  const newName = options.isFolder
+    ? normalizeEntryName(options.newName)
+    : normalizeFilename(options.newName);
   const currentBasePath = relativePath
-    ? posix.join(wsId, relativePath, options.currentName)
-    : posix.join(wsId, options.currentName);
+    ? posix.join(wsId, relativePath, currentName)
+    : posix.join(wsId, currentName);
   const nextBasePath = relativePath
-    ? posix.join(wsId, relativePath, options.newName)
-    : posix.join(wsId, options.newName);
+    ? posix.join(wsId, relativePath, newName)
+    : posix.join(wsId, newName);
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
     const client = createR2Client(config);
@@ -1473,11 +1640,11 @@ export async function renameWorkspaceStorageEntry(
 
   if (options.isFolder) {
     const currentRelativePrefix = relativePath
-      ? posix.join(relativePath, options.currentName)
-      : options.currentName;
+      ? posix.join(relativePath, currentName)
+      : currentName;
     const nextRelativePrefix = relativePath
-      ? posix.join(relativePath, options.newName)
-      : options.newName;
+      ? posix.join(relativePath, newName)
+      : newName;
     const existingObjects = await listWorkspaceStorageRawObjectsForProvider(
       wsId,
       WORKSPACE_STORAGE_PROVIDER_SUPABASE,

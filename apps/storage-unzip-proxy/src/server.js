@@ -228,6 +228,8 @@ async function uploadExtractedFile({ body, contentType, uploadPayload }) {
 
   if (!response.ok) {
     await drainResponseBody(response);
+    // Retry without Content-Type because some signed-upload backends
+    // require the retry request to omit headers that were not part of signing.
     const fallbackHeaders = { ...headers };
     delete fallbackHeaders['Content-Type'];
 

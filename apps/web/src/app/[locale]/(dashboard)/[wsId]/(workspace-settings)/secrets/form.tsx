@@ -68,17 +68,38 @@ export default function SecretForm({
   const initialSelectedSecret = availableSecrets.find(
     (secret) => secret.name === initialSecretName
   );
+  const normalizeSecretValue = (
+    secret: (typeof availableSecrets)[number] | undefined,
+    rawValue?: string
+  ) => {
+    const options =
+      secret?.options ??
+      (secret?.type === 'boolean' ? ['true', 'false'] : undefined);
+
+    if (!options) {
+      return rawValue ?? secret?.defaultValue ?? '';
+    }
+
+    if (rawValue && options.includes(rawValue)) {
+      return rawValue;
+    }
+
+    if (secret?.defaultValue && options.includes(secret.defaultValue)) {
+      return secret.defaultValue;
+    }
+
+    return options[0] ?? '';
+  };
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id,
       name: initialSecretName,
-      value:
-        data?.value ||
-        initialValues?.value ||
-        initialSelectedSecret?.defaultValue ||
-        '',
+      value: normalizeSecretValue(
+        initialSelectedSecret,
+        data?.value ?? initialValues?.value
+      ),
     },
   });
 
@@ -201,14 +222,10 @@ export default function SecretForm({
                           nextOptions &&
                           !nextOptions.includes(currentValue)
                         ) {
-                          form.setValue(
-                            'value',
-                            secret?.defaultValue ?? nextOptions[0] ?? '',
-                            {
-                              shouldDirty: true,
-                              shouldValidate: true,
-                            }
-                          );
+                          form.setValue('value', normalizeSecretValue(secret), {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
                         } else if (!currentValue && secret?.defaultValue) {
                           form.setValue('value', secret.defaultValue, {
                             shouldDirty: true,
