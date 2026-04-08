@@ -1,6 +1,5 @@
 import type { Invoice } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
-import { Separator } from '@tuturuuu/ui/separator';
 import { formatCurrency } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
@@ -33,6 +32,9 @@ export function CompactInvoiceTemplate({
   const BRAND_LOGO_URL = getConfig('BRAND_LOGO_URL');
   const BRAND_LOCATION = getConfig('BRAND_LOCATION');
   const BRAND_PHONE_NUMBER = getConfig('BRAND_PHONE_NUMBER');
+  const dividerClass = isDarkPreview
+    ? 'border-foreground/30 print:border-black'
+    : 'border-black/30 print:border-black';
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,18 +68,14 @@ export function CompactInvoiceTemplate({
         </div>
       </div>
 
-      <Separator />
-
       {/* Bill Bar */}
-      <div className="py-1 text-center">
+      <div className={`border-y py-5 text-center ${dividerClass}`}>
         <h2
           className={`font-bold text-2xl uppercase ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
         >
           {t('invoices.bill')}
         </h2>
       </div>
-
-      <Separator />
 
       {/* Info Section */}
       <div className="flex flex-col gap-4">
@@ -126,7 +124,8 @@ export function CompactInvoiceTemplate({
         </div>
       </div>
 
-      <Separator className="border-dashed" />
+      {/* Divider */}
+      <hr className={`w-full shrink-0 border-0 border-t ${dividerClass}`} />
 
       {/* Footer */}
       <div className="flex flex-col items-end gap-1">
