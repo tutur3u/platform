@@ -37,6 +37,7 @@ export async function GET(
     });
     const signedUrl = await createWorkspaceStorageSignedReadUrl(wsId, path, {
       expiresIn: 900,
+      provider: verified.provider,
     });
 
     const response = NextResponse.redirect(signedUrl, { status: 307 });

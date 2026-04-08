@@ -3,6 +3,9 @@ import unzipper from 'unzipper';
 
 const PORT = Number(process.env.PORT || 8788);
 const SHARED_TOKEN = process.env.DRIVE_UNZIP_PROXY_SHARED_TOKEN || '';
+const FETCH_TIMEOUT_MS = Number(
+  process.env.DRIVE_UNZIP_PROXY_FETCH_TIMEOUT_MS || 30000
+);
 const MAX_ARCHIVE_DOWNLOAD_BYTES = 100 * 1024 * 1024;
 const MAX_ARCHIVE_ENTRIES = 2000;
 const MAX_EXTRACTED_ENTRY_BYTES = 50 * 1024 * 1024;
@@ -21,6 +24,20 @@ const MIME_TYPES = {
   '.txt': 'text/plain',
   '.webp': 'image/webp',
 };
+
+if (!SHARED_TOKEN) {
+  throw new Error(
+    'DRIVE_UNZIP_PROXY_SHARED_TOKEN is required for the storage unzip proxy.'
+  );
+}
+
+class HttpError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.name = 'HttpError';
+    this.status = status;
+  }
+}
 
 function json(data, init = {}) {
   return new Response(JSON.stringify(data), {
@@ -72,7 +89,11 @@ function joinArchivePath(prefix, value) {
     return null;
   }
 
-  const normalizedPrefix = prefix ? normalizePathSegment(prefix) : '';
+  const normalizedPrefix = prefix ? normalizeZipEntryPath(prefix) : '';
+  if (prefix && !normalizedPrefix) {
+    return null;
+  }
+
   return normalizedPrefix
     ? `${normalizedPrefix}/${normalizedValue}`
     : normalizedValue;
@@ -91,6 +112,28 @@ async function drainResponseBody(response) {
   }
 }
 
+async function fetchWithTimeout(input, init = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, FETCH_TIMEOUT_MS);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new HttpError(504, 'Upstream request timed out.');
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function postExtractedEntry({
   body,
   callbackToken,
@@ -99,7 +142,7 @@ async function postExtractedEntry({
   operation,
   contentType,
 }) {
-  const response = await fetch(callbackUrl, {
+  const response = await fetchWithTimeout(callbackUrl, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${callbackToken}`,
@@ -112,7 +155,8 @@ async function postExtractedEntry({
 
   if (!response.ok) {
     const message = await response.text().catch(() => '');
-    throw new Error(
+    throw new HttpError(
+      response.status >= 400 && response.status < 500 ? response.status : 502,
       message || `Callback upload failed with status ${response.status}`
     );
   }
@@ -125,7 +169,7 @@ async function requestExtractedFileUpload({
   filePath,
   size,
 }) {
-  const response = await fetch(callbackUrl, {
+  const response = await fetchWithTimeout(callbackUrl, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${callbackToken}`,
@@ -141,7 +185,8 @@ async function requestExtractedFileUpload({
 
   if (!response.ok) {
     const message = await response.text().catch(() => '');
-    throw new Error(
+    throw new HttpError(
+      response.status >= 400 && response.status < 500 ? response.status : 502,
       message || `Upload URL callback failed with status ${response.status}`
     );
   }
@@ -162,7 +207,7 @@ async function uploadExtractedFile({ body, contentType, uploadPayload }) {
     headers.Authorization = `Bearer ${uploadPayload.token}`;
   }
 
-  let response = await fetch(uploadPayload.signedUrl, {
+  let response = await fetchWithTimeout(uploadPayload.signedUrl, {
     method: 'PUT',
     headers,
     body,
@@ -173,7 +218,7 @@ async function uploadExtractedFile({ body, contentType, uploadPayload }) {
     const fallbackHeaders = { ...headers };
     delete fallbackHeaders['Content-Type'];
 
-    response = await fetch(uploadPayload.signedUrl, {
+    response = await fetchWithTimeout(uploadPayload.signedUrl, {
       method: 'PUT',
       headers: fallbackHeaders,
       body,
@@ -182,20 +227,24 @@ async function uploadExtractedFile({ body, contentType, uploadPayload }) {
 
   if (!response.ok) {
     const message = await response.text().catch(() => '');
-    throw new Error(
+    throw new HttpError(
+      response.status >= 400 && response.status < 500 ? response.status : 502,
       message || `Direct upload failed with status ${response.status}`
     );
   }
 }
 
 async function extractArchive(payload) {
-  const response = await fetch(payload.sourceUrl, {
+  const response = await fetchWithTimeout(payload.sourceUrl, {
     method: 'GET',
     cache: 'no-store',
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to download ZIP source (${response.status})`);
+    throw new HttpError(
+      502,
+      `Failed to download ZIP source (${response.status})`
+    );
   }
 
   const contentLength = Number(response.headers.get('content-length') || 0);
@@ -203,13 +252,16 @@ async function extractArchive(payload) {
     Number.isFinite(contentLength) &&
     contentLength > MAX_ARCHIVE_DOWNLOAD_BYTES
   ) {
-    throw new Error('ZIP archive exceeds maximum allowed download size.');
+    throw new HttpError(
+      413,
+      'ZIP archive exceeds maximum allowed download size.'
+    );
   }
 
   const reader = response.body?.getReader();
 
   if (!reader) {
-    throw new Error('Failed to read ZIP archive response body.');
+    throw new HttpError(502, 'Failed to read ZIP archive response body.');
   }
 
   const chunks = [];
@@ -225,7 +277,10 @@ async function extractArchive(payload) {
     downloadedBytes += value.byteLength;
     if (downloadedBytes > MAX_ARCHIVE_DOWNLOAD_BYTES) {
       await reader.cancel().catch(() => {});
-      throw new Error('ZIP archive exceeds maximum allowed download size.');
+      throw new HttpError(
+        413,
+        'ZIP archive exceeds maximum allowed download size.'
+      );
     }
 
     chunks.push(Buffer.from(value));
@@ -234,7 +289,7 @@ async function extractArchive(payload) {
   const archiveBuffer = Buffer.concat(chunks, downloadedBytes);
   const archive = await unzipper.Open.buffer(archiveBuffer);
   if (archive.files.length > MAX_ARCHIVE_ENTRIES) {
-    throw new Error('ZIP archive contains too many entries.');
+    throw new HttpError(413, 'ZIP archive contains too many entries.');
   }
 
   let files = 0;
@@ -266,24 +321,36 @@ async function extractArchive(payload) {
       Number.isFinite(declaredEntrySize) &&
       declaredEntrySize > MAX_EXTRACTED_ENTRY_BYTES
     ) {
-      throw new Error(`ZIP entry "${entry.path}" exceeds the allowed size.`);
+      throw new HttpError(
+        413,
+        `ZIP entry "${entry.path}" exceeds the allowed size.`
+      );
     }
 
     if (
       Number.isFinite(declaredEntrySize) &&
       totalExtractedBytes + declaredEntrySize > MAX_TOTAL_EXTRACTED_BYTES
     ) {
-      throw new Error('Extracted archive exceeds the total allowed size.');
+      throw new HttpError(
+        413,
+        'Extracted archive exceeds the total allowed size.'
+      );
     }
 
     const body = await entry.buffer();
     if (body.byteLength > MAX_EXTRACTED_ENTRY_BYTES) {
-      throw new Error(`ZIP entry "${entry.path}" exceeds the allowed size.`);
+      throw new HttpError(
+        413,
+        `ZIP entry "${entry.path}" exceeds the allowed size.`
+      );
     }
 
     totalExtractedBytes += body.byteLength;
     if (totalExtractedBytes > MAX_TOTAL_EXTRACTED_BYTES) {
-      throw new Error('Extracted archive exceeds the total allowed size.');
+      throw new HttpError(
+        413,
+        'Extracted archive exceeds the total allowed size.'
+      );
     }
 
     const contentType = contentTypeForFile(entry.path);
@@ -342,13 +409,19 @@ Bun.serve({
     }
 
     try {
+      const destinationPrefix =
+        typeof payload.destinationPrefix === 'string'
+          ? payload.destinationPrefix
+          : '';
+
+      if (destinationPrefix && !normalizeZipEntryPath(destinationPrefix)) {
+        return json({ message: 'Invalid destination prefix' }, { status: 400 });
+      }
+
       const result = await extractArchive({
         callbackToken: payload.callbackToken,
         callbackUrl: payload.callbackUrl,
-        destinationPrefix:
-          typeof payload.destinationPrefix === 'string'
-            ? payload.destinationPrefix
-            : '',
+        destinationPrefix,
         sourceUrl: payload.sourceUrl,
       });
 
@@ -361,7 +434,12 @@ Bun.serve({
               ? error.message
               : 'Failed to extract ZIP archive',
         },
-        { status: 500 }
+        {
+          status:
+            error instanceof HttpError && typeof error.status === 'number'
+              ? error.status
+              : 500,
+        }
       );
     }
   },

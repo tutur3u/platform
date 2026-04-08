@@ -267,7 +267,9 @@ export default function SecretForm({
               </FormControl>
               {selectedSecret?.placeholder && !valueOptions && (
                 <p className="text-muted-foreground text-sm">
-                  {selectedSecret.placeholder}
+                  {selectedSecret.description
+                    ? selectedSecret.description
+                    : `Example: ${selectedSecret.placeholder}`}
                 </p>
               )}
               <FormMessage />

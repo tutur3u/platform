@@ -1,23 +1,13 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import {
-  CheckCircle2,
-  Code2,
-  Copy,
-  ExternalLink,
-  Globe,
-  Link2,
-  Loader2,
-  PackageOpen,
-} from '@tuturuuu/icons';
+import { Loader2, PackageOpen } from '@tuturuuu/icons';
 import {
   exportWorkspaceStorageLinks,
   type WorkspaceStorageExportLinksResponse,
 } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -25,11 +15,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import { formatBytes } from '@/utils/file-helper';
+import {
+  ExportAssetListCard,
+  ExportManifestCard,
+  ExportSummaryCard,
+} from './export-links-dialog-sections';
 
 interface WorkspaceStorageExportLinksDialogProps {
   wsId: string;
@@ -122,6 +115,9 @@ export function WorkspaceStorageExportLinksDialog({
   };
 
   const indexFile = exportQuery.data?.indexFile ?? null;
+  const assetMapJson = exportQuery.data
+    ? JSON.stringify(exportQuery.data.loaderManifest.assetUrls, null, 2)
+    : '{}';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -164,233 +160,80 @@ export function WorkspaceStorageExportLinksDialog({
           ) : exportQuery.data ? (
             <>
               <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-                <Card className="overflow-hidden border-dynamic-border">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Globe className="h-4 w-4 text-dynamic-blue" />
-                      {t('webgl_ready')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      <div className="rounded-xl border border-dynamic-border bg-muted/30 p-4">
-                        <div className="text-muted-foreground text-xs uppercase tracking-[0.12em]">
-                          {t('assets')}
-                        </div>
-                        <div className="mt-2 font-semibold text-2xl">
-                          {exportQuery.data.files.length}
-                        </div>
-                      </div>
-                      <div className="rounded-xl border border-dynamic-border bg-muted/30 p-4">
-                        <div className="text-muted-foreground text-xs uppercase tracking-[0.12em]">
-                          {t('entry')}
-                        </div>
-                        <div className="mt-2 font-semibold text-sm">
-                          {indexFile?.relativePath ?? t('no_index_html')}
-                        </div>
-                      </div>
-                      <div className="rounded-xl border border-dynamic-border bg-muted/30 p-4">
-                        <div className="text-muted-foreground text-xs uppercase tracking-[0.12em]">
-                          {t('mode')}
-                        </div>
-                        <div className="mt-2 font-semibold text-sm">
-                          {t('rotating_mode')}
-                        </div>
-                      </div>
-                    </div>
+                <ExportSummaryCard
+                  assetCount={exportQuery.data.files.length}
+                  assetsLabel={t('assets')}
+                  copyLabel={storageT('copy')}
+                  entryLabel={indexFile?.relativePath ?? ''}
+                  entryUrl={indexFile?.url ?? null}
+                  entryTitle={t('entry')}
+                  entryUrlDescription={t('entry_url_description')}
+                  entryUrlTitle={t('entry_url')}
+                  modeLabel={t('rotating_mode')}
+                  modeTitle={t('mode')}
+                  noIndexHtmlDescription={t('no_index_html_description')}
+                  noIndexHtmlLabel={t('no_index_html')}
+                  openLabel={commonT('open')}
+                  title={t('webgl_ready')}
+                  onCopyEntry={async () => {
+                    if (!indexFile) {
+                      return;
+                    }
 
-                    <div className="rounded-2xl border border-dynamic-border bg-background p-4">
-                      <div className="mb-3 flex items-center justify-between gap-3">
-                        <div>
-                          <div className="font-medium text-sm">
-                            {t('entry_url')}
-                          </div>
-                          <div className="text-muted-foreground text-xs">
-                            {t('entry_url_description')}
-                          </div>
-                        </div>
-                        {indexFile ? (
-                          <div className="flex items-center gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                window.open(
-                                  indexFile.url,
-                                  '_blank',
-                                  'noopener,noreferrer'
-                                )
-                              }
-                            >
-                              <ExternalLink className="mr-2 h-4 w-4" />
-                              {commonT('open')}
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              onClick={async () => {
-                                try {
-                                  await copyText(
-                                    indexFile.url,
-                                    t('links.entry_copied')
-                                  );
-                                } catch {
-                                  toast.error(t('links.copy_failed'));
-                                }
-                              }}
-                            >
-                              <Copy className="mr-2 h-4 w-4" />
-                              {storageT('copy')}
-                            </Button>
-                          </div>
-                        ) : null}
-                      </div>
+                    try {
+                      await copyText(indexFile.url, t('links.entry_copied'));
+                    } catch {
+                      toast.error(t('links.copy_failed'));
+                    }
+                  }}
+                  onOpenEntry={() => {
+                    if (!indexFile) {
+                      return;
+                    }
 
-                      <div className="break-all rounded-xl border border-dynamic-border border-dashed bg-muted/20 p-3 font-mono text-xs leading-6">
-                        {indexFile?.url ?? t('no_index_html_description')}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    window.open(indexFile.url, '_blank', 'noopener,noreferrer');
+                  }}
+                />
 
-                <Card className="border-dynamic-border">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Code2 className="h-4 w-4 text-dynamic-green" />
-                      {t('loader_manifest')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="rounded-2xl border border-dynamic-border bg-muted/20 p-3 text-muted-foreground text-xs leading-5">
-                      {t('loader_manifest_description')}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={async () => {
-                          try {
-                            await copyText(
-                              loaderManifest,
-                              t('links.manifest_copied')
-                            );
-                          } catch {
-                            toast.error(t('links.copy_failed'));
-                          }
-                        }}
-                      >
-                        <Copy className="mr-2 h-4 w-4" />
-                        {t('copy_manifest')}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={async () => {
-                          try {
-                            await copyText(
-                              JSON.stringify(
-                                exportQuery.data.loaderManifest.assetUrls,
-                                null,
-                                2
-                              ),
-                              t('links.asset_map_copied')
-                            );
-                          } catch {
-                            toast.error(t('links.copy_failed'));
-                          }
-                        }}
-                      >
-                        <Link2 className="mr-2 h-4 w-4" />
-                        {t('copy_asset_map')}
-                      </Button>
-                    </div>
-                    <ScrollArea className="h-56 rounded-2xl border border-dynamic-border bg-[#091120] p-0">
-                      <pre className="p-4 font-mono text-[11px] text-dynamic-cyan leading-6">
-                        {loaderManifest}
-                      </pre>
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
+                <ExportManifestCard
+                  assetMapJson={assetMapJson}
+                  copyAssetMapLabel={t('copy_asset_map')}
+                  copyManifestLabel={t('copy_manifest')}
+                  description={t('loader_manifest_description')}
+                  loaderManifest={loaderManifest}
+                  title={t('loader_manifest')}
+                  onCopyAssetMap={async () => {
+                    try {
+                      await copyText(assetMapJson, t('links.asset_map_copied'));
+                    } catch {
+                      toast.error(t('links.copy_failed'));
+                    }
+                  }}
+                  onCopyManifest={async () => {
+                    try {
+                      await copyText(
+                        loaderManifest,
+                        t('links.manifest_copied')
+                      );
+                    } catch {
+                      toast.error(t('links.copy_failed'));
+                    }
+                  }}
+                />
               </div>
 
-              <Card className="border-dynamic-border">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <PackageOpen className="h-4 w-4 text-dynamic-orange" />
-                    {t('asset_links')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[320px] rounded-2xl border border-dynamic-border">
-                    <div className="divide-y">
-                      {exportQuery.data.files.map((file) => (
-                        <div
-                          key={file.relativePath}
-                          className="grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_auto]"
-                        >
-                          <div className="min-w-0 space-y-2">
-                            <div className="flex items-center gap-2">
-                              <div className="truncate font-medium text-sm">
-                                {file.relativePath}
-                              </div>
-                              {file.relativePath === 'index.html' ? (
-                                <Badge className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/10">
-                                  {t('entry')}
-                                </Badge>
-                              ) : null}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
-                              {typeof file.size === 'number' ? (
-                                <span>{formatBytes(file.size)}</span>
-                              ) : null}
-                              {file.contentType ? (
-                                <span>{file.contentType}</span>
-                              ) : null}
-                            </div>
-                            <div className="break-all rounded-xl bg-muted/30 px-3 py-2 font-mono text-[11px] text-muted-foreground leading-5">
-                              {file.url}
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                window.open(
-                                  file.url,
-                                  '_blank',
-                                  'noopener,noreferrer'
-                                )
-                              }
-                            >
-                              <ExternalLink className="mr-2 h-4 w-4" />
-                              {commonT('open')}
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              onClick={() =>
-                                handleCopyAssetLink(file.relativePath, file.url)
-                              }
-                            >
-                              {copiedPath === file.relativePath ? (
-                                <CheckCircle2 className="mr-2 h-4 w-4" />
-                              ) : (
-                                <Copy className="mr-2 h-4 w-4" />
-                              )}
-                              {storageT('copy')}
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
+              <ExportAssetListCard
+                copiedPath={copiedPath}
+                copyLabel={storageT('copy')}
+                entryLabel={t('entry')}
+                files={exportQuery.data.files}
+                openLabel={commonT('open')}
+                title={t('asset_links')}
+                onCopyAssetLink={handleCopyAssetLink}
+                onOpenAssetLink={(url) =>
+                  window.open(url, '_blank', 'noopener,noreferrer')
+                }
+              />
             </>
           ) : null}
         </div>

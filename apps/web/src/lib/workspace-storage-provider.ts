@@ -996,10 +996,13 @@ export async function createWorkspaceStorageSignedReadUrl(
   path: string,
   options?: {
     expiresIn?: number;
+    provider?: WorkspaceStorageProvider;
     transform?: unknown;
   }
 ): Promise<string> {
-  const config = await resolveWorkspaceStorageConfig(wsId);
+  const config = options?.provider
+    ? await resolveWorkspaceStorageBackendConfig(wsId, options.provider)
+    : await resolveWorkspaceStorageConfig(wsId);
   const fullPath = buildWorkspaceStorageKey(wsId, path);
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {

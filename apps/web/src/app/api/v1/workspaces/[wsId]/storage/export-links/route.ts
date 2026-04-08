@@ -143,6 +143,7 @@ export async function POST(
 
     const token = createWorkspaceStorageExportToken({
       wsId: normalizedWsId,
+      provider: resolvedProvider.provider,
       folderPath: sanitizedPath,
     });
 
