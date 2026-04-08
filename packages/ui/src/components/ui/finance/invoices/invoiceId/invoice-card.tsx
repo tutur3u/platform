@@ -117,30 +117,41 @@ export default function InvoiceCard({
       </html>
     `;
 
-    const blob = new Blob([printContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const printWindow = window.open(url, '_blank', 'noopener,noreferrer');
-    if (printWindow) {
-      printWindow.onload = () => {
-        printWindow.onafterprint = () => {
-          printWindow.close();
-        };
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.position = 'fixed';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
 
-        window.setTimeout(() => {
-          printWindow.print();
-        }, 500);
-      };
+    const cleanup = () => {
+      if (iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+    };
 
-      const revoke = () => {
-        try {
-          URL.revokeObjectURL(url);
-        } catch (_) {}
-      };
-      printWindow.addEventListener('beforeunload', revoke, { once: true });
-      setTimeout(revoke, 60000);
-    } else {
-      URL.revokeObjectURL(url);
-    }
+    iframe.onload = () => {
+      const frameWindow = iframe.contentWindow;
+      if (!frameWindow) {
+        cleanup();
+        window.print();
+        return;
+      }
+
+      frameWindow.addEventListener('afterprint', cleanup, { once: true });
+
+      window.setTimeout(() => {
+        frameWindow.focus();
+        frameWindow.print();
+      }, 100);
+
+      window.setTimeout(cleanup, 60000);
+    };
+
+    iframe.srcdoc = printContent;
+    document.body.appendChild(iframe);
   }, [invoice.id, t]);
 
   const handlePngExport = useCallback(async () => {
@@ -156,8 +167,6 @@ export default function InvoiceCard({
         backgroundColor: isDarkPreview ? '#1a1a1a' : '#ffffff',
         width: element.scrollWidth,
         height: element.scrollHeight,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight,
       });
 
       await new Promise<void>((resolve, reject) => {
