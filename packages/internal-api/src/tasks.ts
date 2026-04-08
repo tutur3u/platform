@@ -157,7 +157,6 @@ export type UpdateWorkspaceTaskBoardPayload = Pick<
   Database['public']['Tables']['workspace_boards']['Update'],
   'name' | 'icon' | 'ticket_prefix'
 > & {
-  color?: string;
   archived?: boolean;
   group_ids?: string[];
 };

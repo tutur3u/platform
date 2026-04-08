@@ -22,11 +22,11 @@ const editTaskBodySchema = z
       .enum(VALID_PRIORITIES as [TaskPriority, ...TaskPriority[]])
       .optional(),
     total_duration: z.number().nonnegative().nullable().optional(),
-    is_splittable: z.boolean().nullable().optional(),
+    is_splittable: z.boolean().optional(),
     min_split_duration_minutes: z.number().nonnegative().nullable().optional(),
     max_split_duration_minutes: z.number().nonnegative().nullable().optional(),
     calendar_hours: z.enum(VALID_CALENDAR_HOURS).nullable().optional(),
-    auto_schedule: z.boolean().nullable().optional(),
+    auto_schedule: z.boolean().optional(),
   })
   .strict();
 
@@ -100,7 +100,7 @@ export async function PATCH(
     }
 
     if (body.is_splittable !== undefined) {
-      schedulingUpdateData.is_splittable = body.is_splittable ?? false;
+      schedulingUpdateData.is_splittable = body.is_splittable;
     }
 
     if (body.min_split_duration_minutes !== undefined) {
@@ -118,7 +118,7 @@ export async function PATCH(
     }
 
     if (body.auto_schedule !== undefined) {
-      schedulingUpdateData.auto_schedule = body.auto_schedule ?? false;
+      schedulingUpdateData.auto_schedule = body.auto_schedule;
     }
 
     // Check if there's anything to update
