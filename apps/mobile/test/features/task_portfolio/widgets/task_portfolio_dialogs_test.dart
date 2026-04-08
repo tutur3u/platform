@@ -52,7 +52,7 @@ void main() {
                           ),
                         );
                   },
-                  child: const Text('Open dialog'),
+                  child: const Text('Open sheet'),
                 ),
               ),
             );
@@ -60,7 +60,7 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('Open dialog'));
+      await tester.tap(find.text('Open sheet'));
       await tester.pumpAndSettle();
 
       final statusField = find.byKey(const Key('statusDropdown'));

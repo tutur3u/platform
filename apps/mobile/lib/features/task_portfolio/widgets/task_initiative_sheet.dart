@@ -212,33 +212,25 @@ class _TaskInitiativeSheetState extends State<TaskInitiativeSheet> {
       context: context,
       maxDialogWidth: 420,
       builder: (dialogCtx) {
-        return BackButtonListener(
-          onBackButtonPressed: () async {
-            if (dialogCtx.mounted) {
-              await Navigator.maybePop(dialogCtx);
-            }
-            return true;
-          },
-          child: shad.AlertDialog(
-            title: Text(context.l10n.taskPortfolioInitiativeStatus),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 260),
-                child: ListView(
-                  shrinkWrap: true,
-                  children: _initiativeStatuses
-                      .map(
-                        (value) => shad.GhostButton(
-                          onPressed: () => Navigator.of(dialogCtx).pop(value),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(_initiativeStatusLabel(context, value)),
-                          ),
+        return shad.AlertDialog(
+          title: Text(context.l10n.taskPortfolioInitiativeStatus),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 260),
+              child: ListView(
+                shrinkWrap: true,
+                children: _initiativeStatuses
+                    .map(
+                      (value) => shad.GhostButton(
+                        onPressed: () => Navigator.of(dialogCtx).pop(value),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(_initiativeStatusLabel(context, value)),
                         ),
-                      )
-                      .toList(growable: false),
-                ),
+                      ),
+                    )
+                    .toList(growable: false),
               ),
             ),
           ),

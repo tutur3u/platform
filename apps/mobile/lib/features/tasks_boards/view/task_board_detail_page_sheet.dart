@@ -755,6 +755,10 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       KeyboardDismissGuard.resume();
     }
 
+    if (!mounted) {
+      return;
+    }
+
     if (_descriptionController.text != draftDescription) {
       _descriptionController.text = draftDescription;
     }

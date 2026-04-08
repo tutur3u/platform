@@ -418,6 +418,8 @@ class _TaskProjectSheetState extends State<TaskProjectSheet> {
   }
 
   Future<void> _submit() async {
+    if (_isSubmitting) return;
+
     final trimmedName = _nameController.text.trim();
     if (trimmedName.isEmpty) {
       setState(() {
@@ -451,14 +453,20 @@ class _TaskProjectSheetState extends State<TaskProjectSheet> {
     }
 
     setState(() => _isSubmitting = true);
-    final success = await submit(value);
-    if (!mounted) return;
+    try {
+      final success = await submit(value);
+      if (!mounted) return;
 
-    if (!success) {
+      if (!success) {
+        setState(() => _isSubmitting = false);
+        return;
+      }
+
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) return;
       setState(() => _isSubmitting = false);
-      return;
+      rethrow;
     }
-
-    Navigator.of(context).pop();
   }
 }
