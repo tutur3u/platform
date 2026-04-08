@@ -70,7 +70,7 @@
     "@tiptap/extension-youtube": "3.22.2",
     "@tiptap/pm": "3.22.2",
     "@tiptap/react": "3.22.2",
-    "@tiptap/starter-kit": "3.22.2",
+    "@tiptap/starter-kit": "3.22.3",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/hooks": "workspace:*",

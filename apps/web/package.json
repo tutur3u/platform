@@ -75,7 +75,7 @@
     "@tiptap/extension-underline": "3.22.2",
     "@tiptap/html": "3.22.2",
     "@tiptap/react": "3.22.2",
-    "@tiptap/starter-kit": "3.22.2",
+    "@tiptap/starter-kit": "3.22.3",
     "@trpc/client": "^11.16.0",
     "@trpc/react-query": "^11.16.0",
     "@trpc/server": "^11.16.0",
