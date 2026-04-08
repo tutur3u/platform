@@ -25,7 +25,6 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Navigation Parity**: ALWAYS update `navigation.tsx` in the relevant app when adding new routes (aliases + children + icons + permissions).
 - **Proactive Refactoring**: Evaluate files >400 LOC and components >200 LOC for extraction into smaller, focused units.
 - **Unified Verification**: If your changes touch TypeScript/Javascript files (or root scripts/config that affect repo-wide checks), end your session with `bun check`.
-- **Flutter Analyze Cleanliness**: For `apps/mobile` Dart/Flutter changes, end your session with `flutter analyze` and fix every reported issue until it returns zero issues. Do not leave info/warning/error analyzer findings behind.
 - **Flutter L10n Regeneration**: After adding or renaming keys in `apps/mobile/lib/l10n/arb/*.arb`, run `flutter gen-l10n` before `flutter analyze` or tests. The generated `app_localizations*.dart` files are tracked here, and stale generated code will surface as undefined localization getters even when the ARB files are correct.
 - **UI Preflight Hygiene**: For newly added/edited files, format files with `bun ff` before running verification checks to avoid `biome` issues.
 - **Formatting Workflow**: For fixing formatting issues, try `bun ff` first before making manual edits.

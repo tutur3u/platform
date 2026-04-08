@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/features/task_portfolio/widgets/task_portfolio_dialogs.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:mobile/features/task_portfolio/widgets/task_portfolio_form_values.dart';
 
 import '../../../helpers/helpers.dart';
 
 void main() {
-  group('TaskProjectDialog', () {
+  group('TaskProjectSheet', () {
     testWidgets('updates status, priority, health, and lead while editing', (
       tester,
     ) async {
@@ -21,10 +22,10 @@ void main() {
               body: Center(
                 child: FilledButton(
                   onPressed: () async {
-                    submittedValue = await shad
-                        .showDialog<TaskProjectFormValue>(
+                    submittedValue =
+                        await showAdaptiveSheet<TaskProjectFormValue>(
                           context: context,
-                          builder: (_) => TaskProjectDialog(
+                          builder: (_) => TaskProjectSheet(
                             project: TaskProjectSummary(
                               id: 'project-1',
                               name: 'Roadmap refresh',
@@ -62,12 +63,18 @@ void main() {
       await tester.tap(find.text('Open dialog'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('statusDropdown')).hitTestable());
+      final statusField = find.byKey(const Key('statusDropdown'));
+      await tester.ensureVisible(statusField);
+      await tester.pumpAndSettle();
+      await tester.tap(statusField.hitTestable());
       await tester.pumpAndSettle();
       await tester.tap(find.text('In progress').last);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('priorityDropdown')).hitTestable());
+      final priorityField = find.byKey(const Key('priorityDropdown'));
+      await tester.ensureVisible(priorityField);
+      await tester.pumpAndSettle();
+      await tester.tap(priorityField.hitTestable());
       await tester.pumpAndSettle();
       await tester.tap(find.text('High').last);
       await tester.pumpAndSettle();
