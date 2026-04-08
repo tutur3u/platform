@@ -59,7 +59,7 @@ export default function StudentForm({ values, onSubmit }: StudentFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="flex items-center gap-2 font-medium text-base">
-                  <User className="h-4 w-4 text-blue-500" />
+                  <User className="h-4 w-4 text-dynamic-blue" />
                   Full Name
                 </FormLabel>
                 <FormControl>
@@ -67,9 +67,9 @@ export default function StudentForm({ values, onSubmit }: StudentFormProps) {
                     placeholder="Enter student's full name"
                     className={cn(
                       'h-12 text-base transition-all duration-200',
-                      'border-2 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20',
+                      'border-2 focus:border-dynamic-blue focus:ring-4 focus:ring-dynamic-blue/20',
                       form.formState.errors.name &&
-                        'border-red-300 focus:border-red-500 focus:ring-red-500/20'
+                        'border-destructive/40 focus:border-destructive focus:ring-destructive/20'
                     )}
                     {...field}
                   />
@@ -85,7 +85,7 @@ export default function StudentForm({ values, onSubmit }: StudentFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="flex items-center gap-2 font-medium text-base">
-                  <Hash className="h-4 w-4 text-purple-500" />
+                  <Hash className="h-4 w-4 text-dynamic-purple" />
                   Student Number
                 </FormLabel>
                 <FormControl>
@@ -93,9 +93,9 @@ export default function StudentForm({ values, onSubmit }: StudentFormProps) {
                     placeholder="Enter student number/ID"
                     className={cn(
                       'h-12 text-base transition-all duration-200',
-                      'border-2 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20',
+                      'border-2 focus:border-dynamic-purple focus:ring-4 focus:ring-dynamic-purple/20',
                       form.formState.errors.studentNumber &&
-                        'border-red-300 focus:border-red-500 focus:ring-red-500/20'
+                        'border-destructive/40 focus:border-destructive focus:ring-destructive/20'
                     )}
                     {...field}
                   />
@@ -111,7 +111,7 @@ export default function StudentForm({ values, onSubmit }: StudentFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="flex items-center gap-2 font-medium text-base">
-                  <GraduationCap className="h-4 w-4 text-green-500" />
+                  <GraduationCap className="h-4 w-4 text-dynamic-green" />
                   Program
                   <Badge variant="secondary" className="text-xs">
                     Optional
@@ -122,7 +122,7 @@ export default function StudentForm({ values, onSubmit }: StudentFormProps) {
                     placeholder="Enter program name"
                     className={cn(
                       'h-12 text-base transition-all duration-200',
-                      'border-2 focus:border-green-500 focus:ring-4 focus:ring-green-500/20'
+                      'border-2 focus:border-dynamic-green focus:ring-4 focus:ring-dynamic-green/20'
                     )}
                     {...field}
                   />
@@ -139,13 +139,13 @@ export default function StudentForm({ values, onSubmit }: StudentFormProps) {
           disabled={isSubmitting}
           className={cn(
             'h-14 w-full font-medium text-base transition-all duration-200',
-            'bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700',
+            'bg-linear-to-r from-dynamic-blue to-dynamic-purple text-primary-foreground hover:opacity-90',
             'shadow-lg hover:shadow-xl'
           )}
         >
           {isSubmitting ? (
             <>
-              <div className="mr-2 h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+              <div className="mr-2 h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent"></div>
               Adding Student...
             </>
           ) : (

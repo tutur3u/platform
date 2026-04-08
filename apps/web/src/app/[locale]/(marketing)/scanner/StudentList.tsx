@@ -200,7 +200,7 @@ export default function StudentList({
         <div className="flex items-center gap-4">
           <AddStudentDialog
             trigger={
-              <Button className="bg-blue-500 shadow-lg hover:bg-blue-600">
+              <Button className="bg-dynamic-blue text-primary-foreground shadow-lg hover:bg-dynamic-blue/90">
                 <UserPlus className="mr-2 h-4 w-4" />
                 Add Manually
               </Button>
@@ -225,12 +225,12 @@ export default function StudentList({
           <div className="space-y-4">
             {/* Search Bar */}
             <div className="relative">
-              <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
+              <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-muted-foreground" />
               <Input
                 placeholder="Search by name, student number, or program..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-12 border-2 pl-10 text-base focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20"
+                className="h-12 border-2 pl-10 text-base focus:border-dynamic-blue focus:ring-4 focus:ring-dynamic-blue/20"
               />
               {searchTerm && (
                 <Button
@@ -264,7 +264,7 @@ export default function StudentList({
                 <Button
                   variant="ghost"
                   onClick={clearFilters}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-muted-foreground hover:text-foreground"
                 >
                   Clear All Filters
                 </Button>
@@ -275,7 +275,7 @@ export default function StudentList({
             {showFilters && (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 font-medium text-gray-700 text-sm">
+                  <label className="flex items-center gap-2 font-medium text-foreground text-sm">
                     <Calendar className="h-4 w-4" />
                     Start Date
                   </label>
@@ -286,7 +286,7 @@ export default function StudentList({
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 font-medium text-gray-700 text-sm">
+                  <label className="flex items-center gap-2 font-medium text-foreground text-sm">
                     <Calendar className="h-4 w-4" />
                     End Date
                   </label>
@@ -300,7 +300,7 @@ export default function StudentList({
                   <Button
                     onClick={() => onDateRangeApply(startDate, endDate)}
                     disabled={!startDate && !endDate}
-                    className="w-full bg-green-500 hover:bg-green-600"
+                    className="w-full bg-dynamic-green text-primary-foreground hover:bg-dynamic-green/90"
                   >
                     Apply Filters
                   </Button>
@@ -346,7 +346,7 @@ export default function StudentList({
               <TableRow>
                 <TableCell
                   colSpan={5}
-                  className="py-4 text-center text-gray-500"
+                  className="py-4 text-center text-muted-foreground"
                 >
                   No records found
                 </TableCell>
@@ -398,7 +398,7 @@ export default function StudentList({
                       <Button
                         variant="ghost"
                         onClick={handleSave}
-                        className="text-green-500"
+                        className="text-dynamic-green"
                       >
                         <Save className="h-5 w-5" />
                       </Button>
@@ -406,7 +406,7 @@ export default function StudentList({
                       <Button
                         variant="ghost"
                         onClick={() => handleEdit(item.id)}
-                        className="text-blue-500"
+                        className="text-dynamic-blue"
                       >
                         <Pencil className="h-5 w-5" />
                       </Button>
@@ -417,7 +417,7 @@ export default function StudentList({
                         setShowDeleteDialog(true);
                         setDeleteID(item.id);
                       }}
-                      className="text-red-500"
+                      className="text-destructive"
                     >
                       <Trash2 className="h-5 w-5" />
                     </Button>
@@ -463,7 +463,7 @@ export default function StudentList({
                   className={cn(
                     'h-10 w-10',
                     currentPage === actualPage &&
-                      'bg-blue-500 hover:bg-blue-600'
+                      'bg-dynamic-blue text-primary-foreground hover:bg-dynamic-blue/90'
                   )}
                 >
                   {actualPage}
@@ -489,7 +489,7 @@ export default function StudentList({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-red-500" />
+              <Trash2 className="h-5 w-5 text-destructive" />
               Delete Student Record
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -502,7 +502,7 @@ export default function StudentList({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => handleDelete(deleteID)}
-              className="bg-red-500 text-white hover:bg-red-600"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete Record
             </AlertDialogAction>

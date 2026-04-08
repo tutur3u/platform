@@ -1,7 +1,7 @@
+import type { Timeblock } from '@ncthub/types/primitives/Timeblock';
+import { useEffect } from 'react';
 import DayPlanner from './day-planner';
 import { useTimeBlocking } from './time-blocking-provider';
-import { Timeblock } from '@ncthub/types/primitives/Timeblock';
-import { useEffect } from 'react';
 
 export default function DayPlanners({
   timeblocks,

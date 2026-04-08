@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@ncthub/utils/format';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 type GradientVariant = 'red-blue' | 'yellow-orange';
 

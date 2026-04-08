@@ -1,11 +1,11 @@
-import ContributorsClient from './client';
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import { LoadingIndicator } from '@ncthub/ui/custom/loading-indicator';
 import { createAppAuth } from '@octokit/auth-app';
 import { Octokit } from '@octokit/rest';
 import type { Metadata } from 'next';
 import { getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
+import ContributorsClient from './client';
 
 export const metadata: Metadata = {
   title: 'Community Contributors',

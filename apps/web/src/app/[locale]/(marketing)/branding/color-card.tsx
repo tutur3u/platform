@@ -45,7 +45,7 @@ export default function ColorCard({ hex, delay = 0 }: ColorCardProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-2 right-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 hover:text-black/80"
+            className="absolute top-2 right-2 bg-background/20 backdrop-blur-sm hover:bg-background/30 hover:text-foreground/80"
             onClick={copyToClipboard}
           >
             <Copy className="h-4 w-4" />
@@ -55,7 +55,7 @@ export default function ColorCard({ hex, delay = 0 }: ColorCardProps) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="absolute top-14 right-2 rounded bg-black/80 px-2 py-1 text-white text-xs"
+              className="absolute top-14 right-2 rounded bg-foreground/80 px-2 py-1 text-primary-foreground text-xs"
             >
               Copied!
             </motion.div>

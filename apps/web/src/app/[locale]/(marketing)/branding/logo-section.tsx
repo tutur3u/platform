@@ -98,8 +98,8 @@ function LogoCard({
         className={cn(
           'relative flex aspect-4/3 items-center justify-center overflow-hidden rounded-2xl border transition-colors duration-500',
           isDark
-            ? 'checkerboard-dark border-white/6'
-            : 'checkerboard-light border-black/6'
+            ? 'checkerboard-dark border-border/10'
+            : 'checkerboard-light border-border/10'
         )}
         animate={{
           borderColor: isHovered
@@ -142,8 +142,8 @@ function LogoCard({
             className={cn(
               'h-8 w-8 rounded-lg backdrop-blur-md',
               isDark
-                ? 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
-                : 'bg-black/5 text-black/50 hover:bg-black/10 hover:text-black'
+                ? 'bg-background/10 text-primary-foreground/70 hover:bg-background/20 hover:text-primary-foreground'
+                : 'bg-foreground/5 text-foreground/50 hover:bg-foreground/10 hover:text-foreground'
             )}
             asChild
           >

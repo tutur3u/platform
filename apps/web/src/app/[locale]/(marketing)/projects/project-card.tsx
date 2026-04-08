@@ -14,9 +14,9 @@ interface ProjectCardProps {
 
 // Enhanced status color mapping with gradients
 const STATUS_COLORS = {
-  completed: 'from-green-500 to-emerald-600',
-  ongoing: 'from-blue-500 to-cyan-600',
-  planning: 'from-yellow-500 to-orange-500',
+  completed: 'from-dynamic-green to-dynamic-light-green',
+  ongoing: 'from-dynamic-blue to-dynamic-cyan',
+  planning: 'from-brand-light-yellow to-dynamic-orange',
 } as const;
 
 // Enhanced type configurations with icons and colors
@@ -24,20 +24,20 @@ const TYPE_CONFIG = {
   web: {
     label: 'Web Development',
     icon: Globe,
-    gradient: 'from-purple-500 to-pink-500',
-    bgGradient: 'from-purple-500/10 to-pink-500/10',
+    gradient: 'from-dynamic-purple to-dynamic-pink',
+    bgGradient: 'from-dynamic-purple/10 to-dynamic-pink/10',
   },
   software: {
     label: 'Software',
     icon: Monitor,
-    gradient: 'from-blue-500 to-cyan-500',
-    bgGradient: 'from-blue-500/10 to-cyan-500/10',
+    gradient: 'from-dynamic-blue to-dynamic-cyan',
+    bgGradient: 'from-dynamic-blue/10 to-dynamic-cyan/10',
   },
   hardware: {
     label: 'Hardware',
     icon: Wrench,
-    gradient: 'from-orange-500 to-red-500',
-    bgGradient: 'from-orange-500/10 to-red-500/10',
+    gradient: 'from-dynamic-orange to-dynamic-red',
+    bgGradient: 'from-dynamic-orange/10 to-dynamic-red/10',
   },
 } as const;
 
@@ -72,11 +72,11 @@ export default function ProjectCard({
     `;
 
     const centerStyles = isSelected
-      ? 'shadow-2xl shadow-[#1AF4E6]/20 border-[#1AF4E6]/30'
+      ? 'border-dynamic-cyan/30 shadow-2xl shadow-dynamic-cyan/20'
       : '';
 
     const highlightStyles = isHighlighted
-      ? `bg-gradient-to-br ${typeConfig.bgGradient} border-[#1AF4E6]/50 shadow-xl shadow-[#1AF4E6]/25`
+      ? `bg-gradient-to-br ${typeConfig.bgGradient} border-dynamic-cyan/50 shadow-xl shadow-dynamic-cyan/25`
       : isSelected
         ? 'bg-card/80 hover:bg-card'
         : 'bg-card/40 hover:bg-card/60 hover:border-border hover:shadow-lg';
@@ -162,7 +162,7 @@ export default function ProjectCard({
         {project.techStack && project.techStack.length > 0 && (
           <div className="mb-6">
             <div className="mb-2 flex items-center gap-2">
-              <div className="h-0.5 w-4 bg-linear-to-r from-[#F4B71A] to-[#1AF4E6]" />
+              <div className="h-0.5 w-4 bg-linear-to-r from-brand-light-yellow to-dynamic-cyan" />
               <span className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
                 Tech Stack
               </span>
@@ -251,15 +251,15 @@ export default function ProjectCard({
         <div
           className={`absolute inset-0 rounded-xl bg-linear-to-br ${typeConfig.bgGradient}`}
         />
-        <div className="absolute inset-0 rounded-xl bg-linear-to-br from-[#F4B71A]/5 to-[#1AF4E6]/5" />
+        <div className="absolute inset-0 rounded-xl bg-linear-to-br from-brand-light-yellow/5 to-dynamic-cyan/5" />
       </div>
 
       {/* Shimmer effect on hover */}
-      <div className="pointer-events-none absolute inset-0 -translate-x-full rounded-xl bg-linear-to-r from-transparent via-white/10 to-transparent opacity-0 transition-all duration-1000 group-hover:translate-x-full group-hover:opacity-100" />
+      <div className="pointer-events-none absolute inset-0 -translate-x-full rounded-xl bg-linear-to-r from-transparent via-primary-foreground/10 to-transparent opacity-0 transition-all duration-1000 group-hover:translate-x-full group-hover:opacity-100" />
 
       {/* Border glow effect for center cards */}
       {isSelected && (
-        <div className="pointer-events-none absolute inset-0 rounded-xl bg-linear-to-br from-[#F4B71A]/20 to-[#1AF4E6]/20 opacity-50 blur-xl" />
+        <div className="pointer-events-none absolute inset-0 rounded-xl bg-linear-to-br from-brand-light-yellow/20 to-dynamic-cyan/20 opacity-50 blur-xl" />
       )}
     </Card>
   );

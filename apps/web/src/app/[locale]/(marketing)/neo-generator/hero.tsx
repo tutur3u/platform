@@ -19,24 +19,24 @@ export default function NeoGeneratorHero() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <Sparkles className="h-5 w-5 text-[#FBC721]" />
+        <Sparkles className="h-5 w-5 text-brand-light-yellow" />
         <Badge
           variant="outline"
-          className="border-[#5FC6E5]/50 px-3 py-1 text-sm text-[#5FC6E5]"
+          className="border-brand-light-blue/50 px-3 py-1 text-brand-light-blue text-sm"
         >
           Text Style Generator
         </Badge>
-        <Sparkles className="h-5 w-5 text-[#FBC721]" />
+        <Sparkles className="h-5 w-5 text-brand-light-yellow" />
       </motion.div>
 
       <motion.h1
-        className="mb-6 text-4xl font-bold text-balance text-foreground md:text-5xl lg:text-6xl"
+        className="mb-6 text-balance font-bold text-4xl text-foreground md:text-5xl lg:text-6xl"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.3 }}
       >
         <span>Welcome to</span>{' '}
-        <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
+        <span className="whitespace-nowrap border-brand-light-yellow border-b-4 text-brand-light-blue">
           Neo Generator
         </span>
       </motion.h1>

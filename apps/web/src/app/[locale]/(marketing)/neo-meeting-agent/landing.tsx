@@ -1,7 +1,5 @@
 'use client';
 
-import { LanguageSelect } from './language-select';
-import { MeetingHistory } from './meeting-history';
 import { Button } from '@ncthub/ui/button';
 import {
   Dropzone,
@@ -11,6 +9,8 @@ import {
 import { UploadIcon } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { LanguageSelect } from './language-select';
+import { MeetingHistory } from './meeting-history';
 
 export default function NeoMeetingAgentLanding() {
   const t = useTranslations('neo-meeting-agent');
@@ -33,21 +33,21 @@ export default function NeoMeetingAgentLanding() {
           minSize={1024}
           src={files}
           onDrop={handleDrop}
-          className="hover:bg-muted/25 h-64 border-2 border-dashed transition-colors duration-300"
+          className="h-64 border-2 border-dashed transition-colors duration-300 hover:bg-muted/25"
         >
           <DropzoneContent />
           <DropzoneEmptyState>
             <div className="flex flex-col items-center justify-center text-center">
               <div className="rounded-full border border-dashed p-3">
                 <UploadIcon
-                  className="text-muted-foreground size-7"
+                  className="size-7 text-muted-foreground"
                   aria-hidden="true"
                 />
               </div>
-              <p className="text-muted-foreground mt-4 font-medium">
+              <p className="mt-4 font-medium text-muted-foreground">
                 {t('dropzone.title')}
               </p>
-              <p className="text-muted-foreground/70 mt-2 text-sm">
+              <p className="mt-2 text-muted-foreground/70 text-sm">
                 {t('dropzone.caption', { size: 50 })}
               </p>
             </div>
@@ -56,7 +56,7 @@ export default function NeoMeetingAgentLanding() {
 
         <div className="grid w-full grid-cols-2 items-center gap-4">
           <LanguageSelect onValueChange={setLanguage} defaultValue={language} />
-          <Button className="bg-linear-to-r bg-size-[200%_auto] hover:bg-position-[100%_0%] from-orange-500 to-yellow-400 text-base font-bold text-white transition-all duration-500 ease-in-out">
+          <Button className="bg-linear-to-r bg-size-[200%_auto] from-dynamic-orange to-brand-light-yellow font-bold text-base text-primary transition-all duration-500 ease-in-out hover:bg-position-[100%_0%]">
             {t('actions.generate')}
           </Button>
         </div>
