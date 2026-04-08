@@ -72,7 +72,7 @@ export async function POST(
 
     const resolvedProvider =
       await resolveWorkspaceStorageProvider(normalizedWsId);
-    const objects = await listWorkspaceStorageRawObjectsForProvider(
+    let objects = await listWorkspaceStorageRawObjectsForProvider(
       normalizedWsId,
       resolvedProvider.provider,
       {
@@ -81,7 +81,7 @@ export async function POST(
       }
     );
     const prefix = `${sanitizedPath}/`;
-    const files = objects
+    let files = objects
       .filter(
         (object) =>
           !object.isFolderPlaceholder && object.path.startsWith(prefix)
@@ -98,6 +98,34 @@ export async function POST(
         if (right.relativePath === 'index.html') return 1;
         return left.relativePath.localeCompare(right.relativePath);
       });
+
+    if (objects.length === 501 && files.length <= 500) {
+      objects = await listWorkspaceStorageRawObjectsForProvider(
+        normalizedWsId,
+        resolvedProvider.provider,
+        {
+          pathPrefix: sanitizedPath,
+        }
+      );
+
+      files = objects
+        .filter(
+          (object) =>
+            !object.isFolderPlaceholder && object.path.startsWith(prefix)
+        )
+        .map((object) => ({
+          path: object.path,
+          relativePath: object.path.slice(prefix.length),
+          size: object.size,
+          contentType: object.contentType ?? null,
+        }))
+        .filter((object) => object.relativePath.length > 0)
+        .sort((left, right) => {
+          if (left.relativePath === 'index.html') return -1;
+          if (right.relativePath === 'index.html') return 1;
+          return left.relativePath.localeCompare(right.relativePath);
+        });
+    }
 
     if (files.length === 0) {
       return NextResponse.json(

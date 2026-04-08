@@ -146,6 +146,7 @@ describe('workspace task upload helpers', () => {
           fullPath: 'ws-1/documents/file.txt',
         })
       )
+      .mockResolvedValueOnce({ ok: false, status: 400, text: async () => '' })
       .mockResolvedValueOnce({ ok: true, status: 200, text: async () => '' })
       .mockResolvedValueOnce(
         createJsonResponse({
@@ -181,13 +182,28 @@ describe('workspace task upload helpers', () => {
 
     expect(uploadFetchMock).toHaveBeenNthCalledWith(
       3,
+      'https://upload.example.com/r2-signed',
+      expect.objectContaining({
+        method: 'PUT',
+      })
+    );
+    const thirdCallUploadOptions = uploadFetchMock.mock.calls[2]?.[1] as {
+      headers?: Record<string, string>;
+    };
+    const thirdCallUploadHeaders = thirdCallUploadOptions?.headers ?? {};
+    expect(thirdCallUploadHeaders.Authorization).toBeUndefined();
+    expect(thirdCallUploadHeaders['x-amz-acl']).toBe('private');
+    expect(thirdCallUploadHeaders['Content-Type']).toBeUndefined();
+
+    expect(uploadFetchMock).toHaveBeenNthCalledWith(
+      4,
       'https://internal.example.com/api/v1/workspaces/ws-1/storage/finalize-upload',
       expect.objectContaining({
         method: 'POST',
         cache: 'no-store',
       })
     );
-    const thirdCallOptions = uploadFetchMock.mock.calls[2]?.[1] as {
+    const thirdCallOptions = uploadFetchMock.mock.calls[3]?.[1] as {
       body?: string;
     };
     const thirdCallBody = JSON.parse(thirdCallOptions?.body ?? '{}') as {

@@ -7,6 +7,9 @@ import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { WorkspaceStorageError } from './workspace-storage-provider';
 
 const EXPORT_LINK_VERSION = 1;
+const EXPORT_LINK_TTL_SECONDS = Number(
+  process.env.DRIVE_EXPORT_LINK_TTL_SECONDS || 0
+);
 
 interface WorkspaceStorageExportTokenPayload {
   v: number;
@@ -125,6 +128,13 @@ export function verifyWorkspaceStorageExportToken(token: string) {
     typeof parsed.nonce !== 'string'
   ) {
     throw new WorkspaceStorageError('Invalid export token.', 401);
+  }
+
+  if (EXPORT_LINK_TTL_SECONDS > 0) {
+    const now = Math.floor(Date.now() / 1000);
+    if (now - parsed.iat > EXPORT_LINK_TTL_SECONDS) {
+      throw new WorkspaceStorageError('Export link expired.', 401);
+    }
   }
 
   const sanitizedFolderPath = sanitizePath(parsed.folderPath);

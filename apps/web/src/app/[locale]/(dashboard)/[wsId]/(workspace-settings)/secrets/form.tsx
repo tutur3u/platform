@@ -184,14 +184,30 @@ export default function SecretForm({
                         const secret = availableSecrets.find(
                           (item) => item.name === value
                         );
+                        const nextOptions =
+                          secret?.options ??
+                          (secret?.type === 'boolean'
+                            ? ['true', 'false']
+                            : undefined);
+                        const currentValue = form.getValues('value');
 
-                        if (secret?.defaultValue) {
-                          const currentValue = form.getValues('value');
-                          if (!currentValue || currentValue === 'true') {
-                            form.setValue('value', secret.defaultValue, {
+                        if (
+                          nextOptions &&
+                          !nextOptions.includes(currentValue)
+                        ) {
+                          form.setValue(
+                            'value',
+                            secret?.defaultValue ?? nextOptions[0] ?? '',
+                            {
                               shouldDirty: true,
-                            });
-                          }
+                              shouldValidate: true,
+                            }
+                          );
+                        } else if (!currentValue && secret?.defaultValue) {
+                          form.setValue('value', secret.defaultValue, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
                         }
                       }}
                       onCreate={(val) => {

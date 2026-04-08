@@ -125,7 +125,7 @@ export async function POST(
 
     const isValid =
       (hasAllowedExtension && (hasAllowedMimeType || hasGenericMimeType)) ||
-      hasAllowedMimeType ||
+      (!fileExtension && hasAllowedMimeType) ||
       (!hasExplicitMimeType && hasAllowedExtension);
 
     if (!isValid) {
@@ -164,19 +164,27 @@ export async function POST(
         upsert,
       }
     );
-    const autoExtract = await triggerWorkspaceStorageAutoExtract(
-      normalizedWsId,
-      {
+    let autoExtract = null;
+    let autoExtractError: string | null = null;
+
+    try {
+      autoExtract = await triggerWorkspaceStorageAutoExtract(normalizedWsId, {
         path: data.path,
         contentType: file.type || 'application/octet-stream',
         originalFilename: sanitizedFilename,
         requestOrigin: new URL(request.url).origin,
-      }
-    );
+      });
+    } catch (error) {
+      autoExtractError =
+        error instanceof Error
+          ? error.message
+          : 'Failed to trigger auto extraction';
+    }
 
     return NextResponse.json({
       message: 'File uploaded successfully',
       autoExtract,
+      autoExtractError,
       data: {
         path: data.path,
         fullPath: data.fullPath,

@@ -268,6 +268,12 @@ export async function uploadBill(
       path: joinPath('finance', 'transactions', transactionId),
     });
 
+    if (!data.finalize?.success) {
+      throw new Error(
+        data.finalize?.error || 'Failed to finalize uploaded file'
+      );
+    }
+
     return { data, error: null };
   } catch (error) {
     return { data: null, error };

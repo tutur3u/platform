@@ -98,6 +98,7 @@ export function WorkspaceStorageExportLinksDialog({
     enabled: open,
     queryKey: ['workspace-storage-export-links', wsId, folderPath],
     queryFn: () => exportWorkspaceStorageLinks(wsId, { path: folderPath }),
+    staleTime: 60 * 1000,
   });
 
   const loaderManifest = useMemo(() => {

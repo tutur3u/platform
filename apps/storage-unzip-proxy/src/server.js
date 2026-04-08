@@ -206,11 +206,32 @@ async function extractArchive(payload) {
     throw new Error('ZIP archive exceeds maximum allowed download size.');
   }
 
-  const archiveBuffer = Buffer.from(await response.arrayBuffer());
-  if (archiveBuffer.byteLength > MAX_ARCHIVE_DOWNLOAD_BYTES) {
-    throw new Error('ZIP archive exceeds maximum allowed download size.');
+  const reader = response.body?.getReader();
+
+  if (!reader) {
+    throw new Error('Failed to read ZIP archive response body.');
   }
 
+  const chunks = [];
+  let downloadedBytes = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    downloadedBytes += value.byteLength;
+    if (downloadedBytes > MAX_ARCHIVE_DOWNLOAD_BYTES) {
+      await reader.cancel().catch(() => {});
+      throw new Error('ZIP archive exceeds maximum allowed download size.');
+    }
+
+    chunks.push(Buffer.from(value));
+  }
+
+  const archiveBuffer = Buffer.concat(chunks, downloadedBytes);
   const archive = await unzipper.Open.buffer(archiveBuffer);
   if (archive.files.length > MAX_ARCHIVE_ENTRIES) {
     throw new Error('ZIP archive contains too many entries.');
