@@ -1,16 +1,21 @@
 'use client';
 
+import type { Timezone } from '@ncthub/types/primitives/Timezone';
+import { Separator } from '@ncthub/ui/separator';
+import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
+import timezones from '@/data/timezones.json';
 import CreatePlanDialog from './create-plan-dialog';
 import DateSelector from './date-selector';
 import { TimeSelector } from './time-selector';
 import TimezoneSelector from './timezone-selector';
-import timezones from '@/data/timezones.json';
-import { Timezone } from '@ncthub/types/primitives/Timezone';
-import { Separator } from '@ncthub/ui/separator';
-import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
 
-export default function Form() {
+interface Props {
+  createdPlanCount: number;
+  isLoggedIn: boolean;
+}
+
+export default function Form({ createdPlanCount, isLoggedIn }: Props) {
   const t = useTranslations('meet-together');
 
   const [dates, setDates] = useState<Date[] | undefined>([]);
@@ -74,7 +79,11 @@ export default function Form() {
           <TimezoneSelector value={timezone} onValueChange={setTimezone} />
         </div>
 
-        <CreatePlanDialog plan={plan} />
+        <CreatePlanDialog
+          plan={plan}
+          createdPlanCount={createdPlanCount}
+          isLoggedIn={isLoggedIn}
+        />
       </div>
     </div>
   );

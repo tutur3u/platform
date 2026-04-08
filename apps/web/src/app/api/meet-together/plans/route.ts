@@ -1,5 +1,6 @@
-import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { MAX_MEETING_PLANS } from '@/constants/meet-together';
 
 export async function GET(_: Request) {
   const supabase = await createClient();
@@ -20,18 +21,46 @@ export async function GET(_: Request) {
 }
 
 export async function POST(req: Request) {
-  const sbAdmin = await createAdminClient();
-
-  const data = await req.json();
   const supabase = await createClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: plan, error } = await sbAdmin
+  if (!user?.id) {
+    return NextResponse.json(
+      { message: 'Please log in to create a plan.' },
+      { status: 401 }
+    );
+  }
+
+  const { count, error: countError } = await supabase
     .from('meet_together_plans')
-    .insert({ ...data, creator_id: user?.id })
+    .select('*', { count: 'exact', head: true })
+    .eq('creator_id', user.id);
+
+  if (countError) {
+    console.log(countError);
+    return NextResponse.json(
+      { message: 'Error checking meet together plan limit' },
+      { status: 500 }
+    );
+  }
+
+  if ((count ?? 0) >= MAX_MEETING_PLANS) {
+    return NextResponse.json(
+      {
+        message: `You have reached the ${MAX_MEETING_PLANS}-plan limit. Please delete an old plan before creating a new one.`,
+      },
+      { status: 409 }
+    );
+  }
+
+  const data = await req.json();
+
+  const { data: plan, error } = await supabase
+    .from('meet_together_plans')
+    .insert({ ...data, creator_id: user.id })
     .select('id')
     .single();
 

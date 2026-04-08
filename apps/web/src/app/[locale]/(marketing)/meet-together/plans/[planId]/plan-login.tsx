@@ -1,12 +1,6 @@
 'use client';
 
-import { guestLogin } from './actions';
-import AvailabilityPlanner from './availability-planner';
-import { useTimeBlocking } from './time-blocking-provider';
-import { BASE_URL } from '@/constants/common';
-import { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
-import { Timeblock } from '@ncthub/types/primitives/Timeblock';
-import { User } from '@ncthub/types/primitives/User';
+import type { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
 import { Button } from '@ncthub/ui/button';
 import { Checkbox } from '@ncthub/ui/checkbox';
 import {
@@ -16,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@ncthub/ui/dialog';
 import {
   Form,
@@ -32,10 +25,13 @@ import { Input } from '@ncthub/ui/input';
 import { zodResolver } from '@ncthub/ui/resolvers';
 import { Separator } from '@ncthub/ui/separator';
 import { useMutation } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect } from 'react';
 import { z } from 'zod';
+import { BASE_URL } from '@/constants/common';
+import { guestLogin } from './actions';
+import { useTimeBlocking } from './time-blocking-provider';
 
 const formSchema = z.object({
   guestName: z.string().min(1).max(255),
@@ -45,21 +41,18 @@ const formSchema = z.object({
 
 const GUEST_CREDENTIALS_KEY_PREFIX = 'meet_together_guest_';
 
-export default function PlanLogin({
-  plan,
-  timeblocks,
-  platformUser,
-}: {
-  plan: MeetTogetherPlan;
-  timeblocks: Timeblock[];
-  platformUser: User | null;
-}) {
+export default function PlanLogin({ plan }: { plan: MeetTogetherPlan }) {
   const pathname = usePathname();
   const router = useRouter();
-
   const t = useTranslations();
 
-  const { user, displayMode, setUser, setDisplayMode } = useTimeBlocking();
+  const {
+    user,
+    originalPlatformUser: platformUser,
+    displayMode,
+    setUser,
+    setDisplayMode,
+  } = useTimeBlocking();
 
   const loginMutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
@@ -106,6 +99,23 @@ export default function PlanLogin({
     },
   });
 
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      guestName: user?.display_name ?? '',
+      guestPassword: '',
+      saveCredentials: true,
+    },
+  });
+
+  const onSubmit = useCallback(
+    async (values: z.infer<typeof formSchema>) => {
+      if (!plan.id) return;
+      loginMutation.mutate(values);
+    },
+    [loginMutation.mutate, plan.id]
+  );
+
   // Try to load saved credentials from localStorage on component mount
   useEffect(() => {
     if (!plan.id || user) return;
@@ -131,21 +141,7 @@ export default function PlanLogin({
     } catch (error) {
       console.error('Failed to load saved credentials', error);
     }
-  }, [plan.id]);
-
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      guestName: user?.display_name ?? '',
-      guestPassword: '',
-      saveCredentials: true,
-    },
-  });
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!plan.id) return;
-    loginMutation.mutate(values);
-  }
+  }, [form, onSubmit, plan.id, user]);
 
   const handleLogout = () => {
     if (!plan.id) return;
@@ -175,14 +171,7 @@ export default function PlanLogin({
         );
       }}
     >
-      <DialogTrigger asChild={!!user || !!platformUser}>
-        <AvailabilityPlanner
-          plan={plan}
-          timeblocks={timeblocks}
-          disabled={!user}
-        />
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-106.25">
         <DialogHeader>
           <DialogTitle>
             {displayMode === 'account-switcher'
@@ -204,9 +193,9 @@ export default function PlanLogin({
           <div className="grid gap-2">
             {user?.is_guest ? (
               <>
-                <div className="text-muted-foreground mb-2 text-sm">
+                <div className="mb-2 text-muted-foreground text-sm">
                   {t('meet-together-plan-details.logged_in_as')}{' '}
-                  <span className="text-foreground font-semibold">
+                  <span className="font-semibold text-foreground">
                     {user.display_name}
                   </span>
                   .

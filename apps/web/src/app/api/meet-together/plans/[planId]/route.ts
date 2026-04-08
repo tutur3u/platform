@@ -1,4 +1,4 @@
-import { createAdminClient } from '@ncthub/supabase/next/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -8,15 +8,16 @@ interface Params {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const sbAdmin = await createAdminClient();
+  const supabase = await createClient();
   const { planId: id } = await params;
 
   const data = await req.json();
   const name = data.name;
+  const is_public = data.is_public;
 
-  const { error } = await sbAdmin
+  const { error } = await supabase
     .from('meet_together_plans')
-    .update({ name })
+    .update({ name, is_public })
     .eq('id', id);
 
   if (error) {
@@ -31,10 +32,10 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function DELETE(_: Request, { params }: Params) {
-  const sbAdmin = await createAdminClient();
+  const supabase = await createClient();
   const { planId: id } = await params;
 
-  const { error } = await sbAdmin
+  const { error } = await supabase
     .from('meet_together_plans')
     .delete()
     .eq('id', id);

@@ -1,6 +1,14 @@
 import { createAdminClient } from '@ncthub/supabase/next/server';
 import { generateSalt, hashPassword } from '@ncthub/utils/crypto';
 import { NextResponse } from 'next/server';
+import z from 'zod';
+import { GUEST_LIMIT } from '@/constants/meet-together';
+
+const GuestLoginInputSchema = z.object({
+  planId: z.string().uuid(),
+  name: z.string(),
+  password: z.string(),
+});
 
 interface Params {
   params: Promise<{
@@ -10,25 +18,41 @@ interface Params {
 
 export async function POST(req: Request, { params }: Params) {
   const { planId: rawPlanId } = await params;
+  const { name: rawName, password: rawPassword } = await req.json();
 
-  // rawPlanId is an uuid without dashes,
-  // we'll have to add them back to make it a valid uuid
-  const planId = rawPlanId.replace(
-    /^(\w{8})(\w{4})(\w{4})(\w{4})(\w{12})$/,
-    '$1-$2-$3-$4-$5'
-  );
+  const result = GuestLoginInputSchema.safeParse({
+    planId: rawPlanId,
+    name: rawName,
+    password: rawPassword,
+  });
 
-  // if planId isn't a valid uuid
-  if (planId.length !== 36) {
-    return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
+  if (!result.success) {
+    throw new Error('Invalid request');
   }
+
+  const { planId, name, password } = result.data;
 
   const sbAdmin = await createAdminClient();
 
-  const { name, password } = await req.json();
+  const { count: guestCount, error: guestCountError } = await sbAdmin
+    .from('meet_together_guests')
+    .select('*', { count: 'exact', head: true })
+    .eq('plan_id', planId);
 
-  if (!name)
-    return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
+  if (guestCountError) {
+    console.log(guestCountError);
+    return NextResponse.json(
+      { message: 'Error while counting guests' },
+      { status: 500 }
+    );
+  }
+
+  if (guestCount && guestCount > GUEST_LIMIT) {
+    return NextResponse.json(
+      { message: 'Guest limit reached' },
+      { status: 403 }
+    );
+  }
 
   // Fetch guest by name and planId
   const { data: guest, error } = await sbAdmin

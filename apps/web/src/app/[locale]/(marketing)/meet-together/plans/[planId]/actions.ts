@@ -2,27 +2,47 @@
 
 import { createAdminClient } from '@ncthub/supabase/next/server';
 import { generateSalt, hashPassword } from '@ncthub/utils/crypto';
+import z from 'zod';
+import { GUEST_LIMIT } from '@/constants/meet-together';
+
+const GuestLoginInputSchema = z.object({
+  planId: z.string().uuid(),
+  name: z.string(),
+  password: z.string(),
+});
 
 export async function guestLogin(
   rawPlanId: string,
-  name: string,
-  password: string
+  rawName: string,
+  rawPassword: string
 ) {
-  // rawPlanId is an uuid without dashes,
-  // we'll have to add them back to make it a valid uuid
-  const planId = rawPlanId.replace(
-    /^(\w{8})(\w{4})(\w{4})(\w{4})(\w{12})$/,
-    '$1-$2-$3-$4-$5'
-  );
+  const result = GuestLoginInputSchema.safeParse({
+    planId: rawPlanId,
+    name: rawName,
+    password: rawPassword,
+  });
 
-  // if planId isn't a valid uuid
-  if (planId.length !== 36) {
+  if (!result.success) {
     throw new Error('Invalid request');
   }
 
-  if (!name) throw new Error('Invalid request');
+  const { planId, name, password } = result.data;
 
   const sbAdmin = await createAdminClient();
+
+  const { count: guestCount, error: guestCountError } = await sbAdmin
+    .from('meet_together_guests')
+    .select('*', { count: 'exact', head: true })
+    .eq('plan_id', planId);
+
+  if (guestCountError) {
+    console.log(guestCountError);
+    throw new Error('Error while counting guests');
+  }
+
+  if (guestCount && guestCount > GUEST_LIMIT) {
+    throw new Error('Guest limit reached');
+  }
 
   // Fetch guest by name and planId
   const { data: guest, error } = await sbAdmin
