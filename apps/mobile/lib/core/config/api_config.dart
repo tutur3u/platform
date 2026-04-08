@@ -264,3 +264,8 @@ abstract final class InventoryEndpoints {
   static String invoices(String wsId) =>
       '/api/v1/workspaces/$wsId/finance/invoices';
 }
+
+/// Habits endpoint paths.
+abstract final class HabitsEndpoints {
+  static String access(String wsId) => '/api/v1/workspaces/$wsId/habits/access';
+}

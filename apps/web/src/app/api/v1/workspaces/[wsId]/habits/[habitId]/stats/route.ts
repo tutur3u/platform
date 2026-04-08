@@ -10,9 +10,11 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { fetchHabitStreak } from '@/lib/calendar/habit-scheduler';
+import { habitsNotFoundResponse, isHabitsEnabled } from '@/lib/habits/access';
 
 interface RouteParams {
   wsId: string;
@@ -26,11 +28,8 @@ export async function GET(
   try {
     const { wsId, habitId } = await params;
 
-    if (!validate(wsId) || !validate(habitId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace or habit ID' },
-        { status: 400 }
-      );
+    if (!validate(habitId)) {
+      return NextResponse.json({ error: 'Invalid habit ID' }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -49,10 +48,16 @@ export async function GET(
       );
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
+    if (!(await isHabitsEnabled(normalizedWsId))) {
+      return habitsNotFoundResponse();
+    }
+
     const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -75,7 +80,7 @@ export async function GET(
       .from('workspace_habits')
       .select('*')
       .eq('id', habitId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .is('deleted_at', null)
       .single();
 

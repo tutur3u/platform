@@ -21,10 +21,10 @@ export async function GET(
   { params }: { params: Promise<RouteParams> }
 ) {
   try {
-    const { wsId } = await params;
-    const { user, sbAdmin } = await createHabitTrackerRouteContext(
+    const { wsId: rawWsId } = await params;
+    const { user, sbAdmin, wsId } = await createHabitTrackerRouteContext(
       request,
-      wsId
+      rawWsId
     );
     const url = new URL(request.url);
     const query = habitTrackerListQuerySchema.parse({
@@ -51,10 +51,10 @@ export async function POST(
   { params }: { params: Promise<RouteParams> }
 ) {
   try {
-    const { wsId } = await params;
-    const { user, sbAdmin } = await createHabitTrackerRouteContext(
+    const { wsId: rawWsId } = await params;
+    const { user, sbAdmin, wsId } = await createHabitTrackerRouteContext(
       request,
-      wsId
+      rawWsId
     );
     const body = habitTrackerInputSchema.parse(await request.json());
     const tracker = await createHabitTracker(sbAdmin, wsId, user.id, body);

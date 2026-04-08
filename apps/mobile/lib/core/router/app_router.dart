@@ -20,6 +20,7 @@ import 'package:mobile/features/finance/view/transaction_categories_page.dart';
 import 'package:mobile/features/finance/view/transaction_list_page.dart';
 import 'package:mobile/features/finance/view/wallet_detail_page.dart';
 import 'package:mobile/features/finance/view/wallets_page.dart';
+import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/inventory/view/inventory_audit_logs_page.dart';
@@ -56,6 +57,15 @@ bool shouldRedirectPersonalTimerRequests(
       (workspaceState.currentWorkspace?.personal ?? false);
 }
 
+bool shouldRedirectDisabledHabitsRoutes(
+  String matchedLocation,
+  HabitsAccessState habitsAccessState,
+) {
+  return Routes.miniAppRootForLocation(matchedLocation) == Routes.habits &&
+      (habitsAccessState.status != HabitsAccessStatus.loaded ||
+          !habitsAccessState.enabled);
+}
+
 HistoryViewMode? _parseHistoryViewMode(String? value) {
   switch (value) {
     case 'day':
@@ -83,6 +93,7 @@ DateTime? _parseHistoryDate(String? value) {
 GoRouter createAppRouter(
   AuthCubit authCubit,
   WorkspaceCubit workspaceCubit,
+  HabitsAccessCubit habitsAccessCubit,
   InventoryAccessCubit inventoryAccessCubit,
   AppTabCubit appTabCubit, {
   String? initialLocation,
@@ -93,11 +104,13 @@ GoRouter createAppRouter(
     refreshListenable: _AppRefreshNotifier(
       authCubit,
       workspaceCubit,
+      habitsAccessCubit,
       inventoryAccessCubit,
     ),
     redirect: (context, state) {
       final authState = authCubit.state;
       final wsState = workspaceCubit.state;
+      final habitsAccessState = habitsAccessCubit.state;
       final inventoryAccessState = inventoryAccessCubit.state;
 
       if (kDebugMode) {
@@ -166,6 +179,13 @@ GoRouter createAppRouter(
       // Personal workspace cannot access timer requests page.
       if (shouldRedirectPersonalTimerRequests(state.matchedLocation, wsState)) {
         return Routes.timer;
+      }
+
+      if (shouldRedirectDisabledHabitsRoutes(
+        state.matchedLocation,
+        habitsAccessState,
+      )) {
+        return Routes.apps;
       }
 
       if (Routes.miniAppRootForLocation(state.matchedLocation) ==
@@ -403,6 +423,7 @@ class _AppRefreshNotifier extends ChangeNotifier {
   _AppRefreshNotifier(
     AuthCubit authCubit,
     WorkspaceCubit workspaceCubit,
+    HabitsAccessCubit habitsAccessCubit,
     InventoryAccessCubit inventoryAccessCubit,
   ) {
     _authSub = authCubit.stream.listen((state) {
@@ -421,6 +442,9 @@ class _AppRefreshNotifier extends ChangeNotifier {
       }
       notifyListeners();
     });
+    _habitsAccessSub = habitsAccessCubit.stream.listen((_) {
+      notifyListeners();
+    });
     _inventoryAccessSub = inventoryAccessCubit.stream.listen((_) {
       notifyListeners();
     });
@@ -428,12 +452,14 @@ class _AppRefreshNotifier extends ChangeNotifier {
 
   late final StreamSubscription<AuthState> _authSub;
   late final StreamSubscription<WorkspaceState> _wsSub;
+  late final StreamSubscription<HabitsAccessState> _habitsAccessSub;
   late final StreamSubscription<InventoryAccessState> _inventoryAccessSub;
 
   @override
   Future<void> dispose() async {
     await _authSub.cancel();
     await _wsSub.cancel();
+    await _habitsAccessSub.cancel();
     await _inventoryAccessSub.cancel();
     super.dispose();
   }

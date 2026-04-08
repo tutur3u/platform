@@ -13,8 +13,9 @@ import {
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TablesUpdate } from '@tuturuuu/types';
 import type { Habit, HabitInput } from '@tuturuuu/types/primitives/Habit';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
-import { validate } from 'uuid';
+import { z } from 'zod';
 import {
   normalizeHabitDependencyType,
   validateHabitDependencyGraph,
@@ -23,11 +24,14 @@ import {
   deleteFutureHabitEvents,
   fetchHabitStreak,
 } from '@/lib/calendar/habit-scheduler';
+import { habitsNotFoundResponse, isHabitsEnabled } from '@/lib/habits/access';
 
 interface RouteParams {
   wsId: string;
   habitId: string;
 }
+
+const habitIdParamSchema = z.guid();
 
 async function verifyWorkspaceMembership(
   supabase: TypedSupabaseClient,
@@ -49,11 +53,9 @@ export async function GET(
   try {
     const { wsId, habitId } = await params;
 
-    if (!validate(wsId) || !validate(habitId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace or habit ID' },
-        { status: 400 }
-      );
+    const parsedHabitId = habitIdParamSchema.safeParse(habitId);
+    if (!parsedHabitId.success) {
+      return NextResponse.json({ error: 'Invalid habit ID' }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -72,8 +74,10 @@ export async function GET(
       );
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
     const { data: membership, error: membershipError } =
-      await verifyWorkspaceMembership(supabase, wsId, user.id);
+      await verifyWorkspaceMembership(supabase, normalizedWsId, user.id);
 
     if (membershipError) {
       return NextResponse.json(
@@ -89,12 +93,16 @@ export async function GET(
       );
     }
 
+    if (!(await isHabitsEnabled(normalizedWsId))) {
+      return habitsNotFoundResponse();
+    }
+
     // Fetch habit
     const { data: habit, error: habitError } = await sbAdmin
       .from('workspace_habits')
       .select('*')
-      .eq('id', habitId)
-      .eq('ws_id', wsId)
+      .eq('id', parsedHabitId.data)
+      .eq('ws_id', normalizedWsId)
       .is('deleted_at', null)
       .single();
 
@@ -117,7 +125,7 @@ export async function GET(
           color
         )
       `)
-      .eq('habit_id', habitId)
+      .eq('habit_id', parsedHabitId.data)
       .order('occurrence_date', { ascending: true });
 
     // Calculate streak
@@ -153,11 +161,9 @@ export async function PUT(
   try {
     const { wsId, habitId } = await params;
 
-    if (!validate(wsId) || !validate(habitId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace or habit ID' },
-        { status: 400 }
-      );
+    const parsedHabitId = habitIdParamSchema.safeParse(habitId);
+    if (!parsedHabitId.success) {
+      return NextResponse.json({ error: 'Invalid habit ID' }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -176,8 +182,10 @@ export async function PUT(
       );
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
     const { data: membership, error: membershipError } =
-      await verifyWorkspaceMembership(supabase, wsId, user.id);
+      await verifyWorkspaceMembership(supabase, normalizedWsId, user.id);
 
     if (membershipError) {
       return NextResponse.json(
@@ -193,12 +201,16 @@ export async function PUT(
       );
     }
 
+    if (!(await isHabitsEnabled(normalizedWsId))) {
+      return habitsNotFoundResponse();
+    }
+
     // Fetch existing habit
     const { data: existingHabit, error: fetchError } = await sbAdmin
       .from('workspace_habits')
       .select('*')
-      .eq('id', habitId)
-      .eq('ws_id', wsId)
+      .eq('id', parsedHabitId.data)
+      .eq('ws_id', normalizedWsId)
       .is('deleted_at', null)
       .single();
 
@@ -248,7 +260,7 @@ export async function PUT(
       );
     }
 
-    if (nextDependencyHabitId === habitId) {
+    if (nextDependencyHabitId === parsedHabitId.data) {
       return NextResponse.json(
         { error: 'A habit cannot depend on itself' },
         { status: 400 }
@@ -313,7 +325,7 @@ export async function PUT(
     const { data: workspaceHabits, error: workspaceHabitsError } = await sbAdmin
       .from('workspace_habits')
       .select('id, name, dependency_habit_id, dependency_type')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .is('deleted_at', null);
 
     if (workspaceHabitsError) {
@@ -348,7 +360,7 @@ export async function PUT(
           | undefined,
       })),
       {
-        id: habitId,
+        id: parsedHabitId.data,
         name:
           typeof body.name === 'string' ? body.name.trim() : existingHabit.name,
         dependency_habit_id: nextDependencyHabitId,
@@ -447,7 +459,7 @@ export async function PUT(
     const { data: updatedHabit, error: updateError } = await sbAdmin
       .from('workspace_habits')
       .update(updateData)
-      .eq('id', habitId)
+      .eq('id', parsedHabitId.data)
       .select()
       .single();
 
@@ -462,7 +474,7 @@ export async function PUT(
     // If scheduling changed or habit was deactivated, delete future events
     // Note: Rescheduling is handled by the Smart Schedule button in Calendar
     if (schedulingChanged || body.is_active === false) {
-      await deleteFutureHabitEvents(sbAdmin as any, habitId);
+      await deleteFutureHabitEvents(sbAdmin as any, parsedHabitId.data);
     }
 
     return NextResponse.json({
@@ -485,11 +497,9 @@ export async function DELETE(
   try {
     const { wsId, habitId } = await params;
 
-    if (!validate(wsId) || !validate(habitId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace or habit ID' },
-        { status: 400 }
-      );
+    const parsedHabitId = habitIdParamSchema.safeParse(habitId);
+    if (!parsedHabitId.success) {
+      return NextResponse.json({ error: 'Invalid habit ID' }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -508,8 +518,10 @@ export async function DELETE(
       );
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
     const { data: membership, error: membershipError } =
-      await verifyWorkspaceMembership(supabase, wsId, user.id);
+      await verifyWorkspaceMembership(supabase, normalizedWsId, user.id);
 
     if (membershipError) {
       return NextResponse.json(
@@ -525,12 +537,16 @@ export async function DELETE(
       );
     }
 
+    if (!(await isHabitsEnabled(normalizedWsId))) {
+      return habitsNotFoundResponse();
+    }
+
     // Verify habit exists and belongs to workspace
     const { data: habit, error: fetchError } = await sbAdmin
       .from('workspace_habits')
       .select('id')
-      .eq('id', habitId)
-      .eq('ws_id', wsId)
+      .eq('id', parsedHabitId.data)
+      .eq('ws_id', normalizedWsId)
       .is('deleted_at', null)
       .single();
 
@@ -539,7 +555,7 @@ export async function DELETE(
     }
 
     // Delete future scheduled events
-    await deleteFutureHabitEvents(sbAdmin as any, habitId);
+    await deleteFutureHabitEvents(sbAdmin as any, parsedHabitId.data);
 
     // Soft delete the habit
     const { error: deleteError } = await sbAdmin
@@ -548,7 +564,7 @@ export async function DELETE(
         deleted_at: new Date().toISOString(),
         is_active: false,
       })
-      .eq('id', habitId);
+      .eq('id', parsedHabitId.data);
 
     if (deleteError) {
       console.error('Error deleting habit:', deleteError);

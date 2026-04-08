@@ -16,6 +16,7 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/data/repositories/habits_access_repository.dart';
 import 'package:mobile/data/repositories/inventory_access_repository.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
@@ -30,6 +31,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
+import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
@@ -82,6 +84,7 @@ class _AppState extends State<App> {
   late final TaskRepository _taskRepository;
   late final CalendarRepository _calendarRepository;
   late final FinanceRepository _financeRepository;
+  late final HabitsAccessRepository _habitsAccessRepository;
   late final InventoryAccessRepository _inventoryAccessRepository;
   late final TimeTrackerRepository _timeTrackerRepository;
   late final ProfileRepository _profileRepository;
@@ -92,6 +95,7 @@ class _AppState extends State<App> {
   late final ThemeCubit _themeCubit;
   late final CalendarSettingsCubit _calendarSettingsCubit;
   late final FinancePreferencesCubit _financePreferencesCubit;
+  late final HabitsAccessCubit _habitsAccessCubit;
   late final InventoryAccessCubit _inventoryAccessCubit;
   late final AppTabCubit _appTabCubit;
   late final ShellChromeActionsCubit _shellChromeActionsCubit;
@@ -111,6 +115,7 @@ class _AppState extends State<App> {
     _taskRepository = TaskRepository();
     _calendarRepository = CalendarRepository();
     _financeRepository = FinanceRepository();
+    _habitsAccessRepository = HabitsAccessRepository();
     _inventoryAccessRepository = InventoryAccessRepository();
     _timeTrackerRepository = TimeTrackerRepository();
     _profileRepository = ProfileRepository(
@@ -141,6 +146,7 @@ class _AppState extends State<App> {
     _financePreferencesCubit = FinancePreferencesCubit(
       settingsRepository: _settingsRepo,
     );
+    _habitsAccessCubit = HabitsAccessCubit(repository: _habitsAccessRepository);
     _inventoryAccessCubit = InventoryAccessCubit(
       repository: _inventoryAccessRepository,
     );
@@ -162,6 +168,7 @@ class _AppState extends State<App> {
     _router = createAppRouter(
       _authCubit,
       _workspaceCubit,
+      _habitsAccessCubit,
       _inventoryAccessCubit,
       _appTabCubit,
       initialLocation: widget.initialRoute,
@@ -393,6 +400,7 @@ class _AppState extends State<App> {
     unawaited(_themeCubit.close());
     unawaited(_calendarSettingsCubit.close());
     unawaited(_financePreferencesCubit.close());
+    unawaited(_habitsAccessCubit.close());
     unawaited(_inventoryAccessCubit.close());
     unawaited(_appTabCubit.close());
     unawaited(_shellChromeActionsCubit.close());
@@ -414,6 +422,7 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _themeCubit),
         BlocProvider.value(value: _calendarSettingsCubit),
         BlocProvider.value(value: _financePreferencesCubit),
+        BlocProvider.value(value: _habitsAccessCubit),
         BlocProvider.value(value: _inventoryAccessCubit),
         BlocProvider.value(value: _appTabCubit),
         BlocProvider.value(value: _shellChromeActionsCubit),
@@ -451,6 +460,11 @@ class _AppState extends State<App> {
             listenWhen: (previous, current) =>
                 previous.currentWorkspace?.id != current.currentWorkspace?.id,
             listener: (context, state) {
+              unawaited(
+                context.read<HabitsAccessCubit>().syncWorkspace(
+                  state.currentWorkspace?.id,
+                ),
+              );
               unawaited(
                 context.read<InventoryAccessCubit>().syncWorkspace(
                   state.currentWorkspace?.id,

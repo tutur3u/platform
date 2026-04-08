@@ -10,12 +10,14 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { HabitInput } from '@tuturuuu/types/primitives/Habit';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import {
   normalizeHabitDependencyType,
   validateHabitDependencyGraph,
 } from '@/lib/calendar/habit-dependencies';
+import { habitsNotFoundResponse, isHabitsEnabled } from '@/lib/habits/access';
 
 interface RouteParams {
   wsId: string;
@@ -27,13 +29,6 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-
-    if (!validate(wsId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace ID' },
-        { status: 400 }
-      );
-    }
 
     const supabase = await createClient();
 
@@ -50,11 +45,24 @@ export async function GET(
       );
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
+    if (!validate(normalizedWsId)) {
+      return NextResponse.json(
+        { error: 'Invalid workspace ID' },
+        { status: 400 }
+      );
+    }
+
+    if (!(await isHabitsEnabled(normalizedWsId))) {
+      return habitsNotFoundResponse();
+    }
+
     // Verify workspace access
     const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -83,7 +91,7 @@ export async function GET(
     let query = sbAdmin
       .from('workspace_habits')
       .select('*')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .order('created_at', { ascending: false });
 
     if (activeOnly) {
@@ -121,13 +129,6 @@ export async function POST(
   try {
     const { wsId } = await params;
 
-    if (!validate(wsId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace ID' },
-        { status: 400 }
-      );
-    }
-
     const supabase = await createClient();
 
     // Get authenticated user
@@ -143,11 +144,24 @@ export async function POST(
       );
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
+    if (!validate(normalizedWsId)) {
+      return NextResponse.json(
+        { error: 'Invalid workspace ID' },
+        { status: 400 }
+      );
+    }
+
+    if (!(await isHabitsEnabled(normalizedWsId))) {
+      return habitsNotFoundResponse();
+    }
+
     // Verify workspace access
     const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -232,7 +246,7 @@ export async function POST(
       const { data: dependencyHabit, error: dependencyError } = await sbAdmin
         .from('workspace_habits')
         .select('id, name, dependency_habit_id, dependency_type')
-        .eq('ws_id', wsId)
+        .eq('ws_id', normalizedWsId)
         .eq('id', dependencyHabitId)
         .is('deleted_at', null)
         .maybeSingle();
@@ -364,7 +378,7 @@ export async function POST(
 
     // Create the habit
     const habitData = {
-      ws_id: wsId,
+      ws_id: normalizedWsId,
       creator_id: user.id,
       name: body.name.trim(),
       description: body.description?.trim() || null,
