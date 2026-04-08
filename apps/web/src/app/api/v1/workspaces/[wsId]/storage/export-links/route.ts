@@ -55,7 +55,17 @@ export async function POST(
       );
     }
 
-    const parsed = exportLinksSchema.safeParse(await request.json());
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { message: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    const parsed = exportLinksSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(

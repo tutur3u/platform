@@ -6,6 +6,7 @@ import {
   DeleteObjectCommand,
   DeleteObjectsCommand,
   GetObjectCommand,
+  type GetObjectCommandOutput,
   HeadObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
@@ -130,7 +131,13 @@ export class WorkspaceStorageError extends Error {
 }
 
 function normalizeRelativePath(path = '') {
-  return path.replace(/^\/+|\/+$/g, '');
+  const sanitizedPath = sanitizePath(path);
+
+  if (sanitizedPath === null) {
+    throw new WorkspaceStorageError('Invalid path', 400);
+  }
+
+  return sanitizedPath;
 }
 
 function buildWorkspaceStorageKey(wsId: string, path = '') {
@@ -505,9 +512,20 @@ async function getR2Overview(
 
 async function ensureWorkspaceCapacity(
   wsId: string,
-  incomingBytes: number
+  incomingBytes?: number
 ): Promise<void> {
-  if (incomingBytes <= 0) {
+  if (
+    incomingBytes === undefined ||
+    !Number.isFinite(incomingBytes) ||
+    incomingBytes < 0
+  ) {
+    throw new WorkspaceStorageError(
+      'A valid file size is required for storage uploads.',
+      400
+    );
+  }
+
+  if (incomingBytes === 0) {
     return;
   }
 
@@ -890,12 +908,26 @@ export async function downloadWorkspaceStorageObjectForProvider(
     );
   }
 
-  const response = await createR2Client(config).send(
-    new GetObjectCommand({
-      Bucket: config.bucket,
-      Key: fullPath,
-    })
-  );
+  let response: GetObjectCommandOutput;
+
+  try {
+    response = await createR2Client(config).send(
+      new GetObjectCommand({
+        Bucket: config.bucket,
+        Key: fullPath,
+      })
+    );
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      throw new WorkspaceStorageError('Failed to download source object', 404);
+    }
+
+    throw new WorkspaceStorageError(
+      error instanceof Error
+        ? error.message
+        : 'Failed to download source object'
+    );
+  }
 
   if (!response.Body) {
     throw new WorkspaceStorageError('Failed to download source object', 404);
@@ -977,7 +1009,7 @@ export async function uploadWorkspaceStorageFileDirectToProvider(
   if (error) {
     throw new WorkspaceStorageError(
       error.message || 'Failed to upload file',
-      error.statusCode === '409' ? 409 : 500
+      String(error.statusCode) === '409' ? 409 : 500
     );
   }
 
@@ -1003,6 +1035,16 @@ export async function createWorkspaceStorageSignedReadUrl(
   const config = options?.provider
     ? await resolveWorkspaceStorageBackendConfig(wsId, options.provider)
     : await resolveWorkspaceStorageConfig(wsId);
+
+  if (options?.provider && config.provider !== options.provider) {
+    throw new WorkspaceStorageError(
+      options.provider === WORKSPACE_STORAGE_PROVIDER_R2
+        ? 'Cloudflare R2 is not fully configured for this workspace.'
+        : 'Supabase storage is unavailable for this workspace.',
+      400
+    );
+  }
+
   const fullPath = buildWorkspaceStorageKey(wsId, path);
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
@@ -1054,7 +1096,7 @@ export async function createWorkspaceStorageUploadPayload(
     : posix.join(wsId, filename);
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
-    await ensureWorkspaceCapacity(wsId, options?.size ?? 0);
+    await ensureWorkspaceCapacity(wsId, options?.size);
     const client = createR2Client(config);
 
     if (!(options?.upsert ?? false)) {
@@ -1083,7 +1125,7 @@ export async function createWorkspaceStorageUploadPayload(
     };
   }
 
-  await ensureWorkspaceCapacity(wsId, options?.size ?? 0);
+  await ensureWorkspaceCapacity(wsId, options?.size);
   const supabase = await createDynamicAdminClient();
   const { data, error } = await supabase.storage
     .from('workspaces')
@@ -1394,6 +1436,15 @@ export async function renameWorkspaceStorageEntry(
       return {
         provider: WORKSPACE_STORAGE_PROVIDER_R2,
       };
+    }
+
+    const sourceExists = await hasR2Object(
+      client,
+      config.bucket,
+      currentBasePath
+    );
+    if (!sourceExists) {
+      throw new WorkspaceStorageError('File not found', 404);
     }
 
     const destinationExists = await hasR2Object(

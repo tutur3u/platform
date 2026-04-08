@@ -142,8 +142,14 @@ export default function SecretForm({
   const isDirty = form.formState.isDirty;
   const isValid = form.formState.isValid;
   const isSubmitting = form.formState.isSubmitting || mutation.isPending;
+  const allowPrefilledSubmit =
+    !data?.id &&
+    nameLocked &&
+    Boolean(initialSecretName) &&
+    Boolean(form.getValues('value'));
 
-  const disabled = !isDirty || !isValid || isSubmitting;
+  const disabled =
+    (!isDirty && !allowPrefilledSubmit) || !isValid || isSubmitting;
 
   return (
     <Form {...form}>
@@ -258,7 +264,10 @@ export default function SecretForm({
                   />
                 ) : (
                   <Input
-                    placeholder={selectedSecret?.placeholder || 'Value'}
+                    placeholder={
+                      selectedSecret?.placeholder ||
+                      t('ws-secrets.value_placeholder')
+                    }
                     autoComplete="off"
                     type={selectedSecret?.sensitive ? 'password' : 'text'}
                     {...field}
@@ -269,7 +278,9 @@ export default function SecretForm({
                 <p className="text-muted-foreground text-sm">
                   {selectedSecret.description
                     ? selectedSecret.description
-                    : `Example: ${selectedSecret.placeholder}`}
+                    : t('ws-secrets.value_example', {
+                        value: selectedSecret.placeholder,
+                      })}
                 </p>
               )}
               <FormMessage />

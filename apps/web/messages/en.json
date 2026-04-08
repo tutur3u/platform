@@ -13734,6 +13734,8 @@
     "secrets": "Secrets",
     "singular": "Secret",
     "value": "Value",
+    "value_example": "Example: {value}",
+    "value_placeholder": "Value",
     "workspace_secret": "Workspace Secret"
   },
   "ws-settings": {

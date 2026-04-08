@@ -83,6 +83,19 @@ function normalizeZipEntryPath(value) {
   return segments.join('/');
 }
 
+function parseHttpUrl(value) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+
+    return url;
+  } catch {
+    return null;
+  }
+}
+
 function joinArchivePath(prefix, value) {
   const normalizedValue = normalizeZipEntryPath(value);
   if (!normalizedValue) {
@@ -408,6 +421,13 @@ Bun.serve({
       return json({ message: 'Invalid request body' }, { status: 400 });
     }
 
+    const sourceUrl = parseHttpUrl(payload.sourceUrl);
+    const callbackUrl = parseHttpUrl(payload.callbackUrl);
+
+    if (!sourceUrl || !callbackUrl) {
+      return json({ message: 'Invalid request body' }, { status: 400 });
+    }
+
     try {
       const destinationPrefix =
         typeof payload.destinationPrefix === 'string'
@@ -420,9 +440,9 @@ Bun.serve({
 
       const result = await extractArchive({
         callbackToken: payload.callbackToken,
-        callbackUrl: payload.callbackUrl,
+        callbackUrl: callbackUrl.toString(),
         destinationPrefix,
-        sourceUrl: payload.sourceUrl,
+        sourceUrl: sourceUrl.toString(),
       });
 
       return json(result);

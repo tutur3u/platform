@@ -13734,6 +13734,8 @@
     "secrets": "Mã bí mật",
     "singular": "Mã bí mật",
     "value": "Giá trị",
+    "value_example": "Ví dụ: {value}",
+    "value_placeholder": "Giá trị",
     "workspace_secret": "Mã bí mật"
   },
   "ws-settings": {
