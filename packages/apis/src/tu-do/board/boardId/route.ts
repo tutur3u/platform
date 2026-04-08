@@ -63,15 +63,15 @@ export async function PUT(req: Request, { params }: Params) {
     name?: string;
     icon?: Database['public']['Enums']['platform_icon'] | null;
     color?: string;
+    ticket_prefix?: string | null;
     archived?: boolean;
     group_ids?: string[];
   };
 
-  const { group_ids: _, archived, ...coreData } = data;
+  const { group_ids: _, archived, color: __, ...coreData } = data;
 
-  const updateData: typeof coreData & { archived_at?: string | null } = {
-    ...coreData,
-  };
+  const updateData: Database['public']['Tables']['workspace_boards']['Update'] =
+    { ...coreData };
 
   if (archived !== undefined) {
     updateData.archived_at = archived ? new Date().toISOString() : null;

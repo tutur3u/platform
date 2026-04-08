@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TablesUpdate } from '@tuturuuu/types';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
@@ -62,7 +63,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   const data = parsed.data;
 
-  const updateData: Record<string, unknown> = {
+  const updateData: TablesUpdate<'workspace_promotions'> = {
     name: data.name,
     description: data.description,
     code: data.code,

@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TablesUpdate } from '@tuturuuu/types';
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
@@ -160,7 +161,7 @@ export async function PUT(request: Request, { params }: Params) {
       updates.location !== undefined;
 
     // Build update object with only the fields that were provided
-    const updatePayload: Record<string, unknown> = {};
+    const updatePayload: TablesUpdate<'workspace_calendar_events'> = {};
 
     // Handle sensitive fields with encryption
     // CRITICAL: When E2EE is enabled and the existing event is NOT encrypted,

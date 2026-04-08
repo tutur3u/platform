@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TablesInsert, TablesUpdate } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { NextResponse } from 'next/server';
@@ -84,8 +85,9 @@ export async function PATCH(
     }
 
     // 5. Build update objects with validated fields
-    const taskUpdateData: Record<string, unknown> = {};
-    const schedulingUpdateData: Record<string, unknown> = {};
+    const taskUpdateData: TablesUpdate<'tasks'> = {};
+    const schedulingUpdateData: TablesUpdate<'task_user_scheduling_settings'> =
+      {};
 
     // Priority
     if (body.priority !== undefined) {
@@ -98,7 +100,7 @@ export async function PATCH(
     }
 
     if (body.is_splittable !== undefined) {
-      schedulingUpdateData.is_splittable = body.is_splittable;
+      schedulingUpdateData.is_splittable = body.is_splittable ?? false;
     }
 
     if (body.min_split_duration_minutes !== undefined) {
@@ -116,7 +118,7 @@ export async function PATCH(
     }
 
     if (body.auto_schedule !== undefined) {
-      schedulingUpdateData.auto_schedule = body.auto_schedule;
+      schedulingUpdateData.auto_schedule = body.auto_schedule ?? false;
     }
 
     // Check if there's anything to update
@@ -147,18 +149,17 @@ export async function PATCH(
     }
 
     if (Object.keys(schedulingUpdateData).length > 0) {
+      const schedulingUpsertData: TablesInsert<'task_user_scheduling_settings'> =
+        {
+          task_id: taskId,
+          user_id: user.id,
+          ...schedulingUpdateData,
+        };
       const { error: schedulingError } = await (supabase as any)
         .from('task_user_scheduling_settings')
-        .upsert(
-          {
-            task_id: taskId,
-            user_id: user.id,
-            ...schedulingUpdateData,
-          },
-          {
-            onConflict: 'task_id,user_id',
-          }
-        );
+        .upsert(schedulingUpsertData, {
+          onConflict: 'task_id,user_id',
+        });
 
       if (schedulingError) {
         console.error(

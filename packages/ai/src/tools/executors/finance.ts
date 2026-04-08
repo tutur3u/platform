@@ -353,10 +353,20 @@ export async function executeUpdateTransaction(
   ctx: MiraToolContext
 ) {
   const transactionId = args.transactionId as string;
-  const updates: Record<string, unknown> = {};
+  const updates: TablesUpdate<'wallet_transactions'> = {};
 
-  if (args.amount !== undefined) updates.amount = args.amount;
-  if (args.description !== undefined) updates.description = args.description;
+  if (args.amount !== undefined) {
+    if (args.amount !== null && typeof args.amount !== 'number') {
+      return { error: 'amount must be a number or null' };
+    }
+    updates.amount = args.amount;
+  }
+  if (args.description !== undefined) {
+    if (args.description !== null && typeof args.description !== 'string') {
+      return { error: 'description must be a string or null' };
+    }
+    updates.description = args.description;
+  }
   if (args.categoryId !== undefined) {
     const categoryId = args.categoryId as string | null;
     if (categoryId) {
@@ -374,7 +384,11 @@ export async function executeUpdateTransaction(
     updates.category_id = categoryId;
   }
   if (args.walletId !== undefined) {
-    const walletId = args.walletId as string | null;
+    if (args.walletId === null) {
+      return { error: 'walletId cannot be null' };
+    }
+
+    const walletId = args.walletId as string;
     if (walletId) {
       try {
         if (!(await hasWalletAccess(ctx, walletId))) {
@@ -476,10 +490,20 @@ export async function executeUpdateTransactionCategory(
   ctx: MiraToolContext
 ) {
   const categoryId = args.categoryId as string;
-  const updates: Record<string, unknown> = {};
+  const updates: TablesUpdate<'transaction_categories'> = {};
 
-  if (args.name !== undefined) updates.name = args.name;
-  if (args.isExpense !== undefined) updates.is_expense = args.isExpense;
+  if (args.name !== undefined) {
+    if (typeof args.name !== 'string') {
+      return { error: 'name must be a string' };
+    }
+    updates.name = args.name;
+  }
+  if (args.isExpense !== undefined) {
+    if (args.isExpense !== null && typeof args.isExpense !== 'boolean') {
+      return { error: 'isExpense must be a boolean or null' };
+    }
+    updates.is_expense = args.isExpense;
+  }
 
   if (Object.keys(updates).length === 0) {
     return { success: true, message: 'No fields to update' };

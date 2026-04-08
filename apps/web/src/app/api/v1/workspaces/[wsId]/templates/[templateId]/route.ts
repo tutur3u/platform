@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TablesUpdate } from '@tuturuuu/types';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -232,7 +233,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const sbAdmin = await createAdminClient();
 
     // Build update object
-    const updateData: Record<string, unknown> = {
+    const updateData: TablesUpdate<'board_templates'> = {
       updated_at: new Date().toISOString(),
     };
 

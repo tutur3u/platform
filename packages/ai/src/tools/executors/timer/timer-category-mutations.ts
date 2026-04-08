@@ -1,3 +1,4 @@
+import type { TablesUpdate } from '@tuturuuu/types';
 import type { MiraToolContext } from '../../mira-tools';
 import { getWorkspaceContextWorkspaceId } from '../../workspace-context';
 import { buildToolFailure, coerceOptionalString } from './timer-helpers';
@@ -118,7 +119,7 @@ export async function executeUpdateTimeTrackingCategory(
     );
   }
 
-  const updates: Record<string, unknown> = {
+  const updates: TablesUpdate<'time_tracking_categories'> = {
     updated_at: new Date().toISOString(),
   };
 

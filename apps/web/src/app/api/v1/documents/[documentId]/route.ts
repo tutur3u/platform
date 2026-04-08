@@ -6,7 +6,7 @@
  */
 
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { updateDocumentDataSchema } from '@tuturuuu/types';
+import { type TablesUpdate, updateDocumentDataSchema } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import {
   createErrorResponse,
@@ -115,7 +115,7 @@ export const PATCH = withApiAuth<{ documentId: string }>(
       const supabase = await createClient();
 
       // Build update object
-      const updateData: Record<string, unknown> = {};
+      const updateData: TablesUpdate<'workspace_documents'> = {};
       if (name) updateData.name = name;
       if (content) updateData.content = content;
       if (isPublic !== undefined) updateData.is_public = isPublic;

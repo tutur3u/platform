@@ -1,5 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceRole } from '@tuturuuu/types';
+import type { TablesUpdate, WorkspaceRole } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -44,7 +44,10 @@ export async function PUT(req: Request, { params }: Params) {
       { status: 400 }
     );
 
-  const { permissions, ...coreData } = data;
+  const { permissions } = data;
+  const coreData: TablesUpdate<'workspace_roles'> = {
+    name: data.name,
+  };
 
   const roleQuery = supabase
     .from('workspace_roles')

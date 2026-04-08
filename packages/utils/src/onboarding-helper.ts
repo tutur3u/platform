@@ -173,7 +173,7 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
 export async function createWorkspaceFromOnboarding(
   userId: string,
   workspaceName: string,
-  workspaceDescription?: string,
+  _workspaceDescription?: string,
   avatarUrl?: string
 ): Promise<{ success: boolean; workspaceId?: string; error?: string }> {
   const supabase = createClient();
@@ -184,7 +184,6 @@ export async function createWorkspaceFromOnboarding(
       .from('workspaces')
       .insert({
         name: workspaceName,
-        description: workspaceDescription,
         avatar_url: avatarUrl,
         creator_id: userId,
       })

@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TablesUpdate } from '@tuturuuu/types';
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
@@ -119,7 +120,7 @@ export async function PUT(
     const body = await request.json();
     const parsed = updateDraftSchema.parse(body);
 
-    const updateData: Record<string, unknown> = {
+    const updateData: TablesUpdate<'task_drafts'> = {
       updated_at: new Date().toISOString(),
     };
 

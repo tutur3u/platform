@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TablesUpdate } from '@tuturuuu/types';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -98,7 +99,7 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const updatePayload: Record<string, unknown> = {
+    const updatePayload: TablesUpdate<'external_user_monthly_reports'> = {
       ...parsed.data,
       updated_at: new Date().toISOString(),
     };

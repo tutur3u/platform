@@ -1,3 +1,4 @@
+import type { TablesUpdate } from '@tuturuuu/types';
 import type { MiraToolContext } from '../../mira-tools';
 import { getWorkspaceContextWorkspaceId } from '../../workspace-context';
 import { hasTaskAccess, hasTimeTrackingCategoryAccess } from '../scope-helpers';
@@ -47,7 +48,7 @@ export async function executeUpdateTimeTrackingSession(
   if (existingError) return { error: existingError.message };
   if (!existing) return { error: 'Session not found' };
 
-  const updates: Record<string, unknown> = {};
+  const updates: TablesUpdate<'time_tracking_sessions'> = {};
   if (parsedArgs.title !== undefined) {
     if (typeof parsedArgs.title !== 'string') {
       return { error: 'title must be a string' };

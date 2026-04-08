@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TablesUpdate } from '@tuturuuu/types';
 import {
   INTERNAL_WORKSPACE_SLUG,
   MAX_SHORT_TEXT_LENGTH,
@@ -132,7 +133,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const body = await req.json();
     const validatedData = calendarSettingsSchema.parse(body);
 
-    const updatePayload: Record<string, unknown> = {};
+    const updatePayload: TablesUpdate<'workspaces'> = {};
     if (validatedData.timezone !== undefined) {
       updatePayload.timezone = validatedData.timezone;
     }
