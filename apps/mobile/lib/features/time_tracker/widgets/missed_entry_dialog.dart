@@ -5,6 +5,7 @@ import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, TextButton, TextField;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
@@ -114,302 +115,306 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
         color: theme.colorScheme.background,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + keyboardBottomInset),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                l10n.timerAddMissedEntry,
-                style: theme.typography.h3,
-              ),
-              const shad.Gap(24),
-              shad.FormField(
-                key: const shad.FormKey<String>(#missedEntryTitle),
-                label: Text(l10n.timerSessionTitle),
-                child: shad.TextField(
-                  controller: _titleCtrl,
+      child: DismissKeyboardOnPointerDown(
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + keyboardBottomInset),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l10n.timerAddMissedEntry,
+                  style: theme.typography.h3,
                 ),
-              ),
-              const shad.Gap(16),
-              shad.FormField(
-                key: const shad.FormKey<String>(#missedEntryDesc),
-                label: Text(l10n.timerDescription),
-                child: shad.TextField(
-                  controller: _descCtrl,
-                  maxLines: 3,
-                ),
-              ),
-              const shad.Gap(16),
-              if (widget.categories.isNotEmpty)
+                const shad.Gap(24),
                 shad.FormField(
-                  key: const shad.FormKey<String?>(#missedEntryCategory),
-                  label: Text(l10n.timerCategory),
-                  child: shad.OutlineButton(
-                    onPressed: () => unawaited(_pickCategory()),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            if (selectedCategory?.color != null) ...[
-                              Container(
-                                width: 10,
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: resolveTimeTrackingCategoryColor(
-                                    context,
-                                    selectedCategory?.color,
-                                    fallback: theme.colorScheme.primary,
+                  key: const shad.FormKey<String>(#missedEntryTitle),
+                  label: Text(l10n.timerSessionTitle),
+                  child: shad.TextField(
+                    controller: _titleCtrl,
+                  ),
+                ),
+                const shad.Gap(16),
+                shad.FormField(
+                  key: const shad.FormKey<String>(#missedEntryDesc),
+                  label: Text(l10n.timerDescription),
+                  child: shad.TextField(
+                    controller: _descCtrl,
+                    maxLines: 3,
+                  ),
+                ),
+                const shad.Gap(16),
+                if (widget.categories.isNotEmpty)
+                  shad.FormField(
+                    key: const shad.FormKey<String?>(#missedEntryCategory),
+                    label: Text(l10n.timerCategory),
+                    child: shad.OutlineButton(
+                      onPressed: () => unawaited(_pickCategory()),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              if (selectedCategory?.color != null) ...[
+                                Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: resolveTimeTrackingCategoryColor(
+                                      context,
+                                      selectedCategory?.color,
+                                      fallback: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                                const shad.Gap(8),
+                              ],
+                              Text(
+                                selectedCategory?.name ?? l10n.timerNoCategory,
+                              ),
+                            ],
+                          ),
+                          const Icon(shad.LucideIcons.chevronDown, size: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                const shad.Gap(16),
+                _DateTimePicker(
+                  label: l10n.timerStartTime,
+                  value: _startTime,
+                  dateFmt: dateFmt,
+                  timeFmt: timeFmt,
+                  onChanged: (dt) => setState(() => _startTime = dt),
+                ),
+                const shad.Gap(12),
+                _DateTimePicker(
+                  label: l10n.timerEndTime,
+                  value: _endTime,
+                  dateFmt: dateFmt,
+                  timeFmt: timeFmt,
+                  onChanged: (dt) => setState(() => _endTime = dt),
+                ),
+                if (showThresholdWarning) ...[
+                  const shad.Gap(12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: warningBackgroundColor,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: warningBorderColor,
+                      ),
+                    ),
+                    child: Text(
+                      widget.thresholdDays == 0
+                          ? l10n.timerThresholdWarningAll
+                          : l10n.timerThresholdWarning(
+                              widget.thresholdDays ?? 0,
+                            ),
+                      style: theme.typography.small.copyWith(
+                        color: warningTextColor,
+                      ),
+                    ),
+                  ),
+                  const shad.Gap(12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.timerRequestProofImagesCount(
+                            _images.length,
+                            _maxImages,
+                          ),
+                          style: theme.typography.small,
+                        ),
+                      ),
+                      shad.OutlineButton(
+                        onPressed: _images.length >= _maxImages
+                            ? null
+                            : () => unawaited(_pickImageSource()),
+                        child: Text(l10n.timerRequestAddImage),
+                      ),
+                    ],
+                  ),
+                  const shad.Gap(8),
+                  if (_images.isNotEmpty)
+                    SizedBox(
+                      height: 76,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemBuilder: (context, index) {
+                          final image = _images[index];
+                          return Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  File(image.path),
+                                  width: 76,
+                                  height: 76,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                top: 2,
+                                right: 2,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _images.removeAt(index);
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.black54,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
                                   ),
                                 ),
                               ),
-                              const shad.Gap(8),
                             ],
-                            Text(
-                              selectedCategory?.name ?? l10n.timerNoCategory,
-                            ),
-                          ],
-                        ),
-                        const Icon(shad.LucideIcons.chevronDown, size: 16),
-                      ],
-                    ),
-                  ),
-                ),
-              const shad.Gap(16),
-              _DateTimePicker(
-                label: l10n.timerStartTime,
-                value: _startTime,
-                dateFmt: dateFmt,
-                timeFmt: timeFmt,
-                onChanged: (dt) => setState(() => _startTime = dt),
-              ),
-              const shad.Gap(12),
-              _DateTimePicker(
-                label: l10n.timerEndTime,
-                value: _endTime,
-                dateFmt: dateFmt,
-                timeFmt: timeFmt,
-                onChanged: (dt) => setState(() => _endTime = dt),
-              ),
-              if (showThresholdWarning) ...[
-                const shad.Gap(12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: warningBackgroundColor,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: warningBorderColor,
-                    ),
-                  ),
-                  child: Text(
-                    widget.thresholdDays == 0
-                        ? l10n.timerThresholdWarningAll
-                        : l10n.timerThresholdWarning(widget.thresholdDays ?? 0),
-                    style: theme.typography.small.copyWith(
-                      color: warningTextColor,
-                    ),
-                  ),
-                ),
-                const shad.Gap(12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        l10n.timerRequestProofImagesCount(
-                          _images.length,
-                          _maxImages,
-                        ),
-                        style: theme.typography.small,
+                          );
+                        },
+                        separatorBuilder: (_, _) => const shad.Gap(8),
+                        itemCount: _images.length,
                       ),
                     ),
-                    shad.OutlineButton(
-                      onPressed: _images.length >= _maxImages
-                          ? null
-                          : () => unawaited(_pickImageSource()),
-                      child: Text(l10n.timerRequestAddImage),
+                  if (requiresProof && _images.isEmpty) ...[
+                    const shad.Gap(8),
+                    Text(
+                      l10n.timerProofOfWorkRequired,
+                      style: theme.typography.small.copyWith(
+                        color: theme.colorScheme.destructive,
+                      ),
                     ),
                   ],
-                ),
-                const shad.Gap(8),
-                if (_images.isNotEmpty)
-                  SizedBox(
-                    height: 76,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemBuilder: (context, index) {
-                        final image = _images[index];
-                        return Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
-                                File(image.path),
-                                width: 76,
-                                height: 76,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            Positioned(
-                              top: 2,
-                              right: 2,
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _images.removeAt(index);
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.black54,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.close,
-                                    color: Colors.white,
-                                    size: 14,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                      separatorBuilder: (_, _) => const shad.Gap(8),
-                      itemCount: _images.length,
-                    ),
-                  ),
-                if (requiresProof && _images.isEmpty) ...[
-                  const shad.Gap(8),
-                  Text(
-                    l10n.timerProofOfWorkRequired,
-                    style: theme.typography.small.copyWith(
-                      color: theme.colorScheme.destructive,
-                    ),
-                  ),
                 ],
-              ],
-              const shad.Gap(12),
-              Text(
-                '${l10n.timerDuration}: $durationText',
-                style: theme.typography.small.copyWith(
-                  color: theme.colorScheme.mutedForeground,
+                const shad.Gap(12),
+                Text(
+                  '${l10n.timerDuration}: $durationText',
+                  style: theme.typography.small.copyWith(
+                    color: theme.colorScheme.mutedForeground,
+                  ),
                 ),
-              ),
-              const shad.Gap(24),
-              shad.PrimaryButton(
-                onPressed: _isValid && !_isSubmitting
-                    ? () async {
-                        final navigator = Navigator.of(context);
-                        final toastContext = Navigator.of(
-                          context,
-                          rootNavigator: true,
-                        ).context;
-                        setState(() => _isSubmitting = true);
+                const shad.Gap(24),
+                shad.PrimaryButton(
+                  onPressed: _isValid && !_isSubmitting
+                      ? () async {
+                          final navigator = Navigator.of(context);
+                          final toastContext = Navigator.of(
+                            context,
+                            rootNavigator: true,
+                          ).context;
+                          setState(() => _isSubmitting = true);
 
-                        final workSessionTitle = _titleCtrl.text.isEmpty
-                            ? l10n.timerWorkSession
-                            : _titleCtrl.text;
-                        final successTitle = showThresholdWarning
-                            ? l10n.timerRequestSubmittedTitle
-                            : l10n.timerMissedEntrySavedTitle;
-                        final successContent = showThresholdWarning
-                            ? l10n.timerRequestSubmittedContent
-                            : l10n.timerMissedEntrySavedContent;
-                        final errorTitle = l10n.commonSomethingWentWrong;
+                          final workSessionTitle = _titleCtrl.text.isEmpty
+                              ? l10n.timerWorkSession
+                              : _titleCtrl.text;
+                          final successTitle = showThresholdWarning
+                              ? l10n.timerRequestSubmittedTitle
+                              : l10n.timerMissedEntrySavedTitle;
+                          final successContent = showThresholdWarning
+                              ? l10n.timerRequestSubmittedContent
+                              : l10n.timerMissedEntrySavedContent;
+                          final errorTitle = l10n.commonSomethingWentWrong;
 
-                        try {
-                          await widget.onSave(
-                            title: workSessionTitle,
-                            categoryId: _categoryId,
-                            startTime: _startTime,
-                            endTime: _endTime,
-                            shouldSubmitAsRequest: showThresholdWarning,
-                            imageLocalPaths: _images
-                                .map((file) => file.path)
-                                .toList(),
-                            description: _descCtrl.text.isEmpty
-                                ? null
-                                : _descCtrl.text,
-                          );
+                          try {
+                            await widget.onSave(
+                              title: workSessionTitle,
+                              categoryId: _categoryId,
+                              startTime: _startTime,
+                              endTime: _endTime,
+                              shouldSubmitAsRequest: showThresholdWarning,
+                              imageLocalPaths: _images
+                                  .map((file) => file.path)
+                                  .toList(),
+                              description: _descCtrl.text.isEmpty
+                                  ? null
+                                  : _descCtrl.text,
+                            );
 
-                          if (!context.mounted) {
-                            return;
-                          }
+                            if (!context.mounted) {
+                              return;
+                            }
 
-                          shad.showToast(
-                            context: toastContext,
-                            builder: (context, overlay) => shad.Alert(
-                              title: Text(successTitle),
-                              content: Text(successContent),
-                            ),
-                          );
+                            shad.showToast(
+                              context: toastContext,
+                              builder: (context, overlay) => shad.Alert(
+                                title: Text(successTitle),
+                                content: Text(successContent),
+                              ),
+                            );
 
-                          setState(() => _isSubmitting = false);
+                            setState(() => _isSubmitting = false);
 
-                          final dialogContext = context;
-                          await shad.closeOverlay<void>(dialogContext);
-                          if (!dialogContext.mounted) {
-                            return;
-                          }
+                            final dialogContext = context;
+                            await shad.closeOverlay<void>(dialogContext);
+                            if (!dialogContext.mounted) {
+                              return;
+                            }
 
-                          if (navigator.canPop()) {
-                            navigator.pop();
-                          }
-                        } on ApiException catch (error) {
-                          if (!context.mounted) {
-                            return;
-                          }
+                            if (navigator.canPop()) {
+                              navigator.pop();
+                            }
+                          } on ApiException catch (error) {
+                            if (!context.mounted) {
+                              return;
+                            }
 
-                          shad.showToast(
-                            context: toastContext,
-                            builder: (context, overlay) =>
-                                shad.Alert.destructive(
-                                  title: Text(errorTitle),
-                                  content: Text(_toErrorMessage(error)),
-                                ),
-                          );
-
-                          setState(() => _isSubmitting = false);
-                        } on Object {
-                          if (!context.mounted) {
-                            return;
-                          }
-
-                          shad.showToast(
-                            context: toastContext,
-                            builder: (context, overlay) =>
-                                shad.Alert.destructive(
-                                  title: Text(errorTitle),
-                                  content: Text(
-                                    context.l10n.commonSomethingWentWrong,
+                            shad.showToast(
+                              context: toastContext,
+                              builder: (context, overlay) =>
+                                  shad.Alert.destructive(
+                                    title: Text(errorTitle),
+                                    content: Text(_toErrorMessage(error)),
                                   ),
-                                ),
-                          );
+                            );
 
-                          setState(() => _isSubmitting = false);
+                            setState(() => _isSubmitting = false);
+                          } on Object {
+                            if (!context.mounted) {
+                              return;
+                            }
+
+                            shad.showToast(
+                              context: toastContext,
+                              builder: (context, overlay) =>
+                                  shad.Alert.destructive(
+                                    title: Text(errorTitle),
+                                    content: Text(
+                                      context.l10n.commonSomethingWentWrong,
+                                    ),
+                                  ),
+                            );
+
+                            setState(() => _isSubmitting = false);
+                          }
                         }
-                      }
-                    : null,
-                child: _isSubmitting
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: shad.CircularProgressIndicator(),
-                      )
-                    : Text(
-                        showThresholdWarning
-                            ? l10n.timerSubmitForApproval
-                            : l10n.timerSave,
-                      ),
-              ),
-            ],
+                      : null,
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: shad.CircularProgressIndicator(),
+                        )
+                      : Text(
+                          showThresholdWarning
+                              ? l10n.timerSubmitForApproval
+                              : l10n.timerSave,
+                        ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

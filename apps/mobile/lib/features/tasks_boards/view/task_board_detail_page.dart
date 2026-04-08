@@ -17,6 +17,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
 import 'package:mobile/core/utils/form_dirty_utils.dart';
 import 'package:mobile/core/utils/tiptap_description_parser.dart';
+import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';

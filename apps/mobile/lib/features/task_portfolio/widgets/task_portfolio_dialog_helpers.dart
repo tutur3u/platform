@@ -168,6 +168,7 @@ class _DropdownSelectField extends StatelessWidget {
     required this.value,
     required this.values,
     required this.placeholder,
+    required this.title,
     required this.labelBuilder,
     required this.onChanged,
     this.fieldKey,
@@ -176,6 +177,7 @@ class _DropdownSelectField extends StatelessWidget {
   final String? value;
   final List<String> values;
   final String placeholder;
+  final String title;
   final String Function(String value) labelBuilder;
   final ValueChanged<String?> onChanged;
   final Key? fieldKey;
@@ -183,24 +185,111 @@ class _DropdownSelectField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasValue = value != null && values.contains(value);
+    final selectedLabel = hasValue ? labelBuilder(value!) : placeholder;
 
-    return DropdownButtonFormField<String>(
+    return shad.OutlineButton(
       key: fieldKey ?? ValueKey('${placeholder}_${value ?? 'empty'}'),
-      initialValue: hasValue ? value : null,
-      isExpanded: true,
-      decoration: InputDecoration(
-        border: const OutlineInputBorder(),
-        hintText: placeholder,
-      ),
-      items: values
-          .map(
-            (value) => DropdownMenuItem<String>(
-              value: value,
-              child: Text(labelBuilder(value)),
+      onPressed: () => unawaited(_openPicker(context)),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              selectedLabel,
+              textAlign: TextAlign.left,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          )
-          .toList(growable: false),
-      onChanged: onChanged,
+          ),
+          const shad.Gap(8),
+          const Icon(Icons.keyboard_arrow_down, size: 16),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openPicker(BuildContext context) async {
+    final selected = await showAdaptiveSheet<String>(
+      context: context,
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (_) => _SingleSelectPickerSheet(
+        title: title,
+        values: values,
+        selectedValue: value,
+        labelBuilder: labelBuilder,
+      ),
+    );
+
+    if (selected != null) {
+      onChanged(selected);
+    }
+  }
+}
+
+class _SingleSelectPickerSheet extends StatelessWidget {
+  const _SingleSelectPickerSheet({
+    required this.title,
+    required this.values,
+    required this.selectedValue,
+    required this.labelBuilder,
+  });
+
+  final String title;
+  final List<String> values;
+  final String? selectedValue;
+  final String Function(String value) labelBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16, 12, 16, 20 + bottomInset),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.mutedForeground.withValues(
+                    alpha: 0.3,
+                  ),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const shad.Gap(16),
+            Text(title, style: theme.typography.h4),
+            const shad.Gap(12),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.5,
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: values.length,
+                itemBuilder: (context, index) {
+                  final item = values[index];
+                  final isSelected = item == selectedValue;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: isSelected
+                        ? const Icon(Icons.check, size: 16)
+                        : const SizedBox(width: 16, height: 16),
+                    title: Text(labelBuilder(item)),
+                    onTap: () => Navigator.of(context).pop(item),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

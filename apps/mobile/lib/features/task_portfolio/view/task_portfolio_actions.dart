@@ -23,22 +23,25 @@ class TaskPortfolioActions {
   final TaskRepository taskRepository;
 
   Future<void> openCreateProject() async {
-    final result = await shad.showDialog<TaskProjectFormValue>(
-      context: context,
-      builder: (_) => const TaskProjectDialog(),
-    );
-    if (result == null || !context.mounted) return;
-
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
 
-    await _runAction(
-      () => context.read<TaskPortfolioCubit>().createProject(
-        wsId: wsId,
-        name: result.name,
-        description: result.description,
+    await showAdaptiveSheet<void>(
+      context: context,
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (_) => TaskProjectSheet(
+        onSubmit: (result) async {
+          if (!context.mounted) return false;
+          return _runActionWithResult(
+            () => context.read<TaskPortfolioCubit>().createProject(
+              wsId: wsId,
+              name: result.name,
+              description: result.description,
+            ),
+            successMessage: context.l10n.taskPortfolioProjectCreated,
+          );
+        },
       ),
-      successMessage: context.l10n.taskPortfolioProjectCreated,
     );
   }
 
@@ -67,28 +70,32 @@ class TaskPortfolioActions {
 
     if (!context.mounted) return;
 
-    final result = await shad.showDialog<TaskProjectFormValue>(
+    await showAdaptiveSheet<void>(
       context: context,
-      builder: (_) =>
-          TaskProjectDialog(project: project, workspaceUsers: workspaceUsers),
-    );
-    if (result == null || !context.mounted) return;
-
-    await _runAction(
-      () => context.read<TaskPortfolioCubit>().updateProject(
-        wsId: wsId,
-        projectId: project.id,
-        name: result.name,
-        description: result.description,
-        status: result.status,
-        priority: result.priority,
-        healthStatus: result.healthStatus,
-        leadId: result.leadId,
-        startDate: result.startDate,
-        endDate: result.endDate,
-        archived: result.archived,
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (_) => TaskProjectSheet(
+        project: project,
+        workspaceUsers: workspaceUsers,
+        onSubmit: (result) async {
+          if (!context.mounted) return false;
+          return _runActionWithResult(
+            () => context.read<TaskPortfolioCubit>().updateProject(
+              wsId: wsId,
+              projectId: project.id,
+              name: result.name,
+              description: result.description,
+              status: result.status,
+              priority: result.priority,
+              healthStatus: result.healthStatus,
+              leadId: result.leadId,
+              startDate: result.startDate,
+              endDate: result.endDate,
+              archived: result.archived,
+            ),
+            successMessage: context.l10n.taskPortfolioProjectUpdated,
+          );
+        },
       ),
-      successMessage: context.l10n.taskPortfolioProjectUpdated,
     );
   }
 
@@ -127,21 +134,18 @@ class TaskPortfolioActions {
 
     await showAdaptiveSheet<void>(
       context: context,
-      enableDrag: false,
-      useRootNavigator: true,
-      builder: (_) => TaskInitiativeDialog(
-        onSubmit: (result) {
-          if (!context.mounted) return Future.value(false);
-          final cubit = context.read<TaskPortfolioCubit>();
-          final successMessage = context.l10n.taskPortfolioInitiativeCreated;
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (_) => TaskInitiativeSheet(
+        onSubmit: (result) async {
+          if (!context.mounted) return false;
           return _runActionWithResult(
-            () => cubit.createInitiative(
+            () => context.read<TaskPortfolioCubit>().createInitiative(
               wsId: wsId,
               name: result.name,
               description: result.description,
               status: result.status,
             ),
-            successMessage: successMessage,
+            successMessage: context.l10n.taskPortfolioInitiativeCreated,
           );
         },
       ),
@@ -154,23 +158,20 @@ class TaskPortfolioActions {
 
     await showAdaptiveSheet<void>(
       context: context,
-      enableDrag: false,
-      useRootNavigator: true,
-      builder: (_) => TaskInitiativeDialog(
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (_) => TaskInitiativeSheet(
         initiative: initiative,
-        onSubmit: (result) {
-          if (!context.mounted) return Future.value(false);
-          final cubit = context.read<TaskPortfolioCubit>();
-          final successMessage = context.l10n.taskPortfolioInitiativeUpdated;
+        onSubmit: (result) async {
+          if (!context.mounted) return false;
           return _runActionWithResult(
-            () => cubit.updateInitiative(
+            () => context.read<TaskPortfolioCubit>().updateInitiative(
               wsId: wsId,
               initiativeId: initiative.id,
               name: result.name,
               description: result.description,
               status: result.status,
             ),
-            successMessage: successMessage,
+            successMessage: context.l10n.taskPortfolioInitiativeUpdated,
           );
         },
       ),

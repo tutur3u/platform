@@ -62,13 +62,14 @@ class _TaskBoardListFormSheetState extends State<_TaskBoardListFormSheet> {
     final theme = shad.Theme.of(context);
     final statusOptions = _taskBoardListStatusOptions(context);
     final colorOptions = _taskBoardListColorOptions(context);
+    final viewInsets = MediaQuery.of(context).viewInsets;
 
     return PopScope(
       canPop: !_isSubmitting,
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 20 + viewInsets.bottom),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -93,63 +94,73 @@ class _TaskBoardListFormSheetState extends State<_TaskBoardListFormSheet> {
                 style: theme.typography.h4,
               ),
               const shad.Gap(24),
-              // List name field
-              Text(
-                context.l10n.taskBoardDetailListNameLabel,
-                style: theme.typography.small.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const shad.Gap(8),
-              shad.TextField(
-                controller: _nameController,
-                hintText: context.l10n.taskBoardDetailUntitledList,
-                autofocus: true,
-                enabled: !_isSubmitting,
-                onSubmitted: (_) => _submit(),
-              ),
-              const shad.Gap(16),
-              // Status category dropdown
-              Text(
-                context.l10n.taskBoardDetailStatusCategoryLabel,
-                style: theme.typography.small.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const shad.Gap(8),
-              IgnorePointer(
-                ignoring: _isSubmitting,
-                child: _StatusCategoryDropdown(
-                  selectedStatus: _selectedStatus,
-                  statusOptions: statusOptions,
-                  excludingListId: widget.currentListId,
-                  existingLists: widget.existingLists,
-                  onChanged: (status) {
-                    if (status != null) {
-                      setState(() => _selectedStatus = status);
-                    }
-                  },
-                ),
-              ),
-              const shad.Gap(16),
-              // Color dropdown
-              Text(
-                context.l10n.taskBoardDetailColorLabel,
-                style: theme.typography.small.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const shad.Gap(8),
-              IgnorePointer(
-                ignoring: _isSubmitting,
-                child: _ColorDropdown(
-                  selectedColor: _selectedColor,
-                  colorOptions: colorOptions,
-                  onChanged: (color) {
-                    if (color != null) {
-                      setState(() => _selectedColor = color);
-                    }
-                  },
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // List name field
+                      Text(
+                        context.l10n.taskBoardDetailListNameLabel,
+                        style: theme.typography.small.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const shad.Gap(8),
+                      shad.TextField(
+                        controller: _nameController,
+                        hintText: context.l10n.taskBoardDetailUntitledList,
+                        autofocus: true,
+                        enabled: !_isSubmitting,
+                        onSubmitted: (_) => _submit(),
+                      ),
+                      const shad.Gap(16),
+                      // Status category dropdown
+                      Text(
+                        context.l10n.taskBoardDetailStatusCategoryLabel,
+                        style: theme.typography.small.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const shad.Gap(8),
+                      IgnorePointer(
+                        ignoring: _isSubmitting,
+                        child: _StatusCategoryDropdown(
+                          selectedStatus: _selectedStatus,
+                          statusOptions: statusOptions,
+                          excludingListId: widget.currentListId,
+                          existingLists: widget.existingLists,
+                          onChanged: (status) {
+                            if (status != null) {
+                              setState(() => _selectedStatus = status);
+                            }
+                          },
+                        ),
+                      ),
+                      const shad.Gap(16),
+                      // Color dropdown
+                      Text(
+                        context.l10n.taskBoardDetailColorLabel,
+                        style: theme.typography.small.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const shad.Gap(8),
+                      IgnorePointer(
+                        ignoring: _isSubmitting,
+                        child: _ColorDropdown(
+                          selectedColor: _selectedColor,
+                          colorOptions: colorOptions,
+                          onChanged: (color) {
+                            if (color != null) {
+                              setState(() => _selectedColor = color);
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const shad.Gap(24),
@@ -587,27 +598,33 @@ class _TaskBoardPickerHandle extends StatelessWidget {
   }
 }
 
-class _TaskBoardTextInputDialog extends StatefulWidget {
-  const _TaskBoardTextInputDialog({
+class _TaskBoardRenameBoardSheet extends StatefulWidget {
+  const _TaskBoardRenameBoardSheet({
     required this.title,
     required this.hintText,
     required this.confirmLabel,
+    required this.successMessage,
+    required this.onSubmit,
     this.initialValue = '',
   });
 
   final String title;
   final String hintText;
   final String confirmLabel;
+  final String successMessage;
+  final Future<bool> Function({required String name}) onSubmit;
   final String initialValue;
 
   @override
-  State<_TaskBoardTextInputDialog> createState() {
-    return _TaskBoardTextInputDialogState();
+  State<_TaskBoardRenameBoardSheet> createState() {
+    return _TaskBoardRenameBoardSheetState();
   }
 }
 
-class _TaskBoardTextInputDialogState extends State<_TaskBoardTextInputDialog> {
+class _TaskBoardRenameBoardSheetState
+    extends State<_TaskBoardRenameBoardSheet> {
   late final TextEditingController _controller;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -623,36 +640,95 @@ class _TaskBoardTextInputDialogState extends State<_TaskBoardTextInputDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return shad.AlertDialog(
-      title: Text(widget.title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          shad.TextField(
-            controller: _controller,
-            hintText: widget.hintText,
-            autofocus: true,
-            onSubmitted: (_) => _submit(),
+    final theme = shad.Theme.of(context);
+    final viewInsets = MediaQuery.of(context).viewInsets;
+
+    return PopScope(
+      canPop: !_isSubmitting,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 20 + viewInsets.bottom),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Sheet handle indicator
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.mutedForeground.withValues(
+                      alpha: 0.3,
+                    ),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const shad.Gap(16),
+              // Title
+              Text(
+                widget.title,
+                style: theme.typography.h4,
+              ),
+              const shad.Gap(24),
+              // Board name field
+              shad.TextField(
+                controller: _controller,
+                hintText: widget.hintText,
+                autofocus: true,
+                enabled: !_isSubmitting,
+                onSubmitted: (_) => _submit(),
+              ),
+              const shad.Gap(24),
+              // Action buttons row
+              Row(
+                children: [
+                  Expanded(
+                    child: shad.OutlineButton(
+                      onPressed: _isSubmitting
+                          ? null
+                          : () => Navigator.of(context).pop(),
+                      child: Text(
+                        context.l10n.commonCancel,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                  const shad.Gap(12),
+                  Expanded(
+                    child: shad.PrimaryButton(
+                      onPressed: _isSubmitting ? null : _submit,
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : Text(
+                              widget.confirmLabel,
+                              textAlign: TextAlign.center,
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          const shad.Gap(12),
-          shad.OutlineButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(context.l10n.commonCancel),
-          ),
-          const shad.Gap(8),
-          shad.PrimaryButton(
-            onPressed: _submit,
-            child: Text(widget.confirmLabel),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  void _submit() {
-    final value = _controller.text.trim();
-    if (value.isEmpty) {
+  Future<void> _submit() async {
+    final name = _controller.text.trim();
+    if (name.isEmpty) {
       final toastContext = Navigator.of(context, rootNavigator: true).context;
       if (!toastContext.mounted) return;
       shad.showToast(
@@ -664,6 +740,50 @@ class _TaskBoardTextInputDialogState extends State<_TaskBoardTextInputDialog> {
       return;
     }
 
-    Navigator.of(context).pop(value);
+    setState(() => _isSubmitting = true);
+
+    try {
+      final didSubmit = await widget.onSubmit(name: name);
+      if (!mounted) return;
+      if (!didSubmit) {
+        setState(() => _isSubmitting = false);
+        return;
+      }
+      final toastContext = Navigator.of(context, rootNavigator: true).context;
+      if (!toastContext.mounted) return;
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert(
+          content: Text(widget.successMessage),
+        ),
+      );
+      Navigator.of(context).pop();
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      final toastContext = Navigator.of(context, rootNavigator: true).context;
+      if (!toastContext.mounted) return;
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          content: Text(
+            error.message.trim().isEmpty
+                ? context.l10n.commonSomethingWentWrong
+                : error.message,
+          ),
+        ),
+      );
+    } on Exception {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      final toastContext = Navigator.of(context, rootNavigator: true).context;
+      if (!toastContext.mounted) return;
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          content: Text(context.l10n.commonSomethingWentWrong),
+        ),
+      );
+    }
   }
 }

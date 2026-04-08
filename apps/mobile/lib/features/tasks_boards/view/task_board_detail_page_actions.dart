@@ -545,24 +545,25 @@ extension on _TaskBoardDetailPageViewState {
     if (board == null) return;
 
     final initialName = board.name?.trim() ?? '';
-    final value = await shad.showDialog<String>(
+    await showAdaptiveSheet<void>(
       context: context,
-      builder: (_) => _TaskBoardTextInputDialog(
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (_) => _TaskBoardRenameBoardSheet(
         title: context.l10n.taskBoardDetailRenameBoard,
         hintText: context.l10n.taskBoardDetailUntitledBoard,
         confirmLabel: context.l10n.timerSave,
+        successMessage: context.l10n.taskBoardDetailBoardRenamed,
         initialValue: initialName,
+        onSubmit: ({required name}) async {
+          final currentBoard = context.read<TaskBoardDetailCubit>().state.board;
+          if (currentBoard == null) return false;
+          await context.read<TaskBoardDetailCubit>().renameBoard(
+            name: name,
+            icon: currentBoard.icon,
+          );
+          return true;
+        },
       ),
-    );
-    if (value == null || !context.mounted) return;
-
-    await _runBoardAction(
-      context,
-      () => context.read<TaskBoardDetailCubit>().renameBoard(
-        name: value,
-        icon: board.icon,
-      ),
-      successMessage: context.l10n.taskBoardDetailBoardRenamed,
     );
   }
 

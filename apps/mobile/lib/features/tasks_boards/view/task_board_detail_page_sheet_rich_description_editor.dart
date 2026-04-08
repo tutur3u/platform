@@ -23,7 +23,21 @@ class _TaskDescriptionRichEditor extends StatefulWidget {
 class _TaskDescriptionRichEditorState
     extends State<_TaskDescriptionRichEditor> {
   QuillController? _controller;
+  final FocusNode _editorFocusNode = FocusNode();
   bool _isApplyingExternalState = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.enabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !widget.enabled) {
+          return;
+        }
+        _editorFocusNode.requestFocus();
+      });
+    }
+  }
 
   QuillController get _resolvedController {
     final existing = _controller;
@@ -58,6 +72,14 @@ class _TaskDescriptionRichEditorState
 
     if (oldWidget.enabled != widget.enabled) {
       controller.readOnly = !widget.enabled;
+      if (widget.enabled) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !widget.enabled) {
+            return;
+          }
+          _editorFocusNode.requestFocus();
+        });
+      }
     }
   }
 
@@ -69,6 +91,7 @@ class _TaskDescriptionRichEditorState
         ..removeListener(_handleDocumentChange)
         ..dispose();
     }
+    _editorFocusNode.dispose();
     super.dispose();
   }
 
@@ -259,6 +282,7 @@ class _TaskDescriptionRichEditorState
                 ),
                 child: QuillEditor.basic(
                   controller: controller,
+                  focusNode: _editorFocusNode,
                   config: QuillEditorConfig(
                     placeholder: widget.hintText,
                     embedBuilders: [
