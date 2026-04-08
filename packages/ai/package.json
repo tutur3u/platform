@@ -57,7 +57,7 @@
     "@tuturuuu/google": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@vercel/sandbox": "^1.9.2",
+    "@vercel/sandbox": "^1.9.3",
     "ai": "^6.0.153",
     "bash-tool": "^1.3.16",
     "chat": "^4.24.0",
