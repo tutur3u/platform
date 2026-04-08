@@ -65,165 +65,191 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
         parseTaskLabelColor(_colorController.text) ?? const Color(0xFF3B82F6);
     final theme = shad.Theme.of(context);
     final previewName = _nameController.text.trim();
+    final keyboardBottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
-    return shad.AlertDialog(
-      title: Text(widget.title),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(context.l10n.taskLabelsName),
-            const shad.Gap(4),
-            shad.TextField(
-              controller: _nameController,
-              hintText: context.l10n.taskLabelsName,
-              autofocus: true,
-              onChanged: (_) {
-                setState(() {
-                  if (_nameError != null) {
-                    _nameError = null;
-                  }
-                });
-              },
-            ),
-            if (_nameError != null) ...[
-              const shad.Gap(8),
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            24,
+            24,
+            24,
+            24 + keyboardBottomInset,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
               Text(
-                _nameError!,
-                style: theme.typography.small.copyWith(
-                  color: theme.colorScheme.destructive,
-                ),
+                widget.title,
+                style: theme.typography.h3,
               ),
-            ],
-            const shad.Gap(12),
-            const shad.Gap(12),
-            Text(context.l10n.calendarEventColor),
-            const shad.Gap(4),
-            Row(
-              children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: previewColor,
-                  ),
-                ),
+              const shad.Gap(24),
+              Text(context.l10n.taskLabelsName),
+              const shad.Gap(4),
+              shad.TextField(
+                controller: _nameController,
+                hintText: context.l10n.taskLabelsName,
+                autofocus: true,
+                onChanged: (_) {
+                  setState(() {
+                    if (_nameError != null) {
+                      _nameError = null;
+                    }
+                  });
+                },
+              ),
+              if (_nameError != null) ...[
                 const shad.Gap(8),
-                Expanded(
-                  child: shad.TextField(
-                    controller: _colorController,
-                    hintText: kDefaultTaskLabelColor,
-                    onChanged: (_) {
-                      setState(() {
-                        _colorError = null;
-                      });
-                    },
+                Text(
+                  _nameError!,
+                  style: theme.typography.small.copyWith(
+                    color: theme.colorScheme.destructive,
                   ),
                 ),
               ],
-            ),
-            const shad.Gap(8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                shad.OutlineButton(
-                  onPressed: _openColorPicker,
-                  child: Text(context.l10n.financePickColor),
-                ),
-                shad.OutlineButton(
-                  onPressed: () {
-                    setState(() {
-                      _colorController.text = randomHexColor();
-                      _colorError = null;
-                    });
-                  },
-                  child: Text(context.l10n.financeRandomizeColor),
-                ),
-              ],
-            ),
-            Container(
-              padding: const EdgeInsets.fromLTRB(0, 12, 0, 12),
-              child: Row(
+              const shad.Gap(16),
+              Text(context.l10n.calendarEventColor),
+              const shad.Gap(4),
+              Row(
                 children: [
-                  Text(
-                    context.l10n.financePreview,
-                    style: theme.typography.small.copyWith(
-                      color: theme.colorScheme.mutedForeground,
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: previewColor,
                     ),
                   ),
                   const shad.Gap(8),
-                  Builder(
-                    builder: (context) {
-                      final labelText = previewName.isEmpty
-                          ? context.l10n.taskLabelsName
-                          : previewName;
-                      final parsedPreviewColor = parseTaskLabelColor(
-                        _colorController.text,
-                      );
-
-                      if (parsedPreviewColor == null) {
-                        return shad.OutlineBadge(child: Text(labelText));
-                      }
-
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: parsedPreviewColor.withAlpha(28),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: parsedPreviewColor.withAlpha(180),
-                          ),
-                        ),
-                        child: Text(
-                          labelText,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.small.copyWith(
-                            fontSize: 11,
-                            color: parsedPreviewColor.withAlpha(240),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      );
-                    },
+                  Expanded(
+                    child: shad.TextField(
+                      controller: _colorController,
+                      hintText: kDefaultTaskLabelColor,
+                      onChanged: (_) {
+                        setState(() {
+                          _colorError = null;
+                        });
+                      },
+                    ),
                   ),
                 ],
               ),
-            ),
-            if (_colorError != null) ...[
               const shad.Gap(8),
-              Text(
-                _colorError!,
-                style: theme.typography.small.copyWith(
-                  color: theme.colorScheme.destructive,
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  shad.OutlineButton(
+                    onPressed: _openColorPicker,
+                    child: Text(context.l10n.financePickColor),
+                  ),
+                  shad.OutlineButton(
+                    onPressed: () {
+                      setState(() {
+                        _colorController.text = randomHexColor();
+                        _colorError = null;
+                      });
+                    },
+                    child: Text(context.l10n.financeRandomizeColor),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.fromLTRB(0, 12, 0, 12),
+                child: Row(
+                  children: [
+                    Text(
+                      context.l10n.financePreview,
+                      style: theme.typography.small.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ),
+                    const shad.Gap(8),
+                    Builder(
+                      builder: (context) {
+                        final labelText = previewName.isEmpty
+                            ? context.l10n.taskLabelsName
+                            : previewName;
+                        final parsedPreviewColor = parseTaskLabelColor(
+                          _colorController.text,
+                        );
+
+                        if (parsedPreviewColor == null) {
+                          return shad.OutlineBadge(child: Text(labelText));
+                        }
+
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: parsedPreviewColor.withAlpha(28),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: parsedPreviewColor.withAlpha(180),
+                            ),
+                          ),
+                          child: Text(
+                            labelText,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.small.copyWith(
+                              fontSize: 11,
+                              color: parsedPreviewColor.withAlpha(240),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
+              if (_colorError != null) ...[
+                const shad.Gap(8),
+                Text(
+                  _colorError!,
+                  style: theme.typography.small.copyWith(
+                    color: theme.colorScheme.destructive,
+                  ),
+                ),
+              ],
+              const shad.Gap(24),
+              Row(
+                children: [
+                  Expanded(
+                    child: shad.OutlineButton(
+                      onPressed: _isSubmitting
+                          ? null
+                          : () => Navigator.of(context).pop(),
+                      child: Text(context.l10n.commonCancel),
+                    ),
+                  ),
+                  const shad.Gap(12),
+                  Expanded(
+                    child: shad.PrimaryButton(
+                      onPressed: _isSubmitting ? null : _submit,
+                      child: _isSubmitting
+                          ? const SizedBox.square(
+                              dimension: 16,
+                              child: shad.CircularProgressIndicator(),
+                            )
+                          : Text(widget.submitLabel),
+                    ),
+                  ),
+                ],
+              ),
             ],
-          ],
+          ),
         ),
       ),
-      actions: [
-        shad.OutlineButton(
-          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-          child: Text(context.l10n.commonCancel),
-        ),
-        shad.PrimaryButton(
-          onPressed: _isSubmitting ? null : _submit,
-          child: _isSubmitting
-              ? const SizedBox.square(
-                  dimension: 16,
-                  child: shad.CircularProgressIndicator(),
-                )
-              : Text(widget.submitLabel),
-        ),
-      ],
     );
   }
 

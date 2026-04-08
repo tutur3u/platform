@@ -132,6 +132,7 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                 label: Text(l10n.timerSessionTitle),
                 child: shad.TextField(
                   controller: _titleCtrl,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
               ),
               const shad.Gap(16),
@@ -141,6 +142,7 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                 child: shad.TextField(
                   controller: _descCtrl,
                   maxLines: 3,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
               ),
               const shad.Gap(16),

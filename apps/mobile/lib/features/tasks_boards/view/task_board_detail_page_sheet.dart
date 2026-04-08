@@ -224,109 +224,104 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
 
     return SafeArea(
       top: false,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(16, 12, 16, 20 + bottomInset),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height * 0.8,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        sheetTitle,
-                        style: theme.typography.large.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+        ),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 20 + bottomInset),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      sheetTitle,
+                      style: theme.typography.large.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    if (!_isCreate && widget.lists.length > 1)
-                      Tooltip(
-                        message: context.l10n.taskBoardDetailMoveTask,
-                        child: shad.IconButton.ghost(
-                          icon: const Icon(Icons.swap_horiz, size: 16),
-                          onPressed: _isBusy ? null : _moveTask,
-                        ),
+                  ),
+                  if (!_isCreate && widget.lists.length > 1)
+                    Tooltip(
+                      message: context.l10n.taskBoardDetailMoveTask,
+                      child: shad.IconButton.ghost(
+                        icon: const Icon(Icons.swap_horiz, size: 16),
+                        onPressed: _isBusy ? null : _moveTask,
                       ),
-                    if (!_isCreate)
-                      Tooltip(
-                        message: context.l10n.taskBoardDetailDeleteTask,
-                        child: shad.IconButton.ghost(
-                          icon: const Icon(Icons.delete_outline, size: 16),
-                          onPressed: _isBusy ? null : _deleteTask,
-                        ),
+                    ),
+                  if (!_isCreate)
+                    Tooltip(
+                      message: context.l10n.taskBoardDetailDeleteTask,
+                      child: shad.IconButton.ghost(
+                        icon: const Icon(Icons.delete_outline, size: 16),
+                        onPressed: _isBusy ? null : _deleteTask,
                       ),
-                    shad.IconButton.ghost(
-                      icon: const Icon(Icons.close),
+                    ),
+                  shad.IconButton.ghost(
+                    icon: const Icon(Icons.close),
+                    onPressed: _isBusy ? null : () => unawaited(_closeEditor()),
+                  ),
+                ],
+              ),
+              const shad.Gap(12),
+              if (!_isCreate) ...[
+                shad.Tabs(
+                  index: _activeTab,
+                  onChanged: (value) {
+                    if (_isBusy) return;
+                    setState(() => _activeTab = value);
+                  },
+                  children: [
+                    shad.TabItem(
+                      child: Text(
+                        context.l10n.taskBoardDetailEditorDetailsTab,
+                      ),
+                    ),
+                    shad.TabItem(
+                      child: _TaskEditorTabLabel(
+                        label:
+                            context.l10n.taskBoardDetailEditorRelationshipsTab,
+                        count: _relationshipIndicatorCount,
+                      ),
+                    ),
+                  ],
+                ),
+                const shad.Gap(10),
+              ],
+              if (_isCreate || _activeTab == _detailsTabIndex)
+                _buildDetailsTab(context)
+              else
+                _buildRelationshipsTab(context),
+              const shad.Gap(18),
+              Row(
+                children: [
+                  Expanded(
+                    child: shad.OutlineButton(
                       onPressed: _isBusy
                           ? null
                           : () => unawaited(_closeEditor()),
+                      child: Text(context.l10n.commonCancel),
                     ),
-                  ],
-                ),
-                const shad.Gap(12),
-                if (!_isCreate) ...[
-                  shad.Tabs(
-                    index: _activeTab,
-                    onChanged: (value) {
-                      if (_isBusy) return;
-                      setState(() => _activeTab = value);
-                    },
-                    children: [
-                      shad.TabItem(
-                        child: Text(
-                          context.l10n.taskBoardDetailEditorDetailsTab,
-                        ),
-                      ),
-                      shad.TabItem(
-                        child: _TaskEditorTabLabel(
-                          label: context
-                              .l10n
-                              .taskBoardDetailEditorRelationshipsTab,
-                          count: _relationshipIndicatorCount,
-                        ),
-                      ),
-                    ],
                   ),
                   const shad.Gap(10),
+                  Expanded(
+                    child: shad.PrimaryButton(
+                      onPressed: _canSave ? _saveTask : null,
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: shad.CircularProgressIndicator(),
+                            )
+                          : Text(saveLabel),
+                    ),
+                  ),
                 ],
-                if (_isCreate || _activeTab == _detailsTabIndex)
-                  _buildDetailsTab(context)
-                else
-                  _buildRelationshipsTab(context),
-                const shad.Gap(18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: shad.OutlineButton(
-                        onPressed: _isBusy
-                            ? null
-                            : () => unawaited(_closeEditor()),
-                        child: Text(context.l10n.commonCancel),
-                      ),
-                    ),
-                    const shad.Gap(10),
-                    Expanded(
-                      child: shad.PrimaryButton(
-                        onPressed: _canSave ? _saveTask : null,
-                        child: _isSaving
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: shad.CircularProgressIndicator(),
-                              )
-                            : Text(saveLabel),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -732,28 +727,37 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       return;
     }
 
+    KeyboardDismissGuard.suspend();
+    FocusManager.instance.primaryFocus?.unfocus();
+    var draftDescription = _descriptionController.text;
+
     final l10n = context.l10n;
-    await showAdaptiveSheet<void>(
-      context: context,
-      useRootNavigator: true,
-      builder: (sheetContext) {
-        return _TaskDescriptionEditorOverlay(
-          title: l10n.taskBoardDetailTaskDescriptionLabel,
-          initialValue: _descriptionController.text,
-          enabled: !_isBusy,
-          hintText: l10n.taskBoardDetailTaskDescriptionHint,
-          onChanged: (value) {
-            if (_descriptionController.text == value) {
-              return;
-            }
-            _descriptionController.text = value;
-          },
-          onRequestImageUpload: _isBusy
-              ? null
-              : () => _uploadDescriptionInlineImage(sheetContext),
-        );
-      },
-    );
+    try {
+      await showAdaptiveSheet<void>(
+        context: context,
+        useRootNavigator: true,
+        builder: (sheetContext) {
+          return _TaskDescriptionEditorOverlay(
+            title: l10n.taskBoardDetailTaskDescriptionLabel,
+            initialValue: _descriptionController.text,
+            enabled: !_isBusy,
+            hintText: l10n.taskBoardDetailTaskDescriptionHint,
+            onChanged: (value) {
+              draftDescription = value;
+            },
+            onRequestImageUpload: _isBusy
+                ? null
+                : () => _uploadDescriptionInlineImage(sheetContext),
+          );
+        },
+      );
+    } finally {
+      KeyboardDismissGuard.resume();
+    }
+
+    if (_descriptionController.text != draftDescription) {
+      _descriptionController.text = draftDescription;
+    }
 
     if (mounted) {
       setState(() {});
@@ -936,9 +940,10 @@ class _TaskDescriptionEditorOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+    final isCompact = context.isCompact;
     final screenHeight = MediaQuery.of(context).size.height;
-    final overlayHeight = context.isCompact
-        ? screenHeight * 0.9
+    final overlayHeight = isCompact
+        ? screenHeight
         : math.min(screenHeight * 0.85, 760).toDouble();
 
     return Container(
@@ -947,7 +952,7 @@ class _TaskDescriptionEditorOverlay extends StatelessWidget {
         color: theme.colorScheme.background,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      padding: EdgeInsets.fromLTRB(16, isCompact ? 12 : 16, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
