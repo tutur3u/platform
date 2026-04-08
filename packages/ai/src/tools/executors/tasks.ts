@@ -502,9 +502,14 @@ export async function executeUpdateBoard(
   ctx: MiraToolContext
 ) {
   const boardId = args.boardId as string;
-  const updates: Record<string, unknown> = {};
+  const updates: TablesUpdate<'workspace_boards'> = {};
 
-  if (args.name !== undefined) updates.name = args.name;
+  if (args.name !== undefined) {
+    if (args.name !== null && typeof args.name !== 'string') {
+      return { error: 'name must be a string or null' };
+    }
+    updates.name = args.name;
+  }
 
   if (Object.keys(updates).length === 0) {
     return { success: true, message: 'No fields to update' };

@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TablesUpdate } from '@tuturuuu/types';
 import {
   PERSONAL_WORKSPACE_SLUG,
   resolveWorkspaceId,
@@ -530,21 +531,21 @@ async function updateTask(
 ) {
   const supabase = await createClient();
   const taskId = args.taskId as string;
-  const updates: Record<string, unknown> = {};
+  const updates: TablesUpdate<'tasks'> = {};
 
   // Valid priority values for the database enum
   const validPriorities = ['low', 'normal', 'high', 'critical'] as const;
   type TaskPriority = (typeof validPriorities)[number];
 
-  if (args.name !== undefined) updates.name = args.name;
+  if (args.name !== undefined) updates.name = args.name as string;
   if (args.priority !== undefined) {
-    const priorityArg = args.priority as string;
-    if (validPriorities.includes(priorityArg as TaskPriority)) {
+    const priorityArg = args.priority as TaskPriority;
+    if (validPriorities.includes(priorityArg)) {
       updates.priority = priorityArg;
     }
   }
   if (args.completed !== undefined) {
-    updates.completed = args.completed;
+    updates.completed = args.completed as boolean;
     if (args.completed) {
       updates.completed_at = new Date().toISOString();
     }

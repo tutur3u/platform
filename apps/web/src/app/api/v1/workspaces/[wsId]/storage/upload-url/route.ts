@@ -1,8 +1,4 @@
-import { posix } from 'node:path';
-import {
-  createClient,
-  createDynamicAdminClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import {
@@ -11,11 +7,16 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  createWorkspaceStorageUploadPayload,
+  WorkspaceStorageError,
+} from '@/lib/workspace-storage-provider';
 
 const uploadUrlSchema = z.object({
   filename: z.string().min(1).max(255),
   path: z.string().max(1024).optional(),
   upsert: z.boolean().optional(),
+  size: z.number().int().min(0).optional(),
 });
 
 export async function POST(
@@ -85,37 +86,31 @@ export async function POST(
         ? sanitizedFilename
         : `${generateRandomUUID()}-${sanitizedFilename}`;
 
-    const storagePath = sanitizedPath
-      ? posix.join(normalizedWsId, sanitizedPath, filenameWithSuffix)
-      : posix.join(normalizedWsId, filenameWithSuffix);
-
-    const sbStorageAdmin = await createDynamicAdminClient();
-    const { data, error } = await sbStorageAdmin.storage
-      .from('workspaces')
-      .createSignedUploadUrl(storagePath, {
+    const uploadPayload = await createWorkspaceStorageUploadPayload(
+      normalizedWsId,
+      filenameWithSuffix,
+      {
+        path: sanitizedPath,
         upsert: parsed.data.upsert ?? false,
-      });
+        size: parsed.data.size,
+      }
+    );
 
-    if (error || !data?.signedUrl || !data?.token) {
-      console.error('Error creating storage upload URL:', error);
+    return NextResponse.json({
+      signedUrl: uploadPayload.signedUrl,
+      token: uploadPayload.token,
+      headers: uploadPayload.headers,
+      path: uploadPayload.path,
+      fullPath: uploadPayload.fullPath,
+    });
+  } catch (error) {
+    if (error instanceof WorkspaceStorageError) {
       return NextResponse.json(
-        { message: 'Failed to generate upload URL' },
-        { status: 500 }
+        { message: error.message },
+        { status: error.status }
       );
     }
 
-    const prefix = `${normalizedWsId}/`;
-    const relativePath = storagePath.startsWith(prefix)
-      ? storagePath.substring(prefix.length)
-      : storagePath;
-
-    return NextResponse.json({
-      signedUrl: data.signedUrl,
-      token: data.token,
-      path: relativePath,
-      fullPath: storagePath,
-    });
-  } catch (error) {
     console.error('Upload URL error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },

@@ -1,8 +1,4 @@
-import { posix } from 'node:path';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_NAME_LENGTH,
@@ -14,6 +10,11 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  createWorkspaceStorageFolderObject,
+  deleteWorkspaceStorageFolderByPath,
+  WorkspaceStorageError,
+} from '@/lib/workspace-storage-provider';
 
 const createFolderSchema = z.object({
   path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).default(''),
@@ -27,21 +28,6 @@ const createFolderSchema = z.object({
     ),
 });
 
-const EMPTY_FOLDER_PLACEHOLDER = '.emptyFolderPlaceholder';
-
-function isConflictStorageError(error: {
-  message?: string;
-  status?: number;
-  statusCode?: string | number;
-}) {
-  return (
-    error.status === 409 ||
-    error.statusCode === 409 ||
-    error.statusCode === '409' ||
-    /already exists|duplicate/i.test(error.message ?? '')
-  );
-}
-
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ wsId: string }> }
@@ -49,7 +35,6 @@ export async function POST(
   try {
     const { wsId } = await params;
     const supabase = await createClient(request);
-    const sbAdmin = await createAdminClient();
 
     const {
       data: { user },
@@ -99,50 +84,27 @@ export async function POST(
       );
     }
 
-    const folderPath = sanitizedPath
-      ? posix.join(
-          normalizedWsId,
-          sanitizedPath,
-          sanitizedName,
-          EMPTY_FOLDER_PLACEHOLDER
-        )
-      : posix.join(normalizedWsId, sanitizedName, EMPTY_FOLDER_PLACEHOLDER);
-
-    const relativePath = sanitizedPath
-      ? posix.join(sanitizedPath, sanitizedName)
-      : sanitizedName;
-
-    const { data, error } = await sbAdmin.storage
-      .from('workspaces')
-      .upload(folderPath, new Uint8Array(0), {
-        contentType: 'text/plain',
-        upsert: false,
-      });
-
-    if (error) {
-      console.error('Error creating folder:', error);
-
-      if (isConflictStorageError(error)) {
-        return NextResponse.json(
-          { message: 'Folder already exists' },
-          { status: 409 }
-        );
-      }
-
-      return NextResponse.json(
-        { message: 'Failed to create folder' },
-        { status: 500 }
-      );
-    }
+    const data = await createWorkspaceStorageFolderObject(
+      normalizedWsId,
+      sanitizedPath,
+      sanitizedName
+    );
 
     return NextResponse.json({
       message: 'Folder created successfully',
       data: {
-        path: relativePath,
-        fullPath: data.path,
+        path: data.path,
+        fullPath: data.fullPath,
       },
     });
   } catch (error) {
+    if (error instanceof WorkspaceStorageError) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: error.status }
+      );
+    }
+
     console.error('Unexpected error creating folder:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
@@ -158,7 +120,6 @@ export async function DELETE(
   try {
     const { wsId } = await params;
     const supabase = await createClient(request);
-    const sbAdmin = await createAdminClient();
 
     const {
       data: { user },
@@ -213,48 +174,21 @@ export async function DELETE(
       );
     }
 
-    const folderPrefix = sanitizedPath
-      ? posix.join(normalizedWsId, sanitizedPath, sanitizedName)
-      : posix.join(normalizedWsId, sanitizedName);
-
-    const { data: objects, error: listError } = await sbAdmin.storage
-      .from('workspaces')
-      .list(folderPrefix, {
-        limit: 1000,
-        offset: 0,
-      });
-
-    if (listError) {
-      return NextResponse.json(
-        { message: 'Failed to load folder contents' },
-        { status: 500 }
-      );
-    }
-
-    const paths = (objects || []).map((object) =>
-      posix.join(folderPrefix, object.name)
+    await deleteWorkspaceStorageFolderByPath(
+      normalizedWsId,
+      sanitizedPath,
+      sanitizedName
     );
-
-    if (paths.length === 0) {
-      return NextResponse.json(
-        { message: 'Folder not found' },
-        { status: 404 }
-      );
-    }
-
-    const { error: removeError } = await sbAdmin.storage
-      .from('workspaces')
-      .remove(paths);
-
-    if (removeError) {
-      return NextResponse.json(
-        { message: 'Failed to delete folder' },
-        { status: 500 }
-      );
-    }
 
     return NextResponse.json({ success: true, message: 'Folder deleted' });
   } catch (error) {
+    if (error instanceof WorkspaceStorageError) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: error.status }
+      );
+    }
+
     console.error('Unexpected error deleting folder:', error);
     return NextResponse.json(
       { message: 'Internal server error' },

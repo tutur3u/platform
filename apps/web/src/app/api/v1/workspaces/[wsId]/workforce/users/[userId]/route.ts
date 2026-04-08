@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TablesUpdate } from '@tuturuuu/types';
 import {
   MAX_COLOR_LENGTH,
   MAX_MEDIUM_TEXT_LENGTH,
@@ -183,7 +184,7 @@ export async function PATCH(
     }
 
     // Build update data
-    const updateData: Record<string, any> = {};
+    const updateData: TablesUpdate<'workforce_contracts'> = {};
     if (result.data.contract_type !== undefined)
       updateData.contract_type = result.data.contract_type;
     if (result.data.employment_status !== undefined)

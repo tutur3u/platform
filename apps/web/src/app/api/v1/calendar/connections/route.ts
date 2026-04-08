@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TablesUpdate } from '@tuturuuu/types';
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
@@ -179,7 +180,7 @@ export async function PATCH(request: Request) {
     const { id, calendarId, wsId, ...updates } = validation.data;
 
     // Build the update object dynamically
-    const updateData: Record<string, unknown> = {};
+    const updateData: TablesUpdate<'calendar_connections'> = {};
     if (updates.isEnabled !== undefined)
       updateData.is_enabled = updates.isEnabled;
     if (updates.calendarName !== undefined)

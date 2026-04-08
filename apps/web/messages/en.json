@@ -13656,9 +13656,86 @@
     "edit_secret": "Edit Secret",
     "name": "Name",
     "plural": "Secrets",
+    "rollout": {
+      "add": "Add",
+      "auto_extract": {
+        "blocked": "Blocked",
+        "description": "Optionally route uploaded ZIP archives through a self-hosted proxy that extracts files back into the active backend.",
+        "live": "Live",
+        "off": "Off",
+        "proxy_url": "Proxy URL",
+        "shared_token": "Shared token",
+        "switch": "Switch",
+        "title": "ZIP automation"
+      },
+      "backends": {
+        "active": "Active",
+        "copy_into": "Copy into {provider}",
+        "inventory": "Inventory",
+        "missing_message": "Complete the required secrets before using this backend.",
+        "needs_secrets": "Needs secrets",
+        "objects": "Objects",
+        "r2": {
+          "description": "S3-compatible destination with provider-level signed URLs."
+        },
+        "reachable": "Reachable",
+        "ready_message": "Ready for reads, uploads, and migration.",
+        "supabase": {
+          "description": "Current managed storage path. Good fallback and migration source."
+        },
+        "unavailable": "Unavailable"
+      },
+      "configured": "Configured",
+      "console": "Platform rollout console",
+      "description": "Configure the workspace storage backend here before enabling Cloudflare R2. The Drive page will keep using Supabase until the provider is switched and the required R2 secrets are present.",
+      "dialog_add": "Add workspace secret",
+      "dialog_update": "Update workspace secret",
+      "edit": "Edit",
+      "metrics": {
+        "active_backend": "Active backend",
+        "provider_secrets": "Provider secrets",
+        "zip_automation": "ZIP automation"
+      },
+      "migration": {
+        "description": "Copy files between backends before you switch the active provider. Existing archives stay in place; this copies the current workspace inventory into the destination backend.",
+        "r2_to_supabase": "Copy R2 to Supabase",
+        "recommended": "Recommended: {source} to {target}",
+        "supabase_to_r2": "Copy Supabase to R2",
+        "title": "Migration"
+      },
+      "migration_error": "Failed to migrate workspace storage",
+      "migration_success": "Copied {files} file(s) into {target}.",
+      "missing": "Missing",
+      "no_value": "No value set",
+      "optional": "Optional",
+      "progress": "Required rollout secrets configured: {configured}/{total}",
+      "provider": "Provider: {provider}",
+      "provider_secrets": {
+        "title": "Provider secrets"
+      },
+      "providers": {
+        "r2": "Cloudflare R2",
+        "supabase": "Supabase"
+      },
+      "proxy_secrets": {
+        "description": "The proxy is disabled by default. A workspace must explicitly enable it and provide both the proxy URL and shared token before uploaded ZIPs are extracted automatically.",
+        "title": "ZIP proxy secrets"
+      },
+      "required": "Required for R2 rollout",
+      "states": {
+        "disabled": "Disabled",
+        "enabled": "Enabled",
+        "missing": "Missing",
+        "needs_proxy_secrets": "Needs proxy secrets",
+        "present": "Present"
+      },
+      "title": "Drive Storage Rollout"
+    },
     "secrets": "Secrets",
     "singular": "Secret",
     "value": "Value",
+    "value_example": "Example: {value}",
+    "value_placeholder": "Value",
     "workspace_secret": "Workspace Secret"
   },
   "ws-settings": {
@@ -13721,6 +13798,36 @@
     "download_started": "Download started",
     "enter_new_folder_name": "Enter new folder name",
     "enter_new_name": "Enter new file name",
+    "export": {
+      "asset_links": "Asset Links",
+      "assets": "Assets",
+      "button": "Export Links",
+      "copy_asset_map": "Copy asset map",
+      "copy_manifest": "Copy loader manifest",
+      "description": "Export rotating public links for \"{folderName}\". These stable URLs keep relative asset paths intact and mint fresh provider URLs on demand.",
+      "entry": "Entry",
+      "entry_url": "Entry URL",
+      "entry_url_description": "Use this stable URL for your WebGL loader or external viewer.",
+      "folder_action": "Export Links",
+      "links": {
+        "asset_copied": "Asset link copied",
+        "asset_map_copied": "Asset map copied",
+        "copy_failed": "Failed to copy export link",
+        "entry_copied": "Entry URL copied",
+        "manifest_copied": "Loader manifest copied"
+      },
+      "load_failed": "Failed to load export links",
+      "loader_manifest": "Loader Manifest",
+      "loader_manifest_description": "This manifest keeps a stable entry URL plus a relative asset map that can be copied directly into a Next.js or WebGL loader integration.",
+      "loading": "Preparing rotating export links...",
+      "mode": "Mode",
+      "no_index_html": "No root index.html",
+      "no_index_html_description": "This folder does not contain an index.html file at its root, but all asset links are still available below.",
+      "rotating_badge": "Rotating",
+      "rotating_mode": "Stable app links with automatic signed URL refresh",
+      "title": "Export Package Links",
+      "webgl_ready": "WebGL Package Export"
+    },
     "file_deleted": "File deleted successfully",
     "file_renamed": "File renamed successfully",
     "file_type": "File Type",

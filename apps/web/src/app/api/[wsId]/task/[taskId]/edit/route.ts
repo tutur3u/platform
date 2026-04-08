@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TablesInsert, TablesUpdate } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { NextResponse } from 'next/server';
@@ -21,11 +22,11 @@ const editTaskBodySchema = z
       .enum(VALID_PRIORITIES as [TaskPriority, ...TaskPriority[]])
       .optional(),
     total_duration: z.number().nonnegative().nullable().optional(),
-    is_splittable: z.boolean().nullable().optional(),
+    is_splittable: z.boolean().optional(),
     min_split_duration_minutes: z.number().nonnegative().nullable().optional(),
     max_split_duration_minutes: z.number().nonnegative().nullable().optional(),
     calendar_hours: z.enum(VALID_CALENDAR_HOURS).nullable().optional(),
-    auto_schedule: z.boolean().nullable().optional(),
+    auto_schedule: z.boolean().optional(),
   })
   .strict();
 
@@ -84,8 +85,9 @@ export async function PATCH(
     }
 
     // 5. Build update objects with validated fields
-    const taskUpdateData: Record<string, unknown> = {};
-    const schedulingUpdateData: Record<string, unknown> = {};
+    const taskUpdateData: TablesUpdate<'tasks'> = {};
+    const schedulingUpdateData: TablesUpdate<'task_user_scheduling_settings'> =
+      {};
 
     // Priority
     if (body.priority !== undefined) {
@@ -147,18 +149,17 @@ export async function PATCH(
     }
 
     if (Object.keys(schedulingUpdateData).length > 0) {
+      const schedulingUpsertData: TablesInsert<'task_user_scheduling_settings'> =
+        {
+          task_id: taskId,
+          user_id: user.id,
+          ...schedulingUpdateData,
+        };
       const { error: schedulingError } = await (supabase as any)
         .from('task_user_scheduling_settings')
-        .upsert(
-          {
-            task_id: taskId,
-            user_id: user.id,
-            ...schedulingUpdateData,
-          },
-          {
-            onConflict: 'task_id,user_id',
-          }
-        );
+        .upsert(schedulingUpsertData, {
+          onConflict: 'task_id,user_id',
+        });
 
       if (schedulingError) {
         console.error(

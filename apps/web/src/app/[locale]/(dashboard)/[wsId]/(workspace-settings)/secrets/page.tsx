@@ -8,8 +8,10 @@ import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { getWorkspaceStorageRolloutState } from '@/lib/workspace-storage-migration';
 import { secretColumns } from './columns';
 import SecretForm from './form';
+import { StorageRolloutPanel } from './storage-rollout-panel';
 
 export const metadata: Metadata = {
   title: 'Secrets',
@@ -49,10 +51,16 @@ export default async function WorkspaceSecretsPage({
   }
 
   const { data: secrets, count } = await getSecrets(wsId, await searchParams);
+  const rolloutState = await getWorkspaceStorageRolloutState(wsId);
   const t = await getTranslations();
 
   return (
     <>
+      <StorageRolloutPanel
+        wsId={wsId}
+        secrets={secrets}
+        rolloutState={rolloutState}
+      />
       <FeatureSummary
         pluralTitle={t('ws-secrets.plural')}
         singularTitle={t('ws-secrets.singular')}

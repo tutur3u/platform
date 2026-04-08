@@ -1,3 +1,5 @@
+import { WORKSPACE_STORAGE_SECRET_DEFINITIONS } from '@/lib/workspace-storage-config';
+
 export interface SecretDefinition {
   name: string;
   description: string;
@@ -5,6 +7,10 @@ export interface SecretDefinition {
   defaultValue?: string;
   minValue?: number;
   maxValue?: number;
+  options?: readonly string[];
+  placeholder?: string;
+  sensitive?: boolean;
+  rolloutRequired?: boolean;
 }
 
 export const KNOWN_SECRETS: SecretDefinition[] = [
@@ -15,6 +21,7 @@ export const KNOWN_SECRETS: SecretDefinition[] = [
     type: 'bytes',
     defaultValue: '1073741824', // 1 GB
   },
+  ...WORKSPACE_STORAGE_SECRET_DEFINITIONS,
   {
     name: 'RATE_LIMIT_WINDOW_MS',
     description: 'The time window in milliseconds for rate limiting.',

@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Trash } from '@tuturuuu/icons';
+import { uploadWorkspaceStorageFile } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -154,7 +155,7 @@ export function StorageObjectForm({
   wsId,
   path,
   uploadPath = '',
-  accept = '*',
+  accept,
   onComplete,
   submitLabel,
 }: Props) {
@@ -175,6 +176,16 @@ export function StorageObjectForm({
 
   const [editingFile, setEditingFile] = useState<File | null>(null);
   const [newFileName, setNewFileName] = useState<string>('');
+  const normalizedAccept = accept && accept.trim() !== '*' ? accept : undefined;
+  const files = form.watch('files') ?? [];
+
+  function updateFiles(nextFiles: File[]) {
+    form.setValue('files', nextFiles, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  }
 
   async function onSubmit(formData: z.infer<typeof ObjectFormSchema>) {
     if (loading || editingFile) return;
@@ -182,6 +193,15 @@ export function StorageObjectForm({
     setLoading(true);
     const targetPath = normalizeWorkspaceStoragePath(wsId, path || uploadPath);
     let hasErrors = false;
+    const autoExtractResults: Array<{
+      status?: string;
+      message?: string;
+      originalName: string;
+    }> = [];
+    const finalizeResults: Array<{
+      error?: string;
+      originalName: string;
+    }> = [];
 
     await Promise.all(
       formData.files.map(async (file) => {
@@ -201,21 +221,34 @@ export function StorageObjectForm({
           }
         );
 
-        const requestFormData = new FormData();
-        requestFormData.append('file', uploadFile);
-        requestFormData.append('path', targetPath);
-        requestFormData.append('upsert', 'false');
+        try {
+          const result = await uploadWorkspaceStorageFile(
+            wsId,
+            uploadFile,
+            {
+              path: targetPath,
+              upsert: false,
+            },
+            {
+              fetch,
+            }
+          );
 
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/storage/upload`,
-          {
-            method: 'POST',
-            cache: 'no-store',
-            body: requestFormData,
+          if (result.autoExtract && result.autoExtract.status !== 'skipped') {
+            autoExtractResults.push({
+              status: result.autoExtract.status,
+              message: result.autoExtract.message,
+              originalName: file.name,
+            });
           }
-        );
 
-        if (!response.ok) {
+          if (!result.finalize?.success && result.finalize?.error) {
+            finalizeResults.push({
+              error: result.finalize.error,
+              originalName: file.name,
+            });
+          }
+        } catch {
           hasErrors = true;
           setFileStatuses((prev) => ({
             ...prev,
@@ -232,6 +265,23 @@ export function StorageObjectForm({
     );
 
     if (!hasErrors) {
+      for (const result of finalizeResults) {
+        toast.warning(`${result.originalName}: ${result.error}`);
+      }
+
+      for (const result of autoExtractResults) {
+        if (!result.status || result.status === 'skipped' || !result.message) {
+          continue;
+        }
+
+        if (result.status === 'completed') {
+          toast.success(`${result.originalName}: ${result.message}`);
+          continue;
+        }
+
+        toast.warning(`${result.originalName}: ${result.message}`);
+      }
+
       onComplete?.();
       router.refresh();
     } else {
@@ -241,11 +291,9 @@ export function StorageObjectForm({
     setLoading(false);
   }
 
-  const files = form.watch('files');
-
   const uploadedAllFiles =
     // at least one file is uploaded
-    form.watch('files').length > 0 &&
+    files.length > 0 &&
     // all files match the uploaded status
     files.every((file) => fileStatuses[file.name] === 'uploaded') &&
     // all file statuses are uploaded
@@ -258,7 +306,7 @@ export function StorageObjectForm({
           control={form.control}
           name="files"
           disabled={loading}
-          render={({ field: { onChange, ...fieldProps } }) => (
+          render={({ field: { onBlur, name, ref, ...fieldProps } }) => (
             <FormItem>
               <FormLabel>
                 {t('storage-object-data-table.files')}
@@ -268,12 +316,15 @@ export function StorageObjectForm({
                 <FormControl>
                   <Input
                     {...fieldProps}
+                    ref={ref}
+                    name={name}
+                    onBlur={onBlur}
                     value={undefined}
                     type="file"
                     placeholder="Files"
-                    accept={accept}
+                    accept={normalizedAccept}
                     onChange={(e) => {
-                      onChange(e.target.files && Array.from(e.target.files));
+                      updateFiles(Array.from(e.target.files ?? []));
                     }}
                     multiple
                   />
@@ -319,7 +370,7 @@ export function StorageObjectForm({
                                   }
 
                                   setEditingFile(null);
-                                  onChange(
+                                  updateFiles(
                                     files.map((f) =>
                                       f.name === file.name
                                         ? new File([file], newFileName)
@@ -379,8 +430,7 @@ export function StorageObjectForm({
                                   return next;
                                 });
 
-                                form.setValue(
-                                  'files',
+                                updateFiles(
                                   files.filter((_, index) => index !== i)
                                 );
                               }}
@@ -407,7 +457,7 @@ export function StorageObjectForm({
               className="w-fit"
               onClick={() => {
                 setFileStatuses({});
-                form.setValue('files', []);
+                updateFiles([]);
               }}
               variant="ghost"
               disabled={loading || files.length === 0 || uploadedAllFiles}

@@ -1,5 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceRole } from '@tuturuuu/types';
+import type { TablesInsert, WorkspaceRole } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -41,14 +41,15 @@ export async function POST(req: Request, { params }: Params) {
       { status: 400 }
     );
 
-  const { permissions, ...coreData } = data;
+  const { permissions } = data;
+  const coreData: TablesInsert<'workspace_roles'> = {
+    name: data.name,
+    ws_id: wsId,
+  };
 
   const { data: role, error: roleError } = await supabase
     .from('workspace_roles')
-    .insert({
-      ...coreData,
-      ws_id: wsId,
-    })
+    .insert(coreData)
     .select('id')
     .single();
 

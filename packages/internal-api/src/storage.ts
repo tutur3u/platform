@@ -8,12 +8,55 @@ import {
 interface WorkspaceUploadUrlResponse {
   signedUrl?: string;
   token?: string;
+  headers?: Record<string, string>;
   path?: string;
   fullPath?: string;
 }
 
 interface WorkspaceStorageShareResponse {
   signedUrl?: string;
+}
+
+interface WorkspaceStorageFinalizeUploadResponse {
+  autoExtract?: {
+    status?: string;
+    message?: string;
+    archivePath?: string;
+    destinationPrefix?: string;
+    files?: number;
+    folders?: number;
+  };
+}
+
+export interface WorkspaceStorageAutoExtractResult {
+  status?: string;
+  message?: string;
+  archivePath?: string;
+  destinationPrefix?: string;
+  files?: number;
+  folders?: number;
+}
+
+export interface WorkspaceStorageFinalizeStatus {
+  success: boolean;
+  error?: string;
+}
+
+export interface WorkspaceStorageUploadResult {
+  path: string;
+  fullPath: string | null;
+  autoExtract?: WorkspaceStorageAutoExtractResult;
+  finalize?: WorkspaceStorageFinalizeStatus;
+}
+
+interface WorkspaceStorageMigrationResponse {
+  data: {
+    sourceProvider: 'supabase' | 'r2';
+    targetProvider: 'supabase' | 'r2';
+    filesCopied: number;
+    foldersPrepared: number;
+    skipped: number;
+  };
 }
 
 export interface WorkspaceStorageListItem {
@@ -32,6 +75,27 @@ export interface WorkspaceStorageListResponse {
     offset: number;
     total: number;
   };
+}
+
+export interface WorkspaceStorageExportFile {
+  path: string;
+  relativePath: string;
+  url: string;
+  size?: number;
+  contentType?: string | null;
+}
+
+export interface WorkspaceStorageExportLinksResponse {
+  folderName: string;
+  folderPath: string;
+  generatedAt: string;
+  indexFile: WorkspaceStorageExportFile | null;
+  files: WorkspaceStorageExportFile[];
+  loaderManifest: {
+    entryUrl: string | null;
+    assetUrls: Record<string, string>;
+  };
+  mode: 'rotating';
 }
 
 interface WorkspaceStorageFolderResponse {
@@ -61,7 +125,8 @@ interface WorkspaceStorageDeleteResponse {
 
 interface SignedUploadPayload {
   signedUrl: string;
-  token: string;
+  token?: string;
+  headers?: Record<string, string>;
   path: string;
   fullPath: string | null;
 }
@@ -69,25 +134,41 @@ interface SignedUploadPayload {
 async function uploadFileWithSignedUrl(
   file: File,
   uploadUrlResult: SignedUploadPayload,
-  fetchImpl: typeof fetch
-) {
+  fetchImpl: typeof fetch,
+  onUploaded?: (result: {
+    path: string;
+    fullPath: string | null;
+  }) => Promise<Record<string, unknown> | undefined>
+): Promise<
+  Record<string, unknown> & { path: string; fullPath: string | null }
+> {
+  const headers: Record<string, string> = {
+    ...(uploadUrlResult.headers ?? {}),
+  };
+
+  if (!headers['Content-Type']) {
+    headers['Content-Type'] = file.type || 'application/octet-stream';
+  }
+
+  if (uploadUrlResult.token) {
+    headers.Authorization = `Bearer ${uploadUrlResult.token}`;
+  }
+
   let uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
     method: 'PUT',
     cache: 'no-store',
-    headers: {
-      Authorization: `Bearer ${uploadUrlResult.token}`,
-      'Content-Type': file.type || 'application/octet-stream',
-    },
+    headers,
     body: file,
   });
 
   if (!uploadResponse.ok) {
+    const fallbackHeaders = { ...headers };
+    delete fallbackHeaders['Content-Type'];
+
     uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
       method: 'PUT',
       cache: 'no-store',
-      headers: {
-        Authorization: `Bearer ${uploadUrlResult.token}`,
-      },
+      headers: fallbackHeaders,
       body: file,
     });
   }
@@ -99,20 +180,27 @@ async function uploadFileWithSignedUrl(
     );
   }
 
-  return {
+  const result = {
     path: uploadUrlResult.path,
     fullPath: uploadUrlResult.fullPath,
+  };
+
+  const postUploadData = (await onUploaded?.(result)) ?? {};
+  return {
+    ...result,
+    ...postUploadData,
   };
 }
 
 function parseSignedUploadPayload(payload: WorkspaceUploadUrlResponse) {
-  if (!payload.signedUrl || !payload.token || !payload.path) {
+  if (!payload.signedUrl || !payload.path) {
     throw new Error('Missing upload URL payload');
   }
 
   return {
     signedUrl: payload.signedUrl,
     token: payload.token,
+    headers: payload.headers,
     path: payload.path,
     fullPath: payload.fullPath ?? null,
   } satisfies SignedUploadPayload;
@@ -126,16 +214,53 @@ export async function uploadWorkspaceStorageFile(
     upsert?: boolean;
   },
   clientOptions?: InternalApiClientOptions
-) {
+): Promise<WorkspaceStorageUploadResult> {
   const fetchImpl = clientOptions?.fetch ?? globalThis.fetch;
   const uploadUrlResult = await createWorkspaceStorageUploadUrl(
     workspaceId,
     file.name,
-    options,
+    {
+      ...options,
+      size: file.size,
+    },
     clientOptions
   );
 
-  return uploadFileWithSignedUrl(file, uploadUrlResult, fetchImpl);
+  return uploadFileWithSignedUrl(
+    file,
+    uploadUrlResult,
+    fetchImpl,
+    async (result) => {
+      try {
+        const finalized = await finalizeWorkspaceStorageUpload(
+          workspaceId,
+          {
+            path: result.path,
+            contentType: file.type || 'application/octet-stream',
+            originalFilename: file.name,
+          },
+          clientOptions
+        );
+
+        return {
+          autoExtract: finalized.autoExtract,
+          finalize: {
+            success: true,
+          },
+        };
+      } catch (error) {
+        return {
+          finalize: {
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to finalize upload',
+          },
+        };
+      }
+    }
+  );
 }
 
 export async function uploadWorkspaceTaskFile(
@@ -157,12 +282,36 @@ export async function uploadWorkspaceTaskFile(
   return uploadFileWithSignedUrl(file, uploadUrlResult, fetchImpl);
 }
 
+async function finalizeWorkspaceStorageUpload(
+  workspaceId: string,
+  payload: {
+    path: string;
+    contentType?: string;
+    originalFilename?: string;
+  },
+  clientOptions?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(clientOptions);
+  return client.json<WorkspaceStorageFinalizeUploadResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/storage/finalize-upload`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function createWorkspaceStorageUploadUrl(
   workspaceId: string,
   filename: string,
   options?: {
     path?: string;
     upsert?: boolean;
+    size?: number;
   },
   clientOptions?: InternalApiClientOptions
 ) {
@@ -178,6 +327,7 @@ export async function createWorkspaceStorageUploadUrl(
         filename,
         path: options?.path,
         upsert: options?.upsert,
+        size: options?.size,
       }),
       cache: 'no-store',
     }
@@ -240,6 +390,31 @@ export async function createWorkspaceStorageSignedUrl(
   return payload.signedUrl;
 }
 
+export async function migrateWorkspaceStorage(
+  workspaceId: string,
+  payload: {
+    sourceProvider: 'supabase' | 'r2';
+    targetProvider: 'supabase' | 'r2';
+    overwrite?: boolean;
+  },
+  clientOptions?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(clientOptions);
+  const response = await client.json<WorkspaceStorageMigrationResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/storage/migrate`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+
+  return response.data;
+}
+
 export async function listWorkspaceStorageObjects(
   workspaceId: string,
   query?: {
@@ -257,6 +432,27 @@ export async function listWorkspaceStorageObjects(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/storage/list`,
     {
       query,
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function exportWorkspaceStorageLinks(
+  workspaceId: string,
+  payload: {
+    path: string;
+  },
+  clientOptions?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(clientOptions);
+  return client.json<WorkspaceStorageExportLinksResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/storage/export-links`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
       cache: 'no-store',
     }
   );

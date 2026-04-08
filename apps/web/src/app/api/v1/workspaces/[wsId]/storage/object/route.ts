@@ -1,13 +1,15 @@
-import {
-  createClient,
-  createDynamicAdminClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import {
   getPermissions,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  deleteWorkspaceStorageObjectByPath,
+  WorkspaceStorageError,
+} from '@/lib/workspace-storage-provider';
 
 const deleteObjectSchema = z.object({
   path: z.string().min(1),
@@ -46,22 +48,33 @@ export async function DELETE(
 
   const rawPath = parsed.data.path;
   const prefix = `${normalizedWsId}/`;
-  const storagePath = rawPath.startsWith(prefix)
-    ? rawPath
-    : `${normalizedWsId}/${rawPath}`;
+  const relativePath = rawPath.startsWith(prefix)
+    ? rawPath.substring(prefix.length)
+    : rawPath;
+  const sanitizedPath = sanitizePath(relativePath);
 
-  const sbAdmin = await createDynamicAdminClient();
-  const { error } = await sbAdmin.storage
-    .from('workspaces')
-    .remove([storagePath]);
+  if (!sanitizedPath) {
+    return NextResponse.json(
+      { message: 'Invalid request path' },
+      { status: 400 }
+    );
+  }
 
-  if (error) {
+  try {
+    await deleteWorkspaceStorageObjectByPath(normalizedWsId, sanitizedPath);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof WorkspaceStorageError) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: error.status }
+      );
+    }
+
     console.error('Failed to delete storage object:', error);
     return NextResponse.json(
       { message: 'Failed to delete storage object' },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ success: true });
 }

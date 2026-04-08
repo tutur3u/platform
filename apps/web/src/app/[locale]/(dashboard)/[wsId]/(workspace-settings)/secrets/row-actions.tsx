@@ -77,8 +77,8 @@ export function SecretRowActions({ row }: SecretRowActionsProps) {
       <ModifiableDialogTrigger
         data={data}
         open={showEditDialog}
-        title={t('ws-user-groups.edit')}
-        editDescription={t('ws-user-groups.edit_description')}
+        title={t('ws-secrets.edit_secret')}
+        editDescription={t('ws-secrets.edit_existing_workspace_secret')}
         setOpen={setShowEditDialog}
         form={<SecretForm wsId={data.ws_id} data={data} />}
       />

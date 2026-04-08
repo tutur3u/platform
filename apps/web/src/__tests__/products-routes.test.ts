@@ -1,6 +1,6 @@
+import { verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { verifySecret } from '@tuturuuu/utils/workspace-helper';
 
 const mocks = vi.hoisted(() => {
   const productMaybeSingle = vi.fn();

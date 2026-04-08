@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -99,7 +100,8 @@ export async function PUT(req: Request, { params }: Params) {
   const body = await req.json();
 
   // Build the update data - only include fields that are provided
-  const updateData: Record<string, unknown> = {};
+  const updateData: Database['public']['Tables']['workspace_debt_loans']['Update'] =
+    {};
 
   if (body.name !== undefined) updateData.name = body.name;
   if (body.description !== undefined) updateData.description = body.description;

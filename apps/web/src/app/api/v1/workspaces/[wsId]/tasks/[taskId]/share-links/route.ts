@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TablesUpdate } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -340,7 +341,7 @@ export async function PATCH(
       );
     }
 
-    const updatePayload: Record<string, unknown> = {};
+    const updatePayload: TablesUpdate<'task_share_links'> = {};
 
     if (validationResult.data.publicAccess !== undefined) {
       // Public access is restricted to internal workspace only

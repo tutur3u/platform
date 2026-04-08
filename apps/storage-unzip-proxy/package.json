@@ -1,0 +1,11 @@
+{
+  "name": "@tuturuuu/storage-unzip-proxy",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/server.js"
+  },
+  "dependencies": {
+    "unzipper": "^0.12.3"
+  }
+}

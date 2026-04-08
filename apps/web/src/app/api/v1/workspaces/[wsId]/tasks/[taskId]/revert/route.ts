@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TablesUpdate } from '@tuturuuu/types';
 import type { WorkspaceTask } from '@tuturuuu/types/db';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
@@ -129,14 +130,37 @@ export async function POST(
     );
 
     // Build update object for core fields
-    const coreUpdates: Record<string, unknown> = {};
+    const coreUpdates: TablesUpdate<'tasks'> = {};
     for (const field of coreFields) {
-      if (
-        taskSnapshot &&
-        typeof taskSnapshot === 'object' &&
-        field in taskSnapshot
-      ) {
-        coreUpdates[field] = taskSnapshot[field as keyof WorkspaceTask];
+      if (!taskSnapshot || typeof taskSnapshot !== 'object') {
+        continue;
+      }
+
+      switch (field) {
+        case 'name':
+          coreUpdates.name = taskSnapshot.name;
+          break;
+        case 'description':
+          coreUpdates.description = taskSnapshot.description;
+          break;
+        case 'priority':
+          coreUpdates.priority = taskSnapshot.priority;
+          break;
+        case 'start_date':
+          coreUpdates.start_date = taskSnapshot.start_date;
+          break;
+        case 'end_date':
+          coreUpdates.end_date = taskSnapshot.end_date;
+          break;
+        case 'estimation_points':
+          coreUpdates.estimation_points = taskSnapshot.estimation_points;
+          break;
+        case 'list_id':
+          coreUpdates.list_id = taskSnapshot.list_id;
+          break;
+        case 'completed':
+          coreUpdates.completed = taskSnapshot.completed;
+          break;
       }
     }
 

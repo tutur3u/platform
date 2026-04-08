@@ -1,7 +1,4 @@
-import {
-  createClient,
-  createDynamicAdminClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { imageTransformOptionsSchema } from '@tuturuuu/types';
 import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
@@ -11,6 +8,10 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  createWorkspaceStorageSignedReadUrl,
+  WorkspaceStorageError,
+} from '@/lib/workspace-storage-provider';
 
 const shareSchema = z.object({
   path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).min(1),
@@ -101,24 +102,28 @@ async function resolveSignedUrl(
     );
   }
 
-  const sbStorageAdmin = await createDynamicAdminClient();
-  const storagePath = `${normalizedWsId}/${sanitizedPath}`;
-  const expiresIn = input.expiresIn ?? 31_536_000;
+  try {
+    return await createWorkspaceStorageSignedReadUrl(
+      normalizedWsId,
+      sanitizedPath,
+      {
+        expiresIn: input.expiresIn ?? 31_536_000,
+        transform: input.transform,
+      }
+    );
+  } catch (error) {
+    if (error instanceof WorkspaceStorageError) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: error.status }
+      );
+    }
 
-  const { data, error } = await sbStorageAdmin.storage
-    .from('workspaces')
-    .createSignedUrl(storagePath, expiresIn, {
-      transform: input.transform,
-    });
-
-  if (error || !data?.signedUrl) {
     return NextResponse.json(
       { message: 'Failed to generate signed URL' },
       { status: 500 }
     );
   }
-
-  return data.signedUrl;
 }
 
 export async function POST(

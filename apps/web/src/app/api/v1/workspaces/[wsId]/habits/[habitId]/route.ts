@@ -11,6 +11,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { TablesUpdate } from '@tuturuuu/types';
 import type { Habit, HabitInput } from '@tuturuuu/types/primitives/Habit';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -389,7 +390,7 @@ export async function PUT(
       body.end_date !== undefined;
 
     // Build update object
-    const updateData: Record<string, unknown> = {
+    const updateData: TablesUpdate<'workspace_habits'> = {
       updated_at: new Date().toISOString(),
     };
 
@@ -407,7 +408,7 @@ export async function PUT(
     if (body.max_duration_minutes !== undefined)
       updateData.max_duration_minutes = body.max_duration_minutes;
     if (body.is_splittable !== undefined)
-      updateData.is_splittable = body.is_splittable;
+      updateData.is_splittable = body.is_splittable ?? false;
     if (body.min_instances_per_day !== undefined)
       updateData.min_instances_per_day = body.min_instances_per_day;
     if (body.ideal_instances_per_day !== undefined)

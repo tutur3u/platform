@@ -315,6 +315,12 @@ export function DocumentEditor({
         }
       );
 
+      if (!uploadResult.finalize?.success) {
+        throw new Error(
+          uploadResult.finalize?.error || 'Failed to finalize uploaded file'
+        );
+      }
+
       return createWorkspaceStorageSignedUrl(
         wsId,
         uploadResult.path,

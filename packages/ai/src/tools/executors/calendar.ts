@@ -1,3 +1,4 @@
+import type { TablesUpdate } from '@tuturuuu/types';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -210,7 +211,7 @@ export async function executeUpdateEvent(
     return { error: fetchError?.message || 'Event not found' };
   }
 
-  const updates: Record<string, any> = {};
+  const updates: TablesUpdate<'workspace_calendar_events'> = {};
   if (startAt) updates.start_at = startAt;
   if (endAt) updates.end_at = endAt;
 
@@ -237,8 +238,6 @@ export async function executeUpdateEvent(
     if (location !== undefined) updates.location = encrypted.location;
     updates.is_encrypted = encrypted.is_encrypted;
   }
-
-  updates.updated_at = new Date().toISOString();
 
   const { error } = await ctx.supabase
     .from('workspace_calendar_events')
