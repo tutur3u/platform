@@ -360,7 +360,7 @@ export function useBulkDeleteTasks(
         apiOptions
       );
 
-      if (result.successCount === 0) {
+      if (result.successCount === 0 && taskIds.length > 0) {
         throw new Error(`Failed to delete all ${taskIds.length} tasks`);
       }
 

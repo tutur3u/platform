@@ -109,6 +109,13 @@ export function useBulkAddAssignee(
         updatedAssigneesByTaskId.set(taskId, fallbackAssignees);
       }
 
+      const succeededTaskIdSet = new Set(result.succeededTaskIds);
+      for (const taskId of [...updatedAssigneesByTaskId.keys()]) {
+        if (!succeededTaskIdSet.has(taskId)) {
+          updatedAssigneesByTaskId.delete(taskId);
+        }
+      }
+
       return {
         count: result.successCount,
         assigneeId,

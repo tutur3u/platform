@@ -133,24 +133,27 @@ function buildMoveTaskUpdates(
   const sourceIsCompletion = isCompletionStatus(sourceStatus);
   const targetIsCompletion = isCompletionStatus(targetStatus);
   const completionTimestamp = new Date().toISOString();
-  const currentlyArchived = !!task.closed_at;
+
+  const transitioningIntoCompletion = !sourceIsCompletion && targetIsCompletion;
+  const transitioningOutOfCompletion =
+    sourceIsCompletion && !targetIsCompletion;
 
   let closedAt: string | null;
-  if (targetIsCompletion) {
+  if (transitioningIntoCompletion) {
     closedAt = completionTimestamp;
-  } else if (sourceIsCompletion) {
+  } else if (transitioningOutOfCompletion) {
     closedAt = null;
   } else {
-    closedAt = currentlyArchived ? task.closed_at : null;
+    closedAt = task.closed_at;
   }
 
   let completed: boolean | null;
   let completedAt: string | null;
 
-  if (targetIsCompletion) {
+  if (transitioningIntoCompletion) {
     completed = true;
     completedAt = completionTimestamp;
-  } else if (sourceIsCompletion) {
+  } else if (transitioningOutOfCompletion) {
     completed = false;
     completedAt = null;
   } else {

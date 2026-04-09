@@ -337,6 +337,258 @@ describe('task bulk route', () => {
     );
   });
 
+  it('preserves completion timestamps for completion-to-completion moves and only updates on boundary transitions', async () => {
+    const { POST } = await import('./route.js');
+
+    // done -> closed should preserve historical completion timestamps
+    mocks.taskListMaybeSingle.mockResolvedValueOnce({
+      data: {
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        board_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        status: 'closed',
+        deleted: false,
+        workspace_boards: {
+          ws_id: '00000000-0000-0000-0000-000000000000',
+        },
+      },
+      error: null,
+    });
+    mocks.tasksEq.mockResolvedValueOnce({
+      data: [
+        {
+          id: '22222222-2222-4222-8222-222222222222',
+          list_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+          completed: true,
+          completed_at: '2026-01-01T00:00:00.000Z',
+          closed_at: '2026-01-02T00:00:00.000Z',
+          task_lists: {
+            status: 'done',
+            board_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+            workspace_boards: {
+              ws_id: '00000000-0000-0000-0000-000000000000',
+            },
+          },
+        },
+      ],
+      error: null,
+    });
+    mocks.rpc.mockReset();
+    mocks.rpc.mockResolvedValueOnce({ data: [{ id: 'ok-1' }], error: null });
+
+    const completionToCompletionResponse = await POST(
+      asNextRequest(
+        new Request('http://localhost/api/v1/workspaces/ws-1/tasks/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskIds: ['22222222-2222-4222-8222-222222222222'],
+            operation: {
+              type: 'move_to_list',
+              listId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            },
+          }),
+        })
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(completionToCompletionResponse.status).toBe(200);
+    await expect(completionToCompletionResponse.json()).resolves.toEqual(
+      expect.objectContaining({
+        successCount: 1,
+        failCount: 0,
+        taskMetaById: {
+          '22222222-2222-4222-8222-222222222222': expect.objectContaining({
+            list_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            completed_at: '2026-01-01T00:00:00.000Z',
+            closed_at: '2026-01-02T00:00:00.000Z',
+          }),
+        },
+      })
+    );
+
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      1,
+      'update_task_fields_with_actor',
+      expect.objectContaining({
+        p_task_updates: expect.objectContaining({
+          list_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          completed: true,
+          completed_at: '2026-01-01T00:00:00.000Z',
+          closed_at: '2026-01-02T00:00:00.000Z',
+        }),
+      })
+    );
+
+    // active -> done should stamp completion timestamps
+    mocks.taskListMaybeSingle.mockResolvedValueOnce({
+      data: {
+        id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+        board_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        status: 'done',
+        deleted: false,
+        workspace_boards: {
+          ws_id: '00000000-0000-0000-0000-000000000000',
+        },
+      },
+      error: null,
+    });
+    mocks.tasksEq.mockResolvedValueOnce({
+      data: [
+        {
+          id: '33333333-3333-4333-8333-333333333333',
+          list_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+          completed: false,
+          completed_at: null,
+          closed_at: null,
+          task_lists: {
+            status: 'active',
+            board_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+            workspace_boards: {
+              ws_id: '00000000-0000-0000-0000-000000000000',
+            },
+          },
+        },
+      ],
+      error: null,
+    });
+    mocks.rpc.mockReset();
+    mocks.rpc.mockResolvedValueOnce({ data: [{ id: 'ok-2' }], error: null });
+
+    const enteringCompletionResponse = await POST(
+      asNextRequest(
+        new Request('http://localhost/api/v1/workspaces/ws-1/tasks/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskIds: ['33333333-3333-4333-8333-333333333333'],
+            operation: {
+              type: 'move_to_list',
+              listId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+            },
+          }),
+        })
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(enteringCompletionResponse.status).toBe(200);
+    await expect(enteringCompletionResponse.json()).resolves.toEqual(
+      expect.objectContaining({
+        taskMetaById: {
+          '33333333-3333-4333-8333-333333333333': expect.objectContaining({
+            list_id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+            completed_at: '2026-04-09T10:00:00.000Z',
+            closed_at: '2026-04-09T10:00:00.000Z',
+          }),
+        },
+      })
+    );
+
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      1,
+      'update_task_fields_with_actor',
+      expect.objectContaining({
+        p_task_updates: expect.objectContaining({
+          list_id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+          completed: true,
+          completed_at: '2026-04-09T10:00:00.000Z',
+          closed_at: '2026-04-09T10:00:00.000Z',
+        }),
+      })
+    );
+
+    // done -> active should clear completion timestamps
+    mocks.taskListMaybeSingle.mockResolvedValueOnce({
+      data: {
+        id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+        board_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        status: 'active',
+        deleted: false,
+        workspace_boards: {
+          ws_id: '00000000-0000-0000-0000-000000000000',
+        },
+      },
+      error: null,
+    });
+    mocks.tasksEq.mockResolvedValueOnce({
+      data: [
+        {
+          id: '22222222-2222-4222-8222-222222222222',
+          list_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+          completed: true,
+          completed_at: '2026-01-01T00:00:00.000Z',
+          closed_at: '2026-01-02T00:00:00.000Z',
+          task_lists: {
+            status: 'done',
+            board_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+            workspace_boards: {
+              ws_id: '00000000-0000-0000-0000-000000000000',
+            },
+          },
+        },
+      ],
+      error: null,
+    });
+    mocks.rpc.mockReset();
+    mocks.rpc.mockResolvedValueOnce({ data: [{ id: 'ok-3' }], error: null });
+
+    const exitingCompletionResponse = await POST(
+      asNextRequest(
+        new Request('http://localhost/api/v1/workspaces/ws-1/tasks/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskIds: ['22222222-2222-4222-8222-222222222222'],
+            operation: {
+              type: 'move_to_list',
+              listId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+            },
+          }),
+        })
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(exitingCompletionResponse.status).toBe(200);
+    await expect(exitingCompletionResponse.json()).resolves.toEqual(
+      expect.objectContaining({
+        taskMetaById: {
+          '22222222-2222-4222-8222-222222222222': expect.objectContaining({
+            list_id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+            completed_at: null,
+            closed_at: null,
+          }),
+        },
+      })
+    );
+
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      1,
+      'update_task_fields_with_actor',
+      expect.objectContaining({
+        p_task_updates: expect.objectContaining({
+          list_id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+          completed: false,
+          completed_at: null,
+          closed_at: null,
+        }),
+      })
+    );
+  });
+
   it('treats duplicate add_label writes as success', async () => {
     const { POST } = await import('./route.js');
 
