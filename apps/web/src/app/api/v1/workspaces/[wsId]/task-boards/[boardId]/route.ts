@@ -17,7 +17,7 @@ export async function PUT(req: Request, { params }: Params) {
     group_ids: string[];
   };
 
-  const { group_ids: _, ...coreData } = data;
+  const { group_ids: _, color: __, ...coreData } = data;
 
   const { error } = await supabase
     .from('workspace_boards')

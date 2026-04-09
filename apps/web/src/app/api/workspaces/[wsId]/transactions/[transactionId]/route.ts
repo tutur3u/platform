@@ -1,5 +1,5 @@
 import { createClient } from '@ncthub/supabase/next/server';
-import { Transaction } from '@ncthub/types/primitives/Transaction';
+import type { Transaction } from '@ncthub/types/primitives/Transaction';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -38,13 +38,20 @@ export async function PUT(req: Request, { params }: Params) {
     destination_wallet_id?: string;
   } = await req.json();
 
-  const newData = {
-    ...data,
-    wallet_id: data.origin_wallet_id,
-  };
+  const {
+    origin_wallet_id,
+    destination_wallet_id,
+    category,
+    wallet,
+    href,
+    ws_id,
+    ...rest
+  } = data;
 
-  delete newData.origin_wallet_id;
-  delete newData.destination_wallet_id;
+  const newData = {
+    ...rest,
+    wallet_id: origin_wallet_id,
+  };
 
   const { error } = await supabase
     .from('wallet_transactions')
