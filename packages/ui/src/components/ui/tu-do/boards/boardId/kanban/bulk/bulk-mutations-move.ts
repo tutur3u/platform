@@ -1,7 +1,10 @@
 'use client';
 
 import { type QueryClient, useMutation } from '@tanstack/react-query';
-import { moveWorkspaceTask } from '@tuturuuu/internal-api/tasks';
+import {
+  bulkWorkspaceTasks,
+  moveWorkspaceTask,
+} from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -229,26 +232,28 @@ export function useBulkMoveToList(
       >();
       const apiOptions = getInternalApiOptions();
 
-      for (const taskId of taskIds) {
-        try {
-          const { task: updatedTask } = await moveWorkspaceTask(
-            wsId,
-            taskId,
-            { list_id: listId },
-            apiOptions
-          );
-          taskTimestamps.set(taskId, {
-            completed_at: updatedTask.completed_at ?? null,
-            closed_at: updatedTask.closed_at ?? null,
-          });
-          movedTaskIds.push(taskId);
-          successCount++;
-        } catch (error) {
-          failures.push({
-            taskId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: {
+            type: 'move_to_list',
+            listId,
+          },
+        },
+        apiOptions
+      );
+
+      successCount = result.successCount;
+      failures.push(...result.failures);
+      movedTaskIds.push(...result.succeededTaskIds);
+
+      for (const taskId of result.succeededTaskIds) {
+        const taskMeta = result.taskMetaById?.[taskId];
+        taskTimestamps.set(taskId, {
+          completed_at: taskMeta?.completed_at ?? null,
+          closed_at: taskMeta?.closed_at ?? null,
+        });
       }
 
       if (successCount === 0) {
@@ -394,26 +399,28 @@ export function useBulkMoveToStatus(
       >();
       const apiOptions = getInternalApiOptions();
 
-      for (const taskId of taskIds) {
-        try {
-          const { task: updatedTask } = await moveWorkspaceTask(
-            wsId,
-            taskId,
-            { list_id: targetList.id },
-            apiOptions
-          );
-          taskTimestamps.set(taskId, {
-            completed_at: updatedTask.completed_at ?? null,
-            closed_at: updatedTask.closed_at ?? null,
-          });
-          movedTaskIds.push(taskId);
-          successCount++;
-        } catch (error) {
-          failures.push({
-            taskId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: {
+            type: 'move_to_list',
+            listId: targetList.id,
+          },
+        },
+        apiOptions
+      );
+
+      successCount = result.successCount;
+      failures.push(...result.failures);
+      movedTaskIds.push(...result.succeededTaskIds);
+
+      for (const taskId of result.succeededTaskIds) {
+        const taskMeta = result.taskMetaById?.[taskId];
+        taskTimestamps.set(taskId, {
+          completed_at: taskMeta?.completed_at ?? null,
+          closed_at: taskMeta?.closed_at ?? null,
+        });
       }
 
       if (successCount === 0) {

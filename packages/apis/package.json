@@ -6,6 +6,7 @@
     "access": "public"
   },
   "scripts": {
+    "test": "vitest run",
     "type-check": "tsgo --project tsconfig.typecheck.json"
   },
   "dependencies": {

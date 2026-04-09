@@ -1,19 +1,13 @@
 'use client';
 
 import { type QueryClient, useMutation } from '@tanstack/react-query';
-import {
-  listWorkspaceTasks,
-  updateWorkspaceTask,
-} from '@tuturuuu/internal-api/tasks';
+import { bulkWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
 import type { BulkOperationI18n } from './bulk-operation-i18n';
 import type { WorkspaceProject } from './bulk-operation-types';
-import {
-  getInternalApiOptions,
-  getTaskForRelationMutation,
-} from './bulk-operation-utils';
+import { getInternalApiOptions } from './bulk-operation-utils';
 
 export function useBulkAddProject(
   queryClient: QueryClient,
@@ -31,92 +25,30 @@ export function useBulkAddProject(
       projectId: string;
       taskIds: string[];
     }) => {
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
-      const cachedTasks =
-        (queryClient.getQueryData(['tasks', boardId]) as Task[] | undefined) ??
-        [];
-      const cachedTaskIds = new Set(cachedTasks.map((task) => task.id));
-      const uncachedTaskIds = taskIds.filter(
-        (taskId) => !cachedTaskIds.has(taskId)
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: {
+            type: 'add_project',
+            projectId,
+          },
+        },
+        apiOptions
       );
 
-      if (uncachedTaskIds.length > 0) {
-        try {
-          const uncachedTaskIdSet = new Set(uncachedTaskIds);
-          const { tasks } = await listWorkspaceTasks(
-            wsId,
-            { boardId, includeRelationshipSummary: true },
-            apiOptions
-          );
-
-          if (tasks.length > 0) {
-            queryClient.setQueryData(
-              ['tasks', boardId],
-              (old: Task[] | undefined) => {
-                const existing = old ?? [];
-                const merged = new Map(existing.map((task) => [task.id, task]));
-                for (const fetchedTask of tasks) {
-                  if (!uncachedTaskIdSet.has(fetchedTask.id)) {
-                    continue;
-                  }
-                  merged.set(fetchedTask.id, fetchedTask as Task);
-                }
-                return Array.from(merged.values());
-              }
-            );
-          }
-        } catch {
-          // Continue with per-task fallback fetches in getTaskForRelationMutation.
-        }
-      }
-
-      for (const taskId of taskIds) {
-        try {
-          const taskRecord = await getTaskForRelationMutation(
-            queryClient,
-            boardId,
-            wsId,
-            taskId
-          );
-
-          if (!taskRecord) {
-            throw new Error('Task not found');
-          }
-
-          const currentProjectIds = (taskRecord.projects || [])
-            .map((project) => project.id)
-            .filter((id): id is string => !!id);
-
-          const nextProjectIds = [
-            ...new Set([...currentProjectIds, projectId]),
-          ];
-
-          await updateWorkspaceTask(
-            wsId,
-            taskId,
-            { project_ids: nextProjectIds },
-            apiOptions
-          );
-          successCount++;
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : 'Unknown error';
-          if (!message.toLowerCase().includes('duplicate')) {
-            failures.push({ taskId, error: message });
-          } else {
-            successCount++;
-          }
-        }
-      }
-
-      if (successCount === 0) {
+      if (result.successCount === 0) {
         throw new Error(`Failed to add project to all ${taskIds.length} tasks`);
       }
 
-      return { count: successCount, projectId, taskIds, failures };
+      return {
+        count: result.successCount,
+        projectId,
+        taskIds,
+        failures: result.failures,
+      };
     },
     onMutate: async ({ projectId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -247,76 +179,21 @@ export function useBulkRemoveProject(
       const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
-      const cachedTasks =
-        (queryClient.getQueryData(['tasks', boardId]) as Task[] | undefined) ??
-        [];
-      const cachedTaskIds = new Set(cachedTasks.map((task) => task.id));
-      const uncachedTaskIds = taskIds.filter(
-        (taskId) => !cachedTaskIds.has(taskId)
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: {
+            type: 'remove_project',
+            projectId,
+          },
+        },
+        apiOptions
       );
 
-      if (uncachedTaskIds.length > 0) {
-        try {
-          const uncachedTaskIdSet = new Set(uncachedTaskIds);
-          const { tasks } = await listWorkspaceTasks(
-            wsId,
-            { boardId, includeRelationshipSummary: true },
-            apiOptions
-          );
-
-          if (tasks.length > 0) {
-            queryClient.setQueryData(
-              ['tasks', boardId],
-              (old: Task[] | undefined) => {
-                const existing = old ?? [];
-                const merged = new Map(existing.map((task) => [task.id, task]));
-                for (const fetchedTask of tasks) {
-                  if (!uncachedTaskIdSet.has(fetchedTask.id)) {
-                    continue;
-                  }
-                  merged.set(fetchedTask.id, fetchedTask as Task);
-                }
-                return Array.from(merged.values());
-              }
-            );
-          }
-        } catch {
-          // Continue with per-task fallback fetches in getTaskForRelationMutation.
-        }
-      }
-
-      for (const taskId of taskIds) {
-        try {
-          const taskRecord = await getTaskForRelationMutation(
-            queryClient,
-            boardId,
-            wsId,
-            taskId
-          );
-
-          if (!taskRecord) {
-            throw new Error('Task not found');
-          }
-
-          const nextProjectIds = (taskRecord.projects || [])
-            .map((project) => project.id)
-            .filter((id): id is string => !!id && id !== projectId);
-
-          await updateWorkspaceTask(
-            wsId,
-            taskId,
-            { project_ids: nextProjectIds },
-            apiOptions
-          );
-          succeededTaskIds.push(taskId);
-          successCount++;
-        } catch (error) {
-          failures.push({
-            taskId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
-      }
+      successCount = result.successCount;
+      succeededTaskIds.push(...result.succeededTaskIds);
+      failures.push(...result.failures);
 
       if (successCount === 0) {
         throw new Error(

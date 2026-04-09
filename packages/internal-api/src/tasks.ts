@@ -222,6 +222,72 @@ export interface MoveWorkspaceTaskResponse {
   targetBoardId: string;
 }
 
+export type BulkWorkspaceTaskOperation =
+  | {
+      type: 'update_fields';
+      updates: {
+        priority?: TaskPriority | null;
+        start_date?: string | null;
+        end_date?: string | null;
+        estimation_points?: number | null;
+        deleted?: boolean;
+      };
+    }
+  | {
+      type: 'move_to_list';
+      listId: string;
+      targetBoardId?: string;
+    }
+  | {
+      type: 'add_label';
+      labelId: string;
+    }
+  | {
+      type: 'remove_label';
+      labelId: string;
+    }
+  | {
+      type: 'add_project';
+      projectId: string;
+    }
+  | {
+      type: 'remove_project';
+      projectId: string;
+    }
+  | {
+      type: 'add_assignee';
+      assigneeId: string;
+    }
+  | {
+      type: 'remove_assignee';
+      assigneeId: string;
+    }
+  | {
+      type: 'clear_labels';
+    }
+  | {
+      type: 'clear_projects';
+    }
+  | {
+      type: 'clear_assignees';
+    };
+
+export interface BulkWorkspaceTasksResponse {
+  successCount: number;
+  failCount: number;
+  taskIds: string[];
+  succeededTaskIds: string[];
+  failures: Array<{ taskId: string; error: string }>;
+  taskMetaById?: Record<
+    string,
+    {
+      list_id?: string;
+      completed_at?: string | null;
+      closed_at?: string | null;
+    }
+  >;
+}
+
 export interface CreateWorkspaceTaskWithRelationshipPayload {
   name: string;
   listId: string;
@@ -737,6 +803,28 @@ export async function moveWorkspaceTask(
   const client = getInternalApiClient(options);
   return client.json<MoveWorkspaceTaskResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/move`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function bulkWorkspaceTasks(
+  workspaceId: string,
+  payload: {
+    taskIds: string[];
+    operation: BulkWorkspaceTaskOperation;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<BulkWorkspaceTasksResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/bulk`,
     {
       method: 'POST',
       headers: {
