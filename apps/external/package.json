@@ -31,9 +31,9 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "next": "^16.2.2",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "next": "^16.2.3",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "tuturuuu": "workspace:*",
     "zustand": "^5.0.12"
   },
