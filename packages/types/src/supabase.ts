@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '14.1';
+  };
   public: {
     Tables: {
       abuse_events: {
@@ -10100,6 +10105,341 @@ export type Database = {
           },
           {
             foreignKeyName: 'sent_emails_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      sepay_connections: {
+        Row: {
+          access_token_encrypted: string;
+          access_token_expires_at: string;
+          created_at: string;
+          id: string;
+          refresh_token_encrypted: string;
+          scopes: string[];
+          sepay_company_id: string | null;
+          status: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          access_token_encrypted: string;
+          access_token_expires_at: string;
+          created_at?: string;
+          id?: string;
+          refresh_token_encrypted: string;
+          scopes?: string[];
+          sepay_company_id?: string | null;
+          status?: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          access_token_encrypted?: string;
+          access_token_expires_at?: string;
+          created_at?: string;
+          id?: string;
+          refresh_token_encrypted?: string;
+          scopes?: string[];
+          sepay_company_id?: string | null;
+          status?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'sepay_connections_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sepay_connections_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'sepay_connections_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sepay_connections_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      sepay_wallet_links: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          id: string;
+          metadata: Json;
+          sepay_account_number: string | null;
+          sepay_bank_account_id: string;
+          sepay_gateway: string | null;
+          sepay_sub_account_id: string | null;
+          updated_at: string;
+          wallet_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          sepay_account_number?: string | null;
+          sepay_bank_account_id: string;
+          sepay_gateway?: string | null;
+          sepay_sub_account_id?: string | null;
+          updated_at?: string;
+          wallet_id: string;
+          ws_id: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          sepay_account_number?: string | null;
+          sepay_bank_account_id?: string;
+          sepay_gateway?: string | null;
+          sepay_sub_account_id?: string | null;
+          updated_at?: string;
+          wallet_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'sepay_wallet_links_wallet_id_fkey';
+            columns: ['wallet_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_wallets';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sepay_wallet_links_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sepay_wallet_links_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'sepay_wallet_links_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sepay_wallet_links_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      sepay_webhook_endpoints: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          deleted_at: string | null;
+          id: string;
+          last_used_at: string | null;
+          rotated_at: string | null;
+          sepay_webhook_id: string | null;
+          token_hash: string;
+          token_prefix: string;
+          wallet_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          last_used_at?: string | null;
+          rotated_at?: string | null;
+          sepay_webhook_id?: string | null;
+          token_hash: string;
+          token_prefix: string;
+          wallet_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          last_used_at?: string | null;
+          rotated_at?: string | null;
+          sepay_webhook_id?: string | null;
+          token_hash?: string;
+          token_prefix?: string;
+          wallet_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'sepay_webhook_endpoints_wallet_id_fkey';
+            columns: ['wallet_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_wallets';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sepay_webhook_endpoints_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sepay_webhook_endpoints_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'sepay_webhook_endpoints_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sepay_webhook_endpoints_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      sepay_webhook_events: {
+        Row: {
+          created_transaction_id: string | null;
+          endpoint_id: string;
+          failure_reason: string | null;
+          id: string;
+          payload: Json;
+          processed_at: string | null;
+          received_at: string;
+          reference_code: string | null;
+          sepay_event_id: string | null;
+          status: string;
+          transaction_date: string;
+          transfer_amount: number;
+          transfer_type: string;
+          wallet_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_transaction_id?: string | null;
+          endpoint_id: string;
+          failure_reason?: string | null;
+          id?: string;
+          payload: Json;
+          processed_at?: string | null;
+          received_at?: string;
+          reference_code?: string | null;
+          sepay_event_id?: string | null;
+          status?: string;
+          transaction_date: string;
+          transfer_amount: number;
+          transfer_type: string;
+          wallet_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_transaction_id?: string | null;
+          endpoint_id?: string;
+          failure_reason?: string | null;
+          id?: string;
+          payload?: Json;
+          processed_at?: string | null;
+          received_at?: string;
+          reference_code?: string | null;
+          sepay_event_id?: string | null;
+          status?: string;
+          transaction_date?: string;
+          transfer_amount?: number;
+          transfer_type?: string;
+          wallet_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'sepay_webhook_events_created_transaction_id_fkey';
+            columns: ['created_transaction_id'];
+            isOneToOne: false;
+            referencedRelation: 'wallet_transactions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sepay_webhook_events_created_transaction_id_fkey';
+            columns: ['created_transaction_id'];
+            isOneToOne: false;
+            referencedRelation: 'wallet_transactions_secure';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sepay_webhook_events_endpoint_id_fkey';
+            columns: ['endpoint_id'];
+            isOneToOne: false;
+            referencedRelation: 'sepay_webhook_endpoints';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sepay_webhook_events_wallet_id_fkey';
+            columns: ['wallet_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_wallets';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sepay_webhook_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sepay_webhook_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'sepay_webhook_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sepay_webhook_events_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -22619,36 +22959,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       calendar_event_participants: {
         Row: {

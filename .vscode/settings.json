@@ -45,8 +45,8 @@
     "SECURITY.md": true,
     "LICENSE": true,
     // "**/node_modules": true,
-    "**/coverage": true,
-    "**/.turbo": true
+    "**/coverage": true
+    // "**/.turbo": true
   },
   "editor.formatOnPaste": false,
   "editor.formatOnSave": true,
