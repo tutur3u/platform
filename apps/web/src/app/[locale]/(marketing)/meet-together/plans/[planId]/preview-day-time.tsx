@@ -1,6 +1,4 @@
-import { useTimeBlocking } from './time-blocking-provider';
-import { timetzToTime } from '@/utils/date-helper';
-import { Timeblock } from '@ncthub/types/primitives/Timeblock';
+import type { Timeblock } from '@ncthub/types/primitives/Timeblock';
 import { ShieldCheck, ShieldMinus } from '@ncthub/ui/icons';
 import { Separator } from '@ncthub/ui/separator';
 import {
@@ -10,6 +8,8 @@ import {
   TooltipTrigger,
 } from '@ncthub/ui/tooltip';
 import dayjs from 'dayjs';
+import { timetzToTime } from '@/utils/date-helper';
+import { useTimeBlocking } from './time-blocking-provider';
 
 export default function PreviewDayTime({
   timeblocks: serverTimeblocks,
@@ -72,7 +72,7 @@ export default function PreviewDayTime({
   };
 
   return (
-    <div className="relative w-14 border border-b-0 border-foreground/50">
+    <div className="relative w-14 border border-foreground/50 border-b-0">
       {hourBlocks
         .map((i) => (i + start) * hourSplits)
         // duplicate each item `hourSplits` times
@@ -127,20 +127,20 @@ export default function PreviewDayTime({
                       i + hourSplits < array.length
                         ? isSelected
                           ? isDraft
-                            ? 'bg-green-500/50'
+                            ? 'bg-dynamic-green/50'
                             : isSaved
-                              ? 'bg-green-500/70'
-                              : // : 'animate-pulse bg-green-500/70'
-                                'bg-green-500/70'
+                              ? 'bg-dynamic-green/70'
+                              : // : 'animate-pulse bg-dynamic-green/70'
+                                'bg-dynamic-green/70'
                           : 'bg-foreground/10'
                         : ''
                     } relative h-3 w-full ${
                       hideBorder
                         ? ''
                         : (i + 1) % hourSplits === 0
-                          ? 'border-b border-foreground/50'
+                          ? 'border-foreground/50 border-b'
                           : (i + 1) % (hourSplits / 2) === 0
-                            ? 'border-b border-dashed border-foreground/50'
+                            ? 'border-foreground/50 border-b border-dashed'
                             : ''
                     }`}
                   />

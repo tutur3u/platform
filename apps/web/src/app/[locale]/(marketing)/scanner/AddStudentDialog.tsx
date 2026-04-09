@@ -34,14 +34,14 @@ export default function AddStudentDialog({
       <DialogContent>
         <DialogHeader className="space-y-4">
           <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-linear-to-br from-blue-500 to-purple-600 p-2">
-              <UserPlus className="h-5 w-5 text-white" />
+            <div className="rounded-lg bg-linear-to-br from-dynamic-blue to-dynamic-purple p-2">
+              <UserPlus className="h-5 w-5 text-primary-foreground" />
             </div>
             <div className="space-y-1">
               <DialogTitle className="font-semibold text-xl">
                 Add New Student
               </DialogTitle>
-              <DialogDescription className="text-gray-600">
+              <DialogDescription className="text-muted-foreground">
                 Manually add a student record to the database
               </DialogDescription>
             </div>

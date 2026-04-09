@@ -1,9 +1,9 @@
-import LoginForm from './form';
 import { Separator } from '@ncthub/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import LoginForm from './form';
 
 export default async function Login() {
   const t = await getTranslations();
@@ -12,7 +12,7 @@ export default async function Login() {
     <div className="relative flex h-full w-full flex-col items-center justify-center p-8">
       <Link
         href="/"
-        className="bg-btn-background hover:bg-btn-background-hover group absolute top-8 left-8 flex items-center rounded-md px-4 py-2 text-sm text-foreground no-underline"
+        className="group absolute top-8 left-8 flex items-center rounded-md bg-btn-background px-4 py-2 text-foreground text-sm no-underline hover:bg-btn-background-hover"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -48,7 +48,7 @@ export default async function Login() {
         </Suspense>
 
         <Separator className="mt-2" />
-        <div className="text-center text-sm font-semibold text-foreground/50">
+        <div className="text-center font-semibold text-foreground/50 text-sm">
           {t('auth.notice-p1')}{' '}
           <Link
             href="https://tuturuuu.com/terms"

@@ -230,7 +230,7 @@ export default function CreatePlanDialog({
                 'group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200'
             )}
           />
-          <div className="relative inline-flex w-full items-center justify-center rounded-lg bg-linear-to-r from-dynamic-light-red/60 via-dynamic-light-pink/60 to-dynamic-light-blue/60 px-8 py-2 font-bold text-white transition-all md:text-lg">
+          <div className="relative inline-flex w-full items-center justify-center rounded-lg bg-linear-to-r from-dynamic-light-red/60 via-dynamic-light-pink/60 to-dynamic-light-blue/60 px-8 py-2 font-bold text-primary transition-all md:text-lg">
             {t('create_plan')}
           </div>
         </button>

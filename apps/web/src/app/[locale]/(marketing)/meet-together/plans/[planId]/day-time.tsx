@@ -1,6 +1,6 @@
+import type { Timeblock } from '@ncthub/types/primitives/Timeblock';
 import PreviewDayTime from './preview-day-time';
 import SelectableDayTime from './selectable-day-time';
-import { Timeblock } from '@ncthub/types/primitives/Timeblock';
 
 export default function DayTime({
   editable,

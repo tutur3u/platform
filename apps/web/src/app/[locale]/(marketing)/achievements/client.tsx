@@ -164,7 +164,7 @@ function SpecialAchievementCard({ achievement }: { achievement: Achievement }) {
       </div>
 
       {/* Content Overlay */}
-      <div className="relative z-10 flex h-full flex-col p-6 transition-all duration-200 group-hover:scale-90 group-hover:opacity-80">
+      <div className="relative z-10 flex h-full flex-col p-6 transition-all duration-200 group-hover:opacity-90">
         {/* Top section with badges */}
         <div className="flex justify-end">
           <span className="flex items-center gap-2 font-medium text-sm text-white/90">

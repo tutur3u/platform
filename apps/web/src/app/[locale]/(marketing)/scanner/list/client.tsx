@@ -183,7 +183,7 @@ export default function StudentListClient() {
   }
 
   if (error) {
-    return <div className="p-4 text-center text-red-500">{error}</div>;
+    return <div className="p-4 text-center text-destructive">{error}</div>;
   }
 
   return (

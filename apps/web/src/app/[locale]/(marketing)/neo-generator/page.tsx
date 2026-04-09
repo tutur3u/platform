@@ -1,6 +1,6 @@
+import type { Metadata } from 'next';
 import { TextGeneratorClient } from './client';
 import NeoGeneratorHero from './hero';
-import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Neo Generator | Text Style Generator',

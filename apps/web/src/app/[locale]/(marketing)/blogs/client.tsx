@@ -12,18 +12,20 @@ import { useEffect, useState } from 'react';
 // Category color mapping
 const getCategoryColor = (category: string) => {
   const colors = {
-    Announcement: 'bg-blue-500 text-white',
-    Event: 'bg-purple-500 text-white',
-    Tutorial: 'bg-green-500 text-white',
-    Technology: 'bg-[#5FC6E5] text-white',
-    'Project Showcase': 'bg-orange-500 text-white',
-    Interview: 'bg-pink-500 text-white',
-    Community: 'bg-yellow-500 text-white',
-    Career: 'bg-indigo-500 text-white',
-    Opinion: 'bg-red-500 text-white',
-    Resources: 'bg-teal-500 text-white',
+    Announcement: 'bg-dynamic-blue text-primary-foreground',
+    Event: 'bg-dynamic-purple text-primary-foreground',
+    Tutorial: 'bg-dynamic-green text-primary-foreground',
+    Technology: 'bg-brand-light-blue text-primary',
+    'Project Showcase': 'bg-dynamic-orange text-primary-foreground',
+    Interview: 'bg-dynamic-pink text-primary-foreground',
+    Community: 'bg-brand-light-yellow text-primary',
+    Career: 'bg-dynamic-indigo text-primary-foreground',
+    Opinion: 'bg-destructive text-destructive-foreground',
+    Resources: 'bg-dynamic-cyan text-primary',
   };
-  return colors[category as keyof typeof colors] || 'bg-gray-500 text-white';
+  return (
+    colors[category as keyof typeof colors] || 'bg-muted text-muted-foreground'
+  );
 };
 
 interface Blog {
@@ -46,29 +48,28 @@ export default function BlogsPageClient() {
   const supabase = createClient();
 
   const [blogs, setBlogs] = useState<Blog[]>([]);
-  const fetchBlogs = async () => {
-    const { data, error } = await supabase
-      .from('neo_blogs')
-      .select('*')
-      .order('date_published', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching blogs:', error.message);
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      return [];
-    }
-
-    setBlogs(data as Blog[]);
-  };
 
   useEffect(() => {
-    fetchBlogs();
-  }, []);
+    const fetchBlogs = async () => {
+      const { data, error } = await supabase
+        .from('neo_blogs')
+        .select('*')
+        .order('date_published', { ascending: false });
 
-  console.log('Fetched blogs:', blogs);
+      if (error) {
+        console.error('Error fetching blogs:', error.message);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      setBlogs(data as Blog[]);
+    };
+
+    fetchBlogs();
+  }, [supabase]);
 
   return (
     <div className="container mx-auto space-y-16 px-4 py-16">
@@ -81,14 +82,14 @@ export default function BlogsPageClient() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="inline-flex items-center gap-2"
         >
-          <Sparkles className="h-5 w-5 text-[#FBC721]" />
+          <Sparkles className="h-5 w-5 text-brand-light-yellow" />
           <Badge
             variant="outline"
-            className="border-[#5FC6E5]/50 px-3 py-1 text-[#5FC6E5] text-sm"
+            className="border-brand-light-blue/50 px-3 py-1 text-brand-light-blue text-sm"
           >
             Insights & Stories
           </Badge>
-          <Sparkles className="h-5 w-5 text-[#FBC721]" />
+          <Sparkles className="h-5 w-5 text-brand-light-yellow" />
         </motion.div>
 
         {/* Main Title */}
@@ -100,7 +101,7 @@ export default function BlogsPageClient() {
         >
           <span>NEO Culture Tech</span>{' '}
           <span className="relative">
-            <span className="border-[#FBC721] border-b-4 text-[#5FC6E5]">
+            <span className="border-brand-light-yellow border-b-4 text-brand-light-blue">
               Blog
             </span>
             <motion.div
@@ -115,7 +116,7 @@ export default function BlogsPageClient() {
                 repeatDelay: 3,
               }}
             >
-              <Award className="h-5 w-5 text-[#FBC721] md:h-6 md:w-6" />
+              <Award className="h-5 w-5 text-brand-light-yellow md:h-6 md:w-6" />
             </motion.div>
           </span>
         </motion.h1>
@@ -148,7 +149,7 @@ export default function BlogsPageClient() {
             whileHover={{ y: -8 }}
           >
             <Link href={`/blogs/${blog.id}`}>
-              <Card className="group h-full overflow-hidden transition-all duration-300 hover:border-[#5FC6E5]/50 hover:shadow-lg">
+              <Card className="group h-full overflow-hidden transition-all duration-300 hover:border-brand-light-blue/50 hover:shadow-lg">
                 {/* Blog Image */}
                 {blog.image_url && (
                   <div className="relative h-48 w-full overflow-hidden">
@@ -158,7 +159,7 @@ export default function BlogsPageClient() {
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-foreground/60 to-transparent" />
                     <Badge
                       variant="secondary"
                       className={`absolute top-4 left-4 ${getCategoryColor(blog.category)}`}
@@ -169,7 +170,7 @@ export default function BlogsPageClient() {
                 )}
 
                 <CardHeader>
-                  <CardTitle className="line-clamp-2 font-bold text-xl transition-colors group-hover:text-[#5FC6E5]">
+                  <CardTitle className="line-clamp-2 font-bold text-xl transition-colors group-hover:text-brand-light-blue">
                     {blog.title}
                   </CardTitle>
                 </CardHeader>
@@ -206,7 +207,7 @@ export default function BlogsPageClient() {
 
                   {/* Read More Link */}
                   <div className="pt-2">
-                    <span className="inline-flex items-center font-medium text-[#5FC6E5] text-sm group-hover:underline">
+                    <span className="inline-flex items-center font-medium text-brand-light-blue text-sm group-hover:underline">
                       Read More
                       <svg
                         aria-hidden="true"

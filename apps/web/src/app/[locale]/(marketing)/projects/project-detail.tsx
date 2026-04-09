@@ -20,15 +20,15 @@ interface ProjectDetailProps {
 
 const STATUS_CONFIG = {
   completed: {
-    color: 'bg-green-500',
+    color: 'bg-dynamic-green',
     label: 'Completed',
   },
   ongoing: {
-    color: 'bg-blue-500',
+    color: 'bg-dynamic-blue',
     label: 'In Progress',
   },
   planning: {
-    color: 'bg-yellow-500',
+    color: 'bg-brand-light-yellow text-primary',
     label: 'Planning',
   },
 } as const;
@@ -84,7 +84,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 p-4 backdrop-blur-sm"
       initial="hidden"
       animate="visible"
       exit="exit"
@@ -107,14 +107,14 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
             <X size={20} />
           </button>
 
-          <div className="relative mb-8 h-48 w-full overflow-hidden rounded-2xl bg-linear-to-br from-[#F4B71A]/20 to-[#1AF4E6]/20">
+          <div className="relative mb-8 h-48 w-full overflow-hidden rounded-2xl bg-linear-to-br from-brand-light-yellow/20 to-dynamic-cyan/20">
             <Image
               src={image || '/media/background/demo.jpg'}
               fill
               alt={`${name} project demo`}
               className="object-cover"
             />
-            <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-t from-foreground/60 to-transparent" />
 
             <div className="absolute top-4 left-4 flex gap-2">
               <div
@@ -132,7 +132,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
           </div>
 
           <div className="text-center">
-            <h1 className="mb-2 bg-linear-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text py-2 font-bold text-4xl text-transparent leading-tight md:text-5xl md:leading-tight">
+            <h1 className="mb-2 bg-linear-to-r from-brand-light-yellow to-dynamic-cyan bg-clip-text py-2 font-bold text-4xl text-transparent leading-tight md:text-5xl md:leading-tight">
               {name}
             </h1>
             {manager && (
@@ -178,7 +178,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-2 rounded-xl bg-linear-to-r from-[#24a4db] to-[#1AF4E6] px-6 py-3 font-medium text-black transition-all duration-200 hover:shadow-[#24a4db]/30 hover:shadow-lg"
+                    className="flex items-center gap-2 rounded-xl bg-linear-to-r from-brand-light-blue to-dynamic-cyan px-6 py-3 font-medium text-primary transition-all duration-200 hover:shadow-brand-light-blue/30 hover:shadow-lg"
                   >
                     <Component size={20} />
                     <span>{is3DViewOpen ? 'Close Model' : 'View Model'}</span>
@@ -249,7 +249,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                 className="rounded-xl border border-border bg-muted/50 p-4 text-center"
               >
                 <div className="mb-2 flex justify-center">
-                  <stat.icon className="h-6 w-6 text-[#1AF4E6]" />
+                  <stat.icon className="h-6 w-6 text-dynamic-cyan" />
                 </div>
                 <p className="font-bold text-2xl text-foreground">
                   {stat.value}
@@ -341,7 +341,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
         </div>
 
         {/* Footer */}
-        <div className="rounded-b-3xl border-white/10 border-t bg-white/5 px-8 py-6">
+        <div className="rounded-b-3xl border-border/10 border-t bg-card/5 px-8 py-6">
           <div className="flex justify-center gap-4">
             {githubUrl && (
               <motion.a
@@ -350,7 +350,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-2 rounded-xl border border-gray-600/50 bg-gray-800/80 px-6 py-3 text-white backdrop-blur-sm transition-all duration-200 hover:border-gray-500/50 hover:bg-gray-700/80"
+                className="flex items-center gap-2 rounded-xl border border-border/50 bg-card/80 px-6 py-3 text-card-foreground backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-card"
               >
                 <Github size={20} />
                 <span className="font-medium">View on GitHub</span>

@@ -115,7 +115,7 @@ function FontCard({
       {/* Specimen card */}
       <motion.div
         variants={stagger.item}
-        className="overflow-hidden rounded-2xl border bg-linear-to-br from-pink-50/60 via-white to-blue-50/60 dark:from-pink-950/20 dark:via-background dark:to-blue-950/20"
+        className="overflow-hidden rounded-2xl border bg-linear-to-br from-dynamic-light-pink/20 via-background to-dynamic-light-blue/20"
       >
         <div className="p-6 md:p-8">
           {/* Font name in actual font */}

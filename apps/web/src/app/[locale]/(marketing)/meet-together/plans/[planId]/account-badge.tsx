@@ -8,7 +8,7 @@ export default function AccountBadge({ type }: { type: 'GUEST' | 'PLATFORM' }) {
       className={`${
         type === 'GUEST'
           ? 'border border-foreground/20 bg-foreground/10'
-          : 'bg-linear-to-r from-pink-500/80 to-sky-600/80 dark:from-pink-300/70 dark:to-blue-300/70'
+          : 'bg-linear-to-r from-dynamic-pink/80 to-dynamic-sky/80'
       } mt-2 rounded px-2 py-1 font-semibold text-sm`}
     >
       <span className={`bg-linear-to-r bg-clip-text text-foreground`}>

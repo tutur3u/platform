@@ -76,8 +76,8 @@ function LanyardCard({
         className={cn(
           'relative flex aspect-4/3 items-center justify-center overflow-hidden rounded-2xl border transition-colors duration-500',
           isDark
-            ? 'checkerboard-dark border-white/6'
-            : 'checkerboard-light border-black/6'
+            ? 'checkerboard-dark border-border/10'
+            : 'checkerboard-light border-border/10'
         )}
         animate={{
           borderColor: isHovered

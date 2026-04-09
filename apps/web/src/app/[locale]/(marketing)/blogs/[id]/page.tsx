@@ -31,45 +31,43 @@ export default function BlogDetailPage() {
 
   const [blogDetail, setBlogDetail] = useState<BlogDetail | null>(null);
 
-  const fetchBlogDetail = async () => {
-    if (!params.id || typeof params.id !== 'string') {
-      notFound();
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('neo_blogs')
-      .select('*')
-      .eq('id', params.id)
-      .eq('is_published', true)
-      .single();
-
-    if (error) {
-      console.error('Error fetching blog:', error.message);
-      return;
-    }
-
-    if (!data) {
-      setBlogDetail(null);
-      return;
-    }
-
-    // update views count
-    await supabase
-      .from('neo_blogs')
-      .update({ views_count: (data.views_count || 0) + 1 })
-      .eq('id', data.id);
-
-    setBlogDetail(data as BlogDetail);
-  };
-
   useEffect(() => {
+    const fetchBlogDetail = async () => {
+      if (!params.id || typeof params.id !== 'string') {
+        notFound();
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('neo_blogs')
+        .select('*')
+        .eq('id', params.id)
+        .eq('is_published', true)
+        .single();
+
+      if (error) {
+        console.error('Error fetching blog:', error.message);
+        return;
+      }
+
+      if (!data) {
+        setBlogDetail(null);
+        return;
+      }
+
+      // update views count
+      await supabase
+        .from('neo_blogs')
+        .update({ views_count: (data.views_count || 0) + 1 })
+        .eq('id', data.id);
+
+      setBlogDetail(data as BlogDetail);
+    };
+
     if (params.id) fetchBlogDetail();
-  }, [params.id]);
+  }, [params.id, supabase]);
 
   if (!blogDetail) return null;
-
-  console.log('blogDetail', blogDetail);
 
   return <BlogDetailClient blog={blogDetail!} />;
 }

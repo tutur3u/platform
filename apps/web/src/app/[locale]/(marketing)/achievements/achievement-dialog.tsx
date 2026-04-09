@@ -105,7 +105,7 @@ export default function AchievementDialog({
                       {member.isNctMember && (
                         <Badge
                           variant="outline"
-                          className="shrink-0 border-[#5FC6E5]/50 px-1.5 py-0.5 text-[#5FC6E5] text-[10px]"
+                          className="shrink-0 border-brand-light-blue/50 px-1.5 py-0.5 text-[10px] text-brand-light-blue"
                         >
                           NCT
                         </Badge>

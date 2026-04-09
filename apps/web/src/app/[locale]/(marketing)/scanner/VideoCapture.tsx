@@ -285,8 +285,8 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
         className={cn(
           'relative aspect-video overflow-hidden rounded-2xl border-4 transition-all duration-300',
           cameraOn
-            ? 'border-blue-500 shadow-blue-500/25 shadow-lg'
-            : 'border-gray-200'
+            ? 'border-dynamic-blue shadow-dynamic-blue/25 shadow-lg'
+            : 'border-border'
         )}
       >
         <video
@@ -308,10 +308,10 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
                 <CameraOff className="h-8 w-8 text-dynamic-gray" />
               </div>
               <div className="hidden space-y-2 sm:block">
-                <p className="font-medium text-gray-700 text-lg">
+                <p className="font-medium text-foreground text-lg">
                   Camera is Off
                 </p>
-                <p className="text-gray-500 text-sm">
+                <p className="text-muted-foreground text-sm">
                   Click "Turn On Camera" to start scanning
                 </p>
               </div>
@@ -326,22 +326,22 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
             <div className="pointer-events-none absolute inset-0">
               <div className="absolute top-1/2 left-1/2 h-48 w-80 -translate-x-1/2 -translate-y-1/2">
                 {/* Corner Brackets */}
-                <div className="absolute top-0 left-0 h-8 w-8 rounded-tl-lg border-white border-t-4 border-l-4 shadow-lg"></div>
-                <div className="absolute top-0 right-0 h-8 w-8 rounded-tr-lg border-white border-t-4 border-r-4 shadow-lg"></div>
-                <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-lg border-white border-b-4 border-l-4 shadow-lg"></div>
-                <div className="absolute right-0 bottom-0 h-8 w-8 rounded-br-lg border-white border-r-4 border-b-4 shadow-lg"></div>
+                <div className="absolute top-0 left-0 h-8 w-8 rounded-tl-lg border-primary-foreground border-t-4 border-l-4 shadow-lg"></div>
+                <div className="absolute top-0 right-0 h-8 w-8 rounded-tr-lg border-primary-foreground border-t-4 border-r-4 shadow-lg"></div>
+                <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-lg border-primary-foreground border-b-4 border-l-4 shadow-lg"></div>
+                <div className="absolute right-0 bottom-0 h-8 w-8 rounded-br-lg border-primary-foreground border-r-4 border-b-4 shadow-lg"></div>
 
                 {/* Center Crosshair */}
                 <div className="absolute top-1/2 left-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2">
-                  <div className="h-0.5 w-full bg-white shadow-lg"></div>
-                  <div className="absolute top-0 left-1/2 h-full w-0.5 -translate-x-1/2 bg-white shadow-lg"></div>
+                  <div className="h-0.5 w-full bg-primary-foreground shadow-lg"></div>
+                  <div className="absolute top-0 left-1/2 h-full w-0.5 -translate-x-1/2 bg-primary-foreground shadow-lg"></div>
                 </div>
               </div>
             </div>
 
             {/* Instructions */}
             <div className="absolute top-4 right-4 left-4">
-              <div className="rounded-lg bg-black/60 px-4 py-2 text-center text-sm text-white backdrop-blur-sm">
+              <div className="rounded-lg bg-foreground/60 px-4 py-2 text-center text-primary-foreground text-sm backdrop-blur-sm">
                 <Scan className="mr-2 inline h-4 w-4" />
                 Position student ID card within the frame
               </div>
@@ -351,15 +351,15 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
 
         {/* Processing Overlay */}
         {capturing && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 backdrop-blur-sm">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-foreground/60 backdrop-blur-sm">
             <div className="relative">
-              <LoadingIndicator className="mx-auto h-12 w-12 text-white" />
+              <LoadingIndicator className="mx-auto h-12 w-12 text-primary-foreground" />
             </div>
             <div className="space-y-2 text-center">
-              <p className="font-semibold text-lg text-white">
+              <p className="font-semibold text-lg text-primary-foreground">
                 Processing Image...
               </p>
-              <p className="text-sm text-white/80">
+              <p className="text-primary-foreground/80 text-sm">
                 Extracting student information
               </p>
             </div>
@@ -378,8 +378,8 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
           className={cn(
             'h-14 w-full font-medium text-base transition-all duration-200',
             cameraOn
-              ? 'bg-red-500 shadow-lg shadow-red-500/25 hover:bg-red-600'
-              : 'bg-blue-500 text-white shadow-blue-500/25 shadow-lg hover:bg-blue-600'
+              ? 'bg-destructive shadow-destructive/25 shadow-lg hover:bg-destructive/90'
+              : 'bg-dynamic-blue text-primary-foreground shadow-dynamic-blue/25 shadow-lg hover:bg-dynamic-blue/90'
           )}
         >
           {cameraOn ? (
@@ -401,7 +401,7 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
           disabled={!cameraOn || capturing || !isReady}
           className={cn(
             'h-14 w-full font-medium text-base transition-all duration-200',
-            'bg-linear-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:from-purple-600 hover:to-indigo-700'
+            'bg-linear-to-r from-dynamic-purple to-dynamic-indigo text-primary-foreground shadow-lg hover:opacity-90'
           )}
         >
           {capturing ? (
@@ -420,9 +420,9 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
 
       {/* Status Messages */}
       {cameraOn && !isReady && (
-        <div className="flex items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <AlertCircle className="h-5 w-5 text-amber-600" />
-          <span className="font-medium text-amber-800">
+        <div className="flex items-center justify-center gap-2 rounded-lg border border-dynamic-light-orange/40 bg-dynamic-light-orange/15 p-4">
+          <AlertCircle className="h-5 w-5 text-dynamic-orange" />
+          <span className="font-medium text-dynamic-orange">
             Camera is starting up...
           </span>
         </div>

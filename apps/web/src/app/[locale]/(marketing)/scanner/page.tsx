@@ -290,9 +290,9 @@ export default function ScannerPage() {
         <div className="mb-8">
           {/* Mobile stats (stacked rows) */}
           <div className="flex flex-col gap-3 md:hidden">
-            <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+            <div className="flex items-center justify-between rounded-lg border border-border/20 bg-card/20 px-4 py-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/20 text-blue-200">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-blue/20 text-dynamic-light-blue">
                   <Users className="h-5 w-5" />
                 </div>
                 <p className="font-medium text-sm">Total Students</p>
@@ -300,9 +300,9 @@ export default function ScannerPage() {
               <p className="font-bold text-xl">{students.length}</p>
             </div>
 
-            <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+            <div className="flex items-center justify-between rounded-lg border border-border/20 bg-card/20 px-4 py-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20 text-green-200">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-green/20 text-dynamic-light-green">
                   <Clock className="h-5 w-5" />
                 </div>
                 <p className="font-medium text-sm">Today</p>
@@ -310,9 +310,9 @@ export default function ScannerPage() {
               <p className="font-bold text-xl">{todayCount}</p>
             </div>
 
-            <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+            <div className="flex items-center justify-between rounded-lg border border-border/20 bg-card/20 px-4 py-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/20 text-purple-200">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-purple/20 text-dynamic-light-purple">
                   <TrendingUp className="h-5 w-5" />
                 </div>
                 <p className="font-medium text-sm">This Week</p>
@@ -320,9 +320,9 @@ export default function ScannerPage() {
               <p className="font-bold text-xl">{thisWeekCount}</p>
             </div>
 
-            <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+            <div className="flex items-center justify-between rounded-lg border border-border/20 bg-card/20 px-4 py-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500/20 text-orange-200">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-orange/20 text-dynamic-light-orange">
                   <Upload className="h-5 w-5" />
                 </div>
                 <p className="font-medium text-sm">Pending Upload</p>
@@ -333,7 +333,7 @@ export default function ScannerPage() {
 
           {/* Desktop stats (grid) */}
           <div className="hidden gap-6 md:grid md:grid-cols-4">
-            <Card className="border-0 bg-linear-to-br from-blue-500 to-blue-600 text-white shadow-lg">
+            <Card className="border-0 bg-linear-to-br from-dynamic-blue to-brand-light-blue text-primary-foreground shadow-lg">
               <CardContent className="h-full p-6">
                 <div className="flex h-full flex-col justify-between gap-2">
                   <p className="font-medium text-sm">Total Students</p>
@@ -345,7 +345,7 @@ export default function ScannerPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 bg-linear-to-br from-green-500 to-green-600 text-white shadow-lg">
+            <Card className="border-0 bg-linear-to-br from-dynamic-green to-dynamic-light-green text-primary shadow-lg">
               <CardContent className="h-full p-6">
                 <div className="flex h-full flex-col justify-between gap-2">
                   <p className="font-medium text-sm">Today</p>
@@ -357,7 +357,7 @@ export default function ScannerPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 bg-linear-to-br from-purple-500 to-purple-600 text-white shadow-lg">
+            <Card className="border-0 bg-linear-to-br from-dynamic-purple to-dynamic-light-purple text-primary-foreground shadow-lg">
               <CardContent className="h-full p-6">
                 <div className="flex h-full flex-col justify-between gap-2">
                   <p className="font-medium text-sm">This Week</p>
@@ -369,7 +369,7 @@ export default function ScannerPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 bg-linear-to-br from-orange-500 to-orange-600 text-white shadow-lg">
+            <Card className="border-0 bg-linear-to-br from-dynamic-orange to-brand-light-yellow text-primary shadow-lg">
               <CardContent className="h-full p-6">
                 <div className="flex h-full flex-col justify-between gap-2">
                   <p className="font-medium text-sm">Pending Upload</p>
@@ -391,8 +391,8 @@ export default function ScannerPage() {
               {/* Scanner Section */}
               <div className="flex flex-col gap-8">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-linear-to-br from-blue-500 to-purple-600 p-2">
-                    <Camera className="h-5 w-5 text-white" />
+                  <div className="rounded-lg bg-linear-to-br from-dynamic-blue to-dynamic-purple p-2">
+                    <Camera className="h-5 w-5 text-primary-foreground" />
                   </div>
                   <div>
                     <CardTitle className="text-xl">ID Scanner</CardTitle>
@@ -409,8 +409,8 @@ export default function ScannerPage() {
               {/* Student Form Section */}
               <div className="flex flex-col gap-8">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-linear-to-br from-green-500 to-emerald-600 p-2">
-                    <FileText className="h-5 w-5 text-white" />
+                  <div className="rounded-lg bg-linear-to-br from-dynamic-green to-dynamic-light-green p-2">
+                    <FileText className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <CardTitle className="text-xl">
@@ -451,8 +451,8 @@ export default function ScannerPage() {
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-linear-to-br from-indigo-500 to-purple-600 p-2">
-                    <Users className="h-5 w-5 text-white" />
+                  <div className="rounded-lg bg-linear-to-br from-dynamic-indigo to-dynamic-purple p-2">
+                    <Users className="h-5 w-5 text-primary-foreground" />
                   </div>
                   <div>
                     <CardTitle className="text-xl">Student Records</CardTitle>
@@ -488,7 +488,7 @@ export default function ScannerPage() {
 
                 <Button
                   size="lg"
-                  className="h-14 bg-linear-to-r from-green-500 to-emerald-600 font-medium text-base shadow-lg hover:from-green-600 hover:to-emerald-700"
+                  className="h-14 bg-linear-to-r from-dynamic-green to-dynamic-light-green font-medium text-base text-primary shadow-lg hover:opacity-90"
                   disabled={students.length === 0 || !whitelisted}
                   onClick={handleUpload}
                 >
@@ -519,7 +519,7 @@ export default function ScannerPage() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2">
-                <Trash2 className="h-5 w-5 text-red-500" />
+                <Trash2 className="h-5 w-5 text-destructive" />
                 Clear History
               </AlertDialogTitle>
               <AlertDialogDescription>
@@ -532,7 +532,7 @@ export default function ScannerPage() {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleClear}
-                className="bg-red-500 text-white hover:bg-red-600"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 Clear All Records
               </AlertDialogAction>
