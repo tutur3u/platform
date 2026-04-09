@@ -10,6 +10,7 @@ import {
 } from '@/lib/sepay';
 import { classifyCategoryId } from './classifier';
 import { resolveEndpointByToken } from './endpoint';
+import { classifyTagIds } from './tagger';
 import { buildTransactionDescription, markEventFailed } from './event';
 import { normalizeSepayPayload, sepayRawPayloadSchema } from './schemas';
 import { ensureSystemVirtualUser } from './system-user';
@@ -194,6 +195,12 @@ export async function POST(request: Request, { params }: Params) {
       wsId: endpoint.ws_id,
     });
 
+    const tagClassification = await classifyTagIds({
+      payload,
+      sbAdmin,
+      wsId: endpoint.ws_id,
+    });
+
     const creatorId = await ensureSystemVirtualUser({
       sbAdmin,
       wsId: endpoint.ws_id,
@@ -229,6 +236,26 @@ export async function POST(request: Request, { params }: Params) {
 
     if (createTransactionError || !createdTransaction?.id) {
       throw new Error('Failed to create wallet transaction from webhook');
+    }
+
+    // Insert transaction tags if any were classified
+    if (tagClassification.tagIds.length > 0) {
+      const tagInserts = tagClassification.tagIds.map((tagId) => ({
+        tag_id: tagId,
+        transaction_id: createdTransaction.id,
+      }));
+
+      const { error: tagInsertError } = await sbAdmin
+        .from('wallet_transaction_tags')
+        .insert(tagInserts);
+
+      if (tagInsertError) {
+        console.error(
+          'Failed to insert transaction tags for webhook transaction:',
+          tagInsertError
+        );
+        // Don't throw - the transaction is already created, tags are non-critical
+      }
     }
 
     const { error: finalizeEventError } = await sbAdmin
