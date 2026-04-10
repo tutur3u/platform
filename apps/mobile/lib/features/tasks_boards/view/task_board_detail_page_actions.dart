@@ -761,8 +761,9 @@ class _TaskBoardBulkActionsDrawerState
   TaskBoardDetailCubit get _cubit => context.read<TaskBoardDetailCubit>();
 
   Future<void> _runBulkAction(
-    Future<TaskBulkResult> Function() action,
-  ) async {
+    Future<TaskBulkResult> Function() action, {
+    bool closeOnSuccess = true,
+  }) async {
     if (_isRunningAction) return;
 
     final toastContext = Navigator.of(context, rootNavigator: true).context;
@@ -786,8 +787,9 @@ class _TaskBoardBulkActionsDrawerState
             : shad.Alert(content: Text(message)),
       );
 
-      // Close the sheet on successful action (even if partial)
-      widget.onClose();
+      if (closeOnSuccess) {
+        widget.onClose();
+      }
     } on ApiException catch (error) {
       if (!mounted || !toastContext.mounted) return;
       shad.showToast(
@@ -812,6 +814,25 @@ class _TaskBoardBulkActionsDrawerState
       if (mounted) {
         setState(() => _isRunningAction = false);
       }
+    }
+  }
+
+  Future<void> _runBulkActionSequence(
+    List<Future<TaskBulkResult> Function()> actions,
+  ) async {
+    if (actions.isEmpty) {
+      return;
+    }
+
+    for (final action in actions) {
+      if (!mounted) {
+        return;
+      }
+      await _runBulkAction(action, closeOnSuccess: false);
+    }
+
+    if (mounted) {
+      widget.onClose();
     }
   }
 
@@ -955,18 +976,6 @@ class _TaskBoardBulkActionsDrawerState
                 id: member.id,
                 label: member.label,
                 avatarUrl: member.avatarUrl,
-              ),
-            )
-            .toList(growable: false);
-
-        // Move to list options
-        final listOptions = board.lists
-            .map(
-              (list) => _FilterMenuOption(
-                id: list.id,
-                label: list.name?.trim().isNotEmpty == true
-                    ? list.name!.trim()
-                    : l10n.taskBoardDetailUntitledList,
               ),
             )
             .toList(growable: false);
@@ -1188,6 +1197,17 @@ class _TaskBoardBulkActionsDrawerState
                             selectedIds: appliedLabelIds,
                             enabled: canRun,
                             onApplySelection: (selectedIds) {
+                              if (selectedIds.isEmpty) {
+                                unawaited(
+                                  _runBulkActionSequence([
+                                    _cubit.bulkClearLabels,
+                                  ]),
+                                );
+                                return;
+                              }
+
+                              final actions =
+                                  <Future<TaskBulkResult> Function()>[];
                               final toAdd = selectedIds.where(
                                 (id) => !appliedLabelIds.contains(id),
                               );
@@ -1195,24 +1215,12 @@ class _TaskBoardBulkActionsDrawerState
                                 (id) => !selectedIds.contains(id),
                               );
                               for (final id in toAdd) {
-                                unawaited(
-                                  _runBulkAction(
-                                    () => _cubit.bulkAddLabel(id),
-                                  ),
-                                );
+                                actions.add(() => _cubit.bulkAddLabel(id));
                               }
                               for (final id in toRemove) {
-                                unawaited(
-                                  _runBulkAction(
-                                    () => _cubit.bulkRemoveLabel(id),
-                                  ),
-                                );
+                                actions.add(() => _cubit.bulkRemoveLabel(id));
                               }
-                              if (selectedIds.isEmpty) {
-                                unawaited(
-                                  _runBulkAction(_cubit.bulkClearLabels),
-                                );
-                              }
+                              unawaited(_runBulkActionSequence(actions));
                             },
                           ),
                           const shad.Divider(height: 24),
@@ -1224,6 +1232,17 @@ class _TaskBoardBulkActionsDrawerState
                             selectedIds: appliedProjectIds,
                             enabled: canRun,
                             onApplySelection: (selectedIds) {
+                              if (selectedIds.isEmpty) {
+                                unawaited(
+                                  _runBulkActionSequence([
+                                    _cubit.bulkClearProjects,
+                                  ]),
+                                );
+                                return;
+                              }
+
+                              final actions =
+                                  <Future<TaskBulkResult> Function()>[];
                               final toAdd = selectedIds.where(
                                 (id) => !appliedProjectIds.contains(id),
                               );
@@ -1231,24 +1250,12 @@ class _TaskBoardBulkActionsDrawerState
                                 (id) => !selectedIds.contains(id),
                               );
                               for (final id in toAdd) {
-                                unawaited(
-                                  _runBulkAction(
-                                    () => _cubit.bulkAddProject(id),
-                                  ),
-                                );
+                                actions.add(() => _cubit.bulkAddProject(id));
                               }
                               for (final id in toRemove) {
-                                unawaited(
-                                  _runBulkAction(
-                                    () => _cubit.bulkRemoveProject(id),
-                                  ),
-                                );
+                                actions.add(() => _cubit.bulkRemoveProject(id));
                               }
-                              if (selectedIds.isEmpty) {
-                                unawaited(
-                                  _runBulkAction(_cubit.bulkClearProjects),
-                                );
-                              }
+                              unawaited(_runBulkActionSequence(actions));
                             },
                           ),
                           if (!_isPersonalWorkspaceForBoard(board))
@@ -1262,6 +1269,17 @@ class _TaskBoardBulkActionsDrawerState
                               selectedIds: appliedAssigneeIds,
                               enabled: canRun,
                               onApplySelection: (selectedIds) {
+                                if (selectedIds.isEmpty) {
+                                  unawaited(
+                                    _runBulkActionSequence([
+                                      _cubit.bulkClearAssignees,
+                                    ]),
+                                  );
+                                  return;
+                                }
+
+                                final actions =
+                                    <Future<TaskBulkResult> Function()>[];
                                 final toAdd = selectedIds.where(
                                   (id) => !appliedAssigneeIds.contains(id),
                                 );
@@ -1269,24 +1287,14 @@ class _TaskBoardBulkActionsDrawerState
                                   (id) => !selectedIds.contains(id),
                                 );
                                 for (final id in toAdd) {
-                                  unawaited(
-                                    _runBulkAction(
-                                      () => _cubit.bulkAddAssignee(id),
-                                    ),
-                                  );
+                                  actions.add(() => _cubit.bulkAddAssignee(id));
                                 }
                                 for (final id in toRemove) {
-                                  unawaited(
-                                    _runBulkAction(
-                                      () => _cubit.bulkRemoveAssignee(id),
-                                    ),
+                                  actions.add(
+                                    () => _cubit.bulkRemoveAssignee(id),
                                   );
                                 }
-                                if (selectedIds.isEmpty) {
-                                  unawaited(
-                                    _runBulkAction(_cubit.bulkClearAssignees),
-                                  );
-                                }
+                                unawaited(_runBulkActionSequence(actions));
                               },
                             ),
                         ],
@@ -1298,15 +1306,11 @@ class _TaskBoardBulkActionsDrawerState
                         icon: Icons.drive_file_move_outlined,
                         children: [
                           // Move to list
-                          _FilterDropdownSection(
+                          _ListPickerSection(
                             title: l10n.taskBoardDetailMoveTask,
-                            options: listOptions,
-                            selectedIds: const {},
+                            lists: board.lists,
                             enabled: canRun,
-                            singleSelection: true,
-                            onApplySelection: (selectedIds) {
-                              if (selectedIds.isEmpty) return;
-                              final listId = selectedIds.first;
+                            onSelect: (listId) {
                               unawaited(
                                 _runBulkAction(
                                   () => _cubit.bulkMoveToList(listId: listId),
@@ -1736,6 +1740,7 @@ class _MoveToBoardActionSectionState extends State<_MoveToBoardActionSection> {
 
   Future<void> _handleMoveToBoard() async {
     final l10n = context.l10n;
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
     final currentBoard = widget.cubit.state.board;
     if (currentBoard == null) return;
 
@@ -1745,16 +1750,43 @@ class _MoveToBoardActionSectionState extends State<_MoveToBoardActionSection> {
       boards = _cachedBoards!;
     } else {
       setState(() => _isLoading = true);
-      boards = await widget.cubit.getTaskBoards();
-      _cachedBoards = boards;
-      if (!mounted) return;
-      setState(() => _isLoading = false);
+      try {
+        boards = await widget.cubit.getTaskBoards();
+        _cachedBoards = boards;
+      } on ApiException catch (error) {
+        if (!mounted || !toastContext.mounted) return;
+        shad.showToast(
+          context: toastContext,
+          builder: (context, overlay) => shad.Alert.destructive(
+            content: Text(
+              error.message.trim().isEmpty
+                  ? l10n.commonSomethingWentWrong
+                  : error.message,
+            ),
+          ),
+        );
+        return;
+      } on Exception {
+        if (!mounted || !toastContext.mounted) return;
+        shad.showToast(
+          context: toastContext,
+          builder: (context, overlay) => shad.Alert.destructive(
+            content: Text(l10n.commonSomethingWentWrong),
+          ),
+        );
+        return;
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
     }
 
     final candidateBoards = boards
         .where((board) => board.id != currentBoard.id)
         .toList(growable: false);
     if (candidateBoards.isEmpty) return;
+    if (!mounted) return;
 
     final targetBoardId = await showAdaptiveSheet<String>(
       context: context,
@@ -1767,9 +1799,37 @@ class _MoveToBoardActionSectionState extends State<_MoveToBoardActionSection> {
     if (targetBoardId == null || !mounted) return;
 
     setState(() => _isLoading = true);
-    final targetLists = await widget.cubit.getBoardListsForBoard(targetBoardId);
+    late final List<TaskBoardList> targetLists;
+    try {
+      targetLists = await widget.cubit.getBoardListsForBoard(targetBoardId);
+    } on ApiException catch (error) {
+      if (!mounted || !toastContext.mounted) return;
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          content: Text(
+            error.message.trim().isEmpty
+                ? l10n.commonSomethingWentWrong
+                : error.message,
+          ),
+        ),
+      );
+      return;
+    } on Exception {
+      if (!mounted || !toastContext.mounted) return;
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          content: Text(l10n.commonSomethingWentWrong),
+        ),
+      );
+      return;
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
     if (!mounted) return;
-    setState(() => _isLoading = false);
 
     if (targetLists.isEmpty) return;
 
@@ -1778,7 +1838,7 @@ class _MoveToBoardActionSectionState extends State<_MoveToBoardActionSection> {
       backgroundColor: shad.Theme.of(context).colorScheme.background,
       builder: (sheetContext) => _ListPickerSheet(
         title: l10n.taskBoardDetailTaskListLabel,
-        lists: targetLists,
+        lists: _sortedListsByStatusOrder(targetLists),
       ),
     );
     if (targetListId == null || !mounted) return;
@@ -1787,19 +1847,23 @@ class _MoveToBoardActionSectionState extends State<_MoveToBoardActionSection> {
   }
 }
 
-class _BoardPickerSheet extends StatelessWidget {
-  const _BoardPickerSheet({
+class _ItemPickerSheet<T> extends StatelessWidget {
+  const _ItemPickerSheet({
     required this.title,
-    required this.boards,
+    required this.items,
+    required this.leadingBuilder,
+    required this.labelBuilder,
+    required this.onPicked,
   });
 
   final String title;
-  final List<TaskBoardSummary> boards;
+  final List<T> items;
+  final Widget Function(BuildContext context, T item) leadingBuilder;
+  final String Function(BuildContext context, T item) labelBuilder;
+  final String Function(T item) onPicked;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
     return SafeArea(
       top: false,
       child: Padding(
@@ -1825,25 +1889,55 @@ class _BoardPickerSheet extends StatelessWidget {
               ],
             ),
             const shad.Gap(16),
-            ...boards.map(
-              (board) => ListTile(
-                leading: Icon(
-                  resolvePlatformIcon(
-                    board.icon,
-                    fallback: Icons.dashboard_outlined,
-                  ),
-                ),
-                title: Text(
-                  board.name?.trim().isNotEmpty == true
-                      ? board.name!.trim()
-                      : l10n.taskBoardDetailUntitledBoard,
-                ),
-                onTap: () => Navigator.of(context).pop(board.id),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.5,
+              ),
+              child: ListView(
+                shrinkWrap: true,
+                children: items
+                    .map(
+                      (item) => ListTile(
+                        leading: leadingBuilder(context, item),
+                        title: Text(labelBuilder(context, item)),
+                        onTap: () => Navigator.of(context).pop(onPicked(item)),
+                      ),
+                    )
+                    .toList(growable: false),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _BoardPickerSheet extends StatelessWidget {
+  const _BoardPickerSheet({
+    required this.title,
+    required this.boards,
+  });
+
+  final String title;
+  final List<TaskBoardSummary> boards;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return _ItemPickerSheet<TaskBoardSummary>(
+      title: title,
+      items: boards,
+      leadingBuilder: (_, board) => Icon(
+        resolvePlatformIcon(
+          board.icon,
+          fallback: Icons.dashboard_outlined,
+        ),
+      ),
+      labelBuilder: (_, board) => board.name?.trim().isNotEmpty == true
+          ? board.name!.trim()
+          : l10n.taskBoardDetailUntitledBoard,
+      onPicked: (board) => board.id,
     );
   }
 }
@@ -1860,52 +1954,20 @@ class _ListPickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: shad.Theme.of(
-                      context,
-                    ).typography.large.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                ),
-                shad.IconButton.ghost(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-            const shad.Gap(16),
-            ...lists.map(
-              (list) => ListTile(
-                leading: Icon(
-                  _taskBoardListStatusIcon(list.status),
-                  color: _taskBoardListStatusBadgeColors(
-                    context,
-                    list.status,
-                  ).textColor,
-                ),
-                title: Text(
-                  list.name?.trim().isNotEmpty == true
-                      ? list.name!.trim()
-                      : l10n.taskBoardDetailUntitledList,
-                ),
-                onTap: () => Navigator.of(context).pop(list.id),
-              ),
-            ),
-          ],
-        ),
+    return _ItemPickerSheet<TaskBoardList>(
+      title: title,
+      items: lists,
+      leadingBuilder: (context, list) => Icon(
+        _taskBoardListStatusIcon(list.status),
+        color: _taskBoardListStatusBadgeColors(
+          context,
+          list.status,
+        ).textColor,
       ),
+      labelBuilder: (_, list) => list.name?.trim().isNotEmpty == true
+          ? list.name!.trim()
+          : l10n.taskBoardDetailUntitledList,
+      onPicked: (list) => list.id,
     );
   }
 }

@@ -427,16 +427,16 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       return;
     }
 
-    if (state.selectedTaskId == taskId) {
-      emit(
-        state.copyWith(
-          selectedTaskId: null,
-          selectedTaskIds: state.selectedTaskIds
-              .where((id) => id != taskId)
-              .toSet(),
-        ),
-      );
-    }
+    emit(
+      state.copyWith(
+        selectedTaskId: state.selectedTaskId == taskId
+            ? null
+            : state.selectedTaskId,
+        selectedTaskIds: state.selectedTaskIds
+            .where((id) => id != taskId)
+            .toSet(),
+      ),
+    );
 
     await loadListTasks(
       listId: sourceListId,
@@ -936,11 +936,13 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     return bulkMoveToList(listId: target.id);
   }
 
-  Future<TaskBulkResult> bulkDeleteSelectedTasks() {
+  Future<TaskBulkResult> bulkDeleteSelectedTasks() async {
     const deleteUpdates = {'deleted': true};
-    return _runBulkOperation(
+    final result = await _runBulkOperation(
       TaskBulkOperation.updateFields(deleteUpdates),
     );
+    _invalidateDeletedTasksCache();
+    return result;
   }
 
   Future<TaskBulkResult> bulkAddLabel(String labelId) {
@@ -1178,14 +1180,20 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         operation: operation,
       );
 
+      if (isClosed) {
+        return result;
+      }
+
       if (state.workspaceId != wsId || state.boardId != boardId) {
-        emit(
-          state.copyWith(
-            isMutating: false,
-            clearMutationError: true,
-            clearError: true,
-          ),
-        );
+        if (!isClosed) {
+          emit(
+            state.copyWith(
+              isMutating: false,
+              clearMutationError: true,
+              clearError: true,
+            ),
+          );
+        }
         return result;
       }
 
@@ -1210,6 +1218,9 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       await loadBoardDetail(wsId: wsId, boardId: boardId);
       return result;
     } on Exception catch (error) {
+      if (isClosed) {
+        rethrow;
+      }
       final isSameBoard = state.workspaceId == wsId && state.boardId == boardId;
       emit(
         state.copyWith(

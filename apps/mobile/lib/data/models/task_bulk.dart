@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 
 class TaskBulkOperation extends Equatable {
   const TaskBulkOperation._({
@@ -126,8 +127,17 @@ class TaskBulkFailure extends Equatable {
   const TaskBulkFailure({required this.taskId, required this.error});
 
   factory TaskBulkFailure.fromJson(Map<String, dynamic> json) {
+    final rawTaskId = json['taskId'];
+    final parsedTaskId = rawTaskId is String ? rawTaskId.trim() : '';
+    final hasValidTaskId = parsedTaskId.isNotEmpty;
+    if (!hasValidTaskId) {
+      debugPrint(
+        'TaskBulkFailure.fromJson received malformed taskId. payload=$json',
+      );
+    }
+
     return TaskBulkFailure(
-      taskId: (json['taskId'] as String?) ?? '',
+      taskId: hasValidTaskId ? parsedTaskId : 'unknown',
       error: (json['error'] as String?) ?? 'Unknown error',
     );
   }
