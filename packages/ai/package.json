@@ -23,10 +23,10 @@
     "@ai-sdk/elevenlabs": "^2.0.29",
     "@ai-sdk/fal": "^2.0.30",
     "@ai-sdk/fireworks": "^2.0.46",
-    "@ai-sdk/gateway": "^3.0.94",
+    "@ai-sdk/gateway": "^3.0.95",
     "@ai-sdk/gladia": "^2.0.29",
-    "@ai-sdk/google": "^3.0.60",
-    "@ai-sdk/google-vertex": "^4.0.105",
+    "@ai-sdk/google": "^3.0.61",
+    "@ai-sdk/google-vertex": "^4.0.106",
     "@ai-sdk/groq": "^3.0.35",
     "@ai-sdk/hume": "^2.0.29",
     "@ai-sdk/lmnt": "^2.0.29",
@@ -35,7 +35,7 @@
     "@ai-sdk/openai": "^3.0.52",
     "@ai-sdk/openai-compatible": "^2.0.41",
     "@ai-sdk/perplexity": "^3.0.29",
-    "@ai-sdk/react": "^3.0.156",
+    "@ai-sdk/react": "^3.0.158",
     "@ai-sdk/replicate": "^2.0.29",
     "@ai-sdk/revai": "^2.0.29",
     "@ai-sdk/togetherai": "^2.0.45",
@@ -58,7 +58,7 @@
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@vercel/sandbox": "^1.9.3",
-    "ai": "^6.0.154",
+    "ai": "^6.0.156",
     "bash-tool": "^1.3.16",
     "chat": "^4.24.0",
     "dayjs": "^1.11.20",
@@ -73,7 +73,7 @@
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.6.0",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.14",
     "typescript": "^6.0.2"
@@ -81,5 +81,5 @@
   "exports": {
     "./*": "./src/*.ts"
   },
-  "packageManager": "bun@1.3.11"
+  "packageManager": "bun@1.3.12"
 }
