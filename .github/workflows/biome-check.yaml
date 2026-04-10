@@ -228,7 +228,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Close and delete outdated formatting PR
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const branchName = context.ref.replace('refs/heads/', '');
@@ -298,7 +298,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Comment on PR with progress
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             // Get PR number from context or search for PR associated with this branch
