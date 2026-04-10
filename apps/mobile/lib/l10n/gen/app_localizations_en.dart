@@ -279,16 +279,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get habitsTitle => 'Habits';
 
   @override
-  String get habitsOverviewLabel => 'Overview';
+  String get habitsOverviewLabel => 'Today';
+
+  @override
+  String get habitsTodayLabel => 'Today';
 
   @override
   String get habitsActivityLabel => 'Activity';
+
+  @override
+  String get habitsLibraryLabel => 'Library';
 
   @override
   String get habitsActivityTitle => 'Activity';
 
   @override
   String get habitsActivitySubtitle => 'Review the latest habit logs across every tracker in this workspace.';
+
+  @override
+  String get habitsLibraryTitle => 'Library';
+
+  @override
+  String get habitsLibrarySubtitle => 'Start from strong defaults for fitness, recovery, and disciplined daily routines.';
 
   @override
   String get habitsLoadError => 'Couldn\'t load habits right now';
@@ -456,6 +468,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get habitsSelectOptionsRequired => 'Select fields need at least one option';
 
   @override
+  String get habitsComposerQuickCheck => 'Quick check';
+
+  @override
+  String get habitsComposerQuickIncrement => 'Quick increment';
+
+  @override
+  String get habitsComposerMeasurement => 'Measurement';
+
+  @override
+  String get habitsComposerWorkoutSession => 'Workout';
+
+  @override
+  String get habitsComposerAdvancedCustom => 'Custom';
+
+  @override
   String habitsFieldCardTitle(int count) {
     return 'Field $count';
   }
@@ -515,6 +542,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get habitsLogEntryAction => 'Log entry';
 
   @override
+  String get habitsLogMeasurementAction => 'Log measurement';
+
+  @override
+  String get habitsLogSessionAction => 'Log session';
+
+  @override
   String get habitsCompleteNow => 'Complete now';
 
   @override
@@ -531,6 +564,71 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get habitsSaveEntry => 'Save entry';
+
+  @override
+  String get habitsQuickCheckTitle => 'Quick check-in';
+
+  @override
+  String get habitsQuickCheckDescription => 'Use one tap when this habit is simply done or not done.';
+
+  @override
+  String get habitsQuickIncrementTitle => 'Quick increments';
+
+  @override
+  String get habitsQuickIncrementDescription => 'Adjust the running total with fast chips or enter a custom amount.';
+
+  @override
+  String get habitsMeasurementTitle => 'Measurement';
+
+  @override
+  String get habitsMeasurementDescription => 'Enter one focused measurement and compare it to the latest check-in.';
+
+  @override
+  String get habitsAdvancedComposerTitle => 'Custom entry';
+
+  @override
+  String get habitsAdvancedComposerDescription => 'Use a simple value entry for fully custom trackers.';
+
+  @override
+  String get habitsWorkoutSessionTitle => 'Workout session';
+
+  @override
+  String get habitsWorkoutSessionDescription => 'Add one or more exercise blocks with sets, reps, and optional load.';
+
+  @override
+  String get habitsWorkoutBlocksRequired => 'Add at least one exercise block';
+
+  @override
+  String get habitsWorkoutBlockTitle => 'Exercise block';
+
+  @override
+  String get habitsWorkoutExerciseName => 'Exercise';
+
+  @override
+  String get habitsWorkoutSets => 'Sets';
+
+  @override
+  String get habitsWorkoutReps => 'Reps';
+
+  @override
+  String get habitsWorkoutWeight => 'Weight';
+
+  @override
+  String get habitsWorkoutTotalSets => 'Total sets';
+
+  @override
+  String get habitsWorkoutTotalReps => 'Total reps';
+
+  @override
+  String get habitsWorkoutTotalVolume => 'Total volume';
+
+  @override
+  String get habitsAddExerciseBlock => 'Add exercise';
+
+  @override
+  String habitsLatestValueLabel(String value) {
+    return 'Latest: $value';
+  }
 
   @override
   String get habitsMarkDone => 'Mark done';
@@ -620,6 +718,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get habitsActivityNoTrackers => 'Create a habit tracker first to start collecting activity.';
+
+  @override
+  String get habitsLibraryStrengthTitle => 'Strength';
+
+  @override
+  String get habitsLibraryStrengthSubtitle => 'Heavy sessions, structured lifts, and bodyweight output.';
+
+  @override
+  String get habitsLibraryHealthTitle => 'Health';
+
+  @override
+  String get habitsLibraryHealthSubtitle => 'Measurements and daily totals that keep your baseline visible.';
+
+  @override
+  String get habitsLibraryRecoveryTitle => 'Recovery';
+
+  @override
+  String get habitsLibraryRecoverySubtitle => 'Sleep, sauna, meditation, and reset rituals.';
+
+  @override
+  String get habitsLibraryDisciplineTitle => 'Discipline';
+
+  @override
+  String get habitsLibraryDisciplineSubtitle => 'Simple yes-or-no commitments you want to see every day.';
+
+  @override
+  String get habitsLibraryCustomizeTitle => 'Customize your own';
+
+  @override
+  String get habitsLibraryCustomizeDescription => 'Start from a blank tracker when the preset library is close but not exact.';
+
+  @override
+  String get habitsLibraryCustomizeAction => 'Customize';
+
+  @override
+  String get habitsLibraryGoalChip => 'Goal';
+
+  @override
+  String get habitsLibraryComposerChip => 'Composer';
 
   @override
   String habitsStreakChip(int count) {

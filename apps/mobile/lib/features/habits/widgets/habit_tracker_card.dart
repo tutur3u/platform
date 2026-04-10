@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
+import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -40,205 +41,154 @@ class HabitTrackerCard extends StatelessWidget {
         ? 0.0
         : (currentPeriodValue / tracker.targetValue).clamp(0, 1).toDouble();
     final accent = habitTrackerColor(context, tracker.color);
-    final tint = habitTrackerTint(context, tracker.color);
-    final l10n = context.l10n;
 
-    return Material(
-      color: selected ? tint.withValues(alpha: 0.2) : Colors.transparent,
-      borderRadius: BorderRadius.circular(24),
-      child: InkWell(
-        onTap: onSelect,
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: selected ? accent.withValues(alpha: 0.35) : Colors.black12,
-            ),
-            color: Theme.of(context).colorScheme.surface,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: tint,
-                    ),
-                    child: Icon(habitTrackerIcon(tracker.icon), color: accent),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tracker.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          tracker.description?.trim().isNotEmpty == true
-                              ? tracker.description!.trim()
-                              : l10n.habitsTrackerNoDescription,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.color
-                                    ?.withValues(alpha: 0.72),
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  shad.IconButton.ghost(
-                    icon: const Icon(Icons.settings_outlined),
-                    onPressed: onEdit,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _MetricChip(
-                    label: l10n.habitsTargetChip(tracker.targetValue),
-                  ),
-                  _MetricChip(
-                    label:
-                        tracker.trackingMode ==
-                            HabitTrackerTrackingMode.dailySummary
-                        ? l10n.habitsModeDailySummary
-                        : l10n.habitsModeEventLog,
-                  ),
-                  _MetricChip(label: l10n.habitsStreakChip(streak)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                [
-                  '${formatCompactNumber(currentPeriodValue)} / ${formatCompactNumber(tracker.targetValue)}',
-                  if (primaryField?.unit != null &&
-                      primaryField!.unit!.isNotEmpty)
-                    primaryField.unit!,
-                ].join(' '),
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 8,
-                  backgroundColor: accent.withValues(alpha: 0.12),
-                  valueColor: AlwaysStoppedAnimation<Color>(accent),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _StatTile(
-                      label: l10n.habitsCurrentStreak,
-                      value: '$streak',
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _StatTile(
-                      label: l10n.habitsBestStreak,
-                      value: '${summary.currentMember?.streak.bestStreak ?? 0}',
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _StatTile(
-                      label: l10n.habitsTeamMembers,
-                      value: '${summary.team?.activeMembers ?? 0}',
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _QuickLogSection(
-                tracker: tracker,
-                quickValue: quickValue,
-                onQuickValueChanged: onQuickValueChanged,
-                onQuickLog: onQuickLog,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MetricChip extends StatelessWidget {
-  const _MetricChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      ),
-      child: Text(label, style: Theme.of(context).textTheme.labelMedium),
-    );
-  }
-}
-
-class _StatTile extends StatelessWidget {
-  const _StatTile({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
-      ),
+    return FinancePanel(
+      borderColor: selected ? accent.withValues(alpha: 0.34) : null,
+      backgroundColor: selected
+          ? accent.withValues(alpha: 0.07)
+          : FinancePalette.of(context).panel,
+      onTap: onSelect,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(
-                context,
-              ).textTheme.labelSmall?.color?.withValues(alpha: 0.75),
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: accent.withValues(alpha: 0.14),
+                ),
+                child: Icon(habitTrackerIcon(tracker.icon), color: accent),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tracker.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: shad.Theme.of(
+                        context,
+                      ).typography.large.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      tracker.description?.trim().isNotEmpty == true
+                          ? tracker.description!.trim()
+                          : context.l10n.habitsTrackerNoDescription,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: shad.Theme.of(context).typography.textSmall
+                          .copyWith(
+                            color: shad.Theme.of(
+                              context,
+                            ).colorScheme.mutedForeground,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              _ProgressRing(progress: progress, accent: accent),
+              const SizedBox(width: 4),
+              shad.IconButton.ghost(
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: onEdit,
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FinanceStatChip(
+                label: context.l10n.habitsSummaryTargetsMet,
+                value:
+                    '${formatCompactNumber(currentPeriodValue)} / ${formatCompactNumber(tracker.targetValue)}',
+                tint: accent,
+              ),
+              FinanceStatChip(
+                label: context.l10n.habitsCurrentStreak,
+                value: '$streak',
+                tint: accent,
+              ),
+              FinanceStatChip(
+                label: context.l10n.habitsLibraryComposerChip,
+                value: _actionLabel(context, tracker),
+                tint: accent,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (primaryField != null)
+            Text(
+              primaryField.unit?.trim().isNotEmpty == true
+                  ? '${primaryField.label} • ${primaryField.unit}'
+                  : primaryField.label,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          const SizedBox(height: 10),
+          _CardComposer(
+            tracker: tracker,
+            quickValue: quickValue,
+            onQuickValueChanged: onQuickValueChanged,
+            onQuickLog: onQuickLog,
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _actionLabel(BuildContext context, HabitTracker tracker) {
+    final l10n = context.l10n;
+    return switch (tracker.composerMode) {
+      HabitTrackerComposerMode.quickCheck => l10n.habitsComposerQuickCheck,
+      HabitTrackerComposerMode.quickIncrement =>
+        l10n.habitsComposerQuickIncrement,
+      HabitTrackerComposerMode.measurement => l10n.habitsComposerMeasurement,
+      HabitTrackerComposerMode.workoutSession =>
+        l10n.habitsComposerWorkoutSession,
+      HabitTrackerComposerMode.advancedCustom =>
+        l10n.habitsComposerAdvancedCustom,
+    };
+  }
+}
+
+class _ProgressRing extends StatelessWidget {
+  const _ProgressRing({required this.progress, required this.accent});
+
+  final double progress;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final value = (progress * 100).round().clamp(0, 100);
+
+    return SizedBox(
+      width: 52,
+      height: 52,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CircularProgressIndicator(
+            value: progress,
+            strokeWidth: 5,
+            backgroundColor: accent.withValues(alpha: 0.14),
+            valueColor: AlwaysStoppedAnimation<Color>(accent),
+          ),
           Text(
-            value,
+            '$value%',
             style: Theme.of(
               context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -246,8 +196,8 @@ class _StatTile extends StatelessWidget {
   }
 }
 
-class _QuickLogSection extends StatelessWidget {
-  const _QuickLogSection({
+class _CardComposer extends StatefulWidget {
+  const _CardComposer({
     required this.tracker,
     required this.quickValue,
     required this.onQuickValueChanged,
@@ -260,67 +210,119 @@ class _QuickLogSection extends StatelessWidget {
   final VoidCallback onQuickLog;
 
   @override
+  State<_CardComposer> createState() => _CardComposerState();
+}
+
+class _CardComposerState extends State<_CardComposer> {
+  late final TextEditingController _quickValueController;
+
+  @override
+  void initState() {
+    super.initState();
+    _quickValueController = TextEditingController(text: widget.quickValue);
+  }
+
+  @override
+  void didUpdateWidget(covariant _CardComposer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.quickValue != widget.quickValue &&
+        _quickValueController.text != widget.quickValue) {
+      _quickValueController.value = TextEditingValue(
+        text: widget.quickValue,
+        selection: TextSelection.collapsed(offset: widget.quickValue.length),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _quickValueController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final tracker = widget.tracker;
     final primaryField = primaryFieldForTracker(tracker);
-    final isBoolean = primaryField?.type == HabitTrackerFieldType.boolean;
+    final increments = tracker.composerConfig.suggestedIncrements.isNotEmpty
+        ? tracker.composerConfig.suggestedIncrements
+        : tracker.quickAddValues;
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.black12),
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20),
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.75),
+        border: Border.all(
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.55),
+        ),
       ),
-      child: isBoolean
-          ? shad.PrimaryButton(
-              onPressed: onQuickLog,
-              child: Text(l10n.habitsCompleteNow),
-            )
-          : tracker.trackingMode == HabitTrackerTrackingMode.dailySummary
-          ? Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    initialValue: quickValue,
-                    decoration: InputDecoration(
-                      hintText: l10n.habitsTodayTotalHint,
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    onChanged: onQuickValueChanged,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                shad.PrimaryButton(
-                  onPressed: onQuickLog,
-                  child: Text(l10n.assistantSaveAction),
-                ),
-              ],
-            )
-          : Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: tracker.quickAddValues
-                  .map((value) {
-                    return shad.OutlineButton(
-                      onPressed: () {
-                        onQuickValueChanged(value.toString());
-                        onQuickLog();
-                      },
-                      child: Text(
-                        [
-                          '+${formatCompactNumber(value)}',
-                          if (primaryField?.unit != null &&
-                              primaryField!.unit!.isNotEmpty)
-                            primaryField.unit!,
-                        ].join(' '),
-                      ),
-                    );
-                  })
-                  .toList(growable: false),
+      child: switch (tracker.composerMode) {
+        HabitTrackerComposerMode.quickCheck => shad.PrimaryButton(
+          onPressed: widget.onQuickLog,
+          child: Text(context.l10n.habitsCompleteNow),
+        ),
+        HabitTrackerComposerMode.quickIncrement => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _quickValueController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                hintText: context.l10n.habitsTodayTotalHint,
+                suffixText: primaryField?.unit,
+              ),
+              onChanged: widget.onQuickValueChanged,
             ),
+            if (increments.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: increments
+                    .map(
+                      (value) => shad.OutlineButton(
+                        onPressed: () {
+                          final nextValue = value.toString();
+                          _quickValueController.value = TextEditingValue(
+                            text: nextValue,
+                            selection: TextSelection.collapsed(
+                              offset: nextValue.length,
+                            ),
+                          );
+                          widget.onQuickValueChanged(nextValue);
+                          widget.onQuickLog();
+                        },
+                        child: Text('+${formatCompactNumber(value)}'),
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
+            ],
+            const SizedBox(height: 10),
+            shad.PrimaryButton(
+              onPressed: widget.onQuickLog,
+              child: Text(context.l10n.assistantSaveAction),
+            ),
+          ],
+        ),
+        HabitTrackerComposerMode.measurement => shad.PrimaryButton(
+          onPressed: widget.onQuickLog,
+          child: Text(context.l10n.habitsLogMeasurementAction),
+        ),
+        HabitTrackerComposerMode.workoutSession => shad.PrimaryButton(
+          onPressed: widget.onQuickLog,
+          child: Text(context.l10n.habitsLogSessionAction),
+        ),
+        HabitTrackerComposerMode.advancedCustom => shad.PrimaryButton(
+          onPressed: widget.onQuickLog,
+          child: Text(context.l10n.habitsLogEntryAction),
+        ),
+      },
     );
   }
 }

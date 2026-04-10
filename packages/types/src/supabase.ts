@@ -19211,6 +19211,8 @@ export type Database = {
           aggregation_strategy: string;
           archived_at: string | null;
           color: string;
+          composer_config: Json;
+          composer_mode: string;
           created_at: string;
           created_by: string | null;
           description: string | null;
@@ -19227,14 +19229,18 @@ export type Database = {
           target_operator: string;
           target_period: string;
           target_value: number;
+          template_category: string;
           tracking_mode: string;
           updated_at: string;
+          use_case: string;
           ws_id: string;
         };
         Insert: {
           aggregation_strategy?: string;
           archived_at?: string | null;
           color?: string;
+          composer_config?: Json;
+          composer_mode?: string;
           created_at?: string;
           created_by?: string | null;
           description?: string | null;
@@ -19251,14 +19257,18 @@ export type Database = {
           target_operator?: string;
           target_period?: string;
           target_value?: number;
+          template_category?: string;
           tracking_mode?: string;
           updated_at?: string;
+          use_case?: string;
           ws_id: string;
         };
         Update: {
           aggregation_strategy?: string;
           archived_at?: string | null;
           color?: string;
+          composer_config?: Json;
+          composer_mode?: string;
           created_at?: string;
           created_by?: string | null;
           description?: string | null;
@@ -19275,8 +19285,10 @@ export type Database = {
           target_operator?: string;
           target_period?: string;
           target_value?: number;
+          template_category?: string;
           tracking_mode?: string;
           updated_at?: string;
+          use_case?: string;
           ws_id?: string;
         };
         Relationships: [

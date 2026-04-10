@@ -11,9 +11,11 @@ class HabitTrackerFormSheet extends StatefulWidget {
     required this.onSubmit,
     super.key,
     this.tracker,
+    this.initialTemplateId,
   });
 
   final HabitTracker? tracker;
+  final String? initialTemplateId;
   final Future<void> Function(HabitTrackerInput input) onSubmit;
 
   @override
@@ -110,6 +112,10 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
   late String _selectedIcon;
   late String _primaryMetricKey;
   late bool _isActive;
+  late HabitTrackerUseCase _useCase;
+  late HabitTrackerTemplateCategory _templateCategory;
+  late HabitTrackerComposerMode _composerMode;
+  late HabitTrackerComposerConfig _composerConfig;
   late List<HabitTrackerFieldDraft> _fields;
   String _selectedTemplateId = 'custom';
   bool _isSubmitting = false;
@@ -118,8 +124,9 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
   void initState() {
     super.initState();
     final tracker = widget.tracker;
+    final selectedTemplateId = widget.initialTemplateId ?? 'body_weight';
     final initialInput = tracker == null
-        ? (habitTrackerTemplateById('water')?.toInput(
+        ? (habitTrackerTemplateById(selectedTemplateId)?.toInput(
                 startDate: DateTime.now().toIso8601String().slice(0, 10),
               ) ??
               habitTrackerTemplates.first.toInput(
@@ -140,6 +147,10 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
             quickAddValues: tracker.quickAddValues,
             freezeAllowance: tracker.freezeAllowance,
             recoveryWindowPeriods: tracker.recoveryWindowPeriods,
+            useCase: tracker.useCase,
+            templateCategory: tracker.templateCategory,
+            composerMode: tracker.composerMode,
+            composerConfig: tracker.composerConfig,
             startDate: tracker.startDate,
             isActive: tracker.isActive,
           );
@@ -172,9 +183,14 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
     _selectedIcon = initialInput.icon;
     _primaryMetricKey = initialInput.primaryMetricKey;
     _isActive = initialInput.isActive;
+    _useCase = initialInput.useCase;
+    _templateCategory = initialInput.templateCategory;
+    _composerMode = initialInput.composerMode;
+    _composerConfig = initialInput.composerConfig;
     _fields = initialInput.inputSchema
         .map(HabitTrackerFieldDraft.fromSchema)
         .toList(growable: true);
+    _selectedTemplateId = tracker?.id ?? selectedTemplateId;
   }
 
   @override
@@ -645,6 +661,10 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
       _selectedColor = template.color;
       _selectedIcon = template.icon;
       _primaryMetricKey = template.primaryMetricKey;
+      _useCase = template.useCase;
+      _templateCategory = template.templateCategory;
+      _composerMode = template.composerMode;
+      _composerConfig = template.composerConfig;
       _fields = template.inputSchema
           .map(HabitTrackerFieldDraft.fromSchema)
           .toList(growable: true);
@@ -747,6 +767,10 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
           quickAddValues: quickAddValues,
           freezeAllowance: freezeAllowance,
           recoveryWindowPeriods: recoveryWindow,
+          useCase: _useCase,
+          templateCategory: _templateCategory,
+          composerMode: _composerMode,
+          composerConfig: _composerConfig,
           startDate: _startDateController.text.trim(),
           isActive: _isActive,
         ),

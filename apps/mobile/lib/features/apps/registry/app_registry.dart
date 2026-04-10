@@ -146,16 +146,22 @@ class AppRegistry {
 
   static const List<MiniAppNavItem> _habitsMiniNav = [
     MiniAppNavItem(
-      id: 'habits_home',
+      id: 'habits_today',
       route: Routes.habits,
       icon: Icons.repeat_rounded,
-      labelBuilder: _labelHabitsOverview,
+      labelBuilder: _labelHabitsToday,
     ),
     MiniAppNavItem(
       id: 'habits_activity',
       route: Routes.habitsActivity,
       icon: Icons.history_rounded,
       labelBuilder: _labelHabitsActivity,
+    ),
+    MiniAppNavItem(
+      id: 'habits_library',
+      route: Routes.habitsLibrary,
+      icon: Icons.auto_awesome_outlined,
+      labelBuilder: _labelHabitsLibrary,
     ),
   ];
 
@@ -352,10 +358,12 @@ class AppRegistry {
 
   static String _labelTasks(AppLocalizations l10n) => l10n.navTasks;
   static String _labelHabits(AppLocalizations l10n) => l10n.navHabits;
-  static String _labelHabitsOverview(AppLocalizations l10n) =>
-      l10n.habitsOverviewLabel;
+  static String _labelHabitsToday(AppLocalizations l10n) =>
+      l10n.habitsTodayLabel;
   static String _labelHabitsActivity(AppLocalizations l10n) =>
       l10n.habitsActivityLabel;
+  static String _labelHabitsLibrary(AppLocalizations l10n) =>
+      l10n.habitsLibraryLabel;
   static String _labelTaskEstimates(AppLocalizations l10n) =>
       l10n.taskPlanningTitle;
   static String _labelTaskBoards(AppLocalizations l10n) => l10n.taskBoardsTitle;

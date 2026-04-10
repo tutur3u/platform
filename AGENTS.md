@@ -46,6 +46,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Server Components**: Default to Server Components; use 'use client' only when state/interactivity is required.
 - **Type Inference**: Import extended types from `@tuturuuu/types/db`. Never hand-edit generated type files. Refrain from ad-hoc type definitions that duplicate DB types; extend them in `packages/types` if necessary.
 - **Shared Types Export Parity**: When adding new modules under `packages/types/src/primitives`, keep `packages/types/package.json` exports and the corresponding `dist/primitives/*` entries in sync before running app tests. Vitest/Vite resolves `@tuturuuu/types` through package exports, not raw source files.
+- **Zod Runtime Enums Need Stable Runtime Tuples**: When a web schema uses `z.enum(...)` for newly added shared-type unions, do not assume package-exported runtime arrays will be fresh everywhere in the same patch. Prefer a stable local tuple in the schema or verify the exported runtime value is rebuilt and resolvable before relying on it in tests.
 - **Shared DB Row Aliases**: If a query row shape is reused beyond a single inline callback, define/export it from `packages/types/src/db.ts` (and consume it through `@tuturuuu/types`) instead of recreating local `Pick<Database...>` aliases. For type-only Supabase usage, import `TypedSupabaseClient` from `@tuturuuu/supabase/types`, not `@tuturuuu/supabase/next/client`.
 
 ## 4. Canonical Workflows

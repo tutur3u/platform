@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -13,6 +14,7 @@ import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/features/habits/view/habits_activity_section.dart';
+import 'package:mobile/features/habits/view/habits_library_section.dart';
 import 'package:mobile/features/habits/view/habits_overview_section.dart';
 import 'package:mobile/features/habits/view/habits_page_chrome.dart';
 import 'package:mobile/features/habits/widgets/habit_tracker_detail_sheet.dart';
@@ -26,7 +28,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-enum HabitsSection { overview, activity }
+enum HabitsSection { overview, activity, library }
 
 class HabitsPage extends StatelessWidget {
   const HabitsPage({
@@ -131,11 +133,17 @@ class _HabitsViewState extends State<_HabitsView> {
             }
             final isActivitySection =
                 widget.initialSection == HabitsSection.activity;
+            final isLibrarySection =
+                widget.initialSection == HabitsSection.library;
             final shellOwnerId = isActivitySection
                 ? 'habits-activity'
-                : 'habits-overview';
+                : isLibrarySection
+                ? 'habits-library'
+                : 'habits-today';
             final shellLocation = isActivitySection
                 ? Routes.habitsActivity
+                : isLibrarySection
+                ? Routes.habitsLibrary
                 : Routes.habits;
 
             final shellActionRegistration =
@@ -158,8 +166,20 @@ class _HabitsViewState extends State<_HabitsView> {
                       ShellActionSpec(
                         id: 'habits-create',
                         icon: Icons.add,
-                        tooltip: context.l10n.habitsCreateTrackerAction,
-                        onPressed: () => unawaited(_openCreateTracker()),
+                        tooltip: isLibrarySection
+                            ? context.l10n.habitsLibraryCustomizeAction
+                            : context.l10n.habitsCreateTrackerAction,
+                        onPressed: () {
+                          if (isLibrarySection) {
+                            unawaited(
+                              _openCreateTracker(
+                                template: habitTrackerTemplateById('custom'),
+                              ),
+                            );
+                            return;
+                          }
+                          context.go(Routes.habitsLibrary);
+                        },
                       ),
                     ];
 
@@ -221,16 +241,25 @@ class _HabitsViewState extends State<_HabitsView> {
                                     widget.initialSection ==
                                         HabitsSection.activity
                                     ? context.l10n.habitsActivityTitle
-                                    : context.l10n.habitsTitle,
+                                    : widget.initialSection ==
+                                          HabitsSection.library
+                                    ? context.l10n.habitsLibraryTitle
+                                    : context.l10n.habitsTodayLabel,
                                 subtitle:
                                     widget.initialSection ==
                                         HabitsSection.activity
                                     ? context.l10n.habitsActivitySubtitle
+                                    : widget.initialSection ==
+                                          HabitsSection.library
+                                    ? context.l10n.habitsLibrarySubtitle
                                     : context.l10n.habitsSummarySubtitle,
                                 leadingIcon:
                                     widget.initialSection ==
                                         HabitsSection.activity
                                     ? null
+                                    : widget.initialSection ==
+                                          HabitsSection.library
+                                    ? Icons.auto_awesome_outlined
                                     : Icons.auto_graph_rounded,
                               ),
                               if (!isPersonalWorkspace) ...[
@@ -288,6 +317,17 @@ class _HabitsViewState extends State<_HabitsView> {
                                   state: state,
                                   onOpenTracker: _openTrackerDetail,
                                 )
+                              else if (widget.initialSection ==
+                                  HabitsSection.library)
+                                HabitsLibrarySection(
+                                  onUseTemplate: (template) =>
+                                      _openCreateTracker(template: template),
+                                  onCustomize: () => _openCreateTracker(
+                                    template: habitTrackerTemplateById(
+                                      'custom',
+                                    ),
+                                  ),
+                                )
                               else
                                 HabitsOverviewSection(
                                   filteredTrackers: state.filteredTrackers,
@@ -336,6 +376,13 @@ class _HabitsViewState extends State<_HabitsView> {
 
   Future<void> _quickLogTracker(HabitTrackerCardSummary tracker) async {
     final cubit = context.read<HabitsCubit>();
+    final mode = tracker.tracker.composerMode;
+    if (mode == HabitTrackerComposerMode.measurement ||
+        mode == HabitTrackerComposerMode.workoutSession ||
+        mode == HabitTrackerComposerMode.advancedCustom) {
+      await _openTrackerEntryComposer(tracker.tracker.id);
+      return;
+    }
     final primaryField = primaryFieldForTracker(tracker.tracker);
     if (primaryField == null) {
       return;
@@ -388,11 +435,14 @@ class _HabitsViewState extends State<_HabitsView> {
     });
   }
 
-  Future<void> _openCreateTracker() async {
+  Future<void> _openCreateTracker({
+    HabitTrackerTemplate? template,
+  }) async {
     await showAdaptiveSheet<void>(
       context: context,
       maxDialogWidth: 900,
       builder: (sheetContext) => HabitTrackerFormSheet(
+        initialTemplateId: template?.id,
         onSubmit: (input) => context.read<HabitsCubit>().createTracker(input),
       ),
     );
@@ -441,20 +491,7 @@ class _HabitsViewState extends State<_HabitsView> {
                 showLeaderboard: !isPersonalWorkspace,
                 onRetry: () =>
                     cubit.loadTrackerDetail(trackerId, refresh: true),
-                onLogEntry: () async {
-                  final detail = state.detail;
-                  if (detail == null) {
-                    return;
-                  }
-                  await showAdaptiveSheet<void>(
-                    context: context,
-                    maxDialogWidth: 760,
-                    builder: (sheetContext) => HabitTrackerEntrySheet(
-                      detail: detail,
-                      onSubmit: (input) => cubit.createEntry(trackerId, input),
-                    ),
-                  );
-                },
+                onLogEntry: () => _openTrackerEntryComposer(trackerId),
                 onEditTracker: () async {
                   final tracker = state.detail?.tracker;
                   if (tracker != null) {
@@ -470,6 +507,26 @@ class _HabitsViewState extends State<_HabitsView> {
             },
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _openTrackerEntryComposer(String trackerId) async {
+    final cubit = context.read<HabitsCubit>();
+    await cubit.selectTracker(trackerId);
+    if (!mounted) {
+      return;
+    }
+    final detail = cubit.state.detail;
+    if (detail == null || detail.tracker.id != trackerId) {
+      return;
+    }
+    await showAdaptiveSheet<void>(
+      context: context,
+      maxDialogWidth: 760,
+      builder: (sheetContext) => HabitTrackerEntrySheet(
+        detail: detail,
+        onSubmit: (input) => cubit.createEntry(trackerId, input),
       ),
     );
   }

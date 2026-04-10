@@ -634,14 +634,26 @@ abstract class AppLocalizations {
   /// No description provided for @habitsOverviewLabel.
   ///
   /// In en, this message translates to:
-  /// **'Overview'**
+  /// **'Today'**
   String get habitsOverviewLabel;
+
+  /// No description provided for @habitsTodayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get habitsTodayLabel;
 
   /// No description provided for @habitsActivityLabel.
   ///
   /// In en, this message translates to:
   /// **'Activity'**
   String get habitsActivityLabel;
+
+  /// No description provided for @habitsLibraryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get habitsLibraryLabel;
 
   /// No description provided for @habitsActivityTitle.
   ///
@@ -654,6 +666,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Review the latest habit logs across every tracker in this workspace.'**
   String get habitsActivitySubtitle;
+
+  /// No description provided for @habitsLibraryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get habitsLibraryTitle;
+
+  /// No description provided for @habitsLibrarySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start from strong defaults for fitness, recovery, and disciplined daily routines.'**
+  String get habitsLibrarySubtitle;
 
   /// No description provided for @habitsLoadError.
   ///
@@ -985,6 +1009,36 @@ abstract class AppLocalizations {
   /// **'Select fields need at least one option'**
   String get habitsSelectOptionsRequired;
 
+  /// No description provided for @habitsComposerQuickCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick check'**
+  String get habitsComposerQuickCheck;
+
+  /// No description provided for @habitsComposerQuickIncrement.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick increment'**
+  String get habitsComposerQuickIncrement;
+
+  /// No description provided for @habitsComposerMeasurement.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurement'**
+  String get habitsComposerMeasurement;
+
+  /// No description provided for @habitsComposerWorkoutSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout'**
+  String get habitsComposerWorkoutSession;
+
+  /// No description provided for @habitsComposerAdvancedCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get habitsComposerAdvancedCustom;
+
   /// No description provided for @habitsFieldCardTitle.
   ///
   /// In en, this message translates to:
@@ -1099,6 +1153,18 @@ abstract class AppLocalizations {
   /// **'Log entry'**
   String get habitsLogEntryAction;
 
+  /// No description provided for @habitsLogMeasurementAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Log measurement'**
+  String get habitsLogMeasurementAction;
+
+  /// No description provided for @habitsLogSessionAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Log session'**
+  String get habitsLogSessionAction;
+
   /// No description provided for @habitsCompleteNow.
   ///
   /// In en, this message translates to:
@@ -1134,6 +1200,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save entry'**
   String get habitsSaveEntry;
+
+  /// No description provided for @habitsQuickCheckTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick check-in'**
+  String get habitsQuickCheckTitle;
+
+  /// No description provided for @habitsQuickCheckDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use one tap when this habit is simply done or not done.'**
+  String get habitsQuickCheckDescription;
+
+  /// No description provided for @habitsQuickIncrementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick increments'**
+  String get habitsQuickIncrementTitle;
+
+  /// No description provided for @habitsQuickIncrementDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust the running total with fast chips or enter a custom amount.'**
+  String get habitsQuickIncrementDescription;
+
+  /// No description provided for @habitsMeasurementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurement'**
+  String get habitsMeasurementTitle;
+
+  /// No description provided for @habitsMeasurementDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter one focused measurement and compare it to the latest check-in.'**
+  String get habitsMeasurementDescription;
+
+  /// No description provided for @habitsAdvancedComposerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom entry'**
+  String get habitsAdvancedComposerTitle;
+
+  /// No description provided for @habitsAdvancedComposerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a simple value entry for fully custom trackers.'**
+  String get habitsAdvancedComposerDescription;
+
+  /// No description provided for @habitsWorkoutSessionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout session'**
+  String get habitsWorkoutSessionTitle;
+
+  /// No description provided for @habitsWorkoutSessionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add one or more exercise blocks with sets, reps, and optional load.'**
+  String get habitsWorkoutSessionDescription;
+
+  /// No description provided for @habitsWorkoutBlocksRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one exercise block'**
+  String get habitsWorkoutBlocksRequired;
+
+  /// No description provided for @habitsWorkoutBlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise block'**
+  String get habitsWorkoutBlockTitle;
+
+  /// No description provided for @habitsWorkoutExerciseName.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise'**
+  String get habitsWorkoutExerciseName;
+
+  /// No description provided for @habitsWorkoutSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets'**
+  String get habitsWorkoutSets;
+
+  /// No description provided for @habitsWorkoutReps.
+  ///
+  /// In en, this message translates to:
+  /// **'Reps'**
+  String get habitsWorkoutReps;
+
+  /// No description provided for @habitsWorkoutWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get habitsWorkoutWeight;
+
+  /// No description provided for @habitsWorkoutTotalSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Total sets'**
+  String get habitsWorkoutTotalSets;
+
+  /// No description provided for @habitsWorkoutTotalReps.
+  ///
+  /// In en, this message translates to:
+  /// **'Total reps'**
+  String get habitsWorkoutTotalReps;
+
+  /// No description provided for @habitsWorkoutTotalVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Total volume'**
+  String get habitsWorkoutTotalVolume;
+
+  /// No description provided for @habitsAddExerciseBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Add exercise'**
+  String get habitsAddExerciseBlock;
+
+  /// No description provided for @habitsLatestValueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest: {value}'**
+  String habitsLatestValueLabel(String value);
 
   /// No description provided for @habitsMarkDone.
   ///
@@ -1308,6 +1500,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create a habit tracker first to start collecting activity.'**
   String get habitsActivityNoTrackers;
+
+  /// No description provided for @habitsLibraryStrengthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Strength'**
+  String get habitsLibraryStrengthTitle;
+
+  /// No description provided for @habitsLibraryStrengthSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavy sessions, structured lifts, and bodyweight output.'**
+  String get habitsLibraryStrengthSubtitle;
+
+  /// No description provided for @habitsLibraryHealthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Health'**
+  String get habitsLibraryHealthTitle;
+
+  /// No description provided for @habitsLibraryHealthSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurements and daily totals that keep your baseline visible.'**
+  String get habitsLibraryHealthSubtitle;
+
+  /// No description provided for @habitsLibraryRecoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get habitsLibraryRecoveryTitle;
+
+  /// No description provided for @habitsLibraryRecoverySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep, sauna, meditation, and reset rituals.'**
+  String get habitsLibraryRecoverySubtitle;
+
+  /// No description provided for @habitsLibraryDisciplineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discipline'**
+  String get habitsLibraryDisciplineTitle;
+
+  /// No description provided for @habitsLibraryDisciplineSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Simple yes-or-no commitments you want to see every day.'**
+  String get habitsLibraryDisciplineSubtitle;
+
+  /// No description provided for @habitsLibraryCustomizeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize your own'**
+  String get habitsLibraryCustomizeTitle;
+
+  /// No description provided for @habitsLibraryCustomizeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Start from a blank tracker when the preset library is close but not exact.'**
+  String get habitsLibraryCustomizeDescription;
+
+  /// No description provided for @habitsLibraryCustomizeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize'**
+  String get habitsLibraryCustomizeAction;
+
+  /// No description provided for @habitsLibraryGoalChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get habitsLibraryGoalChip;
+
+  /// No description provided for @habitsLibraryComposerChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Composer'**
+  String get habitsLibraryComposerChip;
 
   /// No description provided for @habitsStreakChip.
   ///
