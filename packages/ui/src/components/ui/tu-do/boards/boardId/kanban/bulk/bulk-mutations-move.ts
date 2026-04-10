@@ -16,6 +16,11 @@ export function useBulkMoveToBoard(
   broadcast?: BoardBroadcastFn | null,
   i18n?: BulkOperationI18n
 ) {
+  type TaskMoveSnapshot = {
+    task: Task;
+    previousIndex: number;
+  };
+
   return useMutation({
     mutationFn: async ({
       targetBoardId,
@@ -78,6 +83,9 @@ export function useBulkMoveToBoard(
         'tasks',
         targetBoardId,
       ]);
+      const previousTasksArray = Array.isArray(previousTasks)
+        ? (previousTasks as Task[])
+        : [];
 
       const taskIdSet = new Set(taskIds);
 
@@ -89,9 +97,17 @@ export function useBulkMoveToBoard(
         }
       );
 
-      const tasksToMove = (previousTasks as Task[] | undefined)?.filter((t) =>
-        taskIdSet.has(t.id)
-      );
+      const tasksToMoveSnapshots: TaskMoveSnapshot[] = [];
+      const tasksToMove: Task[] = [];
+
+      for (const [index, task] of previousTasksArray.entries()) {
+        if (!taskIdSet.has(task.id)) {
+          continue;
+        }
+
+        tasksToMoveSnapshots.push({ task, previousIndex: index });
+        tasksToMove.push(task);
+      }
 
       if (tasksToMove?.length) {
         queryClient.setQueryData(
@@ -107,7 +123,12 @@ export function useBulkMoveToBoard(
         );
       }
 
-      return { previousTasks, previousTargetTasks, tasksToMove };
+      return {
+        previousTasks,
+        previousTargetTasks,
+        tasksToMove,
+        tasksToMoveSnapshots,
+      };
     },
     onError: (error, variables, context) => {
       if (context?.previousTasks) {
@@ -131,31 +152,43 @@ export function useBulkMoveToBoard(
       );
       const movedTaskIds = [...data.movedTaskIds];
       const movedTaskIdSet = new Set(movedTaskIds);
-      const failedTasks = (context?.tasksToMove ?? []).filter((task) =>
-        failedTaskIds.has(task.id)
+      const failedTaskSnapshots = (context?.tasksToMoveSnapshots ?? [])
+        .filter((snapshot: TaskMoveSnapshot) =>
+          failedTaskIds.has(snapshot.task.id)
+        )
+        .sort(
+          (a: TaskMoveSnapshot, b: TaskMoveSnapshot) =>
+            a.previousIndex - b.previousIndex
+        );
+      const failedTasks = failedTaskSnapshots.map(
+        (snapshot: TaskMoveSnapshot) => snapshot.task
       );
 
-      // Always ensure succeeded tasks are removed from source board cache
-      // (handles both partial failure rollback and full success cleanup)
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
-          // Keep tasks that were NOT moved (either failed to move or weren't selected)
-          return old.filter((task) => !movedTaskIdSet.has(task.id));
+
+          const rebuilt = old.filter((task) => !movedTaskIdSet.has(task.id));
+
+          for (const snapshot of failedTaskSnapshots) {
+            const existingIndex = rebuilt.findIndex(
+              (task) => task.id === snapshot.task.id
+            );
+            if (existingIndex >= 0) {
+              rebuilt.splice(existingIndex, 1);
+            }
+
+            const safeInsertIndex = Math.min(
+              Math.max(snapshot.previousIndex, 0),
+              rebuilt.length
+            );
+            rebuilt.splice(safeInsertIndex, 0, snapshot.task);
+          }
+
+          return rebuilt;
         }
       );
-
-      // If there were failures, restore them to the source board
-      if (failedTasks.length > 0) {
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            const existing = old ?? [];
-            return [...existing, ...failedTasks];
-          }
-        );
-      }
 
       for (const tid of movedTaskIds) {
         broadcast?.('task:delete', { taskId: tid });

@@ -125,6 +125,7 @@ function isCompletionStatus(status: string | null | undefined) {
 }
 
 function buildMoveTaskUpdates(
+  operationTimestamp: string,
   task: TaskContextRow,
   targetList: TargetListRow
 ): Record<string, unknown> {
@@ -132,15 +133,13 @@ function buildMoveTaskUpdates(
   const targetStatus = targetList.status;
   const sourceIsCompletion = isCompletionStatus(sourceStatus);
   const targetIsCompletion = isCompletionStatus(targetStatus);
-  const completionTimestamp = new Date().toISOString();
-
   const transitioningIntoCompletion = !sourceIsCompletion && targetIsCompletion;
   const transitioningOutOfCompletion =
     sourceIsCompletion && !targetIsCompletion;
 
   let closedAt: string | null;
   if (transitioningIntoCompletion) {
-    closedAt = completionTimestamp;
+    closedAt = operationTimestamp;
   } else if (transitioningOutOfCompletion) {
     closedAt = null;
   } else {
@@ -152,7 +151,7 @@ function buildMoveTaskUpdates(
 
   if (transitioningIntoCompletion) {
     completed = true;
-    completedAt = completionTimestamp;
+    completedAt = operationTimestamp;
   } else if (transitioningOutOfCompletion) {
     completed = false;
     completedAt = null;
@@ -527,6 +526,7 @@ export async function POST(
       operation.type === 'update_fields'
         ? buildTaskUpdatePayload(operation)
         : null;
+    const operationTimestamp = new Date().toISOString();
 
     for (const taskId of taskIds) {
       const task = taskById.get(taskId);
@@ -560,7 +560,11 @@ export async function POST(
               throw new Error('Target list not found');
             }
 
-            const moveUpdates = buildMoveTaskUpdates(task, targetList);
+            const moveUpdates = buildMoveTaskUpdates(
+              operationTimestamp,
+              task,
+              targetList
+            );
             const updatePayload: TaskActorRpcArgs<'update_task_fields_with_actor'> =
               {
                 p_task_id: taskId,
