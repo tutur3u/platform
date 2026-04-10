@@ -5236,13 +5236,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsWorkspaceSecretsAccessDeniedTitle => 'Cần quyền truy cập';
 
   @override
-  String get settingsWorkspaceSecretsAccessDeniedDescription => 'Bạn cần quyền quản lý bí mật của không gian làm việc hoặc quyền quản trị nền tảng để quản lý bí mật cho không gian này.';
+  String get settingsWorkspaceSecretsAccessDeniedDescription => 'Bạn cần quyền quản lý bí mật không gian làm việc trong không gian nội bộ để mở trang này.';
 
   @override
-  String get settingsWorkspaceSecretsWorkspaceRequiredTitle => 'Cần không gian nhóm';
+  String get settingsWorkspaceSecretsWorkspaceRequiredTitle => 'Cần chọn không gian làm việc';
 
   @override
-  String get settingsWorkspaceSecretsWorkspaceRequiredDescription => 'Chuyển sang không gian nhóm hoặc không gian nội bộ để quản lý bí mật.';
+  String get settingsWorkspaceSecretsWorkspaceRequiredDescription => 'Hãy chọn một không gian làm việc trước khi mở trang quản lý bí mật.';
 
   @override
   String settingsWorkspaceSecretsPageDescription(String workspaceName) {

@@ -5260,13 +5260,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsWorkspaceSecretsAccessDeniedTitle => 'Access required';
 
   @override
-  String get settingsWorkspaceSecretsAccessDeniedDescription => 'You need workspace secret access or platform admin access to manage secrets for this workspace.';
+  String get settingsWorkspaceSecretsAccessDeniedDescription => 'You need the manage workspace secrets permission in the internal workspace to open this page.';
 
   @override
-  String get settingsWorkspaceSecretsWorkspaceRequiredTitle => 'Team workspace required';
+  String get settingsWorkspaceSecretsWorkspaceRequiredTitle => 'Workspace required';
 
   @override
-  String get settingsWorkspaceSecretsWorkspaceRequiredDescription => 'Switch to a team or internal workspace to manage secrets.';
+  String get settingsWorkspaceSecretsWorkspaceRequiredDescription => 'Select a workspace before opening secrets management.';
 
   @override
   String settingsWorkspaceSecretsPageDescription(String workspaceName) {

@@ -243,9 +243,7 @@ class _SettingsWorkspaceSecretsPageState
     final workspaceId = workspace?.id;
     final token = ++_loadToken;
 
-    if (workspaceId == null ||
-        workspaceId.isEmpty ||
-        workspace?.personal == true) {
+    if (workspaceId == null || workspaceId.isEmpty) {
       if (!mounted || token != _loadToken) {
         return;
       }
@@ -279,12 +277,10 @@ class _SettingsWorkspaceSecretsPageState
         rootPermissionsFuture,
       ]);
 
-      final workspacePermissions = permissions[0];
       final rootPermissions = permissions[1];
-      final hasAccess =
-          workspacePermissions.containsPermission('manage_workspace_secrets') ||
-          rootPermissions.containsPermission(manageWorkspaceRolesPermission) ||
-          rootPermissions.containsPermission('manage_workspace_secrets');
+      final hasAccess = rootPermissions.containsPermission(
+        'manage_workspace_secrets',
+      );
 
       if (!mounted || token != _loadToken) {
         return;
@@ -342,10 +338,7 @@ class _SettingsWorkspaceSecretsPageState
     final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     final workspaceId = workspace?.id;
 
-    if (workspaceId == null ||
-        workspaceId.isEmpty ||
-        workspace?.personal == true ||
-        !_hasAccess) {
+    if (workspaceId == null || workspaceId.isEmpty || !_hasAccess) {
       return;
     }
 

@@ -2177,9 +2177,9 @@
     "settingsWorkspaceSecretsTitle": "Bí mật",
     "settingsWorkspaceSecretsSubtitle": "Quản lý bí mật của không gian làm việc và lộ trình lưu trữ.",
     "settingsWorkspaceSecretsAccessDeniedTitle": "Cần quyền truy cập",
-    "settingsWorkspaceSecretsAccessDeniedDescription": "Bạn cần quyền quản lý bí mật của không gian làm việc hoặc quyền quản trị nền tảng để quản lý bí mật cho không gian này.",
-    "settingsWorkspaceSecretsWorkspaceRequiredTitle": "Cần không gian nhóm",
-    "settingsWorkspaceSecretsWorkspaceRequiredDescription": "Chuyển sang không gian nhóm hoặc không gian nội bộ để quản lý bí mật.",
+    "settingsWorkspaceSecretsAccessDeniedDescription": "Bạn cần quyền quản lý bí mật không gian làm việc trong không gian nội bộ để mở trang này.",
+    "settingsWorkspaceSecretsWorkspaceRequiredTitle": "Cần chọn không gian làm việc",
+    "settingsWorkspaceSecretsWorkspaceRequiredDescription": "Hãy chọn một không gian làm việc trước khi mở trang quản lý bí mật.",
     "settingsWorkspaceSecretsPageDescription": "Quản lý bí mật và lộ trình lưu trữ cho {workspaceName}.",
     "@settingsWorkspaceSecretsPageDescription": {
         "placeholders": {

@@ -10060,19 +10060,19 @@ abstract class AppLocalizations {
   /// No description provided for @settingsWorkspaceSecretsAccessDeniedDescription.
   ///
   /// In en, this message translates to:
-  /// **'You need workspace secret access or platform admin access to manage secrets for this workspace.'**
+  /// **'You need the manage workspace secrets permission in the internal workspace to open this page.'**
   String get settingsWorkspaceSecretsAccessDeniedDescription;
 
   /// No description provided for @settingsWorkspaceSecretsWorkspaceRequiredTitle.
   ///
   /// In en, this message translates to:
-  /// **'Team workspace required'**
+  /// **'Workspace required'**
   String get settingsWorkspaceSecretsWorkspaceRequiredTitle;
 
   /// No description provided for @settingsWorkspaceSecretsWorkspaceRequiredDescription.
   ///
   /// In en, this message translates to:
-  /// **'Switch to a team or internal workspace to manage secrets.'**
+  /// **'Select a workspace before opening secrets management.'**
   String get settingsWorkspaceSecretsWorkspaceRequiredDescription;
 
   /// No description provided for @settingsWorkspaceSecretsPageDescription.

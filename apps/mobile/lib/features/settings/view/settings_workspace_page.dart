@@ -14,7 +14,6 @@ import 'package:mobile/data/repositories/workspace_permissions_repository.dart'
     show
         WorkspacePermissions,
         WorkspacePermissionsRepository,
-        manageWorkspaceRolesPermission,
         manageWorkspaceSettingsPermission;
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
@@ -170,13 +169,20 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
     }
 
     if (isPersonalWorkspace) {
+      final rootPermissions = await _workspacePermissionsRepository
+          .getPermissions(wsId: rootWorkspaceId);
+      if (!mounted || token != _workspacePermissionLoadToken) {
+        return;
+      }
       if (!mounted) {
         return;
       }
       setState(() {
         _canManageWorkspaceSettings = true;
         _canManageWorkspaceMembers = false;
-        _canManageWorkspaceSecrets = false;
+        _canManageWorkspaceSecrets = rootPermissions.containsPermission(
+          'manage_workspace_secrets',
+        );
         _canManageWorkspaceRoles = true;
         _isWorkspacePermissionLoading = false;
       });
@@ -210,14 +216,11 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
       _canManageWorkspaceMembers = workspacePermissions.containsPermission(
         'manage_workspace_members',
       );
-      _canManageWorkspaceSecrets =
-          workspacePermissions.containsPermission('manage_workspace_secrets') ||
-          rootPermissions.containsPermission(
-            manageWorkspaceRolesPermission,
-          ) ||
-          rootPermissions.containsPermission('manage_workspace_secrets');
+      _canManageWorkspaceSecrets = rootPermissions.containsPermission(
+        'manage_workspace_secrets',
+      );
       _canManageWorkspaceRoles = workspacePermissions.containsPermission(
-        manageWorkspaceRolesPermission,
+        'manage_workspace_roles',
       );
       _isWorkspacePermissionLoading = false;
     });
