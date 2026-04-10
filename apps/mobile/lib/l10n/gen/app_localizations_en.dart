@@ -5249,4 +5249,249 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsWorkspaceRolesSaved => 'Role saved.';
+
+  @override
+  String get settingsWorkspaceSecretsTitle => 'Secrets';
+
+  @override
+  String get settingsWorkspaceSecretsSubtitle => 'Manage workspace secrets and storage rollout.';
+
+  @override
+  String get settingsWorkspaceSecretsAccessDeniedTitle => 'Access required';
+
+  @override
+  String get settingsWorkspaceSecretsAccessDeniedDescription => 'You need workspace secret access or platform admin access to manage secrets for this workspace.';
+
+  @override
+  String get settingsWorkspaceSecretsWorkspaceRequiredTitle => 'Team workspace required';
+
+  @override
+  String get settingsWorkspaceSecretsWorkspaceRequiredDescription => 'Switch to a team or internal workspace to manage secrets.';
+
+  @override
+  String settingsWorkspaceSecretsPageDescription(String workspaceName) {
+    return 'Manage secrets and storage rollout for $workspaceName.';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsTotalSecrets => 'All secrets';
+
+  @override
+  String get settingsWorkspaceSecretsVisibleSecrets => 'Visible';
+
+  @override
+  String get settingsWorkspaceSecretsActiveBackend => 'Active backend';
+
+  @override
+  String get settingsWorkspaceSecretsCreate => 'Create secret';
+
+  @override
+  String get settingsWorkspaceSecretsRolloutTitle => 'Storage rollout';
+
+  @override
+  String get settingsWorkspaceSecretsRolloutDescription => 'Inspect the current Drive backend, confirm required provider secrets, and migrate files between providers when needed.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecrets => 'Provider secrets';
+
+  @override
+  String get settingsWorkspaceSecretsZipAutomation => 'ZIP automation';
+
+  @override
+  String get settingsWorkspaceSecretsStateEnabled => 'Enabled';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractBlocked => 'Needs proxy secrets';
+
+  @override
+  String get settingsWorkspaceSecretsStateDisabled => 'Disabled';
+
+  @override
+  String get settingsWorkspaceSecretsSelected => 'Selected';
+
+  @override
+  String get settingsWorkspaceSecretsRecommended => 'Recommended';
+
+  @override
+  String get settingsWorkspaceSecretsObjects => 'Objects';
+
+  @override
+  String get settingsWorkspaceSecretsInventory => 'Inventory';
+
+  @override
+  String get settingsWorkspaceSecretsUnavailable => 'Unavailable';
+
+  @override
+  String get settingsWorkspaceSecretsReadyMessage => 'This backend is ready to receive Drive files.';
+
+  @override
+  String get settingsWorkspaceSecretsMissingMessage => 'Add the required secrets before routing Drive traffic here.';
+
+  @override
+  String get settingsWorkspaceSecretsMigrating => 'Migrating...';
+
+  @override
+  String settingsWorkspaceSecretsCopyInto(String provider) {
+    return 'Copy into $provider';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractTitle => 'Auto extract';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractDescription => 'Track whether automatic ZIP extraction is enabled and whether the proxy credentials are ready.';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractSwitch => 'Switch';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractProxyUrl => 'Proxy URL';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractProxyToken => 'Shared token';
+
+  @override
+  String get settingsWorkspaceSecretsStatePresent => 'Present';
+
+  @override
+  String get settingsWorkspaceSecretsStateMissing => 'Missing';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecretsTitle => 'Provider secrets';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecretsDescription => 'Edit the secrets that define which storage provider Drive uses for this workspace.';
+
+  @override
+  String get settingsWorkspaceSecretsProxySecretsTitle => 'ZIP proxy secrets';
+
+  @override
+  String get settingsWorkspaceSecretsProxySecretsDescription => 'Configure the optional secrets used by the ZIP extraction proxy.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveStorageProviderDescription => 'Selects the Drive backend for this workspace. Use \"supabase\" for the current path or \"r2\" to route Drive through Cloudflare R2.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2BucketDescription => 'Cloudflare R2 bucket name used for Drive objects when the provider is set to \"r2\".';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2EndpointDescription => 'S3-compatible R2 endpoint, for example https://<account-id>.r2.cloudflarestorage.com.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2AccessKeyIdDescription => 'Access key ID for the Cloudflare R2 token used by the server-side Drive adapter.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2SecretAccessKeyDescription => 'Secret access key for the Cloudflare R2 token used by the server-side Drive adapter.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractZipDescription => 'Enables automatic ZIP extraction after uploads. Disabled by default.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyUrlDescription => 'HTTPS URL for the self-hosted ZIP extraction proxy. Only used when auto extraction is enabled.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyTokenDescription => 'Shared bearer token used to authenticate requests to the ZIP extraction proxy.';
+
+  @override
+  String get settingsWorkspaceSecretsNoValue => 'No value';
+
+  @override
+  String get settingsWorkspaceSecretsConfigured => 'Configured';
+
+  @override
+  String get settingsWorkspaceSecretsMissing => 'Missing';
+
+  @override
+  String get settingsWorkspaceSecretsRequired => 'Required';
+
+  @override
+  String get settingsWorkspaceSecretsOptional => 'Optional';
+
+  @override
+  String get settingsWorkspaceSecretsAdd => 'Add';
+
+  @override
+  String get settingsWorkspaceSecretsListTitle => 'Secrets list';
+
+  @override
+  String get settingsWorkspaceSecretsListDescription => 'Search, edit, and remove workspace secrets. Boolean values can be toggled inline.';
+
+  @override
+  String get settingsWorkspaceSecretsSearchPlaceholder => 'Search secrets';
+
+  @override
+  String get settingsWorkspaceSecretsEmptyTitle => 'No secrets found';
+
+  @override
+  String get settingsWorkspaceSecretsEmptyDescription => 'Create a secret or adjust the search query to see matching entries.';
+
+  @override
+  String get settingsWorkspaceSecretsEdit => 'Edit';
+
+  @override
+  String get settingsWorkspaceSecretsDeleteTitle => 'Delete';
+
+  @override
+  String settingsWorkspaceSecretsDeleteMessage(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsDeleteSuccess => 'Secret deleted.';
+
+  @override
+  String get settingsWorkspaceSecretsNameField => 'Name';
+
+  @override
+  String get settingsWorkspaceSecretsNamePlaceholder => 'SECRET_NAME';
+
+  @override
+  String get settingsWorkspaceSecretsValueField => 'Value';
+
+  @override
+  String get settingsWorkspaceSecretsValuePlaceholder => 'Secret value';
+
+  @override
+  String get settingsWorkspaceSecretsEditorDescription => 'Update the secret name and value used by this workspace.';
+
+  @override
+  String get settingsWorkspaceSecretsSaving => 'Saving...';
+
+  @override
+  String get settingsWorkspaceSecretsSave => 'Save secret';
+
+  @override
+  String get settingsWorkspaceSecretsNameRequired => 'Enter a secret name.';
+
+  @override
+  String get settingsWorkspaceSecretsValueRequired => 'Enter a secret value.';
+
+  @override
+  String get settingsWorkspaceSecretsSaveSuccess => 'Secret saved.';
+
+  @override
+  String get settingsWorkspaceSecretsSaveError => 'Failed to save secret.';
+
+  @override
+  String get settingsWorkspaceSecretsLoadError => 'Failed to load workspace secrets.';
+
+  @override
+  String settingsWorkspaceSecretsMigrationSuccess(int filesCopied, String provider) {
+    return 'Copied $filesCopied files into $provider.';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsMigrationError => 'Failed to migrate workspace storage.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSupabaseTitle => 'Supabase';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSupabaseDescription => 'The current built-in Drive storage backend.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderR2Title => 'Cloudflare R2';
+
+  @override
+  String get settingsWorkspaceSecretsProviderR2Description => 'An S3-compatible backend for external Drive storage.';
 }

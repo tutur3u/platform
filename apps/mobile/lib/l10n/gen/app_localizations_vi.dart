@@ -5225,4 +5225,249 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsWorkspaceRolesSaved => 'Đã lưu vai trò.';
+
+  @override
+  String get settingsWorkspaceSecretsTitle => 'Bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsSubtitle => 'Quản lý bí mật của không gian làm việc và lộ trình lưu trữ.';
+
+  @override
+  String get settingsWorkspaceSecretsAccessDeniedTitle => 'Cần quyền truy cập';
+
+  @override
+  String get settingsWorkspaceSecretsAccessDeniedDescription => 'Bạn cần quyền quản lý bí mật của không gian làm việc hoặc quyền quản trị nền tảng để quản lý bí mật cho không gian này.';
+
+  @override
+  String get settingsWorkspaceSecretsWorkspaceRequiredTitle => 'Cần không gian nhóm';
+
+  @override
+  String get settingsWorkspaceSecretsWorkspaceRequiredDescription => 'Chuyển sang không gian nhóm hoặc không gian nội bộ để quản lý bí mật.';
+
+  @override
+  String settingsWorkspaceSecretsPageDescription(String workspaceName) {
+    return 'Quản lý bí mật và lộ trình lưu trữ cho $workspaceName.';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsTotalSecrets => 'Tất cả bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsVisibleSecrets => 'Đang hiển thị';
+
+  @override
+  String get settingsWorkspaceSecretsActiveBackend => 'Backend đang dùng';
+
+  @override
+  String get settingsWorkspaceSecretsCreate => 'Tạo bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsRolloutTitle => 'Lộ trình lưu trữ';
+
+  @override
+  String get settingsWorkspaceSecretsRolloutDescription => 'Kiểm tra backend Drive hiện tại, xác nhận các bí mật nhà cung cấp cần thiết và di chuyển tệp giữa các backend khi cần.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecrets => 'Bí mật nhà cung cấp';
+
+  @override
+  String get settingsWorkspaceSecretsZipAutomation => 'Tự động giải nén ZIP';
+
+  @override
+  String get settingsWorkspaceSecretsStateEnabled => 'Đã bật';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractBlocked => 'Thiếu bí mật proxy';
+
+  @override
+  String get settingsWorkspaceSecretsStateDisabled => 'Đã tắt';
+
+  @override
+  String get settingsWorkspaceSecretsSelected => 'Đang chọn';
+
+  @override
+  String get settingsWorkspaceSecretsRecommended => 'Khuyến nghị';
+
+  @override
+  String get settingsWorkspaceSecretsObjects => 'Đối tượng';
+
+  @override
+  String get settingsWorkspaceSecretsInventory => 'Dung lượng';
+
+  @override
+  String get settingsWorkspaceSecretsUnavailable => 'Không khả dụng';
+
+  @override
+  String get settingsWorkspaceSecretsReadyMessage => 'Backend này đã sẵn sàng nhận tệp Drive.';
+
+  @override
+  String get settingsWorkspaceSecretsMissingMessage => 'Hãy thêm các bí mật cần thiết trước khi chuyển luồng Drive sang đây.';
+
+  @override
+  String get settingsWorkspaceSecretsMigrating => 'Đang di chuyển...';
+
+  @override
+  String settingsWorkspaceSecretsCopyInto(String provider) {
+    return 'Sao chép vào $provider';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractTitle => 'Tự động giải nén';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractDescription => 'Theo dõi việc tự động giải nén ZIP đã bật chưa và bí mật proxy đã sẵn sàng hay chưa.';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractSwitch => 'Công tắc';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractProxyUrl => 'URL proxy';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractProxyToken => 'Token dùng chung';
+
+  @override
+  String get settingsWorkspaceSecretsStatePresent => 'Đã có';
+
+  @override
+  String get settingsWorkspaceSecretsStateMissing => 'Thiếu';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecretsTitle => 'Bí mật nhà cung cấp';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecretsDescription => 'Chỉnh sửa các bí mật xác định nhà cung cấp lưu trữ Drive của không gian làm việc này.';
+
+  @override
+  String get settingsWorkspaceSecretsProxySecretsTitle => 'Bí mật proxy ZIP';
+
+  @override
+  String get settingsWorkspaceSecretsProxySecretsDescription => 'Cấu hình các bí mật tùy chọn dùng cho proxy giải nén ZIP.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveStorageProviderDescription => 'Chọn backend Drive cho không gian làm việc này. Dùng \"supabase\" cho đường dẫn hiện tại hoặc \"r2\" để chuyển Drive sang Cloudflare R2.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2BucketDescription => 'Tên bucket Cloudflare R2 dùng cho các đối tượng Drive khi nhà cung cấp là \"r2\".';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2EndpointDescription => 'Endpoint R2 tương thích S3, ví dụ https://<account-id>.r2.cloudflarestorage.com.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2AccessKeyIdDescription => 'Access key ID của token Cloudflare R2 dùng bởi adapter Drive phía máy chủ.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2SecretAccessKeyDescription => 'Secret access key của token Cloudflare R2 dùng bởi adapter Drive phía máy chủ.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractZipDescription => 'Bật tự động giải nén ZIP sau khi tải lên. Mặc định là tắt.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyUrlDescription => 'URL HTTPS của proxy giải nén ZIP tự lưu trữ. Chỉ dùng khi bật tự động giải nén.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyTokenDescription => 'Bearer token dùng chung để xác thực yêu cầu tới proxy giải nén ZIP.';
+
+  @override
+  String get settingsWorkspaceSecretsNoValue => 'Chưa có giá trị';
+
+  @override
+  String get settingsWorkspaceSecretsConfigured => 'Đã cấu hình';
+
+  @override
+  String get settingsWorkspaceSecretsMissing => 'Thiếu';
+
+  @override
+  String get settingsWorkspaceSecretsRequired => 'Bắt buộc';
+
+  @override
+  String get settingsWorkspaceSecretsOptional => 'Tùy chọn';
+
+  @override
+  String get settingsWorkspaceSecretsAdd => 'Thêm';
+
+  @override
+  String get settingsWorkspaceSecretsListTitle => 'Danh sách bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsListDescription => 'Tìm kiếm, sửa và xóa bí mật của không gian làm việc. Giá trị boolean có thể bật tắt trực tiếp.';
+
+  @override
+  String get settingsWorkspaceSecretsSearchPlaceholder => 'Tìm bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsEmptyTitle => 'Không tìm thấy bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsEmptyDescription => 'Tạo một bí mật mới hoặc thay đổi từ khóa tìm kiếm để xem mục phù hợp.';
+
+  @override
+  String get settingsWorkspaceSecretsEdit => 'Sửa';
+
+  @override
+  String get settingsWorkspaceSecretsDeleteTitle => 'Xóa';
+
+  @override
+  String settingsWorkspaceSecretsDeleteMessage(String name) {
+    return 'Xóa $name?';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsDeleteSuccess => 'Đã xóa bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsNameField => 'Tên';
+
+  @override
+  String get settingsWorkspaceSecretsNamePlaceholder => 'SECRET_NAME';
+
+  @override
+  String get settingsWorkspaceSecretsValueField => 'Giá trị';
+
+  @override
+  String get settingsWorkspaceSecretsValuePlaceholder => 'Giá trị bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsEditorDescription => 'Cập nhật tên và giá trị bí mật được dùng trong không gian làm việc này.';
+
+  @override
+  String get settingsWorkspaceSecretsSaving => 'Đang lưu...';
+
+  @override
+  String get settingsWorkspaceSecretsSave => 'Lưu bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsNameRequired => 'Hãy nhập tên bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsValueRequired => 'Hãy nhập giá trị bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsSaveSuccess => 'Đã lưu bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsSaveError => 'Không thể lưu bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsLoadError => 'Không thể tải bí mật của không gian làm việc.';
+
+  @override
+  String settingsWorkspaceSecretsMigrationSuccess(int filesCopied, String provider) {
+    return 'Đã sao chép $filesCopied tệp vào $provider.';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsMigrationError => 'Không thể di chuyển lưu trữ của không gian làm việc.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSupabaseTitle => 'Supabase';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSupabaseDescription => 'Backend lưu trữ Drive tích hợp sẵn hiện tại.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderR2Title => 'Cloudflare R2';
+
+  @override
+  String get settingsWorkspaceSecretsProviderR2Description => 'Backend tương thích S3 cho lưu trữ Drive bên ngoài.';
 }

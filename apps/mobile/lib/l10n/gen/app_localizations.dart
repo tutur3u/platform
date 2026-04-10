@@ -10038,6 +10038,480 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Role saved.'**
   String get settingsWorkspaceRolesSaved;
+
+  /// No description provided for @settingsWorkspaceSecretsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Secrets'**
+  String get settingsWorkspaceSecretsTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage workspace secrets and storage rollout.'**
+  String get settingsWorkspaceSecretsSubtitle;
+
+  /// No description provided for @settingsWorkspaceSecretsAccessDeniedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Access required'**
+  String get settingsWorkspaceSecretsAccessDeniedTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsAccessDeniedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'You need workspace secret access or platform admin access to manage secrets for this workspace.'**
+  String get settingsWorkspaceSecretsAccessDeniedDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsWorkspaceRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Team workspace required'**
+  String get settingsWorkspaceSecretsWorkspaceRequiredTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsWorkspaceRequiredDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to a team or internal workspace to manage secrets.'**
+  String get settingsWorkspaceSecretsWorkspaceRequiredDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsPageDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage secrets and storage rollout for {workspaceName}.'**
+  String settingsWorkspaceSecretsPageDescription(String workspaceName);
+
+  /// No description provided for @settingsWorkspaceSecretsTotalSecrets.
+  ///
+  /// In en, this message translates to:
+  /// **'All secrets'**
+  String get settingsWorkspaceSecretsTotalSecrets;
+
+  /// No description provided for @settingsWorkspaceSecretsVisibleSecrets.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible'**
+  String get settingsWorkspaceSecretsVisibleSecrets;
+
+  /// No description provided for @settingsWorkspaceSecretsActiveBackend.
+  ///
+  /// In en, this message translates to:
+  /// **'Active backend'**
+  String get settingsWorkspaceSecretsActiveBackend;
+
+  /// No description provided for @settingsWorkspaceSecretsCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create secret'**
+  String get settingsWorkspaceSecretsCreate;
+
+  /// No description provided for @settingsWorkspaceSecretsRolloutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage rollout'**
+  String get settingsWorkspaceSecretsRolloutTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsRolloutDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect the current Drive backend, confirm required provider secrets, and migrate files between providers when needed.'**
+  String get settingsWorkspaceSecretsRolloutDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsProviderSecrets.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider secrets'**
+  String get settingsWorkspaceSecretsProviderSecrets;
+
+  /// No description provided for @settingsWorkspaceSecretsZipAutomation.
+  ///
+  /// In en, this message translates to:
+  /// **'ZIP automation'**
+  String get settingsWorkspaceSecretsZipAutomation;
+
+  /// No description provided for @settingsWorkspaceSecretsStateEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get settingsWorkspaceSecretsStateEnabled;
+
+  /// No description provided for @settingsWorkspaceSecretsAutoExtractBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs proxy secrets'**
+  String get settingsWorkspaceSecretsAutoExtractBlocked;
+
+  /// No description provided for @settingsWorkspaceSecretsStateDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get settingsWorkspaceSecretsStateDisabled;
+
+  /// No description provided for @settingsWorkspaceSecretsSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get settingsWorkspaceSecretsSelected;
+
+  /// No description provided for @settingsWorkspaceSecretsRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended'**
+  String get settingsWorkspaceSecretsRecommended;
+
+  /// No description provided for @settingsWorkspaceSecretsObjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Objects'**
+  String get settingsWorkspaceSecretsObjects;
+
+  /// No description provided for @settingsWorkspaceSecretsInventory.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory'**
+  String get settingsWorkspaceSecretsInventory;
+
+  /// No description provided for @settingsWorkspaceSecretsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get settingsWorkspaceSecretsUnavailable;
+
+  /// No description provided for @settingsWorkspaceSecretsReadyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This backend is ready to receive Drive files.'**
+  String get settingsWorkspaceSecretsReadyMessage;
+
+  /// No description provided for @settingsWorkspaceSecretsMissingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the required secrets before routing Drive traffic here.'**
+  String get settingsWorkspaceSecretsMissingMessage;
+
+  /// No description provided for @settingsWorkspaceSecretsMigrating.
+  ///
+  /// In en, this message translates to:
+  /// **'Migrating...'**
+  String get settingsWorkspaceSecretsMigrating;
+
+  /// No description provided for @settingsWorkspaceSecretsCopyInto.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy into {provider}'**
+  String settingsWorkspaceSecretsCopyInto(String provider);
+
+  /// No description provided for @settingsWorkspaceSecretsAutoExtractTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto extract'**
+  String get settingsWorkspaceSecretsAutoExtractTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsAutoExtractDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Track whether automatic ZIP extraction is enabled and whether the proxy credentials are ready.'**
+  String get settingsWorkspaceSecretsAutoExtractDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsAutoExtractSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get settingsWorkspaceSecretsAutoExtractSwitch;
+
+  /// No description provided for @settingsWorkspaceSecretsAutoExtractProxyUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy URL'**
+  String get settingsWorkspaceSecretsAutoExtractProxyUrl;
+
+  /// No description provided for @settingsWorkspaceSecretsAutoExtractProxyToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared token'**
+  String get settingsWorkspaceSecretsAutoExtractProxyToken;
+
+  /// No description provided for @settingsWorkspaceSecretsStatePresent.
+  ///
+  /// In en, this message translates to:
+  /// **'Present'**
+  String get settingsWorkspaceSecretsStatePresent;
+
+  /// No description provided for @settingsWorkspaceSecretsStateMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing'**
+  String get settingsWorkspaceSecretsStateMissing;
+
+  /// No description provided for @settingsWorkspaceSecretsProviderSecretsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider secrets'**
+  String get settingsWorkspaceSecretsProviderSecretsTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsProviderSecretsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit the secrets that define which storage provider Drive uses for this workspace.'**
+  String get settingsWorkspaceSecretsProviderSecretsDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsProxySecretsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ZIP proxy secrets'**
+  String get settingsWorkspaceSecretsProxySecretsTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsProxySecretsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure the optional secrets used by the ZIP extraction proxy.'**
+  String get settingsWorkspaceSecretsProxySecretsDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveStorageProviderDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Selects the Drive backend for this workspace. Use \"supabase\" for the current path or \"r2\" to route Drive through Cloudflare R2.'**
+  String get settingsWorkspaceSecretsDriveStorageProviderDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveR2BucketDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare R2 bucket name used for Drive objects when the provider is set to \"r2\".'**
+  String get settingsWorkspaceSecretsDriveR2BucketDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveR2EndpointDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'S3-compatible R2 endpoint, for example https://<account-id>.r2.cloudflarestorage.com.'**
+  String get settingsWorkspaceSecretsDriveR2EndpointDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveR2AccessKeyIdDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Access key ID for the Cloudflare R2 token used by the server-side Drive adapter.'**
+  String get settingsWorkspaceSecretsDriveR2AccessKeyIdDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveR2SecretAccessKeyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret access key for the Cloudflare R2 token used by the server-side Drive adapter.'**
+  String get settingsWorkspaceSecretsDriveR2SecretAccessKeyDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveAutoExtractZipDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enables automatic ZIP extraction after uploads. Disabled by default.'**
+  String get settingsWorkspaceSecretsDriveAutoExtractZipDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveAutoExtractProxyUrlDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTPS URL for the self-hosted ZIP extraction proxy. Only used when auto extraction is enabled.'**
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyUrlDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveAutoExtractProxyTokenDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared bearer token used to authenticate requests to the ZIP extraction proxy.'**
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyTokenDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsNoValue.
+  ///
+  /// In en, this message translates to:
+  /// **'No value'**
+  String get settingsWorkspaceSecretsNoValue;
+
+  /// No description provided for @settingsWorkspaceSecretsConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Configured'**
+  String get settingsWorkspaceSecretsConfigured;
+
+  /// No description provided for @settingsWorkspaceSecretsMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing'**
+  String get settingsWorkspaceSecretsMissing;
+
+  /// No description provided for @settingsWorkspaceSecretsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get settingsWorkspaceSecretsRequired;
+
+  /// No description provided for @settingsWorkspaceSecretsOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get settingsWorkspaceSecretsOptional;
+
+  /// No description provided for @settingsWorkspaceSecretsAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get settingsWorkspaceSecretsAdd;
+
+  /// No description provided for @settingsWorkspaceSecretsListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Secrets list'**
+  String get settingsWorkspaceSecretsListTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsListDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Search, edit, and remove workspace secrets. Boolean values can be toggled inline.'**
+  String get settingsWorkspaceSecretsListDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search secrets'**
+  String get settingsWorkspaceSecretsSearchPlaceholder;
+
+  /// No description provided for @settingsWorkspaceSecretsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No secrets found'**
+  String get settingsWorkspaceSecretsEmptyTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a secret or adjust the search query to see matching entries.'**
+  String get settingsWorkspaceSecretsEmptyDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get settingsWorkspaceSecretsEdit;
+
+  /// No description provided for @settingsWorkspaceSecretsDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get settingsWorkspaceSecretsDeleteTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String settingsWorkspaceSecretsDeleteMessage(String name);
+
+  /// No description provided for @settingsWorkspaceSecretsDeleteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret deleted.'**
+  String get settingsWorkspaceSecretsDeleteSuccess;
+
+  /// No description provided for @settingsWorkspaceSecretsNameField.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get settingsWorkspaceSecretsNameField;
+
+  /// No description provided for @settingsWorkspaceSecretsNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'SECRET_NAME'**
+  String get settingsWorkspaceSecretsNamePlaceholder;
+
+  /// No description provided for @settingsWorkspaceSecretsValueField.
+  ///
+  /// In en, this message translates to:
+  /// **'Value'**
+  String get settingsWorkspaceSecretsValueField;
+
+  /// No description provided for @settingsWorkspaceSecretsValuePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret value'**
+  String get settingsWorkspaceSecretsValuePlaceholder;
+
+  /// No description provided for @settingsWorkspaceSecretsEditorDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the secret name and value used by this workspace.'**
+  String get settingsWorkspaceSecretsEditorDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get settingsWorkspaceSecretsSaving;
+
+  /// No description provided for @settingsWorkspaceSecretsSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save secret'**
+  String get settingsWorkspaceSecretsSave;
+
+  /// No description provided for @settingsWorkspaceSecretsNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a secret name.'**
+  String get settingsWorkspaceSecretsNameRequired;
+
+  /// No description provided for @settingsWorkspaceSecretsValueRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a secret value.'**
+  String get settingsWorkspaceSecretsValueRequired;
+
+  /// No description provided for @settingsWorkspaceSecretsSaveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret saved.'**
+  String get settingsWorkspaceSecretsSaveSuccess;
+
+  /// No description provided for @settingsWorkspaceSecretsSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save secret.'**
+  String get settingsWorkspaceSecretsSaveError;
+
+  /// No description provided for @settingsWorkspaceSecretsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load workspace secrets.'**
+  String get settingsWorkspaceSecretsLoadError;
+
+  /// No description provided for @settingsWorkspaceSecretsMigrationSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied {filesCopied} files into {provider}.'**
+  String settingsWorkspaceSecretsMigrationSuccess(int filesCopied, String provider);
+
+  /// No description provided for @settingsWorkspaceSecretsMigrationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to migrate workspace storage.'**
+  String get settingsWorkspaceSecretsMigrationError;
+
+  /// No description provided for @settingsWorkspaceSecretsProviderSupabaseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Supabase'**
+  String get settingsWorkspaceSecretsProviderSupabaseTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsProviderSupabaseDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The current built-in Drive storage backend.'**
+  String get settingsWorkspaceSecretsProviderSupabaseDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsProviderR2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare R2'**
+  String get settingsWorkspaceSecretsProviderR2Title;
+
+  /// No description provided for @settingsWorkspaceSecretsProviderR2Description.
+  ///
+  /// In en, this message translates to:
+  /// **'An S3-compatible backend for external Drive storage.'**
+  String get settingsWorkspaceSecretsProviderR2Description;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

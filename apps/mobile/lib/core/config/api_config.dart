@@ -83,6 +83,17 @@ abstract final class WorkspaceEndpoints {
 }
 
 abstract final class WorkspaceSettingsEndpoints {
+  static String secrets(String wsId) => '/api/workspaces/$wsId/secrets';
+
+  static String secret(String wsId, String secretId) =>
+      '/api/workspaces/$wsId/secrets/$secretId';
+
+  static String storageRolloutState(String wsId) =>
+      '/api/v1/workspaces/$wsId/storage/rollout-state';
+
+  static String migrateStorage(String wsId) =>
+      '/api/v1/workspaces/$wsId/storage/migrate';
+
   static String roles(String wsId) => '/api/v1/workspaces/$wsId/roles';
 
   static String role(String wsId, String roleId) =>
