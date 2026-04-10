@@ -220,6 +220,11 @@ export interface HabitTrackerMemberSummary {
   total: number;
   entry_count: number;
   current_period_total: number;
+  latest_value?: number | null;
+  latest_entry_id?: string | null;
+  latest_entry_date?: string | null;
+  latest_occurred_at?: string | null;
+  latest_values?: Record<string, HabitTrackerEntryValue> | null;
   streak: HabitTrackerStreakSummary;
 }
 

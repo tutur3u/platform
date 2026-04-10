@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:mobile/data/utils/date_utils.dart';
 
+const _sentinel = Object();
+
 enum HabitTrackerTrackingMode { eventLog, dailySummary }
 
 enum HabitTrackerTargetPeriod { daily, weekly }
@@ -773,6 +775,11 @@ class HabitTrackerMemberSummary extends Equatable {
     required this.entryCount,
     required this.currentPeriodTotal,
     required this.streak,
+    this.latestValue,
+    this.latestEntryId,
+    this.latestEntryDate,
+    this.latestOccurredAt,
+    this.latestValues,
   });
 
   factory HabitTrackerMemberSummary.fromJson(Map<String, dynamic> json) {
@@ -786,6 +793,13 @@ class HabitTrackerMemberSummary extends Equatable {
       entryCount: (json['entry_count'] as num?)?.toInt() ?? 0,
       currentPeriodTotal:
           (json['current_period_total'] as num?)?.toDouble() ?? 0,
+      latestValue: (json['latest_value'] as num?)?.toDouble(),
+      latestEntryId: (json['latest_entry_id'] as String?)?.trim(),
+      latestEntryDate: (json['latest_entry_date'] as String?)?.trim(),
+      latestOccurredAt: parseDateTime(json['latest_occurred_at']),
+      latestValues: json['latest_values'] == null
+          ? null
+          : _normalizeEntryValues(json['latest_values']),
       streak: HabitTrackerStreakSummary.fromJson(
         Map<String, dynamic>.from(
           (json['streak'] as Map?) ?? const <String, dynamic>{},
@@ -798,7 +812,48 @@ class HabitTrackerMemberSummary extends Equatable {
   final double total;
   final int entryCount;
   final double currentPeriodTotal;
+  final double? latestValue;
+  final String? latestEntryId;
+  final String? latestEntryDate;
+  final DateTime? latestOccurredAt;
+  final Map<String, Object?>? latestValues;
   final HabitTrackerStreakSummary streak;
+
+  HabitTrackerMemberSummary copyWith({
+    HabitTrackerMember? member,
+    double? total,
+    int? entryCount,
+    double? currentPeriodTotal,
+    Object? latestValue = _sentinel,
+    Object? latestEntryId = _sentinel,
+    Object? latestEntryDate = _sentinel,
+    Object? latestOccurredAt = _sentinel,
+    Object? latestValues = _sentinel,
+    HabitTrackerStreakSummary? streak,
+  }) {
+    return HabitTrackerMemberSummary(
+      member: member ?? this.member,
+      total: total ?? this.total,
+      entryCount: entryCount ?? this.entryCount,
+      currentPeriodTotal: currentPeriodTotal ?? this.currentPeriodTotal,
+      latestValue: latestValue == _sentinel
+          ? this.latestValue
+          : latestValue as double?,
+      latestEntryId: latestEntryId == _sentinel
+          ? this.latestEntryId
+          : latestEntryId as String?,
+      latestEntryDate: latestEntryDate == _sentinel
+          ? this.latestEntryDate
+          : latestEntryDate as String?,
+      latestOccurredAt: latestOccurredAt == _sentinel
+          ? this.latestOccurredAt
+          : latestOccurredAt as DateTime?,
+      latestValues: latestValues == _sentinel
+          ? this.latestValues
+          : latestValues as Map<String, Object?>?,
+      streak: streak ?? this.streak,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -806,6 +861,11 @@ class HabitTrackerMemberSummary extends Equatable {
     total,
     entryCount,
     currentPeriodTotal,
+    latestValue,
+    latestEntryId,
+    latestEntryDate,
+    latestOccurredAt,
+    Object.hashAllUnordered(latestValues?.entries ?? const []),
     streak,
   ];
 }
@@ -875,6 +935,23 @@ class HabitTrackerTeamSummary extends Equatable {
   final double totalValue;
   final double averageConsistencyRate;
   final int topStreak;
+
+  HabitTrackerTeamSummary copyWith({
+    int? activeMembers,
+    int? totalEntries,
+    double? totalValue,
+    double? averageConsistencyRate,
+    int? topStreak,
+  }) {
+    return HabitTrackerTeamSummary(
+      activeMembers: activeMembers ?? this.activeMembers,
+      totalEntries: totalEntries ?? this.totalEntries,
+      totalValue: totalValue ?? this.totalValue,
+      averageConsistencyRate:
+          averageConsistencyRate ?? this.averageConsistencyRate,
+      topStreak: topStreak ?? this.topStreak,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -1061,6 +1138,20 @@ class HabitTrackerCardSummary extends Equatable {
   final HabitTrackerTeamSummary? team;
   final List<HabitTrackerLeaderboardRow> leaderboard;
 
+  HabitTrackerCardSummary copyWith({
+    HabitTracker? tracker,
+    HabitTrackerMemberSummary? currentMember,
+    HabitTrackerTeamSummary? team,
+    List<HabitTrackerLeaderboardRow>? leaderboard,
+  }) {
+    return HabitTrackerCardSummary(
+      tracker: tracker ?? this.tracker,
+      currentMember: currentMember ?? this.currentMember,
+      team: team ?? this.team,
+      leaderboard: leaderboard ?? this.leaderboard,
+    );
+  }
+
   @override
   List<Object?> get props => [tracker, currentMember, team, leaderboard];
 }
@@ -1111,6 +1202,22 @@ class HabitTrackerListResponse extends Equatable {
   final HabitTrackerScope scope;
   final String? scopeUserId;
   final String viewerUserId;
+
+  HabitTrackerListResponse copyWith({
+    List<HabitTrackerCardSummary>? trackers,
+    List<HabitTrackerMember>? members,
+    HabitTrackerScope? scope,
+    String? scopeUserId,
+    String? viewerUserId,
+  }) {
+    return HabitTrackerListResponse(
+      trackers: trackers ?? this.trackers,
+      members: members ?? this.members,
+      scope: scope ?? this.scope,
+      scopeUserId: scopeUserId ?? this.scopeUserId,
+      viewerUserId: viewerUserId ?? this.viewerUserId,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -1200,6 +1307,26 @@ class HabitTrackerDetailResponse extends Equatable {
   final List<HabitTrackerMemberSummary> memberSummaries;
   final List<HabitTrackerLeaderboardRow> leaderboard;
   final List<HabitTrackerPeriodMetric> currentPeriodMetrics;
+
+  HabitTrackerDetailResponse copyWith({
+    HabitTracker? tracker,
+    List<HabitTrackerEntry>? entries,
+    HabitTrackerMemberSummary? currentMember,
+    HabitTrackerTeamSummary? team,
+    List<HabitTrackerMemberSummary>? memberSummaries,
+    List<HabitTrackerLeaderboardRow>? leaderboard,
+    List<HabitTrackerPeriodMetric>? currentPeriodMetrics,
+  }) {
+    return HabitTrackerDetailResponse(
+      tracker: tracker ?? this.tracker,
+      entries: entries ?? this.entries,
+      currentMember: currentMember ?? this.currentMember,
+      team: team ?? this.team,
+      memberSummaries: memberSummaries ?? this.memberSummaries,
+      leaderboard: leaderboard ?? this.leaderboard,
+      currentPeriodMetrics: currentPeriodMetrics ?? this.currentPeriodMetrics,
+    );
+  }
 
   @override
   List<Object?> get props => [

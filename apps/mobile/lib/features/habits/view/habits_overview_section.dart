@@ -12,7 +12,6 @@ class HabitsOverviewSection extends StatelessWidget {
     required this.onEditTracker,
     required this.onOpenTracker,
     required this.onQuickLog,
-    required this.onQuickValueChanged,
     super.key,
   });
 
@@ -22,7 +21,6 @@ class HabitsOverviewSection extends StatelessWidget {
   final Future<void> Function(HabitTracker tracker) onEditTracker;
   final Future<void> Function(String trackerId) onOpenTracker;
   final Future<void> Function(HabitTrackerCardSummary tracker) onQuickLog;
-  final void Function(String trackerId, String value) onQuickValueChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -38,10 +36,7 @@ class HabitsOverviewSection extends StatelessWidget {
               child: HabitTrackerCard(
                 summary: tracker,
                 scope: state.selectedScope,
-                quickValue: state.quickDraftFor(tracker.tracker.id),
                 selected: tracker.tracker.id == state.selectedTrackerId,
-                onQuickValueChanged: (value) =>
-                    onQuickValueChanged(tracker.tracker.id, value),
                 onQuickLog: () => onQuickLog(tracker),
                 onSelect: () => onOpenTracker(tracker.tracker.id),
                 onEdit: () => onEditTracker(tracker.tracker),

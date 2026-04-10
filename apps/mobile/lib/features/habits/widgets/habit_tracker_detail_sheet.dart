@@ -15,6 +15,7 @@ class HabitTrackerDetailSheet extends StatelessWidget {
   const HabitTrackerDetailSheet({
     required this.detailStatus,
     required this.detailError,
+    required this.isDetailRefreshing,
     required this.isSubmittingEntry,
     required this.isSubmittingStreakAction,
     required this.isArchivingTracker,
@@ -32,6 +33,7 @@ class HabitTrackerDetailSheet extends StatelessWidget {
   final HabitTrackerDetailResponse? detail;
   final HabitsStatus detailStatus;
   final String? detailError;
+  final bool isDetailRefreshing;
   final bool isSubmittingEntry;
   final bool isSubmittingStreakAction;
   final bool isArchivingTracker;
@@ -98,6 +100,15 @@ class HabitTrackerDetailSheet extends StatelessWidget {
                             onEditTracker: onEditTracker,
                             onArchiveTracker: () => _confirmArchive(context),
                           ),
+                          if (isDetailRefreshing) ...[
+                            const SizedBox(height: 12),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(999),
+                              child: const LinearProgressIndicator(
+                                minHeight: 4,
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 16),
                           TabBar(tabs: tabs),
                           const SizedBox(height: 12),
@@ -168,6 +179,13 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = habitTrackerColor(context, detail.tracker.color);
     final currentValue = detail.currentMember?.currentPeriodTotal ?? 0;
+    final primaryField = primaryFieldForTracker(detail.tracker);
+    final latestValue =
+        detail.currentMember?.latestValues?[detail.tracker.primaryMetricKey] ??
+        detail.currentMember?.latestValue;
+    final latestValueLabel = latestValue == null
+        ? formatCompactNumber(currentValue)
+        : formatFieldValue(primaryField, latestValue);
 
     return FinancePanel(
       padding: const EdgeInsets.all(20),
@@ -225,7 +243,7 @@ class _Header extends StatelessWidget {
             children: [
               FinanceStatChip(
                 label: context.l10n.habitsSummaryVolume,
-                value: formatCompactNumber(currentValue),
+                value: latestValueLabel,
                 tint: accent,
               ),
               FinanceStatChip(

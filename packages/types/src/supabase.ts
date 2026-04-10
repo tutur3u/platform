@@ -26883,6 +26883,21 @@ export type Database = {
             }[];
           };
       get_workspace_drive_size: { Args: { ws_id: string }; Returns: number };
+      get_workspace_habit_tracker_latest_stats: {
+        Args: { p_tracker_ids?: string[]; p_user_id: string; p_ws_id: string };
+        Returns: {
+          current_period_total: number;
+          latest_entry_date: string;
+          latest_entry_id: string;
+          latest_occurred_at: string;
+          latest_primary_value: number;
+          latest_values: Json;
+          total_entries: number;
+          total_value: number;
+          tracker_id: string;
+          user_id: string;
+        }[];
+      };
       get_workspace_member_count: {
         Args: { p_ws_id: string };
         Returns: number;
@@ -27354,6 +27369,15 @@ export type Database = {
             };
             Returns: number;
           };
+      habit_tracker_entry_numeric_value: {
+        Args: {
+          p_aggregation_strategy: string;
+          p_primary_metric_key: string;
+          p_primary_value: number;
+          p_values: Json;
+        };
+        Returns: number;
+      };
       hard_delete_soft_deleted_items: { Args: never; Returns: undefined };
       has_task_permission: {
         Args: { p_permission: string; p_task_id: string };

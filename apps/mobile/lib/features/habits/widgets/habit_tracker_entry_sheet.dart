@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -84,6 +84,12 @@ class _HabitTrackerEntrySheetState extends State<HabitTrackerEntrySheet> {
             _tracker.composerConfig.unit,
       ),
     ];
+    if (_tracker.composerMode == HabitTrackerComposerMode.quickIncrement) {
+      final currentTotal = widget.detail.currentMember?.currentPeriodTotal ?? 0;
+      if (currentTotal > 0) {
+        _primaryValueController.text = formatCompactNumber(currentTotal);
+      }
+    }
   }
 
   @override
@@ -97,89 +103,72 @@ class _HabitTrackerEntrySheetState extends State<HabitTrackerEntrySheet> {
 
   @override
   Widget build(BuildContext context) {
-    return _EntrySheetContainer(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    final currentMember = widget.detail.currentMember;
+    final latestValue =
+        currentMember?.latestValues?[_tracker.primaryMetricKey] ??
+        currentMember?.latestValue ??
+        _latestEntry?.values[_tracker.primaryMetricKey];
+    final latestOccurredAt =
+        currentMember?.latestOccurredAt ??
+        _latestEntry?.occurredAt ??
+        _latestEntry?.createdAt;
+
+    return FinanceFullscreenFormScaffold(
+      title: context.l10n.habitsLogEntryTitle,
+      subtitle: _tracker.name,
+      primaryActionLabel: context.l10n.habitsSaveEntry,
+      onPrimaryPressed: _isSubmitting ? null : _submit,
+      onClose: _isSubmitting ? null : () => Navigator.of(context).maybePop(),
+      isSaving: _isSubmitting,
+      footerTop: _EntryFooterSummary(
+        tracker: _tracker,
+        currentPeriodTotal: currentMember?.currentPeriodTotal ?? 0,
+        latestValue: latestValue,
+      ),
+      child: ListView(
         children: [
-          _Header(
+          _EntryHeroCard(
             tracker: _tracker,
-            isSubmitting: _isSubmitting,
+            latestValue: latestValue,
+            latestOccurredAt: latestOccurredAt,
+            currentPeriodTotal: currentMember?.currentPeriodTotal ?? 0,
           ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _DateField(
-                    controller: _dateController,
-                    onTap: _pickDate,
+          const SizedBox(height: 12),
+          _buildComposer(context),
+          const SizedBox(height: 12),
+          FinanceFormSection(
+            title: context.l10n.habitsEntryDateLabel,
+            subtitle: context.l10n.habitsEntryNoteLabel,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _DateField(
+                  controller: _dateController,
+                  onTap: _pickDate,
+                ),
+                const SizedBox(height: 14),
+                _LabeledField(
+                  label: context.l10n.habitsEntryNoteLabel,
+                  child: TextField(
+                    controller: _noteController,
+                    minLines: 3,
+                    maxLines: 5,
                   ),
-                  const SizedBox(height: 16),
-                  _buildComposer(context),
-                  const SizedBox(height: 16),
-                  _LabeledField(
-                    label: context.l10n.habitsEntryNoteLabel,
-                    child: TextField(
-                      controller: _noteController,
-                      minLines: 3,
-                      maxLines: 5,
+                ),
+                const SizedBox(height: 14),
+                _LabeledField(
+                  label: context.l10n.habitsEntryTagsLabel,
+                  child: TextField(
+                    controller: _tagsController,
+                    decoration: InputDecoration(
+                      hintText: context.l10n.habitsEntryTagsHint,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  _LabeledField(
-                    label: context.l10n.habitsEntryTagsLabel,
-                    child: TextField(
-                      controller: _tagsController,
-                      decoration: InputDecoration(
-                        hintText: context.l10n.habitsEntryTagsHint,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: shad.OutlineButton(
-                  onPressed: _isSubmitting
-                      ? null
-                      : () => Navigator.of(context).maybePop(),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: Text(
-                      context.l10n.commonCancel,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: shad.PrimaryButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  child: _isSubmitting
-                      ? const Center(
-                          child: SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        )
-                      : SizedBox(
-                          width: double.infinity,
-                          child: Text(
-                            context.l10n.habitsSaveEntry,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -336,51 +325,145 @@ class _HabitTrackerEntrySheetState extends State<HabitTrackerEntrySheet> {
   }
 }
 
-class _Header extends StatelessWidget {
-  const _Header({required this.tracker, required this.isSubmitting});
+class _EntryHeroCard extends StatelessWidget {
+  const _EntryHeroCard({
+    required this.tracker,
+    required this.currentPeriodTotal,
+    this.latestValue,
+    this.latestOccurredAt,
+  });
 
   final HabitTracker tracker;
-  final bool isSubmitting;
+  final double currentPeriodTotal;
+  final Object? latestValue;
+  final DateTime? latestOccurredAt;
 
   @override
   Widget build(BuildContext context) {
     final accent = habitTrackerColor(context, tracker.color);
+    final primaryField = primaryFieldForTracker(tracker);
+    final latestLabel = latestValue == null
+        ? context.l10n.habitsLogEntryAction
+        : context.l10n.habitsLatestValueLabel(
+            formatFieldValue(primaryField, latestValue),
+          );
+    final timeLabel = latestOccurredAt == null
+        ? _periodLabel(context, tracker.targetPeriod)
+        : MaterialLocalizations.of(context).formatTimeOfDay(
+            TimeOfDay.fromDateTime(latestOccurredAt!.toLocal()),
+          );
 
-    return Row(
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: accent.withValues(alpha: 0.14),
-          ),
-          child: Icon(habitTrackerIcon(tracker.icon), color: accent),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return FinancePanel(
+      backgroundColor: accent.withValues(alpha: 0.08),
+      borderColor: accent.withValues(alpha: 0.24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Text(
-                context.l10n.habitsLogEntryTitle,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: accent.withValues(alpha: 0.14),
+                ),
+                child: Icon(habitTrackerIcon(tracker.icon), color: accent),
               ),
-              const SizedBox(height: 4),
-              Text(
-                tracker.name,
-                style: Theme.of(context).textTheme.bodyMedium,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tracker.name,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$latestLabel • $timeLabel',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FinanceStatChip(
+                label: context.l10n.habitsSummaryVolume,
+                value: formatCompactNumber(currentPeriodTotal),
+                tint: accent,
+              ),
+              FinanceStatChip(
+                label: context.l10n.habitsSummaryTargetsMet,
+                value:
+                    '${formatCompactNumber(currentPeriodTotal)} / ${formatCompactNumber(tracker.targetValue)}',
+                tint: accent,
+              ),
+              FinanceStatChip(
+                label: context.l10n.habitsTargetPeriodLabel,
+                value: _periodLabel(context, tracker.targetPeriod),
+                tint: accent,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EntryFooterSummary extends StatelessWidget {
+  const _EntryFooterSummary({
+    required this.tracker,
+    required this.currentPeriodTotal,
+    this.latestValue,
+  });
+
+  final HabitTracker tracker;
+  final double currentPeriodTotal;
+  final Object? latestValue;
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryField = primaryFieldForTracker(tracker);
+    final currentLabel = formatCompactNumber(currentPeriodTotal);
+    final latestLabel = latestValue == null
+        ? context.l10n.habitsLogEntryAction
+        : formatFieldValue(primaryField, latestValue);
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            '${context.l10n.habitsSummaryVolume}: $currentLabel',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
-        IconButton(
-          onPressed: isSubmitting
-              ? null
-              : () => Navigator.of(context).maybePop(),
-          icon: const Icon(Icons.close),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            latestLabel,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.end,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
         ),
       ],
     );
@@ -855,26 +938,6 @@ class _MeasurementHeader extends StatelessWidget {
   }
 }
 
-class _EntrySheetContainer extends StatelessWidget {
-  const _EntrySheetContainer({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final height = context.isCompact
-        ? MediaQuery.sizeOf(context).height * 0.9
-        : 760.0;
-    return SizedBox(
-      height: height,
-      child: Material(
-        color: Theme.of(context).colorScheme.surface,
-        child: Padding(padding: const EdgeInsets.all(20), child: child),
-      ),
-    );
-  }
-}
-
 class _LabeledField extends StatelessWidget {
   const _LabeledField({required this.label, required this.child});
 
@@ -897,6 +960,15 @@ class _LabeledField extends StatelessWidget {
       ],
     );
   }
+}
+
+String _periodLabel(
+  BuildContext context,
+  HabitTrackerTargetPeriod targetPeriod,
+) {
+  return targetPeriod == HabitTrackerTargetPeriod.daily
+      ? context.l10n.habitsPeriodDaily
+      : context.l10n.habitsPeriodWeekly;
 }
 
 extension on String {

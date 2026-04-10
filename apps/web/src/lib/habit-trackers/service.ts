@@ -52,6 +52,33 @@ export class HabitTrackerError extends Error {
 type HabitTrackerInsert = TablesInsert<'workspace_habit_trackers'>;
 type HabitTrackerUpdate = TablesUpdate<'workspace_habit_trackers'>;
 
+type HabitTrackerLatestStatRow = {
+  tracker_id: string;
+  user_id: string;
+  latest_entry_id: string | null;
+  latest_entry_date: string | null;
+  latest_occurred_at: string | null;
+  latest_primary_value: number | null;
+  latest_values: Json | null;
+  current_period_total: number | null;
+  total_entries: number | null;
+  total_value: number | null;
+};
+
+type HabitTrackerLatestStatsRpcClient = {
+  rpc(
+    fn: string,
+    args: {
+      p_ws_id: string;
+      p_user_id: string;
+      p_tracker_ids: string[];
+    }
+  ): Promise<{
+    data: unknown;
+    error: { message?: string } | null;
+  }>;
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -204,6 +231,26 @@ function normalizeEntryValues(input: unknown): HabitTrackerEntry['values'] {
 
 function serializeEntryValues(values: HabitTrackerEntry['values']): Json {
   return values as Json;
+}
+
+function applyLatestStatsToMemberSummary(
+  summary: ReturnType<typeof buildHabitTrackerMemberSummary> | undefined,
+  latestStat: HabitTrackerLatestStatRow | undefined
+) {
+  if (!summary || !latestStat) {
+    return summary;
+  }
+
+  return {
+    ...summary,
+    latest_value: latestStat.latest_primary_value,
+    latest_entry_id: latestStat.latest_entry_id,
+    latest_entry_date: latestStat.latest_entry_date,
+    latest_occurred_at: latestStat.latest_occurred_at,
+    latest_values: latestStat.latest_values
+      ? normalizeEntryValues(latestStat.latest_values)
+      : null,
+  };
 }
 
 function mapTrackerRow(row: Record<string, unknown>): HabitTracker {
@@ -632,6 +679,41 @@ async function listTrackerStreakActions(
   );
 }
 
+async function getLatestTrackerStats(
+  supabase: TypedSupabaseClient,
+  wsId: string,
+  userId: string | null,
+  trackerIds: string[]
+) {
+  if (!userId || trackerIds.length === 0) {
+    return new Map<string, HabitTrackerLatestStatRow>();
+  }
+
+  const rpcClient = supabase as unknown as HabitTrackerLatestStatsRpcClient;
+  const { data, error } = await rpcClient.rpc(
+    'get_workspace_habit_tracker_latest_stats',
+    {
+      p_ws_id: wsId,
+      p_user_id: userId,
+      p_tracker_ids: trackerIds,
+    }
+  );
+
+  if (error) {
+    throw new HabitTrackerError(
+      'Failed to load habit tracker latest stats',
+      500
+    );
+  }
+
+  return new Map(
+    ((data ?? []) as unknown as HabitTrackerLatestStatRow[]).map((row) => [
+      row.tracker_id,
+      row,
+    ])
+  );
+}
+
 function groupEntriesByUser(entries: HabitTrackerEntry[]) {
   const entriesByUser: Record<string, HabitTrackerEntry[]> = {};
 
@@ -677,13 +759,52 @@ function resolveScopeUserId(
   return viewerId;
 }
 
+function buildFallbackMemberSummary(
+  tracker: HabitTracker,
+  scopeUserId: string | null,
+  memberSummaries: ReturnType<typeof buildHabitTrackerMemberSummary>[],
+  entriesByUser: Record<string, HabitTrackerEntry[]>,
+  actionsByUser: Record<string, HabitTrackerStreakAction[]>
+) {
+  if (!scopeUserId) {
+    return undefined;
+  }
+
+  const existing = memberSummaries.find(
+    (summary) => summary.member.user_id === scopeUserId
+  );
+  if (existing) {
+    return existing;
+  }
+
+  const memberEntries = entriesByUser[scopeUserId] ?? [];
+  const memberActions = actionsByUser[scopeUserId] ?? [];
+  if (memberEntries.length === 0 && memberActions.length === 0) {
+    return undefined;
+  }
+
+  return buildHabitTrackerMemberSummary(
+    tracker,
+    {
+      user_id: scopeUserId,
+      workspace_user_id: null,
+      display_name: 'You',
+      email: null,
+      avatar_url: null,
+    },
+    memberEntries,
+    memberActions
+  );
+}
+
 function buildTrackerCardSummary(
   tracker: HabitTracker,
   members: HabitTrackerMember[],
   entries: HabitTrackerEntry[],
   actions: HabitTrackerStreakAction[],
   scope: HabitTrackerScope,
-  scopeUserId: string | null
+  scopeUserId: string | null,
+  latestStat?: HabitTrackerLatestStatRow
 ): HabitTrackerCardSummary {
   const entriesByUser = groupEntriesByUser(entries);
   const actionsByUser = groupActionsByUser(actions);
@@ -696,15 +817,20 @@ function buildTrackerCardSummary(
     )
   );
   const leaderboard = buildHabitTrackerLeaderboard(memberSummaries).slice(0, 5);
+  const currentMemberSummary = applyLatestStatsToMemberSummary(
+    buildFallbackMemberSummary(
+      tracker,
+      scopeUserId,
+      memberSummaries,
+      entriesByUser,
+      actionsByUser
+    ),
+    latestStat
+  );
 
   return {
     tracker,
-    current_member:
-      scope === 'team'
-        ? undefined
-        : memberSummaries.find(
-            (summary) => summary.member.user_id === scopeUserId
-          ),
+    current_member: scope === 'team' ? undefined : currentMemberSummary,
     team: buildHabitTrackerTeamSummary(memberSummaries),
     leaderboard,
   };
@@ -739,6 +865,12 @@ export async function listHabitTrackerCards(
       trackers.map((tracker) => tracker.id)
     ),
   ]);
+  const latestStatsByTracker = await getLatestTrackerStats(
+    supabase,
+    wsId,
+    scopeUserId,
+    trackers.map((tracker) => tracker.id)
+  );
 
   return {
     trackers: trackers.map((tracker) =>
@@ -748,7 +880,8 @@ export async function listHabitTrackerCards(
         entries.filter((entry) => entry.tracker_id === tracker.id),
         actions.filter((action) => action.tracker_id === tracker.id),
         scope,
-        scopeUserId
+        scopeUserId,
+        latestStatsByTracker.get(tracker.id)
       )
     ),
     members,
@@ -796,6 +929,12 @@ export async function getHabitTrackerDetail(
   );
   const entriesByUser = groupEntriesByUser(entries);
   const actionsByUser = groupActionsByUser(actions);
+  const latestStatsByTracker = await getLatestTrackerStats(
+    supabase,
+    wsId,
+    scopeUserId,
+    [trackerId]
+  );
   const memberSummaries = members.map((member) =>
     buildHabitTrackerMemberSummary(
       tracker,
@@ -805,9 +944,16 @@ export async function getHabitTrackerDetail(
     )
   );
   const leaderboard = buildHabitTrackerLeaderboard(memberSummaries);
-  const currentMemberSummary = scopeUserId
-    ? memberSummaries.find((summary) => summary.member.user_id === scopeUserId)
-    : undefined;
+  const currentMemberSummary = applyLatestStatsToMemberSummary(
+    buildFallbackMemberSummary(
+      tracker,
+      scopeUserId,
+      memberSummaries,
+      entriesByUser,
+      actionsByUser
+    ),
+    latestStatsByTracker.get(trackerId)
+  );
   const recentEntries = [...entries]
     .sort(
       (left, right) =>

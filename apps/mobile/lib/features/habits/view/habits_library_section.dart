@@ -119,18 +119,18 @@ class _TemplateCard extends StatelessWidget {
     return FinancePanel(
       onTap: onTap,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
               color: accent.withValues(alpha: 0.14),
             ),
             child: Icon(habitTrackerIcon(template.icon), color: accent),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,37 +141,29 @@ class _TemplateCard extends StatelessWidget {
                     context,
                   ).typography.large.copyWith(fontWeight: FontWeight.w700),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   template.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: shad.Theme.of(context).typography.textSmall.copyWith(
                     color: shad.Theme.of(context).colorScheme.mutedForeground,
                   ),
                 ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    FinanceStatChip(
-                      label: context.l10n.habitsLibraryGoalChip,
-                      value: '${template.targetValue.toInt()}',
-                      tint: accent,
-                    ),
-                    FinanceStatChip(
-                      label: context.l10n.habitsLibraryComposerChip,
-                      value: _composerLabel(context, template.composerMode),
-                      tint: accent,
-                    ),
-                  ],
+                const SizedBox(height: 8),
+                Text(
+                  '${context.l10n.habitsLibraryGoalChip}: ${template.targetValue.toInt()} • ${_composerLabel(context, template.composerMode)}',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          shad.IconButton.ghost(
-            icon: const Icon(Icons.chevron_right_rounded),
+          const SizedBox(width: 10),
+          shad.PrimaryButton(
             onPressed: onTap,
+            child: Text(context.l10n.appsHubOpenApp),
           ),
         ],
       ),
