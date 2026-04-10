@@ -279,16 +279,28 @@ class AppLocalizationsVi extends AppLocalizations {
   String get habitsTitle => 'Thói quen';
 
   @override
-  String get habitsOverviewLabel => 'Tổng quan';
+  String get habitsOverviewLabel => 'Hôm nay';
+
+  @override
+  String get habitsTodayLabel => 'Hôm nay';
 
   @override
   String get habitsActivityLabel => 'Hoạt động';
+
+  @override
+  String get habitsLibraryLabel => 'Thư viện';
 
   @override
   String get habitsActivityTitle => 'Hoạt động';
 
   @override
   String get habitsActivitySubtitle => 'Xem các lượt ghi nhận thói quen mới nhất trên mọi bộ theo dõi trong không gian làm việc này.';
+
+  @override
+  String get habitsLibraryTitle => 'Thư viện';
+
+  @override
+  String get habitsLibrarySubtitle => 'Bắt đầu với các mẫu mạnh cho tập luyện, hồi phục và kỷ luật hằng ngày.';
 
   @override
   String get habitsLoadError => 'Không thể tải thói quen lúc này';
@@ -456,6 +468,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get habitsSelectOptionsRequired => 'Trường chọn phải có ít nhất một tùy chọn';
 
   @override
+  String get habitsComposerQuickCheck => 'Đánh dấu nhanh';
+
+  @override
+  String get habitsComposerQuickIncrement => 'Cộng nhanh';
+
+  @override
+  String get habitsComposerMeasurement => 'Đo lường';
+
+  @override
+  String get habitsComposerWorkoutSession => 'Buổi tập';
+
+  @override
+  String get habitsComposerAdvancedCustom => 'Tùy chỉnh';
+
+  @override
   String habitsFieldCardTitle(int count) {
     return 'Trường $count';
   }
@@ -515,6 +542,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get habitsLogEntryAction => 'Ghi nhận';
 
   @override
+  String get habitsLogMeasurementAction => 'Ghi đo lường';
+
+  @override
+  String get habitsLogSessionAction => 'Ghi buổi tập';
+
+  @override
   String get habitsCompleteNow => 'Hoàn thành ngay';
 
   @override
@@ -531,6 +564,71 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get habitsSaveEntry => 'Lưu lượt nhập';
+
+  @override
+  String get habitsQuickCheckTitle => 'Đánh dấu nhanh';
+
+  @override
+  String get habitsQuickCheckDescription => 'Dùng một chạm khi thói quen này chỉ cần hoàn thành hoặc chưa hoàn thành.';
+
+  @override
+  String get habitsQuickIncrementTitle => 'Tăng nhanh';
+
+  @override
+  String get habitsQuickIncrementDescription => 'Điều chỉnh tổng hiện tại bằng các chip nhanh hoặc nhập số tùy chỉnh.';
+
+  @override
+  String get habitsMeasurementTitle => 'Đo lường';
+
+  @override
+  String get habitsMeasurementDescription => 'Nhập một chỉ số chính và so với lần ghi gần nhất.';
+
+  @override
+  String get habitsAdvancedComposerTitle => 'Lượt nhập tùy chỉnh';
+
+  @override
+  String get habitsAdvancedComposerDescription => 'Dùng ô nhập giá trị đơn giản cho các bộ theo dõi tùy chỉnh.';
+
+  @override
+  String get habitsWorkoutSessionTitle => 'Buổi tập';
+
+  @override
+  String get habitsWorkoutSessionDescription => 'Thêm một hoặc nhiều khối bài tập với số hiệp, số rep và mức tạ tùy chọn.';
+
+  @override
+  String get habitsWorkoutBlocksRequired => 'Hãy thêm ít nhất một khối bài tập';
+
+  @override
+  String get habitsWorkoutBlockTitle => 'Khối bài tập';
+
+  @override
+  String get habitsWorkoutExerciseName => 'Bài tập';
+
+  @override
+  String get habitsWorkoutSets => 'Hiệp';
+
+  @override
+  String get habitsWorkoutReps => 'Rep';
+
+  @override
+  String get habitsWorkoutWeight => 'Mức tạ';
+
+  @override
+  String get habitsWorkoutTotalSets => 'Tổng hiệp';
+
+  @override
+  String get habitsWorkoutTotalReps => 'Tổng rep';
+
+  @override
+  String get habitsWorkoutTotalVolume => 'Tổng khối lượng';
+
+  @override
+  String get habitsAddExerciseBlock => 'Thêm bài tập';
+
+  @override
+  String habitsLatestValueLabel(String value) {
+    return 'Gần nhất: $value';
+  }
 
   @override
   String get habitsMarkDone => 'Đánh dấu hoàn thành';
@@ -620,6 +718,45 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get habitsActivityNoTrackers => 'Hãy tạo bộ theo dõi thói quen trước để bắt đầu thu thập hoạt động.';
+
+  @override
+  String get habitsLibraryStrengthTitle => 'Sức mạnh';
+
+  @override
+  String get habitsLibraryStrengthSubtitle => 'Buổi tập nặng, bài lift có cấu trúc và bài bodyweight.';
+
+  @override
+  String get habitsLibraryHealthTitle => 'Sức khỏe';
+
+  @override
+  String get habitsLibraryHealthSubtitle => 'Đo lường và tổng hằng ngày để thấy nền tảng của bạn.';
+
+  @override
+  String get habitsLibraryRecoveryTitle => 'Hồi phục';
+
+  @override
+  String get habitsLibraryRecoverySubtitle => 'Ngủ, sauna, thiền và các nghi thức nạp lại năng lượng.';
+
+  @override
+  String get habitsLibraryDisciplineTitle => 'Kỷ luật';
+
+  @override
+  String get habitsLibraryDisciplineSubtitle => 'Những cam kết có hoặc không mà bạn muốn thấy mỗi ngày.';
+
+  @override
+  String get habitsLibraryCustomizeTitle => 'Tự tùy chỉnh';
+
+  @override
+  String get habitsLibraryCustomizeDescription => 'Bắt đầu với bộ theo dõi trống khi thư viện mẫu vẫn chưa đúng ý.';
+
+  @override
+  String get habitsLibraryCustomizeAction => 'Tùy chỉnh';
+
+  @override
+  String get habitsLibraryGoalChip => 'Mục tiêu';
+
+  @override
+  String get habitsLibraryComposerChip => 'Trình nhập';
 
   @override
   String habitsStreakChip(int count) {

@@ -16,6 +16,7 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/data/repositories/habits_access_repository.dart';
 import 'package:mobile/data/repositories/inventory_access_repository.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
@@ -32,6 +33,7 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
+import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
@@ -314,11 +316,28 @@ class _AppState extends State<App> {
     );
     CacheWarmupCoordinator.instance.register(
       'habits_overview',
-      ({forceRefresh = false}) async {},
+      ({forceRefresh = false}) async {
+        final workspace = _workspaceCubit.state.currentWorkspace;
+        if (workspace == null) return;
+        await HabitsCubit.prewarm(
+          repository: HabitTrackerRepository(),
+          wsId: workspace.id,
+          forceRefresh: forceRefresh,
+        );
+      },
     );
     CacheWarmupCoordinator.instance.register(
       'habits_activity',
-      ({forceRefresh = false}) async {},
+      ({forceRefresh = false}) async {
+        final workspace = _workspaceCubit.state.currentWorkspace;
+        if (workspace == null) return;
+        await HabitsCubit.prewarm(
+          repository: HabitTrackerRepository(),
+          wsId: workspace.id,
+          includeActivity: true,
+          forceRefresh: forceRefresh,
+        );
+      },
     );
     CacheWarmupCoordinator.instance.register(
       'time_tracker_root',

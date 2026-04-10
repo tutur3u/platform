@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:mobile/data/utils/date_utils.dart';
 
+const _sentinel = Object();
+
 enum HabitTrackerTrackingMode { eventLog, dailySummary }
 
 enum HabitTrackerTargetPeriod { daily, weekly }
@@ -16,6 +18,33 @@ enum HabitTrackerEntryKind { eventLog, dailySummary }
 enum HabitTrackerStreakActionType { freeze, repair }
 
 enum HabitTrackerScope { self, team, member }
+
+enum HabitTrackerUseCase {
+  generic,
+  bodyWeight,
+  counter,
+  measurement,
+  workoutSession,
+  wellnessCheck,
+}
+
+enum HabitTrackerTemplateCategory {
+  strength,
+  health,
+  recovery,
+  discipline,
+  custom,
+}
+
+enum HabitTrackerComposerMode {
+  quickCheck,
+  quickIncrement,
+  measurement,
+  workoutSession,
+  advancedCustom,
+}
+
+enum HabitTrackerProgressVariant { ring, bar, check }
 
 HabitTrackerTrackingMode _trackingModeFromJson(Object? value) {
   return switch (value) {
@@ -76,6 +105,49 @@ HabitTrackerScope habitTrackerScopeFromJson(Object? value) {
     'team' => HabitTrackerScope.team,
     'member' => HabitTrackerScope.member,
     _ => HabitTrackerScope.self,
+  };
+}
+
+HabitTrackerUseCase _habitTrackerUseCaseFromJson(Object? value) {
+  return switch (value) {
+    'body_weight' => HabitTrackerUseCase.bodyWeight,
+    'counter' => HabitTrackerUseCase.counter,
+    'measurement' => HabitTrackerUseCase.measurement,
+    'workout_session' => HabitTrackerUseCase.workoutSession,
+    'wellness_check' => HabitTrackerUseCase.wellnessCheck,
+    _ => HabitTrackerUseCase.generic,
+  };
+}
+
+HabitTrackerTemplateCategory _habitTrackerTemplateCategoryFromJson(
+  Object? value,
+) {
+  return switch (value) {
+    'strength' => HabitTrackerTemplateCategory.strength,
+    'health' => HabitTrackerTemplateCategory.health,
+    'recovery' => HabitTrackerTemplateCategory.recovery,
+    'discipline' => HabitTrackerTemplateCategory.discipline,
+    _ => HabitTrackerTemplateCategory.custom,
+  };
+}
+
+HabitTrackerComposerMode _habitTrackerComposerModeFromJson(Object? value) {
+  return switch (value) {
+    'quick_check' => HabitTrackerComposerMode.quickCheck,
+    'quick_increment' => HabitTrackerComposerMode.quickIncrement,
+    'measurement' => HabitTrackerComposerMode.measurement,
+    'workout_session' => HabitTrackerComposerMode.workoutSession,
+    _ => HabitTrackerComposerMode.advancedCustom,
+  };
+}
+
+HabitTrackerProgressVariant _habitTrackerProgressVariantFromJson(
+  Object? value,
+) {
+  return switch (value) {
+    'bar' => HabitTrackerProgressVariant.bar,
+    'check' => HabitTrackerProgressVariant.check,
+    _ => HabitTrackerProgressVariant.ring,
   };
 }
 
@@ -142,6 +214,61 @@ extension HabitTrackerScopeApi on HabitTrackerScope {
   };
 }
 
+extension HabitTrackerUseCaseApi on HabitTrackerUseCase {
+  String get apiValue => switch (this) {
+    HabitTrackerUseCase.generic => 'generic',
+    HabitTrackerUseCase.bodyWeight => 'body_weight',
+    HabitTrackerUseCase.counter => 'counter',
+    HabitTrackerUseCase.measurement => 'measurement',
+    HabitTrackerUseCase.workoutSession => 'workout_session',
+    HabitTrackerUseCase.wellnessCheck => 'wellness_check',
+  };
+}
+
+extension HabitTrackerTemplateCategoryApi on HabitTrackerTemplateCategory {
+  String get apiValue => switch (this) {
+    HabitTrackerTemplateCategory.strength => 'strength',
+    HabitTrackerTemplateCategory.health => 'health',
+    HabitTrackerTemplateCategory.recovery => 'recovery',
+    HabitTrackerTemplateCategory.discipline => 'discipline',
+    HabitTrackerTemplateCategory.custom => 'custom',
+  };
+}
+
+extension HabitTrackerComposerModeApi on HabitTrackerComposerMode {
+  String get apiValue => switch (this) {
+    HabitTrackerComposerMode.quickCheck => 'quick_check',
+    HabitTrackerComposerMode.quickIncrement => 'quick_increment',
+    HabitTrackerComposerMode.measurement => 'measurement',
+    HabitTrackerComposerMode.workoutSession => 'workout_session',
+    HabitTrackerComposerMode.advancedCustom => 'advanced_custom',
+  };
+}
+
+extension HabitTrackerProgressVariantApi on HabitTrackerProgressVariant {
+  String get apiValue => switch (this) {
+    HabitTrackerProgressVariant.ring => 'ring',
+    HabitTrackerProgressVariant.bar => 'bar',
+    HabitTrackerProgressVariant.check => 'check',
+  };
+}
+
+List<HabitTrackerExerciseBlock> _normalizeExerciseBlocks(Object? input) {
+  if (input is! List) {
+    return const [];
+  }
+
+  return input
+      .whereType<Map<Object?, Object?>>()
+      .map(
+        (value) => HabitTrackerExerciseBlock.fromJson(
+          Map<String, dynamic>.from(value),
+        ),
+      )
+      .where((value) => value.exerciseName.isNotEmpty)
+      .toList(growable: false);
+}
+
 Map<String, Object?> _normalizeEntryValues(Object? input) {
   if (input is! Map) {
     return const <String, Object?>{};
@@ -156,6 +283,12 @@ Map<String, Object?> _normalizeEntryValues(Object? input) {
     }
     if (value == null || value is bool || value is num || value is String) {
       values[key] = value;
+      continue;
+    }
+
+    final exerciseBlocks = _normalizeExerciseBlocks(value);
+    if (exerciseBlocks.isNotEmpty) {
+      values[key] = exerciseBlocks;
     }
   }
   return Map.unmodifiable(values);
@@ -235,6 +368,127 @@ class HabitTrackerFieldSchema extends Equatable {
   List<Object?> get props => [key, label, type, unit, required, options];
 }
 
+class HabitTrackerComposerConfig extends Equatable {
+  const HabitTrackerComposerConfig({
+    this.unit,
+    this.supportedUnits = const [],
+    this.suggestedIncrements = const [],
+    this.progressVariant = HabitTrackerProgressVariant.ring,
+    this.suggestedExercises = const [],
+    this.defaultSets,
+    this.defaultReps,
+    this.defaultWeightUnit,
+  });
+
+  factory HabitTrackerComposerConfig.fromJson(Map<String, dynamic> json) {
+    return HabitTrackerComposerConfig(
+      unit: (json['unit'] as String?)?.trim(),
+      supportedUnits:
+          (json['supported_units'] as List?)
+              ?.whereType<String>()
+              .map((value) => value.trim())
+              .where((value) => value.isNotEmpty)
+              .toList(growable: false) ??
+          const [],
+      suggestedIncrements:
+          (json['suggested_increments'] as List?)
+              ?.map((value) => (value as num?)?.toDouble())
+              .whereType<double>()
+              .toList(growable: false) ??
+          const [],
+      progressVariant: _habitTrackerProgressVariantFromJson(
+        json['progress_variant'],
+      ),
+      suggestedExercises:
+          (json['suggested_exercises'] as List?)
+              ?.whereType<String>()
+              .map((value) => value.trim())
+              .where((value) => value.isNotEmpty)
+              .toList(growable: false) ??
+          const [],
+      defaultSets: (json['default_sets'] as num?)?.toInt(),
+      defaultReps: (json['default_reps'] as num?)?.toInt(),
+      defaultWeightUnit: (json['default_weight_unit'] as String?)?.trim(),
+    );
+  }
+
+  final String? unit;
+  final List<String> supportedUnits;
+  final List<double> suggestedIncrements;
+  final HabitTrackerProgressVariant progressVariant;
+  final List<String> suggestedExercises;
+  final int? defaultSets;
+  final int? defaultReps;
+  final String? defaultWeightUnit;
+
+  Map<String, dynamic> toJson() => {
+    if (unit != null && unit!.trim().isNotEmpty) 'unit': unit!.trim(),
+    if (supportedUnits.isNotEmpty) 'supported_units': supportedUnits,
+    if (suggestedIncrements.isNotEmpty)
+      'suggested_increments': suggestedIncrements,
+    'progress_variant': progressVariant.apiValue,
+    if (suggestedExercises.isNotEmpty)
+      'suggested_exercises': suggestedExercises,
+    if (defaultSets != null) 'default_sets': defaultSets,
+    if (defaultReps != null) 'default_reps': defaultReps,
+    if (defaultWeightUnit != null && defaultWeightUnit!.trim().isNotEmpty)
+      'default_weight_unit': defaultWeightUnit!.trim(),
+  };
+
+  @override
+  List<Object?> get props => [
+    unit,
+    supportedUnits,
+    suggestedIncrements,
+    progressVariant,
+    suggestedExercises,
+    defaultSets,
+    defaultReps,
+    defaultWeightUnit,
+  ];
+}
+
+class HabitTrackerExerciseBlock extends Equatable {
+  const HabitTrackerExerciseBlock({
+    required this.exerciseName,
+    required this.sets,
+    required this.reps,
+    this.weight,
+    this.unit,
+    this.notes,
+  });
+
+  factory HabitTrackerExerciseBlock.fromJson(Map<String, dynamic> json) {
+    return HabitTrackerExerciseBlock(
+      exerciseName: (json['exercise_name'] as String? ?? '').trim(),
+      sets: (json['sets'] as num?)?.toInt() ?? 0,
+      reps: (json['reps'] as num?)?.toInt() ?? 0,
+      weight: (json['weight'] as num?)?.toDouble(),
+      unit: (json['unit'] as String?)?.trim(),
+      notes: (json['notes'] as String?)?.trim(),
+    );
+  }
+
+  final String exerciseName;
+  final int sets;
+  final int reps;
+  final double? weight;
+  final String? unit;
+  final String? notes;
+
+  Map<String, dynamic> toJson() => {
+    'exercise_name': exerciseName.trim(),
+    'sets': sets,
+    'reps': reps,
+    if (weight != null) 'weight': weight,
+    if (unit != null && unit!.trim().isNotEmpty) 'unit': unit!.trim(),
+    if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
+  };
+
+  @override
+  List<Object?> get props => [exerciseName, sets, reps, weight, unit, notes];
+}
+
 class HabitTracker extends Equatable {
   const HabitTracker({
     required this.id,
@@ -256,6 +510,10 @@ class HabitTracker extends Equatable {
     required this.isActive,
     required this.createdAt,
     required this.updatedAt,
+    this.useCase = HabitTrackerUseCase.generic,
+    this.templateCategory = HabitTrackerTemplateCategory.custom,
+    this.composerMode = HabitTrackerComposerMode.advancedCustom,
+    this.composerConfig = const HabitTrackerComposerConfig(),
     this.description,
     this.createdBy,
     this.archivedAt,
@@ -300,6 +558,16 @@ class HabitTracker extends Equatable {
       freezeAllowance: (json['freeze_allowance'] as num?)?.toInt() ?? 0,
       recoveryWindowPeriods:
           (json['recovery_window_periods'] as num?)?.toInt() ?? 0,
+      useCase: _habitTrackerUseCaseFromJson(json['use_case']),
+      templateCategory: _habitTrackerTemplateCategoryFromJson(
+        json['template_category'],
+      ),
+      composerMode: _habitTrackerComposerModeFromJson(json['composer_mode']),
+      composerConfig: HabitTrackerComposerConfig.fromJson(
+        Map<String, dynamic>.from(
+          (json['composer_config'] as Map?) ?? const <String, dynamic>{},
+        ),
+      ),
       startDate: (json['start_date'] as String? ?? '').trim(),
       createdBy: json['created_by'] as String?,
       isActive: json['is_active'] as bool? ?? true,
@@ -325,6 +593,10 @@ class HabitTracker extends Equatable {
   final List<double> quickAddValues;
   final int freezeAllowance;
   final int recoveryWindowPeriods;
+  final HabitTrackerUseCase useCase;
+  final HabitTrackerTemplateCategory templateCategory;
+  final HabitTrackerComposerMode composerMode;
+  final HabitTrackerComposerConfig composerConfig;
   final String startDate;
   final String? createdBy;
   final bool isActive;
@@ -350,6 +622,10 @@ class HabitTracker extends Equatable {
     quickAddValues,
     freezeAllowance,
     recoveryWindowPeriods,
+    useCase,
+    templateCategory,
+    composerMode,
+    composerConfig,
     startDate,
     createdBy,
     isActive,
@@ -499,6 +775,11 @@ class HabitTrackerMemberSummary extends Equatable {
     required this.entryCount,
     required this.currentPeriodTotal,
     required this.streak,
+    this.latestValue,
+    this.latestEntryId,
+    this.latestEntryDate,
+    this.latestOccurredAt,
+    this.latestValues,
   });
 
   factory HabitTrackerMemberSummary.fromJson(Map<String, dynamic> json) {
@@ -512,6 +793,13 @@ class HabitTrackerMemberSummary extends Equatable {
       entryCount: (json['entry_count'] as num?)?.toInt() ?? 0,
       currentPeriodTotal:
           (json['current_period_total'] as num?)?.toDouble() ?? 0,
+      latestValue: (json['latest_value'] as num?)?.toDouble(),
+      latestEntryId: (json['latest_entry_id'] as String?)?.trim(),
+      latestEntryDate: (json['latest_entry_date'] as String?)?.trim(),
+      latestOccurredAt: parseDateTime(json['latest_occurred_at']),
+      latestValues: json['latest_values'] == null
+          ? null
+          : _normalizeEntryValues(json['latest_values']),
       streak: HabitTrackerStreakSummary.fromJson(
         Map<String, dynamic>.from(
           (json['streak'] as Map?) ?? const <String, dynamic>{},
@@ -524,7 +812,48 @@ class HabitTrackerMemberSummary extends Equatable {
   final double total;
   final int entryCount;
   final double currentPeriodTotal;
+  final double? latestValue;
+  final String? latestEntryId;
+  final String? latestEntryDate;
+  final DateTime? latestOccurredAt;
+  final Map<String, Object?>? latestValues;
   final HabitTrackerStreakSummary streak;
+
+  HabitTrackerMemberSummary copyWith({
+    HabitTrackerMember? member,
+    double? total,
+    int? entryCount,
+    double? currentPeriodTotal,
+    Object? latestValue = _sentinel,
+    Object? latestEntryId = _sentinel,
+    Object? latestEntryDate = _sentinel,
+    Object? latestOccurredAt = _sentinel,
+    Object? latestValues = _sentinel,
+    HabitTrackerStreakSummary? streak,
+  }) {
+    return HabitTrackerMemberSummary(
+      member: member ?? this.member,
+      total: total ?? this.total,
+      entryCount: entryCount ?? this.entryCount,
+      currentPeriodTotal: currentPeriodTotal ?? this.currentPeriodTotal,
+      latestValue: latestValue == _sentinel
+          ? this.latestValue
+          : latestValue as double?,
+      latestEntryId: latestEntryId == _sentinel
+          ? this.latestEntryId
+          : latestEntryId as String?,
+      latestEntryDate: latestEntryDate == _sentinel
+          ? this.latestEntryDate
+          : latestEntryDate as String?,
+      latestOccurredAt: latestOccurredAt == _sentinel
+          ? this.latestOccurredAt
+          : latestOccurredAt as DateTime?,
+      latestValues: latestValues == _sentinel
+          ? this.latestValues
+          : latestValues as Map<String, Object?>?,
+      streak: streak ?? this.streak,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -532,6 +861,11 @@ class HabitTrackerMemberSummary extends Equatable {
     total,
     entryCount,
     currentPeriodTotal,
+    latestValue,
+    latestEntryId,
+    latestEntryDate,
+    latestOccurredAt,
+    Object.hashAllUnordered(latestValues?.entries ?? const []),
     streak,
   ];
 }
@@ -601,6 +935,23 @@ class HabitTrackerTeamSummary extends Equatable {
   final double totalValue;
   final double averageConsistencyRate;
   final int topStreak;
+
+  HabitTrackerTeamSummary copyWith({
+    int? activeMembers,
+    int? totalEntries,
+    double? totalValue,
+    double? averageConsistencyRate,
+    int? topStreak,
+  }) {
+    return HabitTrackerTeamSummary(
+      activeMembers: activeMembers ?? this.activeMembers,
+      totalEntries: totalEntries ?? this.totalEntries,
+      totalValue: totalValue ?? this.totalValue,
+      averageConsistencyRate:
+          averageConsistencyRate ?? this.averageConsistencyRate,
+      topStreak: topStreak ?? this.topStreak,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -787,6 +1138,20 @@ class HabitTrackerCardSummary extends Equatable {
   final HabitTrackerTeamSummary? team;
   final List<HabitTrackerLeaderboardRow> leaderboard;
 
+  HabitTrackerCardSummary copyWith({
+    HabitTracker? tracker,
+    HabitTrackerMemberSummary? currentMember,
+    HabitTrackerTeamSummary? team,
+    List<HabitTrackerLeaderboardRow>? leaderboard,
+  }) {
+    return HabitTrackerCardSummary(
+      tracker: tracker ?? this.tracker,
+      currentMember: currentMember ?? this.currentMember,
+      team: team ?? this.team,
+      leaderboard: leaderboard ?? this.leaderboard,
+    );
+  }
+
   @override
   List<Object?> get props => [tracker, currentMember, team, leaderboard];
 }
@@ -837,6 +1202,22 @@ class HabitTrackerListResponse extends Equatable {
   final HabitTrackerScope scope;
   final String? scopeUserId;
   final String viewerUserId;
+
+  HabitTrackerListResponse copyWith({
+    List<HabitTrackerCardSummary>? trackers,
+    List<HabitTrackerMember>? members,
+    HabitTrackerScope? scope,
+    String? scopeUserId,
+    String? viewerUserId,
+  }) {
+    return HabitTrackerListResponse(
+      trackers: trackers ?? this.trackers,
+      members: members ?? this.members,
+      scope: scope ?? this.scope,
+      scopeUserId: scopeUserId ?? this.scopeUserId,
+      viewerUserId: viewerUserId ?? this.viewerUserId,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -927,6 +1308,26 @@ class HabitTrackerDetailResponse extends Equatable {
   final List<HabitTrackerLeaderboardRow> leaderboard;
   final List<HabitTrackerPeriodMetric> currentPeriodMetrics;
 
+  HabitTrackerDetailResponse copyWith({
+    HabitTracker? tracker,
+    List<HabitTrackerEntry>? entries,
+    HabitTrackerMemberSummary? currentMember,
+    HabitTrackerTeamSummary? team,
+    List<HabitTrackerMemberSummary>? memberSummaries,
+    List<HabitTrackerLeaderboardRow>? leaderboard,
+    List<HabitTrackerPeriodMetric>? currentPeriodMetrics,
+  }) {
+    return HabitTrackerDetailResponse(
+      tracker: tracker ?? this.tracker,
+      entries: entries ?? this.entries,
+      currentMember: currentMember ?? this.currentMember,
+      team: team ?? this.team,
+      memberSummaries: memberSummaries ?? this.memberSummaries,
+      leaderboard: leaderboard ?? this.leaderboard,
+      currentPeriodMetrics: currentPeriodMetrics ?? this.currentPeriodMetrics,
+    );
+  }
+
   @override
   List<Object?> get props => [
     tracker,
@@ -955,6 +1356,10 @@ class HabitTrackerInput extends Equatable {
     this.quickAddValues = const [],
     this.freezeAllowance = 0,
     this.recoveryWindowPeriods = 0,
+    this.useCase = HabitTrackerUseCase.generic,
+    this.templateCategory = HabitTrackerTemplateCategory.custom,
+    this.composerMode = HabitTrackerComposerMode.advancedCustom,
+    this.composerConfig = const HabitTrackerComposerConfig(),
     this.startDate,
     this.isActive = true,
   });
@@ -973,6 +1378,10 @@ class HabitTrackerInput extends Equatable {
   final List<double> quickAddValues;
   final int freezeAllowance;
   final int recoveryWindowPeriods;
+  final HabitTrackerUseCase useCase;
+  final HabitTrackerTemplateCategory templateCategory;
+  final HabitTrackerComposerMode composerMode;
+  final HabitTrackerComposerConfig composerConfig;
   final String? startDate;
   final bool isActive;
 
@@ -994,6 +1403,10 @@ class HabitTrackerInput extends Equatable {
     if (quickAddValues.isNotEmpty) 'quick_add_values': quickAddValues,
     'freeze_allowance': freezeAllowance,
     'recovery_window_periods': recoveryWindowPeriods,
+    'use_case': useCase.apiValue,
+    'template_category': templateCategory.apiValue,
+    'composer_mode': composerMode.apiValue,
+    'composer_config': composerConfig.toJson(),
     if (startDate != null && startDate!.trim().isNotEmpty)
       'start_date': startDate,
     'is_active': isActive,
@@ -1015,6 +1428,10 @@ class HabitTrackerInput extends Equatable {
     quickAddValues,
     freezeAllowance,
     recoveryWindowPeriods,
+    useCase,
+    templateCategory,
+    composerMode,
+    composerConfig,
     startDate,
     isActive,
   ];
@@ -1046,7 +1463,15 @@ class HabitTrackerEntryInput extends Equatable {
     'entry_date': entryDate,
     if (occurredAt != null)
       'occurred_at': occurredAt!.toUtc().toIso8601String(),
-    'values': values,
+    'values': values.map((key, value) {
+      if (value is List<HabitTrackerExerciseBlock>) {
+        return MapEntry(
+          key,
+          value.map((block) => block.toJson()).toList(growable: false),
+        );
+      }
+      return MapEntry(key, value);
+    }),
     if (primaryValue != null) 'primary_value': primaryValue,
     if (note != null && note!.trim().isNotEmpty) 'note': note!.trim(),
     if (tags.isNotEmpty) 'tags': tags,
@@ -1111,6 +1536,10 @@ class HabitTrackerTemplate extends Equatable {
     required this.inputSchema,
     required this.freezeAllowance,
     required this.recoveryWindowPeriods,
+    this.useCase = HabitTrackerUseCase.generic,
+    this.templateCategory = HabitTrackerTemplateCategory.custom,
+    this.composerMode = HabitTrackerComposerMode.advancedCustom,
+    this.composerConfig = const HabitTrackerComposerConfig(),
   });
 
   final String id;
@@ -1128,6 +1557,10 @@ class HabitTrackerTemplate extends Equatable {
   final List<HabitTrackerFieldSchema> inputSchema;
   final int freezeAllowance;
   final int recoveryWindowPeriods;
+  final HabitTrackerUseCase useCase;
+  final HabitTrackerTemplateCategory templateCategory;
+  final HabitTrackerComposerMode composerMode;
+  final HabitTrackerComposerConfig composerConfig;
 
   HabitTrackerInput toInput({String? startDate}) {
     return HabitTrackerInput(
@@ -1145,6 +1578,10 @@ class HabitTrackerTemplate extends Equatable {
       quickAddValues: quickAddValues,
       freezeAllowance: freezeAllowance,
       recoveryWindowPeriods: recoveryWindowPeriods,
+      useCase: useCase,
+      templateCategory: templateCategory,
+      composerMode: composerMode,
+      composerConfig: composerConfig,
       startDate: startDate,
     );
   }
@@ -1166,5 +1603,9 @@ class HabitTrackerTemplate extends Equatable {
     inputSchema,
     freezeAllowance,
     recoveryWindowPeriods,
+    useCase,
+    templateCategory,
+    composerMode,
+    composerConfig,
   ];
 }

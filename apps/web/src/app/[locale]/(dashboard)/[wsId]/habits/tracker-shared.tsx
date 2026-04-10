@@ -14,6 +14,7 @@ import {
 } from '@tuturuuu/icons';
 import type {
   HabitTracker,
+  HabitTrackerExerciseBlock,
   HabitTrackerFieldSchema,
 } from '@tuturuuu/types/primitives/HabitTracker';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -114,10 +115,20 @@ export function normalizeQuickAddValues(values: number[]) {
 
 export function formatFieldValue(
   field: HabitTrackerFieldSchema | undefined,
-  value: string | number | boolean | null | undefined
+  value:
+    | string
+    | number
+    | boolean
+    | HabitTrackerExerciseBlock[]
+    | null
+    | undefined
 ) {
   if (field?.type === 'boolean') {
     return value === true ? 'Yes' : 'No';
+  }
+
+  if (Array.isArray(value)) {
+    return `${value.length} exercises`;
   }
 
   if (typeof value === 'number') {
