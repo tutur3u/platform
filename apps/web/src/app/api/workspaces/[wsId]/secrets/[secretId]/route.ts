@@ -11,7 +11,7 @@ interface Params {
 export async function PUT(req: Request, { params }: Params) {
   const data = await req.json();
   const { wsId, secretId } = await params;
-  const access = await getWorkspaceSecretsAccess(wsId);
+  const access = await getWorkspaceSecretsAccess(wsId, req);
 
   if (!access.allowed) {
     return NextResponse.json(
@@ -37,9 +37,9 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
+export async function DELETE(request: Request, { params }: Params) {
   const { wsId, secretId } = await params;
-  const access = await getWorkspaceSecretsAccess(wsId);
+  const access = await getWorkspaceSecretsAccess(wsId, request);
 
   if (!access.allowed) {
     return NextResponse.json(

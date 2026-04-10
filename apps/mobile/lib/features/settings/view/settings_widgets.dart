@@ -300,6 +300,13 @@ class SettingsWorkspaceSection extends StatelessWidget {
                     ? () => onEditWorkspaceProperties(currentWorkspace)
                     : null,
               ),
+              if (canManageWorkspaceSecrets)
+                SettingsTile(
+                  icon: Icons.key_rounded,
+                  title: l10n.settingsWorkspaceSecretsTitle,
+                  subtitle: l10n.settingsWorkspaceSecretsSubtitle,
+                  onTap: onOpenWorkspaceSecrets,
+                ),
             ],
           ),
         ),
@@ -319,16 +326,6 @@ class SettingsWorkspaceSection extends StatelessWidget {
                       : l10n.settingsWorkspaceMembersAccessDenied,
                   onTap: canManageWorkspaceMembers
                       ? onOpenWorkspaceMembers
-                      : null,
-                ),
-                SettingsTile(
-                  icon: Icons.key_rounded,
-                  title: l10n.settingsWorkspaceSecretsTitle,
-                  subtitle: canManageWorkspaceSecrets
-                      ? l10n.settingsWorkspaceSecretsSubtitle
-                      : l10n.settingsWorkspaceSecretsAccessDeniedDescription,
-                  onTap: canManageWorkspaceSecrets
-                      ? onOpenWorkspaceSecrets
                       : null,
                 ),
                 SettingsTile(
