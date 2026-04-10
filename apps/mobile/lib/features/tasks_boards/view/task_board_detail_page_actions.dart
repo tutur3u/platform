@@ -785,6 +785,9 @@ class _TaskBoardBulkActionsDrawerState
             ? shad.Alert.destructive(content: Text(message))
             : shad.Alert(content: Text(message)),
       );
+
+      // Close the sheet on successful action (even if partial)
+      widget.onClose();
     } on ApiException catch (error) {
       if (!mounted || !toastContext.mounted) return;
       shad.showToast(
@@ -883,6 +886,91 @@ class _TaskBoardBulkActionsDrawerState
               TaskBoardList.normalizeSupportedStatus(list.status) == 'closed',
         );
 
+        // Priority options
+        final priorityOptions = [
+          _FilterMenuOption(
+            id: 'critical',
+            label: l10n.taskBoardDetailPriorityCritical,
+            kind: _FilterMenuOptionKind.priority,
+            foreground: _taskPriorityStyle(context, 'critical').foreground,
+            background: _taskPriorityStyle(context, 'critical').background,
+            border: _taskPriorityStyle(context, 'critical').border,
+            icon: _taskPriorityStyle(context, 'critical').icon,
+          ),
+          _FilterMenuOption(
+            id: 'high',
+            label: l10n.taskBoardDetailPriorityHigh,
+            kind: _FilterMenuOptionKind.priority,
+            foreground: _taskPriorityStyle(context, 'high').foreground,
+            background: _taskPriorityStyle(context, 'high').background,
+            border: _taskPriorityStyle(context, 'high').border,
+            icon: _taskPriorityStyle(context, 'high').icon,
+          ),
+          _FilterMenuOption(
+            id: 'normal',
+            label: l10n.taskBoardDetailPriorityNormal,
+            kind: _FilterMenuOptionKind.priority,
+            foreground: _taskPriorityStyle(context, 'normal').foreground,
+            background: _taskPriorityStyle(context, 'normal').background,
+            border: _taskPriorityStyle(context, 'normal').border,
+            icon: _taskPriorityStyle(context, 'normal').icon,
+          ),
+          _FilterMenuOption(
+            id: 'low',
+            label: l10n.taskBoardDetailPriorityLow,
+            kind: _FilterMenuOptionKind.priority,
+            foreground: _taskPriorityStyle(context, 'low').foreground,
+            background: _taskPriorityStyle(context, 'low').background,
+            border: _taskPriorityStyle(context, 'low').border,
+            icon: _taskPriorityStyle(context, 'low').icon,
+          ),
+        ];
+
+        // Label options
+        final labelOptions = board.labels
+            .map(
+              (label) => _FilterMenuOption(
+                id: label.id,
+                label: label.name.trim().isEmpty ? label.id : label.name,
+                kind: _FilterMenuOptionKind.label,
+                color: parseTaskLabelColor(label.color),
+              ),
+            )
+            .toList(growable: false);
+
+        // Project options
+        final projectOptions = board.projects
+            .map(
+              (project) => _FilterMenuOption(
+                id: project.id,
+                label: project.name.trim().isEmpty ? project.id : project.name,
+              ),
+            )
+            .toList(growable: false);
+
+        // Assignee options
+        final assigneeOptions = board.members
+            .map(
+              (member) => _FilterMenuOption(
+                id: member.id,
+                label: member.label,
+                avatarUrl: member.avatarUrl,
+              ),
+            )
+            .toList(growable: false);
+
+        // Move to list options
+        final listOptions = board.lists
+            .map(
+              (list) => _FilterMenuOption(
+                id: list.id,
+                label: list.name?.trim().isNotEmpty == true
+                    ? list.name!.trim()
+                    : l10n.taskBoardDetailUntitledList,
+              ),
+            )
+            .toList(growable: false);
+
         return SafeArea(
           top: false,
           child: Padding(
@@ -918,149 +1006,335 @@ class _TaskBoardBulkActionsDrawerState
                     color: shad.Theme.of(context).colorScheme.mutedForeground,
                   ),
                 ),
-                const shad.Gap(12),
+                const shad.Gap(16),
                 Expanded(
                   child: ListView(
                     children: [
-                      if (hasDoneList)
-                        ListTile(
-                          enabled: canRun,
-                          leading: const Icon(Icons.check_circle_outline),
-                          title: Text(l10n.taskBoardDetailBulkMarkDone),
-                          onTap: () => unawaited(
-                            _runBulkAction(
-                              () => _cubit.bulkMoveToStatus('done'),
+                      // Quick Actions section - organized layout
+                      if (hasDoneList || hasClosedList) ...[
+                        _SectionContainer(
+                          icon: Icons.flash_on_outlined,
+                          children: [
+                            // Status actions row: Mark as done & closed
+                            // side by side
+                            if (hasDoneList && hasClosedList)
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: shad.OutlineButton(
+                                      enabled: canRun,
+                                      leading: const Icon(
+                                        Icons.check_circle_outline,
+                                        size: 18,
+                                      ),
+                                      onPressed: () => unawaited(
+                                        _runBulkAction(
+                                          () => _cubit.bulkMoveToStatus('done'),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        l10n.taskBoardDetailBulkMarkDone,
+                                      ),
+                                    ),
+                                  ),
+                                  const shad.Gap(8),
+                                  Expanded(
+                                    child: shad.OutlineButton(
+                                      enabled: canRun,
+                                      leading: const Icon(
+                                        Icons.block_outlined,
+                                        size: 18,
+                                      ),
+                                      onPressed: () => unawaited(
+                                        _runBulkAction(
+                                          () =>
+                                              _cubit.bulkMoveToStatus('closed'),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        l10n.taskBoardDetailBulkMarkClosed,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            else ...[
+                              if (hasDoneList)
+                                shad.OutlineButton(
+                                  enabled: canRun,
+                                  leading: const Icon(
+                                    Icons.check_circle_outline,
+                                    size: 18,
+                                  ),
+                                  onPressed: () => unawaited(
+                                    _runBulkAction(
+                                      () => _cubit.bulkMoveToStatus('done'),
+                                    ),
+                                  ),
+                                  child: Text(l10n.taskBoardDetailBulkMarkDone),
+                                ),
+                              if (hasClosedList)
+                                shad.OutlineButton(
+                                  enabled: canRun,
+                                  leading: const Icon(
+                                    Icons.block_outlined,
+                                    size: 18,
+                                  ),
+                                  onPressed: () => unawaited(
+                                    _runBulkAction(
+                                      () => _cubit.bulkMoveToStatus('closed'),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    l10n.taskBoardDetailBulkMarkClosed,
+                                  ),
+                                ),
+                            ],
+                            // Delete action - full width with visual separation
+                            Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: shad.DestructiveButton(
+                                enabled: canRun,
+                                leading: const Icon(
+                                  Icons.delete_outline,
+                                  size: 18,
+                                ),
+                                onPressed: () => unawaited(
+                                  _runBulkAction(
+                                    () => _cubit.bulkDeleteSelectedTasks(),
+                                  ),
+                                ),
+                                child: Text(
+                                  l10n.taskBoardDetailDeleteTasks(
+                                    selectedCount,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      if (hasClosedList)
-                        ListTile(
-                          enabled: canRun,
-                          leading: const Icon(Icons.block_outlined),
-                          title: Text(l10n.taskBoardDetailBulkMarkClosed),
-                          onTap: () => unawaited(
-                            _runBulkAction(
-                              () => _cubit.bulkMoveToStatus('closed'),
+                        const shad.Gap(20),
+                      ],
+
+                      // Properties section - card with field grouping
+                      _SectionContainer(
+                        icon: Icons.tune_outlined,
+                        children: [
+                          // Priority
+                          _FilterDropdownSection(
+                            title: l10n.taskBoardDetailPriority,
+                            options: priorityOptions,
+                            selectedIds: const {},
+                            enabled: canRun,
+                            singleSelection: true,
+                            onApplySelection: (selectedIds) {
+                              if (selectedIds.isEmpty) return;
+                              final priority = selectedIds.first;
+                              unawaited(
+                                _runBulkAction(
+                                  () => _cubit.bulkUpdatePriority(priority),
+                                ),
+                              );
+                            },
+                          ),
+                          const shad.Divider(height: 24),
+
+                          // Due date - uses sheet instead of dropdown
+                          _DueDateActionSection(
+                            enabled: canRun,
+                            onSelect: (preset, customDate) {
+                              if (preset == 'custom' && customDate != null) {
+                                unawaited(
+                                  _runBulkAction(
+                                    () => _cubit.bulkUpdateCustomDueDate(
+                                      customDate,
+                                    ),
+                                  ),
+                                );
+                              } else if (preset != null) {
+                                unawaited(
+                                  _runBulkAction(
+                                    () => _cubit.bulkUpdateDueDatePreset(
+                                      preset,
+                                      weekStartsOn: _firstDayOfWeek(context),
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                          if (board.estimationType?.trim().isNotEmpty == true)
+                            const shad.Divider(height: 24),
+
+                          // Estimation
+                          if (board.estimationType?.trim().isNotEmpty == true)
+                            _EstimationActionSection(
+                              board: board,
+                              enabled: canRun,
+                              onSelect: (value) {
+                                unawaited(
+                                  _runBulkAction(
+                                    () => _cubit.bulkUpdateEstimation(value),
+                                  ),
+                                );
+                              },
                             ),
+                          const shad.Divider(height: 24),
+
+                          // Labels
+                          _FilterDropdownSection(
+                            title: l10n.taskBoardDetailTaskLabels,
+                            options: labelOptions,
+                            selectedIds: appliedLabelIds,
+                            enabled: canRun,
+                            onApplySelection: (selectedIds) {
+                              final toAdd = selectedIds.where(
+                                (id) => !appliedLabelIds.contains(id),
+                              );
+                              final toRemove = appliedLabelIds.where(
+                                (id) => !selectedIds.contains(id),
+                              );
+                              for (final id in toAdd) {
+                                unawaited(
+                                  _runBulkAction(
+                                    () => _cubit.bulkAddLabel(id),
+                                  ),
+                                );
+                              }
+                              for (final id in toRemove) {
+                                unawaited(
+                                  _runBulkAction(
+                                    () => _cubit.bulkRemoveLabel(id),
+                                  ),
+                                );
+                              }
+                              if (selectedIds.isEmpty) {
+                                unawaited(
+                                  _runBulkAction(_cubit.bulkClearLabels),
+                                );
+                              }
+                            },
                           ),
-                        ),
-                      if (hasDoneList || hasClosedList) const shad.Divider(),
-                      ListTile(
-                        enabled: canRun,
-                        leading: const Icon(Icons.low_priority),
-                        title: Text(l10n.taskBoardDetailPriority),
-                        onTap: () => unawaited(
-                          _openPriorityPicker(canRun: canRun),
-                        ),
-                      ),
-                      ListTile(
-                        enabled: canRun,
-                        leading: const Icon(Icons.calendar_today_outlined),
-                        title: Text(l10n.taskBoardDetailTaskEndDate),
-                        onTap: () => unawaited(
-                          _openDueDatePicker(canRun: canRun),
-                        ),
-                      ),
-                      if (board.estimationType?.trim().isNotEmpty == true)
-                        ListTile(
-                          enabled: canRun,
-                          leading: const Icon(Icons.timer_outlined),
-                          title: Text(l10n.taskBoardDetailTaskEstimation),
-                          onTap: () => unawaited(
-                            _openEstimationPicker(board: board, canRun: canRun),
+                          const shad.Divider(height: 24),
+
+                          // Projects
+                          _FilterDropdownSection(
+                            title: l10n.taskBoardDetailTaskProjects,
+                            options: projectOptions,
+                            selectedIds: appliedProjectIds,
+                            enabled: canRun,
+                            onApplySelection: (selectedIds) {
+                              final toAdd = selectedIds.where(
+                                (id) => !appliedProjectIds.contains(id),
+                              );
+                              final toRemove = appliedProjectIds.where(
+                                (id) => !selectedIds.contains(id),
+                              );
+                              for (final id in toAdd) {
+                                unawaited(
+                                  _runBulkAction(
+                                    () => _cubit.bulkAddProject(id),
+                                  ),
+                                );
+                              }
+                              for (final id in toRemove) {
+                                unawaited(
+                                  _runBulkAction(
+                                    () => _cubit.bulkRemoveProject(id),
+                                  ),
+                                );
+                              }
+                              if (selectedIds.isEmpty) {
+                                unawaited(
+                                  _runBulkAction(_cubit.bulkClearProjects),
+                                );
+                              }
+                            },
                           ),
-                        ),
-                      const shad.Divider(),
-                      ListTile(
-                        enabled: canRun,
-                        leading: const Icon(Icons.label_outline),
-                        title: Text(l10n.taskBoardDetailTaskLabels),
-                        onTap: () => unawaited(
-                          _openLabelPicker(
-                            labels: board.labels,
-                            appliedIds: appliedLabelIds,
-                            canRun: canRun,
-                          ),
-                        ),
-                      ),
-                      ListTile(
-                        enabled: canRun,
-                        leading: const Icon(Icons.account_tree_outlined),
-                        title: Text(l10n.taskBoardDetailTaskProjects),
-                        onTap: () => unawaited(
-                          _openProjectPicker(
-                            projects: board.projects,
-                            appliedIds: appliedProjectIds,
-                            canRun: canRun,
-                          ),
-                        ),
-                      ),
-                      if (!_isPersonalWorkspaceForBoard(board))
-                        ListTile(
-                          enabled: canRun,
-                          leading: const Icon(Icons.person_outline),
-                          title: Text(l10n.taskBoardDetailTaskAssignees),
-                          onTap: () => unawaited(
-                            _openAssigneePicker(
-                              members: board.members,
-                              appliedIds: appliedAssigneeIds,
-                              canRun: canRun,
+                          if (!_isPersonalWorkspaceForBoard(board))
+                            const shad.Divider(height: 24),
+
+                          // Assignees
+                          if (!_isPersonalWorkspaceForBoard(board))
+                            _FilterDropdownSection(
+                              title: l10n.taskBoardDetailTaskAssignees,
+                              options: assigneeOptions,
+                              selectedIds: appliedAssigneeIds,
+                              enabled: canRun,
+                              onApplySelection: (selectedIds) {
+                                final toAdd = selectedIds.where(
+                                  (id) => !appliedAssigneeIds.contains(id),
+                                );
+                                final toRemove = appliedAssigneeIds.where(
+                                  (id) => !selectedIds.contains(id),
+                                );
+                                for (final id in toAdd) {
+                                  unawaited(
+                                    _runBulkAction(
+                                      () => _cubit.bulkAddAssignee(id),
+                                    ),
+                                  );
+                                }
+                                for (final id in toRemove) {
+                                  unawaited(
+                                    _runBulkAction(
+                                      () => _cubit.bulkRemoveAssignee(id),
+                                    ),
+                                  );
+                                }
+                                if (selectedIds.isEmpty) {
+                                  unawaited(
+                                    _runBulkAction(_cubit.bulkClearAssignees),
+                                  );
+                                }
+                              },
                             ),
-                          ),
-                        ),
-                      const shad.Divider(),
-                      ListTile(
-                        enabled: canRun,
-                        leading: const Icon(Icons.move_down_outlined),
-                        title: Text(l10n.taskBoardDetailMoveTask),
-                        onTap: () =>
-                            unawaited(_openMoveToListPicker(canRun: canRun)),
+                        ],
                       ),
-                      ListTile(
-                        enabled: canRun,
-                        leading: const Icon(Icons.compare_arrows_outlined),
-                        title: Text(l10n.taskBoardDetailBulkMoveToBoard),
-                        onTap: () =>
-                            unawaited(_openMoveToBoardPicker(canRun: canRun)),
-                      ),
-                      const shad.Divider(),
-                      ListTile(
-                        enabled: canRun,
-                        leading: const Icon(Icons.delete_outline),
-                        title: Text(
-                          l10n.taskBoardDetailDeleteTasks(selectedCount),
-                        ),
-                        onTap: () => unawaited(
-                          _runBulkAction(
-                            () => _cubit.bulkDeleteSelectedTasks(),
+                      const shad.Gap(20),
+
+                      // Move section - grouped container
+                      _SectionContainer(
+                        icon: Icons.drive_file_move_outlined,
+                        children: [
+                          // Move to list
+                          _FilterDropdownSection(
+                            title: l10n.taskBoardDetailMoveTask,
+                            options: listOptions,
+                            selectedIds: const {},
+                            enabled: canRun,
+                            singleSelection: true,
+                            onApplySelection: (selectedIds) {
+                              if (selectedIds.isEmpty) return;
+                              final listId = selectedIds.first;
+                              unawaited(
+                                _runBulkAction(
+                                  () => _cubit.bulkMoveToList(listId: listId),
+                                ),
+                              );
+                            },
                           ),
-                        ),
+                          const shad.Divider(height: 24),
+
+                          // Move to board
+                          _MoveToBoardActionSection(
+                            enabled: canRun,
+                            cubit: _cubit,
+                            onSelect: (boardId, listId) {
+                              unawaited(
+                                _runBulkAction(
+                                  () => _cubit.bulkMoveToList(
+                                    listId: listId,
+                                    targetBoardId: boardId,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ),
-                const shad.Gap(12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: shad.OutlineButton(
-                        onPressed: selectedCount > 0
-                            ? () => _cubit.selectAllFilteredTasks()
-                            : null,
-                        child: Text(l10n.taskBoardDetailSelectAllFiltered),
-                      ),
-                    ),
-                    const shad.Gap(8),
-                    Expanded(
-                      child: shad.PrimaryButton(
-                        onPressed: () {
-                          _cubit.exitBulkSelectMode();
-                          widget.onClose();
-                        },
-                        child: Text(l10n.taskBoardDetailExitBulkSelect),
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -1086,415 +1360,548 @@ class _TaskBoardBulkActionsDrawerState
         .map((entry) => entry.key)
         .toSet();
   }
+}
 
-  Future<void> _openPriorityPicker({required bool canRun}) async {
-    if (!canRun) return;
-    final l10n = context.l10n;
-    final items = [
-      _BulkChoiceItem(
-        id: 'critical',
-        label: l10n.taskBoardDetailPriorityCritical,
-      ),
-      _BulkChoiceItem(id: 'high', label: l10n.taskBoardDetailPriorityHigh),
-      _BulkChoiceItem(
-        id: 'normal',
-        label: l10n.taskBoardDetailPriorityNormal,
-      ),
-      _BulkChoiceItem(id: 'low', label: l10n.taskBoardDetailPriorityLow),
-      _BulkChoiceItem(id: 'none', label: l10n.taskBoardDetailPriorityNone),
-    ];
-    final choice = await _pickChoice(
-      title: l10n.taskBoardDetailPriority,
-      items: items,
-    );
-    if (choice == null || !mounted) return;
+/// A container widget that groups related bulk action controls with visual
+/// hierarchy through subtle background tint, border, and optional icon header.
+class _SectionContainer extends StatelessWidget {
+  const _SectionContainer({
+    required this.children,
+    this.icon,
+  });
 
-    await _runBulkAction(
-      () => _cubit.bulkUpdatePriority(choice == 'none' ? null : choice),
+  final List<Widget> children;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.secondary.withAlpha(12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Optional icon header for visual distinction
+          if (icon != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+              child: Icon(
+                icon,
+                size: 18,
+                color: colorScheme.primary.withAlpha(180),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: _intersperseDividers(children),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Future<void> _openDueDatePicker({required bool canRun}) async {
-    if (!canRun) return;
+  /// Removes adjacent dividers and ensures proper spacing
+  List<Widget> _intersperseDividers(List<Widget> widgets) {
+    final result = <Widget>[];
+    for (var i = 0; i < widgets.length; i++) {
+      final widget = widgets[i];
+      // Skip consecutive dividers
+      if (widget is shad.Divider &&
+          result.isNotEmpty &&
+          result.last is shad.Divider) {
+        continue;
+      }
+      // Remove trailing divider
+      if (widget is shad.Divider && i == widgets.length - 1) {
+        continue;
+      }
+      result.add(widget);
+    }
+    return result;
+  }
+}
+
+class _DueDateActionSection extends StatelessWidget {
+  const _DueDateActionSection({
+    required this.enabled,
+    required this.onSelect,
+  });
+
+  final bool enabled;
+  final void Function(String? preset, DateTime? customDate) onSelect;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final choices = [
-      _BulkChoiceItem(id: 'today', label: l10n.taskBoardDetailToday),
-      _BulkChoiceItem(id: 'tomorrow', label: l10n.taskBoardDetailTomorrow),
-      _BulkChoiceItem(id: 'this_week', label: l10n.taskBoardDetailThisWeek),
-      _BulkChoiceItem(id: 'next_week', label: l10n.taskBoardDetailNextWeek),
-      _BulkChoiceItem(id: 'custom', label: l10n.taskBoardDetailSetCustomDate),
-      _BulkChoiceItem(id: 'clear', label: l10n.taskBoardDetailRemoveDueDate),
-    ];
-    final choice = await _pickChoice(
-      title: l10n.taskBoardDetailTaskEndDate,
-      items: choices,
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.taskBoardDetailTaskEndDate,
+          style: shad.Theme.of(
+            context,
+          ).typography.small.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const shad.Gap(6),
+        shad.OutlineButton(
+          enabled: enabled,
+          onPressed: () => unawaited(_showDueDateSheet(context)),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(l10n.taskBoardDetailSetDueDate),
+              ),
+              const shad.Gap(8),
+              const Icon(Icons.keyboard_arrow_down, size: 16),
+            ],
+          ),
+        ),
+      ],
     );
-    if (choice == null || !mounted) return;
+  }
+
+  Future<void> _showDueDateSheet(BuildContext context) async {
+    final l10n = context.l10n;
+    final choice = await showAdaptiveSheet<String>(
+      context: context,
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.taskBoardDetailTaskEndDate,
+                        style:
+                            shad.Theme.of(
+                              context,
+                            ).typography.large.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ),
+                    shad.IconButton.ghost(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                    ),
+                  ],
+                ),
+                const shad.Gap(16),
+                ListTile(
+                  leading: const Icon(Icons.today),
+                  title: Text(l10n.taskBoardDetailToday),
+                  onTap: () => Navigator.of(sheetContext).pop('today'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.event),
+                  title: Text(l10n.taskBoardDetailTomorrow),
+                  onTap: () => Navigator.of(sheetContext).pop('tomorrow'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.date_range),
+                  title: Text(l10n.taskBoardDetailThisWeek),
+                  onTap: () => Navigator.of(sheetContext).pop('this_week'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.calendar_view_week),
+                  title: Text(l10n.taskBoardDetailNextWeek),
+                  onTap: () => Navigator.of(sheetContext).pop('next_week'),
+                ),
+                const shad.Divider(),
+                ListTile(
+                  leading: const Icon(Icons.edit_calendar),
+                  title: Text(l10n.taskBoardDetailSetCustomDate),
+                  onTap: () => Navigator.of(sheetContext).pop('custom'),
+                ),
+                ListTile(
+                  leading: Icon(
+                    Icons.clear,
+                    color: shad.Theme.of(context).colorScheme.destructive,
+                  ),
+                  title: Text(
+                    l10n.taskBoardDetailRemoveDueDate,
+                    style: TextStyle(
+                      color: shad.Theme.of(context).colorScheme.destructive,
+                    ),
+                  ),
+                  onTap: () => Navigator.of(sheetContext).pop('clear'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (choice == null) return;
 
     if (choice == 'custom') {
+      if (!context.mounted) return;
       final picked = await showDatePicker(
         context: context,
         initialDate: DateTime.now(),
         firstDate: DateTime(2000),
         lastDate: DateTime(2100),
       );
-      if (picked == null || !mounted) return;
-      await _runBulkAction(() => _cubit.bulkUpdateCustomDueDate(picked));
-      return;
-    }
-
-    await _runBulkAction(
-      () => _cubit.bulkUpdateDueDatePreset(
-        choice,
-        weekStartsOn: _firstDayOfWeek(context),
-      ),
-    );
-  }
-
-  Future<void> _openEstimationPicker({
-    required TaskBoardDetail board,
-    required bool canRun,
-  }) async {
-    if (!canRun) return;
-    final options = _taskEstimationOptions(board);
-    final l10n = context.l10n;
-    final items = [
-      _BulkChoiceItem(
-        id: 'none',
-        label: l10n.taskBoardDetailTaskEstimationNone,
-      ),
-      ...options.map(
-        (points) => _BulkChoiceItem(
-          id: points.toString(),
-          label: _taskEstimationPointLabel(points: points, board: board),
-        ),
-      ),
-    ];
-
-    final choice = await _pickChoice(
-      title: l10n.taskBoardDetailTaskEstimation,
-      items: items,
-    );
-    if (choice == null || !mounted) return;
-
-    final value = choice == 'none' ? null : int.tryParse(choice);
-    await _runBulkAction(() => _cubit.bulkUpdateEstimation(value));
-  }
-
-  Future<void> _openLabelPicker({
-    required List<TaskLabel> labels,
-    required Set<String> appliedIds,
-    required bool canRun,
-  }) async {
-    if (!canRun) return;
-    final l10n = context.l10n;
-    final choice = await _pickChoice(
-      title: l10n.taskBoardDetailTaskLabels,
-      items: [
-        _BulkChoiceItem(
-          id: '__clear__',
-          label: l10n.taskBoardDetailBulkClearLabels,
-        ),
-        ...labels.map(
-          (label) => _BulkChoiceItem(
-            id: label.id,
-            label: label.name,
-            selected: appliedIds.contains(label.id),
-          ),
-        ),
-      ],
-      searchable: true,
-    );
-
-    if (choice == null || !mounted) return;
-    if (choice == '__clear__') {
-      await _runBulkAction(_cubit.bulkClearLabels);
-      return;
-    }
-
-    if (appliedIds.contains(choice)) {
-      await _runBulkAction(() => _cubit.bulkRemoveLabel(choice));
+      if (picked != null) {
+        onSelect('custom', picked);
+      }
     } else {
-      await _runBulkAction(() => _cubit.bulkAddLabel(choice));
+      onSelect(choice, null);
     }
-  }
-
-  Future<void> _openProjectPicker({
-    required List<TaskProjectSummary> projects,
-    required Set<String> appliedIds,
-    required bool canRun,
-  }) async {
-    if (!canRun) return;
-    final l10n = context.l10n;
-    final choice = await _pickChoice(
-      title: l10n.taskBoardDetailTaskProjects,
-      items: [
-        _BulkChoiceItem(
-          id: '__clear__',
-          label: l10n.taskBoardDetailBulkClearProjects,
-        ),
-        ...projects.map(
-          (project) => _BulkChoiceItem(
-            id: project.id,
-            label: project.name,
-            selected: appliedIds.contains(project.id),
-          ),
-        ),
-      ],
-      searchable: true,
-    );
-
-    if (choice == null || !mounted) return;
-    if (choice == '__clear__') {
-      await _runBulkAction(_cubit.bulkClearProjects);
-      return;
-    }
-
-    if (appliedIds.contains(choice)) {
-      await _runBulkAction(() => _cubit.bulkRemoveProject(choice));
-    } else {
-      await _runBulkAction(() => _cubit.bulkAddProject(choice));
-    }
-  }
-
-  Future<void> _openAssigneePicker({
-    required List<WorkspaceUserOption> members,
-    required Set<String> appliedIds,
-    required bool canRun,
-  }) async {
-    if (!canRun) return;
-    final l10n = context.l10n;
-    final choice = await _pickChoice(
-      title: l10n.taskBoardDetailTaskAssignees,
-      items: [
-        _BulkChoiceItem(
-          id: '__clear__',
-          label: l10n.taskBoardDetailBulkClearAssignees,
-        ),
-        ...members.map(
-          (member) => _BulkChoiceItem(
-            id: member.id,
-            label: member.label,
-            selected: appliedIds.contains(member.id),
-          ),
-        ),
-      ],
-      searchable: true,
-    );
-
-    if (choice == null || !mounted) return;
-    if (choice == '__clear__') {
-      await _runBulkAction(_cubit.bulkClearAssignees);
-      return;
-    }
-
-    if (appliedIds.contains(choice)) {
-      await _runBulkAction(() => _cubit.bulkRemoveAssignee(choice));
-    } else {
-      await _runBulkAction(() => _cubit.bulkAddAssignee(choice));
-    }
-  }
-
-  Future<void> _openMoveToListPicker({required bool canRun}) async {
-    if (!canRun) return;
-    final board = _cubit.state.board;
-    if (board == null) return;
-
-    final listId = await _pickChoice(
-      title: context.l10n.taskBoardDetailMoveTask,
-      items: board.lists
-          .map(
-            (list) => _BulkChoiceItem(
-              id: list.id,
-              label: list.name?.trim().isNotEmpty == true
-                  ? list.name!.trim()
-                  : context.l10n.taskBoardDetailUntitledList,
-            ),
-          )
-          .toList(growable: false),
-      searchable: true,
-    );
-    if (listId == null || !mounted) return;
-
-    await _runBulkAction(() => _cubit.bulkMoveToList(listId: listId));
-  }
-
-  Future<void> _openMoveToBoardPicker({required bool canRun}) async {
-    if (!canRun) return;
-    final l10n = context.l10n;
-    final currentBoard = _cubit.state.board;
-    if (currentBoard == null) return;
-
-    final boards = await _cubit.getTaskBoards();
-    if (!mounted) return;
-    final candidateBoards = boards
-        .where((board) => board.id != currentBoard.id)
-        .toList(growable: false);
-    if (candidateBoards.isEmpty) {
-      return;
-    }
-
-    final targetBoardId = await _pickChoice(
-      title: l10n.taskBoardDetailBulkMoveToBoard,
-      items: candidateBoards
-          .map(
-            (board) => _BulkChoiceItem(
-              id: board.id,
-              label: board.name?.trim().isNotEmpty == true
-                  ? board.name!.trim()
-                  : l10n.taskBoardDetailUntitledBoard,
-            ),
-          )
-          .toList(growable: false),
-      searchable: true,
-    );
-    if (targetBoardId == null || !mounted) return;
-
-    final targetLists = await _cubit.getBoardListsForBoard(targetBoardId);
-    if (targetLists.isEmpty || !mounted) return;
-
-    final targetListId = await _pickChoice(
-      title: context.l10n.taskBoardDetailTaskListLabel,
-      items: targetLists
-          .map(
-            (list) => _BulkChoiceItem(
-              id: list.id,
-              label: list.name?.trim().isNotEmpty == true
-                  ? list.name!.trim()
-                  : context.l10n.taskBoardDetailUntitledList,
-            ),
-          )
-          .toList(growable: false),
-      searchable: true,
-    );
-    if (targetListId == null || !mounted) return;
-
-    await _runBulkAction(
-      () => _cubit.bulkMoveToList(
-        listId: targetListId,
-        targetBoardId: targetBoardId,
-      ),
-    );
-  }
-
-  Future<String?> _pickChoice({
-    required String title,
-    required List<_BulkChoiceItem> items,
-    bool searchable = false,
-  }) {
-    return shad.showDialog<String>(
-      context: context,
-      builder: (context) => _BulkChoicePickerDialog(
-        title: title,
-        items: items,
-        searchable: searchable,
-      ),
-    );
   }
 }
 
-class _BulkChoiceItem extends Equatable {
-  const _BulkChoiceItem({
-    required this.id,
-    required this.label,
-    this.selected = false,
+class _EstimationActionSection extends StatelessWidget {
+  const _EstimationActionSection({
+    required this.board,
+    required this.enabled,
+    required this.onSelect,
   });
 
-  final String id;
-  final String label;
-  final bool selected;
-
-  @override
-  List<Object?> get props => [id, label, selected];
-}
-
-class _BulkChoicePickerDialog extends StatefulWidget {
-  const _BulkChoicePickerDialog({
-    required this.title,
-    required this.items,
-    required this.searchable,
-  });
-
-  final String title;
-  final List<_BulkChoiceItem> items;
-  final bool searchable;
-
-  @override
-  State<_BulkChoicePickerDialog> createState() =>
-      _BulkChoicePickerDialogState();
-}
-
-class _BulkChoicePickerDialogState extends State<_BulkChoicePickerDialog> {
-  String _query = '';
+  final TaskBoardDetail board;
+  final bool enabled;
+  final void Function(int? value) onSelect;
 
   @override
   Widget build(BuildContext context) {
-    final normalizedQuery = _query.trim().toLowerCase();
-    final filtered = widget.items
-        .where(
-          (item) =>
-              normalizedQuery.isEmpty ||
-              item.label.toLowerCase().contains(normalizedQuery),
-        )
-        .toList(growable: false);
+    final l10n = context.l10n;
 
-    return shad.AlertDialog(
-      title: Text(widget.title),
-      content: SizedBox(
-        width: double.maxFinite,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.taskBoardDetailTaskEstimation,
+          style: shad.Theme.of(
+            context,
+          ).typography.small.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const shad.Gap(6),
+        shad.OutlineButton(
+          enabled: enabled,
+          onPressed: () => unawaited(_showEstimationSheet(context)),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(l10n.taskBoardDetailSetEstimation),
+              ),
+              const shad.Gap(8),
+              const Icon(Icons.keyboard_arrow_down, size: 16),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showEstimationSheet(BuildContext context) async {
+    final l10n = context.l10n;
+    final options = _taskEstimationOptions(board);
+    final choice = await showAdaptiveSheet<String>(
+      context: context,
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.taskBoardDetailTaskEstimation,
+                        style:
+                            shad.Theme.of(
+                              context,
+                            ).typography.large.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ),
+                    shad.IconButton.ghost(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                    ),
+                  ],
+                ),
+                const shad.Gap(16),
+                ListTile(
+                  leading: const Icon(Icons.clear),
+                  title: Text(l10n.taskBoardDetailTaskEstimationNone),
+                  onTap: () => Navigator.of(sheetContext).pop('none'),
+                ),
+                const shad.Divider(),
+                ...options.map(
+                  (points) => ListTile(
+                    leading: const Icon(Icons.speed),
+                    title: Text(
+                      _taskEstimationPointLabel(points: points, board: board),
+                    ),
+                    onTap: () => Navigator.of(sheetContext).pop('$points'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (choice == null) return;
+
+    final value = choice == 'none' ? null : int.tryParse(choice);
+    onSelect(value);
+  }
+}
+
+class _MoveToBoardActionSection extends StatefulWidget {
+  const _MoveToBoardActionSection({
+    required this.enabled,
+    required this.cubit,
+    required this.onSelect,
+  });
+
+  final bool enabled;
+  final TaskBoardDetailCubit cubit;
+  final void Function(String boardId, String listId) onSelect;
+
+  @override
+  State<_MoveToBoardActionSection> createState() =>
+      _MoveToBoardActionSectionState();
+}
+
+class _MoveToBoardActionSectionState extends State<_MoveToBoardActionSection> {
+  bool _isLoading = false;
+  List<TaskBoardSummary>? _cachedBoards;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        shad.OutlineButton(
+          enabled: widget.enabled && !_isLoading,
+          onPressed: () => unawaited(_handleMoveToBoard()),
+          child: Row(
+            children: [
+              if (_isLoading)
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: shad.CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                const Icon(Icons.compare_arrows_outlined, size: 16),
+              const shad.Gap(8),
+              Expanded(
+                child: Text(l10n.taskBoardDetailBulkMoveToBoard),
+              ),
+              if (!_isLoading) ...[
+                const shad.Gap(8),
+                const Icon(Icons.keyboard_arrow_down, size: 16),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleMoveToBoard() async {
+    final l10n = context.l10n;
+    final currentBoard = widget.cubit.state.board;
+    if (currentBoard == null) return;
+
+    // Use cached boards if available, otherwise fetch and cache
+    List<TaskBoardSummary> boards;
+    if (_cachedBoards != null) {
+      boards = _cachedBoards!;
+    } else {
+      setState(() => _isLoading = true);
+      boards = await widget.cubit.getTaskBoards();
+      _cachedBoards = boards;
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
+
+    final candidateBoards = boards
+        .where((board) => board.id != currentBoard.id)
+        .toList(growable: false);
+    if (candidateBoards.isEmpty) return;
+
+    final targetBoardId = await showAdaptiveSheet<String>(
+      context: context,
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (sheetContext) => _BoardPickerSheet(
+        title: l10n.taskBoardDetailBulkMoveToBoard,
+        boards: candidateBoards,
+      ),
+    );
+    if (targetBoardId == null || !mounted) return;
+
+    setState(() => _isLoading = true);
+    final targetLists = await widget.cubit.getBoardListsForBoard(targetBoardId);
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (targetLists.isEmpty) return;
+
+    final targetListId = await showAdaptiveSheet<String>(
+      context: context,
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (sheetContext) => _ListPickerSheet(
+        title: l10n.taskBoardDetailTaskListLabel,
+        lists: targetLists,
+      ),
+    );
+    if (targetListId == null || !mounted) return;
+
+    widget.onSelect(targetBoardId, targetListId);
+  }
+}
+
+class _BoardPickerSheet extends StatelessWidget {
+  const _BoardPickerSheet({
+    required this.title,
+    required this.boards,
+  });
+
+  final String title;
+  final List<TaskBoardSummary> boards;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (widget.searchable)
-              shad.TextField(
-                hintText: context.l10n.taskBoardDetailSearchPlaceholder,
-                onChanged: (value) => setState(() => _query = value),
-              ),
-            if (widget.searchable) const shad.Gap(10),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 360),
-              child: filtered.isEmpty
-                  ? Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        context.l10n.taskBoardDetailNoMatchingTasks,
-                        style: shad.Theme.of(context).typography.textMuted,
-                      ),
-                    )
-                  : ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, _) => const shad.Divider(),
-                      itemBuilder: (context, index) {
-                        final item = filtered[index];
-                        return shad.GhostButton(
-                          onPressed: () => Navigator.of(context).pop(item.id),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  item.label,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (item.selected)
-                                Icon(
-                                  Icons.check,
-                                  size: 16,
-                                  color: shad.Theme.of(
-                                    context,
-                                  ).colorScheme.primary,
-                                ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: shad.Theme.of(
+                      context,
+                    ).typography.large.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                shad.IconButton.ghost(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
             ),
-            const shad.Gap(10),
-            shad.OutlineButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(context.l10n.commonCancel),
+            const shad.Gap(16),
+            ...boards.map(
+              (board) => ListTile(
+                leading: Icon(
+                  resolvePlatformIcon(
+                    board.icon,
+                    fallback: Icons.dashboard_outlined,
+                  ),
+                ),
+                title: Text(
+                  board.name?.trim().isNotEmpty == true
+                      ? board.name!.trim()
+                      : l10n.taskBoardDetailUntitledBoard,
+                ),
+                onTap: () => Navigator.of(context).pop(board.id),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ListPickerSheet extends StatelessWidget {
+  const _ListPickerSheet({
+    required this.title,
+    required this.lists,
+  });
+
+  final String title;
+  final List<TaskBoardList> lists;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: shad.Theme.of(
+                      context,
+                    ).typography.large.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                shad.IconButton.ghost(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            const shad.Gap(16),
+            ...lists.map(
+              (list) => ListTile(
+                leading: Icon(
+                  _taskBoardListStatusIcon(list.status),
+                  color: _taskBoardListStatusBadgeColors(
+                    context,
+                    list.status,
+                  ).textColor,
+                ),
+                title: Text(
+                  list.name?.trim().isNotEmpty == true
+                      ? list.name!.trim()
+                      : l10n.taskBoardDetailUntitledList,
+                ),
+                onTap: () => Navigator.of(context).pop(list.id),
+              ),
             ),
           ],
         ),

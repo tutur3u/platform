@@ -1624,10 +1624,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailOverdue => 'Overdue';
 
   @override
-  String get taskBoardDetailToday => 'today';
+  String get taskBoardDetailToday => 'Today';
 
   @override
-  String get taskBoardDetailTomorrow => 'tomorrow';
+  String get taskBoardDetailTomorrow => 'Tomorrow';
 
   @override
   String get taskBoardDetailYesterday => 'yesterday';
@@ -1713,13 +1713,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailEnterBulkSelect => 'Select tasks';
 
   @override
-  String get taskBoardDetailExitBulkSelect => 'Done selecting';
+  String get taskBoardDetailExitBulkSelect => 'Clear selection';
 
   @override
   String get taskBoardDetailNoTasksSelected => 'No tasks selected';
 
   @override
-  String get taskBoardDetailNextWeek => 'next week';
+  String get taskBoardDetailNextWeek => 'Next week';
+
+  @override
+  String get taskBoardDetailQuickActions => 'Quick actions';
+
+  @override
+  String get taskBoardDetailProperties => 'Properties';
+
+  @override
+  String get taskBoardDetailMove => 'Move';
+
+  @override
+  String get taskBoardDetailSetDueDate => 'Set due date';
+
+  @override
+  String get taskBoardDetailSetEstimation => 'Set estimation';
 
   @override
   String get taskBoardDetailPriorityNone => 'No priority';
@@ -1816,13 +1831,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailRemoveDueDate => 'Remove due date';
 
   @override
-  String get taskBoardDetailSelectAllFiltered => 'Select all filtered';
+  String get taskBoardDetailSelectAllFiltered => 'Select visible';
 
   @override
   String get taskBoardDetailSetCustomDate => 'Set custom date';
 
   @override
-  String get taskBoardDetailThisWeek => 'this week';
+  String get taskBoardDetailThisWeek => 'This week';
 
   @override
   String get taskBoardDetailBoardActions => 'Board actions';

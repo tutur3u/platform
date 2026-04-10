@@ -1707,13 +1707,28 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailEnterBulkSelect => 'Chọn công việc';
 
   @override
-  String get taskBoardDetailExitBulkSelect => 'Xong chọn';
+  String get taskBoardDetailExitBulkSelect => 'Bỏ chọn';
 
   @override
   String get taskBoardDetailNoTasksSelected => 'Chưa chọn công việc nào';
 
   @override
   String get taskBoardDetailNextWeek => 'tuần sau';
+
+  @override
+  String get taskBoardDetailQuickActions => 'Thao tác nhanh';
+
+  @override
+  String get taskBoardDetailProperties => 'Thuộc tính';
+
+  @override
+  String get taskBoardDetailMove => 'Di chuyển';
+
+  @override
+  String get taskBoardDetailSetDueDate => 'Đặt ngày hết hạn';
+
+  @override
+  String get taskBoardDetailSetEstimation => 'Đặt điểm ước lượng';
 
   @override
   String get taskBoardDetailPriorityNone => 'Không ưu tiên';
@@ -1792,7 +1807,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailRemoveDueDate => 'Xóa ngày hết hạn';
 
   @override
-  String get taskBoardDetailSelectAllFiltered => 'Chọn tất cả theo bộ lọc';
+  String get taskBoardDetailSelectAllFiltered => 'Chọn hiển thị';
 
   @override
   String get taskBoardDetailSetCustomDate => 'Đặt ngày tùy chỉnh';

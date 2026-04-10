@@ -73,18 +73,22 @@ class _TaskCard extends StatelessWidget {
                     Row(
                       children: [
                         if (isBulkSelectMode) ...[
-                          Icon(
-                            isSelected
-                                ? Icons.check_circle
-                                : Icons.radio_button_unchecked,
-                            size: 18,
-                            color: isSelected
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.mutedForeground,
+                          Center(
+                            child: Icon(
+                              isSelected
+                                  ? Icons.check_circle
+                                  : Icons.radio_button_unchecked,
+                              size: 20,
+                              color: isSelected
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.mutedForeground,
+                            ),
                           ),
                           const shad.Gap(8),
                         ],
-                        _TaskStatusIcon(task: task, list: list),
+                        Center(
+                          child: _TaskStatusIcon(task: task, list: list),
+                        ),
                         const shad.Gap(8),
                         Expanded(
                           child: Text(

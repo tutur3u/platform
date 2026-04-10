@@ -864,8 +864,11 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
 
     await showAdaptiveDrawer(
       context: context,
-      builder: (drawerContext) => _TaskBoardBulkActionsDrawer(
-        onClose: () => unawaited(dismissAdaptiveDrawerOverlay(drawerContext)),
+      builder: (drawerContext) => BlocProvider.value(
+        value: cubit,
+        child: _TaskBoardBulkActionsDrawer(
+          onClose: () => unawaited(dismissAdaptiveDrawerOverlay(drawerContext)),
+        ),
       ),
     );
   }

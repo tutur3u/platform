@@ -3220,13 +3220,13 @@ abstract class AppLocalizations {
   /// No description provided for @taskBoardDetailToday.
   ///
   /// In en, this message translates to:
-  /// **'today'**
+  /// **'Today'**
   String get taskBoardDetailToday;
 
   /// No description provided for @taskBoardDetailTomorrow.
   ///
   /// In en, this message translates to:
-  /// **'tomorrow'**
+  /// **'Tomorrow'**
   String get taskBoardDetailTomorrow;
 
   /// No description provided for @taskBoardDetailYesterday.
@@ -3346,7 +3346,7 @@ abstract class AppLocalizations {
   /// No description provided for @taskBoardDetailExitBulkSelect.
   ///
   /// In en, this message translates to:
-  /// **'Done selecting'**
+  /// **'Clear selection'**
   String get taskBoardDetailExitBulkSelect;
 
   /// No description provided for @taskBoardDetailNoTasksSelected.
@@ -3358,8 +3358,38 @@ abstract class AppLocalizations {
   /// No description provided for @taskBoardDetailNextWeek.
   ///
   /// In en, this message translates to:
-  /// **'next week'**
+  /// **'Next week'**
   String get taskBoardDetailNextWeek;
+
+  /// No description provided for @taskBoardDetailQuickActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick actions'**
+  String get taskBoardDetailQuickActions;
+
+  /// No description provided for @taskBoardDetailProperties.
+  ///
+  /// In en, this message translates to:
+  /// **'Properties'**
+  String get taskBoardDetailProperties;
+
+  /// No description provided for @taskBoardDetailMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Move'**
+  String get taskBoardDetailMove;
+
+  /// No description provided for @taskBoardDetailSetDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Set due date'**
+  String get taskBoardDetailSetDueDate;
+
+  /// No description provided for @taskBoardDetailSetEstimation.
+  ///
+  /// In en, this message translates to:
+  /// **'Set estimation'**
+  String get taskBoardDetailSetEstimation;
 
   /// No description provided for @taskBoardDetailPriorityNone.
   ///
@@ -3484,7 +3514,7 @@ abstract class AppLocalizations {
   /// No description provided for @taskBoardDetailSelectAllFiltered.
   ///
   /// In en, this message translates to:
-  /// **'Select all filtered'**
+  /// **'Select visible'**
   String get taskBoardDetailSelectAllFiltered;
 
   /// No description provided for @taskBoardDetailSetCustomDate.
@@ -3496,7 +3526,7 @@ abstract class AppLocalizations {
   /// No description provided for @taskBoardDetailThisWeek.
   ///
   /// In en, this message translates to:
-  /// **'this week'**
+  /// **'This week'**
   String get taskBoardDetailThisWeek;
 
   /// No description provided for @taskBoardDetailBoardActions.
