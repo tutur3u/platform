@@ -684,6 +684,37 @@
     "taskBoardDetailTaskDeleted": "Đã xóa công việc.",
     "taskBoardDetailTaskDeletedForever": "Đã xóa vĩnh viễn công việc.",
     "taskBoardDetailTaskRestored": "Đã khôi phục công việc.",
+    "taskBoardDetailBulkActions": "Thao tác hàng loạt",
+    "taskBoardDetailBulkAllSuccess": "Đã cập nhật {count} công việc.",
+    "@taskBoardDetailBulkAllSuccess": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardDetailBulkClearAssignees": "Xóa tất cả người được giao",
+    "taskBoardDetailBulkClearLabels": "Xóa tất cả nhãn",
+    "taskBoardDetailBulkClearProjects": "Xóa tất cả dự án",
+    "taskBoardDetailBulkMarkClosed": "Đánh dấu đã đóng",
+    "taskBoardDetailBulkMarkDone": "Đánh dấu hoàn thành",
+    "taskBoardDetailBulkMoveToBoard": "Chuyển sang bảng khác",
+    "taskBoardDetailBulkPartialSuccess": "Đã cập nhật {success} công việc, {failed} thất bại.",
+    "@taskBoardDetailBulkPartialSuccess": {
+        "placeholders": {
+            "success": {
+                "type": "int"
+            },
+            "failed": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardDetailEnterBulkSelect": "Chọn công việc",
+    "taskBoardDetailExitBulkSelect": "Xong chọn",
+    "taskBoardDetailNoTasksSelected": "Chưa chọn công việc nào",
+    "taskBoardDetailNextWeek": "tuần sau",
+    "taskBoardDetailPriorityNone": "Không ưu tiên",
     "taskBoardDetailRecycleBin": "Thùng rác",
     "taskBoardDetailRecycleBinDescription": "Các công việc đã xóa từ bảng này. Chọn công việc để khôi phục hoặc xóa vĩnh viễn.",
     "taskBoardDetailRecycleBinEmpty": "Không có công việc đã xóa",
@@ -761,6 +792,10 @@
         }
     },
     "taskBoardDetailNoMoveTargets": "Không có danh sách khác để di chuyển công việc này.",
+    "taskBoardDetailRemoveDueDate": "Xóa ngày hết hạn",
+    "taskBoardDetailSelectAllFiltered": "Chọn tất cả theo bộ lọc",
+    "taskBoardDetailSetCustomDate": "Đặt ngày tùy chỉnh",
+    "taskBoardDetailThisWeek": "tuần này",
     "taskBoardDetailBoardActions": "Thao tác bảng",
     "taskBoardDetailManageBoardLayout": "Quản lý bố cục bảng",
     "taskBoardDetailManageBoardLayoutDescription": "Quản lý các cột theo trạng thái và sắp xếp lại danh sách trong từng trạng thái.",

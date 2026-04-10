@@ -8,6 +8,7 @@ import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_summary.dart';
 import 'package:mobile/data/models/task_board_task.dart';
 import 'package:mobile/data/models/task_boards_page.dart';
+import 'package:mobile/data/models/task_bulk.dart';
 import 'package:mobile/data/models/task_estimate_board.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_label.dart';
@@ -269,6 +270,34 @@ class TaskRepository {
     required String taskId,
   }) async {
     await _apiClient.deleteJson('/api/v1/workspaces/$wsId/tasks/$taskId');
+  }
+
+  Future<TaskBulkResult> bulkBoardTasks({
+    required String wsId,
+    required List<String> taskIds,
+    required TaskBulkOperation operation,
+  }) async {
+    final normalizedTaskIds = taskIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+
+    if (normalizedTaskIds.isEmpty) {
+      throw const ApiException(
+        message: 'No task IDs provided for bulk operation',
+        statusCode: 400,
+      );
+    }
+
+    final response = await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/tasks/bulk',
+      {
+        'taskIds': normalizedTaskIds,
+        'operation': operation.toJson(),
+      },
+    );
+    return TaskBulkResult.fromJson(response);
   }
 
   Future<List<TaskEstimateBoard>> getTaskEstimateBoards(String wsId) async {

@@ -5,7 +5,9 @@ import 'package:equatable/equatable.dart';
 import 'package:mobile/core/utils/tiptap_description_parser.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
+import 'package:mobile/data/models/task_board_summary.dart';
 import 'package:mobile/data/models/task_board_task.dart';
+import 'package:mobile/data/models/task_bulk.dart';
 import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
@@ -67,6 +69,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
             ? const <String, String>{}
             : state.listLoadErrorById,
         selectedTaskId: targetChanged ? null : state.selectedTaskId,
+        isBulkSelectMode: !targetChanged && state.isBulkSelectMode,
+        selectedTaskIds: targetChanged
+            ? const <String>{}
+            : state.selectedTaskIds,
         clearError: true,
       ),
     );
@@ -74,6 +80,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     try {
       final detail = await _taskRepository.getTaskBoardDetail(wsId, boardId);
       if (requestToken != _loadRequestToken) return;
+      final sanitizedSelectedTaskIds = _sanitizeSelectedTaskIds(
+        state.selectedTaskIds,
+        detail.tasks,
+      );
 
       emit(
         state.copyWith(
@@ -81,6 +91,9 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
           workspaceId: wsId,
           boardId: boardId,
           board: detail,
+          selectedTaskIds: sanitizedSelectedTaskIds,
+          isBulkSelectMode:
+              state.isBulkSelectMode && sanitizedSelectedTaskIds.isNotEmpty,
           taskDescriptionSearchIndex: _buildTaskDescriptionSearchIndex(
             detail.tasks,
           ),
@@ -209,10 +222,17 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       final nextBoard = board.copyWith(
         tasks: _flattenTasks(board.lists, nextTasksByList),
       );
+      final sanitizedSelectedTaskIds = _sanitizeSelectedTaskIds(
+        state.selectedTaskIds,
+        nextBoard.tasks,
+      );
 
       emit(
         state.copyWith(
           board: nextBoard,
+          selectedTaskIds: sanitizedSelectedTaskIds,
+          isBulkSelectMode:
+              state.isBulkSelectMode && sanitizedSelectedTaskIds.isNotEmpty,
           taskDescriptionSearchIndex: _buildTaskDescriptionSearchIndex(
             nextBoard.tasks,
           ),
@@ -408,7 +428,14 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
 
     if (state.selectedTaskId == taskId) {
-      emit(state.copyWith(selectedTaskId: null));
+      emit(
+        state.copyWith(
+          selectedTaskId: null,
+          selectedTaskIds: state.selectedTaskIds
+              .where((id) => id != taskId)
+              .toSet(),
+        ),
+      );
     }
 
     await loadListTasks(
@@ -674,6 +701,23 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     return _taskRepository.getWorkspaceTasksForProjectLinking(wsId);
   }
 
+  Future<List<TaskBoardSummary>> getTaskBoards() async {
+    final wsId = state.workspaceId;
+    if (wsId == null) {
+      throw StateError('Workspace not selected');
+    }
+    final page = await _taskRepository.getTaskBoards(wsId, pageSize: 200);
+    return page.boards;
+  }
+
+  Future<List<TaskBoardList>> getBoardListsForBoard(String boardId) async {
+    final wsId = state.workspaceId;
+    if (wsId == null) {
+      throw StateError('Workspace not selected');
+    }
+    return _taskRepository.getBoardLists(wsId, boardId);
+  }
+
   Future<void> deleteTaskRelationship({
     required String taskId,
     required String sourceTaskId,
@@ -723,6 +767,216 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
   void selectTask(String? taskId) {
     emit(state.copyWith(selectedTaskId: taskId));
+  }
+
+  void enterBulkSelectMode({String? initialTaskId}) {
+    final board = state.board;
+    if (board == null) return;
+
+    var nextSelected = _sanitizeSelectedTaskIds(
+      state.selectedTaskIds,
+      board.tasks,
+    );
+    if (initialTaskId != null && initialTaskId.trim().isNotEmpty) {
+      final targetId = initialTaskId.trim();
+      final exists = board.tasks.any((task) => task.id == targetId);
+      if (exists) {
+        nextSelected = {...nextSelected, targetId};
+      }
+    }
+
+    emit(
+      state.copyWith(
+        isBulkSelectMode: true,
+        selectedTaskIds: nextSelected,
+      ),
+    );
+  }
+
+  void exitBulkSelectMode() {
+    emit(
+      state.copyWith(
+        isBulkSelectMode: false,
+        selectedTaskIds: const <String>{},
+      ),
+    );
+  }
+
+  void toggleBulkTaskSelection(String taskId, {bool? selected}) {
+    final board = state.board;
+    if (board == null) return;
+    if (!board.tasks.any((task) => task.id == taskId)) {
+      return;
+    }
+
+    final next = Set<String>.from(state.selectedTaskIds);
+    final shouldSelect = selected ?? !next.contains(taskId);
+    if (shouldSelect) {
+      next.add(taskId);
+    } else {
+      next.remove(taskId);
+    }
+
+    emit(
+      state.copyWith(
+        selectedTaskIds: next,
+        isBulkSelectMode: next.isNotEmpty,
+      ),
+    );
+  }
+
+  void selectAllFilteredTasks() {
+    final board = state.board;
+    if (board == null) return;
+    final ids = state.filteredTasks.map((task) => task.id).toSet();
+    if (ids.isEmpty) return;
+    emit(
+      state.copyWith(
+        isBulkSelectMode: true,
+        selectedTaskIds: _sanitizeSelectedTaskIds(
+          ids,
+          board.tasks,
+        ),
+      ),
+    );
+  }
+
+  Future<TaskBulkResult> bulkUpdatePriority(String? priority) {
+    return _runBulkOperation(
+      TaskBulkOperation.updateFields({'priority': priority}),
+    );
+  }
+
+  Future<TaskBulkResult> bulkUpdateEstimation(int? estimationPoints) {
+    return _runBulkOperation(
+      TaskBulkOperation.updateFields({'estimation_points': estimationPoints}),
+    );
+  }
+
+  Future<TaskBulkResult> bulkUpdateCustomDueDate(DateTime? date) {
+    final endOfDay = date == null
+        ? null
+        : _endOfDay(date).toUtc().toIso8601String();
+    return _runBulkOperation(
+      TaskBulkOperation.updateFields({'end_date': endOfDay}),
+    );
+  }
+
+  Future<TaskBulkResult> bulkUpdateDueDatePreset(
+    String preset, {
+    int weekStartsOn = DateTime.monday,
+  }) {
+    final normalizedPreset = preset.trim().toLowerCase();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    DateTime? targetDate;
+    switch (normalizedPreset) {
+      case 'today':
+        targetDate = today;
+      case 'tomorrow':
+        targetDate = today.add(const Duration(days: 1));
+      case 'this_week':
+        final offset = (today.weekday - weekStartsOn + 7) % 7;
+        final weekStart = today.subtract(Duration(days: offset));
+        targetDate = weekStart.add(const Duration(days: 6));
+      case 'next_week':
+        final offset = (today.weekday - weekStartsOn + 7) % 7;
+        final weekStart = today.subtract(Duration(days: offset));
+        targetDate = weekStart.add(const Duration(days: 13));
+      case 'clear':
+        targetDate = null;
+      default:
+        throw ArgumentError('Unsupported due date preset: $preset');
+    }
+
+    final value = targetDate == null
+        ? null
+        : _endOfDay(targetDate).toUtc().toIso8601String();
+    return _runBulkOperation(
+      TaskBulkOperation.updateFields({'end_date': value}),
+    );
+  }
+
+  Future<TaskBulkResult> bulkMoveToList({
+    required String listId,
+    String? targetBoardId,
+  }) {
+    return _runBulkOperation(
+      TaskBulkOperation.moveToList(
+        listId: listId,
+        targetBoardId: targetBoardId,
+      ),
+    );
+  }
+
+  Future<TaskBulkResult> bulkMoveToStatus(String status) {
+    final board = state.board;
+    if (board == null) {
+      throw StateError('Board detail is not initialized');
+    }
+    final normalizedStatus = TaskBoardList.normalizeSupportedStatus(status);
+    if (normalizedStatus == null) {
+      throw ArgumentError('Unsupported status: $status');
+    }
+
+    TaskBoardList? target;
+    for (final list in board.lists) {
+      if (TaskBoardList.normalizeSupportedStatus(list.status) ==
+          normalizedStatus) {
+        target = list;
+        break;
+      }
+    }
+
+    if (target == null) {
+      throw StateError('No list available for status: $status');
+    }
+
+    return bulkMoveToList(listId: target.id);
+  }
+
+  Future<TaskBulkResult> bulkDeleteSelectedTasks() {
+    const deleteUpdates = {'deleted': true};
+    return _runBulkOperation(
+      TaskBulkOperation.updateFields(deleteUpdates),
+    );
+  }
+
+  Future<TaskBulkResult> bulkAddLabel(String labelId) {
+    return _runBulkOperation(TaskBulkOperation.addLabel(labelId));
+  }
+
+  Future<TaskBulkResult> bulkRemoveLabel(String labelId) {
+    return _runBulkOperation(TaskBulkOperation.removeLabel(labelId));
+  }
+
+  Future<TaskBulkResult> bulkClearLabels() {
+    return _runBulkOperation(TaskBulkOperation.clearLabels);
+  }
+
+  Future<TaskBulkResult> bulkAddProject(String projectId) {
+    return _runBulkOperation(TaskBulkOperation.addProject(projectId));
+  }
+
+  Future<TaskBulkResult> bulkRemoveProject(String projectId) {
+    return _runBulkOperation(TaskBulkOperation.removeProject(projectId));
+  }
+
+  Future<TaskBulkResult> bulkClearProjects() {
+    return _runBulkOperation(TaskBulkOperation.clearProjects);
+  }
+
+  Future<TaskBulkResult> bulkAddAssignee(String assigneeId) {
+    return _runBulkOperation(TaskBulkOperation.addAssignee(assigneeId));
+  }
+
+  Future<TaskBulkResult> bulkRemoveAssignee(String assigneeId) {
+    return _runBulkOperation(TaskBulkOperation.removeAssignee(assigneeId));
+  }
+
+  Future<TaskBulkResult> bulkClearAssignees() {
+    return _runBulkOperation(TaskBulkOperation.clearAssignees);
   }
 
   Future<void> createList({
@@ -891,6 +1145,84 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
   }
 
+  Future<TaskBulkResult> _runBulkOperation(
+    TaskBulkOperation operation,
+  ) async {
+    final wsId = state.workspaceId;
+    final boardId = state.boardId;
+
+    if (wsId == null || boardId == null) {
+      throw StateError('Board detail is not initialized');
+    }
+    if (state.isMutating) {
+      throw StateError('Another mutation is already in progress');
+    }
+
+    final selectedTaskIds = state.selectedTaskIds.toList(growable: false);
+    if (selectedTaskIds.isEmpty) {
+      throw StateError('No tasks selected for bulk operation');
+    }
+
+    emit(
+      state.copyWith(
+        isMutating: true,
+        clearMutationError: true,
+        clearError: true,
+      ),
+    );
+
+    try {
+      final result = await _taskRepository.bulkBoardTasks(
+        wsId: wsId,
+        taskIds: selectedTaskIds,
+        operation: operation,
+      );
+
+      if (state.workspaceId != wsId || state.boardId != boardId) {
+        emit(
+          state.copyWith(
+            isMutating: false,
+            clearMutationError: true,
+            clearError: true,
+          ),
+        );
+        return result;
+      }
+
+      final failedTaskIds = result.failures
+          .map((failure) => failure.taskId)
+          .where((id) => id.trim().isNotEmpty)
+          .toSet();
+      final nextSelectedTaskIds = failedTaskIds.isEmpty
+          ? const <String>{}
+          : state.selectedTaskIds.where(failedTaskIds.contains).toSet();
+
+      emit(
+        state.copyWith(
+          isMutating: false,
+          selectedTaskIds: nextSelectedTaskIds,
+          isBulkSelectMode: nextSelectedTaskIds.isNotEmpty,
+          clearMutationError: true,
+          clearError: true,
+        ),
+      );
+
+      await loadBoardDetail(wsId: wsId, boardId: boardId);
+      return result;
+    } on Exception catch (error) {
+      final isSameBoard = state.workspaceId == wsId && state.boardId == boardId;
+      emit(
+        state.copyWith(
+          isMutating: false,
+          clearError: true,
+          mutationError: isSameBoard ? error.toString() : null,
+          clearMutationError: !isSameBoard,
+        ),
+      );
+      rethrow;
+    }
+  }
+
   String? _findTaskListId(String taskId) {
     final board = state.board;
     if (board == null) return null;
@@ -954,6 +1286,29 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         }
       }
     }
+  }
+
+  static Set<String> _sanitizeSelectedTaskIds(
+    Set<String> selectedTaskIds,
+    Iterable<TaskBoardTask> tasks,
+  ) {
+    if (selectedTaskIds.isEmpty) {
+      return const <String>{};
+    }
+    final visibleTaskIds = tasks.map((task) => task.id).toSet();
+    return selectedTaskIds.where(visibleTaskIds.contains).toSet();
+  }
+
+  static DateTime _endOfDay(DateTime date) {
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      23,
+      59,
+      59,
+      999,
+    );
   }
 
   static Map<String, List<TaskBoardTask>> _mergeCurrentBoardTaskSnapshots({

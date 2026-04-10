@@ -3283,6 +3283,90 @@ abstract class AppLocalizations {
   /// **'Task restored.'**
   String get taskBoardDetailTaskRestored;
 
+  /// No description provided for @taskBoardDetailBulkActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulk actions'**
+  String get taskBoardDetailBulkActions;
+
+  /// No description provided for @taskBoardDetailBulkAllSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {count, plural, one{{count} task} other{{count} tasks}}.'**
+  String taskBoardDetailBulkAllSuccess(int count);
+
+  /// No description provided for @taskBoardDetailBulkClearAssignees.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear assignees'**
+  String get taskBoardDetailBulkClearAssignees;
+
+  /// No description provided for @taskBoardDetailBulkClearLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear labels'**
+  String get taskBoardDetailBulkClearLabels;
+
+  /// No description provided for @taskBoardDetailBulkClearProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear projects'**
+  String get taskBoardDetailBulkClearProjects;
+
+  /// No description provided for @taskBoardDetailBulkMarkClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as closed'**
+  String get taskBoardDetailBulkMarkClosed;
+
+  /// No description provided for @taskBoardDetailBulkMarkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as done'**
+  String get taskBoardDetailBulkMarkDone;
+
+  /// No description provided for @taskBoardDetailBulkMoveToBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to board'**
+  String get taskBoardDetailBulkMoveToBoard;
+
+  /// No description provided for @taskBoardDetailBulkPartialSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {success} tasks, {failed} failed.'**
+  String taskBoardDetailBulkPartialSuccess(int success, int failed);
+
+  /// No description provided for @taskBoardDetailEnterBulkSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select tasks'**
+  String get taskBoardDetailEnterBulkSelect;
+
+  /// No description provided for @taskBoardDetailExitBulkSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Done selecting'**
+  String get taskBoardDetailExitBulkSelect;
+
+  /// No description provided for @taskBoardDetailNoTasksSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks selected'**
+  String get taskBoardDetailNoTasksSelected;
+
+  /// No description provided for @taskBoardDetailNextWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'next week'**
+  String get taskBoardDetailNextWeek;
+
+  /// No description provided for @taskBoardDetailPriorityNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No priority'**
+  String get taskBoardDetailPriorityNone;
+
   /// No description provided for @taskBoardDetailRecycleBin.
   ///
   /// In en, this message translates to:
@@ -3390,6 +3474,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No other lists available for moving this task.'**
   String get taskBoardDetailNoMoveTargets;
+
+  /// No description provided for @taskBoardDetailRemoveDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove due date'**
+  String get taskBoardDetailRemoveDueDate;
+
+  /// No description provided for @taskBoardDetailSelectAllFiltered.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all filtered'**
+  String get taskBoardDetailSelectAllFiltered;
+
+  /// No description provided for @taskBoardDetailSetCustomDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Set custom date'**
+  String get taskBoardDetailSetCustomDate;
+
+  /// No description provided for @taskBoardDetailThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'this week'**
+  String get taskBoardDetailThisWeek;
 
   /// No description provided for @taskBoardDetailBoardActions.
   ///

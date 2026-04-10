@@ -8,6 +8,9 @@ class _TaskCard extends StatelessWidget {
     required this.isLast,
     required this.onTap,
     required this.onMove,
+    required this.isBulkSelectMode,
+    required this.isSelected,
+    required this.onToggleSelected,
   });
 
   final TaskBoardTask task;
@@ -16,6 +19,9 @@ class _TaskCard extends StatelessWidget {
   final bool isLast;
   final VoidCallback onTap;
   final VoidCallback onMove;
+  final bool isBulkSelectMode;
+  final bool isSelected;
+  final VoidCallback onToggleSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +37,9 @@ class _TaskCard extends StatelessWidget {
     final listStyle = _taskBoardListVisualStyle(context, list);
     final isOverdue = _taskIsOverdue(task);
     final isCompleted = task.closedAt != null;
+    final borderColor = isSelected
+        ? theme.colorScheme.primary
+        : theme.colorScheme.border.withValues(alpha: 0.35);
 
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
@@ -39,10 +48,14 @@ class _TaskCard extends StatelessWidget {
         child: Material(
           color: theme.colorScheme.card,
           child: InkWell(
-            onTap: onTap,
+            onTap: isBulkSelectMode ? onToggleSelected : onTap,
+            onLongPress: onToggleSelected,
             child: Container(
               decoration: BoxDecoration(
                 border: Border(
+                  top: BorderSide(color: borderColor),
+                  right: BorderSide(color: borderColor),
+                  bottom: BorderSide(color: borderColor),
                   left: BorderSide(
                     color: listStyle.accent.withValues(alpha: 0.8),
                     width: 4,
@@ -59,6 +72,18 @@ class _TaskCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
+                        if (isBulkSelectMode) ...[
+                          Icon(
+                            isSelected
+                                ? Icons.check_circle
+                                : Icons.radio_button_unchecked,
+                            size: 18,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.mutedForeground,
+                          ),
+                          const shad.Gap(8),
+                        ],
                         _TaskStatusIcon(task: task, list: list),
                         const shad.Gap(8),
                         Expanded(

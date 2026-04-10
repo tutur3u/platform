@@ -1673,6 +1673,52 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailTaskRestored => 'Đã khôi phục công việc.';
 
   @override
+  String get taskBoardDetailBulkActions => 'Thao tác hàng loạt';
+
+  @override
+  String taskBoardDetailBulkAllSuccess(int count) {
+    return 'Đã cập nhật $count công việc.';
+  }
+
+  @override
+  String get taskBoardDetailBulkClearAssignees => 'Xóa tất cả người được giao';
+
+  @override
+  String get taskBoardDetailBulkClearLabels => 'Xóa tất cả nhãn';
+
+  @override
+  String get taskBoardDetailBulkClearProjects => 'Xóa tất cả dự án';
+
+  @override
+  String get taskBoardDetailBulkMarkClosed => 'Đánh dấu đã đóng';
+
+  @override
+  String get taskBoardDetailBulkMarkDone => 'Đánh dấu hoàn thành';
+
+  @override
+  String get taskBoardDetailBulkMoveToBoard => 'Chuyển sang bảng khác';
+
+  @override
+  String taskBoardDetailBulkPartialSuccess(int success, int failed) {
+    return 'Đã cập nhật $success công việc, $failed thất bại.';
+  }
+
+  @override
+  String get taskBoardDetailEnterBulkSelect => 'Chọn công việc';
+
+  @override
+  String get taskBoardDetailExitBulkSelect => 'Xong chọn';
+
+  @override
+  String get taskBoardDetailNoTasksSelected => 'Chưa chọn công việc nào';
+
+  @override
+  String get taskBoardDetailNextWeek => 'tuần sau';
+
+  @override
+  String get taskBoardDetailPriorityNone => 'Không ưu tiên';
+
+  @override
   String get taskBoardDetailRecycleBin => 'Thùng rác';
 
   @override
@@ -1741,6 +1787,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailNoMoveTargets => 'Không có danh sách khác để di chuyển công việc này.';
+
+  @override
+  String get taskBoardDetailRemoveDueDate => 'Xóa ngày hết hạn';
+
+  @override
+  String get taskBoardDetailSelectAllFiltered => 'Chọn tất cả theo bộ lọc';
+
+  @override
+  String get taskBoardDetailSetCustomDate => 'Đặt ngày tùy chỉnh';
+
+  @override
+  String get taskBoardDetailThisWeek => 'tuần này';
 
   @override
   String get taskBoardDetailBoardActions => 'Thao tác bảng';

@@ -684,6 +684,37 @@
     "taskBoardDetailTaskDeleted": "Task deleted.",
     "taskBoardDetailTaskDeletedForever": "Task permanently deleted.",
     "taskBoardDetailTaskRestored": "Task restored.",
+    "taskBoardDetailBulkActions": "Bulk actions",
+    "taskBoardDetailBulkAllSuccess": "Updated {count, plural, one{{count} task} other{{count} tasks}}.",
+    "@taskBoardDetailBulkAllSuccess": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardDetailBulkClearAssignees": "Clear assignees",
+    "taskBoardDetailBulkClearLabels": "Clear labels",
+    "taskBoardDetailBulkClearProjects": "Clear projects",
+    "taskBoardDetailBulkMarkClosed": "Mark as closed",
+    "taskBoardDetailBulkMarkDone": "Mark as done",
+    "taskBoardDetailBulkMoveToBoard": "Move to board",
+    "taskBoardDetailBulkPartialSuccess": "Updated {success} tasks, {failed} failed.",
+    "@taskBoardDetailBulkPartialSuccess": {
+        "placeholders": {
+            "success": {
+                "type": "int"
+            },
+            "failed": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardDetailEnterBulkSelect": "Select tasks",
+    "taskBoardDetailExitBulkSelect": "Done selecting",
+    "taskBoardDetailNoTasksSelected": "No tasks selected",
+    "taskBoardDetailNextWeek": "next week",
+    "taskBoardDetailPriorityNone": "No priority",
     "taskBoardDetailRecycleBin": "Recycle Bin",
     "taskBoardDetailRecycleBinDescription": "Deleted tasks from this board. Select tasks to restore or permanently delete them.",
     "taskBoardDetailRecycleBinEmpty": "No deleted tasks",
@@ -761,6 +792,10 @@
         }
     },
     "taskBoardDetailNoMoveTargets": "No other lists available for moving this task.",
+    "taskBoardDetailRemoveDueDate": "Remove due date",
+    "taskBoardDetailSelectAllFiltered": "Select all filtered",
+    "taskBoardDetailSetCustomDate": "Set custom date",
+    "taskBoardDetailThisWeek": "this week",
     "taskBoardDetailBoardActions": "Board actions",
     "taskBoardDetailManageBoardLayout": "Manage board layout",
     "taskBoardDetailManageBoardLayoutDescription": "Manage board columns by status and reorder lists within each status.",

@@ -9,6 +9,9 @@ class _BoardTaskTile extends StatelessWidget {
     required this.task,
     required this.onTap,
     required this.onMove,
+    required this.isBulkSelectMode,
+    required this.isSelected,
+    required this.onToggleSelected,
   });
 
   final TaskBoardDetail board;
@@ -16,6 +19,9 @@ class _BoardTaskTile extends StatelessWidget {
   final TaskBoardTask task;
   final VoidCallback onTap;
   final VoidCallback onMove;
+  final bool isBulkSelectMode;
+  final bool isSelected;
+  final VoidCallback onToggleSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +35,9 @@ class _BoardTaskTile extends StatelessWidget {
     final startLabel = _taskStartLabel(context, task);
     final isOverdue = _taskIsOverdue(task);
     final relationshipIndicators = _taskRelationshipIndicators(task);
+    final borderColor = isSelected
+        ? theme.colorScheme.primary
+        : listStyle.surfaceBorder;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
@@ -37,7 +46,8 @@ class _BoardTaskTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
-          onTap: onTap,
+          onTap: isBulkSelectMode ? onToggleSelected : onTap,
+          onLongPress: onToggleSelected,
           child: Stack(
             children: [
               Positioned.fill(
@@ -57,6 +67,10 @@ class _BoardTaskTile extends StatelessWidget {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
+                decoration: BoxDecoration(
+                  border: Border.all(color: borderColor),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -64,6 +78,18 @@ class _BoardTaskTile extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (isBulkSelectMode) ...[
+                          Icon(
+                            isSelected
+                                ? Icons.check_circle
+                                : Icons.radio_button_unchecked,
+                            size: 18,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.mutedForeground,
+                          ),
+                          const shad.Gap(8),
+                        ],
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,6 +277,9 @@ class _KanbanColumn extends StatelessWidget {
     required this.hasMoreTasks,
     required this.onTaskTap,
     required this.onTaskMove,
+    required this.isBulkSelectMode,
+    required this.selectedTaskIds,
+    required this.onToggleTaskSelection,
     required this.onCreateTask,
     this.onLoadMoreTasks,
     this.onEditList,
@@ -267,6 +296,9 @@ class _KanbanColumn extends StatelessWidget {
   final VoidCallback? onLoadMoreTasks;
   final void Function(TaskBoardTask task) onTaskTap;
   final void Function(TaskBoardTask task) onTaskMove;
+  final bool isBulkSelectMode;
+  final Set<String> selectedTaskIds;
+  final void Function(TaskBoardTask task) onToggleTaskSelection;
   final VoidCallback onCreateTask;
   final VoidCallback? onEditList;
 
@@ -442,6 +474,12 @@ class _KanbanColumn extends StatelessWidget {
                                     task: task,
                                     onTap: () => onTaskTap(task),
                                     onMove: () => onTaskMove(task),
+                                    isBulkSelectMode: isBulkSelectMode,
+                                    isSelected: selectedTaskIds.contains(
+                                      task.id,
+                                    ),
+                                    onToggleSelected: () =>
+                                        onToggleTaskSelection(task),
                                   );
                                 },
                               ),

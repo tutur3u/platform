@@ -21,6 +21,7 @@ import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
+import 'package:mobile/data/models/task_bulk.dart';
 import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
