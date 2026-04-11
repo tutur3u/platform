@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
-import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -33,17 +33,15 @@ class HabitsLibrarySection extends StatelessWidget {
             subtitle: _subtitle(context, category),
           ),
           const SizedBox(height: 12),
-          ...habitTrackerTemplatesForCategory(category)
-              .map(
-                (template) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _TemplateCard(
-                    template: template,
-                    onTap: () => onUseTemplate(template),
-                  ),
-                ),
-              )
-              .toList(growable: false),
+          ...habitTrackerTemplatesForCategory(category).map(
+            (template) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _TemplateCard(
+                template: template,
+                onTap: () => onUseTemplate(template),
+              ),
+            ),
+          ),
           const SizedBox(height: 18),
         ],
         FinancePanel(
@@ -119,7 +117,6 @@ class _TemplateCard extends StatelessWidget {
     return FinancePanel(
       onTap: onTap,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: 42,
@@ -152,7 +149,9 @@ class _TemplateCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${context.l10n.habitsLibraryGoalChip}: ${template.targetValue.toInt()} • ${_composerLabel(context, template.composerMode)}',
+                  '${context.l10n.habitsLibraryGoalChip}: '
+                  '${template.targetValue.toInt()} • '
+                  '${_composerLabel(context, template.composerMode)}',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),

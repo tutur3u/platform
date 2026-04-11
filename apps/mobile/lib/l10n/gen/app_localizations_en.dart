@@ -30,7 +30,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginOtpInstruction => 'Enter the 6-digit code we sent to your email.';
 
   @override
+  String loginOtpRateLimitedInstruction(Object seconds) {
+    return 'Enter your code below, or use password instead. Retry in ${seconds}s.';
+  }
+
+  @override
   String get loginResendOtp => 'Resend code';
+
+  @override
+  String loginRetryIn(Object seconds) {
+    return 'Retry in ${seconds}s';
+  }
 
   @override
   String loginRetryAfter(Object seconds) {

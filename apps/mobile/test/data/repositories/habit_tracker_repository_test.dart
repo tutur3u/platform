@@ -251,6 +251,12 @@ void main() {
             'quick_add_values': [1.0, 2.0, 3.0],
             'freeze_allowance': 2,
             'recovery_window_periods': 1,
+            'use_case': 'generic',
+            'template_category': 'custom',
+            'composer_mode': 'advanced_custom',
+            'composer_config': {
+              'progress_variant': 'ring',
+            },
             'start_date': '2026-03-25',
             'is_active': true,
           },

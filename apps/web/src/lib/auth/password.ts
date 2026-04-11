@@ -164,9 +164,7 @@ export async function passwordLogin(
     requireConfiguration: true,
   });
   const sbAdmin = await createAdminClient();
-  const supabase = turnstile.shouldBypassForDev
-    ? sbAdmin
-    : await createClient(context.request);
+  const supabase = await createClient(context.request);
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email: validatedEmail,

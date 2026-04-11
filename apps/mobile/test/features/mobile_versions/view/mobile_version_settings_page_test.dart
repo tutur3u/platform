@@ -103,7 +103,6 @@ void main() {
         android: MobilePlatformVersionPolicy(
           effectiveVersion: '1.3.0',
           minimumVersion: '1.1.0',
-          otpEnabled: false,
           storeUrl: 'https://play.google.com/store/apps/details?id=example.app',
         ),
         webOtpEnabled: true,
@@ -169,7 +168,6 @@ void main() {
             android: MobilePlatformVersionPolicy(
               effectiveVersion: '1.3.0',
               minimumVersion: '1.1.0',
-              otpEnabled: false,
               storeUrl:
                   'https://play.google.com/store/apps/details?id=example.app',
             ),

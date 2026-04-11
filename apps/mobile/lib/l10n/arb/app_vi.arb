@@ -10,13 +10,25 @@
     "loginSubtitle": "Đăng nhập để tiếp tục",
     "loginContinueWithEmail": "Tiếp tục với email",
     "loginOtpInstruction": "Nhập mã 6 chữ số chúng tôi đã gửi đến email của bạn.",
+    "loginOtpRateLimitedInstruction": "Nhập mã bên dưới hoặc dùng mật khẩu thay thế. Thử lại sau {seconds} giây.",
     "loginResendOtp": "Gửi lại mã",
+    "loginRetryIn": "Thử lại sau {seconds} giây",
     "loginRetryAfter": "Thử lại sau {seconds} giây",
     "loginSignIn": "Đăng nhập",
     "loginSendOtp": "Gửi mã",
     "loginUseOtpInstead": "Dùng mã email thay thế",
     "loginUsePasswordInstead": "Dùng mật khẩu thay thế",
     "loginVerifyOtp": "Xác minh mã",
+    "@loginOtpRateLimitedInstruction": {
+        "placeholders": {
+            "seconds": {}
+        }
+    },
+    "@loginRetryIn": {
+        "placeholders": {
+            "seconds": {}
+        }
+    },
     "@loginRetryAfter": {
         "placeholders": {
             "seconds": {}

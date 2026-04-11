@@ -23,9 +23,10 @@ export async function OPTIONS() {
 }
 
 export async function GET(request: NextRequest) {
+  const rawPlatform = request.nextUrl.searchParams.get('platform');
   const query = QuerySchema.safeParse({
     client: request.nextUrl.searchParams.get('client'),
-    platform: request.nextUrl.searchParams.get('platform'),
+    platform: rawPlatform && rawPlatform.length > 0 ? rawPlatform : undefined,
   });
 
   if (!query.success) {

@@ -10,13 +10,25 @@
     "loginSubtitle": "Sign in to continue",
     "loginContinueWithEmail": "Continue with email",
     "loginOtpInstruction": "Enter the 6-digit code we sent to your email.",
+    "loginOtpRateLimitedInstruction": "Enter your code below, or use password instead. Retry in {seconds}s.",
     "loginResendOtp": "Resend code",
+    "loginRetryIn": "Retry in {seconds}s",
     "loginRetryAfter": "Try again in {seconds}s",
     "loginSignIn": "Sign in",
     "loginSendOtp": "Send code",
     "loginUseOtpInstead": "Use email code instead",
     "loginUsePasswordInstead": "Use password instead",
     "loginVerifyOtp": "Verify code",
+    "@loginOtpRateLimitedInstruction": {
+        "placeholders": {
+            "seconds": {}
+        }
+    },
+    "@loginRetryIn": {
+        "placeholders": {
+            "seconds": {}
+        }
+    },
     "@loginRetryAfter": {
         "placeholders": {
             "seconds": {}

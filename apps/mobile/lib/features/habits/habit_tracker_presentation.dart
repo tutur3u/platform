@@ -55,8 +55,8 @@ HabitTrackerTemplate _quickIncrementTemplate({
   required String icon,
   required double targetValue,
   required String key,
-  String? unit,
   required List<double> quickAddValues,
+  String? unit,
   HabitTrackerTargetPeriod targetPeriod = HabitTrackerTargetPeriod.daily,
   HabitTrackerTrackingMode trackingMode = HabitTrackerTrackingMode.eventLog,
 }) {
@@ -92,7 +92,6 @@ HabitTrackerTemplate _quickIncrementTemplate({
     composerConfig: HabitTrackerComposerConfig(
       unit: unit,
       suggestedIncrements: quickAddValues,
-      progressVariant: HabitTrackerProgressVariant.ring,
     ),
   );
 }
@@ -178,7 +177,6 @@ HabitTrackerTemplate _measurementTemplate({
     composerConfig: HabitTrackerComposerConfig(
       unit: unit,
       supportedUnits: supportedUnits,
-      progressVariant: HabitTrackerProgressVariant.ring,
     ),
   );
 }
@@ -235,7 +233,6 @@ HabitTrackerTemplate _workoutTemplate({
     templateCategory: HabitTrackerTemplateCategory.strength,
     composerMode: HabitTrackerComposerMode.workoutSession,
     composerConfig: HabitTrackerComposerConfig(
-      progressVariant: HabitTrackerProgressVariant.ring,
       suggestedExercises: suggestedExercises,
       defaultSets: defaultSets,
       defaultReps: defaultReps,
@@ -246,7 +243,7 @@ HabitTrackerTemplate _workoutTemplate({
 }
 
 final List<HabitTrackerTemplate> habitTrackerTemplates = [
-  HabitTrackerTemplate(
+  const HabitTrackerTemplate(
     id: 'body_weight',
     name: 'Body Weight',
     description:
@@ -282,14 +279,14 @@ final List<HabitTrackerTemplate> habitTrackerTemplates = [
     composerConfig: HabitTrackerComposerConfig(
       unit: 'kg',
       supportedUnits: ['kg', 'lb'],
-      progressVariant: HabitTrackerProgressVariant.ring,
     ),
   ),
   _workoutTemplate(
     id: 'workout_session',
     name: 'Workout Session',
     description:
-        'Capture a full workout with multiple exercise blocks, sets, reps, and weight.',
+        'Capture a full workout with multiple exercise blocks, sets, reps, '
+        'and weight.',
     color: 'RED',
     targetValue: 3,
     suggestedExercises: ['Bench Press', 'Squat', 'Deadlift', 'Row'],
@@ -298,7 +295,8 @@ final List<HabitTrackerTemplate> habitTrackerTemplates = [
     id: 'strength_lift',
     name: 'Strength Lift',
     description:
-        'Track a focused strength session with structured blocks for your main lifts.',
+        'Track a focused strength session with structured blocks for your '
+        'main lifts.',
     color: 'ORANGE',
     targetValue: 4,
     suggestedExercises: [
@@ -345,7 +343,8 @@ final List<HabitTrackerTemplate> habitTrackerTemplates = [
     id: 'water',
     name: 'Water',
     description:
-        'Track hydration with quick chips that feel instant on the Today surface.',
+        'Track hydration with quick chips that feel instant on the Today '
+        'surface.',
     color: 'CYAN',
     icon: 'Droplets',
     targetValue: 8,
@@ -357,7 +356,8 @@ final List<HabitTrackerTemplate> habitTrackerTemplates = [
     id: 'sleep',
     name: 'Sleep',
     description:
-        'Record hours slept with a large numeric composer and gentle daily review.',
+        'Record hours slept with a large numeric composer and gentle daily '
+        'review.',
     color: 'PURPLE',
     icon: 'Snowflake',
     targetValue: 8,
@@ -403,7 +403,7 @@ final List<HabitTrackerTemplate> habitTrackerTemplates = [
     color: 'GRAY',
     icon: 'Repeat',
   ),
-  HabitTrackerTemplate(
+  const HabitTrackerTemplate(
     id: 'custom',
     name: 'Custom',
     description: 'Build a tracker for any repeated metric or ritual.',
@@ -431,10 +431,7 @@ final List<HabitTrackerTemplate> habitTrackerTemplates = [
     ],
     freezeAllowance: 2,
     recoveryWindowPeriods: 1,
-    useCase: HabitTrackerUseCase.generic,
-    templateCategory: HabitTrackerTemplateCategory.custom,
-    composerMode: HabitTrackerComposerMode.advancedCustom,
-    composerConfig: const HabitTrackerComposerConfig(
+    composerConfig: HabitTrackerComposerConfig(
       progressVariant: HabitTrackerProgressVariant.bar,
     ),
   ),

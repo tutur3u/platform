@@ -184,6 +184,7 @@ export default function LoginForm() {
   const [authStage, setAuthStage] = useState<AuthStage>('identify');
   const [transitionDirection, setTransitionDirection] = useState<1 | -1>(1);
   const [showDomainPreview, setShowDomainPreview] = useState(false);
+  const [otpRetryAfterSeconds, setOtpRetryAfterSeconds] = useState<number>(0);
   const [captchaToken, setCaptchaToken] = useState<string>();
   const [captchaError, setCaptchaError] = useState<string>();
   const oauthErrorToastKeyRef = useRef<string | null>(null);
@@ -203,6 +204,8 @@ export default function LoginForm() {
   const emailValue = emailForm.watch('email');
   const otpValue = otpForm.watch('otp');
   const webOtpEnabled = otpSettingsQuery.data?.otpEnabled ?? false;
+  const isResolvingOtpEnablement =
+    otpSettingsQuery.isLoading && otpSettingsQuery.data === undefined;
   const normalizedPreviewEmail =
     showDomainPreview && emailValue.trim() && !emailValue.includes('@')
       ? `${emailValue.trim()}@tuturuuu.com`
@@ -213,6 +216,26 @@ export default function LoginForm() {
     (!turnstileClientState.canRenderWidget ||
       !turnstileSiteKey ||
       !captchaToken);
+
+  const openOtpStage = useCallback(
+    ({
+      preserveOtpValue = false,
+      retryAfterSeconds = 0,
+    }: {
+      preserveOtpValue?: boolean;
+      retryAfterSeconds?: number;
+    } = {}) => {
+      if (!preserveOtpValue) {
+        otpForm.reset({ otp: '' });
+      }
+
+      setOtpRetryAfterSeconds(Math.max(0, retryAfterSeconds));
+      setTransitionDirection(1);
+      setShowDomainPreview(false);
+      setAuthStage('otp');
+    },
+    [otpForm]
+  );
 
   const resetCaptcha = useCallback(() => {
     captchaRefPassword.current?.reset();
@@ -381,19 +404,28 @@ export default function LoginForm() {
       resetCaptcha();
 
       if (result.error) {
-        toast.error(t('login.failed_to_send'), {
-          description: result.retryAfter
-            ? `${result.error} (retry in ${result.retryAfter}s)`
-            : result.error,
-        });
+        if ((result.retryAfter ?? 0) > 0) {
+          openOtpStage({
+            preserveOtpValue: authStage === 'otp',
+            retryAfterSeconds: result.retryAfter ?? 0,
+          });
+
+          toast.warning(t('login.otp_rate_limited_title'), {
+            description: t('login.otp_rate_limited_description', {
+              seconds: result.retryAfter ?? 0,
+            }),
+          });
+        } else {
+          toast.error(t('login.failed_to_send'), {
+            description: result.error,
+          });
+        }
+
         setLoading(false);
         return;
       }
 
-      otpForm.reset({ otp: '' });
-      setTransitionDirection(1);
-      setShowDomainPreview(false);
-      setAuthStage('otp');
+      openOtpStage();
       setLoading(false);
     } catch (error) {
       resetCaptcha();
@@ -640,6 +672,7 @@ export default function LoginForm() {
     setTransitionDirection(1);
     setShowDomainPreview(false);
     setShowPassword(false);
+    setOtpRetryAfterSeconds(0);
     setCaptchaError(undefined);
     resetCaptcha();
     setAuthStage('password');
@@ -659,10 +692,23 @@ export default function LoginForm() {
     setTransitionDirection(-1);
     setShowPassword(false);
     setShowDomainPreview(false);
+    setOtpRetryAfterSeconds(0);
     setCaptchaError(undefined);
     resetCaptcha();
     setAuthStage('identify');
   };
+
+  useEffect(() => {
+    if (otpRetryAfterSeconds <= 0) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setOtpRetryAfterSeconds((current) => Math.max(0, current - 1));
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [otpRetryAfterSeconds]);
 
   useEffect(() => {
     async function checkUser() {
@@ -861,6 +907,9 @@ export default function LoginForm() {
                     <form
                       onSubmit={(event) => {
                         event.preventDefault();
+                        if (loading || isResolvingOtpEnablement) {
+                          return;
+                        }
                         if (webOtpEnabled) {
                           void sendEmailOtp();
                           return;
@@ -930,7 +979,9 @@ export default function LoginForm() {
                         )}
                       />
 
-                      {webOtpEnabled && turnstileClientState.isRequired ? (
+                      {!isResolvingOtpEnablement &&
+                      webOtpEnabled &&
+                      turnstileClientState.isRequired ? (
                         <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
                           {turnstileClientState.canRenderWidget &&
                           turnstileSiteKey ? (
@@ -964,34 +1015,21 @@ export default function LoginForm() {
                         type="submit"
                         className="h-12 w-full rounded-2xl font-medium shadow-lg"
                         disabled={
+                          isResolvingOtpEnablement ||
                           loading ||
                           !emailIsValid ||
                           (webOtpEnabled && isCaptchaBlockingPasswordSubmit)
                         }
                       >
-                        {loading ? (
+                        {loading || isResolvingOtpEnablement ? (
                           <div className="flex items-center gap-2">
                             <LoadingIndicator className="h-4 w-4" />
                             <span>{t('common.loading')}...</span>
                           </div>
-                        ) : webOtpEnabled ? (
-                          t('login.send_code')
                         ) : (
-                          t('login.continue')
+                          t('login.continue_with_email')
                         )}
                       </Button>
-
-                      {webOtpEnabled ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="h-11 w-full rounded-2xl"
-                          onClick={advanceToPasswordStage}
-                          disabled={loading}
-                        >
-                          {t('login.use_password_instead')}
-                        </Button>
-                      ) : null}
                     </form>
                   </Form>
 
@@ -1093,7 +1131,11 @@ export default function LoginForm() {
                       {emailForm.getValues('email')}
                     </p>
                     <p className="text-balance text-muted-foreground text-sm">
-                      {t('login.check_email')}
+                      {otpRetryAfterSeconds > 0
+                        ? t('login.otp_rate_limited_inline', {
+                            seconds: otpRetryAfterSeconds,
+                          })
+                        : t('login.check_email')}
                     </p>
                   </div>
 
@@ -1186,11 +1228,16 @@ export default function LoginForm() {
                           onClick={() => void sendEmailOtp()}
                           disabled={
                             loading ||
+                            otpRetryAfterSeconds > 0 ||
                             (turnstileClientState.isRequired &&
                               isCaptchaBlockingPasswordSubmit)
                           }
                         >
-                          {t('login.resend')}
+                          {otpRetryAfterSeconds > 0
+                            ? t('login.resend_available_in', {
+                                seconds: otpRetryAfterSeconds,
+                              })
+                            : t('login.resend')}
                         </Button>
                         <Button
                           type="button"

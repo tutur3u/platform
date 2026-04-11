@@ -30,7 +30,17 @@ class AppLocalizationsVi extends AppLocalizations {
   String get loginOtpInstruction => 'Nhập mã 6 chữ số chúng tôi đã gửi đến email của bạn.';
 
   @override
+  String loginOtpRateLimitedInstruction(Object seconds) {
+    return 'Nhập mã bên dưới hoặc dùng mật khẩu thay thế. Thử lại sau $seconds giây.';
+  }
+
+  @override
   String get loginResendOtp => 'Gửi lại mã';
+
+  @override
+  String loginRetryIn(Object seconds) {
+    return 'Thử lại sau $seconds giây';
+  }
 
   @override
   String loginRetryAfter(Object seconds) {

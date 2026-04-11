@@ -252,7 +252,6 @@ class _HabitTrackerEntrySheetState extends State<HabitTrackerEntrySheet> {
     switch (_tracker.composerMode) {
       case HabitTrackerComposerMode.quickCheck:
         values[_tracker.primaryMetricKey] = _checkValue;
-        break;
       case HabitTrackerComposerMode.quickIncrement:
       case HabitTrackerComposerMode.measurement:
       case HabitTrackerComposerMode.advancedCustom:
@@ -263,7 +262,6 @@ class _HabitTrackerEntrySheetState extends State<HabitTrackerEntrySheet> {
           return;
         }
         values[_tracker.primaryMetricKey] = parsed;
-        break;
       case HabitTrackerComposerMode.workoutSession:
         final blocks = _workoutBlocks
             .map((block) => block.toBlock())
@@ -277,7 +275,6 @@ class _HabitTrackerEntrySheetState extends State<HabitTrackerEntrySheet> {
           return;
         }
         values['exercise_blocks'] = blocks;
-        break;
     }
 
     setState(() => _isSubmitting = true);
@@ -756,19 +753,17 @@ class _WorkoutSessionComposer extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        ...blocks
-            .map(
-              (block) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _WorkoutBlockCard(
-                  tracker: tracker,
-                  block: block,
-                  onRemove: () => onRemoveBlock(block),
-                  onChanged: onChanged,
-                ),
-              ),
-            )
-            .toList(growable: false),
+        ...blocks.map(
+          (block) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _WorkoutBlockCard(
+              tracker: tracker,
+              block: block,
+              onRemove: () => onRemoveBlock(block),
+              onChanged: onChanged,
+            ),
+          ),
+        ),
         shad.SecondaryButton(
           onPressed: onAddBlock,
           child: Text(context.l10n.habitsAddExerciseBlock),

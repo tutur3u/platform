@@ -115,7 +115,7 @@ class HabitsCubit extends Cubit<HabitsState> {
             : response.trackers.first.tracker.id;
 
         HabitTrackerDetailResponse? detail;
-        List<HabitActivityEntry> activityEntries = const [];
+        var activityEntries = const <HabitActivityEntry>[];
 
         if (includeActivity && response.trackers.isNotEmpty) {
           final details = await Future.wait(
@@ -973,11 +973,6 @@ class HabitsCubit extends Cubit<HabitsState> {
       total: 0,
       entryCount: 0,
       currentPeriodTotal: 0,
-      latestValue: null,
-      latestEntryId: null,
-      latestEntryDate: null,
-      latestOccurredAt: null,
-      latestValues: null,
       streak: const HabitTrackerStreakSummary(
         currentStreak: 0,
         bestStreak: 0,

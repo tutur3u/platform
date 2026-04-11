@@ -68,7 +68,7 @@ void main() {
             otpEnabled: true,
             storeUrl: ' https://apps.apple.com/app/id1 ',
           ),
-          android: MobilePlatformVersionPolicy(otpEnabled: false),
+          android: MobilePlatformVersionPolicy(),
           webOtpEnabled: true,
         );
 

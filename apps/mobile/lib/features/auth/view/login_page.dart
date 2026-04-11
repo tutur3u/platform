@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 import 'package:flutter/material.dart'
     hide AppBar, FilledButton, Scaffold, TextButton, TextField;
@@ -27,6 +29,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   static const _stepTransitionDuration = Duration(milliseconds: 420);
+  static const _otpAvailabilityGracePeriod = Duration(seconds: 3);
 
   final _emailController = TextEditingController(
     text: Env.isDevelopment ? 'local@tuturuuu.com' : '',
@@ -42,12 +45,28 @@ class _LoginPageState extends State<LoginPage> {
   _LoginStage _stage = _LoginStage.identify;
   int _retryAfter = 0;
   String? _captchaToken;
+  Timer? _retryAfterTimer;
+  Timer? _otpAvailabilityGraceTimer;
+  bool _otpAvailabilityGraceExpired = false;
 
   bool get _isOtpStage => _stage == _LoginStage.otp;
   bool get _isPasswordStage => _stage == _LoginStage.password;
 
   @override
+  void initState() {
+    super.initState();
+    _otpAvailabilityGraceTimer = Timer(_otpAvailabilityGracePeriod, () {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _otpAvailabilityGraceExpired = true);
+    });
+  }
+
+  @override
   void dispose() {
+    _retryAfterTimer?.cancel();
+    _otpAvailabilityGraceTimer?.cancel();
     _emailController.dispose();
     _otpController.dispose();
     _passwordController.dispose();
@@ -57,12 +76,18 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  bool _isOtpEnabled(BuildContext context) {
+  ({bool isResolving, bool otpEnabled}) _otpAvailability(
+    BuildContext context,
+  ) {
     try {
       final cubit = BlocProvider.of<AppVersionCubit>(context);
-      return cubit.state.versionCheck?.otpEnabled ?? false;
-    } catch (_) {
-      return false;
+      final versionState = cubit.state;
+      return (
+        isResolving: !versionState.hasCompletedInitialCheck,
+        otpEnabled: versionState.versionCheck?.otpEnabled ?? false,
+      );
+    } on Object {
+      return (isResolving: false, otpEnabled: false);
     }
   }
 
@@ -72,10 +97,53 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _showOtpStage() {
+  bool _isOtpCooldownError(String? error) {
+    if (error == null) {
+      return false;
+    }
+
+    final normalized = error.toLowerCase();
+    return normalized.contains('too many') && normalized.contains('otp');
+  }
+
+  void _stopRetryAfterTimer() {
+    _retryAfterTimer?.cancel();
+    _retryAfterTimer = null;
+  }
+
+  void _scheduleRetryAfterCountdown() {
+    _stopRetryAfterTimer();
+    if (_retryAfter <= 0) {
+      return;
+    }
+
+    _retryAfterTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      if (_retryAfter <= 1) {
+        timer.cancel();
+        setState(() => _retryAfter = 0);
+        return;
+      }
+
+      setState(() => _retryAfter -= 1);
+    });
+  }
+
+  void _showOtpStage({bool clearOtp = true, int retryAfter = 0}) {
+    context.read<AuthCubit>().clearError();
+    _stopRetryAfterTimer();
     setState(() {
       _stage = _LoginStage.otp;
+      _retryAfter = retryAfter;
+      if (clearOtp) {
+        _otpController.clear();
+      }
     });
+    _scheduleRetryAfterCountdown();
     Future<void>.delayed(const Duration(milliseconds: 180), () {
       if (mounted && _isOtpStage) {
         _otpFocusNode.requestFocus();
@@ -84,9 +152,13 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showPasswordStage() {
+    context.read<AuthCubit>().clearError();
+    _stopRetryAfterTimer();
     setState(() {
       _stage = _LoginStage.password;
+      _retryAfter = 0;
     });
+    _clearCaptcha();
     Future<void>.delayed(const Duration(milliseconds: 180), () {
       if (mounted && _isPasswordStage) {
         _passwordFocusNode.requestFocus();
@@ -95,6 +167,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showIdentifyStage() {
+    context.read<AuthCubit>().clearError();
+    _stopRetryAfterTimer();
     setState(() {
       _stage = _LoginStage.identify;
       _retryAfter = 0;
@@ -127,13 +201,20 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     if (result.success) {
-      setState(() => _retryAfter = 0);
-      _otpController.clear();
       _showOtpStage();
       return;
     }
 
-    setState(() => _retryAfter = result.retryAfter ?? 0);
+    final retryAfter = result.retryAfter ?? 0;
+    if (retryAfter > 0) {
+      _showOtpStage(clearOtp: false, retryAfter: retryAfter);
+      return;
+    }
+
+    _stopRetryAfterTimer();
+    if (mounted) {
+      setState(() => _retryAfter = 0);
+    }
   }
 
   Future<void> _handleVerifyOtp() async {
@@ -212,7 +293,10 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
-    final otpEnabled = _isOtpEnabled(context);
+    final otpAvailability = _otpAvailability(context);
+    final otpEnabled = otpAvailability.otpEnabled;
+    final isResolvingOtpEnablement =
+        otpAvailability.isResolving && !_otpAvailabilityGraceExpired;
 
     return AuthScaffold(
       title: l10n.loginTitle,
@@ -239,7 +323,10 @@ class _LoginPageState extends State<LoginPage> {
             child: KeyedSubtree(
               key: ValueKey(_stage.name),
               child: switch (_stage) {
-                _LoginStage.identify => _buildIdentifySection(otpEnabled),
+                _LoginStage.identify => _buildIdentifySection(
+                  otpEnabled: otpEnabled,
+                  isResolvingOtpEnablement: isResolvingOtpEnablement,
+                ),
                 _LoginStage.otp => _buildOtpSection(otpEnabled),
                 _LoginStage.password => _buildPasswordSection(otpEnabled),
               },
@@ -260,7 +347,13 @@ class _LoginPageState extends State<LoginPage> {
                 error: state.error,
                 errorCode: state.errorCode,
               );
-              if (errorText == null) return const SizedBox.shrink();
+              final shouldHideCooldownError =
+                  (_stage == _LoginStage.otp && _retryAfter > 0) ||
+                  (_stage != _LoginStage.identify &&
+                      _isOtpCooldownError(state.error));
+              if (errorText == null || shouldHideCooldownError) {
+                return const SizedBox.shrink();
+              }
               return Padding(
                 padding: const EdgeInsets.only(top: 16),
                 child: Text(
@@ -293,7 +386,10 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildIdentifySection(bool otpEnabled) {
+  Widget _buildIdentifySection({
+    required bool otpEnabled,
+    required bool isResolvingOtpEnablement,
+  }) {
     return AuthSectionCard(
       child: BlocBuilder<AuthCubit, AuthState>(
         buildWhen: (prev, curr) => prev.isLoading != curr.isLoading,
@@ -309,39 +405,36 @@ class _LoginPageState extends State<LoginPage> {
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.done,
                 onChanged: (_) => setState(() {}),
-                onSubmitted: (_) =>
-                    otpEnabled ? _handleSendOtp() : _showPasswordStage(),
+                onSubmitted: (_) {
+                  if (isResolvingOtpEnablement) {
+                    return;
+                  }
+                  if (otpEnabled) {
+                    unawaited(_handleSendOtp());
+                    return;
+                  }
+                  _showPasswordStage();
+                },
               ),
               const shad.Gap(16),
-              if (otpEnabled) ...[
+              if (!isResolvingOtpEnablement && otpEnabled) ...[
                 if (Env.isTurnstileConfigured) ...[
                   _buildTurnstile(enabled: !state.isLoading),
                   const shad.Gap(8),
                 ],
-                AuthPrimaryButton(
-                  label: _retryAfter > 0
-                      ? context.l10n.loginRetryAfter(_retryAfter)
-                      : context.l10n.loginSendOtp,
-                  onPressed:
-                      _emailController.text.trim().isEmpty ||
-                          (Env.isTurnstileConfigured && _captchaToken == null)
-                      ? null
-                      : _handleSendOtp,
-                  isLoading: state.isLoading,
-                ),
-                const shad.Gap(10),
-                shad.GhostButton(
-                  onPressed: state.isLoading ? null : _showPasswordStage,
-                  child: Text(context.l10n.loginUsePasswordInstead),
-                ),
-              ] else
-                AuthPrimaryButton(
-                  label: context.l10n.loginContinueWithEmail,
-                  onPressed: _emailController.text.trim().isEmpty
-                      ? null
-                      : _showPasswordStage,
-                  isLoading: state.isLoading,
-                ),
+              ],
+              AuthPrimaryButton(
+                label: context.l10n.loginContinueWithEmail,
+                onPressed:
+                    isResolvingOtpEnablement ||
+                        _emailController.text.trim().isEmpty ||
+                        (otpEnabled &&
+                            Env.isTurnstileConfigured &&
+                            _captchaToken == null)
+                    ? null
+                    : (otpEnabled ? _handleSendOtp : _showPasswordStage),
+                isLoading: state.isLoading || isResolvingOtpEnablement,
+              ),
             ],
           );
         },
@@ -383,7 +476,9 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const shad.Gap(10),
               Text(
-                context.l10n.loginOtpInstruction,
+                _retryAfter > 0
+                    ? context.l10n.loginOtpRateLimitedInstruction(_retryAfter)
+                    : context.l10n.loginOtpInstruction,
                 textAlign: TextAlign.center,
                 style: theme.typography.small.copyWith(
                   color: theme.colorScheme.mutedForeground.withValues(
@@ -416,24 +511,25 @@ class _LoginPageState extends State<LoginPage> {
                 _buildTurnstile(enabled: !state.isLoading),
               ],
               const shad.Gap(10),
-              shad.GhostButton(
+              AuthSecondaryButton(
+                variant: AuthSecondaryButtonVariant.ghost,
                 onPressed: state.isLoading
                     ? null
                     : ((otpEnabled &&
+                              _retryAfter <= 0 &&
                               (!Env.isTurnstileConfigured ||
                                   _captchaToken != null))
                           ? _handleSendOtp
                           : null),
-                child: Text(
-                  _retryAfter > 0
-                      ? context.l10n.loginRetryAfter(_retryAfter)
-                      : context.l10n.loginResendOtp,
-                ),
+                label: _retryAfter > 0
+                    ? context.l10n.loginRetryIn(_retryAfter)
+                    : context.l10n.loginResendOtp,
               ),
               const shad.Gap(6),
-              shad.GhostButton(
+              AuthSecondaryButton(
+                variant: AuthSecondaryButtonVariant.ghost,
                 onPressed: state.isLoading ? null : _showPasswordStage,
-                child: Text(context.l10n.loginUsePasswordInstead),
+                label: context.l10n.loginUsePasswordInstead,
               ),
             ],
           );
@@ -512,9 +608,10 @@ class _LoginPageState extends State<LoginPage> {
               ),
               if (otpEnabled) ...[
                 const shad.Gap(10),
-                shad.GhostButton(
+                AuthSecondaryButton(
+                  variant: AuthSecondaryButtonVariant.ghost,
                   onPressed: state.isLoading ? null : _showOtpStage,
-                  child: Text(context.l10n.loginUseOtpInstead),
+                  label: context.l10n.loginUseOtpInstead,
                 ),
               ],
             ],

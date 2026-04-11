@@ -133,11 +133,23 @@ abstract class AppLocalizations {
   /// **'Enter the 6-digit code we sent to your email.'**
   String get loginOtpInstruction;
 
+  /// No description provided for @loginOtpRateLimitedInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your code below, or use password instead. Retry in {seconds}s.'**
+  String loginOtpRateLimitedInstruction(Object seconds);
+
   /// No description provided for @loginResendOtp.
   ///
   /// In en, this message translates to:
   /// **'Resend code'**
   String get loginResendOtp;
+
+  /// No description provided for @loginRetryIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry in {seconds}s'**
+  String loginRetryIn(Object seconds);
 
   /// No description provided for @loginRetryAfter.
   ///

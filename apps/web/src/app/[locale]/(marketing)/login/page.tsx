@@ -67,7 +67,7 @@ export default function Login({ searchParams }: LoginProps) {
   );
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(148,163,184,0.08),transparent_55%)]">
+    <div className="min-h-screen">
       <div className="mx-auto flex min-h-screen max-w-[36rem] items-center justify-center px-6 py-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

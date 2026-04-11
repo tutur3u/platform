@@ -52,7 +52,6 @@ class HabitTrackerCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 width: 42,
@@ -152,10 +151,12 @@ class HabitTrackerCard extends StatelessWidget {
         tracker.composerMode == HabitTrackerComposerMode.measurement &&
             latestValue != null
         ? context.l10n.habitsLatestValueLabel(
-            '${formatCompactNumber(latestValue)}${unit?.isNotEmpty == true ? ' $unit' : ''}',
+            '${formatCompactNumber(latestValue)}'
+            '${unit?.isNotEmpty == true ? ' $unit' : ''}',
           )
         : currentPeriodValue > 0
-        ? '${formatCompactNumber(currentPeriodValue)}${unit?.isNotEmpty == true ? ' $unit' : ''}'
+        ? '${formatCompactNumber(currentPeriodValue)}'
+              '${unit?.isNotEmpty == true ? ' $unit' : ''}'
         : context.l10n.habitsLogEntryAction;
     if (latestOccurredAt != null) {
       final timeLabel = MaterialLocalizations.of(context).formatTimeOfDay(

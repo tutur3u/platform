@@ -38,6 +38,7 @@ void main() {
       authCubit = _MockAuthCubit();
       appVersionCubit = _MockAppVersionCubit();
 
+      when(() => authCubit.clearError()).thenReturn(null);
       when(() => authCubit.signInWithApple()).thenAnswer((_) async {});
       when(() => authCubit.signInWithGoogle()).thenAnswer((_) async {});
       when(() => authCubit.signInWithMicrosoft()).thenAnswer((_) async {});
@@ -58,6 +59,16 @@ void main() {
         authCubit,
         const Stream<AuthState>.empty(),
         initialState: state,
+      );
+      const passwordOnlyState = AppVersionState(
+        status: AppVersionGateStatus.supported,
+        hasCompletedInitialCheck: true,
+      );
+      when(() => appVersionCubit.state).thenReturn(passwordOnlyState);
+      whenListen(
+        appVersionCubit,
+        const Stream<AppVersionState>.empty(),
+        initialState: passwordOnlyState,
       );
 
       await tester.pumpApp(buildSubject());
@@ -112,6 +123,16 @@ void main() {
         authCubit,
         const Stream<AuthState>.empty(),
         initialState: state,
+      );
+      const passwordOnlyState = AppVersionState(
+        status: AppVersionGateStatus.supported,
+        hasCompletedInitialCheck: true,
+      );
+      when(() => appVersionCubit.state).thenReturn(passwordOnlyState);
+      whenListen(
+        appVersionCubit,
+        const Stream<AppVersionState>.empty(),
+        initialState: passwordOnlyState,
       );
 
       await tester.pumpApp(buildSubject());
@@ -187,7 +208,7 @@ void main() {
       );
     });
 
-    testWidgets('shows OTP-first actions when version check enables OTP', (
+    testWidgets('shows single continue button while OTP mode is unresolved', (
       tester,
     ) async {
       const state = AuthState.unauthenticated();
@@ -198,9 +219,40 @@ void main() {
         initialState: state,
       );
 
-      final otpEnabledState = AppVersionState(
+      await tester.pumpApp(buildSubject());
+      await tester.pump();
+
+      expect(find.text('Continue with email'), findsNothing);
+      expect(find.text('Use password instead'), findsNothing);
+
+      await tester.enterText(
+        find.byType(shad.TextField).first,
+        'user@test.com',
+      );
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump(const Duration(milliseconds: 300));
+
+      verifyNever(
+        () =>
+            authCubit.sendOtp(any(), captchaToken: any(named: 'captchaToken')),
+      );
+    });
+
+    testWidgets('uses the same OTP-first identify step as web when enabled', (
+      tester,
+    ) async {
+      const state = AuthState.unauthenticated();
+      when(() => authCubit.state).thenReturn(state);
+      whenListen(
+        authCubit,
+        const Stream<AuthState>.empty(),
+        initialState: state,
+      );
+
+      const otpEnabledState = AppVersionState(
         status: AppVersionGateStatus.supported,
-        versionCheck: const MobileVersionCheck(
+        hasCompletedInitialCheck: true,
+        versionCheck: MobileVersionCheck(
           platform: 'ios',
           currentVersion: '1.2.3',
           otpEnabled: true,
@@ -220,10 +272,140 @@ void main() {
       await tester.pump();
 
       expect(
-        find.widgetWithText(shad.PrimaryButton, 'Send code'),
+        find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
         findsOneWidget,
       );
-      expect(find.text('Use password instead'), findsOneWidget);
+      expect(find.text('Use password instead'), findsNothing);
     });
+
+    testWidgets(
+      'opens OTP step on rate-limited OTP send so password fallback remains '
+      'available',
+      (
+        tester,
+      ) async {
+        const state = AuthState.unauthenticated();
+        when(() => authCubit.state).thenReturn(state);
+        whenListen(
+          authCubit,
+          const Stream<AuthState>.empty(),
+          initialState: state,
+        );
+
+        const otpEnabledState = AppVersionState(
+          status: AppVersionGateStatus.supported,
+          hasCompletedInitialCheck: true,
+          versionCheck: MobileVersionCheck(
+            platform: 'ios',
+            currentVersion: '1.2.3',
+            otpEnabled: true,
+            status: MobileUpdateStatus.supported,
+            shouldUpdate: false,
+            requiresUpdate: false,
+          ),
+        );
+        when(() => appVersionCubit.state).thenReturn(otpEnabledState);
+        whenListen(
+          appVersionCubit,
+          const Stream<AppVersionState>.empty(),
+          initialState: otpEnabledState,
+        );
+        when(
+          () => authCubit.sendOtp(
+            any(),
+            captchaToken: any(named: 'captchaToken'),
+          ),
+        ).thenAnswer((_) async => (success: false, retryAfter: 30));
+
+        await tester.pumpApp(buildSubject());
+        await tester.pump();
+
+        await tester.enterText(
+          find.byType(shad.TextField).first,
+          'user@test.com',
+        );
+        await tester.tap(
+          find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text(
+            'Enter your code below, or use password instead. Retry in 30s.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Use password instead'), findsOneWidget);
+        expect(find.text('Retry in 30s'), findsOneWidget);
+        expect(
+          find.text('Too many OTP requests. Please try again later.'),
+          findsNothing,
+        );
+      },
+    );
+
+    testWidgets(
+      'clears stale OTP send errors when switching to password step',
+      (
+        tester,
+      ) async {
+        const initialState = AuthState.unauthenticated();
+        final otpRateLimitState = const AuthState.unauthenticated().copyWith(
+          error: 'Too many OTP requests. Please try again later.',
+        );
+        when(() => authCubit.state).thenReturn(initialState);
+        whenListen(
+          authCubit,
+          Stream<AuthState>.fromIterable([otpRateLimitState]),
+          initialState: initialState,
+        );
+
+        const otpEnabledState = AppVersionState(
+          status: AppVersionGateStatus.supported,
+          hasCompletedInitialCheck: true,
+          versionCheck: MobileVersionCheck(
+            platform: 'ios',
+            currentVersion: '1.2.3',
+            otpEnabled: true,
+            status: MobileUpdateStatus.supported,
+            shouldUpdate: false,
+            requiresUpdate: false,
+          ),
+        );
+        when(() => appVersionCubit.state).thenReturn(otpEnabledState);
+        whenListen(
+          appVersionCubit,
+          const Stream<AppVersionState>.empty(),
+          initialState: otpEnabledState,
+        );
+        when(
+          () => authCubit.sendOtp(
+            any(),
+            captchaToken: any(named: 'captchaToken'),
+          ),
+        ).thenAnswer((_) async => (success: false, retryAfter: 30));
+
+        await tester.pumpApp(buildSubject());
+        await tester.pump();
+
+        await tester.enterText(
+          find.byType(shad.TextField).first,
+          'user@test.com',
+        );
+        await tester.tap(
+          find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Use password instead'));
+        await tester.pumpAndSettle();
+
+        verify(() => authCubit.clearError()).called(greaterThanOrEqualTo(1));
+        expect(
+          find.text('Too many OTP requests. Please try again later.'),
+          findsNothing,
+        );
+      },
+    );
   });
 }

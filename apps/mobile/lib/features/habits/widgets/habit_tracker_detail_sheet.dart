@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
+import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -535,11 +535,17 @@ class _EntriesTab extends StatelessWidget {
               if (exerciseBlocks is List<HabitTrackerExerciseBlock> &&
                   exerciseBlocks.isNotEmpty) ...[
                 const SizedBox(height: 10),
-                ...exerciseBlocks
-                    .map(
-                      (block) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Container(
+                ...exerciseBlocks.map(
+                  (block) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Builder(
+                      builder: (context) {
+                        final weightLabel = block.weight == null
+                            ? ''
+                            : ' • ${formatCompactNumber(block.weight!)} '
+                                  '${block.unit ?? ''}';
+
+                        return Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -558,8 +564,7 @@ class _EntriesTab extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${block.sets} x ${block.reps}'
-                                '${block.weight != null ? ' • ${formatCompactNumber(block.weight!)} ${block.unit ?? ''}' : ''}',
+                                '${block.sets} x ${block.reps}$weightLabel',
                               ),
                               if (block.notes?.trim().isNotEmpty == true) ...[
                                 const SizedBox(height: 4),
@@ -567,10 +572,11 @@ class _EntriesTab extends StatelessWidget {
                               ],
                             ],
                           ),
-                        ),
-                      ),
-                    )
-                    .toList(growable: false),
+                        );
+                      },
+                    ),
+                  ),
+                ),
               ],
               if (entry.note?.trim().isNotEmpty == true) ...[
                 const SizedBox(height: 8),
