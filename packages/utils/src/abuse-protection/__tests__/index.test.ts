@@ -7,6 +7,7 @@ import {
   ABUSE_THRESHOLDS,
   BLOCK_DURATIONS,
   checkOTPSendAllowed,
+  classifyPotentialSpamUserAgent,
   extractIPFromHeaders,
   hashEmail,
   MAX_BLOCK_LEVEL,
@@ -156,6 +157,46 @@ describe('abuse-protection', () => {
     it('should handle unicode in email', () => {
       const hash = hashEmail('用户@example.com');
       expect(hash).toMatch(/^[a-f0-9]{16}$/);
+    });
+  });
+
+  describe('classifyPotentialSpamUserAgent', () => {
+    it('blocks known automation frameworks', () => {
+      expect(
+        classifyPotentialSpamUserAgent('Mozilla/5.0 HeadlessChrome Playwright')
+      ).toMatchObject({
+        reason: 'known_automation_framework',
+        riskLevel: 'block',
+      });
+    });
+
+    it('blocks scripted HTTP clients', () => {
+      expect(classifyPotentialSpamUserAgent('curl/8.7.1')).toMatchObject({
+        reason: 'scripted_http_client',
+        riskLevel: 'block',
+      });
+    });
+
+    it('allows common browser user agents', () => {
+      expect(
+        classifyPotentialSpamUserAgent(
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
+        )
+      ).toMatchObject({
+        reason: null,
+        riskLevel: 'allow',
+      });
+    });
+
+    it('allows native mobile app user agents when requested', () => {
+      expect(
+        classifyPotentialSpamUserAgent('Dart/3.9 (dart:io)', {
+          allowNativeAppUserAgents: true,
+        })
+      ).toMatchObject({
+        reason: null,
+        riskLevel: 'allow',
+      });
     });
   });
 

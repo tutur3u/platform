@@ -13,6 +13,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./ai": "./src/ai.ts",
+    "./auth": "./src/auth.ts",
     "./client": "./src/client.ts",
     "./calendar": "./src/calendar.ts",
     "./education": "./src/education.ts",

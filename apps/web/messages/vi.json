@@ -6254,11 +6254,14 @@
     "processing": "Đang xử lý...",
     "resend": "Gửi lại",
     "secure_sign_in": "Đăng nhập an toàn",
+    "send_code": "Gửi mã",
     "sign_in": "Đăng nhập",
     "sign_in_to_your_account": "Đăng nhập vào tài khoản của bạn để tiếp tục",
     "social_sign_in_failed": "Đăng nhập mạng xã hội thất bại. Vui lòng thử lại hoặc liên hệ hỗ trợ nếu lỗi vẫn tiếp diễn.",
     "success": "Thành công!",
     "two_factor_authentication": "Xác thực hai yếu tố",
+    "use_code_instead": "Dùng mã email thay thế",
+    "use_password_instead": "Dùng mật khẩu thay thế",
     "verification_code": "Mã xác thực",
     "verification_code_label": "Mã xác thực",
     "verify": "Xác minh",
@@ -6739,10 +6742,13 @@
       "effective_version_description": "Người dùng thấp hơn phiên bản này sẽ thấy lời nhắc cập nhật nhưng vẫn có thể tiếp tục.",
       "minimum_version": "Phiên bản tối thiểu",
       "minimum_version_description": "Người dùng thấp hơn phiên bản này sẽ bị chặn cho đến khi cập nhật.",
+      "otp_enabled": "Bật đăng nhập OTP",
+      "otp_enabled_description": "Cho phép phiên bản ứng dụng {platform} dùng đăng nhập bằng mã xác thực email.",
       "store_url": "Liên kết cửa hàng",
       "store_url_description": "Chuyển người dùng đến trang ứng dụng tương ứng trên nền tảng này.",
       "store_url_placeholder": "https://...",
-      "version_placeholder": "1.2.3"
+      "version_placeholder": "1.2.3",
+      "web_otp_enabled_description": "Cho phép trang đăng nhập web marketing dùng đăng nhập bằng mã xác thực email."
     },
     "ios": {
       "description": "Cấu hình ngưỡng cập nhật mềm và cứng cho ứng dụng iOS.",
@@ -6756,6 +6762,10 @@
     "validation": {
       "store_url_required": "Phải có liên kết cửa hàng khi đặt phiên bản.",
       "version_format": "Phiên bản phải theo định dạng x.y.z."
+    },
+    "web": {
+      "description": "Kiểm soát việc trang đăng nhập web marketing có thể dùng đăng nhập bằng mã xác thực hay không.",
+      "title": "OTP Web"
     }
   },
   "money-lover-import": {

@@ -27,7 +27,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginContinueWithEmail => 'Continue with email';
 
   @override
+  String get loginOtpInstruction => 'Enter the 6-digit code we sent to your email.';
+
+  @override
+  String get loginResendOtp => 'Resend code';
+
+  @override
+  String loginRetryAfter(Object seconds) {
+    return 'Try again in ${seconds}s';
+  }
+
+  @override
   String get loginSignIn => 'Sign in';
+
+  @override
+  String get loginSendOtp => 'Send code';
+
+  @override
+  String get loginUseOtpInstead => 'Use email code instead';
+
+  @override
+  String get loginUsePasswordInstead => 'Use password instead';
+
+  @override
+  String get loginVerifyOtp => 'Verify code';
 
   @override
   String get authContinueWithApple => 'Continue with Apple';
@@ -4742,13 +4765,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsMobileVersions => 'Mobile versions';
 
   @override
-  String get settingsMobileVersionsTileDescription => 'Manage the effective and minimum versions enforced by the mobile app.';
+  String get settingsMobileVersionsTileDescription => 'Manage the effective and minimum versions enforced by the mobile app and OTP rollout controls.';
 
   @override
   String get settingsMobileVersionsTitle => 'Mobile versions';
 
   @override
-  String get settingsMobileVersionsPageDescription => 'Manage the effective and minimum app versions enforced by the mobile app before users can continue.';
+  String get settingsMobileVersionsPageDescription => 'Manage the effective and minimum app versions enforced by the mobile app before users can continue, plus OTP rollout controls for mobile and web.';
 
   @override
   String get settingsMobileVersionsIosTitle => 'iOS';
@@ -4761,6 +4784,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsMobileVersionsAndroidDescription => 'Set the Play Store threshold and update prompt for Android users.';
+
+  @override
+  String get settingsMobileVersionsOtpEnabled => 'Enable OTP login';
+
+  @override
+  String get settingsMobileVersionsIosOtpDescription => 'Allow iOS app logins to use email verification codes.';
+
+  @override
+  String get settingsMobileVersionsAndroidOtpDescription => 'Allow Android app logins to use email verification codes.';
+
+  @override
+  String get settingsMobileVersionsWebOtpTitle => 'Web OTP';
+
+  @override
+  String get settingsMobileVersionsWebOtpDescription => 'Allow the marketing web login to use email verification-code sign-in.';
 
   @override
   String get settingsMobileVersionsEffectiveVersion => 'Effective version';

@@ -6254,11 +6254,14 @@
     "processing": "Processing",
     "resend": "Resend code",
     "secure_sign_in": "Secure sign-in",
+    "send_code": "Send code",
     "sign_in": "Sign In",
     "sign_in_to_your_account": "Sign in to your account to continue",
     "social_sign_in_failed": "Social sign-in failed. Please try again or contact support if the issue persists.",
     "success": "Success",
     "two_factor_authentication": "Two-Factor Authentication",
+    "use_code_instead": "Use email code instead",
+    "use_password_instead": "Use password instead",
     "verification_code": "Verification Code",
     "verification_code_label": "Verification Code",
     "verify": "Verify",
@@ -6739,10 +6742,13 @@
       "effective_version_description": "Users below this version see an update prompt but can continue.",
       "minimum_version": "Minimum version",
       "minimum_version_description": "Users below this version are blocked until they update.",
+      "otp_enabled": "Enable OTP login",
+      "otp_enabled_description": "Allow {platform} app versions to use email verification-code sign-in.",
       "store_url": "Store URL",
       "store_url_description": "Direct users to the matching app listing for this platform.",
       "store_url_placeholder": "https://...",
-      "version_placeholder": "1.2.3"
+      "version_placeholder": "1.2.3",
+      "web_otp_enabled_description": "Allow the marketing web login to use email verification-code sign-in."
     },
     "ios": {
       "description": "Configure soft and hard update thresholds for the iOS app.",
@@ -6756,6 +6762,10 @@
     "validation": {
       "store_url_required": "Store URL is required when a version is set.",
       "version_format": "Version must use x.y.z format."
+    },
+    "web": {
+      "description": "Control whether the marketing web login can use verification-code sign-in.",
+      "title": "Web OTP"
     }
   },
   "money-lover-import": {

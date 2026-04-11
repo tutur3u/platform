@@ -1,8 +1,14 @@
 'use client';
 
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
 import { ArrowLeft, Eye, EyeOff, Lock, Mail } from '@tuturuuu/icons';
+import {
+  getOtpSettings,
+  sendOtpWithInternalApi,
+  verifyOtpWithInternalApi,
+} from '@tuturuuu/internal-api/auth';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { resolveTurnstileClientState } from '@tuturuuu/turnstile/client';
@@ -71,7 +77,7 @@ const authContainerTransition = {
   ease: [0.22, 1, 0.36, 1] as const,
 };
 
-type AuthStage = 'identify' | 'password';
+type AuthStage = 'identify' | 'otp' | 'password';
 
 function SocialLogoMask({ src, alt }: { src: string; alt: string }) {
   return (
@@ -125,6 +131,10 @@ export default function LoginForm() {
     password: z.string().min(8, t('login.password_min_length')),
   });
 
+  const otpFormSchema = z.object({
+    otp: z.string().length(6, t('login.invalid_verification_code')),
+  });
+
   const totpFormSchema = z.object({
     totp: z.string().length(6, 'TOTP code must be 6 digits'),
   });
@@ -149,6 +159,14 @@ export default function LoginForm() {
     },
   });
 
+  const otpForm = useForm({
+    mode: 'onChange',
+    resolver: zodResolver(otpFormSchema),
+    defaultValues: {
+      otp: '',
+    },
+  });
+
   const totpForm = useForm({
     mode: 'onChange',
     resolver: zodResolver(totpFormSchema),
@@ -170,6 +188,12 @@ export default function LoginForm() {
   const [captchaError, setCaptchaError] = useState<string>();
   const oauthErrorToastKeyRef = useRef<string | null>(null);
   const captchaRefPassword = useRef<TurnstileInstance>(null);
+  const otpSettingsQuery = useQuery({
+    queryFn: () => getOtpSettings({ client: 'web' }),
+    queryKey: ['auth', 'otp-settings', 'web'],
+    retry: 1,
+    staleTime: 60_000,
+  });
 
   const turnstileClientState = resolveTurnstileClientState({
     devMode: DEV_MODE,
@@ -177,6 +201,8 @@ export default function LoginForm() {
   });
   const turnstileSiteKey = turnstileClientState.siteKey;
   const emailValue = emailForm.watch('email');
+  const otpValue = otpForm.watch('otp');
+  const webOtpEnabled = otpSettingsQuery.data?.otpEnabled ?? false;
   const normalizedPreviewEmail =
     showDomainPreview && emailValue.trim() && !emailValue.includes('@')
       ? `${emailValue.trim()}@tuturuuu.com`
@@ -282,6 +308,137 @@ export default function LoginForm() {
     router.refresh();
   }, [router, searchParams, supabase]);
 
+  const completePrimarySignIn = useCallback(
+    async (source: 'otp' | 'password') => {
+      router.refresh();
+
+      if (await needsMFA()) {
+        setRequiresMFA(true);
+        setLoading(false);
+        return;
+      }
+
+      const multiAccount = searchParams.get('multiAccount');
+      const returnUrl = searchParams.get('returnUrl');
+
+      if (multiAccount === 'true' || returnUrl) {
+        try {
+          await processNextUrl();
+        } catch (navError) {
+          console.error(
+            `[login:${source}] Navigation error after successful login:`,
+            navError
+          );
+
+          if (multiAccount === 'true') {
+            window.location.href = `/add-account${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`;
+          } else {
+            window.location.href = '/';
+          }
+        }
+        return;
+      }
+
+      window.location.reload();
+    },
+    [needsMFA, processNextUrl, router, searchParams]
+  );
+
+  const sendOtpMutation = useMutation({
+    mutationFn: async (email: string) =>
+      sendOtpWithInternalApi({
+        captchaToken,
+        client: 'web',
+        email,
+        locale: locale || 'en',
+      }),
+  });
+
+  const verifyOtpMutation = useMutation({
+    mutationFn: async (otp: string) =>
+      verifyOtpWithInternalApi({
+        client: 'web',
+        email: emailForm.getValues('email'),
+        locale: locale || 'en',
+        otp,
+      }),
+  });
+
+  const sendEmailOtp = async () => {
+    const isValid = await emailForm.trigger('email');
+    if (!isValid || !locale) {
+      return;
+    }
+
+    const normalizedEmail = emailSchema.parse(emailForm.getValues('email'));
+    emailForm.setValue('email', normalizedEmail, { shouldValidate: true });
+    passwordForm.setValue('email', normalizedEmail, { shouldDirty: true });
+
+    setLoading(true);
+
+    try {
+      const result = await sendOtpMutation.mutateAsync(normalizedEmail);
+      resetCaptcha();
+
+      if (result.error) {
+        toast.error(t('login.failed_to_send'), {
+          description: result.retryAfter
+            ? `${result.error} (retry in ${result.retryAfter}s)`
+            : result.error,
+        });
+        setLoading(false);
+        return;
+      }
+
+      otpForm.reset({ otp: '' });
+      setTransitionDirection(1);
+      setShowDomainPreview(false);
+      setAuthStage('otp');
+      setLoading(false);
+    } catch (error) {
+      resetCaptcha();
+      console.error('[sendEmailOtp] Unexpected error:', error);
+      toast.error(t('login.failed_to_send'), {
+        description: t('login.failed_to_send'),
+      });
+      setLoading(false);
+    }
+  };
+
+  const loginWithOtp = async (data: { otp: string }) => {
+    if (!locale || !data.otp) return;
+
+    setLoading(true);
+
+    try {
+      const result = await verifyOtpMutation.mutateAsync(data.otp);
+
+      if (result.error) {
+        otpForm.setError('otp', {
+          message: result.error,
+        });
+        otpForm.setValue('otp', '');
+        toast.error(t('login.failed_to_verify'), {
+          description: result.error,
+        });
+        setLoading(false);
+        return;
+      }
+
+      await completePrimarySignIn('otp');
+    } catch (error) {
+      console.error('[loginWithOtp] Unexpected error:', error);
+      otpForm.setError('otp', {
+        message: t('login.invalid_verification_code'),
+      });
+      otpForm.setValue('otp', '');
+      toast.error(t('login.failed_to_verify'), {
+        description: t('login.invalid_verification_code'),
+      });
+      setLoading(false);
+    }
+  };
+
   const loginWithPassword = async (data: {
     email: string;
     password: string;
@@ -317,35 +474,7 @@ export default function LoginForm() {
         return;
       }
 
-      router.refresh();
-
-      if (await needsMFA()) {
-        setRequiresMFA(true);
-        setLoading(false);
-        return;
-      }
-
-      const multiAccount = searchParams.get('multiAccount');
-      const returnUrl = searchParams.get('returnUrl');
-
-      if (multiAccount === 'true' || returnUrl) {
-        try {
-          await processNextUrl();
-        } catch (navError) {
-          console.error(
-            '[loginWithPassword] Navigation error after successful login:',
-            navError
-          );
-
-          if (multiAccount === 'true') {
-            window.location.href = `/add-account${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`;
-          } else {
-            window.location.href = '/';
-          }
-        }
-      } else {
-        window.location.reload();
-      }
+      await completePrimarySignIn('password');
     } catch (error) {
       console.error('[loginWithPassword] Unexpected error:', error);
       resetCaptcha();
@@ -520,6 +649,7 @@ export default function LoginForm() {
     const currentEmail = emailForm.getValues('email');
 
     emailForm.setValue('email', currentEmail, { shouldValidate: true });
+    otpForm.reset({ otp: '' });
     passwordForm.reset({
       email: currentEmail,
       password: defaultPassword,
@@ -606,6 +736,11 @@ export default function LoginForm() {
       return;
     }
 
+    if (authStage === 'otp') {
+      otpForm.setFocus('otp');
+      return;
+    }
+
     if (authStage === 'password') {
       passwordForm.setFocus('password');
       return;
@@ -616,6 +751,7 @@ export default function LoginForm() {
     authStage,
     emailForm,
     initialized,
+    otpForm,
     passwordForm,
     readyForAuth,
     requiresMFA,
@@ -725,6 +861,10 @@ export default function LoginForm() {
                     <form
                       onSubmit={(event) => {
                         event.preventDefault();
+                        if (webOtpEnabled) {
+                          void sendEmailOtp();
+                          return;
+                        }
                         void advanceToPasswordStage();
                       }}
                       className="space-y-5"
@@ -790,20 +930,68 @@ export default function LoginForm() {
                         )}
                       />
 
+                      {webOtpEnabled && turnstileClientState.isRequired ? (
+                        <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                          {turnstileClientState.canRenderWidget &&
+                          turnstileSiteKey ? (
+                            <div className="flex flex-col items-center gap-2">
+                              <Turnstile
+                                ref={captchaRefPassword}
+                                siteKey={turnstileSiteKey}
+                                onSuccess={(token) => {
+                                  setCaptchaToken(token);
+                                  setCaptchaError(undefined);
+                                }}
+                                onExpire={() => setCaptchaToken(undefined)}
+                                onError={handleCaptchaError}
+                                onTimeout={handleCaptchaTimeout}
+                              />
+                              {captchaError ? (
+                                <p className="text-destructive text-sm">
+                                  {captchaError}
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <p className="text-destructive text-sm">
+                              {t('login.captcha_not_configured')}
+                            </p>
+                          )}
+                        </div>
+                      ) : null}
+
                       <Button
                         type="submit"
                         className="h-12 w-full rounded-2xl font-medium shadow-lg"
-                        disabled={loading || !emailIsValid}
+                        disabled={
+                          loading ||
+                          !emailIsValid ||
+                          (webOtpEnabled && isCaptchaBlockingPasswordSubmit)
+                        }
                       >
                         {loading ? (
                           <div className="flex items-center gap-2">
                             <LoadingIndicator className="h-4 w-4" />
                             <span>{t('common.loading')}...</span>
                           </div>
+                        ) : webOtpEnabled ? (
+                          t('login.send_code')
                         ) : (
                           t('login.continue')
                         )}
                       </Button>
+
+                      {webOtpEnabled ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-11 w-full rounded-2xl"
+                          onClick={advanceToPasswordStage}
+                          disabled={loading}
+                        >
+                          {t('login.use_password_instead')}
+                        </Button>
+                      ) : null}
                     </form>
                   </Form>
 
@@ -875,6 +1063,147 @@ export default function LoginForm() {
                       {t('login.continue_with_github')}
                     </SocialLoginButton>
                   </div>
+                </motion.div>
+              ) : authStage === 'otp' ? (
+                <motion.div
+                  key="otp-auth"
+                  custom={transitionDirection}
+                  variants={authStepVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  className="space-y-6"
+                >
+                  <div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="-ml-2 w-fit rounded-full px-2.5 text-muted-foreground hover:text-foreground"
+                      onClick={returnToIdentifyStage}
+                      disabled={loading}
+                    >
+                      <ArrowLeft className="size-4" />
+                      <span>{t('common.back')}</span>
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2 text-center">
+                    <p className="font-medium text-foreground text-sm">
+                      {emailForm.getValues('email')}
+                    </p>
+                    <p className="text-balance text-muted-foreground text-sm">
+                      {t('login.check_email')}
+                    </p>
+                  </div>
+
+                  <Form {...otpForm}>
+                    <form
+                      onSubmit={otpForm.handleSubmit(loginWithOtp)}
+                      className="space-y-5"
+                    >
+                      <FormField
+                        control={otpForm.control}
+                        name="otp"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-medium text-sm">
+                              {t('login.verification_code_label')}
+                            </FormLabel>
+                            <FormControl>
+                              <InputOTP
+                                maxLength={6}
+                                {...field}
+                                disabled={loading}
+                                className="justify-center"
+                              >
+                                <InputOTPGroup className="w-full gap-2">
+                                  {Array.from({ length: 6 }).map((_, index) => (
+                                    <InputOTPSlot
+                                      key={`otp-${index + 1}`}
+                                      index={index}
+                                      className="h-12 w-full rounded-2xl border border-border/60 bg-background/70 font-semibold text-lg shadow-sm transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                    />
+                                  ))}
+                                </InputOTPGroup>
+                              </InputOTP>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <Button
+                        type="submit"
+                        className="h-12 w-full rounded-2xl font-medium shadow-lg"
+                        disabled={loading || otpValue.length !== 6}
+                      >
+                        {loading ? (
+                          <div className="flex items-center gap-2">
+                            <LoadingIndicator className="h-4 w-4" />
+                            <span>{t('common.loading')}...</span>
+                          </div>
+                        ) : (
+                          t('login.verify_button')
+                        )}
+                      </Button>
+
+                      {turnstileClientState.isRequired ? (
+                        <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                          {turnstileClientState.canRenderWidget &&
+                          turnstileSiteKey ? (
+                            <div className="flex flex-col items-center gap-2">
+                              <Turnstile
+                                ref={captchaRefPassword}
+                                siteKey={turnstileSiteKey}
+                                onSuccess={(token) => {
+                                  setCaptchaToken(token);
+                                  setCaptchaError(undefined);
+                                }}
+                                onExpire={() => setCaptchaToken(undefined)}
+                                onError={handleCaptchaError}
+                                onTimeout={handleCaptchaTimeout}
+                              />
+                              {captchaError ? (
+                                <p className="text-destructive text-sm">
+                                  {captchaError}
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <p className="text-destructive text-sm">
+                              {t('login.captcha_not_configured')}
+                            </p>
+                          )}
+                        </div>
+                      ) : null}
+
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-11 rounded-2xl"
+                          onClick={() => void sendEmailOtp()}
+                          disabled={
+                            loading ||
+                            (turnstileClientState.isRequired &&
+                              isCaptchaBlockingPasswordSubmit)
+                          }
+                        >
+                          {t('login.resend')}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-11 rounded-2xl"
+                          onClick={advanceToPasswordStage}
+                          disabled={loading}
+                        >
+                          {t('login.use_password_instead')}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
                 </motion.div>
               ) : (
                 <motion.div
@@ -1007,6 +1336,18 @@ export default function LoginForm() {
                           t('login.sign_in')
                         )}
                       </Button>
+
+                      {webOtpEnabled ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-11 w-full rounded-2xl"
+                          onClick={() => void sendEmailOtp()}
+                          disabled={loading}
+                        >
+                          {t('login.use_code_instead')}
+                        </Button>
+                      ) : null}
                     </form>
                   </Form>
                 </motion.div>
