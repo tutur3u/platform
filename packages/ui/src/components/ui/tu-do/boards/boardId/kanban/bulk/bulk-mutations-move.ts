@@ -16,11 +16,6 @@ export function useBulkMoveToBoard(
   broadcast?: BoardBroadcastFn | null,
   i18n?: BulkOperationI18n
 ) {
-  type TaskMoveSnapshot = {
-    task: Task;
-    previousIndex: number;
-  };
-
   return useMutation({
     mutationFn: async ({
       targetBoardId,
@@ -97,15 +92,13 @@ export function useBulkMoveToBoard(
         }
       );
 
-      const tasksToMoveSnapshots: TaskMoveSnapshot[] = [];
       const tasksToMove: Task[] = [];
 
-      for (const [index, task] of previousTasksArray.entries()) {
+      for (const task of previousTasksArray) {
         if (!taskIdSet.has(task.id)) {
           continue;
         }
 
-        tasksToMoveSnapshots.push({ task, previousIndex: index });
         tasksToMove.push(task);
       }
 
@@ -127,7 +120,6 @@ export function useBulkMoveToBoard(
         previousTasks,
         previousTargetTasks,
         tasksToMove,
-        tasksToMoveSnapshots,
       };
     },
     onError: (error, variables, context) => {
@@ -152,41 +144,18 @@ export function useBulkMoveToBoard(
       );
       const movedTaskIds = [...data.movedTaskIds];
       const movedTaskIdSet = new Set(movedTaskIds);
-      const failedTaskSnapshots = (context?.tasksToMoveSnapshots ?? [])
-        .filter((snapshot: TaskMoveSnapshot) =>
-          failedTaskIds.has(snapshot.task.id)
-        )
-        .sort(
-          (a: TaskMoveSnapshot, b: TaskMoveSnapshot) =>
-            a.previousIndex - b.previousIndex
-        );
-      const failedTasks = failedTaskSnapshots.map(
-        (snapshot: TaskMoveSnapshot) => snapshot.task
-      );
-
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
 
-          const rebuilt = old.filter((task) => !movedTaskIdSet.has(task.id));
+          const previousSourceTasks = Array.isArray(context?.previousTasks)
+            ? (context.previousTasks as Task[])
+            : old;
 
-          for (const snapshot of failedTaskSnapshots) {
-            const existingIndex = rebuilt.findIndex(
-              (task) => task.id === snapshot.task.id
-            );
-            if (existingIndex >= 0) {
-              rebuilt.splice(existingIndex, 1);
-            }
-
-            const safeInsertIndex = Math.min(
-              Math.max(snapshot.previousIndex, 0),
-              rebuilt.length
-            );
-            rebuilt.splice(safeInsertIndex, 0, snapshot.task);
-          }
-
-          return rebuilt;
+          return previousSourceTasks.filter(
+            (task) => !movedTaskIdSet.has(task.id)
+          );
         }
       );
 
@@ -215,7 +184,6 @@ export function useBulkMoveToBoard(
       }
 
       if (movedTaskIds.length > 0) {
-        const movedTaskIdSet = new Set(movedTaskIds);
         const succeededTasks = (context?.tasksToMove ?? [])
           .filter((task) => movedTaskIdSet.has(task.id))
           .map((task) => {
@@ -236,7 +204,7 @@ export function useBulkMoveToBoard(
           ['tasks', data.targetBoardId],
           (old: Task[] | undefined) => {
             if (!old) return succeededTasks;
-            const failedIds = new Set(failedTasks.map((task) => task.id));
+            const failedIds = failedTaskIds;
             const filteredOld = old.filter(
               (task) => !movedTaskIdSet.has(task.id) && !failedIds.has(task.id)
             );
