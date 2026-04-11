@@ -47,6 +47,9 @@ class _MobileVersionSettingsPageState extends State<MobileVersionSettingsPage> {
   final _androidEffectiveController = TextEditingController();
   final _androidMinimumController = TextEditingController();
   final _androidStoreUrlController = TextEditingController();
+  bool _androidOtpEnabled = false;
+  bool _iosOtpEnabled = false;
+  bool _webOtpEnabled = false;
 
   late final MobileVersionPolicyRepository _policyRepository;
   late final WorkspacePermissionsRepository _permissionsRepository;
@@ -165,6 +168,9 @@ class _MobileVersionSettingsPageState extends State<MobileVersionSettingsPage> {
                       platform: _MobilePlatform.ios,
                       effectiveController: _iosEffectiveController,
                       minimumController: _iosMinimumController,
+                      otpEnabled: _iosOtpEnabled,
+                      onOtpEnabledChanged: (value) =>
+                          _updateState(() => _iosOtpEnabled = value),
                       storeUrlController: _iosStoreUrlController,
                       validationErrors: _validationErrors,
                     ),
@@ -172,8 +178,16 @@ class _MobileVersionSettingsPageState extends State<MobileVersionSettingsPage> {
                       platform: _MobilePlatform.android,
                       effectiveController: _androidEffectiveController,
                       minimumController: _androidMinimumController,
+                      otpEnabled: _androidOtpEnabled,
+                      onOtpEnabledChanged: (value) =>
+                          _updateState(() => _androidOtpEnabled = value),
                       storeUrlController: _androidStoreUrlController,
                       validationErrors: _validationErrors,
+                    ),
+                    webCard: _WebOtpCard(
+                      enabled: _webOtpEnabled,
+                      onChanged: (value) =>
+                          _updateState(() => _webOtpEnabled = value),
                     ),
                   ),
                   const shad.Gap(20),

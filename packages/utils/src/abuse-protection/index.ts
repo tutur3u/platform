@@ -27,6 +27,7 @@ import type {
 // Re-export types and constants
 export * from './constants';
 export * from './types';
+export * from './user-agent';
 
 // In-memory fallback store
 const memoryStore = new Map<string, { count: number; expiresAt: number }>();

@@ -154,10 +154,12 @@ class _PlatformPoliciesGrid extends StatelessWidget {
   const _PlatformPoliciesGrid({
     required this.iosCard,
     required this.androidCard,
+    this.webCard,
   });
 
   final Widget iosCard;
   final Widget androidCard;
+  final Widget? webCard;
 
   @override
   Widget build(BuildContext context) {
@@ -170,16 +172,28 @@ class _PlatformPoliciesGrid extends StatelessWidget {
               iosCard,
               const shad.Gap(16),
               androidCard,
+              if (webCard != null) ...[
+                const shad.Gap(16),
+                webCard!,
+              ],
             ],
           );
         }
 
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        return Column(
           children: [
-            Expanded(child: iosCard),
-            const shad.Gap(16),
-            Expanded(child: androidCard),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: iosCard),
+                const shad.Gap(16),
+                Expanded(child: androidCard),
+              ],
+            ),
+            if (webCard != null) ...[
+              const shad.Gap(16),
+              webCard!,
+            ],
           ],
         );
       },
@@ -192,6 +206,8 @@ class _PlatformPolicyCard extends StatelessWidget {
     required this.platform,
     required this.effectiveController,
     required this.minimumController,
+    required this.otpEnabled,
+    required this.onOtpEnabledChanged,
     required this.storeUrlController,
     required this.validationErrors,
   });
@@ -199,6 +215,8 @@ class _PlatformPolicyCard extends StatelessWidget {
   final _MobilePlatform platform;
   final TextEditingController effectiveController;
   final TextEditingController minimumController;
+  final bool otpEnabled;
+  final ValueChanged<bool> onOtpEnabledChanged;
   final TextEditingController storeUrlController;
   final Map<String, String> validationErrors;
 
@@ -230,6 +248,46 @@ class _PlatformPolicyCard extends StatelessWidget {
             ),
           ),
           const shad.Gap(18),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              border: Border.all(color: theme.colorScheme.border),
+              borderRadius: BorderRadius.circular(18),
+              color: theme.colorScheme.muted.withValues(alpha: 0.18),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.settingsMobileVersionsOtpEnabled,
+                        style: theme.typography.small.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const shad.Gap(4),
+                      Text(
+                        isIos
+                            ? l10n.settingsMobileVersionsIosOtpDescription
+                            : l10n.settingsMobileVersionsAndroidOtpDescription,
+                        style: theme.typography.textSmall.copyWith(
+                          color: theme.colorScheme.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const shad.Gap(12),
+                shad.Switch(
+                  value: otpEnabled,
+                  onChanged: onOtpEnabledChanged,
+                ),
+              ],
+            ),
+          ),
+          const shad.Gap(16),
           _FieldBlock(
             label: l10n.settingsMobileVersionsEffectiveVersion,
             description: l10n.settingsMobileVersionsEffectiveVersionDescription,
@@ -267,6 +325,55 @@ class _PlatformPolicyCard extends StatelessWidget {
             error: validationErrors[_fieldKey(_PolicyField.storeUrl)],
             keyboardType: TextInputType.url,
             fieldKey: Key(_fieldKey(_PolicyField.storeUrl)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WebOtpCard extends StatelessWidget {
+  const _WebOtpCard({
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = shad.Theme.of(context);
+
+    return SettingsPanel(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.settingsMobileVersionsWebOtpTitle,
+                  style: theme.typography.large.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const shad.Gap(6),
+                Text(
+                  l10n.settingsMobileVersionsWebOtpDescription,
+                  style: theme.typography.textSmall.copyWith(
+                    color: theme.colorScheme.mutedForeground,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const shad.Gap(16),
+          shad.Switch(
+            value: enabled,
+            onChanged: onChanged,
           ),
         ],
       ),

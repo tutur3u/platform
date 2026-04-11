@@ -127,11 +127,53 @@ abstract class AppLocalizations {
   /// **'Continue with email'**
   String get loginContinueWithEmail;
 
+  /// No description provided for @loginOtpInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit code we sent to your email.'**
+  String get loginOtpInstruction;
+
+  /// No description provided for @loginResendOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend code'**
+  String get loginResendOtp;
+
+  /// No description provided for @loginRetryAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again in {seconds}s'**
+  String loginRetryAfter(Object seconds);
+
   /// No description provided for @loginSignIn.
   ///
   /// In en, this message translates to:
   /// **'Sign in'**
   String get loginSignIn;
+
+  /// No description provided for @loginSendOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Send code'**
+  String get loginSendOtp;
+
+  /// No description provided for @loginUseOtpInstead.
+  ///
+  /// In en, this message translates to:
+  /// **'Use email code instead'**
+  String get loginUseOtpInstead;
+
+  /// No description provided for @loginUsePasswordInstead.
+  ///
+  /// In en, this message translates to:
+  /// **'Use password instead'**
+  String get loginUsePasswordInstead;
+
+  /// No description provided for @loginVerifyOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify code'**
+  String get loginVerifyOtp;
 
   /// No description provided for @authContinueWithApple.
   ///
@@ -9064,7 +9106,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsMobileVersionsTileDescription.
   ///
   /// In en, this message translates to:
-  /// **'Manage the effective and minimum versions enforced by the mobile app.'**
+  /// **'Manage the effective and minimum versions enforced by the mobile app and OTP rollout controls.'**
   String get settingsMobileVersionsTileDescription;
 
   /// No description provided for @settingsMobileVersionsTitle.
@@ -9076,7 +9118,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsMobileVersionsPageDescription.
   ///
   /// In en, this message translates to:
-  /// **'Manage the effective and minimum app versions enforced by the mobile app before users can continue.'**
+  /// **'Manage the effective and minimum app versions enforced by the mobile app before users can continue, plus OTP rollout controls for mobile and web.'**
   String get settingsMobileVersionsPageDescription;
 
   /// No description provided for @settingsMobileVersionsIosTitle.
@@ -9102,6 +9144,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set the Play Store threshold and update prompt for Android users.'**
   String get settingsMobileVersionsAndroidDescription;
+
+  /// No description provided for @settingsMobileVersionsOtpEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable OTP login'**
+  String get settingsMobileVersionsOtpEnabled;
+
+  /// No description provided for @settingsMobileVersionsIosOtpDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow iOS app logins to use email verification codes.'**
+  String get settingsMobileVersionsIosOtpDescription;
+
+  /// No description provided for @settingsMobileVersionsAndroidOtpDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Android app logins to use email verification codes.'**
+  String get settingsMobileVersionsAndroidOtpDescription;
+
+  /// No description provided for @settingsMobileVersionsWebOtpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Web OTP'**
+  String get settingsMobileVersionsWebOtpTitle;
+
+  /// No description provided for @settingsMobileVersionsWebOtpDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow the marketing web login to use email verification-code sign-in.'**
+  String get settingsMobileVersionsWebOtpDescription;
 
   /// No description provided for @settingsMobileVersionsEffectiveVersion.
   ///

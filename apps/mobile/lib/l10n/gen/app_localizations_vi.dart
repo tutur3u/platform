@@ -27,7 +27,30 @@ class AppLocalizationsVi extends AppLocalizations {
   String get loginContinueWithEmail => 'Tiếp tục với email';
 
   @override
+  String get loginOtpInstruction => 'Nhập mã 6 chữ số chúng tôi đã gửi đến email của bạn.';
+
+  @override
+  String get loginResendOtp => 'Gửi lại mã';
+
+  @override
+  String loginRetryAfter(Object seconds) {
+    return 'Thử lại sau $seconds giây';
+  }
+
+  @override
   String get loginSignIn => 'Đăng nhập';
+
+  @override
+  String get loginSendOtp => 'Gửi mã';
+
+  @override
+  String get loginUseOtpInstead => 'Dùng mã email thay thế';
+
+  @override
+  String get loginUsePasswordInstead => 'Dùng mật khẩu thay thế';
+
+  @override
+  String get loginVerifyOtp => 'Xác minh mã';
 
   @override
   String get authContinueWithApple => 'Tiếp tục với Apple';
@@ -4718,13 +4741,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsMobileVersions => 'Phiên bản di động';
 
   @override
-  String get settingsMobileVersionsTileDescription => 'Quản lý phiên bản hiệu lực và tối thiểu mà ứng dụng di động sẽ áp dụng.';
+  String get settingsMobileVersionsTileDescription => 'Quản lý phiên bản hiệu lực, tối thiểu và cờ triển khai OTP cho ứng dụng di động.';
 
   @override
   String get settingsMobileVersionsTitle => 'Phiên bản di động';
 
   @override
-  String get settingsMobileVersionsPageDescription => 'Quản lý phiên bản hiệu lực và tối thiểu mà ứng dụng di động sẽ áp dụng trước khi người dùng có thể tiếp tục.';
+  String get settingsMobileVersionsPageDescription => 'Quản lý phiên bản hiệu lực và tối thiểu mà ứng dụng di động sẽ áp dụng trước khi người dùng có thể tiếp tục, cùng với cờ triển khai OTP cho di động và web.';
 
   @override
   String get settingsMobileVersionsIosTitle => 'iOS';
@@ -4737,6 +4760,21 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsMobileVersionsAndroidDescription => 'Đặt ngưỡng Play Store và lời nhắc cập nhật cho người dùng Android.';
+
+  @override
+  String get settingsMobileVersionsOtpEnabled => 'Bật đăng nhập OTP';
+
+  @override
+  String get settingsMobileVersionsIosOtpDescription => 'Cho phép đăng nhập ứng dụng iOS bằng mã xác thực email.';
+
+  @override
+  String get settingsMobileVersionsAndroidOtpDescription => 'Cho phép đăng nhập ứng dụng Android bằng mã xác thực email.';
+
+  @override
+  String get settingsMobileVersionsWebOtpTitle => 'OTP Web';
+
+  @override
+  String get settingsMobileVersionsWebOtpDescription => 'Cho phép trang đăng nhập web marketing dùng đăng nhập bằng mã xác thực email.';
 
   @override
   String get settingsMobileVersionsEffectiveVersion => 'Phiên bản hiệu lực';

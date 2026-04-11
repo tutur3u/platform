@@ -5,6 +5,18 @@ export {
   updateAiChat,
 } from './ai';
 export {
+  getOtpSettings,
+  type InternalOtpClient,
+  type InternalOtpPlatform,
+  type OtpSettingsResponse,
+  type SendOtpPayload,
+  type SendOtpResponse,
+  sendOtpWithInternalApi,
+  type VerifyOtpPayload,
+  type VerifyOtpResponse,
+  verifyOtpWithInternalApi,
+} from './auth';
+export {
   applyWorkspaceCalendarSchedule,
   createWorkspaceCalendarEvent,
   createWorkspaceHabitSkip,
@@ -118,9 +130,12 @@ export {
   type InfrastructurePushAppFlavor,
   type InfrastructurePushDeliveryKind,
   type InfrastructurePushPlatform,
+  type MobilePlatformVersionPolicyPayload,
+  type MobileVersionPoliciesPayload,
   type SendInfrastructurePushTestPayload,
   type SendInfrastructurePushTestResponse,
   sendInfrastructurePushTest,
+  updateMobileVersionPolicies,
 } from './infrastructure';
 export {
   listInquiryMediaUrls,
