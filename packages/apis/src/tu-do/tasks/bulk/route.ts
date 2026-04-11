@@ -114,11 +114,21 @@ async function parseJsonBody(request: NextRequest) {
   }
 }
 
-function toTaskUpdateRpcJson(
-  value: Record<string, unknown>
-): TaskUpdateRpcJson {
-  return value as TaskUpdateRpcJson;
-}
+type MoveTaskUpdates = {
+  list_id: string;
+  completed: boolean | null;
+  completed_at: string | null;
+  closed_at: string | null;
+  display_number?: null;
+};
+
+type UpdateFieldsPayload = {
+  priority?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  estimation_points?: number | null;
+  deleted_at?: string | null;
+};
 
 function isCompletionStatus(status: string | null | undefined) {
   return status === 'done' || status === 'closed';
@@ -128,7 +138,7 @@ function buildMoveTaskUpdates(
   operationTimestamp: string,
   task: TaskContextRow,
   targetList: TargetListRow
-): Record<string, unknown> {
+): MoveTaskUpdates {
   const sourceStatus = task.task_lists?.status ?? null;
   const targetStatus = targetList.status;
   const sourceIsCompletion = isCompletionStatus(sourceStatus);
@@ -175,8 +185,8 @@ function buildMoveTaskUpdates(
 
 function buildTaskUpdatePayload(
   operation: Extract<BulkOperation, { type: 'update_fields' }>
-) {
-  const updates: Record<string, unknown> = {};
+): UpdateFieldsPayload {
+  const updates: UpdateFieldsPayload = {};
   const operationUpdates = operation.updates;
 
   if (operationUpdates.priority !== undefined) {
@@ -542,7 +552,8 @@ export async function POST(
             const updatePayload: TaskActorRpcArgs<'update_task_fields_with_actor'> =
               {
                 p_task_id: taskId,
-                p_task_updates: toTaskUpdateRpcJson(staticUpdatePayload ?? {}),
+                p_task_updates: (staticUpdatePayload ??
+                  {}) as TaskUpdateRpcJson,
                 p_actor_user_id: user.id,
               };
             const { error } = await sbAdmin.rpc(
@@ -568,7 +579,7 @@ export async function POST(
             const updatePayload: TaskActorRpcArgs<'update_task_fields_with_actor'> =
               {
                 p_task_id: taskId,
-                p_task_updates: toTaskUpdateRpcJson(moveUpdates),
+                p_task_updates: moveUpdates as TaskUpdateRpcJson,
                 p_actor_user_id: user.id,
               };
 
@@ -678,7 +689,7 @@ export async function POST(
 
             const payload: TaskActorRpcArgs<'update_task_with_relations'> = {
               p_task_id: taskId,
-              p_task_updates: toTaskUpdateRpcJson({}),
+              p_task_updates: {} as TaskUpdateRpcJson,
               p_assignee_ids: nextAssigneeIds,
               p_replace_assignees: true,
               p_label_ids: undefined,
@@ -700,7 +711,7 @@ export async function POST(
           case 'clear_labels': {
             const payload: TaskActorRpcArgs<'update_task_with_relations'> = {
               p_task_id: taskId,
-              p_task_updates: toTaskUpdateRpcJson({}),
+              p_task_updates: {} as TaskUpdateRpcJson,
               p_assignee_ids: undefined,
               p_replace_assignees: false,
               p_label_ids: [],
@@ -722,7 +733,7 @@ export async function POST(
           case 'clear_projects': {
             const payload: TaskActorRpcArgs<'update_task_with_relations'> = {
               p_task_id: taskId,
-              p_task_updates: toTaskUpdateRpcJson({}),
+              p_task_updates: {} as TaskUpdateRpcJson,
               p_assignee_ids: undefined,
               p_replace_assignees: false,
               p_label_ids: undefined,

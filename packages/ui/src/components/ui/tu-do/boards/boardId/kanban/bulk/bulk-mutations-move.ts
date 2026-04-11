@@ -144,18 +144,35 @@ export function useBulkMoveToBoard(
       );
       const movedTaskIds = [...data.movedTaskIds];
       const movedTaskIdSet = new Set(movedTaskIds);
+
+      const previousSourceTasks = Array.isArray(context?.previousTasks)
+        ? (context.previousTasks as Task[])
+        : [];
+      const previousOrder = new Map(
+        previousSourceTasks.map((task, index) => [task.id, index])
+      );
+      const previousTaskMap = new Map(
+        previousSourceTasks.map((task) => [task.id, task])
+      );
+
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
 
-          const previousSourceTasks = Array.isArray(context?.previousTasks)
-            ? (context.previousTasks as Task[])
-            : old;
+          const merged = old.filter((task) => !movedTaskIdSet.has(task.id));
 
-          return previousSourceTasks.filter(
-            (task) => !movedTaskIdSet.has(task.id)
-          );
+          const failedTasks = [...failedTaskIds]
+            .map((taskId) => previousTaskMap.get(taskId))
+            .filter((task): task is Task => Boolean(task));
+
+          for (const task of failedTasks) {
+            if (merged.some((current) => current.id === task.id)) continue;
+            const insertIndex = previousOrder.get(task.id) ?? merged.length;
+            merged.splice(Math.min(insertIndex, merged.length), 0, task);
+          }
+
+          return merged;
         }
       );
 
@@ -203,14 +220,18 @@ export function useBulkMoveToBoard(
         queryClient.setQueryData(
           ['tasks', data.targetBoardId],
           (old: Task[] | undefined) => {
-            if (!old) return succeededTasks;
-            const failedIds = failedTaskIds;
+            if (!old) return old;
             const filteredOld = old.filter(
-              (task) => !movedTaskIdSet.has(task.id) && !failedIds.has(task.id)
+              (task) =>
+                !movedTaskIdSet.has(task.id) && !failedTaskIds.has(task.id)
             );
             return [...filteredOld, ...succeededTasks];
           }
         );
+
+        queryClient.invalidateQueries({
+          queryKey: ['tasks', data.targetBoardId],
+        });
       }
     },
   });
