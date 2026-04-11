@@ -14,11 +14,14 @@ extension _MobileVersionSettingsPageLogic on _MobileVersionSettingsPageState {
     _initialPolicies = normalized;
     _iosEffectiveController.text = normalized.ios.effectiveVersion ?? '';
     _iosMinimumController.text = normalized.ios.minimumVersion ?? '';
+    _iosOtpEnabled = normalized.ios.otpEnabled;
     _iosStoreUrlController.text = normalized.ios.storeUrl ?? '';
     _androidEffectiveController.text =
         normalized.android.effectiveVersion ?? '';
     _androidMinimumController.text = normalized.android.minimumVersion ?? '';
+    _androidOtpEnabled = normalized.android.otpEnabled;
     _androidStoreUrlController.text = normalized.android.storeUrl ?? '';
+    _webOtpEnabled = normalized.webOtpEnabled;
     _isApplyingPolicies = false;
   }
 
@@ -33,6 +36,7 @@ extension _MobileVersionSettingsPageLogic on _MobileVersionSettingsPageState {
           _iosEffectiveController.text,
         ),
         minimumVersion: _normalizeOptionalString(_iosMinimumController.text),
+        otpEnabled: _iosOtpEnabled,
         storeUrl: _normalizeOptionalString(_iosStoreUrlController.text),
       ),
       android: MobilePlatformVersionPolicy(
@@ -42,8 +46,10 @@ extension _MobileVersionSettingsPageLogic on _MobileVersionSettingsPageState {
         minimumVersion: _normalizeOptionalString(
           _androidMinimumController.text,
         ),
+        otpEnabled: _androidOtpEnabled,
         storeUrl: _normalizeOptionalString(_androidStoreUrlController.text),
       ),
+      webOtpEnabled: _webOtpEnabled,
     ).normalized();
   }
 

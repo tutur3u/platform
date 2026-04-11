@@ -12,8 +12,8 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart'
     show
+        WorkspacePermissions,
         WorkspacePermissionsRepository,
-        manageWorkspaceRolesPermission,
         manageWorkspaceSettingsPermission;
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
@@ -22,6 +22,7 @@ import 'package:mobile/features/settings/view/workspace_properties_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
+import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -39,6 +40,7 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
   int _workspaceCurrencyLoadToken = 0;
   bool _canManageWorkspaceSettings = false;
   bool _canManageWorkspaceMembers = false;
+  bool _canManageWorkspaceSecrets = false;
   bool _canManageWorkspaceRoles = false;
   bool _isWorkspacePermissionLoading = false;
   bool _isWorkspaceCurrencyLoading = true;
@@ -108,7 +110,10 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
                     _showWorkspaceDefaultCurrencyEditor(),
                   ),
                   canManageWorkspaceMembers: _canManageWorkspaceMembers,
+                  canManageWorkspaceSecrets: _canManageWorkspaceSecrets,
                   canManageWorkspaceRoles: _canManageWorkspaceRoles,
+                  onOpenWorkspaceSecrets: () =>
+                      context.push(Routes.settingsWorkspaceSecrets),
                   onOpenWorkspaceMembers: () =>
                       context.push(Routes.settingsWorkspaceMembers),
                   onOpenWorkspaceRoles: () =>
@@ -156,6 +161,7 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
       setState(() {
         _canManageWorkspaceSettings = false;
         _canManageWorkspaceMembers = false;
+        _canManageWorkspaceSecrets = false;
         _canManageWorkspaceRoles = false;
         _isWorkspacePermissionLoading = false;
       });
@@ -163,12 +169,20 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
     }
 
     if (isPersonalWorkspace) {
+      final rootPermissions = await _workspacePermissionsRepository
+          .getPermissions(wsId: rootWorkspaceId);
+      if (!mounted || token != _workspacePermissionLoadToken) {
+        return;
+      }
       if (!mounted) {
         return;
       }
       setState(() {
         _canManageWorkspaceSettings = true;
         _canManageWorkspaceMembers = false;
+        _canManageWorkspaceSecrets = rootPermissions.containsPermission(
+          'manage_workspace_secrets',
+        );
         _canManageWorkspaceRoles = true;
         _isWorkspacePermissionLoading = false;
       });
@@ -181,21 +195,32 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
       });
     }
 
-    final permissions = await _workspacePermissionsRepository.getPermissions(
-      wsId: workspaceId,
-    );
+    final workspacePermissionsFuture = _workspacePermissionsRepository
+        .getPermissions(wsId: workspaceId);
+    final rootPermissionsFuture = workspaceId == rootWorkspaceId
+        ? workspacePermissionsFuture
+        : _workspacePermissionsRepository.getPermissions(wsId: rootWorkspaceId);
+    final permissions = await Future.wait<WorkspacePermissions>([
+      workspacePermissionsFuture,
+      rootPermissionsFuture,
+    ]);
     if (!mounted || token != _workspacePermissionLoadToken) {
       return;
     }
+    final workspacePermissions = permissions[0];
+    final rootPermissions = permissions[1];
     setState(() {
-      _canManageWorkspaceSettings = permissions.containsPermission(
+      _canManageWorkspaceSettings = workspacePermissions.containsPermission(
         manageWorkspaceSettingsPermission,
       );
-      _canManageWorkspaceMembers = permissions.containsPermission(
+      _canManageWorkspaceMembers = workspacePermissions.containsPermission(
         'manage_workspace_members',
       );
-      _canManageWorkspaceRoles = permissions.containsPermission(
-        manageWorkspaceRolesPermission,
+      _canManageWorkspaceSecrets = rootPermissions.containsPermission(
+        'manage_workspace_secrets',
+      );
+      _canManageWorkspaceRoles = workspacePermissions.containsPermission(
+        'manage_workspace_roles',
       );
       _isWorkspacePermissionLoading = false;
     });

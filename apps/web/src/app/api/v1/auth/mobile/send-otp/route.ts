@@ -1,39 +1,19 @@
 import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  isTurnstileError,
-  resolveTurnstileToken,
-} from '@tuturuuu/turnstile/server';
-import {
-  checkOTPSendAllowed,
-  extractIPFromHeaders,
-  logAbuseEvent,
-  recordOTPSendSuccess,
-} from '@tuturuuu/utils/abuse-protection';
-import {
   MAX_CODE_LENGTH,
+  MAX_EMAIL_LENGTH,
   MAX_LONG_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
-import {
-  checkEmailInfrastructureBlocked,
-  checkIfUserExists,
-  generateRandomPassword,
-  validateEmail,
-} from '@tuturuuu/utils/email/server';
-import { headers } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { DEV_MODE } from '@/constants/common';
-
+import { sendOtp, toOtpErrorResult } from '@/lib/auth/otp';
 import { jsonWithCors, optionsWithCors } from '../shared';
 
-const SendOtpSchema = z.object({
-  email: z.string().email(),
+const LegacySendOtpSchema = z.object({
+  email: z.string().email().max(MAX_EMAIL_LENGTH),
   locale: z.string().max(MAX_CODE_LENGTH).optional(),
   deviceId: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
   captchaToken: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
+  platform: z.enum(['ios', 'android']).optional(),
 });
 
 export async function OPTIONS() {
@@ -41,190 +21,31 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: NextRequest) {
-  let ipAddress = 'unknown';
-  let validatedEmail: string | undefined;
-
   try {
-    if (!DEV_MODE) {
-      return jsonWithCors(
-        { error: 'OTP login is only available in development mode.' },
-        { status: 403 }
-      );
-    }
-
     const body = await request.json().catch(() => null);
-    const parsed = SendOtpSchema.safeParse(body);
+    const parsed = LegacySendOtpSchema.safeParse(body);
 
     if (!parsed.success) {
       return jsonWithCors({ error: 'Invalid request body' }, { status: 400 });
     }
 
-    const { email, locale, deviceId, captchaToken } = parsed.data;
-    const normalizedLocale = locale || 'en';
-
-    console.log('[mobile/send-otp] Request:', {
-      locale: normalizedLocale,
-      hasDeviceId: !!deviceId,
-      hasCaptchaToken: !!captchaToken,
-    });
-
-    const headersList = await headers();
-    ipAddress = extractIPFromHeaders(headersList);
-
-    try {
-      validatedEmail = await validateEmail(email);
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : String(error || 'Invalid email');
-      return jsonWithCors({ error: message }, { status: 400 });
-    }
-
-    const abuseCheck = await checkOTPSendAllowed(ipAddress, validatedEmail);
-    if (!abuseCheck.allowed) {
-      return jsonWithCors(
-        {
-          error:
-            abuseCheck.reason || 'Too many requests. Please try again later.',
-          retryAfter: abuseCheck.retryAfter,
-        },
-        { status: 429 }
-      );
-    }
-
-    const infrastructureCheck =
-      await checkEmailInfrastructureBlocked(validatedEmail);
-    if (infrastructureCheck.isBlocked) {
-      void logAbuseEvent(ipAddress, 'otp_send', {
-        email: validatedEmail,
-        success: false,
-        metadata: {
-          stage: 'infrastructure_block',
-          blockType: infrastructureCheck.blockType,
-        },
-      });
-      return jsonWithCors(
-        { error: 'Unable to send verification code to this email address.' },
-        { status: 400 }
-      );
-    }
-
-    const userId = await checkIfUserExists({ email: validatedEmail });
-
-    const sbAdmin = await createAdminClient();
-    const turnstile = resolveTurnstileToken({
-      token: captchaToken,
-      requireConfiguration: true,
-    });
-    const useAdminAuth = turnstile.shouldBypassForDev;
-    const supabase = useAdminAuth ? sbAdmin : await createClient();
-
-    const metadata: Record<string, string> = {
-      locale: normalizedLocale,
-      origin: 'TUTURUUU',
-    };
-
-    if (deviceId) {
-      metadata.device_id = deviceId;
-    }
-
-    if (userId) {
-      const { error: updateError } = await sbAdmin.auth.admin.updateUserById(
-        userId,
-        { user_metadata: metadata }
-      );
-
-      if (updateError) {
-        void logAbuseEvent(ipAddress, 'otp_send', {
-          email: validatedEmail,
-          success: false,
-          metadata: {
-            stage: 'update_user',
-            message: updateError.message,
-          },
-        });
-        console.error('[mobile/send-otp] updateUserById error:', updateError);
-        return jsonWithCors({ error: updateError.message }, { status: 500 });
+    const result = await sendOtp(
+      {
+        ...parsed.data,
+        client: 'mobile',
+      },
+      {
+        client: 'mobile',
+        endpoint: '/api/v1/auth/mobile/send-otp',
+        headers: request.headers,
+        platform: parsed.data.platform,
+        request,
       }
+    );
 
-      const { error } = await supabase.auth.signInWithOtp({
-        email: validatedEmail,
-        options: { data: metadata, ...turnstile.captchaOptions },
-      });
-
-      if (error) {
-        void logAbuseEvent(ipAddress, 'otp_send', {
-          email: validatedEmail,
-          success: false,
-          metadata: {
-            stage: 'sign_in_with_otp',
-            message: error.message,
-            code: error.code,
-            status: error.status,
-          },
-        });
-        console.error(
-          '[mobile/send-otp] signInWithOtp error:',
-          JSON.stringify({
-            message: error.message,
-            status: error.status,
-            code: error.code,
-          })
-        );
-        return jsonWithCors({ error: error.message }, { status: 400 });
-      }
-    } else {
-      const randomPassword = generateRandomPassword();
-
-      const { error } = await supabase.auth.signUp({
-        email: validatedEmail,
-        password: randomPassword,
-        options: { data: metadata, ...turnstile.captchaOptions },
-      });
-
-      if (error) {
-        void logAbuseEvent(ipAddress, 'otp_send', {
-          email: validatedEmail,
-          success: false,
-          metadata: {
-            stage: 'sign_up',
-            message: error.message,
-            code: error.code,
-            status: error.status,
-          },
-        });
-        console.error(
-          '[mobile/send-otp] signUp error:',
-          JSON.stringify({
-            message: error.message,
-            status: error.status,
-            code: error.code,
-          })
-        );
-        return jsonWithCors({ error: error.message }, { status: 400 });
-      }
-    }
-
-    await recordOTPSendSuccess(ipAddress, validatedEmail);
-    return jsonWithCors({ success: true });
+    return jsonWithCors(result.body, { status: result.status });
   } catch (error) {
-    if (isTurnstileError(error)) {
-      if (validatedEmail) {
-        void logAbuseEvent(ipAddress, 'otp_send', {
-          email: validatedEmail,
-          success: false,
-          metadata: {
-            stage: 'captcha',
-            message: error.message,
-          },
-        });
-      }
-      return jsonWithCors({ error: error.message }, { status: 400 });
-    }
-
-    const message =
-      error instanceof Error ? error.message : 'Failed to send OTP';
-    return jsonWithCors({ error: message }, { status: 500 });
+    const result = toOtpErrorResult(error, 'send');
+    return jsonWithCors(result.body, { status: result.status });
   }
 }

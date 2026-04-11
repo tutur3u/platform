@@ -107,7 +107,11 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
     key: 'auth',
     matches: (req) =>
       req.nextUrl.pathname.startsWith('/api/auth/mfa/') ||
-      /^\/api\/v1\/auth\/mobile\/(?:verify-otp|password-login)(?:\/|$)/.test(
+      /^\/api\/v1\/auth\/otp\/(?:send|verify|settings)(?:\/|$)/.test(
+        req.nextUrl.pathname
+      ) ||
+      /^\/api\/v1\/auth\/password-login(?:\/|$)/.test(req.nextUrl.pathname) ||
+      /^\/api\/v1\/auth\/mobile\/(?:send-otp|verify-otp|password-login)(?:\/|$)/.test(
         req.nextUrl.pathname
       ),
     rateLimits: AUTH_RATE_LIMITS,

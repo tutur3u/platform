@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
+import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -19,14 +21,49 @@ class HabitTrackerEntrySheet extends StatefulWidget {
   State<HabitTrackerEntrySheet> createState() => _HabitTrackerEntrySheetState();
 }
 
+class _WorkoutBlockDraft {
+  _WorkoutBlockDraft({
+    this.sets = 4,
+    this.reps = 8,
+    this.unit,
+  });
+
+  String exerciseName = '';
+  int sets;
+  int reps;
+  String weight = '';
+  String? unit;
+  String notes = '';
+
+  HabitTrackerExerciseBlock? toBlock() {
+    final name = exerciseName.trim();
+    if (name.isEmpty) {
+      return null;
+    }
+    final parsedWeight = weight.trim().isEmpty ? null : double.tryParse(weight);
+    return HabitTrackerExerciseBlock(
+      exerciseName: name,
+      sets: sets,
+      reps: reps,
+      weight: parsedWeight,
+      unit: unit,
+      notes: notes.trim().isEmpty ? null : notes.trim(),
+    );
+  }
+}
+
 class _HabitTrackerEntrySheetState extends State<HabitTrackerEntrySheet> {
   late final TextEditingController _dateController;
   late final TextEditingController _noteController;
   late final TextEditingController _tagsController;
-  late final Map<String, TextEditingController> _valueControllers;
-  late final Map<String, bool> _booleanValues;
-  late final Map<String, String?> _selectedValues;
+  late final TextEditingController _primaryValueController;
+  late final List<_WorkoutBlockDraft> _workoutBlocks;
+  late bool _checkValue;
   bool _isSubmitting = false;
+
+  HabitTracker get _tracker => widget.detail.tracker;
+  HabitTrackerEntry? get _latestEntry =>
+      widget.detail.entries.isEmpty ? null : widget.detail.entries.first;
 
   @override
   void initState() {
@@ -36,21 +73,23 @@ class _HabitTrackerEntrySheetState extends State<HabitTrackerEntrySheet> {
     );
     _noteController = TextEditingController();
     _tagsController = TextEditingController();
-    _valueControllers = {
-      for (final field in widget.detail.tracker.inputSchema)
-        if (field.type != HabitTrackerFieldType.boolean &&
-            field.type != HabitTrackerFieldType.select)
-          field.key: TextEditingController(),
-    };
-    _booleanValues = {
-      for (final field in widget.detail.tracker.inputSchema)
-        if (field.type == HabitTrackerFieldType.boolean) field.key: false,
-    };
-    _selectedValues = {
-      for (final field in widget.detail.tracker.inputSchema)
-        if (field.type == HabitTrackerFieldType.select)
-          field.key: field.options.isEmpty ? null : field.options.first.value,
-    };
+    _primaryValueController = TextEditingController();
+    _checkValue = false;
+    _workoutBlocks = [
+      _WorkoutBlockDraft(
+        sets: _tracker.composerConfig.defaultSets ?? 4,
+        reps: _tracker.composerConfig.defaultReps ?? 8,
+        unit:
+            _tracker.composerConfig.defaultWeightUnit ??
+            _tracker.composerConfig.unit,
+      ),
+    ];
+    if (_tracker.composerMode == HabitTrackerComposerMode.quickIncrement) {
+      final currentTotal = widget.detail.currentMember?.currentPeriodTotal ?? 0;
+      if (currentTotal > 0) {
+        _primaryValueController.text = formatCompactNumber(currentTotal);
+      }
+    }
   }
 
   @override
@@ -58,178 +97,139 @@ class _HabitTrackerEntrySheetState extends State<HabitTrackerEntrySheet> {
     _dateController.dispose();
     _noteController.dispose();
     _tagsController.dispose();
-    for (final controller in _valueControllers.values) {
-      controller.dispose();
-    }
+    _primaryValueController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final currentMember = widget.detail.currentMember;
+    final latestValue =
+        currentMember?.latestValues?[_tracker.primaryMetricKey] ??
+        currentMember?.latestValue ??
+        _latestEntry?.values[_tracker.primaryMetricKey];
+    final latestOccurredAt =
+        currentMember?.latestOccurredAt ??
+        _latestEntry?.occurredAt ??
+        _latestEntry?.createdAt;
 
-    return _EntrySheetContainer(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    return FinanceFullscreenFormScaffold(
+      title: context.l10n.habitsLogEntryTitle,
+      subtitle: _tracker.name,
+      primaryActionLabel: context.l10n.habitsSaveEntry,
+      onPrimaryPressed: _isSubmitting ? null : _submit,
+      onClose: _isSubmitting ? null : () => Navigator.of(context).maybePop(),
+      isSaving: _isSubmitting,
+      footerTop: _EntryFooterSummary(
+        tracker: _tracker,
+        currentPeriodTotal: currentMember?.currentPeriodTotal ?? 0,
+        latestValue: latestValue,
+      ),
+      child: ListView(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  l10n.habitsLogEntryTitle,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          _EntryHeroCard(
+            tracker: _tracker,
+            latestValue: latestValue,
+            latestOccurredAt: latestOccurredAt,
+            currentPeriodTotal: currentMember?.currentPeriodTotal ?? 0,
+          ),
+          const SizedBox(height: 12),
+          _buildComposer(context),
+          const SizedBox(height: 12),
+          FinanceFormSection(
+            title: context.l10n.habitsEntryDateLabel,
+            subtitle: context.l10n.habitsEntryNoteLabel,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _DateField(
+                  controller: _dateController,
+                  onTap: _pickDate,
                 ),
-              ),
-              IconButton(
-                onPressed: _isSubmitting
-                    ? null
-                    : () => Navigator.of(context).maybePop(),
-                icon: const Icon(Icons.close),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.habitsLogEntryDescription,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _LabeledField(
-                    label: l10n.habitsEntryDateLabel,
-                    child: TextField(
-                      controller: _dateController,
-                      readOnly: true,
-                      onTap: _pickDate,
-                      decoration: const InputDecoration(
-                        suffixIcon: Icon(Icons.calendar_today_outlined),
-                      ),
+                const SizedBox(height: 14),
+                _LabeledField(
+                  label: context.l10n.habitsEntryNoteLabel,
+                  child: TextField(
+                    controller: _noteController,
+                    minLines: 3,
+                    maxLines: 5,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _LabeledField(
+                  label: context.l10n.habitsEntryTagsLabel,
+                  child: TextField(
+                    controller: _tagsController,
+                    decoration: InputDecoration(
+                      hintText: context.l10n.habitsEntryTagsHint,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  for (final field in widget.detail.tracker.inputSchema) ...[
-                    _buildField(context, field),
-                    const SizedBox(height: 16),
-                  ],
-                  _LabeledField(
-                    label: l10n.habitsEntryNoteLabel,
-                    child: TextField(
-                      controller: _noteController,
-                      minLines: 3,
-                      maxLines: 5,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _LabeledField(
-                    label: l10n.habitsEntryTagsLabel,
-                    child: TextField(
-                      controller: _tagsController,
-                      decoration: InputDecoration(
-                        hintText: l10n.habitsEntryTagsHint,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: shad.OutlineButton(
-                  onPressed: _isSubmitting
-                      ? null
-                      : () => Navigator.of(context).maybePop(),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: Text(
-                      l10n.commonCancel,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: shad.PrimaryButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  child: _isSubmitting
-                      ? const Center(
-                          child: SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        )
-                      : SizedBox(
-                          width: double.infinity,
-                          child: Text(
-                            l10n.habitsSaveEntry,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _buildField(BuildContext context, HabitTrackerFieldSchema field) {
-    final l10n = context.l10n;
-    return _LabeledField(
-      label: field.label,
-      child: switch (field.type) {
-        HabitTrackerFieldType.boolean => SwitchListTile.adaptive(
-          value: _booleanValues[field.key] ?? false,
-          title: Text(
-            (_booleanValues[field.key] ?? false)
-                ? l10n.habitsMarkedDone
-                : l10n.habitsMarkDone,
-          ),
-          contentPadding: EdgeInsets.zero,
-          onChanged: (value) {
-            setState(() {
-              _booleanValues[field.key] = value;
-            });
-          },
+  Widget _buildComposer(BuildContext context) {
+    return switch (_tracker.composerMode) {
+      HabitTrackerComposerMode.quickCheck => _QuickCheckComposer(
+        tracker: _tracker,
+        value: _checkValue,
+        onChanged: (value) => setState(() => _checkValue = value),
+      ),
+      HabitTrackerComposerMode.quickIncrement => _QuickIncrementComposer(
+        tracker: _tracker,
+        controller: _primaryValueController,
+        latestEntry: _latestEntry,
+        onIncrement: _applyIncrement,
+      ),
+      HabitTrackerComposerMode.measurement => _MeasurementComposer(
+        tracker: _tracker,
+        controller: _primaryValueController,
+        latestEntry: _latestEntry,
+      ),
+      HabitTrackerComposerMode.workoutSession => _WorkoutSessionComposer(
+        tracker: _tracker,
+        blocks: _workoutBlocks,
+        onAddBlock: _addWorkoutBlock,
+        onRemoveBlock: _removeWorkoutBlock,
+        onChanged: () => setState(() {}),
+      ),
+      HabitTrackerComposerMode.advancedCustom => _AdvancedComposer(
+        tracker: _tracker,
+        controller: _primaryValueController,
+      ),
+    };
+  }
+
+  void _applyIncrement(double amount) {
+    final current = double.tryParse(_primaryValueController.text.trim()) ?? 0;
+    _primaryValueController.text = formatCompactNumber(current + amount);
+  }
+
+  void _addWorkoutBlock() {
+    setState(() {
+      _workoutBlocks.add(
+        _WorkoutBlockDraft(
+          sets: _tracker.composerConfig.defaultSets ?? 4,
+          reps: _tracker.composerConfig.defaultReps ?? 8,
+          unit:
+              _tracker.composerConfig.defaultWeightUnit ??
+              _tracker.composerConfig.unit,
         ),
-        HabitTrackerFieldType.select => DropdownButtonFormField<String>(
-          initialValue: _selectedValues[field.key],
-          items: field.options
-              .map(
-                (option) => DropdownMenuItem<String>(
-                  value: option.value,
-                  child: Text(option.label),
-                ),
-              )
-              .toList(growable: false),
-          onChanged: (value) {
-            setState(() {
-              _selectedValues[field.key] = value;
-            });
-          },
-        ),
-        HabitTrackerFieldType.text => TextField(
-          controller: _valueControllers[field.key],
-          minLines: 3,
-          maxLines: 5,
-        ),
-        _ => TextField(
-          controller: _valueControllers[field.key],
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
-      },
-    );
+      );
+    });
+  }
+
+  void _removeWorkoutBlock(_WorkoutBlockDraft block) {
+    if (_workoutBlocks.length == 1) {
+      return;
+    }
+    setState(() => _workoutBlocks.remove(block));
   }
 
   Future<void> _pickDate() async {
@@ -248,39 +248,33 @@ class _HabitTrackerEntrySheetState extends State<HabitTrackerEntrySheet> {
   Future<void> _submit() async {
     final toastContext = Navigator.of(context, rootNavigator: true).context;
     final values = <String, Object?>{};
-    for (final field in widget.detail.tracker.inputSchema) {
-      switch (field.type) {
-        case HabitTrackerFieldType.boolean:
-          values[field.key] = _booleanValues[field.key] ?? false;
-        case HabitTrackerFieldType.select:
-          values[field.key] = _selectedValues[field.key] ?? '';
-        case HabitTrackerFieldType.text:
-          values[field.key] = _valueControllers[field.key]?.text.trim() ?? '';
-        case HabitTrackerFieldType.number:
-        case HabitTrackerFieldType.duration:
-          final raw = _valueControllers[field.key]?.text.trim() ?? '';
-          if (field.required && raw.isEmpty) {
-            _showErrorToast(toastContext, context.l10n.habitsFormRequiredField);
-            return;
-          }
-          final parsed = raw.isEmpty ? 0 : double.tryParse(raw);
-          if (parsed == null) {
-            _showErrorToast(toastContext, context.l10n.habitsFormInvalidNumber);
-            return;
-          }
-          values[field.key] = parsed;
-      }
-      if (field.required) {
-        final value = values[field.key];
-        final missing =
-            value == null ||
-            (value is String && value.trim().isEmpty) ||
-            (field.type == HabitTrackerFieldType.boolean && value != true);
-        if (missing) {
-          _showErrorToast(toastContext, context.l10n.habitsFormRequiredField);
+
+    switch (_tracker.composerMode) {
+      case HabitTrackerComposerMode.quickCheck:
+        values[_tracker.primaryMetricKey] = _checkValue;
+      case HabitTrackerComposerMode.quickIncrement:
+      case HabitTrackerComposerMode.measurement:
+      case HabitTrackerComposerMode.advancedCustom:
+        final raw = _primaryValueController.text.trim().replaceAll(',', '');
+        final parsed = double.tryParse(raw);
+        if (parsed == null) {
+          _showErrorToast(toastContext, context.l10n.habitsFormInvalidNumber);
           return;
         }
-      }
+        values[_tracker.primaryMetricKey] = parsed;
+      case HabitTrackerComposerMode.workoutSession:
+        final blocks = _workoutBlocks
+            .map((block) => block.toBlock())
+            .whereType<HabitTrackerExerciseBlock>()
+            .toList(growable: false);
+        if (blocks.isEmpty) {
+          _showErrorToast(
+            toastContext,
+            context.l10n.habitsWorkoutBlocksRequired,
+          );
+          return;
+        }
+        values['exercise_blocks'] = blocks;
     }
 
     setState(() => _isSubmitting = true);
@@ -328,22 +322,613 @@ class _HabitTrackerEntrySheetState extends State<HabitTrackerEntrySheet> {
   }
 }
 
-class _EntrySheetContainer extends StatelessWidget {
-  const _EntrySheetContainer({required this.child});
+class _EntryHeroCard extends StatelessWidget {
+  const _EntryHeroCard({
+    required this.tracker,
+    required this.currentPeriodTotal,
+    this.latestValue,
+    this.latestOccurredAt,
+  });
 
-  final Widget child;
+  final HabitTracker tracker;
+  final double currentPeriodTotal;
+  final Object? latestValue;
+  final DateTime? latestOccurredAt;
 
   @override
   Widget build(BuildContext context) {
-    final height = context.isCompact
-        ? MediaQuery.sizeOf(context).height * 0.88
-        : 720.0;
-    return SizedBox(
-      height: height,
-      child: Material(
-        color: Theme.of(context).colorScheme.surface,
-        child: Padding(padding: const EdgeInsets.all(20), child: child),
+    final accent = habitTrackerColor(context, tracker.color);
+    final primaryField = primaryFieldForTracker(tracker);
+    final latestLabel = latestValue == null
+        ? context.l10n.habitsLogEntryAction
+        : context.l10n.habitsLatestValueLabel(
+            formatFieldValue(primaryField, latestValue),
+          );
+    final timeLabel = latestOccurredAt == null
+        ? _periodLabel(context, tracker.targetPeriod)
+        : MaterialLocalizations.of(context).formatTimeOfDay(
+            TimeOfDay.fromDateTime(latestOccurredAt!.toLocal()),
+          );
+
+    return FinancePanel(
+      backgroundColor: accent.withValues(alpha: 0.08),
+      borderColor: accent.withValues(alpha: 0.24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: accent.withValues(alpha: 0.14),
+                ),
+                child: Icon(habitTrackerIcon(tracker.icon), color: accent),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tracker.name,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$latestLabel • $timeLabel',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FinanceStatChip(
+                label: context.l10n.habitsSummaryVolume,
+                value: formatCompactNumber(currentPeriodTotal),
+                tint: accent,
+              ),
+              FinanceStatChip(
+                label: context.l10n.habitsSummaryTargetsMet,
+                value:
+                    '${formatCompactNumber(currentPeriodTotal)} / ${formatCompactNumber(tracker.targetValue)}',
+                tint: accent,
+              ),
+              FinanceStatChip(
+                label: context.l10n.habitsTargetPeriodLabel,
+                value: _periodLabel(context, tracker.targetPeriod),
+                tint: accent,
+              ),
+            ],
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _EntryFooterSummary extends StatelessWidget {
+  const _EntryFooterSummary({
+    required this.tracker,
+    required this.currentPeriodTotal,
+    this.latestValue,
+  });
+
+  final HabitTracker tracker;
+  final double currentPeriodTotal;
+  final Object? latestValue;
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryField = primaryFieldForTracker(tracker);
+    final currentLabel = formatCompactNumber(currentPeriodTotal);
+    final latestLabel = latestValue == null
+        ? context.l10n.habitsLogEntryAction
+        : formatFieldValue(primaryField, latestValue);
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            '${context.l10n.habitsSummaryVolume}: $currentLabel',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            latestLabel,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.end,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DateField extends StatelessWidget {
+  const _DateField({required this.controller, required this.onTap});
+
+  final TextEditingController controller;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _LabeledField(
+      label: context.l10n.habitsEntryDateLabel,
+      child: TextField(
+        controller: controller,
+        readOnly: true,
+        onTap: onTap,
+        decoration: const InputDecoration(
+          suffixIcon: Icon(Icons.calendar_today_outlined),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickCheckComposer extends StatelessWidget {
+  const _QuickCheckComposer({
+    required this.tracker,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final HabitTracker tracker;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = habitTrackerColor(context, tracker.color);
+
+    return FinancePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.l10n.habitsQuickCheckTitle,
+            style: shad.Theme.of(
+              context,
+            ).typography.large.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            context.l10n.habitsQuickCheckDescription,
+            style: shad.Theme.of(context).typography.textSmall.copyWith(
+              color: shad.Theme.of(context).colorScheme.mutedForeground,
+            ),
+          ),
+          const SizedBox(height: 16),
+          shad.PrimaryButton(
+            onPressed: () => onChanged(!value),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  value ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  color: accent,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  value
+                      ? context.l10n.habitsMarkedDone
+                      : context.l10n.habitsMarkDone,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickIncrementComposer extends StatelessWidget {
+  const _QuickIncrementComposer({
+    required this.tracker,
+    required this.controller,
+    required this.latestEntry,
+    required this.onIncrement,
+  });
+
+  final HabitTracker tracker;
+  final TextEditingController controller;
+  final HabitTrackerEntry? latestEntry;
+  final ValueChanged<double> onIncrement;
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryField = primaryFieldForTracker(tracker);
+    final previousValue = latestEntry?.values[tracker.primaryMetricKey] as num?;
+    final increments = tracker.composerConfig.suggestedIncrements.isNotEmpty
+        ? tracker.composerConfig.suggestedIncrements
+        : tracker.quickAddValues;
+
+    return FinancePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _MeasurementHeader(
+            title: context.l10n.habitsQuickIncrementTitle,
+            subtitle: previousValue == null
+                ? context.l10n.habitsQuickIncrementDescription
+                : context.l10n.habitsLatestValueLabel(
+                    formatFieldValue(primaryField, previousValue),
+                  ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              hintText: context.l10n.habitsTodayTotalHint,
+              suffixText: primaryField?.unit,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: increments
+                .map(
+                  (value) => shad.OutlineButton(
+                    onPressed: () => onIncrement(value),
+                    child: Text('+${formatCompactNumber(value)}'),
+                  ),
+                )
+                .toList(growable: false),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MeasurementComposer extends StatelessWidget {
+  const _MeasurementComposer({
+    required this.tracker,
+    required this.controller,
+    required this.latestEntry,
+  });
+
+  final HabitTracker tracker;
+  final TextEditingController controller;
+  final HabitTrackerEntry? latestEntry;
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryField = primaryFieldForTracker(tracker);
+    final previousValue = latestEntry?.values[tracker.primaryMetricKey] as num?;
+
+    return FinancePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _MeasurementHeader(
+            title: context.l10n.habitsMeasurementTitle,
+            subtitle: previousValue == null
+                ? context.l10n.habitsMeasurementDescription
+                : context.l10n.habitsLatestValueLabel(
+                    formatFieldValue(primaryField, previousValue),
+                  ),
+          ),
+          const SizedBox(height: 18),
+          TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: Theme.of(
+              context,
+            ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w800),
+            decoration: InputDecoration(
+              hintText: '0',
+              suffixText:
+                  tracker.composerConfig.unit ??
+                  primaryField?.unit ??
+                  tracker.composerConfig.defaultWeightUnit,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdvancedComposer extends StatelessWidget {
+  const _AdvancedComposer({
+    required this.tracker,
+    required this.controller,
+  });
+
+  final HabitTracker tracker;
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryField = primaryFieldForTracker(tracker);
+
+    return FinancePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _MeasurementHeader(
+            title: context.l10n.habitsAdvancedComposerTitle,
+            subtitle: context.l10n.habitsAdvancedComposerDescription,
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              hintText: primaryField?.label ?? context.l10n.habitsNameLabel,
+              suffixText: primaryField?.unit,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WorkoutSessionComposer extends StatelessWidget {
+  const _WorkoutSessionComposer({
+    required this.tracker,
+    required this.blocks,
+    required this.onAddBlock,
+    required this.onRemoveBlock,
+    required this.onChanged,
+  });
+
+  final HabitTracker tracker;
+  final List<_WorkoutBlockDraft> blocks;
+  final VoidCallback onAddBlock;
+  final ValueChanged<_WorkoutBlockDraft> onRemoveBlock;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final totalSets = blocks.fold<int>(0, (sum, block) => sum + block.sets);
+    final totalReps = blocks.fold<int>(
+      0,
+      (sum, block) => sum + (block.sets * block.reps),
+    );
+    final totalVolume = blocks.fold<double>(0, (sum, block) {
+      final weight = double.tryParse(block.weight.trim()) ?? 0;
+      return sum + (block.sets * block.reps * weight);
+    });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FinancePanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _MeasurementHeader(
+                title: context.l10n.habitsWorkoutSessionTitle,
+                subtitle: context.l10n.habitsWorkoutSessionDescription,
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FinanceStatChip(
+                    label: context.l10n.habitsWorkoutTotalSets,
+                    value: '$totalSets',
+                  ),
+                  FinanceStatChip(
+                    label: context.l10n.habitsWorkoutTotalReps,
+                    value: '$totalReps',
+                  ),
+                  FinanceStatChip(
+                    label: context.l10n.habitsWorkoutTotalVolume,
+                    value: formatCompactNumber(totalVolume),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...blocks.map(
+          (block) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _WorkoutBlockCard(
+              tracker: tracker,
+              block: block,
+              onRemove: () => onRemoveBlock(block),
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+        shad.SecondaryButton(
+          onPressed: onAddBlock,
+          child: Text(context.l10n.habitsAddExerciseBlock),
+        ),
+      ],
+    );
+  }
+}
+
+class _WorkoutBlockCard extends StatelessWidget {
+  const _WorkoutBlockCard({
+    required this.tracker,
+    required this.block,
+    required this.onRemove,
+    required this.onChanged,
+  });
+
+  final HabitTracker tracker;
+  final _WorkoutBlockDraft block;
+  final VoidCallback onRemove;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final units = tracker.composerConfig.supportedUnits.isEmpty
+        ? <String>[
+            tracker.composerConfig.defaultWeightUnit ??
+                tracker.composerConfig.unit ??
+                'kg',
+          ]
+        : tracker.composerConfig.supportedUnits;
+
+    return FinancePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  context.l10n.habitsWorkoutBlockTitle,
+                  style: shad.Theme.of(
+                    context,
+                  ).typography.large.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+              shad.IconButton.ghost(
+                icon: const Icon(Icons.delete_outline_rounded),
+                onPressed: onRemove,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            initialValue: block.exerciseName,
+            decoration: InputDecoration(
+              labelText: context.l10n.habitsWorkoutExerciseName,
+            ),
+            onChanged: (value) {
+              block.exerciseName = value;
+              onChanged();
+            },
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  initialValue: '${block.sets}',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.habitsWorkoutSets,
+                  ),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    block.sets = int.tryParse(value) ?? block.sets;
+                    onChanged();
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextFormField(
+                  initialValue: '${block.reps}',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.habitsWorkoutReps,
+                  ),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    block.reps = int.tryParse(value) ?? block.reps;
+                    onChanged();
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  initialValue: block.weight,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.habitsWorkoutWeight,
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  onChanged: (value) {
+                    block.weight = value;
+                    onChanged();
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                width: 120,
+                child: DropdownButtonFormField<String>(
+                  initialValue: block.unit ?? units.first,
+                  items: units
+                      .map(
+                        (unit) => DropdownMenuItem<String>(
+                          value: unit,
+                          child: Text(unit),
+                        ),
+                      )
+                      .toList(growable: false),
+                  onChanged: (value) {
+                    block.unit = value;
+                    onChanged();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MeasurementHeader extends StatelessWidget {
+  const _MeasurementHeader({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: shad.Theme.of(
+            context,
+          ).typography.large.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          subtitle,
+          style: shad.Theme.of(context).typography.textSmall.copyWith(
+            color: shad.Theme.of(context).colorScheme.mutedForeground,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -370,6 +955,15 @@ class _LabeledField extends StatelessWidget {
       ],
     );
   }
+}
+
+String _periodLabel(
+  BuildContext context,
+  HabitTrackerTargetPeriod targetPeriod,
+) {
+  return targetPeriod == HabitTrackerTargetPeriod.daily
+      ? context.l10n.habitsPeriodDaily
+      : context.l10n.habitsPeriodWeekly;
 }
 
 extension on String {

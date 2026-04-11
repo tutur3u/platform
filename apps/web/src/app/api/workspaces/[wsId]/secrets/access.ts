@@ -8,8 +8,11 @@ import {
 } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 
-export async function getWorkspaceSecretsAccess(wsId: string) {
-  const supabase = await createClient();
+export async function getWorkspaceSecretsAccess(
+  wsId: string,
+  request?: Request
+) {
+  const supabase = await createClient(request);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -25,8 +28,8 @@ export async function getWorkspaceSecretsAccess(wsId: string) {
   const resolvedWsId = resolveWorkspaceId(wsId);
 
   const [workspacePermissions, rootPermissions] = await Promise.all([
-    getPermissions({ wsId: resolvedWsId }),
-    getPermissions({ wsId: ROOT_WORKSPACE_ID }),
+    getPermissions({ wsId: resolvedWsId, request }),
+    getPermissions({ wsId: ROOT_WORKSPACE_ID, request }),
   ]);
 
   const canManageWorkspaceSecrets =

@@ -1,3 +1,4 @@
+import type { HabitTrackerEntryInput } from '@tuturuuu/types/primitives/HabitTracker';
 import { NextResponse } from 'next/server';
 import {
   assertValidTrackerId,
@@ -51,7 +52,9 @@ export async function POST(
       request,
       rawWsId
     );
-    const body = habitTrackerEntryInputSchema.parse(await request.json());
+    const body = habitTrackerEntryInputSchema.parse(
+      await request.json()
+    ) as HabitTrackerEntryInput;
     const entry = await createHabitTrackerEntry(
       sbAdmin,
       wsId,

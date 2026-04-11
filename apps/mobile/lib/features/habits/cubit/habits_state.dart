@@ -25,6 +25,15 @@ class HabitsState extends Equatable {
     this.status = HabitsStatus.initial,
     this.detailStatus = HabitsStatus.initial,
     this.activityStatus = HabitsStatus.initial,
+    this.isFromCache = false,
+    this.isRefreshing = false,
+    this.lastUpdatedAt,
+    this.isDetailFromCache = false,
+    this.isDetailRefreshing = false,
+    this.detailLastUpdatedAt,
+    this.isActivityFromCache = false,
+    this.isActivityRefreshing = false,
+    this.activityLastUpdatedAt,
     this.activeWorkspaceId,
     this.listResponse,
     this.detail,
@@ -48,6 +57,15 @@ class HabitsState extends Equatable {
   final HabitsStatus status;
   final HabitsStatus detailStatus;
   final HabitsStatus activityStatus;
+  final bool isFromCache;
+  final bool isRefreshing;
+  final DateTime? lastUpdatedAt;
+  final bool isDetailFromCache;
+  final bool isDetailRefreshing;
+  final DateTime? detailLastUpdatedAt;
+  final bool isActivityFromCache;
+  final bool isActivityRefreshing;
+  final DateTime? activityLastUpdatedAt;
   final String? activeWorkspaceId;
   final HabitTrackerListResponse? listResponse;
   final HabitTrackerDetailResponse? detail;
@@ -107,6 +125,15 @@ class HabitsState extends Equatable {
     HabitsStatus? status,
     HabitsStatus? detailStatus,
     HabitsStatus? activityStatus,
+    bool? isFromCache,
+    bool? isRefreshing,
+    Object? lastUpdatedAt = _sentinel,
+    bool? isDetailFromCache,
+    bool? isDetailRefreshing,
+    Object? detailLastUpdatedAt = _sentinel,
+    bool? isActivityFromCache,
+    bool? isActivityRefreshing,
+    Object? activityLastUpdatedAt = _sentinel,
     Object? activeWorkspaceId = _sentinel,
     Object? listResponse = _sentinel,
     Object? detail = _sentinel,
@@ -130,6 +157,21 @@ class HabitsState extends Equatable {
       status: status ?? this.status,
       detailStatus: detailStatus ?? this.detailStatus,
       activityStatus: activityStatus ?? this.activityStatus,
+      isFromCache: isFromCache ?? this.isFromCache,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
+      lastUpdatedAt: lastUpdatedAt == _sentinel
+          ? this.lastUpdatedAt
+          : lastUpdatedAt as DateTime?,
+      isDetailFromCache: isDetailFromCache ?? this.isDetailFromCache,
+      isDetailRefreshing: isDetailRefreshing ?? this.isDetailRefreshing,
+      detailLastUpdatedAt: detailLastUpdatedAt == _sentinel
+          ? this.detailLastUpdatedAt
+          : detailLastUpdatedAt as DateTime?,
+      isActivityFromCache: isActivityFromCache ?? this.isActivityFromCache,
+      isActivityRefreshing: isActivityRefreshing ?? this.isActivityRefreshing,
+      activityLastUpdatedAt: activityLastUpdatedAt == _sentinel
+          ? this.activityLastUpdatedAt
+          : activityLastUpdatedAt as DateTime?,
       activeWorkspaceId: activeWorkspaceId == _sentinel
           ? this.activeWorkspaceId
           : activeWorkspaceId as String?,
@@ -175,6 +217,15 @@ class HabitsState extends Equatable {
     status,
     detailStatus,
     activityStatus,
+    isFromCache,
+    isRefreshing,
+    lastUpdatedAt,
+    isDetailFromCache,
+    isDetailRefreshing,
+    detailLastUpdatedAt,
+    isActivityFromCache,
+    isActivityRefreshing,
+    activityLastUpdatedAt,
     activeWorkspaceId,
     listResponse,
     detail,

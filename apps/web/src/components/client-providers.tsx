@@ -36,6 +36,10 @@ function FetchInterceptorI18n() {
 export function ClientProviders({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isSharedSurface = /^\/[^/]+\/shared(?:\/|$)/.test(pathname ?? '');
+  const isWorkspaceDashboardSurface =
+    /^\/[^/]+\/(?:personal|[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{12})(?:\/|$)/.test(
+      pathname ?? ''
+    );
   const content = (
     <>
       <TooltipProvider>{children}</TooltipProvider>
@@ -50,9 +54,15 @@ export function ClientProviders({ children }: { children: ReactNode }) {
     return content;
   }
 
+  const wrappedContent = (
+    <AccountSwitcherProvider>{content}</AccountSwitcherProvider>
+  );
+
+  if (!isWorkspaceDashboardSurface) {
+    return wrappedContent;
+  }
+
   return (
-    <CalendarPreferencesProvider>
-      <AccountSwitcherProvider>{content}</AccountSwitcherProvider>
-    </CalendarPreferencesProvider>
+    <CalendarPreferencesProvider>{wrappedContent}</CalendarPreferencesProvider>
   );
 }

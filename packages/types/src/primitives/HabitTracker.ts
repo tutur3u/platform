@@ -43,6 +43,40 @@ export type HabitTrackerStreakActionType =
 export const HabitTrackerScopes = ['self', 'team', 'member'] as const;
 export type HabitTrackerScope = (typeof HabitTrackerScopes)[number];
 
+export const HabitTrackerUseCases = [
+  'generic',
+  'body_weight',
+  'counter',
+  'measurement',
+  'workout_session',
+  'wellness_check',
+] as const;
+export type HabitTrackerUseCase = (typeof HabitTrackerUseCases)[number];
+
+export const HabitTrackerTemplateCategories = [
+  'strength',
+  'health',
+  'recovery',
+  'discipline',
+  'custom',
+] as const;
+export type HabitTrackerTemplateCategory =
+  (typeof HabitTrackerTemplateCategories)[number];
+
+export const HabitTrackerComposerModes = [
+  'quick_check',
+  'quick_increment',
+  'measurement',
+  'workout_session',
+  'advanced_custom',
+] as const;
+export type HabitTrackerComposerMode =
+  (typeof HabitTrackerComposerModes)[number];
+
+export const HabitTrackerProgressVariants = ['ring', 'bar', 'check'] as const;
+export type HabitTrackerProgressVariant =
+  (typeof HabitTrackerProgressVariants)[number];
+
 export interface HabitTrackerFieldOption {
   label: string;
   value: string;
@@ -56,6 +90,33 @@ export interface HabitTrackerFieldSchema {
   required?: boolean;
   options?: HabitTrackerFieldOption[];
 }
+
+export interface HabitTrackerComposerConfig {
+  unit?: string | null;
+  supported_units?: string[];
+  suggested_increments?: number[];
+  progress_variant?: HabitTrackerProgressVariant;
+  suggested_exercises?: string[];
+  default_sets?: number | null;
+  default_reps?: number | null;
+  default_weight_unit?: string | null;
+}
+
+export interface HabitTrackerExerciseBlock {
+  exercise_name: string;
+  sets: number;
+  reps: number;
+  weight?: number | null;
+  unit?: string | null;
+  notes?: string | null;
+}
+
+export type HabitTrackerEntryValue =
+  | boolean
+  | number
+  | string
+  | null
+  | HabitTrackerExerciseBlock[];
 
 export interface HabitTracker {
   id: string;
@@ -78,6 +139,10 @@ export interface HabitTracker {
   created_by?: string | null;
   is_active: boolean;
   archived_at?: string | null;
+  use_case?: HabitTrackerUseCase;
+  template_category?: HabitTrackerTemplateCategory;
+  composer_mode?: HabitTrackerComposerMode;
+  composer_config?: HabitTrackerComposerConfig | null;
   created_at: string;
   updated_at: string;
 }
@@ -90,7 +155,7 @@ export interface HabitTrackerEntry {
   entry_kind: HabitTrackerEntryKind;
   entry_date: string;
   occurred_at: string;
-  values: Record<string, boolean | number | string | null>;
+  values: Record<string, HabitTrackerEntryValue>;
   primary_value?: number | null;
   note?: string | null;
   tags: string[];
@@ -155,6 +220,11 @@ export interface HabitTrackerMemberSummary {
   total: number;
   entry_count: number;
   current_period_total: number;
+  latest_value?: number | null;
+  latest_entry_id?: string | null;
+  latest_entry_date?: string | null;
+  latest_occurred_at?: string | null;
+  latest_values?: Record<string, HabitTrackerEntryValue> | null;
   streak: HabitTrackerStreakSummary;
 }
 
@@ -218,6 +288,10 @@ export interface HabitTrackerInput {
   quick_add_values?: number[];
   freeze_allowance?: number;
   recovery_window_periods?: number;
+  use_case?: HabitTrackerUseCase;
+  template_category?: HabitTrackerTemplateCategory;
+  composer_mode?: HabitTrackerComposerMode;
+  composer_config?: HabitTrackerComposerConfig | null;
   start_date?: string;
   is_active?: boolean;
 }
@@ -226,7 +300,7 @@ export interface HabitTrackerEntryInput {
   entry_kind?: HabitTrackerEntryKind;
   entry_date: string;
   occurred_at?: string;
-  values: Record<string, boolean | number | string | null>;
+  values: Record<string, HabitTrackerEntryValue>;
   primary_value?: number | null;
   note?: string | null;
   tags?: string[];
@@ -256,4 +330,8 @@ export interface HabitTrackerTemplate {
   input_schema: HabitTrackerFieldSchema[];
   freeze_allowance: number;
   recovery_window_periods: number;
+  use_case?: HabitTrackerUseCase;
+  template_category?: HabitTrackerTemplateCategory;
+  composer_mode?: HabitTrackerComposerMode;
+  composer_config?: HabitTrackerComposerConfig | null;
 }

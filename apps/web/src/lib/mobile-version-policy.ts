@@ -5,14 +5,18 @@ export const MOBILE_VERSION_POLICY_CONFIG_KEYS = {
   ios: {
     effectiveVersion: 'MOBILE_IOS_EFFECTIVE_VERSION',
     minimumVersion: 'MOBILE_IOS_MINIMUM_VERSION',
+    otpEnabled: 'MOBILE_IOS_OTP_ENABLED',
     storeUrl: 'MOBILE_IOS_STORE_URL',
   },
   android: {
     effectiveVersion: 'MOBILE_ANDROID_EFFECTIVE_VERSION',
     minimumVersion: 'MOBILE_ANDROID_MINIMUM_VERSION',
+    otpEnabled: 'MOBILE_ANDROID_OTP_ENABLED',
     storeUrl: 'MOBILE_ANDROID_STORE_URL',
   },
 } as const;
+
+export const WEB_OTP_ENABLED_CONFIG_KEY = 'WEB_OTP_ENABLED';
 
 export type MobilePlatform = keyof typeof MOBILE_VERSION_POLICY_CONFIG_KEYS;
 export type MobileVersionStatus =
@@ -23,12 +27,14 @@ export type MobileVersionStatus =
 export interface MobilePlatformVersionPolicy {
   effectiveVersion: string | null;
   minimumVersion: string | null;
+  otpEnabled: boolean;
   storeUrl: string | null;
 }
 
 export interface MobileVersionPolicies {
   ios: MobilePlatformVersionPolicy;
   android: MobilePlatformVersionPolicy;
+  webOtpEnabled: boolean;
 }
 
 export interface MobileVersionCheckResult {
@@ -36,6 +42,7 @@ export interface MobileVersionCheckResult {
   currentVersion: string;
   effectiveVersion: string | null;
   minimumVersion: string | null;
+  otpEnabled: boolean;
   storeUrl: string | null;
   status: MobileVersionStatus;
   shouldUpdate: boolean;
@@ -44,10 +51,30 @@ export interface MobileVersionCheckResult {
 
 const STRICT_SEMVER_REGEX = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 
-export function normalizeOptionalString(value: string | null | undefined) {
+export function normalizeOptionalString(value: unknown) {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeBooleanValue(value: unknown) {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    switch (value.trim().toLowerCase()) {
+      case '1':
+      case 'on':
+      case 'true':
+      case 'yes':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  return false;
 }
 
 export function isStrictSemver(value: string) {
@@ -77,13 +104,17 @@ export function compareStrictSemver(left: string, right: string) {
 
 export function normalizeMobileVersionPolicies(
   value: Partial<
-    Record<MobilePlatform, Partial<MobilePlatformVersionPolicy> | undefined>
-  >
+    Record<
+      MobilePlatform,
+      Partial<Record<keyof MobilePlatformVersionPolicy, unknown>> | undefined
+    >
+  > & { webOtpEnabled?: unknown }
 ): MobileVersionPolicies {
   return {
     ios: {
       effectiveVersion: normalizeOptionalString(value.ios?.effectiveVersion),
       minimumVersion: normalizeOptionalString(value.ios?.minimumVersion),
+      otpEnabled: normalizeBooleanValue(value.ios?.otpEnabled),
       storeUrl: normalizeOptionalString(value.ios?.storeUrl),
     },
     android: {
@@ -91,8 +122,10 @@ export function normalizeMobileVersionPolicies(
         value.android?.effectiveVersion
       ),
       minimumVersion: normalizeOptionalString(value.android?.minimumVersion),
+      otpEnabled: normalizeBooleanValue(value.android?.otpEnabled),
       storeUrl: normalizeOptionalString(value.android?.storeUrl),
     },
+    webOtpEnabled: normalizeBooleanValue(value.webOtpEnabled),
   };
 }
 
@@ -143,9 +176,10 @@ export function validateMobileVersionPolicies(value: MobileVersionPolicies) {
 
 export async function getMobileVersionPolicies() {
   const sbAdmin = await createAdminClient();
-  const configIds = Object.values(MOBILE_VERSION_POLICY_CONFIG_KEYS).flatMap(
-    (platformConfig) => Object.values(platformConfig)
-  );
+  const configIds: string[] = Object.values(
+    MOBILE_VERSION_POLICY_CONFIG_KEYS
+  ).flatMap((platformConfig) => Object.values(platformConfig));
+  configIds.push(WEB_OTP_ENABLED_CONFIG_KEY);
 
   const { data, error } = await sbAdmin
     .from('workspace_configs')
@@ -166,6 +200,9 @@ export async function getMobileVersionPolicies() {
       minimumVersion: configMap.get(
         MOBILE_VERSION_POLICY_CONFIG_KEYS.ios.minimumVersion
       ),
+      otpEnabled: configMap.get(
+        MOBILE_VERSION_POLICY_CONFIG_KEYS.ios.otpEnabled
+      ),
       storeUrl: configMap.get(MOBILE_VERSION_POLICY_CONFIG_KEYS.ios.storeUrl),
     },
     android: {
@@ -175,10 +212,14 @@ export async function getMobileVersionPolicies() {
       minimumVersion: configMap.get(
         MOBILE_VERSION_POLICY_CONFIG_KEYS.android.minimumVersion
       ),
+      otpEnabled: configMap.get(
+        MOBILE_VERSION_POLICY_CONFIG_KEYS.android.otpEnabled
+      ),
       storeUrl: configMap.get(
         MOBILE_VERSION_POLICY_CONFIG_KEYS.android.storeUrl
       ),
     },
+    webOtpEnabled: configMap.get(WEB_OTP_ENABLED_CONFIG_KEY),
   });
 
   const validation = validateMobileVersionPolicies(policies);
@@ -222,6 +263,7 @@ export function evaluateMobileVersionPolicy({
     currentVersion,
     effectiveVersion: policy.effectiveVersion,
     minimumVersion: policy.minimumVersion,
+    otpEnabled: policy.otpEnabled,
     storeUrl: policy.storeUrl,
     status,
     shouldUpdate: status !== 'supported',

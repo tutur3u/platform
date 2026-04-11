@@ -35,6 +35,7 @@ import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/settings/view/settings_workspace_members_page.dart';
 import 'package:mobile/features/settings/view/settings_workspace_page.dart';
 import 'package:mobile/features/settings/view/settings_workspace_roles_page.dart';
+import 'package:mobile/features/settings/view/settings_workspace_secrets_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_project_detail_page.dart';
@@ -272,6 +273,11 @@ GoRouter createAppRouter(
                 const HabitsPage(initialSection: HabitsSection.activity),
           ),
           GoRoute(
+            path: Routes.habitsLibrary,
+            builder: (context, state) =>
+                const HabitsPage(initialSection: HabitsSection.library),
+          ),
+          GoRoute(
             path: Routes.taskBoards,
             builder: (context, state) => const TaskBoardsPage(),
           ),
@@ -365,6 +371,10 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.settingsWorkspace,
             builder: (context, state) => const SettingsWorkspacePage(),
+          ),
+          GoRoute(
+            path: Routes.settingsWorkspaceSecrets,
+            builder: (context, state) => const SettingsWorkspaceSecretsPage(),
           ),
           GoRoute(
             path: Routes.settingsWorkspaceMembers,

@@ -178,7 +178,7 @@ describe('guardApiProxyRequest', () => {
     expect(mocks.limit).not.toHaveBeenCalled();
   });
 
-  it('keeps mobile OTP sends on the default mutate bucket', async () => {
+  it('keeps OTP sends on the strict auth bucket', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
@@ -187,7 +187,7 @@ describe('guardApiProxyRequest', () => {
     mocks.isBlocked.mockResolvedValue(null);
     mocks.limit.mockResolvedValueOnce({
       success: false,
-      limit: 12,
+      limit: 3,
       remaining: 0,
       reset: Date.now() + 15_000,
     });
@@ -197,13 +197,15 @@ describe('guardApiProxyRequest', () => {
     clearApiProxyGuardLimiterCache();
 
     const response = await guardApiProxyRequest(
-      makeRequest('/api/v1/auth/mobile/send-otp', 'POST'),
-      { prefixBase: 'proxy:test:api' }
+      makeRequest('/api/v1/auth/otp/send', 'POST'),
+      {
+        prefixBase: 'proxy:test:api',
+      }
     );
 
     expect(response?.status).toBe(429);
-    expect(response?.headers.get('X-RateLimit-Limit')).toBe('12');
-    expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('3');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('auth');
   });
 
   it('keeps verify-otp on the strict auth bucket', async () => {
@@ -226,6 +228,34 @@ describe('guardApiProxyRequest', () => {
 
     const response = await guardApiProxyRequest(
       makeRequest('/api/v1/auth/mobile/verify-otp', 'POST'),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('3');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('auth');
+  });
+
+  it('keeps password-login on the strict auth bucket', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 3,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/auth/password-login', 'POST'),
       { prefixBase: 'proxy:test:api' }
     );
 

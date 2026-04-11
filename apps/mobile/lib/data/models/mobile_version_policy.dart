@@ -9,6 +9,7 @@ class MobilePlatformVersionPolicy extends Equatable {
   const MobilePlatformVersionPolicy({
     this.effectiveVersion,
     this.minimumVersion,
+    this.otpEnabled = false,
     this.storeUrl,
   });
 
@@ -20,17 +21,20 @@ class MobilePlatformVersionPolicy extends Equatable {
       minimumVersion: _normalizeOptionalString(
         json['minimumVersion'] as String?,
       ),
+      otpEnabled: json['otpEnabled'] as bool? ?? false,
       storeUrl: _normalizeOptionalString(json['storeUrl'] as String?),
     );
   }
 
   final String? effectiveVersion;
   final String? minimumVersion;
+  final bool otpEnabled;
   final String? storeUrl;
 
   Map<String, dynamic> toJson() => {
     'effectiveVersion': _normalizeOptionalString(effectiveVersion),
     'minimumVersion': _normalizeOptionalString(minimumVersion),
+    'otpEnabled': otpEnabled,
     'storeUrl': _normalizeOptionalString(storeUrl),
   };
 
@@ -38,18 +42,25 @@ class MobilePlatformVersionPolicy extends Equatable {
     return MobilePlatformVersionPolicy(
       effectiveVersion: _normalizeOptionalString(effectiveVersion),
       minimumVersion: _normalizeOptionalString(minimumVersion),
+      otpEnabled: otpEnabled,
       storeUrl: _normalizeOptionalString(storeUrl),
     );
   }
 
   @override
-  List<Object?> get props => [effectiveVersion, minimumVersion, storeUrl];
+  List<Object?> get props => [
+    effectiveVersion,
+    minimumVersion,
+    otpEnabled,
+    storeUrl,
+  ];
 }
 
 class MobileVersionPolicies extends Equatable {
   const MobileVersionPolicies({
     required this.ios,
     required this.android,
+    this.webOtpEnabled = false,
   });
 
   factory MobileVersionPolicies.empty() {
@@ -67,24 +78,28 @@ class MobileVersionPolicies extends Equatable {
       android: MobilePlatformVersionPolicy.fromJson(
         (json['android'] as Map<String, dynamic>?) ?? const <String, dynamic>{},
       ),
+      webOtpEnabled: json['webOtpEnabled'] as bool? ?? false,
     );
   }
 
   final MobilePlatformVersionPolicy ios;
   final MobilePlatformVersionPolicy android;
+  final bool webOtpEnabled;
 
   Map<String, dynamic> toJson() => {
     'ios': ios.normalized().toJson(),
     'android': android.normalized().toJson(),
+    'webOtpEnabled': webOtpEnabled,
   };
 
   MobileVersionPolicies normalized() {
     return MobileVersionPolicies(
       ios: ios.normalized(),
       android: android.normalized(),
+      webOtpEnabled: webOtpEnabled,
     );
   }
 
   @override
-  List<Object?> get props => [ios, android];
+  List<Object?> get props => [ios, android, webOtpEnabled];
 }

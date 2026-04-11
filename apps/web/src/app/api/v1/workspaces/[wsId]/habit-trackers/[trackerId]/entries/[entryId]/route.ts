@@ -1,3 +1,4 @@
+import type { HabitTrackerEntryInput } from '@tuturuuu/types/primitives/HabitTracker';
 import { NextResponse } from 'next/server';
 import {
   assertValidEntryId,
@@ -29,7 +30,9 @@ export async function PATCH(
       request,
       rawWsId
     );
-    const body = habitTrackerEntryUpdateSchema.parse(await request.json());
+    const body = habitTrackerEntryUpdateSchema.parse(
+      await request.json()
+    ) as Partial<HabitTrackerEntryInput>;
     const entry = await updateHabitTrackerEntry(
       sbAdmin,
       wsId,

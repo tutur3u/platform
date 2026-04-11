@@ -7,9 +7,9 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
   const { wsId } = await params;
-  const access = await getWorkspaceSecretsAccess(wsId);
+  const access = await getWorkspaceSecretsAccess(wsId, request);
 
   if (!access.allowed) {
     return NextResponse.json(
@@ -38,7 +38,7 @@ export async function GET(_: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   const data = await req.json();
   const { wsId } = await params;
-  const access = await getWorkspaceSecretsAccess(wsId);
+  const access = await getWorkspaceSecretsAccess(wsId, req);
 
   if (!access.allowed) {
     return NextResponse.json(

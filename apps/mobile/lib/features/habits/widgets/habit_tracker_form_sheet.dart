@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
+import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -11,9 +12,11 @@ class HabitTrackerFormSheet extends StatefulWidget {
     required this.onSubmit,
     super.key,
     this.tracker,
+    this.initialTemplateId,
   });
 
   final HabitTracker? tracker;
+  final String? initialTemplateId;
   final Future<void> Function(HabitTrackerInput input) onSubmit;
 
   @override
@@ -110,16 +113,22 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
   late String _selectedIcon;
   late String _primaryMetricKey;
   late bool _isActive;
+  late HabitTrackerUseCase _useCase;
+  late HabitTrackerTemplateCategory _templateCategory;
+  late HabitTrackerComposerMode _composerMode;
+  late HabitTrackerComposerConfig _composerConfig;
   late List<HabitTrackerFieldDraft> _fields;
   String _selectedTemplateId = 'custom';
+  bool _showAdvancedFields = false;
   bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
     final tracker = widget.tracker;
+    final selectedTemplateId = widget.initialTemplateId ?? 'body_weight';
     final initialInput = tracker == null
-        ? (habitTrackerTemplateById('water')?.toInput(
+        ? (habitTrackerTemplateById(selectedTemplateId)?.toInput(
                 startDate: DateTime.now().toIso8601String().slice(0, 10),
               ) ??
               habitTrackerTemplates.first.toInput(
@@ -140,6 +149,10 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
             quickAddValues: tracker.quickAddValues,
             freezeAllowance: tracker.freezeAllowance,
             recoveryWindowPeriods: tracker.recoveryWindowPeriods,
+            useCase: tracker.useCase,
+            templateCategory: tracker.templateCategory,
+            composerMode: tracker.composerMode,
+            composerConfig: tracker.composerConfig,
             startDate: tracker.startDate,
             isActive: tracker.isActive,
           );
@@ -172,9 +185,15 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
     _selectedIcon = initialInput.icon;
     _primaryMetricKey = initialInput.primaryMetricKey;
     _isActive = initialInput.isActive;
+    _useCase = initialInput.useCase;
+    _templateCategory = initialInput.templateCategory;
+    _composerMode = initialInput.composerMode;
+    _composerConfig = initialInput.composerConfig;
     _fields = initialInput.inputSchema
         .map(HabitTrackerFieldDraft.fromSchema)
         .toList(growable: true);
+    _selectedTemplateId = tracker?.id ?? selectedTemplateId;
+    _showAdvancedFields = tracker != null || selectedTemplateId == 'custom';
   }
 
   @override
@@ -192,418 +211,416 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final previewTrackerName = _nameController.text.trim().isEmpty
+        ? (widget.tracker == null
+              ? (habitTrackerTemplateById(_selectedTemplateId)?.name ??
+                    l10n.habitsCreateTrackerTitle)
+              : widget.tracker!.name)
+        : _nameController.text.trim();
+    final previewUnit = (() {
+      for (final field in _fields) {
+        if (field.key == _primaryMetricKey) {
+          return field.unit;
+        }
+      }
+      return _composerConfig.unit;
+    })();
 
-    return SizedBox(
-      height: context.isCompact
-          ? MediaQuery.sizeOf(context).height * 0.92
-          : 780,
-      child: Material(
-        color: Theme.of(context).colorScheme.surface,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.tracker == null
-                          ? l10n.habitsCreateTrackerTitle
-                          : l10n.habitsEditTrackerTitle,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
+    return FinanceFullscreenFormScaffold(
+      title: widget.tracker == null
+          ? l10n.habitsCreateTrackerTitle
+          : l10n.habitsEditTrackerTitle,
+      subtitle: widget.tracker == null
+          ? l10n.habitsCreateTrackerDescription
+          : l10n.habitsEditTrackerDescription,
+      primaryActionLabel: widget.tracker == null
+          ? l10n.habitsCreateTrackerAction
+          : l10n.habitsSaveTrackerAction,
+      onPrimaryPressed: _isSubmitting ? null : _submit,
+      onClose: _isSubmitting ? null : () => Navigator.of(context).maybePop(),
+      isSaving: _isSubmitting,
+      child: ListView(
+        children: [
+          _FormPreviewCard(
+            trackerName: previewTrackerName,
+            description: _descriptionController.text.trim(),
+            color: _selectedColor,
+            icon: _selectedIcon,
+            targetValue: _targetValueController.text.trim(),
+            unit: previewUnit,
+            composerMode: _composerMode,
+            targetPeriod: _targetPeriod,
+          ),
+          if (widget.tracker == null) ...[
+            const SizedBox(height: 12),
+            _FormSectionPanel(
+              title: l10n.habitsTemplateLabel,
+              subtitle: l10n.habitsCreateTrackerDescription,
+              child: _TemplateChooser(
+                selectedTemplateId: _selectedTemplateId,
+                onSelected: _applyTemplate,
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          _FormSectionPanel(
+            title: l10n.habitsNameLabel,
+            subtitle: widget.tracker == null
+                ? l10n.habitsCreateTrackerDescription
+                : l10n.habitsEditTrackerDescription,
+            child: Column(
+              children: [
+                _LabeledField(
+                  label: l10n.habitsNameLabel,
+                  child: TextField(
+                    controller: _nameController,
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _LabeledField(
+                  label: l10n.habitsDescriptionLabel,
+                  child: TextField(
+                    controller: _descriptionController,
+                    minLines: 2,
+                    maxLines: 4,
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          _FormSectionPanel(
+            title: l10n.habitsTargetValueLabel,
+            subtitle: l10n.habitsQuickAddValuesLabel,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _LabeledField(
+                        label: l10n.habitsTargetValueLabel,
+                        child: TextField(
+                          controller: _targetValueController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: _isSubmitting
-                        ? null
-                        : () => Navigator.of(context).maybePop(),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.tracker == null
-                    ? l10n.habitsCreateTrackerDescription
-                    : l10n.habitsEditTrackerDescription,
-              ),
-              const SizedBox(height: 20),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (widget.tracker == null) ...[
-                        Text(
-                          l10n.habitsTemplateLabel,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 12),
-                        _TemplateChooser(
-                          selectedTemplateId: _selectedTemplateId,
-                          onSelected: _applyTemplate,
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                      _LabeledField(
-                        label: l10n.habitsNameLabel,
-                        child: TextField(controller: _nameController),
-                      ),
-                      const SizedBox(height: 16),
-                      _LabeledField(
-                        label: l10n.habitsDescriptionLabel,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _LabeledField(
+                        label: l10n.habitsStartDateLabel,
                         child: TextField(
-                          controller: _descriptionController,
-                          minLines: 3,
-                          maxLines: 5,
+                          controller: _startDateController,
+                          readOnly: true,
+                          onTap: _pickDate,
+                          decoration: const InputDecoration(
+                            suffixIcon: Icon(
+                              Icons.calendar_today_outlined,
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _DropdownField<HabitTrackerTrackingMode>(
-                              label: l10n.habitsTrackingModeLabel,
-                              value: _trackingMode,
-                              items: HabitTrackerTrackingMode.values
-                                  .map(
-                                    (value) => DropdownMenuItem(
-                                      value: value,
-                                      child: Text(
-                                        value ==
-                                                HabitTrackerTrackingMode
-                                                    .dailySummary
-                                            ? l10n.habitsModeDailySummary
-                                            : l10n.habitsModeEventLog,
-                                      ),
-                                    ),
-                                  )
-                                  .toList(growable: false),
-                              onChanged: (value) {
-                                if (value != null) {
-                                  setState(() => _trackingMode = value);
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child:
-                                _DropdownField<HabitTrackerAggregationStrategy>(
-                                  label: l10n.habitsAggregationLabel,
-                                  value: _aggregationStrategy,
-                                  items: HabitTrackerAggregationStrategy.values
-                                      .map(
-                                        (value) => DropdownMenuItem(
-                                          value: value,
-                                          child: Text(
-                                            _aggregationLabel(context, value),
-                                          ),
-                                        ),
-                                      )
-                                      .toList(growable: false),
-                                  onChanged: (value) {
-                                    if (value != null) {
-                                      setState(
-                                        () => _aggregationStrategy = value,
-                                      );
-                                    }
-                                  },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _DropdownField<HabitTrackerTargetPeriod>(
+                        label: l10n.habitsTargetPeriodLabel,
+                        value: _targetPeriod,
+                        items: HabitTrackerTargetPeriod.values
+                            .map(
+                              (value) => DropdownMenuItem(
+                                value: value,
+                                child: Text(
+                                  value == HabitTrackerTargetPeriod.daily
+                                      ? l10n.habitsPeriodDaily
+                                      : l10n.habitsPeriodWeekly,
                                 ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _DropdownField<HabitTrackerTargetPeriod>(
-                              label: l10n.habitsTargetPeriodLabel,
-                              value: _targetPeriod,
-                              items: HabitTrackerTargetPeriod.values
-                                  .map(
-                                    (value) => DropdownMenuItem(
-                                      value: value,
-                                      child: Text(
-                                        value == HabitTrackerTargetPeriod.daily
-                                            ? l10n.habitsPeriodDaily
-                                            : l10n.habitsPeriodWeekly,
-                                      ),
-                                    ),
-                                  )
-                                  .toList(growable: false),
-                              onChanged: (value) {
-                                if (value != null) {
-                                  setState(() => _targetPeriod = value);
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _DropdownField<HabitTrackerTargetOperator>(
-                              label: l10n.habitsTargetOperatorLabel,
-                              value: _targetOperator,
-                              items: HabitTrackerTargetOperator.values
-                                  .map(
-                                    (value) => DropdownMenuItem(
-                                      value: value,
-                                      child: Text(
-                                        value == HabitTrackerTargetOperator.eq
-                                            ? l10n.habitsTargetOperatorEq
-                                            : l10n.habitsTargetOperatorGte,
-                                      ),
-                                    ),
-                                  )
-                                  .toList(growable: false),
-                              onChanged: (value) {
-                                if (value != null) {
-                                  setState(() => _targetOperator = value);
-                                }
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _LabeledField(
-                              label: l10n.habitsTargetValueLabel,
-                              child: TextField(
-                                controller: _targetValueController,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _LabeledField(
-                              label: l10n.habitsStartDateLabel,
-                              child: TextField(
-                                controller: _startDateController,
-                                readOnly: true,
-                                onTap: _pickDate,
-                                decoration: const InputDecoration(
-                                  suffixIcon: Icon(
-                                    Icons.calendar_today_outlined,
+                            )
+                            .toList(growable: false),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _targetPeriod = value);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _DropdownField<HabitTrackerTargetOperator>(
+                        label: l10n.habitsTargetOperatorLabel,
+                        value: _targetOperator,
+                        items: HabitTrackerTargetOperator.values
+                            .map(
+                              (value) => DropdownMenuItem(
+                                value: value,
+                                child: Text(
+                                  value == HabitTrackerTargetOperator.eq
+                                      ? l10n.habitsTargetOperatorEq
+                                      : l10n.habitsTargetOperatorGte,
+                                ),
+                              ),
+                            )
+                            .toList(growable: false),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _targetOperator = value);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                _LabeledField(
+                  label: l10n.habitsQuickAddValuesLabel,
+                  child: TextField(
+                    controller: _quickAddController,
+                    decoration: InputDecoration(
+                      hintText: l10n.habitsQuickAddValuesHint,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          _FormSectionPanel(
+            title: l10n.habitsTrackingModeLabel,
+            subtitle: l10n.habitsAppearanceLabel,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _DropdownField<HabitTrackerTrackingMode>(
+                        label: l10n.habitsTrackingModeLabel,
+                        value: _trackingMode,
+                        items: HabitTrackerTrackingMode.values
+                            .map(
+                              (value) => DropdownMenuItem(
+                                value: value,
+                                child: Text(
+                                  value == HabitTrackerTrackingMode.dailySummary
+                                      ? l10n.habitsModeDailySummary
+                                      : l10n.habitsModeEventLog,
+                                ),
+                              ),
+                            )
+                            .toList(growable: false),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _trackingMode = value);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _DropdownField<HabitTrackerAggregationStrategy>(
+                        label: l10n.habitsAggregationLabel,
+                        value: _aggregationStrategy,
+                        items: HabitTrackerAggregationStrategy.values
+                            .map(
+                              (value) => DropdownMenuItem(
+                                value: value,
+                                child: Text(
+                                  _aggregationLabel(
+                                    context,
+                                    value,
                                   ),
                                 ),
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        l10n.habitsAppearanceLabel,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 12),
-                      _ColorChooser(
-                        selectedColor: _selectedColor,
-                        onSelected: (value) =>
-                            setState(() => _selectedColor = value),
-                      ),
-                      const SizedBox(height: 12),
-                      _DropdownField<String>(
-                        label: l10n.habitsIconLabel,
-                        value: _selectedIcon,
-                        items: habitTrackerIconOptions
-                            .map(
-                              (value) => DropdownMenuItem<String>(
-                                value: value,
-                                child: Row(
-                                  children: [
-                                    Icon(habitTrackerIcon(value)),
-                                    const SizedBox(width: 8),
-                                    Text(value),
-                                  ],
-                                ),
-                              ),
                             )
                             .toList(growable: false),
                         onChanged: (value) {
                           if (value != null) {
-                            setState(() => _selectedIcon = value);
+                            setState(
+                              () => _aggregationStrategy = value,
+                            );
                           }
                         },
                       ),
-                      const SizedBox(height: 20),
-                      Text(
-                        l10n.habitsFieldsTitle,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 12),
-                      for (var index = 0; index < _fields.length; index++) ...[
-                        _FieldDraftCard(
-                          draft: _fields[index],
-                          index: index,
-                          onChanged: (next) {
-                            setState(() {
-                              _fields[index] = next;
-                              if (!next.manualKey) {
-                                _fields[index] = _fields[index].copyWith(
-                                  key: slugifyHabitFieldKey(next.label),
-                                );
-                              }
-                              if (!_fields.any(
-                                (field) => field.key == _primaryMetricKey,
-                              )) {
-                                _primaryMetricKey = _fields[index].key;
-                              }
-                            });
-                          },
-                          onRemove: _fields.length == 1
-                              ? null
-                              : () {
-                                  setState(() {
-                                    final removedKey = _fields[index].key;
-                                    _fields.removeAt(index);
-                                    if (_primaryMetricKey == removedKey &&
-                                        _fields.isNotEmpty) {
-                                      _primaryMetricKey = _fields.first.key;
-                                    }
-                                  });
-                                },
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                      shad.OutlineButton(
-                        onPressed: _fields.length >= 4 ? null : _addField,
-                        child: Text(l10n.habitsAddField),
-                      ),
-                      const SizedBox(height: 16),
-                      _DropdownField<String>(
-                        label: l10n.habitsPrimaryMetricLabel,
-                        value: _primaryMetricKey,
-                        items: _fields
-                            .map(
-                              (field) => DropdownMenuItem<String>(
-                                value: field.key,
-                                child: Text(
-                                  field.label.trim().isEmpty
-                                      ? field.key
-                                      : field.label,
-                                ),
-                              ),
-                            )
-                            .toList(growable: false),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _primaryMetricKey = value);
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _LabeledField(
-                              label: l10n.habitsQuickAddValuesLabel,
-                              child: TextField(
-                                controller: _quickAddController,
-                                decoration: InputDecoration(
-                                  hintText: l10n.habitsQuickAddValuesHint,
-                                ),
-                              ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                _LabeledField(
+                  label: l10n.habitsIconLabel,
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _selectedIcon,
+                    items: habitTrackerIconOptions
+                        .map(
+                          (value) => DropdownMenuItem<String>(
+                            value: value,
+                            child: Row(
+                              children: [
+                                Icon(habitTrackerIcon(value)),
+                                const SizedBox(width: 8),
+                                Text(value),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _LabeledField(
-                              label: l10n.habitsFreezeAllowanceLabel,
-                              child: TextField(
-                                controller: _freezeAllowanceController,
-                                keyboardType: TextInputType.number,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _LabeledField(
-                              label: l10n.habitsRecoveryWindowLabel,
-                              child: TextField(
-                                controller: _recoveryWindowController,
-                                keyboardType: TextInputType.number,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: SwitchListTile.adaptive(
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(l10n.habitsActiveLabel),
-                              value: _isActive,
-                              onChanged: (value) {
-                                setState(() => _isActive = value);
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                        )
+                        .toList(growable: false),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _selectedIcon = value);
+                      }
+                    },
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: shad.OutlineButton(
-                      onPressed: _isSubmitting
-                          ? null
-                          : () => Navigator.of(context).maybePop(),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: Text(
-                          context.l10n.commonCancel,
-                          textAlign: TextAlign.center,
+                const SizedBox(height: 14),
+                _LabeledField(
+                  label: l10n.habitsAppearanceLabel,
+                  child: _ColorChooser(
+                    selectedColor: _selectedColor,
+                    onSelected: (value) =>
+                        setState(() => _selectedColor = value),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          _FormSectionPanel(
+            title: l10n.habitsFreezeAllowanceLabel,
+            subtitle: l10n.habitsRecoveryWindowLabel,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _LabeledField(
+                        label: l10n.habitsFreezeAllowanceLabel,
+                        child: TextField(
+                          controller: _freezeAllowanceController,
+                          keyboardType: TextInputType.number,
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: shad.PrimaryButton(
-                      onPressed: _isSubmitting ? null : _submit,
-                      child: _isSubmitting
-                          ? const Center(
-                              child: SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            )
-                          : SizedBox(
-                              width: double.infinity,
-                              child: Text(
-                                widget.tracker == null
-                                    ? l10n.habitsCreateTrackerAction
-                                    : l10n.habitsSaveTrackerAction,
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _LabeledField(
+                        label: l10n.habitsRecoveryWindowLabel,
+                        child: TextField(
+                          controller: _recoveryWindowController,
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.habitsActiveLabel),
+                  value: _isActive,
+                  onChanged: (value) {
+                    setState(() => _isActive = value);
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          _FormSectionPanel(
+            title: l10n.habitsFieldsTitle,
+            subtitle: l10n.habitsPrimaryMetricLabel,
+            action: shad.OutlineButton(
+              onPressed: () {
+                setState(
+                  () => _showAdvancedFields = !_showAdvancedFields,
+                );
+              },
+              child: Text(
+                _showAdvancedFields
+                    ? context.l10n.commonShowLess
+                    : context.l10n.commonShowMore,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _DropdownField<String>(
+                  label: l10n.habitsPrimaryMetricLabel,
+                  value: _primaryMetricKey,
+                  items: _fields
+                      .map(
+                        (field) => DropdownMenuItem<String>(
+                          value: field.key,
+                          child: Text(
+                            field.label.trim().isEmpty
+                                ? field.key
+                                : field.label,
+                          ),
+                        ),
+                      )
+                      .toList(growable: false),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _primaryMetricKey = value);
+                    }
+                  },
+                ),
+                if (_showAdvancedFields) ...[
+                  const SizedBox(height: 14),
+                  for (var index = 0; index < _fields.length; index++) ...[
+                    _FieldDraftCard(
+                      draft: _fields[index],
+                      index: index,
+                      onChanged: (next) {
+                        setState(() {
+                          _fields[index] = next;
+                          if (!next.manualKey) {
+                            _fields[index] = _fields[index].copyWith(
+                              key: slugifyHabitFieldKey(
+                                next.label,
+                              ),
+                            );
+                          }
+                          if (!_fields.any(
+                            (field) => field.key == _primaryMetricKey,
+                          )) {
+                            _primaryMetricKey = _fields[index].key;
+                          }
+                        });
+                      },
+                      onRemove: _fields.length == 1
+                          ? null
+                          : () {
+                              setState(() {
+                                final removedKey = _fields[index].key;
+                                _fields.removeAt(index);
+                                if (_primaryMetricKey == removedKey &&
+                                    _fields.isNotEmpty) {
+                                  _primaryMetricKey = _fields.first.key;
+                                }
+                              });
+                            },
+                    ),
+                    if (index != _fields.length - 1) const SizedBox(height: 12),
+                  ],
+                  const SizedBox(height: 14),
+                  shad.OutlineButton(
+                    onPressed: _fields.length >= 4 ? null : _addField,
+                    child: Text(l10n.habitsAddField),
                   ),
                 ],
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
@@ -645,6 +662,10 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
       _selectedColor = template.color;
       _selectedIcon = template.icon;
       _primaryMetricKey = template.primaryMetricKey;
+      _useCase = template.useCase;
+      _templateCategory = template.templateCategory;
+      _composerMode = template.composerMode;
+      _composerConfig = template.composerConfig;
       _fields = template.inputSchema
           .map(HabitTrackerFieldDraft.fromSchema)
           .toList(growable: true);
@@ -747,6 +768,10 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
           quickAddValues: quickAddValues,
           freezeAllowance: freezeAllowance,
           recoveryWindowPeriods: recoveryWindow,
+          useCase: _useCase,
+          templateCategory: _templateCategory,
+          composerMode: _composerMode,
+          composerConfig: _composerConfig,
           startDate: _startDateController.text.trim(),
           isActive: _isActive,
         ),
@@ -791,6 +816,156 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
       context: toastContext,
       builder: (toastContext, overlay) =>
           shad.Alert.destructive(content: Text(message)),
+    );
+  }
+}
+
+class _FormPreviewCard extends StatelessWidget {
+  const _FormPreviewCard({
+    required this.trackerName,
+    required this.description,
+    required this.color,
+    required this.icon,
+    required this.targetValue,
+    required this.unit,
+    required this.composerMode,
+    required this.targetPeriod,
+  });
+
+  final String trackerName;
+  final String description;
+  final String color;
+  final String icon;
+  final String targetValue;
+  final String? unit;
+  final HabitTrackerComposerMode composerMode;
+  final HabitTrackerTargetPeriod targetPeriod;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = habitTrackerColor(context, color);
+    final palette = FinancePalette.of(context);
+    final formattedTarget = targetValue.trim().isEmpty ? '0' : targetValue;
+    final suffix = unit?.trim().isNotEmpty == true ? ' ${unit!.trim()}' : '';
+
+    return FinancePanel(
+      backgroundColor: accent.withValues(alpha: 0.08),
+      borderColor: accent.withValues(alpha: 0.26),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: accent.withValues(alpha: 0.16),
+                ),
+                child: Icon(habitTrackerIcon(icon), color: accent),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      trackerName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: shad.Theme.of(context).typography.large.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    if (description.trim().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        description.trim(),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: shad.Theme.of(context).typography.textSmall
+                            .copyWith(
+                              color: shad.Theme.of(
+                                context,
+                              ).colorScheme.mutedForeground,
+                            ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FinanceStatChip(
+                label: context.l10n.habitsTargetValueLabel,
+                value: '$formattedTarget$suffix',
+                tint: accent,
+              ),
+              FinanceStatChip(
+                label: context.l10n.habitsTrackingModeLabel,
+                value: switch (composerMode) {
+                  HabitTrackerComposerMode.quickCheck =>
+                    context.l10n.habitsComposerQuickCheck,
+                  HabitTrackerComposerMode.quickIncrement =>
+                    context.l10n.habitsComposerQuickIncrement,
+                  HabitTrackerComposerMode.measurement =>
+                    context.l10n.habitsComposerMeasurement,
+                  HabitTrackerComposerMode.workoutSession =>
+                    context.l10n.habitsComposerWorkoutSession,
+                  HabitTrackerComposerMode.advancedCustom =>
+                    context.l10n.habitsComposerAdvancedCustom,
+                },
+                tint: palette.accent,
+              ),
+              FinanceStatChip(
+                label: context.l10n.habitsTargetPeriodLabel,
+                value: targetPeriod == HabitTrackerTargetPeriod.daily
+                    ? context.l10n.habitsPeriodDaily
+                    : context.l10n.habitsPeriodWeekly,
+                tint: palette.positive,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FormSectionPanel extends StatelessWidget {
+  const _FormSectionPanel({
+    required this.title,
+    required this.child,
+    this.subtitle,
+    this.action,
+  });
+
+  final String title;
+  final String? subtitle;
+  final Widget child;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    return FinancePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FinanceSectionHeader(
+            title: title,
+            subtitle: subtitle,
+            action: action,
+          ),
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
     );
   }
 }
@@ -856,70 +1031,107 @@ class _TemplateChooser extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 180,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemBuilder: (context, index) {
-          final template = habitTrackerTemplates[index];
-          final selected = template.id == selectedTemplateId;
-          final accent = habitTrackerColor(context, template.color);
-          return Material(
-            color: selected
-                ? habitTrackerTint(context, template.color)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            child: InkWell(
-              onTap: () => onSelected(template.id),
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                width: 220,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 640;
+        final itemWidth = compact
+            ? constraints.maxWidth
+            : (constraints.maxWidth - 12) / 2;
+
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: habitTrackerTemplates
+              .map((template) {
+                final selected = template.id == selectedTemplateId;
+                final accent = habitTrackerColor(context, template.color);
+                return SizedBox(
+                  width: itemWidth,
+                  child: Material(
                     color: selected
-                        ? accent.withValues(alpha: 0.35)
-                        : Colors.black12,
+                        ? accent.withValues(alpha: 0.09)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(22),
+                    child: InkWell(
+                      onTap: () => onSelected(template.id),
+                      borderRadius: BorderRadius.circular(22),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: selected
+                                ? accent.withValues(alpha: 0.34)
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.outlineVariant.withValues(
+                                    alpha: 0.7,
+                                  ),
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                color: accent.withValues(alpha: 0.14),
+                              ),
+                              child: Icon(
+                                habitTrackerIcon(template.icon),
+                                color: accent,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          template.name,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                        ),
+                                      ),
+                                      if (selected)
+                                        Icon(
+                                          Icons.check_circle_rounded,
+                                          size: 18,
+                                          color: accent,
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    template.description,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        color: habitTrackerTint(context, template.color),
-                      ),
-                      child: Icon(
-                        habitTrackerIcon(template.icon),
-                        color: accent,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      template.name,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      template.description,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
-        itemCount: habitTrackerTemplates.length,
-      ),
+                );
+              })
+              .toList(growable: false),
+        );
+      },
     );
   }
 }
