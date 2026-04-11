@@ -101,6 +101,9 @@ function createSupabaseMock({
   } as unknown as TypedSupabaseClient;
 }
 
+const today = new Date().toISOString().slice(0, 10);
+const todayAtNoon = `${today}T12:00:00.000Z`;
+
 const baseTrackerRow = {
   id: 'tracker-1',
   ws_id: 'ws-1',
@@ -119,15 +122,15 @@ const baseTrackerRow = {
   quick_add_values: [],
   freeze_allowance: 0,
   recovery_window_periods: 0,
-  start_date: '2026-04-10',
+  start_date: today,
   use_case: 'body_weight',
   template_category: 'health',
   composer_mode: 'measurement',
   composer_config: { unit: 'kg' },
   is_active: true,
   archived_at: null,
-  created_at: '2026-04-10T00:00:00.000Z',
-  updated_at: '2026-04-10T00:00:00.000Z',
+  created_at: todayAtNoon,
+  updated_at: todayAtNoon,
 };
 
 const baseEntryRow = {
@@ -136,21 +139,21 @@ const baseEntryRow = {
   tracker_id: 'tracker-1',
   user_id: 'viewer-1',
   entry_kind: 'daily_summary',
-  entry_date: '2026-04-10',
-  occurred_at: '2026-04-10T00:00:00.000Z',
+  entry_date: today,
+  occurred_at: todayAtNoon,
   values: { weight: 44 },
   primary_value: 44,
   tags: [],
-  created_at: '2026-04-10T00:00:00.000Z',
-  updated_at: '2026-04-10T00:00:00.000Z',
+  created_at: todayAtNoon,
+  updated_at: todayAtNoon,
 };
 
 const baseLatestStatRow = {
   tracker_id: 'tracker-1',
   user_id: 'viewer-1',
   latest_entry_id: 'entry-1',
-  latest_entry_date: '2026-04-10',
-  latest_occurred_at: '2026-04-10T00:00:00.000Z',
+  latest_entry_date: today,
+  latest_occurred_at: todayAtNoon,
   latest_primary_value: 44,
   latest_values: { weight: 44 },
   current_period_total: 44,
