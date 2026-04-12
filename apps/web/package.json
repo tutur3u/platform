@@ -37,7 +37,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.61",
+    "@ai-sdk/google": "^3.0.62",
     "@aws-sdk/client-s3": "^3.1029.0",
     "@aws-sdk/s3-request-presigner": "^3.1029.0",
     "@deepgram/sdk": "^5.0.0",
@@ -65,7 +65,7 @@
     "@streamdown/math": "^1.0.2",
     "@streamdown/mermaid": "^1.0.2",
     "@tanstack/react-hotkeys": "^0.9.1",
-    "@tanstack/react-query": "^5.97.0",
+    "@tanstack/react-query": "^5.99.0",
     "@tanstack/react-table": "^8.21.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@tiptap/extension-highlight": "3.22.3",
@@ -173,7 +173,7 @@
     "@next/bundle-analyzer": "^16.2.3",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4.2.2",
-    "@tanstack/react-query-devtools": "^5.97.0",
+    "@tanstack/react-query-devtools": "^5.99.0",
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/bcrypt": "^6.0.0",
