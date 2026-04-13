@@ -1,5 +1,5 @@
 import NewInvoicePage from '@tuturuuu/ui/finance/invoices/new-invoice-page';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -12,12 +12,23 @@ interface Props {
 
 export default async function WorkspaceNewInvoicePage({ params }: Props) {
   const { wsId: id } = await params;
-  const workspace = await getWorkspace(id);
-  if (!workspace) notFound();
+  const [workspace, permissions] = await Promise.all([
+    getWorkspace(id),
+    getPermissions({ wsId: id }),
+  ]);
+  if (!workspace || !permissions) notFound();
 
   return (
     <Suspense>
-      <NewInvoicePage wsId={workspace.id} />
+      <NewInvoicePage
+        wsId={workspace.id}
+        canChangeFinanceWallets={permissions.containsPermission(
+          'change_finance_wallets'
+        )}
+        canSetFinanceWalletsOnCreate={permissions.containsPermission(
+          'set_finance_wallets_on_create'
+        )}
+      />
     </Suspense>
   );
 }

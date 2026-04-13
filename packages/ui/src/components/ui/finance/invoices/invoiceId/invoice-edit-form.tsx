@@ -30,6 +30,7 @@ interface Props {
   initialNotice: string | null;
   initialNote: string | null;
   initialWalletId: string | null;
+  canChangeFinanceWallets?: boolean;
 }
 
 export default function InvoiceEditForm({
@@ -38,6 +39,7 @@ export default function InvoiceEditForm({
   initialNotice,
   initialNote,
   initialWalletId,
+  canChangeFinanceWallets = true,
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
@@ -126,7 +128,7 @@ export default function InvoiceEditForm({
           <Select
             value={walletId}
             onValueChange={setWalletId}
-            disabled={walletsLoading}
+            disabled={walletsLoading || !canChangeFinanceWallets}
           >
             <SelectTrigger>
               <SelectValue

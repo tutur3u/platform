@@ -900,7 +900,7 @@ export function SettingsDialog({
         )}
 
         {activeTab === 'transaction_defaults' && workspace?.id && (
-          <TransactionDefaultsSettings workspaceId={workspace.id} />
+          <TransactionDefaultsSettings workspaceId={workspace.id} user={user} />
         )}
 
         {activeTab === 'default_currency' && workspace?.id && (

@@ -29,6 +29,7 @@ interface Props {
   locale: string;
   invoiceId: string;
   canUpdateInvoices?: boolean;
+  canChangeFinanceWallets?: boolean;
   currency?: string;
 }
 
@@ -37,6 +38,7 @@ export default async function InvoiceDetailsPage({
   locale,
   invoiceId,
   canUpdateInvoices = false,
+  canChangeFinanceWallets = false,
   currency = 'USD',
 }: Props) {
   const t = await getTranslations();
@@ -213,6 +215,7 @@ export default async function InvoiceDetailsPage({
               initialNotice={invoice.notice}
               initialNote={invoice.note}
               initialWalletId={invoice.wallet_id}
+              canChangeFinanceWallets={canChangeFinanceWallets}
             />
           )}
         </div>

@@ -1,15 +1,11 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import { getMonthStartDate, parseLocalCalendarDate } from './utils';
-
-export interface AttendanceGroup {
-  workspace_user_groups: {
-    id: string;
-    name: string;
-    sessions?: string[];
-  };
-}
+import {
+  type BillableSession,
+  getMonthStartDate,
+  parseLocalCalendarDate,
+} from './utils';
 
 interface AttendanceCalendarProps {
   userAttendance: {
@@ -18,14 +14,14 @@ interface AttendanceCalendarProps {
     group_id?: string;
   }[];
   selectedMonth: string;
-  selectedGroups: AttendanceGroup[];
+  sessions: BillableSession[];
   locale: string;
 }
 
 export function AttendanceCalendar({
   userAttendance,
   selectedMonth,
-  selectedGroups,
+  sessions,
   locale,
 }: AttendanceCalendarProps) {
   const t = useTranslations();
@@ -34,19 +30,6 @@ export function AttendanceCalendar({
     () => getMonthStartDate(selectedMonth),
     [selectedMonth]
   );
-
-  // Get all group sessions for the month with group info
-  const groupSessions = useMemo(() => {
-    return selectedGroups.flatMap((groupItem) => {
-      const group = groupItem.workspace_user_groups;
-      if (!group?.sessions) return [];
-      return group.sessions.map((session: string) => ({
-        date: session,
-        groupId: group.id,
-        groupName: group.name,
-      }));
-    });
-  }, [selectedGroups]);
 
   // Create attendance map for quick lookup: date -> Map<groupId, status>
   const attendanceMap = useMemo(() => {
@@ -92,10 +75,7 @@ export function AttendanceCalendar({
     date.getMonth() === currentDate.getMonth() &&
     date.getFullYear() === currentDate.getFullYear();
 
-  const isDateAvailable = (
-    sessions: { date: string; groupId: string; groupName: string }[],
-    currentDate: Date
-  ) => {
+  const isDateAvailable = (currentDate: Date) => {
     if (!sessions || !Array.isArray(sessions)) return false;
 
     try {
@@ -129,7 +109,7 @@ export function AttendanceCalendar({
 
   const getDayStyles = (date: Date) => {
     const isCurrentMonthDay = isCurrentMonth(date);
-    const hasSession = isDateAvailable(groupSessions, date);
+    const hasSession = isDateAvailable(date);
     const attendanceStatusMap = getAttendanceStatus(date);
 
     if (!isCurrentMonthDay) {
@@ -181,7 +161,7 @@ export function AttendanceCalendar({
         <div className="grid grid-cols-7 gap-1">
           {daysInMonth.map((day, idx) => {
             const isCurrentMonthDay = isCurrentMonth(day);
-            const dateSessions = groupSessions.filter((session) => {
+            const dateSessions = sessions.filter((session) => {
               const sessionDate = parseLocalCalendarDate(session.date);
               return (
                 sessionDate.getDate() === day.getDate() &&

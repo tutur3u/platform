@@ -6,6 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { shouldLockFinanceWalletSelectionOnCreate } from '@tuturuuu/utils/finance';
 import { formatCurrency } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -54,10 +55,11 @@ import {
   formatMonthValue,
   getAttendanceStats,
   getAvailableMonths,
+  getBillableAttendanceRecords,
+  getBillableSessionsForGroups,
   getEffectiveAttendanceDays,
   getGroupsDateRange,
   getMonthStartDate,
-  getTotalSessionsForGroups,
 } from './utils';
 
 interface Props {
@@ -69,6 +71,8 @@ interface Props {
   defaultWalletId?: string;
   defaultCategoryId?: string;
   defaultCurrency?: 'VND' | 'USD';
+  canChangeFinanceWallets?: boolean;
+  canSetFinanceWalletsOnCreate?: boolean;
 }
 
 export function SubscriptionInvoice({
@@ -80,6 +84,8 @@ export function SubscriptionInvoice({
   defaultWalletId,
   defaultCategoryId,
   defaultCurrency = 'USD',
+  canChangeFinanceWallets = true,
+  canSetFinanceWalletsOnCreate = true,
 }: Props) {
   const t = useTranslations();
   const locale = useLocale();
@@ -160,6 +166,11 @@ export function SubscriptionInvoice({
   const [selectedWalletId, setSelectedWalletId] = useState<string>(
     defaultWalletId || ''
   );
+  const isWalletSelectionLocked = shouldLockFinanceWalletSelectionOnCreate({
+    defaultWalletId,
+    canChangeFinanceWallets,
+    canSetFinanceWalletsOnCreate,
+  });
 
   useEffect(() => {
     if (defaultWalletId) {
@@ -282,6 +293,50 @@ export function SubscriptionInvoice({
     });
   }, [effectiveSelectedMonth, latestSubscriptionInvoices, selectedGroupIds]);
 
+  const billableAttendance = useMemo(
+    () =>
+      getBillableAttendanceRecords(
+        userAttendance,
+        selectedGroupIds,
+        effectiveSelectedMonth,
+        latestSubscriptionInvoices
+      ),
+    [
+      effectiveSelectedMonth,
+      latestSubscriptionInvoices,
+      selectedGroupIds,
+      userAttendance,
+    ]
+  );
+
+  const billableSessions = useMemo(
+    () =>
+      getBillableSessionsForGroups(
+        userGroups,
+        selectedGroupIds,
+        effectiveSelectedMonth,
+        latestSubscriptionInvoices
+      ),
+    [
+      effectiveSelectedMonth,
+      latestSubscriptionInvoices,
+      selectedGroupIds,
+      userGroups,
+    ]
+  );
+
+  const attendanceStats = useMemo(
+    () => getAttendanceStats(billableAttendance),
+    [billableAttendance]
+  );
+
+  const totalSessions = billableSessions.length;
+
+  const attendanceRate = useMemo(() => {
+    const attendanceDays = getEffectiveAttendanceDays(billableAttendance);
+    return totalSessions > 0 ? (attendanceDays / totalSessions) * 100 : 0;
+  }, [billableAttendance, totalSessions]);
+
   const selectedPromotion =
     selectedPromotionId === 'none'
       ? null
@@ -322,7 +377,7 @@ export function SubscriptionInvoice({
     products,
     userGroups,
     useAttendanceBased,
-    userAttendance,
+    userAttendance: billableAttendance,
     latestSubscriptionInvoices,
     onSelectedProductsChange: setSubscriptionSelectedProducts,
   });
@@ -334,7 +389,7 @@ export function SubscriptionInvoice({
     userGroups,
     groupProducts,
     subscriptionSelectedProducts,
-    userAttendance,
+    userAttendance: billableAttendance,
     latestSubscriptionInvoices,
     isSelectedMonthPaid,
     locale,
@@ -763,31 +818,14 @@ export function SubscriptionInvoice({
                 canNavigateMonth={canNavigateMonth}
                 onMonthChange={(value) => updateSearchParam('month', value)}
                 availableMonths={availableMonths}
-                userGroups={userGroups}
                 latestSubscriptionInvoices={latestSubscriptionInvoices}
                 isLoadingSubscriptionData={isLoadingSubscriptionData}
-                userAttendance={userAttendance}
+                userAttendance={billableAttendance}
+                billableSessions={billableSessions}
                 userAttendanceError={userAttendanceError}
-                attendanceStats={getAttendanceStats(userAttendance)}
-                totalSessions={getTotalSessionsForGroups(
-                  userGroups,
-                  selectedGroupIds,
-                  effectiveSelectedMonth,
-                  latestSubscriptionInvoices
-                )}
-                attendanceRate={(() => {
-                  const attendanceDays =
-                    getEffectiveAttendanceDays(userAttendance);
-                  const totalSessions = getTotalSessionsForGroups(
-                    userGroups,
-                    selectedGroupIds,
-                    effectiveSelectedMonth,
-                    latestSubscriptionInvoices
-                  );
-                  return totalSessions > 0
-                    ? (attendanceDays / totalSessions) * 100
-                    : 0;
-                })()}
+                attendanceStats={attendanceStats}
+                totalSessions={totalSessions}
+                attendanceRate={attendanceRate}
               />
             )}
 
@@ -807,6 +845,7 @@ export function SubscriptionInvoice({
                       selectedCategoryId={selectedCategoryId}
                       onWalletChange={setSelectedWalletId}
                       onCategoryChange={setSelectedCategoryId}
+                      walletDisabled={isWalletSelectionLocked}
                       showPromotion
                       currency={defaultCurrency}
                       promotionsAllowed={true}

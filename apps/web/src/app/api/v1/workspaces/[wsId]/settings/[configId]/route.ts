@@ -71,6 +71,16 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
+  if (
+    id === 'default_wallet_id' &&
+    withoutPermission('change_finance_wallets')
+  ) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to change the default wallet' },
+      { status: 403 }
+    );
+  }
+
   const { value } = await req.json();
   if (value !== undefined && value !== null && typeof value !== 'string') {
     return NextResponse.json(

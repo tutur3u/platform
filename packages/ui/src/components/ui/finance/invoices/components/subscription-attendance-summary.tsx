@@ -1,7 +1,6 @@
 'use client';
 
 import { ChevronLeft, ChevronRight, Loader2 } from '@tuturuuu/icons';
-import type { Database } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -21,7 +20,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { formatMonthLabel } from '../utils';
+import { type BillableSession, formatMonthLabel } from '../utils';
 
 export type AvailableMonthOption = {
   value: string;
@@ -38,11 +37,6 @@ interface SubscriptionAttendanceSummaryProps {
   canNavigateMonth: (direction: 'prev' | 'next') => boolean;
   onMonthChange: (month: string) => void;
   availableMonths: AvailableMonthOption[];
-  userGroups: {
-    workspace_user_groups:
-      | Database['public']['Tables']['workspace_user_groups']['Row']
-      | null;
-  }[];
   latestSubscriptionInvoices: {
     group_id?: string;
     valid_until?: string | null;
@@ -50,6 +44,7 @@ interface SubscriptionAttendanceSummaryProps {
   }[];
   isLoadingSubscriptionData: boolean;
   userAttendance: { status: string; date: string }[];
+  billableSessions: BillableSession[];
   userAttendanceError: Error | null;
   attendanceStats: {
     present: number;
@@ -70,10 +65,10 @@ export function SubscriptionAttendanceSummary({
   canNavigateMonth,
   onMonthChange,
   availableMonths,
-  userGroups,
   latestSubscriptionInvoices: _latestSubscriptionInvoices,
   isLoadingSubscriptionData,
   userAttendance,
+  billableSessions,
   userAttendanceError,
   attendanceStats,
   totalSessions,
@@ -246,23 +241,7 @@ export function SubscriptionAttendanceSummary({
                 <AttendanceCalendar
                   userAttendance={userAttendance}
                   selectedMonth={resolvedSelectedMonth}
-                  selectedGroups={userGroups
-                    .filter(
-                      (
-                        g
-                      ): g is {
-                        workspace_user_groups: Database['public']['Tables']['workspace_user_groups']['Row'];
-                      } =>
-                        !!g.workspace_user_groups &&
-                        selectedGroupIds.includes(g.workspace_user_groups.id)
-                    )
-                    .map((g) => ({
-                      workspace_user_groups: {
-                        id: g.workspace_user_groups.id,
-                        name: g.workspace_user_groups.name,
-                        sessions: g.workspace_user_groups.sessions || [],
-                      },
-                    }))}
+                  sessions={billableSessions}
                   locale={locale}
                 />
                 <div className="flex items-center gap-4 text-muted-foreground text-xs">
