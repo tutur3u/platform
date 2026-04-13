@@ -851,13 +851,10 @@ export function BoardLayoutSettings({
     updateColorMutation.mutate({ listId, color });
   };
 
-  const statuses: TaskBoardStatus[] = [
-    'documents',
-    'not_started',
-    'active',
-    'done',
-    'closed',
-  ];
+  const statuses = useMemo<TaskBoardStatus[]>(
+    () => ['documents', 'not_started', 'active', 'done', 'closed'],
+    []
+  );
 
   const hasClosedList = (groupedLists.closed?.length ?? 0) > 0;
 

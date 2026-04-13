@@ -13,8 +13,8 @@ import {
   updateWorkspaceTaskList,
 } from '@tuturuuu/internal-api/tasks';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import {
