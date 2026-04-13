@@ -42,6 +42,7 @@ describe('Supabase Proxy', () => {
     headers: new Map(),
     cookies: {
       getAll: () => [],
+      set: vi.fn(),
     },
   };
 
@@ -74,6 +75,7 @@ describe('Supabase Proxy', () => {
     (createServerClient as any).mockImplementationOnce(() => ({
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
+        getClaims: vi.fn().mockResolvedValue({ data: { claims: null } }),
       },
       cookies: mockCookies,
     }));
@@ -84,6 +86,25 @@ describe('Supabase Proxy', () => {
     const cookieHandler = (createServerClient as any).mock.calls[0][2].cookies;
     expect(cookieHandler.getAll).toBeDefined();
     expect(cookieHandler.setAll).toBeDefined();
+  });
+
+  it('should clear malformed Supabase auth cookies before getClaims', async () => {
+    mockRequest.cookies.getAll = () => [
+      {
+        name: 'sb-test-auth-token',
+        value: 'base64-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ',
+      },
+      { name: 'other', value: '1' },
+    ];
+
+    await updateSession(mockRequest as any);
+
+    const cookieHandler = (createServerClient as any).mock.calls[0][2].cookies;
+    expect(cookieHandler.getAll()).toEqual([{ name: 'other', value: '1' }]);
+    expect(mockRequest.cookies.set).toHaveBeenCalledWith(
+      'sb-test-auth-token',
+      ''
+    );
   });
 
   it('should return response and JWT Payload', async () => {

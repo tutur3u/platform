@@ -39,6 +39,10 @@ export const ABUSE_THRESHOLDS = {
   // API auth failure limits (session-auth routes)
   API_AUTH_FAILED_WINDOW_MS: 5 * 60 * 1000, // 5 minutes
   API_AUTH_FAILED_MAX: 20, // 20 failed auths in 5 min → auto-block IP
+
+  // Malformed session cookie abuse at the proxy/edge layer
+  MALFORMED_AUTH_COOKIE_WINDOW_MS: 60 * 1000, // 1 minute
+  MALFORMED_AUTH_COOKIE_MAX: 3, // 3 malformed-cookie hits in 1 min → block IP
 } as const;
 
 /**
@@ -90,6 +94,7 @@ export const REDIS_KEYS = {
 
   // API auth failure attempts (session-auth routes)
   API_AUTH_FAILED: (ip: string) => `api:auth:failed:${ip}`,
+  API_MALFORMED_AUTH_COOKIE: (ip: string) => `api:auth:malformed-cookie:${ip}`,
 
   // IP block cache
   IP_BLOCKED: (ip: string) => `ip:blocked:${ip}`,

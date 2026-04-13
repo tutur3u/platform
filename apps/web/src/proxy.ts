@@ -3,10 +3,16 @@ import {
   createCentralizedAuthProxy,
   propagateAuthCookies,
 } from '@tuturuuu/auth/proxy';
+import { getMalformedSupabaseAuthCookieNames } from '@tuturuuu/supabase/next/proxy';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import {
+  extractIPFromRequest,
+  isIPBlockedEdge,
+  recordMalformedAuthCookieEdge,
+} from '@tuturuuu/utils/abuse-protection/edge';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
@@ -92,6 +98,108 @@ async function hasWorkspaceEmailRateLimitOverrides(
     );
     return false;
   }
+}
+
+function getBearerAccessToken(
+  req: Pick<NextRequest, 'headers'>
+): string | null {
+  const authHeader =
+    req.headers.get('authorization') ?? req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const accessToken = authHeader.slice('Bearer '.length).trim();
+  return accessToken || null;
+}
+
+function applyExpiredCookies(response: NextResponse, cookieNames: string[]) {
+  for (const cookieName of cookieNames) {
+    response.cookies.set(cookieName, '', {
+      expires: new Date(0),
+      maxAge: 0,
+      path: '/',
+    });
+  }
+}
+
+async function blockMalformedApiAuthCookieRequest(
+  req: NextRequest
+): Promise<NextResponse | null> {
+  if (getBearerAccessToken(req)) {
+    return null;
+  }
+
+  const malformedCookieNames = getMalformedSupabaseAuthCookieNames(
+    req.cookies.getAll(),
+    process.env.NEXT_PUBLIC_SUPABASE_URL
+  );
+
+  if (malformedCookieNames.length === 0) {
+    return null;
+  }
+
+  const ipAddress = extractIPFromRequest(req.headers);
+  const existingBlock =
+    ipAddress === 'unknown' ? null : await isIPBlockedEdge(ipAddress);
+
+  if (existingBlock) {
+    const retryAfter = Math.max(
+      1,
+      Math.ceil((existingBlock.expiresAt.getTime() - Date.now()) / 1000)
+    );
+    const response = NextResponse.json(
+      { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+      {
+        status: 429,
+        headers: {
+          'Cache-Control': 'no-store',
+          'Retry-After': `${retryAfter}`,
+          'X-Proxy-Block-Reason': 'malformed-supabase-auth-cookie-ip-blocked',
+        },
+      }
+    );
+    applyExpiredCookies(response, malformedCookieNames);
+    return response;
+  }
+
+  const newBlock =
+    ipAddress === 'unknown'
+      ? null
+      : await recordMalformedAuthCookieEdge(ipAddress);
+
+  if (newBlock) {
+    const retryAfter = Math.max(
+      1,
+      Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
+    );
+    const response = NextResponse.json(
+      { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+      {
+        status: 429,
+        headers: {
+          'Cache-Control': 'no-store',
+          'Retry-After': `${retryAfter}`,
+          'X-Proxy-Block-Reason': 'malformed-supabase-auth-cookie-ip-blocked',
+        },
+      }
+    );
+    applyExpiredCookies(response, malformedCookieNames);
+    return response;
+  }
+
+  const response = NextResponse.json(
+    { error: 'Unauthorized' },
+    {
+      status: 401,
+      headers: {
+        'Cache-Control': 'no-store',
+        'X-Proxy-Block-Reason': 'malformed-supabase-auth-cookie',
+      },
+    }
+  );
+  applyExpiredCookies(response, malformedCookieNames);
+  return response;
 }
 
 /**
@@ -244,6 +352,12 @@ const authProxy = createCentralizedAuthProxy({
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
+    const malformedAuthCookieResponse =
+      await blockMalformedApiAuthCookieRequest(req);
+    if (malformedAuthCookieResponse) {
+      return malformedAuthCookieResponse;
+    }
+
     if (await hasWorkspaceEmailRateLimitOverrides(req.nextUrl.pathname)) {
       return NextResponse.next();
     }

@@ -4,19 +4,33 @@ import type { Database } from '@tuturuuu/types';
 import type { RequestCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 import { cookies } from 'next/headers';
+import { sanitizeSupabaseAuthCookies } from './auth-cookie-sanitizer';
 import { checkEnvVariables, type SupabaseCookie } from './common';
 import {
   wrapDirectClientForProxyOnlyTables,
   wrapRequestClientForProxyOnlyTables,
 } from './protected-tables';
 
-function createCookieHandler(cookieStore: ReadonlyRequestCookies): {
+function createCookieHandler(
+  cookieStore: ReadonlyRequestCookies,
+  url: string
+): {
   getAll(): RequestCookie[];
   setAll(cookiesToSet: SupabaseCookie[]): void;
 } {
   return {
     getAll() {
-      return cookieStore.getAll();
+      return sanitizeSupabaseAuthCookies(cookieStore.getAll(), url, (name) => {
+        try {
+          cookieStore.set(name, '', {
+            expires: new Date(0),
+            maxAge: 0,
+            path: '/',
+          });
+        } catch {
+          // Ignore cookie clearing failures in read-only contexts.
+        }
+      });
     },
     setAll(cookiesToSet: SupabaseCookie[]) {
       try {
@@ -46,7 +60,7 @@ async function createGenericClient<T = Database>(
 
           setAll(_: SupabaseCookie[]) {},
         }
-      : createCookieHandler(cookieStore),
+      : createCookieHandler(cookieStore, url),
   });
 }
 
@@ -205,7 +219,7 @@ export async function createDynamicClient<T = Database>(
   const cookieStore = await cookies();
   return wrapDirectClientForProxyOnlyTables(
     createServerClient<T>(url, key, {
-      cookies: createCookieHandler(cookieStore),
+      cookies: createCookieHandler(cookieStore, url),
     })
   );
 }
