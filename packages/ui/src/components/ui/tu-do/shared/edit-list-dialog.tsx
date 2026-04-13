@@ -29,7 +29,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 type EditableList = {
   id: string;
@@ -92,91 +92,157 @@ export function EditListDialog({
   onSave,
 }: EditListDialogProps) {
   const t = useTranslations('common');
-  const [name, setName] = useState('');
-  const [status, setStatus] = useState<TaskBoardStatus>('active');
-  const [color, setColor] = useState<SupportedColor>('GRAY');
 
-  useEffect(() => {
-    if (!list || !open) {
-      return;
-    }
+  if (!open || !list) {
+    return null;
+  }
 
-    setName(list.name ?? '');
-    setStatus(list.status ?? 'active');
-    setColor(list.color ?? 'GRAY');
-  }, [list, open]);
+  return (
+    <EditListDialogForm
+      key={list.id}
+      list={list}
+      isSaving={isSaving}
+      onOpenChange={onOpenChange}
+      onSave={onSave}
+      labels={{
+        active: t('active'),
+        backlog: t('backlog'),
+        blue: t('blue'),
+        cancel: t('cancel'),
+        closed: t('closed'),
+        color: t('color'),
+        cyan: t('cyan'),
+        documents: t('documents'),
+        done: t('done'),
+        editList: t('edit_list'),
+        gray: t('gray'),
+        green: t('green'),
+        indigo: t('indigo'),
+        listName: t('list_name'),
+        orange: t('orange'),
+        pink: t('pink'),
+        purple: t('purple'),
+        red: t('red'),
+        saveChanges: t('save_changes'),
+        saving: t('saving'),
+        statusCategory: t('status_category'),
+        updateListDescription: t('change_list_name'),
+        yellow: t('yellow'),
+      }}
+    />
+  );
+}
+
+function EditListDialogForm({
+  list,
+  onOpenChange,
+  isSaving,
+  onSave,
+  labels,
+}: {
+  list: EditableList;
+  onOpenChange: (open: boolean) => void;
+  isSaving: boolean;
+  onSave: EditListDialogProps['onSave'];
+  labels: {
+    active: string;
+    backlog: string;
+    blue: string;
+    cancel: string;
+    closed: string;
+    color: string;
+    cyan: string;
+    documents: string;
+    done: string;
+    editList: string;
+    gray: string;
+    green: string;
+    indigo: string;
+    listName: string;
+    orange: string;
+    pink: string;
+    purple: string;
+    red: string;
+    saveChanges: string;
+    saving: string;
+    statusCategory: string;
+    updateListDescription: string;
+    yellow: string;
+  };
+}) {
+  const [name, setName] = useState(list.name ?? '');
+  const [status, setStatus] = useState<TaskBoardStatus>(
+    list.status ?? 'active'
+  );
+  const [color, setColor] = useState<SupportedColor>(list.color ?? 'GRAY');
 
   const statusLabels: Record<TaskBoardStatus, string> = {
-    not_started: t('backlog'),
-    active: t('active'),
-    done: t('done'),
-    closed: t('closed'),
-    documents: t('documents'),
+    not_started: labels.backlog,
+    active: labels.active,
+    done: labels.done,
+    closed: labels.closed,
+    documents: labels.documents,
   };
 
   const colorOptions = [
     {
       value: 'GRAY' as SupportedColor,
-      label: t('gray'),
+      label: labels.gray,
       class: 'bg-dynamic-gray/30',
     },
     {
       value: 'RED' as SupportedColor,
-      label: t('red'),
+      label: labels.red,
       class: 'bg-dynamic-red/30',
     },
     {
       value: 'BLUE' as SupportedColor,
-      label: t('blue'),
+      label: labels.blue,
       class: 'bg-dynamic-blue/30',
     },
     {
       value: 'GREEN' as SupportedColor,
-      label: t('green'),
+      label: labels.green,
       class: 'bg-dynamic-green/30',
     },
     {
       value: 'YELLOW' as SupportedColor,
-      label: t('yellow'),
+      label: labels.yellow,
       class: 'bg-dynamic-yellow/30',
     },
     {
       value: 'ORANGE' as SupportedColor,
-      label: t('orange'),
+      label: labels.orange,
       class: 'bg-dynamic-orange/30',
     },
     {
       value: 'PURPLE' as SupportedColor,
-      label: t('purple'),
+      label: labels.purple,
       class: 'bg-dynamic-purple/30',
     },
     {
       value: 'PINK' as SupportedColor,
-      label: t('pink'),
+      label: labels.pink,
       class: 'bg-dynamic-pink/30',
     },
     {
       value: 'INDIGO' as SupportedColor,
-      label: t('indigo'),
+      label: labels.indigo,
       class: 'bg-dynamic-indigo/30',
     },
     {
       value: 'CYAN' as SupportedColor,
-      label: t('cyan'),
+      label: labels.cyan,
       class: 'bg-dynamic-cyan/30',
     },
   ];
 
-  if (!list) {
-    return null;
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-106.25">
         <DialogHeader>
-          <DialogTitle>{t('edit_list')}</DialogTitle>
-          <DialogDescription>{t('change_list_name')}</DialogDescription>
+          <DialogTitle>{labels.editList}</DialogTitle>
+          <DialogDescription>{labels.updateListDescription}</DialogDescription>
         </DialogHeader>
 
         <form
@@ -198,17 +264,17 @@ export function EditListDialog({
           }}
         >
           <div className="space-y-2">
-            <Label htmlFor="edit-list-name">{t('list_name')}</Label>
+            <Label htmlFor="edit-list-name">{labels.listName}</Label>
             <Input
               id="edit-list-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={t('list_name')}
+              placeholder={labels.listName}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-list-status">{t('status_category')}</Label>
+            <Label htmlFor="edit-list-status">{labels.statusCategory}</Label>
             <Select
               value={status}
               onValueChange={(value) => setStatus(value as TaskBoardStatus)}
@@ -238,7 +304,7 @@ export function EditListDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>{t('color')}</Label>
+            <Label>{labels.color}</Label>
             <div className="grid grid-cols-5 gap-3">
               {colorOptions.map((colorOption) => (
                 <button
@@ -264,10 +330,10 @@ export function EditListDialog({
               onClick={() => onOpenChange(false)}
               disabled={isSaving}
             >
-              {t('cancel')}
+              {labels.cancel}
             </Button>
             <Button type="submit" disabled={isSaving || !name.trim()}>
-              {isSaving ? t('saving') : t('save_changes')}
+              {isSaving ? labels.saving : labels.saveChanges}
             </Button>
           </DialogFooter>
         </form>

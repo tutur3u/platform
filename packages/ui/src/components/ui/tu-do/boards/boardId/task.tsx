@@ -2130,6 +2130,8 @@ export const TaskCard = React.memo(TaskCardInner, (prev, next) => {
   if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
   if (prev.boardId !== next.boardId) return false;
   if (prev.workspaceId !== next.workspaceId) return false;
+  // Check taskList color changes so cards re-render when list color changes
+  if (prev.taskList?.color !== next.taskList?.color) return false;
   // Shallow compare task critical fields
   const a = prev.task;
   const b = next.task;
