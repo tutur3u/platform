@@ -2212,6 +2212,7 @@
     "starts": "Bắt đầu",
     "starts_at": "Bắt đầu {date}",
     "status": "Trạng thái",
+    "status_category": "Nhóm trạng thái",
     "stay-updated": "Cập nhật thường xuyên",
     "stress": "căng thẳng",
     "styles": "Kiểu dáng",
