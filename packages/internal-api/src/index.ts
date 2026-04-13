@@ -241,12 +241,16 @@ export {
   updateWorkspaceBreakType,
 } from './time-tracking';
 export {
+  createCurrentUserAvatarUploadUrl,
   createSupportInquiry,
   getCurrentUserProfile,
   getUserCalendarSettings,
   getUserConfig,
+  removeCurrentUserAvatar,
   updateCurrentUserDefaultWorkspace,
+  updateCurrentUserProfile,
   updateUserConfig,
+  uploadCurrentUserAvatar,
 } from './users';
 export {
   createWorkspaceUserFeedback,

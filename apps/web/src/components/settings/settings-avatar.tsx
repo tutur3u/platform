@@ -2,6 +2,10 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Settings, UserIcon } from '@tuturuuu/icons';
+import {
+  removeCurrentUserAvatar,
+  uploadCurrentUserAvatar,
+} from '@tuturuuu/internal-api';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -96,42 +100,7 @@ export default function UserAvatar({ user }: AvatarProps) {
       compressedFile: File;
       filename: string;
     }) => {
-      // Step 1: Get upload URL
-      const urlRes = await fetch('/api/v1/users/me/avatar/upload-url', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ filename }),
-      });
-
-      if (!urlRes.ok) throw new Error('Failed to get upload URL');
-
-      const { uploadUrl, publicUrl } = await urlRes.json();
-
-      // Step 2: Upload file to storage
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': compressedFile.type,
-        },
-        body: compressedFile,
-      });
-
-      if (!uploadRes.ok) throw new Error('Failed to upload file');
-
-      // Step 3: Update user profile with new avatar URL
-      const updateRes = await fetch('/api/v1/users/me/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ avatar_url: publicUrl }),
-      });
-
-      if (!updateRes.ok) throw new Error('Failed to update profile');
-
-      return { publicUrl };
+      return uploadCurrentUserAvatar(compressedFile, filename);
     },
     onSuccess: ({ publicUrl }) => {
       setCommittedAvatarUrl(publicUrl);
@@ -152,11 +121,7 @@ export default function UserAvatar({ user }: AvatarProps) {
 
   const removeAvatarMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/v1/users/me/avatar', {
-        method: 'DELETE',
-      });
-
-      if (!res.ok) throw new Error('Failed to remove avatar');
+      await removeCurrentUserAvatar();
     },
     onMutate: async () => {
       // Optimistically remove avatar preview
