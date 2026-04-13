@@ -12,6 +12,8 @@ import {
   listWorkspaceTaskLists,
   updateWorkspaceTaskList,
 } from '@tuturuuu/internal-api/tasks';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
@@ -30,18 +32,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useMoveAllTasksFromList } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
+import { EditListDialog } from '../../shared/edit-list-dialog';
 import { BoardSelector } from '../board-selector';
 
 interface Props {
   listId: string;
   listName: string;
-  listStatus?: string;
+  listStatus?: TaskBoardStatus;
+  listColor?: SupportedColor;
   tasks?: Task[];
   boardId?: string;
   wsId?: string;
@@ -55,6 +58,7 @@ export function ListActions({
   listId,
   listName,
   listStatus,
+  listColor,
   tasks = [],
   boardId = '',
   wsId,
@@ -68,7 +72,6 @@ export function ListActions({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
   const [isMoveAllDialogOpen, setIsMoveAllDialogOpen] = useState(false);
-  const [newName, setNewName] = useState(listName);
 
   const queryClient = useQueryClient();
   const broadcast = useBoardBroadcast();
@@ -146,8 +149,16 @@ export function ListActions({
     },
   });
 
-  const renameListMutation = useMutation({
-    mutationFn: async (trimmedName: string) => {
+  const editListMutation = useMutation({
+    mutationFn: async ({
+      trimmedName,
+      status,
+      color,
+    }: {
+      trimmedName: string;
+      status: TaskBoardStatus;
+      color: SupportedColor;
+    }) => {
       if (!wsId || !boardId) {
         throw new Error(t('save_failed'));
       }
@@ -156,14 +167,14 @@ export function ListActions({
         wsId,
         boardId,
         listId,
-        { name: trimmedName },
+        { name: trimmedName, status, color },
         {
           baseUrl:
             typeof window !== 'undefined' ? window.location.origin : undefined,
         }
       );
     },
-    onMutate: async (trimmedName) => {
+    onMutate: async ({ trimmedName, status, color }) => {
       await queryClient.cancelQueries({ queryKey: ['task_lists', boardId] });
       const previousLists = queryClient.getQueryData<TaskList[]>([
         'task_lists',
@@ -175,15 +186,17 @@ export function ListActions({
         (old: TaskList[] | undefined) => {
           if (!old) return old;
           return old.map((l) =>
-            l.id === listId ? { ...l, name: trimmedName } : l
+            l.id === listId ? { ...l, name: trimmedName, status, color } : l
           );
         }
       );
 
       return { previousLists };
     },
-    onSuccess: (_, trimmedName) => {
-      broadcast?.('list:upsert', { list: { id: listId, name: trimmedName } });
+    onSuccess: (_, { trimmedName, status, color }) => {
+      broadcast?.('list:upsert', {
+        list: { id: listId, name: trimmedName, status, color },
+      });
       toast.success(t('name_updated'));
       onEditOpenChange(false);
       onUpdate();
@@ -267,16 +280,6 @@ export function ListActions({
 
   function handleDelete() {
     deleteListMutation.mutate();
-  }
-
-  function handleUpdate() {
-    if (!newName.trim() || newName === listName) {
-      onEditOpenChange(false);
-      return;
-    }
-
-    const trimmedName = newName.trim();
-    renameListMutation.mutate(trimmedName);
   }
 
   function handleArchiveAllTasks() {
@@ -428,34 +431,24 @@ export function ListActions({
         </DialogContent>
       </Dialog>
 
-      <Dialog
+      <EditListDialog
         open={canManageList && isEditOpen}
         onOpenChange={onEditOpenChange}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('edit_list')}</DialogTitle>
-            <DialogDescription>{t('change_list_name')}</DialogDescription>
-          </DialogHeader>
-          <Input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleUpdate();
-              }
-            }}
-            placeholder={t('list_name')}
-          />
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => onEditOpenChange(false)}>
-              {t('cancel')}
-            </Button>
-            <Button onClick={handleUpdate}>{t('save_changes')}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        list={{
+          id: listId,
+          name: listName,
+          status: listStatus,
+          color: listColor ?? 'GRAY',
+        }}
+        isSaving={editListMutation.isPending}
+        onSave={({ updates }) => {
+          editListMutation.mutate({
+            trimmedName: updates.name,
+            status: updates.status,
+            color: updates.color,
+          });
+        }}
+      />
 
       <Dialog
         open={canManageList && isArchiveDialogOpen}
