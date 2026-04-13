@@ -78,6 +78,8 @@ class TaskBoardDetailState extends Equatable {
     this.listPageSizeById = const <String, int>{},
     this.listLoadErrorById = const <String, String>{},
     this.selectedTaskId,
+    this.isBulkSelectMode = false,
+    this.selectedTaskIds = const <String>{},
     this.isMutating = false,
     this.mutationError,
     this.error,
@@ -99,6 +101,8 @@ class TaskBoardDetailState extends Equatable {
   final Map<String, int> listPageSizeById;
   final Map<String, String> listLoadErrorById;
   final String? selectedTaskId;
+  final bool isBulkSelectMode;
+  final Set<String> selectedTaskIds;
   final bool isMutating;
   final String? mutationError;
   final String? error;
@@ -227,6 +231,8 @@ class TaskBoardDetailState extends Equatable {
     Map<String, int>? listPageSizeById,
     Map<String, String>? listLoadErrorById,
     Object? selectedTaskId = _taskBoardDetailSentinel,
+    bool? isBulkSelectMode,
+    Set<String>? selectedTaskIds,
     bool? isMutating,
     Object? mutationError = _taskBoardDetailSentinel,
     Object? error = _taskBoardDetailSentinel,
@@ -259,6 +265,8 @@ class TaskBoardDetailState extends Equatable {
       selectedTaskId: selectedTaskId == _taskBoardDetailSentinel
           ? this.selectedTaskId
           : selectedTaskId as String?,
+      isBulkSelectMode: isBulkSelectMode ?? this.isBulkSelectMode,
+      selectedTaskIds: selectedTaskIds ?? this.selectedTaskIds,
       isMutating: isMutating ?? this.isMutating,
       mutationError: clearMutationError
           ? null
@@ -291,6 +299,8 @@ class TaskBoardDetailState extends Equatable {
     listPageSizeById,
     listLoadErrorById,
     selectedTaskId,
+    isBulkSelectMode,
+    selectedTaskIds,
     isMutating,
     mutationError,
     error,

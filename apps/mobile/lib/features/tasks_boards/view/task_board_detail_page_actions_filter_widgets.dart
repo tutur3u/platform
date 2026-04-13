@@ -126,6 +126,77 @@ class _FilterDropdownSection extends StatelessWidget {
   }
 }
 
+class _ListPickerSection extends StatelessWidget {
+  const _ListPickerSection({
+    required this.title,
+    required this.lists,
+    required this.onSelect,
+    this.enabled = true,
+  });
+
+  final String title;
+  final List<TaskBoardList> lists;
+  final ValueChanged<String> onSelect;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: shad.Theme.of(
+            context,
+          ).typography.small.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const shad.Gap(6),
+        if (lists.isEmpty)
+          Text(
+            l10n.taskBoardDetailNoFilterOptions,
+            style: shad.Theme.of(context).typography.textMuted,
+          )
+        else
+          shad.OutlineButton(
+            onPressed: enabled
+                ? () => unawaited(_openListPicker(context))
+                : null,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.taskBoardDetailTaskListSelect,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const shad.Gap(8),
+                const Icon(Icons.keyboard_arrow_down, size: 16),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _openListPicker(BuildContext context) async {
+    final selectedListId = await showAdaptiveSheet<String>(
+      context: context,
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (_) => _ListPickerSheet(
+        title: title,
+        lists: _sortedListsByStatusOrder(lists),
+      ),
+    );
+
+    if (selectedListId != null) {
+      onSelect(selectedListId);
+    }
+  }
+}
+
 class _FilterSelectionSheet extends StatefulWidget {
   const _FilterSelectionSheet({
     required this.title,

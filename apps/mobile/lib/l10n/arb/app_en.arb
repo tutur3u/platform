@@ -735,8 +735,8 @@
         }
     },
     "taskBoardDetailOverdue": "Overdue",
-    "taskBoardDetailToday": "today",
-    "taskBoardDetailTomorrow": "tomorrow",
+    "taskBoardDetailToday": "Today",
+    "taskBoardDetailTomorrow": "Tomorrow",
     "taskBoardDetailYesterday": "yesterday",
     "taskBoardDetailInDays": "{count, plural, one{in {count} day} other{in {count} days}}",
     "@taskBoardDetailInDays": {
@@ -760,6 +760,42 @@
     "taskBoardDetailTaskDeleted": "Task deleted.",
     "taskBoardDetailTaskDeletedForever": "Task permanently deleted.",
     "taskBoardDetailTaskRestored": "Task restored.",
+    "taskBoardDetailBulkActions": "Bulk actions",
+    "taskBoardDetailBulkAllSuccess": "Updated {count, plural, one{{count} task} other{{count} tasks}}.",
+    "@taskBoardDetailBulkAllSuccess": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardDetailBulkClearAssignees": "Clear assignees",
+    "taskBoardDetailBulkClearLabels": "Clear labels",
+    "taskBoardDetailBulkClearProjects": "Clear projects",
+    "taskBoardDetailBulkMarkClosed": "Mark as closed",
+    "taskBoardDetailBulkMarkDone": "Mark as done",
+    "taskBoardDetailBulkMoveToBoard": "Move to board",
+    "taskBoardDetailBulkPartialSuccess": "Updated {success} tasks, {failed} failed.",
+    "@taskBoardDetailBulkPartialSuccess": {
+        "placeholders": {
+            "success": {
+                "type": "int"
+            },
+            "failed": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardDetailEnterBulkSelect": "Select tasks",
+    "taskBoardDetailExitBulkSelect": "Clear selection",
+    "taskBoardDetailNoTasksSelected": "No tasks selected",
+    "taskBoardDetailNextWeek": "Next week",
+    "taskBoardDetailQuickActions": "Quick actions",
+    "taskBoardDetailProperties": "Properties",
+    "taskBoardDetailMove": "Move",
+    "taskBoardDetailSetDueDate": "Set due date",
+    "taskBoardDetailSetEstimation": "Set estimation",
+    "taskBoardDetailPriorityNone": "No priority",
     "taskBoardDetailRecycleBin": "Recycle Bin",
     "taskBoardDetailRecycleBinDescription": "Deleted tasks from this board. Select tasks to restore or permanently delete them.",
     "taskBoardDetailRecycleBinEmpty": "No deleted tasks",
@@ -837,6 +873,10 @@
         }
     },
     "taskBoardDetailNoMoveTargets": "No other lists available for moving this task.",
+    "taskBoardDetailRemoveDueDate": "Remove due date",
+    "taskBoardDetailSelectAllFiltered": "Select visible",
+    "taskBoardDetailSetCustomDate": "Set custom date",
+    "taskBoardDetailThisWeek": "This week",
     "taskBoardDetailBoardActions": "Board actions",
     "taskBoardDetailManageBoardLayout": "Manage board layout",
     "taskBoardDetailManageBoardLayoutDescription": "Manage board columns by status and reorder lists within each status.",

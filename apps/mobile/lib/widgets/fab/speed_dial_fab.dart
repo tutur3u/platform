@@ -106,11 +106,9 @@ class _SpeedDialFabState extends State<SpeedDialFab> {
           shape: shad.ButtonShape.circle,
           density: shad.ButtonDensity.icon,
           child: Center(
-            child: AnimatedRotation(
-              turns: _expanded ? 0.125 : 0,
+            child: AnimatedSwitcher(
               duration: _animationDuration,
-              curve: Curves.easeOutCubic,
-              child: Icon(widget.icon, size: 24),
+              child: Icon(widget.icon, key: ValueKey(widget.icon), size: 24),
             ),
           ),
         ),

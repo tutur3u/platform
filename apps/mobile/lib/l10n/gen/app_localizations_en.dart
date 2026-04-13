@@ -1794,10 +1794,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailOverdue => 'Overdue';
 
   @override
-  String get taskBoardDetailToday => 'today';
+  String get taskBoardDetailToday => 'Today';
 
   @override
-  String get taskBoardDetailTomorrow => 'tomorrow';
+  String get taskBoardDetailTomorrow => 'Tomorrow';
 
   @override
   String get taskBoardDetailYesterday => 'yesterday';
@@ -1841,6 +1841,73 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailTaskRestored => 'Task restored.';
+
+  @override
+  String get taskBoardDetailBulkActions => 'Bulk actions';
+
+  @override
+  String taskBoardDetailBulkAllSuccess(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasks',
+      one: '$count task',
+    );
+    return 'Updated $_temp0.';
+  }
+
+  @override
+  String get taskBoardDetailBulkClearAssignees => 'Clear assignees';
+
+  @override
+  String get taskBoardDetailBulkClearLabels => 'Clear labels';
+
+  @override
+  String get taskBoardDetailBulkClearProjects => 'Clear projects';
+
+  @override
+  String get taskBoardDetailBulkMarkClosed => 'Mark as closed';
+
+  @override
+  String get taskBoardDetailBulkMarkDone => 'Mark as done';
+
+  @override
+  String get taskBoardDetailBulkMoveToBoard => 'Move to board';
+
+  @override
+  String taskBoardDetailBulkPartialSuccess(int success, int failed) {
+    return 'Updated $success tasks, $failed failed.';
+  }
+
+  @override
+  String get taskBoardDetailEnterBulkSelect => 'Select tasks';
+
+  @override
+  String get taskBoardDetailExitBulkSelect => 'Clear selection';
+
+  @override
+  String get taskBoardDetailNoTasksSelected => 'No tasks selected';
+
+  @override
+  String get taskBoardDetailNextWeek => 'Next week';
+
+  @override
+  String get taskBoardDetailQuickActions => 'Quick actions';
+
+  @override
+  String get taskBoardDetailProperties => 'Properties';
+
+  @override
+  String get taskBoardDetailMove => 'Move';
+
+  @override
+  String get taskBoardDetailSetDueDate => 'Set due date';
+
+  @override
+  String get taskBoardDetailSetEstimation => 'Set estimation';
+
+  @override
+  String get taskBoardDetailPriorityNone => 'No priority';
 
   @override
   String get taskBoardDetailRecycleBin => 'Recycle Bin';
@@ -1929,6 +1996,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailNoMoveTargets => 'No other lists available for moving this task.';
+
+  @override
+  String get taskBoardDetailRemoveDueDate => 'Remove due date';
+
+  @override
+  String get taskBoardDetailSelectAllFiltered => 'Select visible';
+
+  @override
+  String get taskBoardDetailSetCustomDate => 'Set custom date';
+
+  @override
+  String get taskBoardDetailThisWeek => 'This week';
 
   @override
   String get taskBoardDetailBoardActions => 'Board actions';
