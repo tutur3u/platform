@@ -18,7 +18,10 @@ describe('postgrest rate limit helpers', () => {
       }),
     });
 
-    expect(metadata).toEqual({ retryAfter: 17 });
+    expect(metadata).toEqual({
+      headers: { 'Retry-After': '17' },
+      retryAfter: 17,
+    });
   });
 
   it('extracts retry-after metadata from the real PostgREST error shape', () => {
@@ -34,7 +37,10 @@ describe('postgrest rate limit helpers', () => {
       }),
     });
 
-    expect(metadata).toEqual({ retryAfter: 30 });
+    expect(metadata).toEqual({
+      headers: { 'Retry-After': '30' },
+      retryAfter: 30,
+    });
   });
 
   it('builds a 429 response for custom PostgREST rate-limit errors', async () => {
@@ -42,7 +48,12 @@ describe('postgrest rate limit helpers', () => {
       code: 'RATE_LIMITED',
       details: JSON.stringify({
         status: 429,
-        headers: { 'Retry-After': '9' },
+        headers: {
+          'Retry-After': '9',
+          'X-RateLimit-Limit': '20',
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': '1234567890',
+        },
       }),
       message: JSON.stringify({
         code: 'RATE_LIMITED',
@@ -51,7 +62,11 @@ describe('postgrest rate limit helpers', () => {
 
     expect(response?.status).toBe(429);
     expect(response?.headers.get('Retry-After')).toBe('9');
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('20');
+    expect(response?.headers.get('X-RateLimit-Remaining')).toBe('0');
+    expect(response?.headers.get('X-RateLimit-Reset')).toBe('1234567890');
     await expect(response?.json()).resolves.toEqual({
+      code: 'RATE_LIMIT_EXCEEDED',
       error: 'Too Many Requests',
       message: 'Rate limit exceeded',
     });
@@ -68,6 +83,7 @@ describe('postgrest rate limit helpers', () => {
     expect(response?.status).toBe(429);
     expect(response?.headers.get('Retry-After')).toBe('21');
     await expect(response?.json()).resolves.toEqual({
+      code: 'RATE_LIMIT_EXCEEDED',
       error: 'Too Many Requests',
       message: 'Rate limit exceeded',
     });

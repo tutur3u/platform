@@ -1,7 +1,7 @@
 'use client';
 
 import { type QueryClient, useMutation } from '@tanstack/react-query';
-import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
+import { bulkWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
@@ -26,36 +26,32 @@ export function useBulkUpdatePriority(
       priority: Task['priority'] | null;
       taskIds: string[];
     }) => {
-      let successCount = 0;
-      const succeededTaskIds: string[] = [];
-      const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
-      for (const taskId of taskIds) {
-        try {
-          await updateWorkspaceTask(wsId, taskId, { priority }, apiOptions);
-          succeededTaskIds.push(taskId);
-          successCount++;
-        } catch (error) {
-          failures.push({
-            taskId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
-      }
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: {
+            type: 'update_fields',
+            updates: { priority },
+          },
+        },
+        apiOptions
+      );
 
-      if (successCount === 0) {
+      if (result.successCount === 0) {
         throw new Error(
           `Failed to update priority for all ${taskIds.length} tasks`
         );
       }
 
       return {
-        count: successCount,
+        count: result.successCount,
         priority,
         taskIds,
-        failures,
-        succeededTaskIds,
+        failures: result.failures,
+        succeededTaskIds: result.succeededTaskIds,
       };
     },
     onMutate: async ({ priority, taskIds }) => {
@@ -149,41 +145,32 @@ export function useBulkUpdateEstimation(
       points: number | null;
       taskIds: string[];
     }) => {
-      let successCount = 0;
-      const succeededTaskIds: string[] = [];
-      const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
-      for (const taskId of taskIds) {
-        try {
-          await updateWorkspaceTask(
-            wsId,
-            taskId,
-            { estimation_points: points },
-            apiOptions
-          );
-          succeededTaskIds.push(taskId);
-          successCount++;
-        } catch (error) {
-          failures.push({
-            taskId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
-      }
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: {
+            type: 'update_fields',
+            updates: { estimation_points: points },
+          },
+        },
+        apiOptions
+      );
 
-      if (successCount === 0) {
+      if (result.successCount === 0) {
         throw new Error(
           `Failed to update estimation for all ${taskIds.length} tasks`
         );
       }
 
       return {
-        count: successCount,
+        count: result.successCount,
         points,
         taskIds,
-        failures,
-        succeededTaskIds,
+        failures: result.failures,
+        succeededTaskIds: result.succeededTaskIds,
       };
     },
     onMutate: async ({ points, taskIds }) => {
@@ -281,41 +268,32 @@ export function useBulkUpdateDueDate(
       taskIds: string[];
     }) => {
       const newDate = resolveDueDatePreset(preset, weekStartsOn);
-      let successCount = 0;
-      const succeededTaskIds: string[] = [];
-      const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
-      for (const taskId of taskIds) {
-        try {
-          await updateWorkspaceTask(
-            wsId,
-            taskId,
-            { end_date: newDate },
-            apiOptions
-          );
-          succeededTaskIds.push(taskId);
-          successCount++;
-        } catch (error) {
-          failures.push({
-            taskId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
-      }
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: {
+            type: 'update_fields',
+            updates: { end_date: newDate },
+          },
+        },
+        apiOptions
+      );
 
-      if (successCount === 0) {
+      if (result.successCount === 0) {
         throw new Error(
           `Failed to update due date for all ${taskIds.length} tasks`
         );
       }
 
       return {
-        count: successCount,
+        count: result.successCount,
         end_date: newDate,
         taskIds,
-        failures,
-        succeededTaskIds,
+        failures: result.failures,
+        succeededTaskIds: result.succeededTaskIds,
       };
     },
     onMutate: async ({ preset, taskIds }) => {
@@ -413,41 +391,32 @@ export function useBulkUpdateCustomDueDate(
       taskIds: string[];
     }) => {
       const newDate = date ? date.toISOString() : null;
-      let successCount = 0;
-      const succeededTaskIds: string[] = [];
-      const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
-      for (const taskId of taskIds) {
-        try {
-          await updateWorkspaceTask(
-            wsId,
-            taskId,
-            { end_date: newDate },
-            apiOptions
-          );
-          succeededTaskIds.push(taskId);
-          successCount++;
-        } catch (error) {
-          failures.push({
-            taskId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
-      }
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: {
+            type: 'update_fields',
+            updates: { end_date: newDate },
+          },
+        },
+        apiOptions
+      );
 
-      if (successCount === 0) {
+      if (result.successCount === 0) {
         throw new Error(
           `Failed to update due date for all ${taskIds.length} tasks`
         );
       }
 
       return {
-        count: successCount,
+        count: result.successCount,
         end_date: newDate,
         taskIds,
-        failures,
-        succeededTaskIds,
+        failures: result.failures,
+        succeededTaskIds: result.succeededTaskIds,
       };
     },
     onMutate: async ({ date, taskIds }) => {

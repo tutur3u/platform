@@ -1,10 +1,7 @@
 'use client';
 
 import { type QueryClient, useMutation } from '@tanstack/react-query';
-import {
-  addWorkspaceTaskLabel,
-  removeWorkspaceTaskLabel,
-} from '@tuturuuu/internal-api/tasks';
+import { bulkWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
@@ -28,30 +25,30 @@ export function useBulkAddLabel(
       labelId: string;
       taskIds: string[];
     }) => {
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
-      for (const taskId of taskIds) {
-        try {
-          await addWorkspaceTaskLabel(wsId, taskId, labelId, apiOptions);
-          successCount++;
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : 'Unknown error';
-          if (!message.toLowerCase().includes('duplicate')) {
-            failures.push({ taskId, error: message });
-          } else {
-            successCount++;
-          }
-        }
-      }
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: {
+            type: 'add_label',
+            labelId,
+          },
+        },
+        apiOptions
+      );
 
-      if (successCount === 0) {
+      if (result.successCount === 0) {
         throw new Error(`Failed to add label to all ${taskIds.length} tasks`);
       }
 
-      return { count: successCount, labelId, taskIds, failures };
+      return {
+        count: result.successCount,
+        labelId,
+        taskIds,
+        failures: result.failures,
+      };
     },
     onMutate: async ({ labelId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -173,29 +170,32 @@ export function useBulkRemoveLabel(
       labelId: string;
       taskIds: string[];
     }) => {
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
-      for (const taskId of taskIds) {
-        try {
-          await removeWorkspaceTaskLabel(wsId, taskId, labelId, apiOptions);
-          successCount++;
-        } catch (error) {
-          failures.push({
-            taskId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
-      }
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: {
+            type: 'remove_label',
+            labelId,
+          },
+        },
+        apiOptions
+      );
 
-      if (successCount === 0) {
+      if (result.successCount === 0) {
         throw new Error(
           `Failed to remove label from all ${taskIds.length} tasks`
         );
       }
 
-      return { count: successCount, labelId, taskIds, failures };
+      return {
+        count: result.successCount,
+        labelId,
+        taskIds,
+        failures: result.failures,
+      };
     },
     onMutate: async ({ labelId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
