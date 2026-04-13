@@ -10,7 +10,7 @@
     "type-check": "tsgo --project tsconfig.typecheck.json"
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.61",
+    "@ai-sdk/google": "^3.0.62",
     "@tuturuuu/payment": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",

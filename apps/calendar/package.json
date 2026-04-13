@@ -26,7 +26,7 @@
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.8.2",
     "@hookform/resolvers": "^5.2.2",
-    "@tanstack/react-query": "^5.97.0",
+    "@tanstack/react-query": "^5.99.0",
     "@tanstack/react-table": "^8.21.3",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/apis": "workspace:*",
@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.2",
-    "@tanstack/react-query-devtools": "^5.97.0",
+    "@tanstack/react-query-devtools": "^5.99.0",
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/negotiator": "^0.6.4",
