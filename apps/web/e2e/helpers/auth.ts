@@ -1,9 +1,15 @@
 import type { Locator, Page } from '@playwright/test';
-import { AUTH_STATE_PATH, TEST_USER } from './constants';
+import {
+  AUTH_STATE_PATH,
+  DASHBOARD_URL,
+  DEFAULT_LOCALE,
+  TEST_USER,
+} from './constants';
 import { resetDbRateLimits, setWebOtpEnabled } from './rate-limits';
 
 /** Mailpit API base URL for retrieving OTP codes in local dev/E2E. */
 const MAILPIT_API_URL = 'http://localhost:8004/api/v1';
+const DEV_SESSION_URL = '/api/auth/dev-session';
 
 let previousOtpState: boolean | null = null;
 
@@ -92,34 +98,61 @@ export async function fetchOtpCodeFromMailpit(
  *  - The UI form uses the correctly configured client, so cookies persist properly.
  */
 export async function authenticateTestUser(page: Page): Promise<void> {
-  // Reset any auth-related rate limits before attempting login
   await resetDbRateLimits();
 
-  // Disable web OTP so the password form appears directly without
-  // requiring an OTP send that may not be configured in local dev.
-  previousOtpState = await setWebOtpEnabled(false);
+  try {
+    await authenticateViaDevSession(page);
+  } catch {
+    previousOtpState = await setWebOtpEnabled(false);
 
-  // Step 1: Navigate to login page
+    try {
+      await authenticateViaPasswordUi(page);
+    } finally {
+      if (previousOtpState !== null) {
+        await setWebOtpEnabled(previousOtpState);
+      }
+    }
+  }
+
+  await page.context().storageState({ path: AUTH_STATE_PATH });
+}
+
+async function authenticateViaDevSession(page: Page): Promise<void> {
+  const response = await page.request.post(DEV_SESSION_URL, {
+    data: {
+      email: TEST_USER.email,
+      locale: DEFAULT_LOCALE,
+    },
+    failOnStatusCode: false,
+  });
+
+  if (!response.ok()) {
+    const errorBody = await response.text().catch(() => '');
+    throw new Error(
+      `Dev session failed with status ${response.status()}: ${errorBody}`
+    );
+  }
+  await verifyAuthenticatedSession(page);
+}
+
+async function authenticateViaPasswordUi(page: Page): Promise<void> {
   await page.goto('/login', {
     waitUntil: 'domcontentloaded',
   });
 
-  // Step 2: Advance through the current identify step until the password form
-  // is visible. With OTP disabled, the password form appears after the
-  // email identify step.
   const passwordInput = await openPasswordStage(page, TEST_USER.email);
-
-  // Step 3: Fill in test credentials
   await passwordInput.clear();
   await passwordInput.fill(TEST_USER.password);
 
-  // Step 4: Submit the form
   await page
     .getByRole('button', { name: /sign in/i })
     .first()
     .click();
 
-  // Step 5: Wait for successful post-login state
+  await verifyAuthenticatedSession(page);
+}
+
+async function verifyAuthenticatedSession(page: Page): Promise<void> {
   await page.waitForFunction(
     async () => {
       try {
@@ -133,21 +166,19 @@ export async function authenticateTestUser(page: Page): Promise<void> {
         return false;
       }
     },
-    {
-      timeout: 60_000,
-    }
+    { timeout: 60_000 }
   );
 
-  // Step 6: Let cookies settle after redirects
-  await page.waitForTimeout(2_000);
+  // Force one server-rendered navigation so setup only succeeds when a
+  // server-readable session cookie exists, not just a client-side auth state.
+  await page.goto(DASHBOARD_URL, { waitUntil: 'domcontentloaded' });
+  await page.waitForURL(
+    (url) =>
+      !url.pathname.includes('/login') && !url.pathname.includes('/auth'),
+    { timeout: 60_000, waitUntil: 'domcontentloaded' }
+  );
 
-  // Step 7: Restore OTP to its original setting
-  if (previousOtpState !== null) {
-    await setWebOtpEnabled(previousOtpState);
-  }
-
-  // Step 8: Save browser state (cookies + localStorage) for reuse
-  await page.context().storageState({ path: AUTH_STATE_PATH });
+  await page.waitForTimeout(1_000);
 }
 
 /**

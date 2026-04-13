@@ -46,6 +46,7 @@ function getRetryAfterSeconds(
 }
 
 export function getPostgrestRateLimitMetadata(error: PostgrestLikeError): {
+  headers: Record<string, string>;
   retryAfter: number | null;
 } | null {
   const message = parseJson<{ code?: string }>(error.message);
@@ -63,7 +64,25 @@ export function getPostgrestRateLimitMetadata(error: PostgrestLikeError): {
     return null;
   }
 
+  const headers: Record<string, string> = {};
+  const detailHeaders = details?.headers ?? {};
+
+  for (const [name, value] of Object.entries(detailHeaders)) {
+    if (value === null || value === undefined) continue;
+
+    const normalizedName = name.toLowerCase();
+    if (
+      normalizedName === 'retry-after' ||
+      normalizedName === 'x-ratelimit-limit' ||
+      normalizedName === 'x-ratelimit-remaining' ||
+      normalizedName === 'x-ratelimit-reset'
+    ) {
+      headers[name] = `${value}`;
+    }
+  }
+
   return {
+    headers,
     retryAfter: getRetryAfterSeconds(error, details),
   };
 }
@@ -74,13 +93,17 @@ export function buildPostgrestRateLimitResponse(error: PostgrestLikeError) {
     return null;
   }
 
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...metadata.headers };
   if (metadata.retryAfter !== null && metadata.retryAfter > 0) {
     headers['Retry-After'] = `${metadata.retryAfter}`;
   }
 
   return NextResponse.json(
-    { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+    {
+      code: 'RATE_LIMIT_EXCEEDED',
+      error: 'Too Many Requests',
+      message: 'Rate limit exceeded',
+    },
     { status: 429, headers }
   );
 }
