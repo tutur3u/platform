@@ -62,16 +62,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useMemo, useState } from 'react';
@@ -80,6 +71,7 @@ import {
   useBoardBroadcast,
 } from './board-broadcast-context';
 import { CreateListDialog } from './create-list-dialog';
+import { EditListDialog } from './edit-list-dialog';
 
 interface BoardLayoutSettingsProps {
   open: boolean;
@@ -530,61 +522,6 @@ export function BoardLayoutSettings({
     [t]
   );
   const queryClient = useQueryClient();
-  const colorOptions = useMemo(
-    () => [
-      {
-        value: 'GRAY' as SupportedColor,
-        label: t.gray,
-        class: 'bg-dynamic-gray/30',
-      },
-      {
-        value: 'RED' as SupportedColor,
-        label: t.red,
-        class: 'bg-dynamic-red/30',
-      },
-      {
-        value: 'BLUE' as SupportedColor,
-        label: t.blue,
-        class: 'bg-dynamic-blue/30',
-      },
-      {
-        value: 'GREEN' as SupportedColor,
-        label: t.green,
-        class: 'bg-dynamic-green/30',
-      },
-      {
-        value: 'YELLOW' as SupportedColor,
-        label: t.yellow,
-        class: 'bg-dynamic-yellow/30',
-      },
-      {
-        value: 'ORANGE' as SupportedColor,
-        label: t.orange,
-        class: 'bg-dynamic-orange/30',
-      },
-      {
-        value: 'PURPLE' as SupportedColor,
-        label: t.purple,
-        class: 'bg-dynamic-purple/30',
-      },
-      {
-        value: 'PINK' as SupportedColor,
-        label: t.pink,
-        class: 'bg-dynamic-pink/30',
-      },
-      {
-        value: 'INDIGO' as SupportedColor,
-        label: t.indigo,
-        class: 'bg-dynamic-indigo/30',
-      },
-      {
-        value: 'CYAN' as SupportedColor,
-        label: t.cyan,
-        class: 'bg-dynamic-cyan/30',
-      },
-    ],
-    [t]
-  );
   const [editingList, setEditingList] = useState<WorkspaceTaskList | null>(
     null
   );
@@ -914,19 +851,25 @@ export function BoardLayoutSettings({
     updateColorMutation.mutate({ listId, color });
   };
 
-  const statuses: TaskBoardStatus[] = [
-    'documents',
-    'not_started',
-    'active',
-    'done',
-    'closed',
-  ];
+  const statuses = useMemo<TaskBoardStatus[]>(
+    () => ['documents', 'not_started', 'active', 'done', 'closed'],
+    []
+  );
+
+  const hasClosedList = (groupedLists.closed?.length ?? 0) > 0;
+
+  const editListAllowedStatuses = useMemo(() => {
+    if (hasClosedList && editingList?.status !== 'closed') {
+      return statuses.filter((status) => status !== 'closed');
+    }
+
+    return statuses;
+  }, [editingList?.status, hasClosedList, statuses]);
 
   const openCreateListDialog = useCallback((status: TaskBoardStatus) => {
     setCreateListStatus(status);
     setCreatingList(true);
   }, []);
-  const hasClosedList = (groupedLists.closed?.length ?? 0) > 0;
 
   return (
     <>
@@ -1078,119 +1021,29 @@ export function BoardLayoutSettings({
         }}
       />
 
-      {/* Edit List Dialog */}
-      {editingList && (
-        <Dialog open={!!editingList} onOpenChange={() => setEditingList(null)}>
-          <DialogContent className="sm:max-w-106.25">
-            <DialogHeader>
-              <DialogTitle>{t.editList}</DialogTitle>
-              <DialogDescription>{t.updateListDescription}</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">{t.listName}</Label>
-                <Input
-                  defaultValue={editingList?.name || ''}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      updateListMutation.mutate({
-                        listId: editingList.id,
-                        updates: {
-                          name: (e.target as HTMLInputElement).value.trim(),
-                        },
-                      });
-                    }
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-status">{t.statusCategory}</Label>
-                <Select
-                  defaultValue={editingList?.status || ''}
-                  onValueChange={(value) => {
-                    updateListMutation.mutate({
-                      listId: editingList.id,
-                      updates: { status: value as TaskBoardStatus },
-                    });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statuses.map((status) => {
-                      const Icon = statusConfig[status].icon;
-                      return (
-                        <SelectItem key={status} value={status}>
-                          <div className="flex items-center gap-2">
-                            <Icon
-                              className={cn(
-                                'h-4 w-4',
-                                statusConfig[status].color
-                              )}
-                            />
-                            {statusLabels[status]}
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>{t.color}</Label>
-                <div className="grid grid-cols-5 gap-2">
-                  {colorOptions.map((color) => (
-                    <button
-                      type="button"
-                      key={color.value}
-                      onClick={() =>
-                        updateColorMutation.mutate({
-                          listId: editingList.id,
-                          color: color.value,
-                        })
-                      }
-                      className={cn(
-                        'h-8 w-8 rounded border-2 transition-all',
-                        color.class,
-                        editingList.color === color.value &&
-                          'scale-110 ring-2 ring-primary'
-                      )}
-                      title={color.label}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setEditingList(null)}
-                disabled={updateListMutation.isPending}
-              >
-                {t.cancel}
-              </Button>
-              <Button
-                onClick={() => {
-                  const nameInput = document.getElementById(
-                    'edit-name'
-                  ) as HTMLInputElement;
-                  if (nameInput?.value.trim()) {
-                    updateListMutation.mutate({
-                      listId: editingList.id,
-                      updates: { name: nameInput.value.trim() },
-                    });
-                  }
-                }}
-                disabled={updateListMutation.isPending}
-              >
-                {updateListMutation.isPending ? t.saving : t.saveChanges}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+      <EditListDialog
+        open={!!editingList}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setEditingList(null);
+          }
+        }}
+        allowedStatuses={editListAllowedStatuses}
+        list={
+          editingList
+            ? {
+                id: editingList.id,
+                name: editingList.name ?? '',
+                status: editingList.status,
+                color: (editingList.color as SupportedColor | null) ?? null,
+              }
+            : null
+        }
+        isSaving={updateListMutation.isPending}
+        onSave={({ listId, updates }) => {
+          updateListMutation.mutate({ listId, updates });
+        }}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog
