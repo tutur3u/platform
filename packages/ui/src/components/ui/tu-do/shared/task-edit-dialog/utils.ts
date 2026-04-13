@@ -240,6 +240,22 @@ export async function saveYjsDescriptionToDatabase({
     const currentDescription = getContent();
     const descriptionString =
       serializeTaskDescriptionContent(currentDescription);
+    const isOversizedDescription =
+      descriptionString !== null &&
+      descriptionString.length > MAX_TASK_DESCRIPTION_LENGTH;
+
+    if (isOversizedDescription) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`Task description exceeds max length (${context})`, {
+          maxLength: MAX_TASK_DESCRIPTION_LENGTH,
+          serializedLength: descriptionString.length,
+          taskId,
+          wsId,
+        });
+      }
+      return false;
+    }
+
     const yjsState = getYjsState?.();
     const payload = buildTaskDescriptionUpdatePayload({
       content: currentDescription,
@@ -252,12 +268,15 @@ export async function saveYjsDescriptionToDatabase({
 
     await updateWorkspaceTaskDescription(wsId, taskId, payload);
 
-    updateTaskDescriptionCaches({
-      taskId,
-      descriptionString,
-      boardId,
-      queryClient,
-    });
+    if (payload.description !== undefined) {
+      updateTaskDescriptionCaches({
+        taskId,
+        descriptionString:
+          payload.description === null ? null : (payload.description ?? null),
+        boardId,
+        queryClient,
+      });
+    }
 
     return true;
   } catch (error) {
@@ -294,6 +313,22 @@ export async function saveAndVerifyYjsDescriptionToDatabase({
     const currentDescription = getContent();
     const descriptionString =
       serializeTaskDescriptionContent(currentDescription);
+    const isOversizedDescription =
+      descriptionString !== null &&
+      descriptionString.length > MAX_TASK_DESCRIPTION_LENGTH;
+
+    if (isOversizedDescription) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`Task description exceeds max length (${context})`, {
+          maxLength: MAX_TASK_DESCRIPTION_LENGTH,
+          serializedLength: descriptionString.length,
+          taskId,
+          wsId,
+        });
+      }
+      return false;
+    }
+
     const yjsState = getYjsState?.();
     const payload = buildTaskDescriptionUpdatePayload({
       content: currentDescription,
@@ -306,12 +341,15 @@ export async function saveAndVerifyYjsDescriptionToDatabase({
 
     await updateWorkspaceTaskDescription(wsId, taskId, payload);
 
-    updateTaskDescriptionCaches({
-      taskId,
-      descriptionString,
-      boardId,
-      queryClient,
-    });
+    if (payload.description !== undefined) {
+      updateTaskDescriptionCaches({
+        taskId,
+        descriptionString:
+          payload.description === null ? null : (payload.description ?? null),
+        boardId,
+        queryClient,
+      });
+    }
 
     const persistedDescription = await fetchWorkspaceTaskDescription(
       wsId,

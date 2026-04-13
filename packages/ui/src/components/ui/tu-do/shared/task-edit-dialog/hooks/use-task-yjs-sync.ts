@@ -78,10 +78,14 @@ export function useTaskYjsSync({
         )
           ? taskDescription.description_yjs_state
           : null;
+        const serverDescriptionContent = getDescriptionContent(
+          taskDescription.description
+        );
         const canonicalDescription =
-          getDescriptionContent(taskDescription.description) ||
-          description ||
-          EMPTY_DOC_CONTENT;
+          serverDescriptionContent || description || EMPTY_DOC_CONTENT;
+        const hasCanonicalDescriptionSource = Boolean(
+          serverDescriptionContent || description
+        );
         const canonicalDescriptionString =
           serializeTaskDescriptionContent(canonicalDescription);
 
@@ -110,6 +114,12 @@ export function useTaskYjsSync({
           });
 
           applyYjsStateToDoc(yjsState);
+          initializedTaskIdRef.current = taskId;
+          return;
+        }
+
+        if (!hasCanonicalDescriptionSource) {
+          applyYjsStateToDoc(Uint8Array.from(currentYjsState));
           initializedTaskIdRef.current = taskId;
           return;
         }

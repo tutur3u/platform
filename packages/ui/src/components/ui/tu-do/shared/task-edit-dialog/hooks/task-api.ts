@@ -7,6 +7,10 @@ import {
 import type { WorkspaceTaskLabel } from '../types';
 
 async function getErrorMessage(response: Response, fallback: string) {
+  if (response.status === 413) {
+    return 'Description content is too large. Please shorten it or split it into smaller documents.';
+  }
+
   const payload = await response.json().catch(() => null);
   return typeof payload?.error === 'string' ? payload.error : fallback;
 }

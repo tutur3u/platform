@@ -134,4 +134,34 @@ describe('useTaskYjsSync', () => {
       taskApiMocks.mockUpdateWorkspaceTaskDescription
     ).not.toHaveBeenCalled();
   });
+
+  it('hydrates editor from persisted yjs state when description payload is null', async () => {
+    const props = makeProps();
+    const yjsState = createValidYjsState();
+
+    taskApiMocks.mockFetchWorkspaceTaskDescription.mockResolvedValueOnce({
+      description: null,
+      description_yjs_state: Array.from(yjsState),
+    });
+
+    renderHook(() =>
+      useTaskYjsSync({
+        ...props,
+        description: null,
+      })
+    );
+
+    await waitFor(() => {
+      expect(
+        taskApiMocks.mockFetchWorkspaceTaskDescription
+      ).toHaveBeenCalledWith('ws-1', 'task-1');
+    });
+
+    expect(
+      taskApiMocks.mockUpdateWorkspaceTaskDescription
+    ).not.toHaveBeenCalled();
+    expect(
+      yjsHelperMocks.mockConvertJsonContentToYjsState
+    ).not.toHaveBeenCalled();
+  });
 });
