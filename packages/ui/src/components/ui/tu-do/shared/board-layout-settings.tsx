@@ -859,11 +859,20 @@ export function BoardLayoutSettings({
     'closed',
   ];
 
+  const hasClosedList = (groupedLists.closed?.length ?? 0) > 0;
+
+  const editListAllowedStatuses = useMemo(() => {
+    if (hasClosedList && editingList?.status !== 'closed') {
+      return statuses.filter((status) => status !== 'closed');
+    }
+
+    return statuses;
+  }, [editingList?.status, hasClosedList, statuses]);
+
   const openCreateListDialog = useCallback((status: TaskBoardStatus) => {
     setCreateListStatus(status);
     setCreatingList(true);
   }, []);
-  const hasClosedList = (groupedLists.closed?.length ?? 0) > 0;
 
   return (
     <>
@@ -1022,6 +1031,7 @@ export function BoardLayoutSettings({
             setEditingList(null);
           }
         }}
+        allowedStatuses={editListAllowedStatuses}
         list={
           editingList
             ? {

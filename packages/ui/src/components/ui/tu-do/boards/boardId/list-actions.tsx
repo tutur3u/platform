@@ -35,7 +35,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useMoveAllTasksFromList } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import { EditListDialog } from '../../shared/edit-list-dialog';
 import { BoardSelector } from '../board-selector';
@@ -75,6 +75,23 @@ export function ListActions({
 
   const queryClient = useQueryClient();
   const broadcast = useBoardBroadcast();
+
+  const cachedLists = queryClient.getQueryData<TaskList[]>([
+    'task_lists',
+    boardId,
+  ]);
+  const hasAnotherClosedList =
+    cachedLists?.some(
+      (list) => list.id !== listId && list.status === 'closed' && !list.deleted
+    ) ?? false;
+  const allowedStatuses = useMemo<TaskBoardStatus[]>(() => {
+    if (listStatus === 'closed' || !hasAnotherClosedList) {
+      return ['documents', 'not_started', 'active', 'done', 'closed'];
+    }
+
+    return ['documents', 'not_started', 'active', 'done'];
+  }, [hasAnotherClosedList, listStatus]);
+
   const moveAllTasksFromListMutation = useMoveAllTasksFromList(
     boardId,
     wsId,
@@ -442,12 +459,17 @@ export function ListActions({
         }}
         isSaving={editListMutation.isPending}
         onSave={({ updates }) => {
+          if (!allowedStatuses.includes(updates.status)) {
+            toast.error(t('save_failed'));
+            return;
+          }
           editListMutation.mutate({
             trimmedName: updates.name,
             status: updates.status,
             color: updates.color,
           });
         }}
+        allowedStatuses={allowedStatuses}
       />
 
       <Dialog

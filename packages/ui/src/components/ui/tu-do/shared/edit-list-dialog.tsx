@@ -29,7 +29,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 type EditableList = {
   id: string;
@@ -42,6 +42,7 @@ interface EditListDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   list: EditableList | null;
+  allowedStatuses?: TaskBoardStatus[];
   isSaving?: boolean;
   onSave: (payload: {
     listId: string;
@@ -88,6 +89,7 @@ export function EditListDialog({
   open,
   onOpenChange,
   list,
+  allowedStatuses,
   isSaving = false,
   onSave,
 }: EditListDialogProps) {
@@ -101,6 +103,7 @@ export function EditListDialog({
     <EditListDialogForm
       key={list.id}
       list={list}
+      allowedStatuses={allowedStatuses}
       isSaving={isSaving}
       onOpenChange={onOpenChange}
       onSave={onSave}
@@ -135,12 +138,14 @@ export function EditListDialog({
 
 function EditListDialogForm({
   list,
+  allowedStatuses,
   onOpenChange,
   isSaving,
   onSave,
   labels,
 }: {
   list: EditableList;
+  allowedStatuses?: TaskBoardStatus[];
   onOpenChange: (open: boolean) => void;
   isSaving: boolean;
   onSave: EditListDialogProps['onSave'];
@@ -170,11 +175,32 @@ function EditListDialogForm({
     yellow: string;
   };
 }) {
+  const resolvedAllowedStatuses = useMemo(() => {
+    if (allowedStatuses && allowedStatuses.length > 0) {
+      return allowedStatuses;
+    }
+
+    if (list.status === 'closed') {
+      return statuses;
+    }
+
+    return statuses.filter((itemStatus) => itemStatus !== 'closed');
+  }, [allowedStatuses, list.status]);
+
+  const defaultStatus = useMemo<TaskBoardStatus>(() => {
+    if (list.status && resolvedAllowedStatuses.includes(list.status)) {
+      return list.status;
+    }
+
+    return resolvedAllowedStatuses.find(() => true) ?? 'active';
+  }, [list.status, resolvedAllowedStatuses]);
+
   const [name, setName] = useState(list.name ?? '');
-  const [status, setStatus] = useState<TaskBoardStatus>(
-    list.status ?? 'active'
-  );
+  const [status, setStatus] = useState<TaskBoardStatus>(defaultStatus);
   const [color, setColor] = useState<SupportedColor>(list.color ?? 'GRAY');
+  const selectedStatus = resolvedAllowedStatuses.includes(status)
+    ? status
+    : defaultStatus;
 
   const statusLabels: Record<TaskBoardStatus, string> = {
     not_started: labels.backlog,
@@ -253,11 +279,14 @@ function EditListDialogForm({
             if (!trimmedName) {
               return;
             }
+            if (!resolvedAllowedStatuses.includes(selectedStatus)) {
+              return;
+            }
             onSave({
               listId: list.id,
               updates: {
                 name: trimmedName,
-                status,
+                status: selectedStatus,
                 color,
               },
             });
@@ -276,14 +305,20 @@ function EditListDialogForm({
           <div className="space-y-2">
             <Label htmlFor="edit-list-status">{labels.statusCategory}</Label>
             <Select
-              value={status}
-              onValueChange={(value) => setStatus(value as TaskBoardStatus)}
+              value={selectedStatus}
+              onValueChange={(value) => {
+                const nextStatus = value as TaskBoardStatus;
+                if (!resolvedAllowedStatuses.includes(nextStatus)) {
+                  return;
+                }
+                setStatus(nextStatus);
+              }}
             >
               <SelectTrigger id="edit-list-status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {statuses.map((itemStatus) => {
+                {resolvedAllowedStatuses.map((itemStatus) => {
                   const Icon = statusConfig[itemStatus].icon;
                   return (
                     <SelectItem key={itemStatus} value={itemStatus}>
