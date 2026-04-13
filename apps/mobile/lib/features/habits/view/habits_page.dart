@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -9,10 +10,12 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
+import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/features/habits/view/habits_activity_section.dart';
+import 'package:mobile/features/habits/view/habits_library_section.dart';
 import 'package:mobile/features/habits/view/habits_overview_section.dart';
 import 'package:mobile/features/habits/view/habits_page_chrome.dart';
 import 'package:mobile/features/habits/widgets/habit_tracker_detail_sheet.dart';
@@ -26,7 +29,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-enum HabitsSection { overview, activity }
+enum HabitsSection { overview, activity, library }
 
 class HabitsPage extends StatelessWidget {
   const HabitsPage({
@@ -131,11 +134,17 @@ class _HabitsViewState extends State<_HabitsView> {
             }
             final isActivitySection =
                 widget.initialSection == HabitsSection.activity;
+            final isLibrarySection =
+                widget.initialSection == HabitsSection.library;
             final shellOwnerId = isActivitySection
                 ? 'habits-activity'
-                : 'habits-overview';
+                : isLibrarySection
+                ? 'habits-library'
+                : 'habits-today';
             final shellLocation = isActivitySection
                 ? Routes.habitsActivity
+                : isLibrarySection
+                ? Routes.habitsLibrary
                 : Routes.habits;
 
             final shellActionRegistration =
@@ -158,8 +167,20 @@ class _HabitsViewState extends State<_HabitsView> {
                       ShellActionSpec(
                         id: 'habits-create',
                         icon: Icons.add,
-                        tooltip: context.l10n.habitsCreateTrackerAction,
-                        onPressed: () => unawaited(_openCreateTracker()),
+                        tooltip: isLibrarySection
+                            ? context.l10n.habitsLibraryCustomizeAction
+                            : context.l10n.habitsCreateTrackerAction,
+                        onPressed: () {
+                          if (isLibrarySection) {
+                            unawaited(
+                              _openCreateTracker(
+                                template: habitTrackerTemplateById('custom'),
+                              ),
+                            );
+                            return;
+                          }
+                          context.go(Routes.habitsLibrary);
+                        },
                       ),
                     ];
 
@@ -186,14 +207,6 @@ class _HabitsViewState extends State<_HabitsView> {
                         return HabitsErrorView(error: state.error);
                       }
 
-                      final visibleTrackers =
-                          widget.initialSection == HabitsSection.overview
-                          ? state.filteredTrackers
-                          : state.trackers;
-                      final summary = buildHabitSummaryMetrics(
-                        visibleTrackers,
-                        state.selectedScope,
-                      );
                       final isPersonalWorkspace = workspace.personal;
 
                       return ResponsiveWrapper(
@@ -215,26 +228,8 @@ class _HabitsViewState extends State<_HabitsView> {
                               24 + MediaQuery.paddingOf(context).bottom,
                             ),
                             children: [
-                              HabitsSummaryHeader(
-                                summary: summary,
-                                title:
-                                    widget.initialSection ==
-                                        HabitsSection.activity
-                                    ? context.l10n.habitsActivityTitle
-                                    : context.l10n.habitsTitle,
-                                subtitle:
-                                    widget.initialSection ==
-                                        HabitsSection.activity
-                                    ? context.l10n.habitsActivitySubtitle
-                                    : context.l10n.habitsSummarySubtitle,
-                                leadingIcon:
-                                    widget.initialSection ==
-                                        HabitsSection.activity
-                                    ? null
-                                    : Icons.auto_graph_rounded,
-                              ),
                               if (!isPersonalWorkspace) ...[
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 4),
                                 HabitsScopeControls(
                                   selectedScope: state.selectedScope,
                                   onScopeSelected: (scope) async {
@@ -253,7 +248,7 @@ class _HabitsViewState extends State<_HabitsView> {
                               if (!isPersonalWorkspace &&
                                   state.selectedScope ==
                                       HabitTrackerScope.member) ...[
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 10),
                                 HabitsMemberPicker(
                                   members: state.members,
                                   selectedMemberId: state.selectedMemberId,
@@ -271,7 +266,7 @@ class _HabitsViewState extends State<_HabitsView> {
                                 ),
                               ],
                               if (_supportsSearch) ...[
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 10),
                                 HabitsSearchField(
                                   controller: _searchController,
                                   isVisible: _isSearchVisible,
@@ -280,13 +275,37 @@ class _HabitsViewState extends State<_HabitsView> {
                                       .setSearchQuery(value),
                                 ),
                               ] else
-                                const SizedBox(height: 16),
-                              const SizedBox(height: 16),
+                                const SizedBox(height: 8),
+                              if (state.isRefreshing &&
+                                  widget.initialSection !=
+                                      HabitsSection.activity) ...[
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(999),
+                                    child: const LinearProgressIndicator(
+                                      minHeight: 4,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 12),
                               if (widget.initialSection ==
                                   HabitsSection.activity)
                                 HabitsActivitySection(
                                   state: state,
                                   onOpenTracker: _openTrackerDetail,
+                                )
+                              else if (widget.initialSection ==
+                                  HabitsSection.library)
+                                HabitsLibrarySection(
+                                  onUseTemplate: (template) =>
+                                      _openCreateTracker(template: template),
+                                  onCustomize: () => _openCreateTracker(
+                                    template: habitTrackerTemplateById(
+                                      'custom',
+                                    ),
+                                  ),
                                 )
                               else
                                 HabitsOverviewSection(
@@ -296,10 +315,6 @@ class _HabitsViewState extends State<_HabitsView> {
                                   onEditTracker: _openEditTracker,
                                   onOpenTracker: _openTrackerDetail,
                                   onQuickLog: _quickLogTracker,
-                                  onQuickValueChanged: (trackerId, value) =>
-                                      context
-                                          .read<HabitsCubit>()
-                                          .setQuickLogDraft(trackerId, value),
                                 ),
                             ],
                           ),
@@ -335,46 +350,7 @@ class _HabitsViewState extends State<_HabitsView> {
   }
 
   Future<void> _quickLogTracker(HabitTrackerCardSummary tracker) async {
-    final cubit = context.read<HabitsCubit>();
-    final primaryField = primaryFieldForTracker(tracker.tracker);
-    if (primaryField == null) {
-      return;
-    }
-    Object? value;
-    if (primaryField.type == HabitTrackerFieldType.boolean) {
-      value = true;
-    } else {
-      final raw = cubit.state.quickDraftFor(tracker.tracker.id).trim();
-      if (raw.isEmpty) {
-        final toastContext = Navigator.of(context, rootNavigator: true).context;
-        shad.showToast(
-          context: toastContext,
-          builder: (toastContext, overlay) => shad.Alert.destructive(
-            content: Text(context.l10n.habitsQuickLogValueRequired),
-          ),
-        );
-        return;
-      }
-      value = double.tryParse(raw);
-      if (value == null) {
-        final toastContext = Navigator.of(context, rootNavigator: true).context;
-        shad.showToast(
-          context: toastContext,
-          builder: (toastContext, overlay) => shad.Alert.destructive(
-            content: Text(context.l10n.habitsFormInvalidNumber),
-          ),
-        );
-        return;
-      }
-    }
-
-    await cubit.createEntry(
-      tracker.tracker.id,
-      HabitTrackerEntryInput(
-        entryDate: DateTime.now().toIso8601String().slice(0, 10),
-        values: {tracker.tracker.primaryMetricKey: value},
-      ),
-    );
+    await _openTrackerEntryComposer(tracker.tracker.id);
   }
 
   void _toggleSearch() {
@@ -388,20 +364,21 @@ class _HabitsViewState extends State<_HabitsView> {
     });
   }
 
-  Future<void> _openCreateTracker() async {
-    await showAdaptiveSheet<void>(
+  Future<void> _openCreateTracker({
+    HabitTrackerTemplate? template,
+  }) async {
+    await showFinanceFullscreenModal<void>(
       context: context,
-      maxDialogWidth: 900,
       builder: (sheetContext) => HabitTrackerFormSheet(
+        initialTemplateId: template?.id,
         onSubmit: (input) => context.read<HabitsCubit>().createTracker(input),
       ),
     );
   }
 
   Future<void> _openEditTracker(HabitTracker tracker) async {
-    await showAdaptiveSheet<void>(
+    await showFinanceFullscreenModal<void>(
       context: context,
-      maxDialogWidth: 900,
       builder: (sheetContext) => HabitTrackerFormSheet(
         tracker: tracker,
         onSubmit: (input) =>
@@ -435,26 +412,14 @@ class _HabitsViewState extends State<_HabitsView> {
                     : null,
                 detailStatus: state.detailStatus,
                 detailError: state.detailError,
+                isDetailRefreshing: state.isDetailRefreshing,
                 isSubmittingEntry: state.isSubmittingEntry,
                 isSubmittingStreakAction: state.isSubmittingStreakAction,
                 isArchivingTracker: state.isArchivingTracker,
                 showLeaderboard: !isPersonalWorkspace,
                 onRetry: () =>
                     cubit.loadTrackerDetail(trackerId, refresh: true),
-                onLogEntry: () async {
-                  final detail = state.detail;
-                  if (detail == null) {
-                    return;
-                  }
-                  await showAdaptiveSheet<void>(
-                    context: context,
-                    maxDialogWidth: 760,
-                    builder: (sheetContext) => HabitTrackerEntrySheet(
-                      detail: detail,
-                      onSubmit: (input) => cubit.createEntry(trackerId, input),
-                    ),
-                  );
-                },
+                onLogEntry: () => _openTrackerEntryComposer(trackerId),
                 onEditTracker: () async {
                   final tracker = state.detail?.tracker;
                   if (tracker != null) {
@@ -470,6 +435,25 @@ class _HabitsViewState extends State<_HabitsView> {
             },
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _openTrackerEntryComposer(String trackerId) async {
+    final cubit = context.read<HabitsCubit>();
+    await cubit.selectTracker(trackerId);
+    if (!mounted) {
+      return;
+    }
+    final detail = cubit.state.detail;
+    if (detail == null || detail.tracker.id != trackerId) {
+      return;
+    }
+    await showFinanceFullscreenModal<void>(
+      context: context,
+      builder: (sheetContext) => HabitTrackerEntrySheet(
+        detail: detail,
+        onSubmit: (input) => cubit.createEntry(trackerId, input),
       ),
     );
   }
@@ -490,8 +474,4 @@ Future<void> _loadWorkspaceForSection(
   if (section == HabitsSection.activity) {
     await cubit.loadActivity(refresh: refresh);
   }
-}
-
-extension on String {
-  String slice(int start, [int? end]) => substring(start, end);
 }

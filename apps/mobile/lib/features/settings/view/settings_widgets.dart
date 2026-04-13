@@ -208,7 +208,9 @@ class SettingsWorkspaceSection extends StatelessWidget {
     required this.isWorkspaceCurrencyLoading,
     required this.onEditWorkspaceDefaultCurrency,
     required this.canManageWorkspaceMembers,
+    required this.canManageWorkspaceSecrets,
     required this.canManageWorkspaceRoles,
+    required this.onOpenWorkspaceSecrets,
     required this.onOpenWorkspaceMembers,
     required this.onOpenWorkspaceRoles,
     required this.showWorkspaceAccess,
@@ -225,7 +227,9 @@ class SettingsWorkspaceSection extends StatelessWidget {
   final bool isWorkspaceCurrencyLoading;
   final VoidCallback onEditWorkspaceDefaultCurrency;
   final bool canManageWorkspaceMembers;
+  final bool canManageWorkspaceSecrets;
   final bool canManageWorkspaceRoles;
+  final VoidCallback onOpenWorkspaceSecrets;
   final VoidCallback onOpenWorkspaceMembers;
   final VoidCallback onOpenWorkspaceRoles;
   final bool showWorkspaceAccess;
@@ -296,6 +300,13 @@ class SettingsWorkspaceSection extends StatelessWidget {
                     ? () => onEditWorkspaceProperties(currentWorkspace)
                     : null,
               ),
+              if (canManageWorkspaceSecrets)
+                SettingsTile(
+                  icon: Icons.key_rounded,
+                  title: l10n.settingsWorkspaceSecretsTitle,
+                  subtitle: l10n.settingsWorkspaceSecretsSubtitle,
+                  onTap: onOpenWorkspaceSecrets,
+                ),
             ],
           ),
         ),

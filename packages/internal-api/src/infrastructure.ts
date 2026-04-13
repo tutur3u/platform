@@ -1,5 +1,18 @@
 import { getInternalApiClient, type InternalApiClientOptions } from './client';
 
+export interface MobilePlatformVersionPolicyPayload {
+  effectiveVersion: string | null;
+  minimumVersion: string | null;
+  otpEnabled: boolean;
+  storeUrl: string | null;
+}
+
+export interface MobileVersionPoliciesPayload {
+  android: MobilePlatformVersionPolicyPayload;
+  ios: MobilePlatformVersionPolicyPayload;
+  webOtpEnabled: boolean;
+}
+
 export type InfrastructurePushAppFlavor =
   | 'development'
   | 'production'
@@ -48,4 +61,22 @@ export async function sendInfrastructurePushTest(
       cache: 'no-store',
     }
   );
+}
+
+export async function updateMobileVersionPolicies(
+  payload: MobileVersionPoliciesPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{
+    data: MobileVersionPoliciesPayload;
+    message: string;
+  }>('/api/v1/infrastructure/mobile-versions', {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'PUT',
+  });
 }

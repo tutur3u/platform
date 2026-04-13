@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
+import { updateMobileVersionPolicies } from '@tuturuuu/internal-api/infrastructure';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -15,6 +16,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
@@ -27,13 +29,16 @@ type FormValues = {
   ios: {
     effectiveVersion: string;
     minimumVersion: string;
+    otpEnabled: boolean;
     storeUrl: string;
   };
   android: {
     effectiveVersion: string;
     minimumVersion: string;
+    otpEnabled: boolean;
     storeUrl: string;
   };
+  webOtpEnabled: boolean;
 };
 
 interface Props {
@@ -45,13 +50,16 @@ function toFormValues(data: MobileVersionPolicies): FormValues {
     ios: {
       effectiveVersion: data.ios.effectiveVersion ?? '',
       minimumVersion: data.ios.minimumVersion ?? '',
+      otpEnabled: data.ios.otpEnabled,
       storeUrl: data.ios.storeUrl ?? '',
     },
     android: {
       effectiveVersion: data.android.effectiveVersion ?? '',
       minimumVersion: data.android.minimumVersion ?? '',
+      otpEnabled: data.android.otpEnabled,
       storeUrl: data.android.storeUrl ?? '',
     },
+    webOtpEnabled: data.webOtpEnabled,
   };
 }
 
@@ -63,6 +71,7 @@ export function MobileVersionSettingsForm({ initialData }: Props) {
       .object({
         effectiveVersion: z.string(),
         minimumVersion: z.string(),
+        otpEnabled: z.boolean(),
         storeUrl: z.string(),
       })
       .superRefine((value, ctx) => {
@@ -103,6 +112,7 @@ export function MobileVersionSettingsForm({ initialData }: Props) {
       .object({
         effectiveVersion: z.string(),
         minimumVersion: z.string(),
+        otpEnabled: z.boolean(),
         storeUrl: z.string(),
       })
       .superRefine((value, ctx) => {
@@ -139,6 +149,7 @@ export function MobileVersionSettingsForm({ initialData }: Props) {
           });
         }
       }),
+    webOtpEnabled: z.boolean(),
   });
 
   const form = useForm<FormValues>({
@@ -148,34 +159,21 @@ export function MobileVersionSettingsForm({ initialData }: Props) {
 
   const saveMutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      const response = await fetch('/api/v1/infrastructure/mobile-versions', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
+      return updateMobileVersionPolicies({
+        ios: {
+          effectiveVersion: values.ios.effectiveVersion.trim() || null,
+          minimumVersion: values.ios.minimumVersion.trim() || null,
+          otpEnabled: values.ios.otpEnabled,
+          storeUrl: values.ios.storeUrl.trim() || null,
         },
-        body: JSON.stringify({
-          ios: {
-            effectiveVersion: values.ios.effectiveVersion.trim() || null,
-            minimumVersion: values.ios.minimumVersion.trim() || null,
-            storeUrl: values.ios.storeUrl.trim() || null,
-          },
-          android: {
-            effectiveVersion: values.android.effectiveVersion.trim() || null,
-            minimumVersion: values.android.minimumVersion.trim() || null,
-            storeUrl: values.android.storeUrl.trim() || null,
-          },
-        }),
+        android: {
+          effectiveVersion: values.android.effectiveVersion.trim() || null,
+          minimumVersion: values.android.minimumVersion.trim() || null,
+          otpEnabled: values.android.otpEnabled,
+          storeUrl: values.android.storeUrl.trim() || null,
+        },
+        webOtpEnabled: values.webOtpEnabled,
       });
-
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as {
-          errors?: string[];
-          message?: string;
-        } | null;
-        throw new Error(body?.errors?.[0] || body?.message || t('save_error'));
-      }
-
-      return response.json();
     },
     onSuccess: (_, values) => {
       form.reset(values);
@@ -207,6 +205,32 @@ export function MobileVersionSettingsForm({ initialData }: Props) {
                   {t(`${platform}.description`)}
                 </p>
               </div>
+
+              <FormField
+                control={form.control}
+                name={`${platform}.otpEnabled`}
+                render={({ field }) => (
+                  <FormItem className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <FormLabel>{t('fields.otp_enabled')}</FormLabel>
+                        <FormDescription>
+                          {t('fields.otp_enabled_description', {
+                            platform: t(`${platform}.title`),
+                          })}
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
@@ -269,6 +293,38 @@ export function MobileVersionSettingsForm({ initialData }: Props) {
               />
             </div>
           ))}
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-6">
+          <FormField
+            control={form.control}
+            name="webOtpEnabled"
+            render={({ field }) => (
+              <FormItem className="space-y-3">
+                <div className="space-y-1">
+                  <FormLabel>{t('web.title')}</FormLabel>
+                  <FormDescription>{t('web.description')}</FormDescription>
+                </div>
+                <div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 bg-muted/20 p-4">
+                  <div className="space-y-1">
+                    <p className="font-medium text-sm">
+                      {t('fields.otp_enabled')}
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      {t('fields.web_otp_enabled_description')}
+                    </p>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <Button

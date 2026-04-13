@@ -27,6 +27,7 @@ void main() {
           'currentVersion': '1.2.0',
           'effectiveVersion': '1.3.0',
           'minimumVersion': '1.1.0',
+          'otpEnabled': true,
           'storeUrl':
               'https://play.google.com/store/apps/details?id=example.app',
           'status': 'update-recommended',
@@ -47,6 +48,7 @@ void main() {
       expect(result!.status, MobileUpdateStatus.updateRecommended);
       expect(result.currentVersion, '1.2.0');
       expect(result.effectiveVersion, '1.3.0');
+      expect(result.otpEnabled, isTrue);
       expect(result.requiresUpdate, isFalse);
     });
 

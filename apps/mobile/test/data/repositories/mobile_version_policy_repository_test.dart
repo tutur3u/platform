@@ -23,14 +23,17 @@ void main() {
           'ios': {
             'effectiveVersion': ' 1.4.0 ',
             'minimumVersion': '',
+            'otpEnabled': true,
             'storeUrl': 'https://apps.apple.com/app/id1',
           },
           'android': {
             'effectiveVersion': null,
             'minimumVersion': '1.2.0',
+            'otpEnabled': false,
             'storeUrl':
                 'https://play.google.com/store/apps/details?id=example.app',
           },
+          'webOtpEnabled': true,
         },
       );
 
@@ -42,6 +45,7 @@ void main() {
         const MobileVersionPolicies(
           ios: MobilePlatformVersionPolicy(
             effectiveVersion: '1.4.0',
+            otpEnabled: true,
             storeUrl: 'https://apps.apple.com/app/id1',
           ),
           android: MobilePlatformVersionPolicy(
@@ -49,6 +53,7 @@ void main() {
             storeUrl:
                 'https://play.google.com/store/apps/details?id=example.app',
           ),
+          webOtpEnabled: true,
         ),
       );
     });
@@ -60,9 +65,11 @@ void main() {
           ios: MobilePlatformVersionPolicy(
             effectiveVersion: ' 1.5.0 ',
             minimumVersion: ' 1.3.0 ',
+            otpEnabled: true,
             storeUrl: ' https://apps.apple.com/app/id1 ',
           ),
           android: MobilePlatformVersionPolicy(),
+          webOtpEnabled: true,
         );
 
         when(
@@ -72,13 +79,16 @@ void main() {
               'ios': {
                 'effectiveVersion': '1.5.0',
                 'minimumVersion': '1.3.0',
+                'otpEnabled': true,
                 'storeUrl': 'https://apps.apple.com/app/id1',
               },
               'android': <String, dynamic>{
                 'effectiveVersion': null,
                 'minimumVersion': null,
+                'otpEnabled': false,
                 'storeUrl': null,
               },
+              'webOtpEnabled': true,
             },
           ),
         ).thenAnswer(
@@ -88,13 +98,16 @@ void main() {
               'ios': {
                 'effectiveVersion': '1.5.0',
                 'minimumVersion': '1.3.0',
+                'otpEnabled': true,
                 'storeUrl': 'https://apps.apple.com/app/id1',
               },
               'android': <String, dynamic>{
                 'effectiveVersion': null,
                 'minimumVersion': null,
+                'otpEnabled': false,
                 'storeUrl': null,
               },
+              'webOtpEnabled': true,
             },
           },
         );

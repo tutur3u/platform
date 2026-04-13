@@ -78,6 +78,9 @@ export function useBulkMoveToBoard(
         'tasks',
         targetBoardId,
       ]);
+      const previousTasksArray = Array.isArray(previousTasks)
+        ? (previousTasks as Task[])
+        : [];
 
       const taskIdSet = new Set(taskIds);
 
@@ -89,9 +92,15 @@ export function useBulkMoveToBoard(
         }
       );
 
-      const tasksToMove = (previousTasks as Task[] | undefined)?.filter((t) =>
-        taskIdSet.has(t.id)
-      );
+      const tasksToMove: Task[] = [];
+
+      for (const task of previousTasksArray) {
+        if (!taskIdSet.has(task.id)) {
+          continue;
+        }
+
+        tasksToMove.push(task);
+      }
 
       if (tasksToMove?.length) {
         queryClient.setQueryData(
@@ -107,7 +116,11 @@ export function useBulkMoveToBoard(
         );
       }
 
-      return { previousTasks, previousTargetTasks, tasksToMove };
+      return {
+        previousTasks,
+        previousTargetTasks,
+        tasksToMove,
+      };
     },
     onError: (error, variables, context) => {
       if (context?.previousTasks) {
@@ -131,31 +144,37 @@ export function useBulkMoveToBoard(
       );
       const movedTaskIds = [...data.movedTaskIds];
       const movedTaskIdSet = new Set(movedTaskIds);
-      const failedTasks = (context?.tasksToMove ?? []).filter((task) =>
-        failedTaskIds.has(task.id)
+
+      const previousSourceTasks = Array.isArray(context?.previousTasks)
+        ? (context.previousTasks as Task[])
+        : [];
+      const previousOrder = new Map(
+        previousSourceTasks.map((task, index) => [task.id, index])
+      );
+      const previousTaskMap = new Map(
+        previousSourceTasks.map((task) => [task.id, task])
       );
 
-      // Always ensure succeeded tasks are removed from source board cache
-      // (handles both partial failure rollback and full success cleanup)
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
-          // Keep tasks that were NOT moved (either failed to move or weren't selected)
-          return old.filter((task) => !movedTaskIdSet.has(task.id));
+
+          const merged = old.filter((task) => !movedTaskIdSet.has(task.id));
+
+          const failedTasks = [...failedTaskIds]
+            .map((taskId) => previousTaskMap.get(taskId))
+            .filter((task): task is Task => Boolean(task));
+
+          for (const task of failedTasks) {
+            if (merged.some((current) => current.id === task.id)) continue;
+            const insertIndex = previousOrder.get(task.id) ?? merged.length;
+            merged.splice(Math.min(insertIndex, merged.length), 0, task);
+          }
+
+          return merged;
         }
       );
-
-      // If there were failures, restore them to the source board
-      if (failedTasks.length > 0) {
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            const existing = old ?? [];
-            return [...existing, ...failedTasks];
-          }
-        );
-      }
 
       for (const tid of movedTaskIds) {
         broadcast?.('task:delete', { taskId: tid });
@@ -182,7 +201,6 @@ export function useBulkMoveToBoard(
       }
 
       if (movedTaskIds.length > 0) {
-        const movedTaskIdSet = new Set(movedTaskIds);
         const succeededTasks = (context?.tasksToMove ?? [])
           .filter((task) => movedTaskIdSet.has(task.id))
           .map((task) => {
@@ -202,14 +220,18 @@ export function useBulkMoveToBoard(
         queryClient.setQueryData(
           ['tasks', data.targetBoardId],
           (old: Task[] | undefined) => {
-            if (!old) return succeededTasks;
-            const failedIds = new Set(failedTasks.map((task) => task.id));
+            if (!old) return old;
             const filteredOld = old.filter(
-              (task) => !movedTaskIdSet.has(task.id) && !failedIds.has(task.id)
+              (task) =>
+                !movedTaskIdSet.has(task.id) && !failedTaskIds.has(task.id)
             );
             return [...filteredOld, ...succeededTasks];
           }
         );
+
+        queryClient.invalidateQueries({
+          queryKey: ['tasks', data.targetBoardId],
+        });
       }
     },
   });

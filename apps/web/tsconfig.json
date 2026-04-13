@@ -2,7 +2,6 @@
   "extends": "@tuturuuu/typescript-config/nextjs.json",
   "compilerOptions": {
     "module": "ESNext",
-    "types": ["@serwist/next/typings"],
     "lib": ["dom", "dom.iterable", "esnext", "webworker"],
     "plugins": [
       {

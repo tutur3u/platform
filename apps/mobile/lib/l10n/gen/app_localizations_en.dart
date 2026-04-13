@@ -27,7 +27,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginContinueWithEmail => 'Continue with email';
 
   @override
+  String get loginOtpInstruction => 'Enter the 6-digit code we sent to your email.';
+
+  @override
+  String loginOtpRateLimitedInstruction(Object seconds) {
+    return 'Enter your code below, or use password instead. Retry in ${seconds}s.';
+  }
+
+  @override
+  String get loginResendOtp => 'Resend code';
+
+  @override
+  String loginRetryIn(Object seconds) {
+    return 'Retry in ${seconds}s';
+  }
+
+  @override
+  String loginRetryAfter(Object seconds) {
+    return 'Try again in ${seconds}s';
+  }
+
+  @override
   String get loginSignIn => 'Sign in';
+
+  @override
+  String get loginSendOtp => 'Send code';
+
+  @override
+  String get loginUseOtpInstead => 'Use email code instead';
+
+  @override
+  String get loginUsePasswordInstead => 'Use password instead';
+
+  @override
+  String get loginVerifyOtp => 'Verify code';
 
   @override
   String get authContinueWithApple => 'Continue with Apple';
@@ -279,16 +312,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get habitsTitle => 'Habits';
 
   @override
-  String get habitsOverviewLabel => 'Overview';
+  String get habitsOverviewLabel => 'Today';
+
+  @override
+  String get habitsTodayLabel => 'Today';
 
   @override
   String get habitsActivityLabel => 'Activity';
+
+  @override
+  String get habitsLibraryLabel => 'Library';
 
   @override
   String get habitsActivityTitle => 'Activity';
 
   @override
   String get habitsActivitySubtitle => 'Review the latest habit logs across every tracker in this workspace.';
+
+  @override
+  String get habitsLibraryTitle => 'Library';
+
+  @override
+  String get habitsLibrarySubtitle => 'Start from strong defaults for fitness, recovery, and disciplined daily routines.';
 
   @override
   String get habitsLoadError => 'Couldn\'t load habits right now';
@@ -456,6 +501,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get habitsSelectOptionsRequired => 'Select fields need at least one option';
 
   @override
+  String get habitsComposerQuickCheck => 'Quick check';
+
+  @override
+  String get habitsComposerQuickIncrement => 'Quick increment';
+
+  @override
+  String get habitsComposerMeasurement => 'Measurement';
+
+  @override
+  String get habitsComposerWorkoutSession => 'Workout';
+
+  @override
+  String get habitsComposerAdvancedCustom => 'Custom';
+
+  @override
   String habitsFieldCardTitle(int count) {
     return 'Field $count';
   }
@@ -515,6 +575,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get habitsLogEntryAction => 'Log entry';
 
   @override
+  String get habitsLogMeasurementAction => 'Log measurement';
+
+  @override
+  String get habitsLogSessionAction => 'Log session';
+
+  @override
   String get habitsCompleteNow => 'Complete now';
 
   @override
@@ -531,6 +597,71 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get habitsSaveEntry => 'Save entry';
+
+  @override
+  String get habitsQuickCheckTitle => 'Quick check-in';
+
+  @override
+  String get habitsQuickCheckDescription => 'Use one tap when this habit is simply done or not done.';
+
+  @override
+  String get habitsQuickIncrementTitle => 'Quick increments';
+
+  @override
+  String get habitsQuickIncrementDescription => 'Adjust the running total with fast chips or enter a custom amount.';
+
+  @override
+  String get habitsMeasurementTitle => 'Measurement';
+
+  @override
+  String get habitsMeasurementDescription => 'Enter one focused measurement and compare it to the latest check-in.';
+
+  @override
+  String get habitsAdvancedComposerTitle => 'Custom entry';
+
+  @override
+  String get habitsAdvancedComposerDescription => 'Use a simple value entry for fully custom trackers.';
+
+  @override
+  String get habitsWorkoutSessionTitle => 'Workout session';
+
+  @override
+  String get habitsWorkoutSessionDescription => 'Add one or more exercise blocks with sets, reps, and optional load.';
+
+  @override
+  String get habitsWorkoutBlocksRequired => 'Add at least one exercise block';
+
+  @override
+  String get habitsWorkoutBlockTitle => 'Exercise block';
+
+  @override
+  String get habitsWorkoutExerciseName => 'Exercise';
+
+  @override
+  String get habitsWorkoutSets => 'Sets';
+
+  @override
+  String get habitsWorkoutReps => 'Reps';
+
+  @override
+  String get habitsWorkoutWeight => 'Weight';
+
+  @override
+  String get habitsWorkoutTotalSets => 'Total sets';
+
+  @override
+  String get habitsWorkoutTotalReps => 'Total reps';
+
+  @override
+  String get habitsWorkoutTotalVolume => 'Total volume';
+
+  @override
+  String get habitsAddExerciseBlock => 'Add exercise';
+
+  @override
+  String habitsLatestValueLabel(String value) {
+    return 'Latest: $value';
+  }
 
   @override
   String get habitsMarkDone => 'Mark done';
@@ -620,6 +751,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get habitsActivityNoTrackers => 'Create a habit tracker first to start collecting activity.';
+
+  @override
+  String get habitsLibraryStrengthTitle => 'Strength';
+
+  @override
+  String get habitsLibraryStrengthSubtitle => 'Heavy sessions, structured lifts, and bodyweight output.';
+
+  @override
+  String get habitsLibraryHealthTitle => 'Health';
+
+  @override
+  String get habitsLibraryHealthSubtitle => 'Measurements and daily totals that keep your baseline visible.';
+
+  @override
+  String get habitsLibraryRecoveryTitle => 'Recovery';
+
+  @override
+  String get habitsLibraryRecoverySubtitle => 'Sleep, sauna, meditation, and reset rituals.';
+
+  @override
+  String get habitsLibraryDisciplineTitle => 'Discipline';
+
+  @override
+  String get habitsLibraryDisciplineSubtitle => 'Simple yes-or-no commitments you want to see every day.';
+
+  @override
+  String get habitsLibraryCustomizeTitle => 'Customize your own';
+
+  @override
+  String get habitsLibraryCustomizeDescription => 'Start from a blank tracker when the preset library is close but not exact.';
+
+  @override
+  String get habitsLibraryCustomizeAction => 'Customize';
+
+  @override
+  String get habitsLibraryGoalChip => 'Goal';
+
+  @override
+  String get habitsLibraryComposerChip => 'Composer';
 
   @override
   String habitsStreakChip(int count) {
@@ -4684,13 +4854,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsMobileVersions => 'Mobile versions';
 
   @override
-  String get settingsMobileVersionsTileDescription => 'Manage the effective and minimum versions enforced by the mobile app.';
+  String get settingsMobileVersionsTileDescription => 'Manage the effective and minimum versions enforced by the mobile app and OTP rollout controls.';
 
   @override
   String get settingsMobileVersionsTitle => 'Mobile versions';
 
   @override
-  String get settingsMobileVersionsPageDescription => 'Manage the effective and minimum app versions enforced by the mobile app before users can continue.';
+  String get settingsMobileVersionsPageDescription => 'Manage the effective and minimum app versions enforced by the mobile app before users can continue, plus OTP rollout controls for mobile and web.';
 
   @override
   String get settingsMobileVersionsIosTitle => 'iOS';
@@ -4703,6 +4873,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsMobileVersionsAndroidDescription => 'Set the Play Store threshold and update prompt for Android users.';
+
+  @override
+  String get settingsMobileVersionsOtpEnabled => 'Enable OTP login';
+
+  @override
+  String get settingsMobileVersionsIosOtpDescription => 'Allow iOS app logins to use email verification codes.';
+
+  @override
+  String get settingsMobileVersionsAndroidOtpDescription => 'Allow Android app logins to use email verification codes.';
+
+  @override
+  String get settingsMobileVersionsWebOtpTitle => 'Web OTP';
+
+  @override
+  String get settingsMobileVersionsWebOtpDescription => 'Allow the marketing web login to use email verification-code sign-in.';
 
   @override
   String get settingsMobileVersionsEffectiveVersion => 'Effective version';
@@ -5328,4 +5513,249 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsWorkspaceRolesSaved => 'Role saved.';
+
+  @override
+  String get settingsWorkspaceSecretsTitle => 'Secrets';
+
+  @override
+  String get settingsWorkspaceSecretsSubtitle => 'Manage workspace secrets and storage rollout.';
+
+  @override
+  String get settingsWorkspaceSecretsAccessDeniedTitle => 'Access required';
+
+  @override
+  String get settingsWorkspaceSecretsAccessDeniedDescription => 'You need the manage workspace secrets permission in the internal workspace to open this page.';
+
+  @override
+  String get settingsWorkspaceSecretsWorkspaceRequiredTitle => 'Workspace required';
+
+  @override
+  String get settingsWorkspaceSecretsWorkspaceRequiredDescription => 'Select a workspace before opening secrets management.';
+
+  @override
+  String settingsWorkspaceSecretsPageDescription(String workspaceName) {
+    return 'Manage secrets and storage rollout for $workspaceName.';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsTotalSecrets => 'All secrets';
+
+  @override
+  String get settingsWorkspaceSecretsVisibleSecrets => 'Visible';
+
+  @override
+  String get settingsWorkspaceSecretsActiveBackend => 'Active backend';
+
+  @override
+  String get settingsWorkspaceSecretsCreate => 'Create secret';
+
+  @override
+  String get settingsWorkspaceSecretsRolloutTitle => 'Storage rollout';
+
+  @override
+  String get settingsWorkspaceSecretsRolloutDescription => 'Inspect the current Drive backend, confirm required provider secrets, and migrate files between providers when needed.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecrets => 'Provider secrets';
+
+  @override
+  String get settingsWorkspaceSecretsZipAutomation => 'ZIP automation';
+
+  @override
+  String get settingsWorkspaceSecretsStateEnabled => 'Enabled';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractBlocked => 'Needs proxy secrets';
+
+  @override
+  String get settingsWorkspaceSecretsStateDisabled => 'Disabled';
+
+  @override
+  String get settingsWorkspaceSecretsSelected => 'Selected';
+
+  @override
+  String get settingsWorkspaceSecretsRecommended => 'Recommended';
+
+  @override
+  String get settingsWorkspaceSecretsObjects => 'Objects';
+
+  @override
+  String get settingsWorkspaceSecretsInventory => 'Inventory';
+
+  @override
+  String get settingsWorkspaceSecretsUnavailable => 'Unavailable';
+
+  @override
+  String get settingsWorkspaceSecretsReadyMessage => 'This backend is ready to receive Drive files.';
+
+  @override
+  String get settingsWorkspaceSecretsMissingMessage => 'Add the required secrets before routing Drive traffic here.';
+
+  @override
+  String get settingsWorkspaceSecretsMigrating => 'Migrating...';
+
+  @override
+  String settingsWorkspaceSecretsCopyInto(String provider) {
+    return 'Copy into $provider';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractTitle => 'Auto extract';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractDescription => 'Track whether automatic ZIP extraction is enabled and whether the proxy credentials are ready.';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractSwitch => 'Switch';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractProxyUrl => 'Proxy URL';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractProxyToken => 'Shared token';
+
+  @override
+  String get settingsWorkspaceSecretsStatePresent => 'Present';
+
+  @override
+  String get settingsWorkspaceSecretsStateMissing => 'Missing';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecretsTitle => 'Provider secrets';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecretsDescription => 'Edit the secrets that define which storage provider Drive uses for this workspace.';
+
+  @override
+  String get settingsWorkspaceSecretsProxySecretsTitle => 'ZIP proxy secrets';
+
+  @override
+  String get settingsWorkspaceSecretsProxySecretsDescription => 'Configure the optional secrets used by the ZIP extraction proxy.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveStorageProviderDescription => 'Selects the Drive backend for this workspace. Use \"supabase\" for the current path or \"r2\" to route Drive through Cloudflare R2.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2BucketDescription => 'Cloudflare R2 bucket name used for Drive objects when the provider is set to \"r2\".';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2EndpointDescription => 'S3-compatible R2 endpoint, for example https://<account-id>.r2.cloudflarestorage.com.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2AccessKeyIdDescription => 'Access key ID for the Cloudflare R2 token used by the server-side Drive adapter.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2SecretAccessKeyDescription => 'Secret access key for the Cloudflare R2 token used by the server-side Drive adapter.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractZipDescription => 'Enables automatic ZIP extraction after uploads. Disabled by default.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyUrlDescription => 'HTTPS URL for the self-hosted ZIP extraction proxy. Only used when auto extraction is enabled.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyTokenDescription => 'Shared bearer token used to authenticate requests to the ZIP extraction proxy.';
+
+  @override
+  String get settingsWorkspaceSecretsNoValue => 'No value';
+
+  @override
+  String get settingsWorkspaceSecretsConfigured => 'Configured';
+
+  @override
+  String get settingsWorkspaceSecretsMissing => 'Missing';
+
+  @override
+  String get settingsWorkspaceSecretsRequired => 'Required';
+
+  @override
+  String get settingsWorkspaceSecretsOptional => 'Optional';
+
+  @override
+  String get settingsWorkspaceSecretsAdd => 'Add';
+
+  @override
+  String get settingsWorkspaceSecretsListTitle => 'Secrets list';
+
+  @override
+  String get settingsWorkspaceSecretsListDescription => 'Search, edit, and remove workspace secrets. Boolean values can be toggled inline.';
+
+  @override
+  String get settingsWorkspaceSecretsSearchPlaceholder => 'Search secrets';
+
+  @override
+  String get settingsWorkspaceSecretsEmptyTitle => 'No secrets found';
+
+  @override
+  String get settingsWorkspaceSecretsEmptyDescription => 'Create a secret or adjust the search query to see matching entries.';
+
+  @override
+  String get settingsWorkspaceSecretsEdit => 'Edit';
+
+  @override
+  String get settingsWorkspaceSecretsDeleteTitle => 'Delete';
+
+  @override
+  String settingsWorkspaceSecretsDeleteMessage(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsDeleteSuccess => 'Secret deleted.';
+
+  @override
+  String get settingsWorkspaceSecretsNameField => 'Name';
+
+  @override
+  String get settingsWorkspaceSecretsNamePlaceholder => 'SECRET_NAME';
+
+  @override
+  String get settingsWorkspaceSecretsValueField => 'Value';
+
+  @override
+  String get settingsWorkspaceSecretsValuePlaceholder => 'Secret value';
+
+  @override
+  String get settingsWorkspaceSecretsEditorDescription => 'Update the secret name and value used by this workspace.';
+
+  @override
+  String get settingsWorkspaceSecretsSaving => 'Saving...';
+
+  @override
+  String get settingsWorkspaceSecretsSave => 'Save secret';
+
+  @override
+  String get settingsWorkspaceSecretsNameRequired => 'Enter a secret name.';
+
+  @override
+  String get settingsWorkspaceSecretsValueRequired => 'Enter a secret value.';
+
+  @override
+  String get settingsWorkspaceSecretsSaveSuccess => 'Secret saved.';
+
+  @override
+  String get settingsWorkspaceSecretsSaveError => 'Failed to save secret.';
+
+  @override
+  String get settingsWorkspaceSecretsLoadError => 'Failed to load workspace secrets.';
+
+  @override
+  String settingsWorkspaceSecretsMigrationSuccess(int filesCopied, String provider) {
+    return 'Copied $filesCopied files into $provider.';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsMigrationError => 'Failed to migrate workspace storage.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSupabaseTitle => 'Supabase';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSupabaseDescription => 'The current built-in Drive storage backend.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderR2Title => 'Cloudflare R2';
+
+  @override
+  String get settingsWorkspaceSecretsProviderR2Description => 'An S3-compatible backend for external Drive storage.';
 }

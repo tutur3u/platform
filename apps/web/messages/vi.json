@@ -6218,6 +6218,7 @@
     "continue": "Tiếp tục",
     "continue_with_apple": "Tiếp tục với Apple",
     "continue_with_discord": "Tiếp tục với Discord",
+    "continue_with_email": "Tiếp tục với email",
     "continue_with_github": "Tiếp tục với GitHub",
     "continue_with_google": "Tiếp tục với Google",
     "continue_with_microsoft": "Tiếp tục với Microsoft",
@@ -6242,6 +6243,9 @@
     "or_continue_with": "Hoặc tiếp tục với",
     "otp_code": "Mã xác thực",
     "otp_description": "Nhập mã xác thực được gửi đến địa chỉ email của bạn.",
+    "otp_rate_limited_description": "Nếu bạn đã nhận được mã xác thực, hãy nhập mã bên dưới. Nếu chưa, hãy dùng mật khẩu thay thế. Bạn có thể yêu cầu mã mới sau {seconds} giây.",
+    "otp_rate_limited_inline": "Nếu bạn đã có mã, hãy nhập mã bên dưới. Nếu chưa, hãy dùng mật khẩu thay thế. Bạn có thể yêu cầu mã mới sau {seconds} giây.",
+    "otp_rate_limited_title": "Yêu cầu mã tạm thời bị giới hạn",
     "otp_sent": "Chúng tôi đã gửi mã xác thực đến địa chỉ email của bạn.",
     "otp_verified": "Địa chỉ email của bạn đã được xác thực.",
     "password": "Mật khẩu",
@@ -6253,12 +6257,16 @@
     "powered-by": "Tuturuuu cung cấp hệ thống xác thực phía sau {domain}.",
     "processing": "Đang xử lý...",
     "resend": "Gửi lại",
+    "resend_available_in": "Có thể gửi lại sau {seconds} giây",
     "secure_sign_in": "Đăng nhập an toàn",
+    "send_code": "Gửi mã",
     "sign_in": "Đăng nhập",
     "sign_in_to_your_account": "Đăng nhập vào tài khoản của bạn để tiếp tục",
     "social_sign_in_failed": "Đăng nhập mạng xã hội thất bại. Vui lòng thử lại hoặc liên hệ hỗ trợ nếu lỗi vẫn tiếp diễn.",
     "success": "Thành công!",
     "two_factor_authentication": "Xác thực hai yếu tố",
+    "use_code_instead": "Dùng mã email thay thế",
+    "use_password_instead": "Dùng mật khẩu thay thế",
     "verification_code": "Mã xác thực",
     "verification_code_label": "Mã xác thực",
     "verify": "Xác minh",
@@ -6739,10 +6747,13 @@
       "effective_version_description": "Người dùng thấp hơn phiên bản này sẽ thấy lời nhắc cập nhật nhưng vẫn có thể tiếp tục.",
       "minimum_version": "Phiên bản tối thiểu",
       "minimum_version_description": "Người dùng thấp hơn phiên bản này sẽ bị chặn cho đến khi cập nhật.",
+      "otp_enabled": "Bật đăng nhập OTP",
+      "otp_enabled_description": "Cho phép phiên bản ứng dụng {platform} dùng đăng nhập bằng mã xác thực email.",
       "store_url": "Liên kết cửa hàng",
       "store_url_description": "Chuyển người dùng đến trang ứng dụng tương ứng trên nền tảng này.",
       "store_url_placeholder": "https://...",
-      "version_placeholder": "1.2.3"
+      "version_placeholder": "1.2.3",
+      "web_otp_enabled_description": "Cho phép trang đăng nhập web marketing dùng đăng nhập bằng mã xác thực email."
     },
     "ios": {
       "description": "Cấu hình ngưỡng cập nhật mềm và cứng cho ứng dụng iOS.",
@@ -6756,6 +6767,10 @@
     "validation": {
       "store_url_required": "Phải có liên kết cửa hàng khi đặt phiên bản.",
       "version_format": "Phiên bản phải theo định dạng x.y.z."
+    },
+    "web": {
+      "description": "Kiểm soát việc trang đăng nhập web marketing có thể dùng đăng nhập bằng mã xác thực hay không.",
+      "title": "OTP Web"
     }
   },
   "money-lover-import": {

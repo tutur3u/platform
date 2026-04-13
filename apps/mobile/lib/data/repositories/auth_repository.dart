@@ -59,6 +59,94 @@ class AuthRepository {
   final String _googleWebClientId;
   final String _googleIosClientId;
 
+  String? get _mobileOtpPlatform {
+    if (_devicePlatform.isIOS) {
+      return 'ios';
+    }
+    if (_devicePlatform.isAndroid) {
+      return 'android';
+    }
+    return null;
+  }
+
+  // ── OTP ─────────────────────────────────────────
+
+  Future<({bool success, String? error, int? retryAfter})> sendOtp(
+    String email, {
+    String? captchaToken,
+  }) async {
+    try {
+      final deviceId = await getDeviceId();
+      final response = await _apiClient.postJson(
+        AuthEndpoints.otpSend,
+        {
+          'client': 'mobile',
+          'email': email,
+          'locale': getLocale(),
+          'platform': _mobileOtpPlatform,
+          if (deviceId != null) 'deviceId': deviceId,
+          if (captchaToken != null) 'captchaToken': captchaToken,
+        },
+        requiresAuth: false,
+      );
+
+      if (response['error'] != null) {
+        return (
+          success: false,
+          error: response['error'] as String,
+          retryAfter: response['retryAfter'] as int?,
+        );
+      }
+
+      return (success: true, error: null, retryAfter: null);
+    } on ApiException catch (e) {
+      return (success: false, error: e.message, retryAfter: e.retryAfter);
+    } on Exception catch (e) {
+      return (success: false, error: e.toString(), retryAfter: null);
+    }
+  }
+
+  Future<({bool success, String? error})> verifyOtp(
+    String email,
+    String otp,
+  ) async {
+    try {
+      final deviceId = await getDeviceId();
+      final response = await _apiClient.postJson(
+        AuthEndpoints.otpVerify,
+        {
+          'client': 'mobile',
+          'email': email,
+          'locale': getLocale(),
+          'otp': otp,
+          'platform': _mobileOtpPlatform,
+          if (deviceId != null) 'deviceId': deviceId,
+        },
+        requiresAuth: false,
+      );
+
+      if (response['error'] != null) {
+        return (success: false, error: response['error'] as String);
+      }
+
+      final sessionJson = response['session'] as Map<String, dynamic>?;
+      if (sessionJson == null) {
+        return (success: false, error: 'No session returned');
+      }
+
+      final payload = AuthSessionPayload.fromJson(sessionJson);
+      await _client.auth.setSession(payload.refreshToken);
+
+      return (success: true, error: null);
+    } on ApiException catch (e) {
+      return (success: false, error: e.message);
+    } on AuthException catch (e) {
+      return (success: false, error: e.message);
+    } on Exception catch (e) {
+      return (success: false, error: e.toString());
+    }
+  }
+
   // ── Password ────────────────────────────────────
 
   Future<({bool success, String? error, int? retryAfter})> passwordLogin(
@@ -71,6 +159,7 @@ class AuthRepository {
       final response = await _apiClient.postJson(
         AuthEndpoints.passwordLogin,
         {
+          'client': 'mobile',
           'email': email,
           'password': password,
           'locale': getLocale(),

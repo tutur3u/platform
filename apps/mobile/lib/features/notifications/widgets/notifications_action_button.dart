@@ -35,6 +35,7 @@ bool shouldShowNotificationsActionForLocation(String matchedLocation) {
       matchedLocation == Routes.timerRequests ||
       matchedLocation == Routes.settings ||
       matchedLocation == Routes.settingsWorkspace ||
+      matchedLocation == Routes.settingsWorkspaceSecrets ||
       matchedLocation == Routes.settingsMobileVersions;
 }
 

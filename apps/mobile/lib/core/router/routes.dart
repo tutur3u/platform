@@ -19,6 +19,7 @@ abstract final class Routes {
   static const tasks = '/tasks';
   static const habits = '/habits';
   static const habitsActivity = '/habits/activity';
+  static const habitsLibrary = '/habits/library';
   static const taskBoards = '/tasks/boards';
   static const taskBoardDetail = '/tasks/boards/:boardId';
   static const taskEstimates = '/tasks/estimates';
@@ -30,6 +31,7 @@ abstract final class Routes {
   static const timer = '/timer';
   static const settings = '/settings';
   static const settingsWorkspace = '/settings/workspace';
+  static const settingsWorkspaceSecrets = '/settings/workspace/secrets';
   static const settingsWorkspaceMembers = '/settings/workspace/members';
   static const settingsWorkspaceRoles = '/settings/workspace/roles';
   static const settingsMobileVersions = '/settings/mobile-versions';

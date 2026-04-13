@@ -284,7 +284,7 @@ PODS:
   - swift-collections/OrderedCollections (1.1.1):
     - InternalCollectionsUtilities (= 1.1.1)
   - SwiftyGif (5.4.5)
-  - TOCropViewController (3.1.1)
+  - TOCropViewController (3.1.2)
   - url_launcher_ios (0.0.1):
     - Flutter
   - video_player_avfoundation (0.0.1):
@@ -478,7 +478,7 @@ SPEC CHECKSUMS:
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   swift-collections: ba248ecaf44ef500b27d5cf94d304218c89892ff
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
-  TOCropViewController: 9002a9b12d8104d7478cdc306d80f0efea7fe2c5
+  TOCropViewController: a916930c465b5d9445a74d95e0c0da931771b4df
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
   video_player_avfoundation: dd410b52df6d2466a42d28550e33e4146928280a
 

@@ -89,6 +89,90 @@ class HabitsCubit extends Cubit<HabitsState> {
     _latestCacheKeyByWorkspace.clear();
   }
 
+  static Future<void> prewarm({
+    required IHabitTrackerRepository repository,
+    required String wsId,
+    HabitTrackerScope scope = HabitTrackerScope.self,
+    String? userId,
+    bool includeActivity = false,
+    bool forceRefresh = false,
+  }) async {
+    final scopeUserId = scope == HabitTrackerScope.member ? userId : null;
+    await CacheStore.instance.prefetch<HabitsState>(
+      key: _storeKey(wsId, scope, scopeUserId),
+      policy: _cachePolicy,
+      decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
+      forceRefresh: forceRefresh,
+      tags: [_cacheTag, 'workspace:$wsId', 'module:habits'],
+      fetch: () async {
+        final response = await repository.listTrackers(
+          wsId,
+          scope: scope,
+          userId: scopeUserId,
+        );
+        final selectedTrackerId = response.trackers.isEmpty
+            ? null
+            : response.trackers.first.tracker.id;
+
+        HabitTrackerDetailResponse? detail;
+        var activityEntries = const <HabitActivityEntry>[];
+
+        if (includeActivity && response.trackers.isNotEmpty) {
+          final details = await Future.wait(
+            response.trackers.map(
+              (summary) => repository.getTrackerDetail(
+                wsId,
+                summary.tracker.id,
+                scope: scope,
+                userId: scopeUserId,
+              ),
+            ),
+          );
+          detail = details.isEmpty ? null : details.first;
+          activityEntries =
+              details
+                  .expand(
+                    (value) => value.entries.map(
+                      (entry) => HabitActivityEntry(
+                        tracker: value.tracker,
+                        entry: entry,
+                      ),
+                    ),
+                  )
+                  .toList(growable: false)
+                ..sort(
+                  (left, right) => right.timestamp.compareTo(left.timestamp),
+                );
+        }
+
+        final now = DateTime.now();
+        return _stateToCacheJson(
+          HabitsState(
+            status: HabitsStatus.loaded,
+            detailStatus: detail == null
+                ? HabitsStatus.initial
+                : HabitsStatus.loaded,
+            activityStatus: activityEntries.isEmpty
+                ? HabitsStatus.initial
+                : HabitsStatus.loaded,
+            activeWorkspaceId: wsId,
+            listResponse: response,
+            detail: detail,
+            activityEntries: activityEntries,
+            selectedTrackerId: selectedTrackerId,
+            selectedScope: scope,
+            selectedMemberId: scopeUserId,
+            detailScope: detail == null ? null : scope,
+            detailScopeUserId: detail == null ? null : scopeUserId,
+            lastUpdatedAt: now,
+            detailLastUpdatedAt: detail == null ? null : now,
+            activityLastUpdatedAt: activityEntries.isEmpty ? null : now,
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> loadWorkspace(
     String wsId, {
     bool refresh = false,
@@ -116,7 +200,10 @@ class HabitsCubit extends Cubit<HabitsState> {
     if (diskCached?.hasValue == true &&
         diskCached?.data != null &&
         !hasVisibleData) {
-      final cachedState = diskCached!.data!;
+      final cachedState = _decorateCachedState(
+        diskCached!.data!,
+        fetchedAt: diskCached.fetchedAt,
+      );
       emit(cachedState);
       _cache[cacheKey] = _HabitsCacheEntry(
         state: cachedState,
@@ -130,7 +217,7 @@ class HabitsCubit extends Cubit<HabitsState> {
     }
 
     if (cached != null && !hasVisibleData) {
-      emit(cached.state);
+      emit(_decorateCachedState(cached.state, fetchedAt: cached.fetchedAt));
       hasVisibleData = true;
       if (!refresh && isHabitsCacheFresh(cached.fetchedAt)) {
         return;
@@ -149,10 +236,11 @@ class HabitsCubit extends Cubit<HabitsState> {
     if (hasVisibleData) {
       emit(
         state.copyWith(
-          status: HabitsStatus.loading,
+          status: HabitsStatus.loaded,
           activeWorkspaceId: wsId,
           selectedScope: effectiveScope,
           selectedMemberId: requestedMemberId,
+          isRefreshing: true,
           error: null,
           detailError: null,
           activityError: null,
@@ -162,6 +250,15 @@ class HabitsCubit extends Cubit<HabitsState> {
       emit(
         state.copyWith(
           status: HabitsStatus.loading,
+          isFromCache: false,
+          isRefreshing: false,
+          lastUpdatedAt: null,
+          isDetailFromCache: false,
+          isDetailRefreshing: false,
+          detailLastUpdatedAt: null,
+          isActivityFromCache: false,
+          isActivityRefreshing: false,
+          activityLastUpdatedAt: null,
           activityStatus: HabitsStatus.initial,
           activeWorkspaceId: wsId,
           selectedScope: effectiveScope,
@@ -200,6 +297,9 @@ class HabitsCubit extends Cubit<HabitsState> {
 
       final nextState = state.copyWith(
         status: HabitsStatus.loaded,
+        isFromCache: false,
+        isRefreshing: false,
+        lastUpdatedAt: DateTime.now(),
         listResponse: response,
         selectedScope: effectiveScope,
         selectedMemberId: nextMemberId,
@@ -225,11 +325,17 @@ class HabitsCubit extends Cubit<HabitsState> {
       } else {
         final nextState = state.copyWith(
           detailStatus: HabitsStatus.initial,
+          isDetailFromCache: false,
+          isDetailRefreshing: false,
+          detailLastUpdatedAt: null,
           detail: null,
           detailError: null,
           detailScope: null,
           detailScopeUserId: null,
           activityStatus: HabitsStatus.initial,
+          isActivityFromCache: false,
+          isActivityRefreshing: false,
+          activityLastUpdatedAt: null,
           activityEntries: const [],
           activityError: null,
         );
@@ -244,6 +350,7 @@ class HabitsCubit extends Cubit<HabitsState> {
       emit(
         state.copyWith(
           status: hasVisibleData ? HabitsStatus.loaded : HabitsStatus.error,
+          isRefreshing: false,
           error: hasVisibleData ? null : error.toString(),
           listResponse: hasVisibleData ? state.listResponse : null,
           selectedTrackerId: hasVisibleData ? state.selectedTrackerId : null,
@@ -279,7 +386,7 @@ class HabitsCubit extends Cubit<HabitsState> {
         state.activityStatus == HabitsStatus.loaded;
 
     if (cached != null && !hasVisibleEntries) {
-      emit(cached.state);
+      emit(_applyCachedActivityState(state, cached.state, cached.fetchedAt));
       if (!refresh &&
           cached.state.activityStatus == HabitsStatus.loaded &&
           isHabitsCacheFresh(cached.fetchedAt)) {
@@ -308,7 +415,10 @@ class HabitsCubit extends Cubit<HabitsState> {
 
     emit(
       state.copyWith(
-        activityStatus: HabitsStatus.loading,
+        activityStatus: hasVisibleEntries
+            ? HabitsStatus.loaded
+            : HabitsStatus.loading,
+        isActivityRefreshing: hasVisibleEntries,
         activityError: null,
       ),
     );
@@ -319,6 +429,9 @@ class HabitsCubit extends Cubit<HabitsState> {
         emit(
           state.copyWith(
             activityStatus: HabitsStatus.loaded,
+            isActivityFromCache: false,
+            isActivityRefreshing: false,
+            activityLastUpdatedAt: DateTime.now(),
             activityEntries: const [],
             activityError: null,
           ),
@@ -361,6 +474,9 @@ class HabitsCubit extends Cubit<HabitsState> {
 
       final nextState = state.copyWith(
         activityStatus: HabitsStatus.loaded,
+        isActivityFromCache: false,
+        isActivityRefreshing: false,
+        activityLastUpdatedAt: DateTime.now(),
         activityEntries: entries,
         activityError: null,
       );
@@ -378,8 +494,11 @@ class HabitsCubit extends Cubit<HabitsState> {
 
       emit(
         state.copyWith(
-          activityStatus: HabitsStatus.error,
-          activityError: error.toString(),
+          activityStatus: hasVisibleEntries
+              ? HabitsStatus.loaded
+              : HabitsStatus.error,
+          isActivityRefreshing: false,
+          activityError: hasVisibleEntries ? null : error.toString(),
         ),
       );
     }
@@ -406,11 +525,34 @@ class HabitsCubit extends Cubit<HabitsState> {
       return;
     }
 
+    final cacheKey = _cacheKeyFor(wsId, detailScope, detailScopeUserId);
+    final cached = _cache[cacheKey];
+    final hasVisibleDetail =
+        state.detail?.tracker.id == trackerId &&
+        state.detailScope == detailScope &&
+        state.detailScopeUserId == detailScopeUserId &&
+        state.detailStatus == HabitsStatus.loaded;
+
+    if (cached != null && !hasVisibleDetail) {
+      final cachedDetail = cached.state.detail;
+      if (cachedDetail?.tracker.id == trackerId &&
+          cached.state.detailScope == detailScope &&
+          cached.state.detailScopeUserId == detailScopeUserId) {
+        emit(_applyCachedDetailState(state, cached.state, cached.fetchedAt));
+        if (!refresh && isHabitsCacheFresh(cached.fetchedAt)) {
+          return;
+        }
+      }
+    }
+
     final requestToken = ++_detailRequestToken;
     emit(
       state.copyWith(
         selectedTrackerId: trackerId,
-        detailStatus: HabitsStatus.loading,
+        detailStatus: hasVisibleDetail
+            ? HabitsStatus.loaded
+            : HabitsStatus.loading,
+        isDetailRefreshing: hasVisibleDetail,
         detailError: null,
       ),
     );
@@ -430,6 +572,9 @@ class HabitsCubit extends Cubit<HabitsState> {
       final nextState = state.copyWith(
         detail: detail,
         detailStatus: HabitsStatus.loaded,
+        isDetailFromCache: false,
+        isDetailRefreshing: false,
+        detailLastUpdatedAt: DateTime.now(),
         detailError: null,
         detailScope: detailScope,
         detailScopeUserId: detailScopeUserId,
@@ -442,8 +587,11 @@ class HabitsCubit extends Cubit<HabitsState> {
       }
       emit(
         state.copyWith(
-          detailStatus: HabitsStatus.error,
-          detailError: error.toString(),
+          detailStatus: hasVisibleDetail
+              ? HabitsStatus.loaded
+              : HabitsStatus.error,
+          isDetailRefreshing: false,
+          detailError: hasVisibleDetail ? null : error.toString(),
         ),
       );
     }
@@ -577,10 +725,19 @@ class HabitsCubit extends Cubit<HabitsState> {
 
     emit(state.copyWith(isSubmittingEntry: true, error: null));
     try {
-      await _repository.createEntry(wsId, trackerId, input);
+      final entry = await _repository.createEntry(wsId, trackerId, input);
       final drafts = <String, String>{...state.quickLogDrafts}
         ..remove(trackerId);
-      emit(state.copyWith(quickLogDrafts: drafts));
+      var nextState = state.copyWith(quickLogDrafts: drafts);
+      nextState = _applyCreatedEntryLocally(nextState, trackerId, entry);
+      final now = DateTime.now();
+      nextState = nextState.copyWith(
+        lastUpdatedAt: now,
+        detailLastUpdatedAt: nextState.detail == null ? null : now,
+        activityLastUpdatedAt: nextState.activityEntries.isEmpty ? null : now,
+      );
+      emit(nextState);
+      _storeCache(nextState);
       await _reloadAfterMutation(selectTrackerId: trackerId);
     } finally {
       emit(state.copyWith(isSubmittingEntry: false));
@@ -683,6 +840,252 @@ class HabitsCubit extends Cubit<HabitsState> {
     return '$wsId::${scope.apiValue}::${userId ?? ''}';
   }
 
+  HabitsState _applyCreatedEntryLocally(
+    HabitsState currentState,
+    String trackerId,
+    HabitTrackerEntry entry,
+  ) {
+    final listResponse = currentState.listResponse;
+    if (listResponse == null) {
+      return currentState;
+    }
+
+    final trackerIndex = listResponse.trackers.indexWhere(
+      (value) => value.tracker.id == trackerId,
+    );
+    if (trackerIndex < 0) {
+      return currentState;
+    }
+
+    final summary = listResponse.trackers[trackerIndex];
+    final nextSummary = _patchSummaryWithEntry(
+      currentState,
+      listResponse,
+      summary,
+      entry,
+    );
+    final nextTrackers = [...listResponse.trackers];
+    nextTrackers[trackerIndex] = nextSummary;
+
+    var nextState = currentState.copyWith(
+      listResponse: listResponse.copyWith(trackers: nextTrackers),
+    );
+
+    if (currentState.detail?.tracker.id == trackerId) {
+      final detail = currentState.detail!;
+      final nextEntries = [
+        entry,
+        ...detail.entries.where((value) => value.id != entry.id),
+      ];
+      nextState = nextState.copyWith(
+        detail: detail.copyWith(
+          entries: nextEntries,
+          currentMember: nextSummary.currentMember,
+          team: nextSummary.team,
+        ),
+      );
+    }
+
+    if (currentState.activityStatus != HabitsStatus.initial ||
+        currentState.activityEntries.isNotEmpty) {
+      final tracker = nextSummary.tracker;
+      final nextActivityEntries = [
+        HabitActivityEntry(tracker: tracker, entry: entry),
+        ...currentState.activityEntries.where(
+          (value) => value.entry.id != entry.id,
+        ),
+      ]..sort((left, right) => right.timestamp.compareTo(left.timestamp));
+      nextState = nextState.copyWith(
+        activityStatus: HabitsStatus.loaded,
+        activityEntries: nextActivityEntries,
+      );
+    }
+
+    return nextState;
+  }
+
+  HabitTrackerCardSummary _patchSummaryWithEntry(
+    HabitsState currentState,
+    HabitTrackerListResponse listResponse,
+    HabitTrackerCardSummary summary,
+    HabitTrackerEntry entry,
+  ) {
+    final tracker = summary.tracker;
+    final entryValue = _primaryEntryValue(tracker, entry);
+    final affectsCurrentPeriod = _entryAffectsCurrentPeriod(tracker, entry);
+    final memberSummary =
+        summary.currentMember ??
+        _buildFallbackCurrentMember(currentState, listResponse, entry);
+
+    final nextCurrentMember = memberSummary == null
+        ? null
+        : _patchCurrentMemberSummary(
+            memberSummary,
+            tracker,
+            entry,
+            entryValue,
+            affectsCurrentPeriod,
+          );
+    final previousCurrentPeriod =
+        summary.currentMember?.currentPeriodTotal ?? 0;
+    final nextCurrentPeriod = nextCurrentMember?.currentPeriodTotal ?? 0;
+    final nextTeam = summary.team == null
+        ? null
+        : _patchTeamSummary(
+            summary.team!,
+            entryValue,
+            previousCurrentPeriod: previousCurrentPeriod,
+            nextCurrentPeriod: nextCurrentPeriod,
+          );
+
+    return summary.copyWith(
+      currentMember: nextCurrentMember,
+      team: nextTeam,
+    );
+  }
+
+  HabitTrackerMemberSummary? _buildFallbackCurrentMember(
+    HabitsState currentState,
+    HabitTrackerListResponse listResponse,
+    HabitTrackerEntry entry,
+  ) {
+    final targetUserId = currentState.selectedScope == HabitTrackerScope.member
+        ? currentState.selectedMemberId
+        : listResponse.viewerUserId;
+    if (targetUserId == null || targetUserId.isEmpty) {
+      return null;
+    }
+
+    HabitTrackerMember? member;
+    for (final value in listResponse.members) {
+      if (value.userId == targetUserId) {
+        member = value;
+        break;
+      }
+    }
+    member ??= entry.member != null && entry.member!.userId == targetUserId
+        ? entry.member
+        : null;
+    member ??= HabitTrackerMember(userId: targetUserId, displayName: 'You');
+
+    return HabitTrackerMemberSummary(
+      member: member,
+      total: 0,
+      entryCount: 0,
+      currentPeriodTotal: 0,
+      streak: const HabitTrackerStreakSummary(
+        currentStreak: 0,
+        bestStreak: 0,
+        freezeCount: 0,
+        freezesUsed: 0,
+        perfectWeekCount: 0,
+        consistencyRate: 0,
+        recoveryWindow: HabitTrackerRecoveryWindowState(eligible: false),
+      ),
+    );
+  }
+
+  HabitTrackerMemberSummary _patchCurrentMemberSummary(
+    HabitTrackerMemberSummary summary,
+    HabitTracker tracker,
+    HabitTrackerEntry entry,
+    double entryValue,
+    bool affectsCurrentPeriod,
+  ) {
+    final nextTotal = _applyAggregation(
+      currentValue: summary.total,
+      entryValue: entryValue,
+      strategy: tracker.aggregationStrategy,
+    );
+    final nextCurrentPeriod = affectsCurrentPeriod
+        ? _applyAggregation(
+            currentValue: summary.currentPeriodTotal,
+            entryValue: entryValue,
+            strategy: tracker.aggregationStrategy,
+          )
+        : summary.currentPeriodTotal;
+
+    return summary.copyWith(
+      total: nextTotal,
+      entryCount: summary.entryCount + 1,
+      currentPeriodTotal: nextCurrentPeriod,
+      latestValue: entryValue,
+      latestEntryId: entry.id,
+      latestEntryDate: entry.entryDate,
+      latestOccurredAt: entry.occurredAt ?? entry.createdAt,
+      latestValues: entry.values,
+    );
+  }
+
+  HabitTrackerTeamSummary _patchTeamSummary(
+    HabitTrackerTeamSummary summary,
+    double entryValue, {
+    required double previousCurrentPeriod,
+    required double nextCurrentPeriod,
+  }) {
+    final delta = nextCurrentPeriod - previousCurrentPeriod;
+    return summary.copyWith(
+      totalEntries: summary.totalEntries + 1,
+      totalValue: summary.totalValue + delta,
+    );
+  }
+
+  double _primaryEntryValue(HabitTracker tracker, HabitTrackerEntry entry) {
+    if (entry.primaryValue != null) {
+      return entry.primaryValue!;
+    }
+
+    final rawValue = entry.values[tracker.primaryMetricKey];
+    if (rawValue is num) {
+      return rawValue.toDouble();
+    }
+    if (rawValue is bool) {
+      return rawValue ? 1 : 0;
+    }
+    return 0;
+  }
+
+  bool _entryAffectsCurrentPeriod(
+    HabitTracker tracker,
+    HabitTrackerEntry entry,
+  ) {
+    final entryDate = DateTime.tryParse(entry.entryDate);
+    if (entryDate == null) {
+      return false;
+    }
+
+    final now = DateTime.now();
+    final current = DateTime(now.year, now.month, now.day);
+    final candidate = DateTime(entryDate.year, entryDate.month, entryDate.day);
+
+    switch (tracker.targetPeriod) {
+      case HabitTrackerTargetPeriod.daily:
+        return candidate == current;
+      case HabitTrackerTargetPeriod.weekly:
+        final startOfWeek = current.subtract(
+          Duration(days: current.weekday - DateTime.monday),
+        );
+        final endOfWeek = startOfWeek.add(const Duration(days: 6));
+        return !candidate.isBefore(startOfWeek) &&
+            !candidate.isAfter(endOfWeek);
+    }
+  }
+
+  double _applyAggregation({
+    required double currentValue,
+    required double entryValue,
+    required HabitTrackerAggregationStrategy strategy,
+  }) {
+    return switch (strategy) {
+      HabitTrackerAggregationStrategy.max =>
+        entryValue > currentValue ? entryValue : currentValue,
+      HabitTrackerAggregationStrategy.countEntries => currentValue + 1,
+      HabitTrackerAggregationStrategy.booleanAny =>
+        (currentValue > 0 || entryValue > 0) ? 1 : 0,
+      HabitTrackerAggregationStrategy.sum => currentValue + entryValue,
+    };
+  }
+
   void _storeCache(HabitsState nextState) {
     final wsId = nextState.activeWorkspaceId;
     final listResponse = nextState.listResponse;
@@ -718,6 +1121,85 @@ class HabitsCubit extends Cubit<HabitsState> {
               stackTrace: stackTrace,
             );
           }),
+    );
+  }
+
+  HabitsState _decorateCachedState(
+    HabitsState cachedState, {
+    DateTime? fetchedAt,
+  }) {
+    return cachedState.copyWith(
+      status: cachedState.listResponse == null
+          ? cachedState.status
+          : HabitsStatus.loaded,
+      detailStatus: cachedState.detail == null
+          ? cachedState.detailStatus
+          : HabitsStatus.loaded,
+      activityStatus:
+          cachedState.activityEntries.isNotEmpty ||
+              cachedState.activityStatus == HabitsStatus.loaded
+          ? HabitsStatus.loaded
+          : cachedState.activityStatus,
+      isFromCache: true,
+      isRefreshing: false,
+      lastUpdatedAt: cachedState.lastUpdatedAt ?? fetchedAt,
+      isDetailFromCache: cachedState.detail != null,
+      isDetailRefreshing: false,
+      detailLastUpdatedAt: cachedState.detail == null
+          ? null
+          : (cachedState.detailLastUpdatedAt ?? fetchedAt),
+      isActivityFromCache:
+          cachedState.activityEntries.isNotEmpty ||
+          cachedState.activityStatus == HabitsStatus.loaded,
+      isActivityRefreshing: false,
+      activityLastUpdatedAt:
+          cachedState.activityEntries.isEmpty &&
+              cachedState.activityStatus != HabitsStatus.loaded
+          ? null
+          : (cachedState.activityLastUpdatedAt ?? fetchedAt),
+      error: null,
+      detailError: null,
+      activityError: null,
+    );
+  }
+
+  HabitsState _applyCachedActivityState(
+    HabitsState currentState,
+    HabitsState cachedState,
+    DateTime? fetchedAt,
+  ) {
+    return currentState.copyWith(
+      activityStatus:
+          cachedState.activityEntries.isNotEmpty ||
+              cachedState.activityStatus == HabitsStatus.loaded
+          ? HabitsStatus.loaded
+          : currentState.activityStatus,
+      activityEntries: cachedState.activityEntries,
+      isActivityFromCache:
+          cachedState.activityEntries.isNotEmpty ||
+          cachedState.activityStatus == HabitsStatus.loaded,
+      isActivityRefreshing: false,
+      activityLastUpdatedAt: cachedState.activityLastUpdatedAt ?? fetchedAt,
+      activityError: null,
+    );
+  }
+
+  HabitsState _applyCachedDetailState(
+    HabitsState currentState,
+    HabitsState cachedState,
+    DateTime? fetchedAt,
+  ) {
+    return currentState.copyWith(
+      detail: cachedState.detail,
+      detailStatus: cachedState.detail == null
+          ? currentState.detailStatus
+          : HabitsStatus.loaded,
+      isDetailFromCache: cachedState.detail != null,
+      isDetailRefreshing: false,
+      detailLastUpdatedAt: cachedState.detailLastUpdatedAt ?? fetchedAt,
+      detailError: null,
+      detailScope: cachedState.detailScope,
+      detailScopeUserId: cachedState.detailScopeUserId,
     );
   }
 
