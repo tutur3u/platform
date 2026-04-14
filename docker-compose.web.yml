@@ -1,0 +1,68 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: dev
+    command: ["bun", "run", "dev:web"]
+    env_file:
+      - path: apps/web/.env.local
+        required: false
+    environment:
+      CHOKIDAR_INTERVAL: "1000"
+      CHOKIDAR_USEPOLLING: "1"
+      HOSTNAME: "0.0.0.0"
+      NEXT_TELEMETRY_DISABLED: "1"
+      NODE_ENV: development
+      PORT: "7803"
+      SUPABASE_SERVER_URL: ${DOCKER_INTERNAL_SUPABASE_URL:-http://host.docker.internal:8001}
+      TSC_WATCHDIRECTORY: DynamicPriorityPolling
+      TSC_WATCHFILE: DynamicPriorityPolling
+      WATCHPACK_POLLING: "true"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    init: true
+    ports:
+      - "7803:7803"
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/workspace
+      - platform-bun-install:/root/.bun/install/cache
+      - platform-web-next:/workspace/apps/web/.next
+      - platform-web-app-node_modules:/workspace/apps/web/node_modules
+      - platform-web-node_modules:/workspace/node_modules
+      - platform-web-supabase-node_modules:/workspace/packages/supabase/node_modules
+      - platform-web-supabase-dist:/workspace/packages/supabase/dist
+      - platform-web-turbo:/workspace/.turbo
+      - platform-web-types-node_modules:/workspace/packages/types/node_modules
+      - platform-web-types-dist:/workspace/packages/types/dist
+
+  redis:
+    profiles: ["redis"]
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  serverless-redis-http:
+    profiles: ["redis"]
+    depends_on:
+      - redis
+    environment:
+      SRH_CONNECTION_STRING: redis://redis:6379
+      SRH_MODE: env
+      SRH_TOKEN: example_token
+    image: hiett/serverless-redis-http:latest
+    ports:
+      - "8079:80"
+
+volumes:
+  platform-web-app-node_modules:
+  platform-bun-install:
+  platform-web-next:
+  platform-web-node_modules:
+  platform-web-supabase-node_modules:
+  platform-web-supabase-dist:
+  platform-web-turbo:
+  platform-web-types-node_modules:
+  platform-web-types-dist:

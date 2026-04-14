@@ -174,6 +174,33 @@ bun dev
 
 If you need a real Redis backend (e.g., to test rate limiting or Upstash clients) there is an optional stack under `apps/redis`. Run `bun redis:start` from the repo root to boot Redis + the Serverless Redis HTTP proxy and point `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` at `http://localhost:8079`/`example_token`. The platform normally falls back to memory-only storage, so this step is only required when you want container-backed persistence.
 
+## Docker web workflow
+
+The repo now includes a web-focused Docker workflow that preserves the existing root script contract instead of inventing a separate Docker-only task graph.
+
+- `bun dev:web:docker` runs the same filtered web dev workload as `bun dev:web`, but inside Docker.
+- `bun devx:web:docker` starts local Supabase first, then launches the Dockerized web dev stack.
+- `bun devrs:web:docker` starts and resets local Supabase first, then launches the Dockerized web dev stack.
+- `bun dev:web:docker:down` stops the Docker web stack.
+
+The Docker service reads runtime values from `apps/web/.env.local`. For host-run local Supabase, the Docker helper automatically rewrites the server-side Supabase URL to `host.docker.internal` while leaving the browser-facing `NEXT_PUBLIC_SUPABASE_URL` unchanged.
+
+Redis stays optional. To enable the bundled Redis profile, forward the compose profile through the script:
+
+```bash
+bun dev:web:docker -- --profile redis
+```
+
+Production builds use `apps/web/Dockerfile`. The builder keeps secrets external by accepting an optional BuildKit secret sourced from `apps/web/.env.local`:
+
+```bash
+docker build \
+  --secret id=web_env,src=apps/web/.env.local \
+  -f apps/web/Dockerfile \
+  --target runner \
+  .
+```
+
 ---
 
 ## Key Commands
@@ -184,6 +211,10 @@ If you need a real Redis backend (e.g., to test rate limiting or Upstash clients
 |---------|-------------|
 | `bun dev` | Start all apps in development mode |
 | `bun dev:web` | Start main web app only |
+| `bun dev:web:docker` | Start the web dev workflow in Docker |
+| `bun devx:web:docker` | Start local Supabase, then the Docker web dev workflow |
+| `bun devrs:web:docker` | Start/reset local Supabase, then the Docker web dev workflow |
+| `bun dev:web:docker:down` | Stop the Docker web dev workflow |
 | `bun devx` | Start full stack with persisted database |
 | `bun devrs` | Start full stack with clean, seeded database |
 
