@@ -110,16 +110,25 @@ describe('guardApiProxyRequest', () => {
     );
 
     expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-Proxy-Block-Reason')).toBe(
+      'ip-already-blocked'
+    );
     expect(mocks.limit).not.toHaveBeenCalled();
   });
 
-  it('does not rate limit generic GET routes', async () => {
+  it('rate limits anonymous generic GET routes', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
     mocks.redis.mockReturnValue({});
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 20,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
 
     const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
       await import('../api-proxy-guard.js');
@@ -132,17 +141,25 @@ describe('guardApiProxyRequest', () => {
       }
     );
 
-    expect(response).toBeNull();
-    expect(mocks.limit).not.toHaveBeenCalled();
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('20');
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
   });
 
-  it('does not rate limit users/me reads', async () => {
+  it('rate limits anonymous users/me reads', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
     mocks.redis.mockReturnValue({});
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 20,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
 
     const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
       await import('../api-proxy-guard.js');
@@ -153,11 +170,12 @@ describe('guardApiProxyRequest', () => {
       { prefixBase: 'proxy:test:api' }
     );
 
-    expect(response).toBeNull();
-    expect(mocks.limit).not.toHaveBeenCalled();
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('20');
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
   });
 
-  it('does not rate limit workspace user database reads', async () => {
+  it('does not rate limit authenticated API client reads', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
@@ -170,7 +188,9 @@ describe('guardApiProxyRequest', () => {
     clearApiProxyGuardLimiterCache();
 
     const response = await guardApiProxyRequest(
-      makeRequest('/api/v1/workspaces/ws-1/users/database?page=1', 'GET'),
+      makeRequest('/api/v1/workspaces/ws-1/users/database?page=1', 'GET', {
+        authorization: 'Bearer ttr_test_key',
+      }),
       { prefixBase: 'proxy:test:api' }
     );
 

@@ -14,7 +14,11 @@ vi.mock('../../upstash-rest', () => ({
   getUpstashRestRedisClient: () => mocks.getRedis(),
 }));
 
-import { extractIPFromRequest, recordMalformedAuthCookieEdge } from '../edge';
+import {
+  extractIPFromRequest,
+  recordMalformedAuthCookieEdge,
+  recordSuspiciousApiRequestEdge,
+} from '../edge';
 
 describe('abuse-protection edge', () => {
   beforeEach(() => {
@@ -92,6 +96,40 @@ describe('abuse-protection edge', () => {
         'ip:block:level:203.0.113.10',
         1,
         expect.objectContaining({ ex: 86400 })
+      );
+    });
+  });
+
+  describe('recordSuspiciousApiRequestEdge', () => {
+    it('tracks suspicious anonymous hits without blocking on the first offense', async () => {
+      mocks.redis.incr.mockResolvedValueOnce(1);
+
+      const blockInfo = await recordSuspiciousApiRequestEdge('203.0.113.20');
+
+      expect(blockInfo).toBeNull();
+      expect(mocks.redis.expire).toHaveBeenCalledWith(
+        'api:suspicious:203.0.113.20',
+        60
+      );
+      expect(mocks.redis.set).not.toHaveBeenCalledWith(
+        'ip:blocked:203.0.113.20',
+        expect.anything(),
+        expect.anything()
+      );
+    });
+
+    it('escalates repeated suspicious anonymous hits into an IP block', async () => {
+      mocks.redis.incr.mockResolvedValueOnce(3);
+      mocks.redis.get.mockResolvedValueOnce(0);
+
+      const blockInfo = await recordSuspiciousApiRequestEdge('203.0.113.20');
+
+      expect(blockInfo?.blockLevel).toBe(1);
+      expect(blockInfo?.reason).toBe('api_abuse');
+      expect(mocks.redis.set).toHaveBeenCalledWith(
+        'ip:blocked:203.0.113.20',
+        expect.any(String),
+        expect.objectContaining({ ex: 300 })
       );
     });
   });

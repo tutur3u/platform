@@ -11,6 +11,8 @@ import {
 
 const isDev = process.env.NODE_ENV !== 'production';
 
+type CallerClass = 'anonymous' | 'authenticated';
+
 export type RateLimitWindow = 'minute' | 'hour' | 'day';
 
 export type RateLimitConfig = {
@@ -53,6 +55,41 @@ type Limiters = {
 const limiterCache = new Map<string, Limiters>();
 
 const NO_READ_RATE_LIMITS: RateLimitConfig[] = [];
+
+function parsePositiveIntEnv(name: string, fallback: number): number {
+  const rawValue = process.env[name];
+  if (!rawValue) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(rawValue, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function createConfig(
+  window: RateLimitWindow,
+  duration: '1 m' | '1 h' | '1 d',
+  fallback: number,
+  envName: string
+): RateLimitConfig {
+  return {
+    window,
+    duration,
+    limit: parsePositiveIntEnv(envName, fallback),
+  };
+}
+
+const DEFAULT_ANONYMOUS_READ_RATE_LIMITS: RateLimitConfig[] = [
+  createConfig('minute', '1 m', 20, 'API_PROXY_ANON_READ_LIMIT_MINUTE'),
+  createConfig('hour', '1 h', 240, 'API_PROXY_ANON_READ_LIMIT_HOUR'),
+  createConfig('day', '1 d', 1200, 'API_PROXY_ANON_READ_LIMIT_DAY'),
+];
+
+const DEFAULT_ANONYMOUS_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
+  createConfig('minute', '1 m', 12, 'API_PROXY_ANON_MUTATE_LIMIT_MINUTE'),
+  createConfig('hour', '1 h', 120, 'API_PROXY_ANON_MUTATE_LIMIT_HOUR'),
+  createConfig('day', '1 d', 600, 'API_PROXY_ANON_MUTATE_LIMIT_DAY'),
+];
 
 const DEFAULT_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
   { window: 'minute', limit: 30, duration: '1 m' },
@@ -297,11 +334,104 @@ function buildRateLimitResponse(
     {
       status,
       headers: {
+        'Cache-Control': 'no-store',
         'Retry-After': `${retryAfter}`,
         ...headers,
       },
     }
   );
+}
+
+function looksLikeSupabaseJwt(token: string): boolean {
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return false;
+  }
+
+  return parts.every(
+    (part) => /^[A-Za-z0-9_-]+$/.test(part) && part.length > 0
+  );
+}
+
+function looksLikeWorkspaceApiKey(token: string): boolean {
+  return /^ttr_[A-Za-z0-9_-]+$/.test(token);
+}
+
+function hasAuthenticatedBearerToken(headers: Headers): boolean {
+  const authHeader = headers.get('authorization');
+  if (!authHeader) {
+    return false;
+  }
+
+  const trimmedHeader = authHeader.trim();
+  if (looksLikeWorkspaceApiKey(trimmedHeader)) {
+    return true;
+  }
+
+  if (!trimmedHeader.toLowerCase().startsWith('bearer ')) {
+    return false;
+  }
+
+  const token = trimmedHeader.slice(7).trim();
+  return looksLikeSupabaseJwt(token) || looksLikeWorkspaceApiKey(token);
+}
+
+function getSupabaseAuthStorageKey(url: string): string | null {
+  try {
+    return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
+  } catch {
+    return null;
+  }
+}
+
+function hasSupabaseSessionCookie(req: NextRequest): boolean {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) {
+    return false;
+  }
+
+  const storageKey = getSupabaseAuthStorageKey(supabaseUrl);
+  if (!storageKey) {
+    return false;
+  }
+
+  return req.cookies
+    .getAll()
+    .some(
+      (cookie) =>
+        cookie.name === storageKey ||
+        (/^\d+$/.test(cookie.name.slice(storageKey.length + 1)) &&
+          cookie.name.startsWith(`${storageKey}.`))
+    );
+}
+
+function getCallerClass(req: NextRequest): CallerClass {
+  if (
+    hasAuthenticatedBearerToken(req.headers) ||
+    hasSupabaseSessionCookie(req)
+  ) {
+    return 'authenticated';
+  }
+
+  return 'anonymous';
+}
+
+function getEffectiveRateLimits(
+  routePolicy: ProxyRoutePolicy,
+  callerClass: CallerClass
+): RateLimitProfile {
+  if (callerClass === 'authenticated') {
+    return routePolicy.rateLimits;
+  }
+
+  if (routePolicy.key === 'default' || routePolicy.key === 'users-me') {
+    return {
+      get: DEFAULT_ANONYMOUS_READ_RATE_LIMITS,
+      mutate: DEFAULT_ANONYMOUS_MUTATE_RATE_LIMITS,
+    };
+  }
+
+  return routePolicy.rateLimits;
 }
 
 export function isTrustedProxyBypassRequest(
@@ -355,14 +485,18 @@ export async function guardApiProxyRequest(
           Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
         );
 
-        return buildRateLimitResponse(429, retryAfter);
+        return buildRateLimitResponse(429, retryAfter, {
+          'X-Proxy-Block-Reason': 'ip-already-blocked',
+        });
       }
 
       const routePolicy = getRoutePolicy(req, routePolicies);
+      const callerClass = getCallerClass(req);
       const isRead = req.method === 'GET' || req.method === 'HEAD';
+      const rateLimits = getEffectiveRateLimits(routePolicy, callerClass);
       const limiters = await getRateLimiters(
         `${options.prefixBase}:${routePolicy.key}`,
-        routePolicy.rateLimits
+        rateLimits
       );
       const activeLimiters = isRead ? limiters.get : limiters.mutate;
 
@@ -388,9 +522,11 @@ export async function guardApiProxyRequest(
           );
 
           return buildRateLimitResponse(429, retryAfter, {
+            'X-Proxy-Block-Reason': 'route-rate-limit',
             'X-RateLimit-Limit': `${limit}`,
             'X-RateLimit-Remaining': `${remaining}`,
             'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
+            'X-RateLimit-Caller-Class': callerClass,
             'X-RateLimit-Window': window,
             'X-RateLimit-Policy': routePolicy.key,
           });

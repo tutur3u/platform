@@ -376,3 +376,5 @@ At the **END** of every session, you MUST:
 2. Update `AGENTS.md` with durable standards/rules (no chronological logs).
 3. Eliminate redundancy—ensure new knowledge isn't already covered by specialized skills.
 4. Propose future improvements to the human partner.
+
+- **Proxy Abuse Test Hygiene**: When hardening API proxy abuse controls, tests must explicitly model anonymous vs authenticated callers (headers/cookies/user-agent) and freeze time with fake timers for block-window assertions. Otherwise CI can miss false positives or time-window regressions.

@@ -4,12 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   authProxy: vi.fn(),
   guardApiProxyRequest: vi.fn(),
+  isTrustedProxyBypassRequest: vi.fn(),
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
   getMalformedSupabaseAuthCookieNames: vi.fn(),
   extractIPFromRequest: vi.fn(),
   isIPBlockedEdge: vi.fn(),
   recordMalformedAuthCookieEdge: vi.fn(),
+  recordSuspiciousApiRequestEdge: vi.fn(),
   isPersonalWorkspace: vi.fn(),
   getUserDefaultWorkspace: vi.fn(),
 }));
@@ -23,6 +25,9 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
   ) => mocks.guardApiProxyRequest(...args),
+  isTrustedProxyBypassRequest: (
+    ...args: Parameters<typeof mocks.isTrustedProxyBypassRequest>
+  ) => mocks.isTrustedProxyBypassRequest(...args),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -47,6 +52,9 @@ vi.mock('@tuturuuu/utils/abuse-protection/edge', () => ({
   recordMalformedAuthCookieEdge: (
     ...args: Parameters<typeof mocks.recordMalformedAuthCookieEdge>
   ) => mocks.recordMalformedAuthCookieEdge(...args),
+  recordSuspiciousApiRequestEdge: (
+    ...args: Parameters<typeof mocks.recordSuspiciousApiRequestEdge>
+  ) => mocks.recordSuspiciousApiRequestEdge(...args),
   blockIPEdge: vi.fn(),
 }));
 
@@ -80,6 +88,8 @@ describe('web proxy api handling', () => {
     mocks.extractIPFromRequest.mockReturnValue('203.0.113.10');
     mocks.isIPBlockedEdge.mockResolvedValue(null);
     mocks.recordMalformedAuthCookieEdge.mockResolvedValue(null);
+    mocks.recordSuspiciousApiRequestEdge.mockResolvedValue(null);
+    mocks.isTrustedProxyBypassRequest.mockReturnValue(false);
     mocks.isPersonalWorkspace.mockResolvedValue(false);
     mocks.getUserDefaultWorkspace.mockResolvedValue(null);
   });
@@ -100,6 +110,9 @@ describe('web proxy api handling', () => {
       new NextRequest('http://localhost/api/v1/auth/mobile/send-otp', {
         method: 'POST',
         body: '{}',
+        headers: {
+          'user-agent': 'Mozilla/5.0',
+        },
       })
     );
 
@@ -118,6 +131,9 @@ describe('web proxy api handling', () => {
     const response = await proxy(
       new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
         method: 'GET',
+        headers: {
+          'user-agent': 'Mozilla/5.0',
+        },
       })
     );
 
@@ -173,7 +189,7 @@ describe('web proxy api handling', () => {
 
     expect(response.status).toBe(429);
     expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
-      'malformed-supabase-auth-cookie-ip-blocked'
+      'ip-already-blocked'
     );
     expect(response.headers.get('Retry-After')).not.toBeNull();
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
@@ -189,7 +205,8 @@ describe('web proxy api handling', () => {
       new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
         method: 'GET',
         headers: {
-          Authorization: 'Bearer valid-access-token',
+          Authorization:
+            'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature',
         },
       })
     );
@@ -207,12 +224,120 @@ describe('web proxy api handling', () => {
       new NextRequest('http://localhost/api/v1/workspaces/~/mail/send', {
         method: 'POST',
         body: '{}',
+        headers: {
+          'user-agent': 'Mozilla/5.0',
+        },
       })
     );
 
     expect(response.status).toBe(200);
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(1);
     expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('blocks malformed authorization headers before the proxy guard', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Basic totally-wrong',
+          'user-agent': 'curl/8.0',
+        },
+      })
+    );
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
+      'malformed-auth-header'
+    );
+    expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalledWith(
+      '203.0.113.10'
+    );
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+  });
+
+  it('escalates repeated suspicious anonymous API traffic into an IP block', async () => {
+    const now = new Date(Date.now());
+
+    mocks.recordSuspiciousApiRequestEdge.mockResolvedValue({
+      id: 'block-2',
+      blockLevel: 1,
+      reason: 'api_abuse',
+      blockedAt: now,
+      expiresAt: new Date(Date.now() + 300_000),
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
+        method: 'GET',
+      })
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
+      'ip-already-blocked'
+    );
+    expect(response.headers.get('Retry-After')).not.toBeNull();
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+  });
+
+  it('keeps trusted bypass API routes out of the suspicious-anonymous gate', async () => {
+    mocks.isTrustedProxyBypassRequest.mockReturnValue(true);
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/api/cron/process-post-email-queue', {
+        method: 'POST',
+        body: '{}',
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it('escalates repeated anonymous proxy guard rate-limit hits into an IP block', async () => {
+    const now = new Date(Date.now());
+
+    mocks.guardApiProxyRequest.mockResolvedValue(
+      NextResponse.json(
+        { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+        {
+          status: 429,
+          headers: {
+            'X-Proxy-Block-Reason': 'route-rate-limit',
+          },
+        }
+      )
+    );
+    mocks.recordSuspiciousApiRequestEdge.mockResolvedValue({
+      id: 'block-3',
+      blockLevel: 1,
+      reason: 'api_abuse',
+      blockedAt: now,
+      expiresAt: new Date(Date.now() + 300_000),
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
+        method: 'GET',
+        headers: {
+          'user-agent': 'Mozilla/5.0',
+        },
+      })
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
+      'ip-already-blocked'
+    );
+    expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalledWith(
+      '203.0.113.10'
+    );
   });
 
   it('bypasses auth and locale rewriting for the offline fallback route', async () => {

@@ -21,6 +21,16 @@ import type { BlockInfo } from './types';
 let edgeRedisClient: UpstashRestRedisClient | null = null;
 let edgeRedisInitialized = false;
 
+function parsePositiveIntEnv(name: string, fallback: number): number {
+  const rawValue = process.env[name];
+  if (!rawValue) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(rawValue, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 async function getEdgeRedisClient() {
   if (edgeRedisInitialized) return edgeRedisClient;
 
@@ -110,25 +120,28 @@ export async function blockIPEdge(
   }
 }
 
-export async function recordMalformedAuthCookieEdge(
-  ipAddress: string
+async function recordEdgeAbuseSignal(
+  ipAddress: string,
+  redisKey: string,
+  {
+    maxAttempts,
+    windowMs,
+  }: {
+    maxAttempts: number;
+    windowMs: number;
+  }
 ): Promise<BlockInfo | null> {
   try {
     const redis = await getEdgeRedisClient();
     if (!redis) return null;
 
-    const attempts = await redis.incr(
-      REDIS_KEYS.API_MALFORMED_AUTH_COOKIE(ipAddress)
-    );
+    const attempts = await redis.incr(redisKey);
 
     if (attempts === 1) {
-      await redis.expire(
-        REDIS_KEYS.API_MALFORMED_AUTH_COOKIE(ipAddress),
-        ABUSE_THRESHOLDS.MALFORMED_AUTH_COOKIE_WINDOW_MS / 1000
-      );
+      await redis.expire(redisKey, Math.ceil(windowMs / 1000));
     }
 
-    if (attempts < ABUSE_THRESHOLDS.MALFORMED_AUTH_COOKIE_MAX) {
+    if (attempts < maxAttempts) {
       return null;
     }
 
@@ -136,6 +149,44 @@ export async function recordMalformedAuthCookieEdge(
   } catch {
     return null;
   }
+}
+
+export async function recordMalformedAuthCookieEdge(
+  ipAddress: string
+): Promise<BlockInfo | null> {
+  return recordEdgeAbuseSignal(
+    ipAddress,
+    REDIS_KEYS.API_MALFORMED_AUTH_COOKIE(ipAddress),
+    {
+      maxAttempts: parsePositiveIntEnv(
+        'EDGE_MALFORMED_AUTH_COOKIE_MAX',
+        ABUSE_THRESHOLDS.MALFORMED_AUTH_COOKIE_MAX
+      ),
+      windowMs: parsePositiveIntEnv(
+        'EDGE_MALFORMED_AUTH_COOKIE_WINDOW_MS',
+        ABUSE_THRESHOLDS.MALFORMED_AUTH_COOKIE_WINDOW_MS
+      ),
+    }
+  );
+}
+
+export async function recordSuspiciousApiRequestEdge(
+  ipAddress: string
+): Promise<BlockInfo | null> {
+  return recordEdgeAbuseSignal(
+    ipAddress,
+    REDIS_KEYS.API_SUSPICIOUS(ipAddress),
+    {
+      maxAttempts: parsePositiveIntEnv(
+        'EDGE_SUSPICIOUS_API_MAX',
+        ABUSE_THRESHOLDS.SUSPICIOUS_API_MAX
+      ),
+      windowMs: parsePositiveIntEnv(
+        'EDGE_SUSPICIOUS_API_WINDOW_MS',
+        ABUSE_THRESHOLDS.SUSPICIOUS_API_WINDOW_MS
+      ),
+    }
+  );
 }
 
 /**

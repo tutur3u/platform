@@ -12,8 +12,12 @@ import {
   extractIPFromRequest,
   isIPBlockedEdge,
   recordMalformedAuthCookieEdge,
+  recordSuspiciousApiRequestEdge,
 } from '@tuturuuu/utils/abuse-protection/edge';
-import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import {
+  guardApiProxyRequest,
+  isTrustedProxyBypassRequest,
+} from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -59,6 +63,26 @@ const EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES = [
   'EMAIL_RATE_LIMIT_IP_MINUTE',
   'EMAIL_RATE_LIMIT_IP_HOUR',
 ] as const;
+const SUSPICIOUS_QUERY_LENGTH_MAX = parsePositiveIntEnv(
+  'PROXY_SUSPICIOUS_QUERY_LENGTH_MAX',
+  1024
+);
+const SUSPICIOUS_QUERY_PARAMS_MAX = parsePositiveIntEnv(
+  'PROXY_SUSPICIOUS_QUERY_PARAMS_MAX',
+  24
+);
+const SCANNER_PATH_PATTERN =
+  /(wp-admin|wp-login\.php|xmlrpc\.php|phpmyadmin|adminer|\.env|\.git|boaform|server-status|cgi-bin|vendor\/phpunit|actuator|jenkins|hudson|\/shell|\/debug)/i;
+
+function parsePositiveIntEnv(name: string, fallback: number): number {
+  const rawValue = process.env[name];
+  if (!rawValue) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(rawValue, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
 
 async function hasWorkspaceEmailRateLimitOverrides(
   pathname: string
@@ -103,14 +127,97 @@ async function hasWorkspaceEmailRateLimitOverrides(
 function getBearerAccessToken(
   req: Pick<NextRequest, 'headers'>
 ): string | null {
-  const authHeader =
-    req.headers.get('authorization') ?? req.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) {
     return null;
   }
 
-  const accessToken = authHeader.slice('Bearer '.length).trim();
+  const trimmedHeader = authHeader.trim();
+  if (!trimmedHeader.toLowerCase().startsWith('bearer ')) {
+    return null;
+  }
+
+  const accessToken = trimmedHeader.slice(7).trim();
   return accessToken || null;
+}
+
+function looksLikeSupabaseJwt(token: string): boolean {
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return false;
+  }
+
+  return parts.every(
+    (part) => /^[A-Za-z0-9_-]+$/.test(part) && part.length > 0
+  );
+}
+
+function looksLikeWorkspaceApiKey(token: string): boolean {
+  return /^ttr_[A-Za-z0-9_-]+$/.test(token);
+}
+
+function hasLikelyAuthenticatedApiCredential(req: NextRequest): boolean {
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) {
+    return false;
+  }
+
+  const trimmedHeader = authHeader.trim();
+  if (looksLikeWorkspaceApiKey(trimmedHeader)) {
+    return true;
+  }
+
+  if (!trimmedHeader.toLowerCase().startsWith('bearer ')) {
+    return false;
+  }
+
+  const token = trimmedHeader.slice(7).trim();
+  return looksLikeSupabaseJwt(token) || looksLikeWorkspaceApiKey(token);
+}
+
+function hasMalformedAuthorizationHeader(req: NextRequest): boolean {
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) {
+    return false;
+  }
+
+  const trimmedHeader = authHeader.trim();
+  if (looksLikeWorkspaceApiKey(trimmedHeader)) {
+    return false;
+  }
+
+  if (!trimmedHeader.toLowerCase().startsWith('bearer ')) {
+    return true;
+  }
+
+  const token = trimmedHeader.slice(7).trim();
+  return token.length === 0 || /\s/.test(token);
+}
+
+function buildProxyBlockResponse(
+  status: 400 | 401 | 429,
+  reason:
+    | 'ip-already-blocked'
+    | 'malformed-auth-header'
+    | 'malformed-supabase-auth-cookie'
+    | 'suspicious-anonymous-request',
+  retryAfter?: number
+) {
+  const body =
+    status === 429
+      ? { error: 'Too Many Requests', message: 'Rate limit exceeded' }
+      : status === 401
+        ? { error: 'Unauthorized' }
+        : { error: 'Bad Request' };
+
+  return NextResponse.json(body, {
+    status,
+    headers: {
+      'Cache-Control': 'no-store',
+      ...(retryAfter ? { 'Retry-After': `${retryAfter}` } : {}),
+      'X-Proxy-Block-Reason': reason,
+    },
+  });
 }
 
 function applyExpiredCookies(response: NextResponse, cookieNames: string[]) {
@@ -126,7 +233,10 @@ function applyExpiredCookies(response: NextResponse, cookieNames: string[]) {
 async function blockMalformedApiAuthCookieRequest(
   req: NextRequest
 ): Promise<NextResponse | null> {
-  if (getBearerAccessToken(req)) {
+  if (
+    hasLikelyAuthenticatedApiCredential(req) ||
+    isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers)
+  ) {
     return null;
   }
 
@@ -148,16 +258,10 @@ async function blockMalformedApiAuthCookieRequest(
       1,
       Math.ceil((existingBlock.expiresAt.getTime() - Date.now()) / 1000)
     );
-    const response = NextResponse.json(
-      { error: 'Too Many Requests', message: 'Rate limit exceeded' },
-      {
-        status: 429,
-        headers: {
-          'Cache-Control': 'no-store',
-          'Retry-After': `${retryAfter}`,
-          'X-Proxy-Block-Reason': 'malformed-supabase-auth-cookie-ip-blocked',
-        },
-      }
+    const response = buildProxyBlockResponse(
+      429,
+      'ip-already-blocked',
+      retryAfter
     );
     applyExpiredCookies(response, malformedCookieNames);
     return response;
@@ -173,33 +277,115 @@ async function blockMalformedApiAuthCookieRequest(
       1,
       Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
     );
-    const response = NextResponse.json(
-      { error: 'Too Many Requests', message: 'Rate limit exceeded' },
-      {
-        status: 429,
-        headers: {
-          'Cache-Control': 'no-store',
-          'Retry-After': `${retryAfter}`,
-          'X-Proxy-Block-Reason': 'malformed-supabase-auth-cookie-ip-blocked',
-        },
-      }
+    const response = buildProxyBlockResponse(
+      429,
+      'ip-already-blocked',
+      retryAfter
     );
     applyExpiredCookies(response, malformedCookieNames);
     return response;
   }
 
-  const response = NextResponse.json(
-    { error: 'Unauthorized' },
-    {
-      status: 401,
-      headers: {
-        'Cache-Control': 'no-store',
-        'X-Proxy-Block-Reason': 'malformed-supabase-auth-cookie',
-      },
-    }
+  const response = buildProxyBlockResponse(
+    401,
+    'malformed-supabase-auth-cookie'
   );
   applyExpiredCookies(response, malformedCookieNames);
   return response;
+}
+
+function getSuspiciousAnonymousApiSignal(req: NextRequest): {
+  reason: 'malformed-auth-header' | 'suspicious-anonymous-request';
+  status: 400 | 401;
+} | null {
+  if (
+    isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) ||
+    hasLikelyAuthenticatedApiCredential(req)
+  ) {
+    return null;
+  }
+
+  if (hasMalformedAuthorizationHeader(req)) {
+    return {
+      reason: 'malformed-auth-header',
+      status: 401,
+    };
+  }
+
+  if (
+    !(req.method === 'GET' || req.method === 'HEAD') &&
+    !getBearerAccessToken(req)
+  ) {
+    const contentLength = req.headers.get('content-length');
+    if (contentLength) {
+      const parsedLength = Number.parseInt(contentLength, 10);
+      if (
+        Number.isFinite(parsedLength) &&
+        parsedLength > SUSPICIOUS_QUERY_LENGTH_MAX * 4
+      ) {
+        return {
+          reason: 'suspicious-anonymous-request',
+          status: 400,
+        };
+      }
+    }
+  }
+
+  if ((req.headers.get('user-agent') ?? '').trim().length === 0) {
+    return {
+      reason: 'suspicious-anonymous-request',
+      status: 400,
+    };
+  }
+
+  if (
+    req.nextUrl.search.length > SUSPICIOUS_QUERY_LENGTH_MAX ||
+    req.nextUrl.searchParams.size > SUSPICIOUS_QUERY_PARAMS_MAX ||
+    SCANNER_PATH_PATTERN.test(req.nextUrl.pathname)
+  ) {
+    return {
+      reason: 'suspicious-anonymous-request',
+      status: 400,
+    };
+  }
+
+  return null;
+}
+
+async function blockSuspiciousAnonymousApiRequest(
+  req: NextRequest
+): Promise<NextResponse | null> {
+  const signal = getSuspiciousAnonymousApiSignal(req);
+  if (!signal) {
+    return null;
+  }
+
+  const ipAddress = extractIPFromRequest(req.headers);
+  const existingBlock =
+    ipAddress === 'unknown' ? null : await isIPBlockedEdge(ipAddress);
+
+  if (existingBlock) {
+    const retryAfter = Math.max(
+      1,
+      Math.ceil((existingBlock.expiresAt.getTime() - Date.now()) / 1000)
+    );
+    return buildProxyBlockResponse(429, 'ip-already-blocked', retryAfter);
+  }
+
+  const newBlock =
+    ipAddress === 'unknown'
+      ? null
+      : await recordSuspiciousApiRequestEdge(ipAddress);
+
+  if (newBlock) {
+    const retryAfter = Math.max(
+      1,
+      Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
+    );
+    return buildProxyBlockResponse(429, 'ip-already-blocked', retryAfter);
+  }
+
+  return buildProxyBlockResponse(signal.status, signal.reason);
 }
 
 /**
@@ -358,6 +544,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       return malformedAuthCookieResponse;
     }
 
+    const suspiciousAnonymousApiResponse =
+      await blockSuspiciousAnonymousApiRequest(req);
+    if (suspiciousAnonymousApiResponse) {
+      return suspiciousAnonymousApiResponse;
+    }
+
     if (await hasWorkspaceEmailRateLimitOverrides(req.nextUrl.pathname)) {
       return NextResponse.next();
     }
@@ -366,6 +558,28 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       prefixBase: 'proxy:web:api',
     });
     if (guardResponse) {
+      if (
+        guardResponse.status === 429 &&
+        guardResponse.headers.get('X-Proxy-Block-Reason') ===
+          'route-rate-limit' &&
+        !isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) &&
+        !hasLikelyAuthenticatedApiCredential(req)
+      ) {
+        const ipAddress = extractIPFromRequest(req.headers);
+        const newBlock =
+          ipAddress === 'unknown'
+            ? null
+            : await recordSuspiciousApiRequestEdge(ipAddress);
+
+        if (newBlock) {
+          const retryAfter = Math.max(
+            1,
+            Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
+          );
+          return buildProxyBlockResponse(429, 'ip-already-blocked', retryAfter);
+        }
+      }
+
       return guardResponse;
     }
 
