@@ -1,14 +1,12 @@
 'use client';
 
 import { Tag } from '@tuturuuu/icons';
-import type { TaskLabel as DbTaskLabel } from '@tuturuuu/types/db';
+import type { TaskLabelSummary } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '../utils/label-colors';
 
-export type TaskLabel = Pick<DbTaskLabel, 'id' | 'name' | 'color'> & {
-  created_at?: DbTaskLabel['created_at'];
-};
+export type TaskLabel = TaskLabelSummary;
 
 interface LabelChipProps {
   label: TaskLabel;

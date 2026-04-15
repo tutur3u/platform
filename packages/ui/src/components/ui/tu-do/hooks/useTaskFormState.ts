@@ -18,8 +18,8 @@ interface TaskFormState {
   selectedListId: string;
   estimationPoints: number | null | undefined;
   selectedLabels: WorkspaceTaskLabel[];
-  selectedAssignees: any[];
-  selectedProjects: any[];
+  selectedAssignees: NonNullable<Task['assignees']>;
+  selectedProjects: NonNullable<Task['projects']>;
 }
 
 interface UseTaskFormStateProps {
@@ -77,12 +77,12 @@ export function useTaskFormState({
   const [selectedLabels, setSelectedLabels] = useState<WorkspaceTaskLabel[]>(
     task?.labels || []
   );
-  const [selectedAssignees, setSelectedAssignees] = useState<any[]>(
-    task?.assignees || []
-  );
-  const [selectedProjects, setSelectedProjects] = useState<any[]>(
-    task?.projects || []
-  );
+  const [selectedAssignees, setSelectedAssignees] = useState<
+    NonNullable<Task['assignees']>
+  >(task?.assignees || []);
+  const [selectedProjects, setSelectedProjects] = useState<
+    NonNullable<Task['projects']>
+  >(task?.projects || []);
 
   // Build initial snapshot for change detection
   const initialSnapshot = useMemo(() => {
