@@ -71,7 +71,15 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json({ connections }, { status: 200 });
+    return NextResponse.json(
+      { connections },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'private, max-age=60, stale-while-revalidate=30',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Error in GET calendar connections:', error);
     return NextResponse.json(

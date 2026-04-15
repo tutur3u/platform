@@ -16,10 +16,7 @@ import {
   Star,
   Zap,
 } from '@tuturuuu/icons';
-import {
-  createSupportInquiry,
-  getCurrentUserProfile,
-} from '@tuturuuu/internal-api';
+import { createSupportInquiry } from '@tuturuuu/internal-api';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -56,6 +53,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import * as z from 'zod';
 import { GITHUB_OWNER } from '@/constants/common';
+import { useCurrentUserProfile } from '@/hooks/use-current-user-profile';
 
 const formSchema = z.object({
   name: z
@@ -90,7 +88,10 @@ const formSchema = z.object({
 export default function ContactPage() {
   const t = useTranslations('contact');
   const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const { data: profile } = useCurrentUserProfile();
+  const user = profile
+    ? ({ id: profile.id, email: profile.email } as SupabaseUser)
+    : null;
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -105,32 +106,19 @@ export default function ContactPage() {
   });
 
   useEffect(() => {
-    const getUser = async () => {
-      const profile = await getCurrentUserProfile().catch(() => null);
+    if (!profile) {
+      return;
+    }
 
-      const currentUser = profile
-        ? ({ id: profile.id, email: profile.email } as SupabaseUser)
-        : null;
+    if (profile.email) {
+      form.setValue('email', profile.email);
+    }
 
-      setUser(currentUser);
-
-      if (profile) {
-        // Set email from auth user
-        if (profile.email) {
-          form.setValue('email', profile.email);
-        }
-
-        // Use display_name, fall back to email username
-        const name = profile.display_name || profile.email?.split('@')[0] || '';
-
-        if (name) {
-          form.setValue('name', name);
-        }
-      }
-    };
-
-    getUser();
-  }, [form.setValue, form]);
+    const name = profile.display_name || profile.email?.split('@')[0] || '';
+    if (name) {
+      form.setValue('name', name);
+    }
+  }, [form, profile]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!user) {

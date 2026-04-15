@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Check, Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -18,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import { currentUserProfileQueryKey } from '@/hooks/use-current-user-profile';
 
 interface Props {
   defaultValue?: string | null;
@@ -26,6 +28,7 @@ interface Props {
 
 export default function FullNameInput({ defaultValue = '', disabled }: Props) {
   const t = useTranslations('settings-account');
+  const queryClient = useQueryClient();
   const router = useRouter();
 
   const [saving, setSaving] = useState(false);
@@ -65,6 +68,9 @@ export default function FullNameInput({ defaultValue = '', disabled }: Props) {
         body: JSON.stringify({ full_name: data.name }),
       });
       if (res.ok) {
+        await queryClient.invalidateQueries({
+          queryKey: [...currentUserProfileQueryKey],
+        });
         toast({
           title: t('profile-updated'),
           description: t('full-name-updated'),

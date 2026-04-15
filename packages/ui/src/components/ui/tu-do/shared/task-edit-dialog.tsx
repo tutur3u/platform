@@ -295,6 +295,8 @@ export function TaskEditDialog({
     },
     enabled: isCreateMode && !!user?.id,
     staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const loadTaskDescriptionState = useCallback(async () => {

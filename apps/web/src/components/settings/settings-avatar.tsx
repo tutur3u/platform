@@ -23,6 +23,7 @@ import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import * as z from 'zod';
+import { currentUserProfileQueryKey } from '@/hooks/use-current-user-profile';
 
 interface AvatarProps {
   user: WorkspaceUser;
@@ -111,7 +112,9 @@ export default function UserAvatar({ user }: AvatarProps) {
     onSuccess: () => {
       toast.success(t('settings-account.avatar_updated'));
       // Invalidate user queries to refetch data
-      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+      queryClient.invalidateQueries({
+        queryKey: [...currentUserProfileQueryKey],
+      });
       setOpen(false);
       form.reset();
     },
@@ -137,7 +140,9 @@ export default function UserAvatar({ user }: AvatarProps) {
     onSuccess: () => {
       toast.success(t('settings-account.avatar_removed'));
       // Invalidate user queries to refetch data
-      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+      queryClient.invalidateQueries({
+        queryKey: [...currentUserProfileQueryKey],
+      });
       form.reset();
     },
     onError: (error) => {
