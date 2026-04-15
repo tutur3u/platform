@@ -23,6 +23,23 @@ export type UpdateCurrentUserDefaultWorkspaceResponse = {
   success: boolean;
 };
 
+type CurrentUserAvatarUploadUrlResponse = {
+  uploadUrl: string;
+  publicUrl: string;
+};
+
+export type UploadCurrentUserAvatarResult = {
+  publicUrl: string;
+  finalizeOk: boolean;
+  finalizeError?: string;
+};
+
+export type UpdateCurrentUserProfilePayload = {
+  avatar_url?: string | null;
+  display_name?: string | null;
+  full_name?: string | null;
+};
+
 export interface CreateSupportInquiryPayload {
   name: string;
   email: string;
@@ -99,6 +116,88 @@ export async function updateCurrentUserDefaultWorkspace(
       body: JSON.stringify({ workspaceId }),
     }
   );
+}
+
+export async function createCurrentUserAvatarUploadUrl(
+  filename: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CurrentUserAvatarUploadUrlResponse>(
+    '/api/v1/users/me/avatar/upload-url',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ filename }),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateCurrentUserProfile(
+  payload: UpdateCurrentUserProfilePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CurrentUserProfileResponse>('/api/v1/users/me/profile', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+  });
+}
+
+export async function uploadCurrentUserAvatar(
+  file: File,
+  filename = file.name,
+  options?: InternalApiClientOptions
+): Promise<UploadCurrentUserAvatarResult> {
+  const client = getInternalApiClient(options);
+  const { uploadUrl, publicUrl } = await createCurrentUserAvatarUploadUrl(
+    filename,
+    options
+  );
+
+  const uploadResponse = await client.fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': file.type,
+    },
+    body: file,
+    cache: 'no-store',
+  });
+
+  if (!uploadResponse.ok) {
+    throw new Error('Failed to upload file');
+  }
+
+  try {
+    await updateCurrentUserProfile({ avatar_url: publicUrl }, options);
+    return { publicUrl, finalizeOk: true };
+  } catch (error) {
+    return {
+      publicUrl,
+      finalizeOk: false,
+      finalizeError:
+        error instanceof Error
+          ? error.message
+          : 'Failed to finalize avatar profile update',
+    };
+  }
+}
+
+export async function removeCurrentUserAvatar(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<void>('/api/v1/users/me/avatar', {
+    method: 'DELETE',
+    cache: 'no-store',
+  });
 }
 
 export async function getUserCalendarSettings(
