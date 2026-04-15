@@ -51,7 +51,6 @@ import {
   TaskProjectsMenu,
   TaskRelatedMenu,
 } from '../tu-do/boards/boardId/menus';
-import { CreateListDialog } from '../tu-do/shared/create-list-dialog';
 import { TaskCustomDateDialog } from '../tu-do/boards/boardId/task-dialogs/TaskCustomDateDialog';
 import { TaskDeleteDialog } from '../tu-do/boards/boardId/task-dialogs/TaskDeleteDialog';
 import { TaskNewLabelDialog } from '../tu-do/boards/boardId/task-dialogs/TaskNewLabelDialog';
@@ -59,6 +58,7 @@ import { TaskNewProjectDialog } from '../tu-do/boards/boardId/task-dialogs/TaskN
 import { useTaskCardRelationships } from '../tu-do/hooks/useTaskCardRelationships';
 import { useTaskLabelManagement } from '../tu-do/hooks/useTaskLabelManagement';
 import { useTaskProjectManagement } from '../tu-do/hooks/useTaskProjectManagement';
+import { CreateListDialog } from '../tu-do/shared/create-list-dialog';
 import { computeAccessibleLabelStyles } from '../tu-do/utils/label-colors';
 import {
   getAssigneeInitials,

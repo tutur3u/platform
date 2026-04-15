@@ -11,8 +11,8 @@ import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { EmptyStateCard } from '../../empty-state-card';
 import {
-  translateTaskListNameForDisplay,
   type TaskListLabels,
+  translateTaskListNameForDisplay,
 } from '../../utils/translate-task-list-display-name';
 import {
   taskListStatusIcon,

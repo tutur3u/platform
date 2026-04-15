@@ -53,12 +53,12 @@ import { LabelChip } from '../label-chip';
 import type { SchedulingSettings } from '../task-edit-dialog/hooks/use-task-mutations';
 import type { WorkspaceTaskLabel } from '../task-edit-dialog/types';
 import { UserAvatar } from '../user-avatar';
+import { translateTaskListNameForDisplay } from '../utils/translate-task-list-display-name';
 import { TaskListSelector } from './components/task-list-selector';
 import {
   getTaskListTriggerIcon,
   getTaskListTriggerSurfaceClass,
 } from './components/task-list-trigger-styles';
-import { translateTaskListNameForDisplay } from '../utils/translate-task-list-display-name';
 
 // Scheduled calendar event type
 export interface ScheduledCalendarEvent {
