@@ -25,6 +25,13 @@ vi.mock('@tuturuuu/utils/abuse-protection', () => ({
     mockRecordAuthFailure(ip, endpoint),
 }));
 
+const mockHasAuthenticatedApiSession = vi.fn().mockReturnValue(false);
+
+vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
+  hasAuthenticatedApiSession: (request: unknown) =>
+    mockHasAuthenticatedApiSession(request),
+}));
+
 const mockCheckRateLimit = vi
   .fn()
   .mockResolvedValue({ allowed: true, headers: {} });
@@ -69,6 +76,7 @@ describe('withSessionAuth', () => {
     mockIsIPBlocked.mockResolvedValue(null);
     mockCheckRateLimit.mockResolvedValue({ allowed: true, headers: {} });
     mockCheckSuspension.mockResolvedValue({ suspended: false });
+    mockHasAuthenticatedApiSession.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -112,6 +120,36 @@ describe('withSessionAuth', () => {
 
     // Should have Retry-After header
     expect(response.headers.get('Retry-After')).toBeTruthy();
+  });
+
+  it('should ignore api_abuse IP blocks for authenticated session requests', async () => {
+    mockHasAuthenticatedApiSession.mockReturnValue(true);
+    mockIsIPBlocked.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 60000),
+      reason: 'api_abuse',
+    });
+
+    const handler = vi.fn().mockReturnValue(NextResponse.json({ ok: true }));
+    const wrapped = withSessionAuth(handler);
+    const response = await wrapped(makeRequest('GET'));
+
+    expect(response.status).toBe(200);
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('should keep non-api_abuse IP blocks for authenticated session requests', async () => {
+    mockHasAuthenticatedApiSession.mockReturnValue(true);
+    mockIsIPBlocked.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 60000),
+      reason: 'password_login_failed',
+    });
+
+    const handler = vi.fn();
+    const wrapped = withSessionAuth(handler);
+    const response = await wrapped(makeRequest('GET'));
+
+    expect(response.status).toBe(429);
+    expect(handler).not.toHaveBeenCalled();
   });
 
   // ---- Rate limiting ----
