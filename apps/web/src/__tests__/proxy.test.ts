@@ -476,6 +476,34 @@ describe('web proxy api handling', () => {
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
+  it('rewrites dot-prefixed root segments before they can fall through to locale or workspace resolution', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/.well-known/traffic-advice')
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'http://localhost/__reserved-root-not-found__'
+    );
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('rewrites localized dot-prefixed workspace-like segments before they can fall through', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/en/.well-known/traffic-advice')
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'http://localhost/__reserved-root-not-found__'
+    );
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
   it('redirects localized reserved tilde routes to the canonical root path', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(

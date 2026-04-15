@@ -58,6 +58,17 @@ const logWorkspaceError = (
   console.error(`[WorkspaceHelper] ${context}:`, logData);
 };
 
+function isDirectWorkspaceLookupIdentifier(id: string): boolean {
+  const normalized = id.trim().toLowerCase();
+
+  return (
+    normalized === PERSONAL_WORKSPACE_SLUG.toLowerCase() ||
+    normalized === ROOT_WORKSPACE_ID.toLowerCase() ||
+    normalized === 'internal' ||
+    validateUUID(normalized)
+  );
+}
+
 /**
  * Type for workspace subscription data from Supabase queries
  */
@@ -224,6 +235,10 @@ export async function getWorkspace(
     })
   | null
 > {
+  if (!isDirectWorkspaceLookupIdentifier(id)) {
+    return null;
+  }
+
   const supabase = await createClient();
   const sbAdmin = options.useAdmin ? await createAdminClient() : supabase;
 

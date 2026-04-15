@@ -352,6 +352,8 @@ export function useFeaturedGroupCounts(
     placeholderData: keepPreviousData,
     staleTime: 30 * 1000, // 30 seconds — matches useWorkspaceUsers
     gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 

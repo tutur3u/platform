@@ -8,6 +8,18 @@ interface Params {
   }>;
 }
 
+function isSupabaseGatewayHtmlError(error: {
+  code?: string | null;
+  message?: string | null;
+}) {
+  const message = error.message ?? '';
+
+  return (
+    message.includes('<!DOCTYPE html>') &&
+    /Error code 502|502: Bad gateway|Bad gateway/i.test(message)
+  );
+}
+
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
   const { searchParams } = new URL(req.url);
@@ -23,6 +35,10 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
+  if (featuredGroupIds.length === 0) {
+    return NextResponse.json({});
+  }
+
   const sbAdmin = await createAdminClient();
 
   const { data, error } = await sbAdmin.rpc('get_featured_group_counts', {
@@ -35,6 +51,17 @@ export async function GET(req: Request, { params }: Params) {
   });
 
   if (error) {
+    if (isSupabaseGatewayHtmlError(error)) {
+      console.warn('Featured group counts temporarily unavailable:', {
+        wsId,
+        featuredGroupCount: featuredGroupIds.length,
+      });
+
+      return NextResponse.json(
+        Object.fromEntries(featuredGroupIds.map((groupId) => [groupId, 0]))
+      );
+    }
+
     console.error(error);
     return NextResponse.json(
       { message: 'Error fetching featured group counts' },

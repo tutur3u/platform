@@ -28322,6 +28322,50 @@ export type Database = {
         };
         Returns: Json;
       };
+      update_time_tracking_request_content: {
+        Args: {
+          p_actor_auth_uid: string;
+          p_description?: string;
+          p_end_time?: string;
+          p_images?: string[];
+          p_request_id: string;
+          p_start_time?: string;
+          p_title: string;
+          p_workspace_id: string;
+        };
+        Returns: {
+          approval_status: Database['public']['Enums']['time_tracking_request_status'];
+          approved_at: string | null;
+          approved_by: string | null;
+          break_type_id: string | null;
+          break_type_name: string | null;
+          category_id: string | null;
+          created_at: string;
+          description: string | null;
+          end_time: string;
+          id: string;
+          images: string[] | null;
+          linked_session_id: string | null;
+          needs_info_reason: string | null;
+          needs_info_requested_at: string | null;
+          needs_info_requested_by: string | null;
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
+          start_time: string;
+          task_id: string | null;
+          title: string;
+          updated_at: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'time_tracking_requests';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       update_time_tracking_session_bypassed: {
         Args: {
           new_end_time: string;
@@ -30447,8 +30491,6 @@ export type Database = {
         | 'create_transactions'
         | 'update_transactions'
         | 'delete_transactions'
-        | 'set_finance_wallets_on_create'
-        | 'change_finance_wallets'
         | 'view_invoices'
         | 'create_invoices'
         | 'update_invoices'
@@ -30512,7 +30554,9 @@ export type Database = {
         | 'view_inventory_sales'
         | 'create_inventory_sales'
         | 'view_inventory_analytics'
-        | 'view_inventory_audit_logs';
+        | 'view_inventory_audit_logs'
+        | 'change_finance_wallets'
+        | 'set_finance_wallets_on_create';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -32587,8 +32631,6 @@ export const Constants = {
         'create_transactions',
         'update_transactions',
         'delete_transactions',
-        'set_finance_wallets_on_create',
-        'change_finance_wallets',
         'view_invoices',
         'create_invoices',
         'update_invoices',
@@ -32653,6 +32695,8 @@ export const Constants = {
         'create_inventory_sales',
         'view_inventory_analytics',
         'view_inventory_audit_logs',
+        'change_finance_wallets',
+        'set_finance_wallets_on_create',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

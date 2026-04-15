@@ -17,20 +17,23 @@ import {
 } from '../workspace-helper';
 
 describe('workspace-helper tier lookup', () => {
+  const workspaceOneId = '11111111-1111-4111-8111-111111111111';
+  const workspaceTwoId = '22222222-2222-4222-8222-222222222222';
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('resolves a workspace tier through workspace_subscriptions without joining protected product tables', async () => {
     const workspaceQuery = createSingleWorkspaceQuery({
-      id: 'ws-1',
+      id: workspaceOneId,
       name: 'Workspace One',
       personal: false,
       workspace_members: [{ user_id: 'user-1' }],
     });
     const subscriptionQuery = createSubscriptionLookupQuery([
       {
-        ws_id: 'ws-1',
+        ws_id: workspaceOneId,
         created_at: '2026-03-10T00:00:00.000Z',
         status: 'active',
         workspace_subscription_products: { tier: 'PRO' },
@@ -47,9 +50,9 @@ describe('workspace-helper tier lookup', () => {
       createAdminClient({ subscriptionQuery })
     );
 
-    const workspace = await getWorkspace('ws-1');
+    const workspace = await getWorkspace(workspaceOneId);
 
-    expect(workspace?.id).toBe('ws-1');
+    expect(workspace?.id).toBe(workspaceOneId);
     expect(workspace?.joined).toBe(true);
     expect(workspace?.tier).toBe('PRO');
     expect(workspaceQuery.select).toHaveBeenCalledWith(
@@ -63,7 +66,7 @@ describe('workspace-helper tier lookup', () => {
   it('hydrates workspace list tiers from the subscription lookup query', async () => {
     const workspacesQuery = createWorkspacesQuery([
       {
-        id: 'ws-1',
+        id: workspaceOneId,
         name: 'Workspace One',
         avatar_url: null,
         logo_url: null,
@@ -72,7 +75,7 @@ describe('workspace-helper tier lookup', () => {
         workspace_members: [{ user_id: 'user-1' }],
       },
       {
-        id: 'ws-2',
+        id: workspaceTwoId,
         name: 'Workspace Two',
         avatar_url: null,
         logo_url: null,
@@ -83,13 +86,13 @@ describe('workspace-helper tier lookup', () => {
     ]);
     const subscriptionQuery = createSubscriptionLookupQuery([
       {
-        ws_id: 'ws-1',
+        ws_id: workspaceOneId,
         created_at: '2026-03-10T00:00:00.000Z',
         status: 'active',
         workspace_subscription_products: { tier: 'PLUS' },
       },
       {
-        ws_id: 'ws-2',
+        ws_id: workspaceTwoId,
         created_at: '2026-03-11T00:00:00.000Z',
         status: 'canceled',
         workspace_subscription_products: { tier: 'ENTERPRISE' },
@@ -109,16 +112,32 @@ describe('workspace-helper tier lookup', () => {
     const workspaces = await getWorkspaces();
 
     expect(workspaces).toEqual([
-      expect.objectContaining({ id: 'ws-1', tier: 'PLUS' }),
-      expect.objectContaining({ id: 'ws-2', tier: null }),
+      expect.objectContaining({ id: workspaceOneId, tier: 'PLUS' }),
+      expect.objectContaining({ id: workspaceTwoId, tier: null }),
     ]);
     expect(workspacesQuery.select).toHaveBeenCalledWith(
       'id, name, avatar_url, logo_url, personal, created_at, workspace_members!inner(user_id)'
     );
     expect(subscriptionQuery.in).toHaveBeenCalledWith('ws_id', [
-      'ws-1',
-      'ws-2',
+      workspaceOneId,
+      workspaceTwoId,
     ]);
+  });
+
+  it('returns null without querying when the workspace id is not a UUID or supported slug', async () => {
+    const fromMock = vi.fn();
+    const getUserMock = vi.fn();
+
+    mockCreateClient.mockResolvedValue({
+      auth: { getUser: getUserMock },
+      from: fromMock,
+    });
+
+    const workspace = await getWorkspace('traffic-advice');
+
+    expect(workspace).toBeNull();
+    expect(getUserMock).not.toHaveBeenCalled();
+    expect(fromMock).not.toHaveBeenCalled();
   });
 });
 
