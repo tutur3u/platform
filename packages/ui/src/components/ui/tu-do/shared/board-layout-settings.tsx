@@ -71,8 +71,8 @@ import {
   useBoardBroadcast,
 } from './board-broadcast-context';
 import { CreateListDialog } from './create-list-dialog';
-import { translateTaskListNameForDisplay } from './utils/translate-task-list-display-name';
 import { EditListDialog } from './edit-list-dialog';
+import { translateTaskListNameForDisplay } from './utils/translate-task-list-display-name';
 
 interface BoardLayoutSettingsProps {
   open: boolean;

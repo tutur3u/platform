@@ -116,104 +116,102 @@ export function TaskListPickerPanel({
   };
 
   return (
-    <>
-      <div className={cn('w-full min-w-0 p-0', className)}>
-        {availableLists.length === 0 ? (
-          <EmptyStateCard
-            title={t('ws-task-boards.dialog.no_lists_found')}
-            description={emptyDescription}
-            actionLabel={addNewListLabel}
-            ActionIcon={Plus}
-            onAction={openCreateDialog}
-          />
-        ) : (
-          <>
-            <div
-              className="max-h-72 overflow-y-auto overscroll-contain p-1"
-              onWheel={(e) => e.stopPropagation()}
-            >
-              {groupedLists.map((group, index) => {
-                const StatusIcon = taskListStatusIcon[group.status];
+    <div className={cn('w-full min-w-0 p-0', className)}>
+      {availableLists.length === 0 ? (
+        <EmptyStateCard
+          title={t('ws-task-boards.dialog.no_lists_found')}
+          description={emptyDescription}
+          actionLabel={addNewListLabel}
+          ActionIcon={Plus}
+          onAction={openCreateDialog}
+        />
+      ) : (
+        <>
+          <div
+            className="max-h-72 overflow-y-auto overscroll-contain p-1"
+            onWheel={(e) => e.stopPropagation()}
+          >
+            {groupedLists.map((group, index) => {
+              const StatusIcon = taskListStatusIcon[group.status];
 
-                return (
-                  <div key={group.status}>
-                    {index > 0 && <Separator className="my-1.5" />}
-                    <div className="px-2 py-1.5">
-                      <div className="flex items-center gap-1.5 font-medium text-muted-foreground text-xs">
-                        <StatusIcon
-                          className={cn(
-                            'h-3.5 w-3.5',
-                            taskListStatusToneClass[group.status]
-                          )}
-                        />
-                        <span>{statusLabels[group.status]}</span>
-                        <span className="font-normal opacity-70">
-                          ({group.lists.length})
-                        </span>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5 px-0.5 pb-0.5">
-                      {group.lists.map((list) => {
-                        const isSelected = selectedListId === list.id;
-                        const colorKey = list.color ?? 'GRAY';
-                        const rowTint =
-                          taskListPickerRowColorClass[colorKey] ??
-                          taskListPickerRowColorClass.GRAY;
-                        const displayName = translateTaskListNameForDisplay(
-                          list.name,
-                          nameLabels
-                        );
-
-                        return (
-                          <button
-                            key={list.id}
-                            type="button"
-                            disabled={disabled}
-                            onClick={() => onSelectList(list.id)}
-                            className={cn(
-                              'flex w-full items-center gap-2.5 rounded-lg py-2 pr-2.5 pl-2.5 text-left text-sm shadow-sm transition-colors',
-                              rowTint,
-                              isSelected &&
-                                'bg-primary/[0.07] ring-1 ring-primary/35 ring-inset hover:bg-primary/10',
-                              disabled && 'pointer-events-none opacity-50'
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                'min-w-0 flex-1 truncate text-foreground',
-                                isSelected ? 'font-semibold' : 'font-medium'
-                              )}
-                            >
-                              {displayName}
-                            </span>
-                            {isSelected && (
-                              <Check className="h-4 w-4 shrink-0 text-primary" />
-                            )}
-                          </button>
-                        );
-                      })}
+              return (
+                <div key={group.status}>
+                  {index > 0 && <Separator className="my-1.5" />}
+                  <div className="px-2 py-1.5">
+                    <div className="flex items-center gap-1.5 font-medium text-muted-foreground text-xs">
+                      <StatusIcon
+                        className={cn(
+                          'h-3.5 w-3.5',
+                          taskListStatusToneClass[group.status]
+                        )}
+                      />
+                      <span>{statusLabels[group.status]}</span>
+                      <span className="font-normal opacity-70">
+                        ({group.lists.length})
+                      </span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                  <div className="space-y-1.5 px-0.5 pb-0.5">
+                    {group.lists.map((list) => {
+                      const isSelected = selectedListId === list.id;
+                      const colorKey = list.color ?? 'GRAY';
+                      const rowTint =
+                        taskListPickerRowColorClass[colorKey] ??
+                        taskListPickerRowColorClass.GRAY;
+                      const displayName = translateTaskListNameForDisplay(
+                        list.name,
+                        nameLabels
+                      );
 
-            <Separator />
-            <div className="p-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-full justify-start"
-                disabled={disabled}
-                onClick={openCreateDialog}
-              >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                {addNewListLabel}
-              </Button>
-            </div>
-          </>
-        )}
-      </div>
-    </>
+                      return (
+                        <button
+                          key={list.id}
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => onSelectList(list.id)}
+                          className={cn(
+                            'flex w-full items-center gap-2.5 rounded-lg py-2 pr-2.5 pl-2.5 text-left text-sm shadow-sm transition-colors',
+                            rowTint,
+                            isSelected &&
+                              'bg-primary/[0.07] ring-1 ring-primary/35 ring-inset hover:bg-primary/10',
+                            disabled && 'pointer-events-none opacity-50'
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              'min-w-0 flex-1 truncate text-foreground',
+                              isSelected ? 'font-semibold' : 'font-medium'
+                            )}
+                          >
+                            {displayName}
+                          </span>
+                          {isSelected && (
+                            <Check className="h-4 w-4 shrink-0 text-primary" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <Separator />
+          <div className="p-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 w-full justify-start"
+              disabled={disabled}
+              onClick={openCreateDialog}
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              {addNewListLabel}
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
