@@ -401,7 +401,7 @@ function isSupabaseAuthCookieName(
   return GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN.test(cookieName);
 }
 
-function hasSupabaseSessionCookie(req: NextRequest): boolean {
+export function hasSupabaseSessionCookie(req: NextRequest): boolean {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const storageKey = supabaseUrl
     ? getSupabaseAuthStorageKey(supabaseUrl)
@@ -412,11 +412,19 @@ function hasSupabaseSessionCookie(req: NextRequest): boolean {
     .some((cookie) => isSupabaseAuthCookieName(cookie.name, storageKey));
 }
 
-function getCallerClass(req: NextRequest): CallerClass {
+export function hasAuthenticatedApiSession(req: NextRequest): boolean {
   if (
     hasAuthenticatedBearerToken(req.headers) ||
     hasSupabaseSessionCookie(req)
   ) {
+    return true;
+  }
+
+  return false;
+}
+
+function getCallerClass(req: NextRequest): CallerClass {
+  if (hasAuthenticatedApiSession(req)) {
     return 'authenticated';
   }
 
@@ -499,9 +507,10 @@ export async function guardApiProxyRequest(
       trustedBypassRules
     )
   ) {
+    const callerClass = getCallerClass(req);
     const ip = extractIPFromRequest(req.headers);
 
-    if (ip !== 'unknown') {
+    if (ip !== 'unknown' && callerClass === 'anonymous') {
       const blockInfo = await isIPBlockedEdge(ip);
       if (blockInfo) {
         const retryAfter = Math.max(
@@ -515,7 +524,6 @@ export async function guardApiProxyRequest(
       }
 
       const routePolicy = getRoutePolicy(req, routePolicies);
-      const callerClass = getCallerClass(req);
       const isRead = req.method === 'GET' || req.method === 'HEAD';
       const rateLimits = getEffectiveRateLimits(routePolicy, callerClass);
       const limiters = await getRateLimiters(

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   authProxy: vi.fn(),
   guardApiProxyRequest: vi.fn(),
+  hasAuthenticatedApiSession: vi.fn(),
   isTrustedProxyBypassRequest: vi.fn(),
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
@@ -25,6 +26,9 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
   ) => mocks.guardApiProxyRequest(...args),
+  hasAuthenticatedApiSession: (
+    ...args: Parameters<typeof mocks.hasAuthenticatedApiSession>
+  ) => mocks.hasAuthenticatedApiSession(...args),
   isTrustedProxyBypassRequest: (
     ...args: Parameters<typeof mocks.isTrustedProxyBypassRequest>
   ) => mocks.isTrustedProxyBypassRequest(...args),
@@ -78,6 +82,23 @@ describe('web proxy api handling', () => {
     vi.clearAllMocks();
     mocks.authProxy.mockResolvedValue(NextResponse.next());
     mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.hasAuthenticatedApiSession.mockImplementation((req: NextRequest) => {
+      const authHeader = req.headers.get('authorization')?.trim() ?? '';
+      if (
+        authHeader === 'ttr_test_key' ||
+        authHeader.startsWith('Bearer ') ||
+        authHeader.startsWith('bearer ')
+      ) {
+        return true;
+      }
+
+      return req.cookies
+        .getAll()
+        .some(
+          (cookie) =>
+            cookie.name.startsWith('sb-') && cookie.name.includes('auth-token')
+        );
+    });
     mocks.createAdminClient.mockRejectedValue(new Error('not configured'));
     mocks.createClient.mockResolvedValue({
       auth: {
@@ -165,6 +186,30 @@ describe('web proxy api handling', () => {
     expect(response.status).toBe(200);
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(1);
     expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('keeps signed-in browser requests out of the suspicious-anonymous gate', async () => {
+    const { proxy } = await import('../proxy');
+    const url = new URL(
+      'http://localhost/api/v1/workspaces/ws-1/users/groups/possible-excluded'
+    );
+    for (let i = 0; i < 30; i += 1) {
+      url.searchParams.append('includedGroups', `group-${i}`);
+    }
+
+    const response = await proxy(
+      new NextRequest(url, {
+        method: 'GET',
+        headers: {
+          cookie:
+            'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+        },
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(1);
   });
 
   it('blocks malformed Supabase auth cookies at the API proxy layer', async () => {
@@ -363,6 +408,37 @@ describe('web proxy api handling', () => {
     expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalledWith(
       '203.0.113.10'
     );
+  });
+
+  it('does not escalate signed-in browser route-rate-limit responses into an IP block', async () => {
+    const guardResponse = NextResponse.json(
+      { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+      {
+        status: 429,
+        headers: {
+          'X-Proxy-Block-Reason': 'route-rate-limit',
+        },
+      }
+    );
+    mocks.guardApiProxyRequest.mockResolvedValue(guardResponse);
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/users/database',
+        {
+          method: 'GET',
+          headers: {
+            cookie:
+              'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+            'user-agent': 'Mozilla/5.0',
+          },
+        }
+      )
+    );
+
+    expect(response).toBe(guardResponse);
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
   });
 
   it('bypasses auth and locale rewriting for the offline fallback route', async () => {

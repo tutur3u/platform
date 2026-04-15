@@ -232,6 +232,36 @@ describe('guardApiProxyRequest', () => {
     expect(mocks.limit).not.toHaveBeenCalled();
   });
 
+  it('does not enforce anonymous IP blocks for authenticated browser sessions', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 30_000),
+      reason: 'api_abuse',
+      blockLevel: 1,
+      blockedAt: new Date(),
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/users/database?page=1', 'GET', {
+        cookie:
+          'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+      }),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response).toBeNull();
+    expect(mocks.limit).not.toHaveBeenCalled();
+  });
+
   it('scopes anonymous read buckets by pathname to avoid cross-route collisions', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');

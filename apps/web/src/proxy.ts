@@ -16,6 +16,7 @@ import {
 } from '@tuturuuu/utils/abuse-protection/edge';
 import {
   guardApiProxyRequest,
+  hasAuthenticatedApiSession,
   isTrustedProxyBypassRequest,
 } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -283,7 +284,7 @@ function getSuspiciousAnonymousApiSignal(req: NextRequest): {
 } | null {
   if (
     isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) ||
-    hasLikelyAuthenticatedApiCredential(req)
+    hasAuthenticatedApiSession(req)
   ) {
     return null;
   }
@@ -527,7 +528,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         guardResponse.headers.get('X-Proxy-Block-Reason') ===
           'route-rate-limit' &&
         !isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) &&
-        !hasLikelyAuthenticatedApiCredential(req)
+        !hasAuthenticatedApiSession(req)
       ) {
         const ipAddress = extractIPFromRequest(req.headers);
         const newBlock =

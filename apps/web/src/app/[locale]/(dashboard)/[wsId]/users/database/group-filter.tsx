@@ -225,6 +225,8 @@ export function GroupFilter({
     enabled: !!wsId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const {
@@ -241,6 +243,8 @@ export function GroupFilter({
     enabled: !!wsId && normalizedSelectedGroupIds.length > 0,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const groups = useMemo(() => {
