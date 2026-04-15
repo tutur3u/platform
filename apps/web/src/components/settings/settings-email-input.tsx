@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Check, Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { InputField } from '@tuturuuu/ui/custom/input-field';
@@ -18,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import * as z from 'zod';
+import { currentUserProfileQueryKey } from '@/hooks/use-current-user-profile';
 
 interface Props {
   oldEmail?: string | null;
@@ -30,6 +32,7 @@ const FormSchema = z.object({
 });
 
 export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const t = useTranslations('settings-account');
 
@@ -62,6 +65,9 @@ export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
     });
 
     if (res.ok) {
+      await queryClient.invalidateQueries({
+        queryKey: [...currentUserProfileQueryKey],
+      });
       toast({
         title:
           data.email !== oldEmail

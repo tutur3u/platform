@@ -49,7 +49,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ tokens: null }, { status: 200 });
     }
 
-    return NextResponse.json({ tokens: tokenData }, { status: 200 });
+    return NextResponse.json(
+      { tokens: tokenData },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'private, max-age=60, stale-while-revalidate=30',
+        },
+      }
+    );
   } catch (error) {
     console.error('Error in /api/v1/calendar/auth/tokens:', error);
     return NextResponse.json(

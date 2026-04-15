@@ -3555,6 +3555,7 @@
     "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể.",
     "name": "Tên bảng",
     "plural": "Bảng nhiệm vụ",
+    "select_or_create_list": "Chọn hoặc tạo danh sách",
     "singular": "Bảng nhiệm vụ"
   },
   "ws-transaction-categories": {

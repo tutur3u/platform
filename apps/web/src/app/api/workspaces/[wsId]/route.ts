@@ -50,7 +50,11 @@ export async function GET(req: Request, { params }: Params) {
 
   void workspaceMembers;
 
-  return NextResponse.json(workspaceData);
+  return NextResponse.json(workspaceData, {
+    headers: {
+      'Cache-Control': 'private, max-age=60, stale-while-revalidate=30',
+    },
+  });
 }
 
 export async function PUT(req: Request, { params }: Params) {

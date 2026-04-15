@@ -1,7 +1,16 @@
 import type { Editor, JSONContent } from '@tiptap/react';
+import type {
+  InternalApiWorkspaceMember,
+  TaskLabelSummary,
+  TaskProject,
+} from '@tuturuuu/types/db';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { TaskFilters } from '../types';
+
+export type WorkspaceTaskAssignee = InternalApiWorkspaceMember;
+export type WorkspaceTaskProject = Pick<TaskProject, 'id' | 'name' | 'status'>;
 
 export interface TaskEditDialogProps {
   wsId: string;
@@ -23,24 +32,19 @@ export interface TaskEditDialogProps {
   onUpdate: () => void;
 }
 
-export interface WorkspaceTaskLabel {
-  id: string;
-  name: string;
-  color: string;
-  created_at: string;
-}
+export type WorkspaceTaskLabel = TaskLabelSummary;
 
 export interface TaskFormState {
   name: string;
   description: JSONContent | null;
-  priority: any | null;
+  priority: TaskPriority | null;
   startDate: Date | undefined;
   endDate: Date | undefined;
   selectedListId: string;
   estimationPoints: number | null | undefined;
   selectedLabels: WorkspaceTaskLabel[];
-  selectedAssignees: any[];
-  selectedProjects: any[];
+  selectedAssignees: WorkspaceTaskAssignee[];
+  selectedProjects: WorkspaceTaskProject[];
   // Scheduling fields
   totalDuration: number | null;
   isSplittable: boolean;

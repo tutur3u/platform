@@ -12,8 +12,8 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
+import { toast } from '@tuturuuu/ui/sonner';
 import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import {
@@ -30,7 +30,9 @@ import { TaskNewLabelDialog } from '../boards/boardId/task-dialogs/TaskNewLabelD
 import { TaskNewProjectDialog } from '../boards/boardId/task-dialogs/TaskNewProjectDialog';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import { useOptionalWorkspacePresenceContext } from '../providers/workspace-presence-provider';
+import { NEW_LABEL_COLOR } from '../utils/taskConstants';
 import { getActiveBroadcast } from './board-broadcast-context';
+import { DescriptionOverflowWarningDialog } from './description-overflow-warning-dialog';
 import { createInitialSuggestionState } from './mention-system/types';
 import { SyncWarningDialog } from './sync-warning-dialog';
 import { MobileFloatingSaveButton } from './task-edit-dialog/components/mobile-floating-save-button';
@@ -73,6 +75,7 @@ import type {
 import { getSeededPendingTaskRelationships } from './task-edit-dialog/types/pending-relationship';
 import {
   broadcastTaskDescriptionUpsert,
+  clearDraft,
   getDraftStorageKey,
   getTaskDescriptionPercentLeft,
   getTaskDescriptionStorageLength,
@@ -166,7 +169,6 @@ export function TaskEditDialog({
   const isCreateMode = mode === 'create';
   const effectiveTaskWsId = !isCreateMode ? (taskWsId ?? wsId) : wsId;
   const pathname = usePathname();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const t = useTranslations('common');
   const dialogT = useTranslations('ws-task-boards.dialog');
@@ -295,6 +297,8 @@ export function TaskEditDialog({
     },
     enabled: isCreateMode && !!user?.id,
     staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const loadTaskDescriptionState = useCallback(async () => {
@@ -312,6 +316,15 @@ export function TaskEditDialog({
 
       const content =
         flushEditorPendingRef.current?.() ?? descriptionRef.current;
+      const serializedDescription = serializeTaskDescriptionContent(content);
+
+      if (
+        serializedDescription &&
+        serializedDescription.length > MAX_TASK_DESCRIPTION_LENGTH
+      ) {
+        return;
+      }
+
       const didPersist = await saveYjsDescriptionToDatabase({
         wsId: effectiveTaskWsId,
         taskId: task.id,
@@ -327,7 +340,7 @@ export function TaskEditDialog({
       const broadcast = getActiveBroadcast();
       broadcastTaskDescriptionUpsert({
         taskId: task.id,
-        descriptionString: serializeTaskDescriptionContent(content),
+        descriptionString: serializedDescription,
         broadcast: broadcast ?? undefined,
       });
     },
@@ -428,7 +441,7 @@ export function TaskEditDialog({
     []
   );
   const [newLabelName, setNewLabelName] = useState('');
-  const [newLabelColor, setNewLabelColor] = useState('gray');
+  const [newLabelColor, setNewLabelColor] = useState(NEW_LABEL_COLOR);
   const previousWorkspaceLabelsRef = useRef<string>('');
 
   useEffect(() => {
@@ -450,6 +463,8 @@ export function TaskEditDialog({
   const [descriptionStorageLength, setDescriptionStorageLength] = useState(() =>
     getTaskDescriptionStorageLength(formState.description)
   );
+  const descriptionPayloadTooLargeNotifiedRef = useRef(false);
+  const closeBlockedByOverflowRef = useRef(false);
 
   // Dialog states
   const [showNewLabelDialog, setShowNewLabelDialog] = useState(false);
@@ -460,6 +475,8 @@ export function TaskEditDialog({
   const [createMultiple, setCreateMultiple] = useState(false);
   const [showSyncWarning, setShowSyncWarning] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const [showDescriptionOverflowWarning, setShowDescriptionOverflowWarning] =
+    useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [saveAsDraft, setSaveAsDraft] = useState(draftModeEnabled);
   const [isTitleVisible, setIsTitleVisible] = useState(true);
@@ -489,23 +506,21 @@ export function TaskEditDialog({
           )
         );
 
-        toast({
-          title: !currentLocked ? 'Event locked' : 'Event unlocked',
+        toast(!currentLocked ? 'Event locked' : 'Event unlocked', {
           description: !currentLocked
             ? 'The auto-scheduler will no longer move this instance.'
             : 'The auto-scheduler can now move this instance.',
         });
-      } catch (_error) {
-        toast({
-          title: 'Error',
+      } catch (error) {
+        console.error('Failed to update lock status for calendar event', error);
+        toast.error('Error', {
           description: 'Failed to update lock status',
-          variant: 'destructive',
         });
       } finally {
         setLockingEventId(null);
       }
     },
-    [toast, effectiveTaskWsId]
+    [effectiveTaskWsId]
   );
 
   useEffect(() => {
@@ -846,6 +861,34 @@ export function TaskEditDialog({
     MAX_TASK_DESCRIPTION_LENGTH
   );
 
+  const showDescriptionPayloadTooLargeToast = useCallback(() => {
+    const title = dialogT.has('description_payload_too_large_title')
+      ? dialogT('description_payload_too_large_title')
+      : 'Description payload is too large';
+    const description = dialogT.has('description_payload_too_large_description')
+      ? dialogT('description_payload_too_large_description')
+      : 'This description is too large to sync. Please shorten it or split it into smaller documents.';
+
+    toast.error(title, { description });
+  }, [dialogT]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      descriptionPayloadTooLargeNotifiedRef.current = false;
+      return;
+    }
+
+    if (!isDescriptionOverLimit) {
+      descriptionPayloadTooLargeNotifiedRef.current = false;
+      return;
+    }
+
+    if (descriptionPayloadTooLargeNotifiedRef.current) return;
+
+    descriptionPayloadTooLargeNotifiedRef.current = true;
+    showDescriptionPayloadTooLargeToast();
+  }, [isDescriptionOverLimit, isOpen, showDescriptionPayloadTooLargeToast]);
+
   // Quick due date handler
   const handleQuickDueDate = useCallback(
     (days: number | null) => {
@@ -908,15 +951,11 @@ export function TaskEditDialog({
         return `/api/v1/workspaces/${encodeURIComponent(effectiveTaskWsId)}/storage/share?${query.toString()}`;
       } catch (error) {
         const message = error instanceof Error ? error.message : t('error');
-        toast({
-          title: t('error'),
-          description: message,
-          variant: 'destructive',
-        });
+        toast.error(t('error'), { description: message });
         throw error;
       }
     },
-    [canManageTaskMedia, effectiveTaskWsId, task?.id, t, toast]
+    [canManageTaskMedia, effectiveTaskWsId, task?.id, t]
   );
 
   const imageUploadHandler = canManageTaskMedia ? handleImageUpload : undefined;
@@ -958,10 +997,8 @@ export function TaskEditDialog({
     if (!editorInstance || !boardId || !availableLists) return;
     const firstList = availableLists[0];
     if (!firstList) {
-      toast({
-        title: 'No lists available',
+      toast.error('No lists available', {
         description: 'Create a list first before converting items to tasks',
-        variant: 'destructive',
       });
       return;
     }
@@ -1006,10 +1043,8 @@ export function TaskEditDialog({
       },
     });
     if (!result.success) {
-      toast({
-        title: result.error!.message,
+      toast.error(result.error!.message, {
         description: result.error!.description,
-        variant: 'destructive',
       });
       return;
     }
@@ -1042,18 +1077,10 @@ export function TaskEditDialog({
       queryKey: ['time-tracking-data'],
     });
 
-    toast({
-      title: 'Task created',
+    toast('Task created', {
       description: `Created task "${result.taskName}" and added mention`,
     });
-  }, [
-    editorInstance,
-    boardId,
-    availableLists,
-    queryClient,
-    toast,
-    effectiveTaskWsId,
-  ]);
+  }, [editorInstance, boardId, availableLists, queryClient, effectiveTaskWsId]);
 
   // Save handler
   // Transform user for save hook (ensure id is string if present)
@@ -1127,9 +1154,21 @@ export function TaskEditDialog({
       return true;
     }
 
+    closeBlockedByOverflowRef.current = false;
+
     const currentContent = flushEditorPendingRef.current();
     const currentSerializedDescription =
       serializeTaskDescriptionContent(currentContent) ?? null;
+
+    if (
+      currentSerializedDescription &&
+      currentSerializedDescription.length > MAX_TASK_DESCRIPTION_LENGTH
+    ) {
+      closeBlockedByOverflowRef.current = true;
+      setShowDescriptionOverflowWarning(true);
+      return false;
+    }
+
     const initialSerializedDescription =
       serializeTaskDescriptionContent(parseDescription(task.description)) ??
       null;
@@ -1173,6 +1212,14 @@ export function TaskEditDialog({
     const currentContent = flushEditorPendingRef.current();
     const currentSerializedDescription =
       serializeTaskDescriptionContent(currentContent) ?? null;
+
+    if (
+      currentSerializedDescription &&
+      currentSerializedDescription.length > MAX_TASK_DESCRIPTION_LENGTH
+    ) {
+      return false;
+    }
+
     const initialSerializedDescription =
       serializeTaskDescriptionContent(parseDescription(task.description)) ??
       null;
@@ -1197,6 +1244,10 @@ export function TaskEditDialog({
       persistTaskDescription: persistTaskDescriptionOnClose,
       hasPendingRealtimeDescriptionChanges,
       onCloseBlocked: () => {
+        if (closeBlockedByOverflowRef.current) {
+          return;
+        }
+
         const closeFailedTitle = dialogT.has('description_close_failed_title')
           ? dialogT('description_close_failed_title')
           : 'Task description is still syncing';
@@ -1206,10 +1257,8 @@ export function TaskEditDialog({
           ? dialogT('description_close_failed_description')
           : 'The latest description changes have not been confirmed on the server yet. Keep the dialog open and try again.';
 
-        toast({
-          title: closeFailedTitle,
+        toast.error(closeFailedTitle, {
           description: closeFailedDescription,
-          variant: 'destructive',
         });
       },
       setShowSyncWarning,
@@ -1223,6 +1272,19 @@ export function TaskEditDialog({
     }
     handleClose();
   }, [isCreateMode, hasUnsavedChanges, formState.name, handleClose]);
+
+  const handleConfirmCloseWithOverflow = useCallback(async () => {
+    closeBlockedByOverflowRef.current = false;
+    setShowDescriptionOverflowWarning(false);
+
+    await flushNameUpdate();
+
+    if (!isCreateMode) {
+      clearDraft(draftStorageKey);
+    }
+
+    onClose();
+  }, [flushNameUpdate, isCreateMode, draftStorageKey, onClose]);
 
   // Dialog open change - prevents close when menus are open
   const handleDialogOpenChange = useCallback(
@@ -1580,6 +1642,7 @@ export function TaskEditDialog({
                 {!disabled && (
                   <TaskPropertiesSection
                     wsId={effectiveTaskWsId}
+                    boardId={boardId}
                     taskId={task?.id}
                     priority={formState.priority}
                     startDate={formState.startDate}
@@ -1865,6 +1928,37 @@ export function TaskEditDialog({
         synced={synced}
         connected={connected}
         onForceClose={handleForceClose}
+      />
+
+      <DescriptionOverflowWarningDialog
+        open={showDescriptionOverflowWarning}
+        onOpenChange={setShowDescriptionOverflowWarning}
+        onConfirmClose={handleConfirmCloseWithOverflow}
+        title={
+          dialogT.has('description_overflow_close_warning_title')
+            ? dialogT('description_overflow_close_warning_title')
+            : 'Description is too large to save'
+        }
+        description={
+          dialogT.has('description_overflow_close_warning_description')
+            ? dialogT('description_overflow_close_warning_description')
+            : 'This description is too large to sync right now. You can go back and shorten or split it, or close now and discard the unsaved description changes.'
+        }
+        cancelLabel={
+          dialogT.has('description_overflow_close_warning_cancel')
+            ? dialogT('description_overflow_close_warning_cancel')
+            : 'Go back and edit'
+        }
+        confirmLabel={
+          dialogT.has('description_overflow_close_warning_confirm')
+            ? dialogT('description_overflow_close_warning_confirm')
+            : 'Close without saving description'
+        }
+        warningMessage={
+          dialogT.has('description_overflow_close_warning_warning')
+            ? dialogT('description_overflow_close_warning_warning')
+            : 'Oversized content will be discarded if you close now.'
+        }
       />
 
       <TaskNewLabelDialog

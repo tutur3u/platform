@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   authProxy: vi.fn(),
   guardApiProxyRequest: vi.fn(),
+  hasAuthenticatedApiSession: vi.fn(),
   isTrustedProxyBypassRequest: vi.fn(),
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
@@ -25,6 +26,9 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
   ) => mocks.guardApiProxyRequest(...args),
+  hasAuthenticatedApiSession: (
+    ...args: Parameters<typeof mocks.hasAuthenticatedApiSession>
+  ) => mocks.hasAuthenticatedApiSession(...args),
   isTrustedProxyBypassRequest: (
     ...args: Parameters<typeof mocks.isTrustedProxyBypassRequest>
   ) => mocks.isTrustedProxyBypassRequest(...args),
@@ -78,6 +82,23 @@ describe('web proxy api handling', () => {
     vi.clearAllMocks();
     mocks.authProxy.mockResolvedValue(NextResponse.next());
     mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.hasAuthenticatedApiSession.mockImplementation((req: NextRequest) => {
+      const authHeader = req.headers.get('authorization')?.trim() ?? '';
+      if (
+        authHeader === 'ttr_test_key' ||
+        authHeader.startsWith('Bearer ') ||
+        authHeader.startsWith('bearer ')
+      ) {
+        return true;
+      }
+
+      return req.cookies
+        .getAll()
+        .some(
+          (cookie) =>
+            cookie.name.startsWith('sb-') && cookie.name.includes('auth-token')
+        );
+    });
     mocks.createAdminClient.mockRejectedValue(new Error('not configured'));
     mocks.createClient.mockResolvedValue({
       auth: {
@@ -124,6 +145,31 @@ describe('web proxy api handling', () => {
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
+  it('lets oversized API payloads reach the proxy guard so they return 413 instead of suspicious-request 400', async () => {
+    const guardResponse = NextResponse.json(
+      { error: 'Payload Too Large', message: 'Request body exceeds limit' },
+      { status: 413 }
+    );
+    mocks.guardApiProxyRequest.mockResolvedValue(guardResponse);
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
+        method: 'PUT',
+        headers: {
+          'content-length': `${600 * 1024}`,
+          'content-type': 'application/json',
+          'user-agent': 'Mozilla/5.0',
+        },
+        body: JSON.stringify({ value: 'x'.repeat(1024) }),
+      })
+    );
+
+    expect(response).toBe(guardResponse);
+    expect(response.status).toBe(413);
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
+  });
+
   it('passes clean API requests through without invoking auth flow', async () => {
     mocks.guardApiProxyRequest.mockResolvedValue(null);
 
@@ -140,6 +186,30 @@ describe('web proxy api handling', () => {
     expect(response.status).toBe(200);
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(1);
     expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('keeps signed-in browser requests out of the suspicious-anonymous gate', async () => {
+    const { proxy } = await import('../proxy');
+    const url = new URL(
+      'http://localhost/api/v1/workspaces/ws-1/users/groups/possible-excluded'
+    );
+    for (let i = 0; i < 30; i += 1) {
+      url.searchParams.append('includedGroups', `group-${i}`);
+    }
+
+    const response = await proxy(
+      new NextRequest(url, {
+        method: 'GET',
+        headers: {
+          cookie:
+            'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+        },
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(1);
   });
 
   it('blocks malformed Supabase auth cookies at the API proxy layer', async () => {
@@ -340,6 +410,37 @@ describe('web proxy api handling', () => {
     );
   });
 
+  it('does not escalate signed-in browser route-rate-limit responses into an IP block', async () => {
+    const guardResponse = NextResponse.json(
+      { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+      {
+        status: 429,
+        headers: {
+          'X-Proxy-Block-Reason': 'route-rate-limit',
+        },
+      }
+    );
+    mocks.guardApiProxyRequest.mockResolvedValue(guardResponse);
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/users/database',
+        {
+          method: 'GET',
+          headers: {
+            cookie:
+              'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+            'user-agent': 'Mozilla/5.0',
+          },
+        }
+      )
+    );
+
+    expect(response).toBe(guardResponse);
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
+  });
+
   it('bypasses auth and locale rewriting for the offline fallback route', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(new NextRequest('http://localhost/~offline'));
@@ -366,6 +467,34 @@ describe('web proxy api handling', () => {
   it('bypasses auth and locale rewriting for reserved root tilde routes', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(new NextRequest('http://localhost/~'));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'http://localhost/__reserved-root-not-found__'
+    );
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('rewrites dot-prefixed root segments before they can fall through to locale or workspace resolution', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/.well-known/traffic-advice')
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'http://localhost/__reserved-root-not-found__'
+    );
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('rewrites localized dot-prefixed workspace-like segments before they can fall through', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/en/.well-known/traffic-advice')
+    );
 
     expect(response.status).toBe(200);
     expect(response.headers.get('x-middleware-rewrite')).toBe(

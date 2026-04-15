@@ -53,6 +53,8 @@ type Limiters = {
 };
 
 const limiterCache = new Map<string, Limiters>();
+const GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN =
+  /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
 
 const NO_READ_RATE_LIMITS: RateLimitConfig[] = [];
 
@@ -384,32 +386,45 @@ function getSupabaseAuthStorageKey(url: string): string | null {
   }
 }
 
-function hasSupabaseSessionCookie(req: NextRequest): boolean {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl) {
-    return false;
+function isSupabaseAuthCookieName(
+  cookieName: string,
+  storageKey: string | null
+): boolean {
+  if (storageKey) {
+    return (
+      cookieName === storageKey ||
+      (/^\d+$/.test(cookieName.slice(storageKey.length + 1)) &&
+        cookieName.startsWith(`${storageKey}.`))
+    );
   }
 
-  const storageKey = getSupabaseAuthStorageKey(supabaseUrl);
-  if (!storageKey) {
-    return false;
-  }
+  return GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN.test(cookieName);
+}
+
+export function hasSupabaseSessionCookie(req: NextRequest): boolean {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const storageKey = supabaseUrl
+    ? getSupabaseAuthStorageKey(supabaseUrl)
+    : null;
 
   return req.cookies
     .getAll()
-    .some(
-      (cookie) =>
-        cookie.name === storageKey ||
-        (/^\d+$/.test(cookie.name.slice(storageKey.length + 1)) &&
-          cookie.name.startsWith(`${storageKey}.`))
-    );
+    .some((cookie) => isSupabaseAuthCookieName(cookie.name, storageKey));
 }
 
-function getCallerClass(req: NextRequest): CallerClass {
+export function hasAuthenticatedApiSession(req: NextRequest): boolean {
   if (
     hasAuthenticatedBearerToken(req.headers) ||
     hasSupabaseSessionCookie(req)
   ) {
+    return true;
+  }
+
+  return false;
+}
+
+function getCallerClass(req: NextRequest): CallerClass {
+  if (hasAuthenticatedApiSession(req)) {
     return 'authenticated';
   }
 
@@ -432,6 +447,23 @@ function getEffectiveRateLimits(
   }
 
   return routePolicy.rateLimits;
+}
+
+function shouldScopeRateLimitByPath(routePolicy: ProxyRoutePolicy): boolean {
+  return routePolicy.key === 'default' || routePolicy.key === 'users-me';
+}
+
+function getPathScopedRateLimitPrefix(
+  prefixBase: string,
+  routePolicy: ProxyRoutePolicy,
+  callerClass: CallerClass,
+  pathname: string
+): string {
+  const scopeSuffix = shouldScopeRateLimitByPath(routePolicy)
+    ? `:${pathname.replaceAll('/', ':') || ':root'}`
+    : '';
+
+  return `${prefixBase}:${routePolicy.key}:${callerClass}${scopeSuffix}`;
 }
 
 export function isTrustedProxyBypassRequest(
@@ -475,9 +507,10 @@ export async function guardApiProxyRequest(
       trustedBypassRules
     )
   ) {
+    const callerClass = getCallerClass(req);
     const ip = extractIPFromRequest(req.headers);
 
-    if (ip !== 'unknown') {
+    if (ip !== 'unknown' && callerClass === 'anonymous') {
       const blockInfo = await isIPBlockedEdge(ip);
       if (blockInfo) {
         const retryAfter = Math.max(
@@ -491,11 +524,15 @@ export async function guardApiProxyRequest(
       }
 
       const routePolicy = getRoutePolicy(req, routePolicies);
-      const callerClass = getCallerClass(req);
       const isRead = req.method === 'GET' || req.method === 'HEAD';
       const rateLimits = getEffectiveRateLimits(routePolicy, callerClass);
       const limiters = await getRateLimiters(
-        `${options.prefixBase}:${routePolicy.key}`,
+        getPathScopedRateLimitPrefix(
+          options.prefixBase,
+          routePolicy,
+          callerClass,
+          req.nextUrl.pathname
+        ),
         rateLimits
       );
       const activeLimiters = isRead ? limiters.get : limiters.mutate;

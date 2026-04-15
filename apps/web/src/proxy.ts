@@ -16,6 +16,7 @@ import {
 } from '@tuturuuu/utils/abuse-protection/edge';
 import {
   guardApiProxyRequest,
+  hasAuthenticatedApiSession,
   isTrustedProxyBypassRequest,
 } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -50,6 +51,7 @@ const WEB_APP_URL = isDev ? `http://localhost:${PORT}` : 'https://tuturuuu.com';
 const OFFLINE_FALLBACK_PATH = '/~offline';
 const RESERVED_ROOT_SEGMENT_PREFIX = '~';
 const RESERVED_ROOT_NOT_FOUND_PATH = '/__reserved-root-not-found__';
+const BLOCKED_ROOT_SEGMENT_PREFIX = '.';
 const EMAIL_ROUTE_WORKSPACE_PATTERN =
   /^\/api\/v1\/workspaces\/([^/]+)\/(?:mail\/send|users\/[^/]+\/follow-up|user-groups\/[^/]+\/group-checks\/[^/]+\/email)(?:\/|$)/;
 const EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES = [
@@ -122,23 +124,6 @@ async function hasWorkspaceEmailRateLimitOverrides(
     );
     return false;
   }
-}
-
-function getBearerAccessToken(
-  req: Pick<NextRequest, 'headers'>
-): string | null {
-  const authHeader = req.headers.get('authorization');
-  if (!authHeader) {
-    return null;
-  }
-
-  const trimmedHeader = authHeader.trim();
-  if (!trimmedHeader.toLowerCase().startsWith('bearer ')) {
-    return null;
-  }
-
-  const accessToken = trimmedHeader.slice(7).trim();
-  return accessToken || null;
 }
 
 function looksLikeSupabaseJwt(token: string): boolean {
@@ -300,7 +285,7 @@ function getSuspiciousAnonymousApiSignal(req: NextRequest): {
 } | null {
   if (
     isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) ||
-    hasLikelyAuthenticatedApiCredential(req)
+    hasAuthenticatedApiSession(req)
   ) {
     return null;
   }
@@ -310,25 +295,6 @@ function getSuspiciousAnonymousApiSignal(req: NextRequest): {
       reason: 'malformed-auth-header',
       status: 401,
     };
-  }
-
-  if (
-    !(req.method === 'GET' || req.method === 'HEAD') &&
-    !getBearerAccessToken(req)
-  ) {
-    const contentLength = req.headers.get('content-length');
-    if (contentLength) {
-      const parsedLength = Number.parseInt(contentLength, 10);
-      if (
-        Number.isFinite(parsedLength) &&
-        parsedLength > SUSPICIOUS_QUERY_LENGTH_MAX * 4
-      ) {
-        return {
-          reason: 'suspicious-anonymous-request',
-          status: 400,
-        };
-      }
-    }
   }
 
   if ((req.headers.get('user-agent') ?? '').trim().length === 0) {
@@ -536,6 +502,20 @@ const authProxy = createCentralizedAuthProxy({
   skipApiRoutes: true,
 });
 
+function getRootDynamicSegment(pathname: string): string | null {
+  const segments = pathname.split('/').filter(Boolean);
+
+  if (segments.length === 0) {
+    return null;
+  }
+
+  if (supportedLocales.includes((segments[0] ?? '') as Locale)) {
+    return segments[1] ?? null;
+  }
+
+  return segments[0] ?? null;
+}
+
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
     const malformedAuthCookieResponse =
@@ -563,7 +543,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         guardResponse.headers.get('X-Proxy-Block-Reason') ===
           'route-rate-limit' &&
         !isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) &&
-        !hasLikelyAuthenticatedApiCredential(req)
+        !hasAuthenticatedApiSession(req)
       ) {
         const ipAddress = extractIPFromRequest(req.headers);
         const newBlock =
@@ -869,9 +849,16 @@ const handleReservedRootRoute = (req: NextRequest): NextResponse | null => {
   const { pathname } = req.nextUrl;
   const segments = pathname.split('/').filter(Boolean);
   const localizedReservedSegment = segments[1];
+  const rootDynamicSegment = getRootDynamicSegment(pathname);
 
   if (pathname === OFFLINE_FALLBACK_PATH) {
     return NextResponse.next();
+  }
+
+  if (rootDynamicSegment?.startsWith(BLOCKED_ROOT_SEGMENT_PREFIX)) {
+    return NextResponse.rewrite(
+      new URL(RESERVED_ROOT_NOT_FOUND_PATH, req.nextUrl)
+    );
   }
 
   if (segments[0]?.startsWith(RESERVED_ROOT_SEGMENT_PREFIX)) {

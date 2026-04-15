@@ -3555,6 +3555,7 @@
     "description": "Task boards are used to manage tasks that are related to a specific project or goal.",
     "name": "Board name",
     "plural": "Task boards",
+    "select_or_create_list": "Select or create a list",
     "singular": "Task board"
   },
   "ws-transaction-categories": {

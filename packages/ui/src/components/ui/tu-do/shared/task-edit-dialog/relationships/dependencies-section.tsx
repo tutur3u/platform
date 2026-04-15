@@ -50,9 +50,9 @@ export function DependenciesSection({
     subTab === 'blocks' ? onAddBlockingTaskDialog : onAddBlockedByTaskDialog;
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       {/* Sub-tab navigation */}
-      <div className="flex gap-2">
+      <div className="flex shrink-0 gap-2">
         <Button
           variant={subTab === 'blocks' ? 'default' : 'outline'}
           size="sm"
@@ -73,8 +73,8 @@ export function DependenciesSection({
 
       {/* Task list */}
       {currentList.length > 0 && (
-        <ScrollArea className="max-h-[150px]">
-          <div className="space-y-1">
+        <ScrollArea className="h-[150px]">
+          <div className="space-y-1 pr-2">
             {currentList.map((task) => (
               <ClickableTaskItem
                 key={task.id}

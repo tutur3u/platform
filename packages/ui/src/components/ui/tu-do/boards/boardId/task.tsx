@@ -83,6 +83,7 @@ import { useTaskProjectManagement } from '../../hooks/useTaskProjectManagement';
 import { useTaskDialogContext } from '../../providers/task-dialog-provider';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
+import { CreateListDialog } from '../../shared/create-list-dialog';
 import { formatRelationshipTaskIdentifier } from '../../shared/relationship-task-identifier';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
@@ -164,6 +165,7 @@ function TaskCardInner({
 
   const [isLoading, setIsLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isCreateListDialogOpen, setIsCreateListDialogOpen] = useState(false);
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [isInViewport, setIsInViewport] = useState(false);
@@ -560,6 +562,10 @@ function TaskCardInner({
 
   const targetCompletionList = getTargetCompletionList();
   const targetClosedList = getTargetClosedList();
+  const hasClosedList = useMemo(
+    () => availableLists.some((list) => list.status === 'closed'),
+    [availableLists]
+  );
   const canMoveToCompletion =
     targetCompletionList && targetCompletionList.id !== task.list_id;
   const canMoveToClose =
@@ -1677,16 +1683,19 @@ function TaskCardInner({
                   )}
 
                   {/* Move Menu */}
-                  {availableLists.length > 1 && (
+                  {availableLists.length > 0 && effectiveWorkspaceId && (
                     <TaskMoveMenu
                       currentListId={task.list_id}
                       availableLists={availableLists}
                       isLoading={isLoading}
                       onMoveToList={handleMoveToList}
                       onMenuItemSelect={handleMenuItemSelect}
+                      onRequestOpenCreateDialog={() => {
+                        setMenuOpen(false);
+                        setIsCreateListDialogOpen(true);
+                      }}
                       translations={{
                         move: t('move'),
-                        noOtherListsAvailable: t('no_other_lists_available'),
                       }}
                     />
                   )}
@@ -2032,6 +2041,19 @@ function TaskCardInner({
           deleting: t('deleting'),
         }}
       />
+      {effectiveWorkspaceId && (
+        <CreateListDialog
+          open={isCreateListDialogOpen}
+          onOpenChange={setIsCreateListDialogOpen}
+          boardId={boardId}
+          wsId={effectiveWorkspaceId}
+          initialStatus="active"
+          hasClosedList={hasClosedList}
+          onSuccess={(listId) => {
+            handleMoveToList(listId);
+          }}
+        />
+      )}
       <TaskNewLabelDialog
         open={dialogState.newLabelDialogOpen}
         newLabelName={newLabelName}

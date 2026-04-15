@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
+import { safeParseBody } from '@/lib/safe-parse-body';
 
 export const GET = withSessionAuth<{ configId: string }>(
   async (_req, { user, supabase }, { configId: id }) => {
@@ -31,7 +32,12 @@ export const PUT = withSessionAuth<{ configId: string }>(
     const bodySchema = z.object({
       value: z.string().max(MAX_MEDIUM_TEXT_LENGTH).optional(),
     });
-    const parsedBody = bodySchema.safeParse(await req.json());
+    const bodyResult = await safeParseBody<{ value?: string }>(req);
+    if (bodyResult instanceof NextResponse) {
+      return bodyResult;
+    }
+
+    const parsedBody = bodySchema.safeParse(bodyResult.data);
 
     if (!parsedBody.success) {
       return NextResponse.json(

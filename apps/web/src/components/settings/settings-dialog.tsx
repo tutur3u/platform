@@ -209,23 +209,18 @@ export function SettingsDialog({
     queryFn: async () => {
       if (!workspace?.id) return null;
 
-      const response = await fetch(
-        `/api/v1/calendar/auth/tokens?wsId=${workspace.id}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch calendar token');
-      }
-
-      const payload = (await response.json()) as {
+      const payload = await apiFetch<{
         tokens?: WorkspaceCalendarGoogleToken | null;
-      };
+      }>(`/api/v1/calendar/auth/tokens?wsId=${workspace.id}`, {
+        cache: 'no-store',
+      });
 
       return payload.tokens ?? null;
     },
     enabled: !!workspace?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   // Fetch calendar connections when workspace is available (using TanStack Query)
@@ -234,25 +229,19 @@ export function SettingsDialog({
     queryFn: async () => {
       if (!workspace?.id) return [];
 
-      const response = await fetch(
-        `/api/v1/calendar/connections?wsId=${workspace.id}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch calendar connections');
-      }
-
-      const payload = (await response.json()) as {
+      const payload = await apiFetch<{
         connections?: CalendarConnection[];
-      };
+      }>(`/api/v1/calendar/connections?wsId=${workspace.id}`, {
+        cache: 'no-store',
+      });
 
       return payload.connections ?? [];
     },
     enabled: !!workspace?.id,
-    staleTime: 30 * 1000, // 30 seconds for fresh data
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const navItems = [

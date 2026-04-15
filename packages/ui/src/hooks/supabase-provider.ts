@@ -44,6 +44,16 @@ export default class SupabaseProvider extends EventEmitter {
   private _dirty: boolean = false; // Set on local edits, cleared after resync
   private awarenessDebounceTimeout: NodeJS.Timeout | undefined;
   private _handleVisibilityChange: (() => void) | null = null;
+  private readonly boundAwarenessUpdate: (
+    data: { added: number[]; updated: number[]; removed: number[] },
+    origin: unknown
+  ) => void;
+  private readonly boundDocumentUpdate: (
+    update: Uint8Array,
+    origin: unknown
+  ) => void;
+  private readonly boundRemoveSelfFromAwarenessOnUnload: () => void;
+  private readonly processExitHandler: () => void;
 
   isOnline(online?: boolean): boolean {
     if (!online && online !== false) return this.connected;
@@ -51,7 +61,7 @@ export default class SupabaseProvider extends EventEmitter {
     return this.connected;
   }
 
-  onDocumentUpdate(update: Uint8Array, origin: any) {
+  onDocumentUpdate(update: Uint8Array, origin: unknown) {
     if (origin !== this) {
       // Only broadcast and save if connected and not destroyed
       if (!this.connected || this.destroyed) {
@@ -365,6 +375,14 @@ export default class SupabaseProvider extends EventEmitter {
   ) {
     super();
 
+    this.boundAwarenessUpdate = this.onAwarenessUpdate.bind(this);
+    this.boundDocumentUpdate = this.onDocumentUpdate.bind(this);
+    this.boundRemoveSelfFromAwarenessOnUnload =
+      this.removeSelfFromAwarenessOnUnload.bind(this);
+    this.processExitHandler = () => {
+      this.boundRemoveSelfFromAwarenessOnUnload();
+    };
+
     this.awareness =
       this.config.awareness || new awarenessProtocol.Awareness(doc);
 
@@ -442,10 +460,10 @@ export default class SupabaseProvider extends EventEmitter {
     if (typeof window !== 'undefined') {
       window.addEventListener(
         'beforeunload',
-        this.removeSelfFromAwarenessOnUnload
+        this.boundRemoveSelfFromAwarenessOnUnload
       );
     } else if (typeof process !== 'undefined') {
-      process.on('exit', () => this.removeSelfFromAwarenessOnUnload);
+      process.on('exit', this.processExitHandler);
     }
     this.on('awareness', (update) => {
       // Only broadcast if connected and channel exists
@@ -499,10 +517,10 @@ export default class SupabaseProvider extends EventEmitter {
       );
     }
 
-    this.awareness.on('update', this.onAwarenessUpdate.bind(this));
+    this.awareness.on('update', this.boundAwarenessUpdate);
 
     // Listen to document updates and broadcast them to peers
-    this.doc.on('update', this.onDocumentUpdate.bind(this));
+    this.doc.on('update', this.boundDocumentUpdate);
   }
 
   get synced() {
@@ -661,14 +679,14 @@ export default class SupabaseProvider extends EventEmitter {
     if (typeof window !== 'undefined') {
       window.removeEventListener(
         'beforeunload',
-        this.removeSelfFromAwarenessOnUnload
+        this.boundRemoveSelfFromAwarenessOnUnload
       );
     } else if (typeof process !== 'undefined') {
-      process.off('exit', () => this.removeSelfFromAwarenessOnUnload);
+      process.off('exit', this.processExitHandler);
     }
 
-    this.awareness.off('update', this.onAwarenessUpdate);
-    this.doc.off('update', this.onDocumentUpdate);
+    this.awareness.off('update', this.boundAwarenessUpdate);
+    this.doc.off('update', this.boundDocumentUpdate);
 
     if (this.channel) this.disconnect();
   }

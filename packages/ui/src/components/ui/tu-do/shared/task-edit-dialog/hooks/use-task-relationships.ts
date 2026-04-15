@@ -1,10 +1,15 @@
 import { useQueryClient } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
+import { NEW_LABEL_COLOR } from '../../../utils/taskConstants';
 import { useBoardBroadcast } from '../../board-broadcast-context';
-import type { WorkspaceTaskLabel } from '../types';
+import type {
+  WorkspaceTaskAssignee,
+  WorkspaceTaskLabel,
+  WorkspaceTaskProject,
+} from '../types';
 import {
   createWorkspaceLabel,
   createWorkspaceProject,
@@ -17,8 +22,8 @@ export interface UseTaskRelationshipsProps {
   isCreateMode: boolean;
   boardId: string;
   selectedLabels: WorkspaceTaskLabel[];
-  selectedAssignees: any[];
-  selectedProjects: any[];
+  selectedAssignees: WorkspaceTaskAssignee[];
+  selectedProjects: WorkspaceTaskProject[];
   newLabelName: string;
   newLabelColor: string;
   newProjectName: string;
@@ -27,8 +32,16 @@ export interface UseTaskRelationshipsProps {
       | WorkspaceTaskLabel[]
       | ((prev: WorkspaceTaskLabel[]) => WorkspaceTaskLabel[])
   ) => void;
-  setSelectedAssignees: (value: any[] | ((prev: any[]) => any[])) => void;
-  setSelectedProjects: (value: any[] | ((prev: any[]) => any[])) => void;
+  setSelectedAssignees: (
+    value:
+      | WorkspaceTaskAssignee[]
+      | ((prev: WorkspaceTaskAssignee[]) => WorkspaceTaskAssignee[])
+  ) => void;
+  setSelectedProjects: (
+    value:
+      | WorkspaceTaskProject[]
+      | ((prev: WorkspaceTaskProject[]) => WorkspaceTaskProject[])
+  ) => void;
   setAvailableLabels: (
     value:
       | WorkspaceTaskLabel[]
@@ -44,12 +57,16 @@ export interface UseTaskRelationshipsProps {
 
 export interface UseTaskRelationshipsReturn {
   toggleLabel: (label: WorkspaceTaskLabel) => Promise<void>;
-  toggleAssignee: (member: any) => Promise<void>;
-  toggleProject: (project: any) => Promise<void>;
+  toggleAssignee: (member: WorkspaceTaskAssignee) => Promise<void>;
+  toggleProject: (project: WorkspaceTaskProject) => Promise<void>;
   handleCreateLabel: () => Promise<void>;
   handleCreateProject: () => Promise<void>;
   creatingLabel: boolean;
   creatingProject: boolean;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
 }
 
 export function useTaskRelationships({
@@ -75,7 +92,6 @@ export function useTaskRelationships({
   onUpdate,
 }: UseTaskRelationshipsProps): UseTaskRelationshipsReturn {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const broadcast = useBoardBroadcast();
   const [creatingLabel, setCreatingLabel] = useState(false);
   const [creatingProject, setCreatingProject] = useState(false);
@@ -113,11 +129,9 @@ export function useTaskRelationships({
         queryClient.invalidateQueries({ queryKey: ['task-history'] });
         broadcast?.('task:relations-changed', { taskId });
         onUpdate();
-      } catch (e: any) {
-        toast({
-          title: 'Label update failed',
-          description: e.message || 'Unable to update labels',
-          variant: 'destructive',
+      } catch (error: unknown) {
+        toast.error('Label update failed', {
+          description: getErrorMessage(error, 'Unable to update labels'),
         });
       }
     },
@@ -128,7 +142,6 @@ export function useTaskRelationships({
       taskId,
       boardId,
       queryClient,
-      toast,
       setSelectedLabels,
       onUpdate,
       broadcast,
@@ -136,7 +149,7 @@ export function useTaskRelationships({
   );
 
   const toggleAssignee = useCallback(
-    async (member: any) => {
+    async (member: WorkspaceTaskAssignee) => {
       const userId = member.user_id || member.id;
       const exists = selectedAssignees.some(
         (assignee) => (assignee.id || assignee.user_id) === userId
@@ -182,10 +195,9 @@ export function useTaskRelationships({
                     ...currentAssignees,
                     {
                       id: userId,
-                      display_name: member.display_name || member.name,
+                      display_name: member.display_name,
                       email: member.email,
                       avatar_url: member.avatar_url,
-                      handle: member.handle,
                     },
                   ];
               return { ...task, assignees: newAssignees };
@@ -195,11 +207,9 @@ export function useTaskRelationships({
         queryClient.invalidateQueries({ queryKey: ['task-history'] });
         broadcast?.('task:relations-changed', { taskId });
         onUpdate();
-      } catch (e: any) {
-        toast({
-          title: 'Assignee update failed',
-          description: e.message || 'Unable to update assignees',
-          variant: 'destructive',
+      } catch (error: unknown) {
+        toast.error('Assignee update failed', {
+          description: getErrorMessage(error, 'Unable to update assignees'),
         });
       }
     },
@@ -211,14 +221,13 @@ export function useTaskRelationships({
       boardId,
       queryClient,
       onUpdate,
-      toast,
       setSelectedAssignees,
       broadcast,
     ]
   );
 
   const toggleProject = useCallback(
-    async (project: any) => {
+    async (project: WorkspaceTaskProject) => {
       const exists = selectedProjects.some((entry) => entry.id === project.id);
 
       try {
@@ -259,11 +268,9 @@ export function useTaskRelationships({
         queryClient.invalidateQueries({ queryKey: ['task-history'] });
         broadcast?.('task:relations-changed', { taskId });
         onUpdate();
-      } catch (e: any) {
-        toast({
-          title: 'Project update failed',
-          description: e.message || 'Unable to update projects',
-          variant: 'destructive',
+      } catch (error: unknown) {
+        toast.error('Project update failed', {
+          description: getErrorMessage(error, 'Unable to update projects'),
         });
       }
     },
@@ -275,7 +282,6 @@ export function useTaskRelationships({
       queryClient,
       boardId,
       onUpdate,
-      toast,
       setSelectedProjects,
       broadcast,
     ]
@@ -286,12 +292,21 @@ export function useTaskRelationships({
 
     setCreatingLabel(true);
 
+    let newLabel: WorkspaceTaskLabel;
     try {
-      const newLabel = await createWorkspaceLabel(wsId, {
+      newLabel = await createWorkspaceLabel(wsId, {
         name: newLabelName.trim(),
         color: newLabelColor,
       });
+    } catch (error: unknown) {
+      toast.error('Label creation failed', {
+        description: getErrorMessage(error, 'Unable to create label.'),
+      });
+      setCreatingLabel(false);
+      return;
+    }
 
+    try {
       setAvailableLabels((prev) =>
         [newLabel, ...prev].sort((a, b) =>
           (a?.name || '')
@@ -302,8 +317,7 @@ export function useTaskRelationships({
 
       if (isCreateMode) {
         setSelectedLabels((prev) => [...prev, newLabel]);
-        toast({
-          title: 'Label created',
+        toast.success('Label created', {
           description: 'New label will be attached to the task on save.',
         });
       } else if (taskId) {
@@ -338,20 +352,24 @@ export function useTaskRelationships({
         );
         broadcast?.('task:relations-changed', { taskId });
         onUpdate();
-        toast({
-          title: 'Label created & linked',
+        toast.success('Label created & linked', {
           description: 'New label added and attached to this task.',
+        });
+      } else {
+        toast.success('Label created', {
+          description: 'New label has been created, but no task is selected.',
         });
       }
 
       setNewLabelName('');
-      setNewLabelColor('gray');
+      setNewLabelColor(NEW_LABEL_COLOR);
       setShowNewLabelDialog(false);
-    } catch (e: any) {
-      toast({
-        title: 'Label creation failed',
-        description: e.message || 'Unable to create or link label.',
-        variant: 'destructive',
+    } catch (error: unknown) {
+      toast.error('Label created but not linked', {
+        description: getErrorMessage(
+          error,
+          'The label was created but could not be attached to this task.'
+        ),
       });
     } finally {
       setCreatingLabel(false);
@@ -364,7 +382,6 @@ export function useTaskRelationships({
     taskId,
     queryClient,
     onUpdate,
-    toast,
     isCreateMode,
     selectedLabels,
     setSelectedLabels,
@@ -381,9 +398,13 @@ export function useTaskRelationships({
     setCreatingProject(true);
 
     try {
-      const newProject = await createWorkspaceProject(wsId, {
+      const newProjectResponse = await createWorkspaceProject(wsId, {
         name: newProjectName.trim(),
       });
+      const newProject: WorkspaceTaskProject = {
+        ...newProjectResponse,
+        status: newProjectResponse.status ?? null,
+      };
 
       await queryClient.invalidateQueries({
         queryKey: ['task-projects', wsId],
@@ -391,8 +412,7 @@ export function useTaskRelationships({
 
       if (isCreateMode) {
         setSelectedProjects((prev) => [...prev, newProject]);
-        toast({
-          title: 'Project created',
+        toast.success('Project created', {
           description: 'New project will be attached to the task on save.',
         });
       } else if (taskId) {
@@ -412,26 +432,26 @@ export function useTaskRelationships({
               const currentProjects = task.projects || [];
               return {
                 ...task,
-                projects: [...currentProjects, newProject as any],
+                projects: [...currentProjects, newProject],
               };
             });
           }
         );
         broadcast?.('task:relations-changed', { taskId });
         onUpdate();
-        toast({
-          title: 'Project created & linked',
+        toast.success('Project created & linked', {
           description: 'New project added and attached to this task.',
         });
       }
 
       setNewProjectName('');
       setShowNewProjectDialog(false);
-    } catch (e: any) {
-      toast({
-        title: 'Project creation failed',
-        description: e.message || 'Unable to create or link project.',
-        variant: 'destructive',
+    } catch (error: unknown) {
+      toast.error('Project creation failed', {
+        description: getErrorMessage(
+          error,
+          'Unable to create or link project.'
+        ),
       });
     } finally {
       setCreatingProject(false);
@@ -443,7 +463,6 @@ export function useTaskRelationships({
     taskId,
     queryClient,
     onUpdate,
-    toast,
     isCreateMode,
     selectedProjects,
     setSelectedProjects,

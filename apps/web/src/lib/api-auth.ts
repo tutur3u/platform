@@ -6,6 +6,7 @@ import {
   isIPBlocked,
   recordApiAuthFailure,
 } from '@tuturuuu/utils/abuse-protection';
+import { hasAuthenticatedApiSession } from '@tuturuuu/utils/api-proxy-guard';
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, type RateLimitConfig } from './rate-limit';
@@ -220,17 +221,25 @@ export function withSessionAuth<T = unknown>(
     if (ipAddress && ipAddress !== 'unknown') {
       const blockInfo = await isIPBlocked(ipAddress);
       if (blockInfo) {
-        const retryAfter = Math.max(
-          1,
-          Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
-        );
-        return NextResponse.json(
-          { error: 'Too Many Requests', message: 'Rate limit exceeded' },
-          {
-            status: 429,
-            headers: { 'Retry-After': `${retryAfter}` },
-          }
-        );
+        const authenticatedSessionRequest = hasAuthenticatedApiSession(request);
+
+        // Proxy-side anonymous abuse blocks should not lock out valid signed-in
+        // browser or API sessions on normal session-authenticated routes.
+        if (
+          !(authenticatedSessionRequest && blockInfo.reason === 'api_abuse')
+        ) {
+          const retryAfter = Math.max(
+            1,
+            Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
+          );
+          return NextResponse.json(
+            { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+            {
+              status: 429,
+              headers: { 'Retry-After': `${retryAfter}` },
+            }
+          );
+        }
       }
 
       // 3. IP rate limit BEFORE auth — method-aware defaults + separate keys
