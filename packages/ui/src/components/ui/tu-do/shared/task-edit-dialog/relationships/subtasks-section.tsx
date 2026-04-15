@@ -34,7 +34,7 @@ export function SubtasksSection({
   const hasAddOptions = onAddSubtask || onAddExistingAsSubtask;
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       {/* Empty state */}
       {childTasks.length === 0 && (
         <div className="py-4 text-center">
@@ -48,8 +48,8 @@ export function SubtasksSection({
 
       {/* Task list */}
       {childTasks.length > 0 && (
-        <ScrollArea className="max-h-50">
-          <div className="space-y-1">
+        <ScrollArea className="h-[200px]">
+          <div className="space-y-1 pr-2">
             {childTasks.map((task) => (
               <ClickableTaskItem
                 key={task.id}
