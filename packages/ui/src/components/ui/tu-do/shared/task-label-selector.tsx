@@ -1,7 +1,11 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Check, Plus, Tag, X } from '@tuturuuu/icons';
+import {
+  addWorkspaceTaskLabel,
+  removeWorkspaceTaskLabel,
+} from '@tuturuuu/internal-api/tasks';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -47,20 +51,36 @@ export function TaskLabelSelector({
     enabled: !!wsId,
   });
 
+  const assignLabelMutation = useMutation({
+    mutationFn: async (labelId: string) => {
+      if (!taskId) return;
+      await addWorkspaceTaskLabel(wsId, taskId, labelId);
+    },
+    onError: (error) => {
+      console.error('Error assigning label:', error);
+      toast.error('Failed to assign label to task');
+    },
+  });
+
+  const removeLabelMutation = useMutation({
+    mutationFn: async (labelId: string) => {
+      if (!taskId) return;
+      await removeWorkspaceTaskLabel(wsId, taskId, labelId);
+    },
+    onError: (error) => {
+      console.error('Error removing label:', error);
+      toast.error('Failed to remove label from task');
+    },
+  });
+
   const handleLabelToggle = async (label: TaskLabel) => {
     const isSelected = selectedLabels.some((l) => l.id === label.id);
 
     if (isSelected) {
       if (taskId) {
         try {
-          const response = await fetch(
-            `/api/v1/workspaces/${wsId}/tasks/${taskId}/labels?label_id=${label.id}`,
-            { method: 'DELETE' }
-          );
-          if (!response.ok) throw new Error('Failed to remove label');
-        } catch (error) {
-          console.error('Error removing label:', error);
-          toast.error('Failed to remove label from task');
+          await removeLabelMutation.mutateAsync(label.id);
+        } catch {
           return;
         }
       }
@@ -69,18 +89,8 @@ export function TaskLabelSelector({
     } else {
       if (taskId) {
         try {
-          const response = await fetch(
-            `/api/v1/workspaces/${wsId}/tasks/${taskId}/labels`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ label_id: label.id }),
-            }
-          );
-          if (!response.ok) throw new Error('Failed to assign label');
-        } catch (error) {
-          console.error('Error assigning label:', error);
-          toast.error('Failed to assign label to task');
+          await assignLabelMutation.mutateAsync(label.id);
+        } catch {
           return;
         }
       }
@@ -120,11 +130,13 @@ export function TaskLabelSelector({
               {!disabled && (
                 <button
                   type="button"
+                  aria-label={`Remove ${label.name}`}
+                  title={`Remove ${label.name}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleRemoveLabel(label.id);
                   }}
-                  className="flex h-5 w-5 items-center justify-center rounded-sm opacity-0 transition-opacity hover:bg-border group-hover:opacity-100"
+                  className="flex h-5 w-5 items-center justify-center rounded-sm opacity-0 transition-opacity hover:bg-border focus-visible:opacity-100 group-hover:opacity-100"
                 >
                   <X className="h-3 w-3" />
                 </button>

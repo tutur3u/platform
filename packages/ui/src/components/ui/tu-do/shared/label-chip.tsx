@@ -38,7 +38,7 @@ export function LabelChip({
               borderColor: styles.border,
               color: styles.text,
             }
-          : { backgroundColor: label.color, color: '#fff' }
+          : { backgroundColor: label.color }
       }
     >
       {showIcon && <Tag className="h-3 w-3 shrink-0" />}

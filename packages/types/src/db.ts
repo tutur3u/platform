@@ -120,6 +120,10 @@ export type WorkspaceTaskPickerRow = Pick<
   } | null;
 };
 export type TaskLabel = Tables<'workspace_task_labels'>;
+export type TaskLabelSummary = Pick<
+  Tables<'workspace_task_labels'>,
+  'id' | 'name' | 'color' | 'created_at'
+>;
 export type TaskProject = Tables<'task_projects'>;
 export type TaskProjectUpdate = Tables<'task_project_updates'>;
 export type TaskCalendarEvent = Tables<'task_calendar_events'>;

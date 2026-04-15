@@ -1,5 +1,5 @@
 import type { Editor, JSONContent } from '@tiptap/react';
-import type { TaskLabel as DbTaskLabel } from '@tuturuuu/types/db';
+import type { TaskLabelSummary } from '@tuturuuu/types';
 import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { TaskFilters } from '../types';
@@ -24,10 +24,7 @@ export interface TaskEditDialogProps {
   onUpdate: () => void;
 }
 
-export type WorkspaceTaskLabel = Pick<
-  DbTaskLabel,
-  'id' | 'name' | 'color' | 'created_at'
->;
+export type WorkspaceTaskLabel = TaskLabelSummary;
 
 export interface TaskFormState {
   name: string;
