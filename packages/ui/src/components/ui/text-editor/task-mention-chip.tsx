@@ -965,13 +965,16 @@ export function TaskMentionChip({
       )}
 
       {/* Move Menu */}
-      {availableLists.length > 1 && (
+      {availableLists.length > 0 && boardConfig?.ws_id && task?.board_id && (
         <TaskMoveMenu
+          wsId={boardConfig.ws_id}
+          boardId={task.board_id}
           currentListId={task.list_id}
           availableLists={availableLists}
           isLoading={isLoading}
           onMoveToList={handleMoveToList}
           onMenuItemSelect={handleMenuItemSelect}
+          onCloseMenu={() => setMenuOpen(false)}
         />
       )}
 

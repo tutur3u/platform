@@ -1677,16 +1677,18 @@ function TaskCardInner({
                   )}
 
                   {/* Move Menu */}
-                  {availableLists.length > 1 && (
+                  {availableLists.length > 0 && effectiveWorkspaceId && (
                     <TaskMoveMenu
+                      wsId={effectiveWorkspaceId}
+                      boardId={boardId}
                       currentListId={task.list_id}
                       availableLists={availableLists}
                       isLoading={isLoading}
                       onMoveToList={handleMoveToList}
                       onMenuItemSelect={handleMenuItemSelect}
+                      onCloseMenu={() => setMenuOpen(false)}
                       translations={{
                         move: t('move'),
-                        noOtherListsAvailable: t('no_other_lists_available'),
                       }}
                     />
                   )}
