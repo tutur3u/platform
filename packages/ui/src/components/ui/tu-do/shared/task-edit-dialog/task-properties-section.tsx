@@ -12,7 +12,6 @@ import {
   ChevronDown,
   Clock,
   Flag,
-  ListTodo,
   Loader2,
   Minus,
   Pen,
@@ -54,6 +53,11 @@ import { LabelChip } from '../label-chip';
 import type { SchedulingSettings } from '../task-edit-dialog/hooks/use-task-mutations';
 import type { WorkspaceTaskLabel } from '../task-edit-dialog/types';
 import { UserAvatar } from '../user-avatar';
+import { TaskListSelector } from './components/task-list-selector';
+import {
+  getTaskListTriggerIcon,
+  getTaskListTriggerSurfaceClass,
+} from './components/task-list-trigger-styles';
 
 // Scheduled calendar event type
 export interface ScheduledCalendarEvent {
@@ -70,6 +74,7 @@ export interface ScheduledCalendarEvent {
 interface TaskPropertiesSectionProps {
   // IDs
   wsId: string;
+  boardId: string;
   taskId?: string;
   // State
   priority: TaskPriority | null;
@@ -261,9 +266,8 @@ function DurationInput({
 
 export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
   const {
-    // wsId and taskId are passed for potential future use
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    wsId: _wsId,
+    wsId,
+    boardId,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     taskId: _taskId,
     priority,
@@ -330,6 +334,19 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     return translations[normalized] ?? name;
   };
 
+  const selectedListForSummary = useMemo(
+    () =>
+      selectedListId
+        ? availableLists?.find((l) => l.id === selectedListId)
+        : undefined,
+    [availableLists, selectedListId]
+  );
+
+  const ListSummaryTriggerIcon = getTaskListTriggerIcon(selectedListForSummary);
+  const listSummarySurfaceClass = getTaskListTriggerSurfaceClass(
+    selectedListForSummary
+  );
+
   const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
   const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
@@ -339,7 +356,6 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
   const [isLabelsPopoverOpen, setIsLabelsPopoverOpen] = useState(false);
   const [isProjectsPopoverOpen, setIsProjectsPopoverOpen] = useState(false);
   const [isAssigneesPopoverOpen, setIsAssigneesPopoverOpen] = useState(false);
-  const [isListPopoverOpen, setIsListPopoverOpen] = useState(false);
   const [isSchedulingPopoverOpen, setIsSchedulingPopoverOpen] = useState(false);
 
   // Track last saved settings locally (updates after successful save)
@@ -629,9 +645,13 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               {selectedListId && (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-green/30 bg-dynamic-green/15 px-2 font-medium text-[10px] text-dynamic-green"
+                  className={cn(
+                    'h-5 shrink-0 gap-1 border px-2 font-medium text-[10px]',
+                    listSummarySurfaceClass ??
+                      'border-border bg-muted/50 text-muted-foreground'
+                  )}
                 >
-                  <ListTodo className="h-2.5 w-2.5" />
+                  <ListSummaryTriggerIcon className="h-2.5 w-2.5" />
                   {(() => {
                     const listName = availableLists?.find(
                       (l) => l.id === selectedListId
@@ -825,75 +845,14 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               </PopoverContent>
             </Popover>
 
-            {/* List Badge */}
-            <Popover
-              open={isListPopoverOpen}
-              onOpenChange={setIsListPopoverOpen}
-            >
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  disabled={disabled}
-                  className={cn(
-                    'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
-                    selectedListId
-                      ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green hover:border-dynamic-green/50 hover:bg-dynamic-green/20'
-                      : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
-                    disabled && 'cursor-not-allowed opacity-50'
-                  )}
-                >
-                  <ListTodo className="h-3.5 w-3.5" />
-                  <span>
-                    {selectedListId
-                      ? (() => {
-                          const listName = availableLists?.find(
-                            (l) => l.id === selectedListId
-                          )?.name;
-                          return listName
-                            ? translateListName(listName)
-                            : t('ws-task-boards.dialog.field.list');
-                        })()
-                      : t('ws-task-boards.dialog.field.list')}
-                  </span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-64 p-0">
-                {!availableLists || availableLists.length === 0 ? (
-                  <div className="p-4 text-center text-muted-foreground text-sm">
-                    {t('ws-task-boards.dialog.no_lists_found')}
-                  </div>
-                ) : (
-                  <div
-                    className="max-h-60 overflow-y-auto overscroll-contain"
-                    onWheel={(e) => e.stopPropagation()}
-                  >
-                    <div className="p-1">
-                      {availableLists.map((list) => (
-                        <button
-                          key={list.id}
-                          type="button"
-                          onClick={() => {
-                            onListChange(list.id);
-                            setIsListPopoverOpen(false);
-                          }}
-                          className={cn(
-                            'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted',
-                            selectedListId === list.id && 'bg-muted font-medium'
-                          )}
-                        >
-                          <span className="flex-1">
-                            {translateListName(list.name)}
-                          </span>
-                          {selectedListId === list.id && (
-                            <Check className="h-4 w-4 shrink-0 text-primary" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
+            <TaskListSelector
+              wsId={wsId}
+              boardId={boardId}
+              selectedListId={selectedListId}
+              availableLists={availableLists}
+              disabled={disabled}
+              onListChange={onListChange}
+            />
 
             {/* Dates Badge */}
             <Popover

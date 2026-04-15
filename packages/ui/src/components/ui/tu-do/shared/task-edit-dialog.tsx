@@ -1632,6 +1632,7 @@ export function TaskEditDialog({
                 {!disabled && (
                   <TaskPropertiesSection
                     wsId={effectiveTaskWsId}
+                    boardId={boardId}
                     taskId={task?.id}
                     priority={formState.priority}
                     startDate={formState.startDate}

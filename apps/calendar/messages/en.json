@@ -12153,6 +12153,7 @@
       },
       "unarchive": "Unarchive"
     },
+    "select_or_create_list": "Select or create a list",
     "settings": {
       "configure_description": "Configure board-specific settings.",
       "ticket_prefix": "Ticket Prefix",
