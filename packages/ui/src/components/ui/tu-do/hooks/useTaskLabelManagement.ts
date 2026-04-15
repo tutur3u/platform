@@ -4,18 +4,17 @@ import {
   removeWorkspaceTaskLabel,
   updateWorkspaceTask,
 } from '@tuturuuu/internal-api/tasks';
+import type { TaskLabel as DbTaskLabel } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
 import { useBoardBroadcast } from '../shared/board-broadcast-context';
 import { NEW_LABEL_COLOR } from '../utils/taskConstants';
 
-interface WorkspaceTaskLabel {
-  id: string;
-  name: string;
-  color: string;
-  created_at: string;
-}
+type WorkspaceTaskLabel = Pick<
+  DbTaskLabel,
+  'id' | 'name' | 'color' | 'created_at'
+>;
 
 interface UseTaskLabelManagementProps {
   task: Task;

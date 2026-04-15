@@ -50,6 +50,7 @@ import {
   buildEstimationIndices,
   mapEstimationPoints,
 } from '../estimation-mapping';
+import { LabelChip } from '../label-chip';
 import type { SchedulingSettings } from '../task-edit-dialog/hooks/use-task-mutations';
 import type { WorkspaceTaskLabel } from '../task-edit-dialog/types';
 import { UserAvatar } from '../user-avatar';
@@ -1208,27 +1209,20 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           .filter(
                             (l) => !selectedLabels.some((sl) => sl.id === l.id)
                           )
-                          .map((label) => {
-                            const styles = computeAccessibleLabelStyles(
-                              label.color
-                            );
-                            return (
-                              <button
-                                key={label.id}
-                                type="button"
-                                onClick={() => onLabelToggle(label)}
-                                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
-                              >
-                                <span
-                                  className="h-3 w-3 shrink-0 rounded-full"
-                                  style={{
-                                    backgroundColor: styles?.bg || '#ccc',
-                                  }}
-                                />
-                                <span className="flex-1">{label.name}</span>
-                              </button>
-                            );
-                          })}
+                          .map((label) => (
+                            <button
+                              key={label.id}
+                              type="button"
+                              onClick={() => onLabelToggle(label)}
+                              className="flex w-full items-center rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted"
+                            >
+                              <LabelChip
+                                label={label}
+                                showIcon={false}
+                                className="h-6 px-2 text-xs"
+                              />
+                            </button>
+                          ))}
                       </div>
                     </div>
                     <div className="border-t p-2">

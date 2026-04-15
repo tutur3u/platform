@@ -30,6 +30,7 @@ import { TaskNewLabelDialog } from '../boards/boardId/task-dialogs/TaskNewLabelD
 import { TaskNewProjectDialog } from '../boards/boardId/task-dialogs/TaskNewProjectDialog';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import { useOptionalWorkspacePresenceContext } from '../providers/workspace-presence-provider';
+import { NEW_LABEL_COLOR } from '../utils/taskConstants';
 import { getActiveBroadcast } from './board-broadcast-context';
 import { DescriptionOverflowWarningDialog } from './description-overflow-warning-dialog';
 import { createInitialSuggestionState } from './mention-system/types';
@@ -440,7 +441,7 @@ export function TaskEditDialog({
     []
   );
   const [newLabelName, setNewLabelName] = useState('');
-  const [newLabelColor, setNewLabelColor] = useState('gray');
+  const [newLabelColor, setNewLabelColor] = useState(NEW_LABEL_COLOR);
   const previousWorkspaceLabelsRef = useRef<string>('');
 
   useEffect(() => {

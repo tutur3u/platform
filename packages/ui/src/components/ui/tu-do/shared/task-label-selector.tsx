@@ -1,8 +1,12 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Check, Plus, Tag, X } from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
+import {
+  addWorkspaceTaskLabel,
+  listWorkspaceLabels,
+  removeWorkspaceTaskLabel,
+} from '@tuturuuu/internal-api/tasks';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -12,21 +16,16 @@ import {
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
+import { useTheme } from 'next-themes';
 import { useState } from 'react';
-
-interface TaskLabel {
-  id: string;
-  name: string;
-  color: string;
-  created_at: string;
-}
+import { LabelChip, type TaskLabel } from './label-chip';
 
 interface Props {
   wsId: string;
-  taskId?: string; // Optional for new tasks
+  taskId?: string;
   selectedLabels?: TaskLabel[];
   onLabelsChange: (labels: TaskLabel[]) => void;
   disabled?: boolean;
@@ -39,64 +38,62 @@ export function TaskLabelSelector({
   onLabelsChange,
   disabled = false,
 }: Props) {
-  const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
-  // Fetch available labels for the workspace
-  const { data: availableLabels = [], isLoading } = useQuery({
+  const {
+    data: availableLabels,
+    isLoading,
+    isSuccess,
+  } = useQuery({
     queryKey: ['workspace-labels', wsId],
-    queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/labels`);
-      if (!response.ok) throw new Error('Failed to fetch labels');
-      return response.json() as Promise<TaskLabel[]>;
-    },
+    queryFn: async () => listWorkspaceLabels(wsId),
     enabled: !!wsId,
+  });
+
+  const labels = availableLabels ?? [];
+
+  const assignLabelMutation = useMutation({
+    mutationFn: async (labelId: string) => {
+      if (!taskId) return;
+      await addWorkspaceTaskLabel(wsId, taskId, labelId);
+    },
+    onError: (error) => {
+      console.error('Error assigning label:', error);
+      toast.error('Failed to assign label to task');
+    },
+  });
+
+  const removeLabelMutation = useMutation({
+    mutationFn: async (labelId: string) => {
+      if (!taskId) return;
+      await removeWorkspaceTaskLabel(wsId, taskId, labelId);
+    },
+    onError: (error) => {
+      console.error('Error removing label:', error);
+      toast.error('Failed to remove label from task');
+    },
   });
 
   const handleLabelToggle = async (label: TaskLabel) => {
     const isSelected = selectedLabels.some((l) => l.id === label.id);
 
     if (isSelected) {
-      // Remove label
       if (taskId) {
         try {
-          const response = await fetch(
-            `/api/v1/workspaces/${wsId}/tasks/${taskId}/labels?label_id=${label.id}`,
-            { method: 'DELETE' }
-          );
-          if (!response.ok) throw new Error('Failed to remove label');
-        } catch (error) {
-          console.error('Error removing label:', error);
-          toast({
-            title: 'Error',
-            description: 'Failed to remove label from task',
-            variant: 'destructive',
-          });
+          await removeLabelMutation.mutateAsync(label.id);
+        } catch {
           return;
         }
       }
 
       onLabelsChange(selectedLabels.filter((l) => l.id !== label.id));
     } else {
-      // Add label
       if (taskId) {
         try {
-          const response = await fetch(
-            `/api/v1/workspaces/${wsId}/tasks/${taskId}/labels`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ label_id: label.id }),
-            }
-          );
-          if (!response.ok) throw new Error('Failed to assign label');
-        } catch (error) {
-          console.error('Error assigning label:', error);
-          toast({
-            title: 'Error',
-            description: 'Failed to assign label to task',
-            variant: 'destructive',
-          });
+          await assignLabelMutation.mutateAsync(label.id);
+        } catch {
           return;
         }
       }
@@ -112,7 +109,12 @@ export function TaskLabelSelector({
     }
   };
 
-  if (availableLabels.length === 0 && !isLoading) {
+  if (
+    isSuccess &&
+    !isLoading &&
+    labels.length === 0 &&
+    selectedLabels.length === 0
+  ) {
     return (
       <div className="text-center text-muted-foreground text-sm">
         <Tag className="mx-auto mb-2 h-6 w-6" />
@@ -124,31 +126,34 @@ export function TaskLabelSelector({
 
   return (
     <div className="space-y-2">
-      {/* Selected Labels */}
       {selectedLabels.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {selectedLabels.map((label) => (
-            <Badge
-              key={label.id}
-              style={{ backgroundColor: label.color, color: '#fff' }}
-              className="cursor-pointer hover:opacity-80"
-            >
-              {label.name}
+            <div key={label.id} className="group flex items-center gap-0.5">
+              <LabelChip
+                label={label}
+                isDark={isDark}
+                className="h-5 px-1.5 text-[10px]"
+              />
               {!disabled && (
-                <X
-                  className="ml-1 h-3 w-3 rounded-full hover:bg-white/20"
+                <button
+                  type="button"
+                  aria-label={`Remove ${label.name}`}
+                  title={`Remove ${label.name}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleRemoveLabel(label.id);
                   }}
-                />
+                  className="flex h-5 w-5 items-center justify-center rounded-sm opacity-0 transition-opacity hover:bg-border focus-visible:opacity-100 group-hover:opacity-100"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               )}
-            </Badge>
+            </div>
           ))}
         </div>
       )}
 
-      {/* Label Selector */}
       {!disabled && (
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
@@ -177,7 +182,7 @@ export function TaskLabelSelector({
                   </div>
                 </CommandEmpty>
                 <CommandGroup>
-                  {availableLabels.map((label) => {
+                  {labels.map((label) => {
                     const isSelected = selectedLabels.some(
                       (l) => l.id === label.id
                     );
@@ -187,18 +192,15 @@ export function TaskLabelSelector({
                         onSelect={() => handleLabelToggle(label)}
                         className="cursor-pointer"
                       >
-                        <div className="flex flex-1 items-center space-x-2">
-                          <Badge
-                            style={{
-                              backgroundColor: label.color,
-                              color: '#fff',
-                            }}
-                            className="text-xs"
-                          >
-                            {label.name}
-                          </Badge>
+                        <div className="flex flex-1 items-center gap-2 pr-2">
+                          <LabelChip
+                            label={label}
+                            isDark={isDark}
+                            showIcon={false}
+                            className="h-5.5 px-1.5 text-[10px]"
+                          />
                           {isSelected && (
-                            <Check className="ml-auto h-4 w-4 text-primary" />
+                            <Check className="ml-auto h-4 w-4 shrink-0 text-primary" />
                           )}
                         </div>
                       </CommandItem>
