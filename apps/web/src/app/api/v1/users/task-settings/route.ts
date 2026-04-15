@@ -36,10 +36,17 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({
-      task_auto_assign_to_self: userData?.task_auto_assign_to_self ?? false,
-      fade_completed_tasks: userData?.fade_completed_tasks ?? false,
-    });
+    return NextResponse.json(
+      {
+        task_auto_assign_to_self: userData?.task_auto_assign_to_self ?? false,
+        fade_completed_tasks: userData?.fade_completed_tasks ?? false,
+      },
+      {
+        headers: {
+          'Cache-Control': 'private, max-age=60, stale-while-revalidate=30',
+        },
+      }
+    );
   } catch (error) {
     console.error('Error in user task settings API:', error);
     return NextResponse.json(

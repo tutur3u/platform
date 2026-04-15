@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { canReassignFinanceWallet } from '@tuturuuu/utils/finance';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -222,6 +223,27 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
+  const { data: existingTransaction, error: existingTransactionError } =
+    await sbAdmin
+      .from('wallet_transactions')
+      .select('id, wallet_id')
+      .eq('id', transactionId)
+      .maybeSingle();
+
+  if (existingTransactionError) {
+    return NextResponse.json(
+      { message: 'Error loading transaction' },
+      { status: 500 }
+    );
+  }
+
+  if (!existingTransaction) {
+    return NextResponse.json(
+      { message: 'Transaction not found' },
+      { status: 404 }
+    );
+  }
+
   const newData = {
     ...data,
     wallet_id: data.origin_wallet_id,
@@ -289,6 +311,22 @@ export async function PUT(req: Request, { params }: Params) {
     if (!walletCheck) {
       return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });
     }
+  }
+
+  if (
+    !canReassignFinanceWallet({
+      permissions,
+      currentWalletId: existingTransaction.wallet_id,
+      requestedWalletId: newData.wallet_id,
+    })
+  ) {
+    return NextResponse.json(
+      {
+        message:
+          'Insufficient permissions to change the wallet for transactions',
+      },
+      { status: 403 }
+    );
   }
 
   // Build update payload conditionally - only include fields that are provided

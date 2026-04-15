@@ -18,6 +18,7 @@ interface DescriptionOverflowWarningDialogProps {
   onConfirmClose: () => void;
   title: string;
   description: string;
+  warningMessage: string;
   cancelLabel: string;
   confirmLabel: string;
 }
@@ -28,6 +29,7 @@ export function DescriptionOverflowWarningDialog({
   onConfirmClose,
   title,
   description,
+  warningMessage,
   cancelLabel,
   confirmLabel,
 }: DescriptionOverflowWarningDialogProps) {
@@ -48,7 +50,7 @@ export function DescriptionOverflowWarningDialog({
         <div className="rounded-md border border-dynamic-yellow/30 bg-dynamic-yellow/5 px-3 py-2">
           <div className="flex items-center gap-2 text-dynamic-yellow text-xs">
             <AlertTriangle className="h-4 w-4" />
-            <span>Oversized content will be discarded if you close now.</span>
+            <span>{warningMessage}</span>
           </div>
         </div>
         <AlertDialogFooter>

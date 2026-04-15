@@ -69,6 +69,8 @@ interface InfiniteTransactionsListProps {
   /** View mode for transaction grouping */
   viewMode?: TransactionViewMode;
   canCreateTransactions?: boolean;
+  canChangeFinanceWallets?: boolean;
+  canSetFinanceWalletsOnCreate?: boolean;
   canCreateConfidentialTransactions?: boolean;
   canUpdateTransactions?: boolean;
   canDeleteTransactions?: boolean;
@@ -109,6 +111,8 @@ export function InfiniteTransactionsList({
   timezone: timezoneProp,
   viewMode = 'daily',
   canCreateTransactions,
+  canChangeFinanceWallets,
+  canSetFinanceWalletsOnCreate,
   canCreateConfidentialTransactions,
   canUpdateTransactions,
   canDeleteTransactions,
@@ -1031,6 +1035,8 @@ export function InfiniteTransactionsList({
             <TransactionForm
               wsId={wsId}
               data={selectedTransaction}
+              canChangeFinanceWallets={canChangeFinanceWallets}
+              canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
               canUpdateTransactions={canUpdateTransactions}
               canUpdateConfidentialTransactions={
                 canUpdateConfidentialTransactions
@@ -1062,6 +1068,8 @@ export function InfiniteTransactionsList({
             <TransactionForm
               wsId={wsId}
               canCreateTransactions={canCreateTransactions}
+              canChangeFinanceWallets={canChangeFinanceWallets}
+              canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
               canCreateConfidentialTransactions={
                 canCreateConfidentialTransactions
               }

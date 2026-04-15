@@ -271,8 +271,7 @@ export async function saveYjsDescriptionToDatabase({
     if (payload.description !== undefined) {
       updateTaskDescriptionCaches({
         taskId,
-        descriptionString:
-          payload.description === null ? null : (payload.description ?? null),
+        descriptionString: payload.description,
         boardId,
         queryClient,
       });
@@ -344,8 +343,7 @@ export async function saveAndVerifyYjsDescriptionToDatabase({
     if (payload.description !== undefined) {
       updateTaskDescriptionCaches({
         taskId,
-        descriptionString:
-          payload.description === null ? null : (payload.description ?? null),
+        descriptionString: payload.description,
         boardId,
         queryClient,
       });

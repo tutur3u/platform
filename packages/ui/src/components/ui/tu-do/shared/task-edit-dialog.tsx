@@ -75,6 +75,7 @@ import type {
 import { getSeededPendingTaskRelationships } from './task-edit-dialog/types/pending-relationship';
 import {
   broadcastTaskDescriptionUpsert,
+  clearDraft,
   getDraftStorageKey,
   getTaskDescriptionPercentLeft,
   getTaskDescriptionStorageLength,
@@ -296,6 +297,8 @@ export function TaskEditDialog({
     },
     enabled: isCreateMode && !!user?.id,
     staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const loadTaskDescriptionState = useCallback(async () => {
@@ -1270,11 +1273,18 @@ export function TaskEditDialog({
     handleClose();
   }, [isCreateMode, hasUnsavedChanges, formState.name, handleClose]);
 
-  const handleConfirmCloseWithOverflow = useCallback(() => {
+  const handleConfirmCloseWithOverflow = useCallback(async () => {
     closeBlockedByOverflowRef.current = false;
     setShowDescriptionOverflowWarning(false);
+
+    await flushNameUpdate();
+
+    if (!isCreateMode) {
+      clearDraft(draftStorageKey);
+    }
+
     onClose();
-  }, [onClose]);
+  }, [flushNameUpdate, isCreateMode, draftStorageKey, onClose]);
 
   // Dialog open change - prevents close when menus are open
   const handleDialogOpenChange = useCallback(
@@ -1942,6 +1952,11 @@ export function TaskEditDialog({
           dialogT.has('description_overflow_close_warning_confirm')
             ? dialogT('description_overflow_close_warning_confirm')
             : 'Close without saving description'
+        }
+        warningMessage={
+          dialogT.has('description_overflow_close_warning_warning')
+            ? dialogT('description_overflow_close_warning_warning')
+            : 'Oversized content will be discarded if you close now.'
         }
       />
 

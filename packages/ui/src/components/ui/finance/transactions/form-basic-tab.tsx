@@ -43,6 +43,8 @@ interface FormBasicTabProps {
   selectedWalletCurrency: string | undefined;
   loading: boolean;
   hasFormPermission: boolean;
+  originWalletDisabled?: boolean;
+  destinationWalletDisabled?: boolean;
   isTransfer: boolean;
   suggestedExchangeRate: number | null;
   isDestinationOverridden: boolean;
@@ -70,6 +72,8 @@ export function FormBasicTab({
   selectedWalletCurrency,
   loading,
   hasFormPermission,
+  originWalletDisabled = false,
+  destinationWalletDisabled = false,
   isTransfer,
   suggestedExchangeRate,
   isDestinationOverridden,
@@ -118,7 +122,12 @@ export function FormBasicTab({
                   },
                 ]}
                 actionsPosition="top"
-                disabled={loading || walletsLoading || !hasFormPermission}
+                disabled={
+                  loading ||
+                  walletsLoading ||
+                  !hasFormPermission ||
+                  originWalletDisabled
+                }
               />
               {walletPrefillMeta &&
                 field.value === walletPrefillMeta.value &&
@@ -176,7 +185,12 @@ export function FormBasicTab({
                     },
                   ]}
                   actionsPosition="top"
-                  disabled={loading || walletsLoading || !hasFormPermission}
+                  disabled={
+                    loading ||
+                    walletsLoading ||
+                    !hasFormPermission ||
+                    destinationWalletDisabled
+                  }
                 />
                 <FormMessage />
               </FormItem>

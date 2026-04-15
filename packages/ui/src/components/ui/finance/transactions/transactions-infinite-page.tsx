@@ -28,6 +28,8 @@ interface TransactionsInfinitePageProps {
   canExport?: boolean;
   exportContent?: React.ReactNode;
   canCreateTransactions?: boolean;
+  canChangeFinanceWallets?: boolean;
+  canSetFinanceWalletsOnCreate?: boolean;
   canCreateConfidentialTransactions?: boolean;
   canUpdateTransactions?: boolean;
   canDeleteTransactions?: boolean;
@@ -47,6 +49,8 @@ export function TransactionsInfinitePage({
   canExport,
   exportContent,
   canCreateTransactions,
+  canChangeFinanceWallets,
+  canSetFinanceWalletsOnCreate,
   canCreateConfidentialTransactions,
   canUpdateTransactions,
   canDeleteTransactions,
@@ -181,6 +185,8 @@ export function TransactionsInfinitePage({
           timezone={timezone}
           viewMode={viewMode}
           canCreateTransactions={canCreateTransactions}
+          canChangeFinanceWallets={canChangeFinanceWallets}
+          canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
           canCreateConfidentialTransactions={canCreateConfidentialTransactions}
           canUpdateTransactions={canUpdateTransactions}
           canDeleteTransactions={canDeleteTransactions}

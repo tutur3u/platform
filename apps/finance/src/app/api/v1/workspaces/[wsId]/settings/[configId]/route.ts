@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
+  getPermissions,
   getWorkspaceConfig,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
@@ -13,11 +14,33 @@ interface Params {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(req);
   const { wsId: rawWsId, configId: id } = await params;
 
   // Normalize workspace ID to UUID (handles 'personal', 'internal', etc.)
-  const wsId = await normalizeWorkspaceId(rawWsId);
+  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+
+  const permissions = await getPermissions({ wsId, request: req });
+  if (!permissions) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
+  if (permissions.withoutPermission('manage_workspace_settings')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to modify workspace settings' },
+      { status: 403 }
+    );
+  }
+
+  if (
+    id === 'default_wallet_id' &&
+    permissions.withoutPermission('change_finance_wallets')
+  ) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to change the default wallet' },
+      { status: 403 }
+    );
+  }
 
   const { value } = await req.json();
 

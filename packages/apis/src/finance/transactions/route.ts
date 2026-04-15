@@ -3,7 +3,11 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { canUseRequestedFinanceWalletOnCreate } from '@tuturuuu/utils/finance';
+import {
+  getPermissions,
+  getWorkspaceConfig,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -153,6 +157,7 @@ export async function POST(req: Request, { params }: Params) {
 
   // Resolve workspace ID (handles "internal" slug)
   const resolvedWsId = resolveWorkspaceId(wsId);
+  const defaultWalletId = await getWorkspaceConfig(wsId, 'default_wallet_id');
 
   // Get the virtual_user_id for this workspace
   let { data: wsUser } = await supabase
@@ -249,6 +254,22 @@ export async function POST(req: Request, { params }: Params) {
 
   if (walletErr || !walletCheck) {
     return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });
+  }
+
+  if (
+    !canUseRequestedFinanceWalletOnCreate({
+      permissions,
+      defaultWalletId,
+      requestedWalletId: data.origin_wallet_id,
+    })
+  ) {
+    return NextResponse.json(
+      {
+        message:
+          'Insufficient permissions to override the default wallet for new transactions',
+      },
+      { status: 403 }
+    );
   }
 
   const { data: transaction, error } = await sbAdmin
