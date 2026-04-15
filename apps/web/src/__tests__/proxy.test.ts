@@ -124,6 +124,31 @@ describe('web proxy api handling', () => {
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
+  it('lets oversized API payloads reach the proxy guard so they return 413 instead of suspicious-request 400', async () => {
+    const guardResponse = NextResponse.json(
+      { error: 'Payload Too Large', message: 'Request body exceeds limit' },
+      { status: 413 }
+    );
+    mocks.guardApiProxyRequest.mockResolvedValue(guardResponse);
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
+        method: 'PUT',
+        headers: {
+          'content-length': `${600 * 1024}`,
+          'content-type': 'application/json',
+          'user-agent': 'Mozilla/5.0',
+        },
+        body: JSON.stringify({ value: 'x'.repeat(1024) }),
+      })
+    );
+
+    expect(response).toBe(guardResponse);
+    expect(response.status).toBe(413);
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
+  });
+
   it('passes clean API requests through without invoking auth flow', async () => {
     mocks.guardApiProxyRequest.mockResolvedValue(null);
 

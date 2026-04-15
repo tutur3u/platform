@@ -124,23 +124,6 @@ async function hasWorkspaceEmailRateLimitOverrides(
   }
 }
 
-function getBearerAccessToken(
-  req: Pick<NextRequest, 'headers'>
-): string | null {
-  const authHeader = req.headers.get('authorization');
-  if (!authHeader) {
-    return null;
-  }
-
-  const trimmedHeader = authHeader.trim();
-  if (!trimmedHeader.toLowerCase().startsWith('bearer ')) {
-    return null;
-  }
-
-  const accessToken = trimmedHeader.slice(7).trim();
-  return accessToken || null;
-}
-
 function looksLikeSupabaseJwt(token: string): boolean {
   const parts = token.split('.');
   if (parts.length !== 3) {
@@ -310,25 +293,6 @@ function getSuspiciousAnonymousApiSignal(req: NextRequest): {
       reason: 'malformed-auth-header',
       status: 401,
     };
-  }
-
-  if (
-    !(req.method === 'GET' || req.method === 'HEAD') &&
-    !getBearerAccessToken(req)
-  ) {
-    const contentLength = req.headers.get('content-length');
-    if (contentLength) {
-      const parsedLength = Number.parseInt(contentLength, 10);
-      if (
-        Number.isFinite(parsedLength) &&
-        parsedLength > SUSPICIOUS_QUERY_LENGTH_MAX * 4
-      ) {
-        return {
-          reason: 'suspicious-anonymous-request',
-          status: 400,
-        };
-      }
-    }
   }
 
   if ((req.headers.get('user-agent') ?? '').trim().length === 0) {
