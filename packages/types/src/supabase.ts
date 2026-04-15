@@ -30447,6 +30447,8 @@ export type Database = {
         | 'create_transactions'
         | 'update_transactions'
         | 'delete_transactions'
+        | 'set_finance_wallets_on_create'
+        | 'change_finance_wallets'
         | 'view_invoices'
         | 'create_invoices'
         | 'update_invoices'
@@ -32585,6 +32587,8 @@ export const Constants = {
         'create_transactions',
         'update_transactions',
         'delete_transactions',
+        'set_finance_wallets_on_create',
+        'change_finance_wallets',
         'view_invoices',
         'create_invoices',
         'update_invoices',

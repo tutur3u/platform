@@ -30,6 +30,8 @@ export interface TransactionFormProps {
   canUpdateTransactions?: boolean;
   canCreateConfidentialTransactions?: boolean;
   canUpdateConfidentialTransactions?: boolean;
+  canChangeFinanceWallets?: boolean;
+  canSetFinanceWalletsOnCreate?: boolean;
 }
 
 export type NewContentType = 'wallet' | 'transaction-category' | 'tag';

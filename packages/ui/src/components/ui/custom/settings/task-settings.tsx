@@ -74,6 +74,8 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
       return res.json();
     },
     staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   useEffect(() => {

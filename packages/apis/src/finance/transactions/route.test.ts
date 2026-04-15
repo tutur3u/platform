@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
   const getPermissions = vi.fn();
+  const getWorkspaceConfig = vi.fn();
   const getUser = vi.fn();
   const linkedUserSingle = vi.fn();
   const walletMaybeSingle = vi.fn();
@@ -85,6 +86,7 @@ const mocks = vi.hoisted(() => {
   return {
     adminSupabase,
     getPermissions,
+    getWorkspaceConfig,
     linkedUserSingle,
     sessionSupabase,
     tagInsert,
@@ -103,9 +105,17 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: (...args: Parameters<typeof mocks.getPermissions>) =>
     mocks.getPermissions(...args),
+  getWorkspaceConfig: (...args: Parameters<typeof mocks.getWorkspaceConfig>) =>
+    mocks.getWorkspaceConfig(...args),
 }));
 
 describe('transactions route', () => {
+  const withPermissions = (granted: string[]) => ({
+    withoutPermission: vi.fn(
+      (permission: string) => !granted.includes(permission)
+    ),
+  });
+
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -113,6 +123,7 @@ describe('transactions route', () => {
     mocks.getPermissions.mockResolvedValue({
       withoutPermission: vi.fn(() => false),
     });
+    mocks.getWorkspaceConfig.mockResolvedValue(null);
     mocks.sessionSupabase.auth.getUser.mockResolvedValue({
       data: {
         user: {
@@ -243,5 +254,70 @@ describe('transactions route', () => {
     expect(mocks.sessionSupabase.from).not.toHaveBeenCalledWith(
       'wallet_transaction_tags'
     );
+  });
+
+  it('rejects non-default wallet selection on create without wallet override permissions', async () => {
+    const { POST } = await import('./route.js');
+
+    mocks.getWorkspaceConfig.mockResolvedValue('wallet-default');
+    mocks.getPermissions.mockResolvedValue(
+      withPermissions(['create_transactions'])
+    );
+
+    const response = await POST(
+      new Request('http://localhost/api/workspaces/ws-1/transactions', {
+        method: 'POST',
+        body: JSON.stringify({
+          amount: 150,
+          origin_wallet_id: '3c9a5c7f-4f0d-4f15-9477-cbf1c7bc7445',
+          taken_at: '2026-03-30T08:00:00.000Z',
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      message:
+        'Insufficient permissions to override the default wallet for new transactions',
+    });
+  });
+
+  it('allows create-only wallet override permission to bypass the default wallet lock on create', async () => {
+    const { POST } = await import('./route.js');
+
+    mocks.getWorkspaceConfig.mockResolvedValue('wallet-default');
+    mocks.getPermissions.mockResolvedValue(
+      withPermissions(['create_transactions', 'set_finance_wallets_on_create'])
+    );
+
+    const response = await POST(
+      new Request('http://localhost/api/workspaces/ws-1/transactions', {
+        method: 'POST',
+        body: JSON.stringify({
+          amount: 150,
+          origin_wallet_id: '3c9a5c7f-4f0d-4f15-9477-cbf1c7bc7445',
+          taken_at: '2026-03-30T08:00:00.000Z',
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ message: 'success' });
   });
 });

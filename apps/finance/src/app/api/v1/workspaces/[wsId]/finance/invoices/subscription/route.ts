@@ -2,7 +2,11 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { canUseRequestedFinanceWalletOnCreate } from '@tuturuuu/utils/finance';
+import {
+  getPermissions,
+  getWorkspaceConfig,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { isGroupBlockedForSubscriptionInvoices } from '@/utils/workspace-config';
 import { type CalculatedValues, calculateInvoiceValues } from '../route';
@@ -58,6 +62,8 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
 
+  const defaultWalletId = await getWorkspaceConfig(wsId, 'default_wallet_id');
+
   try {
     const {
       customer_id,
@@ -96,6 +102,22 @@ export async function POST(req: Request, { params }: Params) {
             'Missing required fields: customer_id, group_id(s), selected_month, products, wallet_id, and category_id',
         },
         { status: 400 }
+      );
+    }
+
+    if (
+      !canUseRequestedFinanceWalletOnCreate({
+        permissions,
+        defaultWalletId,
+        requestedWalletId: wallet_id,
+      })
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            'Insufficient permissions to override the default wallet for new invoices',
+        },
+        { status: 403 }
       );
     }
 

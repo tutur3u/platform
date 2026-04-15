@@ -17,6 +17,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { fetcher } from '@tuturuuu/utils/fetcher';
+import { shouldLockFinanceWalletSelectionOnCreate } from '@tuturuuu/utils/finance';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
@@ -42,6 +43,8 @@ export function TransactionForm({
   canUpdateTransactions,
   canCreateConfidentialTransactions,
   canUpdateConfidentialTransactions,
+  canChangeFinanceWallets = true,
+  canSetFinanceWalletsOnCreate = true,
 }: TransactionFormProps) {
   const t = useTranslations();
   const locale = useLocale();
@@ -295,6 +298,22 @@ export function TransactionForm({
   const hasCreatePermission = canCreateTransactions && !data?.id;
   const hasUpdatePermission = canUpdateTransactions && data?.id;
   const hasFormPermission = hasCreatePermission || hasUpdatePermission;
+  const isCreateMode = !data?.id;
+  const isEditMode = !!data?.id;
+  const shouldLockCreateOriginWallet =
+    isCreateMode &&
+    !isTransfer &&
+    shouldLockFinanceWalletSelectionOnCreate({
+      defaultWalletId,
+      canChangeFinanceWallets,
+      canSetFinanceWalletsOnCreate,
+    });
+  const shouldLockEditOriginWallet =
+    isEditMode && !canChangeFinanceWallets && !!data?.wallet_id;
+  const shouldLockEditDestinationWallet =
+    isEditMode &&
+    !canChangeFinanceWallets &&
+    !!data?.transfer?.linked_wallet_id;
 
   const refreshTransactions = async () => {
     await queryClient.invalidateQueries({
@@ -676,6 +695,10 @@ export function TransactionForm({
                 selectedWalletCurrency={selectedWalletCurrency}
                 loading={loading}
                 hasFormPermission={!!hasFormPermission}
+                originWalletDisabled={
+                  shouldLockCreateOriginWallet || shouldLockEditOriginWallet
+                }
+                destinationWalletDisabled={shouldLockEditDestinationWallet}
                 isTransfer={isTransfer}
                 suggestedExchangeRate={suggestedExchangeRate}
                 isDestinationOverridden={isDestinationOverridden}

@@ -17,6 +17,8 @@ interface WalletDetailsActionsProps {
   canUpdateWallets: boolean;
   canCreateTransactions: boolean;
   canCreateConfidentialTransactions: boolean;
+  canChangeFinanceWallets?: boolean;
+  canSetFinanceWalletsOnCreate?: boolean;
   canDeleteWallets: boolean;
   isPersonalWorkspace: boolean;
 }
@@ -28,6 +30,8 @@ export function WalletDetailsActions({
   canUpdateWallets,
   canCreateTransactions,
   canCreateConfidentialTransactions,
+  canChangeFinanceWallets,
+  canSetFinanceWalletsOnCreate,
   canDeleteWallets,
   isPersonalWorkspace,
 }: WalletDetailsActionsProps) {
@@ -92,6 +96,8 @@ export function WalletDetailsActions({
               <TransactionForm
                 wsId={wsId}
                 canCreateTransactions={canCreateTransactions}
+                canChangeFinanceWallets={canChangeFinanceWallets}
+                canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
                 canCreateConfidentialTransactions={
                   canCreateConfidentialTransactions
                 }

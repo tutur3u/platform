@@ -291,6 +291,7 @@ export function BoardColumn({
             listId={column.id}
             listName={column.name}
             listStatus={column.status}
+            listColor={column.color as SupportedColor}
             tasks={tasks}
             boardId={boardId}
             wsId={wsId}

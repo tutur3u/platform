@@ -30,6 +30,10 @@ export default async function TransactionsPage({ wsId }: Props) {
   const canCreateTransactions = containsPermission('create_transactions');
   const canUpdateTransactions = containsPermission('update_transactions');
   const canDeleteTransactions = containsPermission('delete_transactions');
+  const canChangeFinanceWallets = containsPermission('change_finance_wallets');
+  const canSetFinanceWalletsOnCreate = containsPermission(
+    'set_finance_wallets_on_create'
+  );
   const canCreateConfidentialTransactions = containsPermission(
     'create_confidential_transactions'
   );
@@ -64,6 +68,8 @@ export default async function TransactionsPage({ wsId }: Props) {
             <TransactionForm
               wsId={wsId}
               canCreateTransactions={canCreateTransactions}
+              canChangeFinanceWallets={canChangeFinanceWallets}
+              canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
               canCreateConfidentialTransactions={
                 canCreateConfidentialTransactions
               }
@@ -81,6 +87,8 @@ export default async function TransactionsPage({ wsId }: Props) {
           <ExportDialogContent wsId={wsId} exportType="transactions" />
         }
         canCreateTransactions={canCreateTransactions}
+        canChangeFinanceWallets={canChangeFinanceWallets}
+        canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
         canCreateConfidentialTransactions={canCreateConfidentialTransactions}
         canUpdateTransactions={canUpdateTransactions}
         canDeleteTransactions={canDeleteTransactions}

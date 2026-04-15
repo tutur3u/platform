@@ -3,6 +3,7 @@ import type { Database } from '@tuturuuu/types';
 type AttendanceRecord = {
   status: string;
   date: string;
+  group_id?: string;
 };
 
 type AttendanceStats = {
@@ -22,6 +23,12 @@ export type UserGroup = {
 type Invoice = {
   group_id?: string;
   valid_until?: string | null;
+};
+
+export type BillableSession = {
+  date: string;
+  groupId: string;
+  groupName: string;
 };
 
 const MONTH_VALUE_PATTERN = /^(\d{4})-(\d{2})$/;
@@ -116,6 +123,86 @@ export const getEffectiveAttendanceDays = (
 ): number => {
   const stats = getAttendanceStats(attendance);
   return stats.present + stats.late;
+};
+
+const getGroupValidUntilDate = (
+  latestInvoices: Invoice[],
+  groupId: string
+): Date | null => {
+  const latestInvoice = latestInvoices.find((inv) => inv.group_id === groupId);
+  if (!latestInvoice?.valid_until) return null;
+
+  const validUntil = parseLocalCalendarDate(latestInvoice.valid_until);
+  return Number.isNaN(validUntil.getTime()) ? null : validUntil;
+};
+
+const isDateInMonth = (date: Date, month: string): boolean => {
+  if (Number.isNaN(date.getTime())) return false;
+
+  const startOfMonth = getMonthStartDate(month);
+  if (Number.isNaN(startOfMonth.getTime())) return false;
+
+  const nextMonth = new Date(startOfMonth);
+  nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+  return date >= startOfMonth && date < nextMonth;
+};
+
+export const getBillableSessionsForGroups = (
+  userGroups: UserGroup[],
+  groupIds: string[],
+  selectedMonth: string,
+  latestInvoices: Invoice[] = []
+): BillableSession[] => {
+  if (!selectedMonth || groupIds.length === 0) return [];
+
+  return groupIds.flatMap((groupId) => {
+    const group = userGroups.find(
+      (candidate) => candidate.workspace_user_groups?.id === groupId
+    )?.workspace_user_groups;
+
+    if (!group?.sessions?.length) return [];
+
+    const validUntil = getGroupValidUntilDate(latestInvoices, groupId);
+
+    return group.sessions.flatMap((sessionDate) => {
+      if (!sessionDate) return [];
+
+      const parsedDate = parseLocalCalendarDate(sessionDate);
+      if (!isDateInMonth(parsedDate, selectedMonth)) return [];
+      if (validUntil && parsedDate < validUntil) return [];
+
+      return [
+        {
+          date: sessionDate,
+          groupId: group.id,
+          groupName: group.name || 'Unknown Group',
+        },
+      ];
+    });
+  });
+};
+
+export const getBillableAttendanceRecords = (
+  attendance: AttendanceRecord[],
+  groupIds: string[],
+  selectedMonth: string,
+  latestInvoices: Invoice[] = []
+): AttendanceRecord[] => {
+  if (!Array.isArray(attendance) || !selectedMonth || groupIds.length === 0) {
+    return [];
+  }
+
+  return attendance.filter((record) => {
+    const groupId = record.group_id;
+    if (!groupId || !groupIds.includes(groupId)) return false;
+
+    const attendanceDate = parseLocalCalendarDate(record.date);
+    if (!isDateInMonth(attendanceDate, selectedMonth)) return false;
+
+    const validUntil = getGroupValidUntilDate(latestInvoices, groupId);
+    return !validUntil || attendanceDate >= validUntil;
+  });
 };
 
 export const getSessionsForMonth = (
@@ -285,34 +372,12 @@ export const getTotalSessionsForGroups = (
   selectedMonth: string,
   latestInvoices: Invoice[] = []
 ): number => {
-  let total = 0;
-  for (const groupId of groupIds) {
-    const group = userGroups.find(
-      (g) => g.workspace_user_groups?.id === groupId
-    );
-    if (group) {
-      const sessionsArray = group.workspace_user_groups?.sessions || [];
-      const latestInvoice = latestInvoices.find(
-        (inv) => inv.group_id === groupId
-      );
-      const validUntil = latestInvoice?.valid_until
-        ? parseLocalCalendarDate(latestInvoice.valid_until)
-        : null;
-
-      // If we have a valid_until date, we should count sessions from that date onwards.
-      // If not, we fall back to the selected month only (standard behavior).
-      if (validUntil) {
-        total += getSessionsUntilMonth(
-          sessionsArray,
-          selectedMonth,
-          validUntil
-        );
-      } else {
-        total += getSessionsForMonth(sessionsArray, selectedMonth);
-      }
-    }
-  }
-  return total;
+  return getBillableSessionsForGroups(
+    userGroups,
+    groupIds,
+    selectedMonth,
+    latestInvoices
+  ).length;
 };
 
 /** Days before valid_until to consider "expiring soon" */

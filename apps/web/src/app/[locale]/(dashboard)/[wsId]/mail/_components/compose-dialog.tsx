@@ -12,7 +12,6 @@ import { generateHTML } from '@tiptap/html';
 import type { JSONContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { ChevronDown, ChevronUp, Send, X } from '@tuturuuu/icons';
-import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
@@ -44,6 +43,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { useCurrentUserProfile } from '@/hooks/use-current-user-profile';
 import { AIEmailDrafter } from './ai-email-drafter';
 
 function EmailChips({
@@ -190,13 +190,6 @@ export function ComposeDialog({
   const [showCc, setShowCc] = useState(false);
   const [showBcc, setShowBcc] = useState(false);
 
-  // User info state
-  const [user, setUser] = useState<{
-    email: string | undefined;
-    display_name: string | null | undefined;
-  } | null>(null);
-  const [userLoading, setUserLoading] = useState(true);
-
   // Preview state
   const [previewMode, setPreviewMode] = useState<'edit' | 'preview'>('edit');
   const [sanitizedHtml, setSanitizedHtml] = useState('');
@@ -205,31 +198,15 @@ export function ComposeDialog({
   // Quoted content state
   const [showQuotedContent, setShowQuotedContent] = useState(false);
   const [quotedContent, setQuotedContent] = useState('');
-
-  // Fetch user info on mount
-  useEffect(() => {
-    async function fetchUser() {
-      setUserLoading(true);
-      try {
-        const profile = await getCurrentUserProfile();
-
-        if (profile?.id) {
-          setUser({
-            email: profile.email ?? undefined,
-            display_name: profile.display_name,
-          });
-        } else {
-          setUser(null);
-        }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (_) {
-        setUser(null);
-      } finally {
-        setUserLoading(false);
+  const { data: profile, isLoading: userLoading } = useCurrentUserProfile({
+    enabled: open,
+  });
+  const user = profile?.id
+    ? {
+        email: profile.email ?? undefined,
+        display_name: profile.display_name,
       }
-    }
-    if (open) fetchUser();
-  }, [open]);
+    : null;
 
   const form = useForm<ComposeFormValues>({
     resolver: zodResolver(composeSchema),
