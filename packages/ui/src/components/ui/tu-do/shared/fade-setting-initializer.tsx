@@ -43,6 +43,8 @@ export function FadeSettingInitializer() {
     },
     staleTime: 5 * 60 * 1000,
     retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     // Only fetch if user is logged in
     enabled: isLoggedIn === true,
   });

@@ -29,7 +29,15 @@ export default async function WorkspaceInvoicesPage({ params }: Props) {
 
         return (
           <Suspense fallback={<div className="p-8">Loading...</div>}>
-            <NewInvoicePage wsId={wsId} />
+            <NewInvoicePage
+              wsId={wsId}
+              canChangeFinanceWallets={permissions.containsPermission(
+                'change_finance_wallets'
+              )}
+              canSetFinanceWalletsOnCreate={permissions.containsPermission(
+                'set_finance_wallets_on_create'
+              )}
+            />
           </Suspense>
         );
       }}

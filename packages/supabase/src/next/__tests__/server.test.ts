@@ -103,6 +103,58 @@ describe('Supabase Server Client', () => {
       });
     });
 
+    it('should clear malformed Supabase auth cookies before SSR parsing', async () => {
+      mockCookieStore.getAll.mockReturnValueOnce([
+        {
+          name: 'sb-test-auth-token',
+          value: 'base64-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ',
+        },
+        { name: 'test-cookie', value: 'test-value' },
+      ]);
+
+      await createClient();
+
+      const cookieHandler = (createServerClient as any).mock.calls[0][2]
+        .cookies;
+      expect(cookieHandler.getAll()).toEqual([
+        { name: 'test-cookie', value: 'test-value' },
+      ]);
+      expect(mockCookieStore.set).toHaveBeenCalledWith(
+        'sb-test-auth-token',
+        '',
+        {
+          expires: expect.any(Date),
+          maxAge: 0,
+          path: '/',
+        }
+      );
+    });
+
+    it('should preserve legacy raw Supabase auth cookies', async () => {
+      mockCookieStore.getAll.mockReturnValueOnce([
+        {
+          name: 'sb-test-auth-token',
+          value: '{"access_token":"jwt.with.dots","refresh_token":"refresh"}',
+        },
+      ]);
+
+      await createClient();
+
+      const cookieHandler = (createServerClient as any).mock.calls[0][2]
+        .cookies;
+      expect(cookieHandler.getAll()).toEqual([
+        {
+          name: 'sb-test-auth-token',
+          value: '{"access_token":"jwt.with.dots","refresh_token":"refresh"}',
+        },
+      ]);
+      expect(mockCookieStore.set).not.toHaveBeenCalledWith(
+        'sb-test-auth-token',
+        '',
+        expect.anything()
+      );
+    });
+
     it('should create a Bearer-token client when request has Authorization header', async () => {
       const mockRequest = {
         headers: new Headers({

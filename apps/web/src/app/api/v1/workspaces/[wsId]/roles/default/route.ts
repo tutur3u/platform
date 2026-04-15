@@ -1,5 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceRole } from '@tuturuuu/types';
+import type { Database, TablesInsert, WorkspaceRole } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -7,6 +7,9 @@ interface Params {
     wsId: string;
   }>;
 }
+
+type WorkspaceRolePermissionValue =
+  Database['public']['Enums']['workspace_role_permission'];
 
 export async function GET(req: Request, { params }: Params) {
   const supabase = await createClient(req);
@@ -48,11 +51,13 @@ export async function PUT(req: Request, { params }: Params) {
   const { permissions } = data;
 
   const { error } = await supabase.from('workspace_default_permissions').upsert(
-    permissions.map((permission) => ({
-      ws_id: wsId,
-      permission: permission.id,
-      enabled: permission.enabled,
-    }))
+    permissions.map(
+      (permission): TablesInsert<'workspace_default_permissions'> => ({
+        ws_id: wsId,
+        permission: permission.id as WorkspaceRolePermissionValue,
+        enabled: permission.enabled,
+      })
+    )
   );
 
   if (error) {

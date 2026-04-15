@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   limit: vi.fn(),
+  ratelimitPrefixes: [] as string[],
   redis: vi.fn(),
   extractIp: vi.fn(),
   isBlocked: vi.fn(),
@@ -11,8 +12,15 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@upstash/ratelimit', () => {
   class MockRatelimit {
+    prefix: string;
+
     static slidingWindow(limit: number, window: string) {
       return { limit, window };
+    }
+
+    constructor(config: { prefix: string }) {
+      this.prefix = config.prefix;
+      mocks.ratelimitPrefixes.push(config.prefix);
     }
 
     limit(ip: string) {
@@ -66,6 +74,7 @@ describe('guardApiProxyRequest', () => {
   beforeEach(() => {
     vi.resetModules();
     mocks.limit.mockReset();
+    mocks.ratelimitPrefixes.length = 0;
     mocks.redis.mockReset();
     mocks.extractIp.mockReset();
     mocks.isBlocked.mockReset();
@@ -110,16 +119,25 @@ describe('guardApiProxyRequest', () => {
     );
 
     expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-Proxy-Block-Reason')).toBe(
+      'ip-already-blocked'
+    );
     expect(mocks.limit).not.toHaveBeenCalled();
   });
 
-  it('does not rate limit generic GET routes', async () => {
+  it('rate limits anonymous generic GET routes', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
     mocks.redis.mockReturnValue({});
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 20,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
 
     const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
       await import('../api-proxy-guard.js');
@@ -132,17 +150,25 @@ describe('guardApiProxyRequest', () => {
       }
     );
 
-    expect(response).toBeNull();
-    expect(mocks.limit).not.toHaveBeenCalled();
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('20');
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
   });
 
-  it('does not rate limit users/me reads', async () => {
+  it('rate limits anonymous users/me reads', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
     mocks.redis.mockReturnValue({});
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 20,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
 
     const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
       await import('../api-proxy-guard.js');
@@ -153,11 +179,12 @@ describe('guardApiProxyRequest', () => {
       { prefixBase: 'proxy:test:api' }
     );
 
-    expect(response).toBeNull();
-    expect(mocks.limit).not.toHaveBeenCalled();
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('20');
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
   });
 
-  it('does not rate limit workspace user database reads', async () => {
+  it('does not rate limit authenticated API client reads', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
@@ -170,12 +197,96 @@ describe('guardApiProxyRequest', () => {
     clearApiProxyGuardLimiterCache();
 
     const response = await guardApiProxyRequest(
-      makeRequest('/api/v1/workspaces/ws-1/users/database?page=1', 'GET'),
+      makeRequest('/api/v1/workspaces/ws-1/users/database?page=1', 'GET', {
+        authorization: 'Bearer ttr_test_key',
+      }),
       { prefixBase: 'proxy:test:api' }
     );
 
     expect(response).toBeNull();
     expect(mocks.limit).not.toHaveBeenCalled();
+  });
+
+  it('treats Supabase session cookies as authenticated even without env-based cookie derivation', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/users/me/profile', 'GET', {
+        cookie:
+          'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+      }),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response).toBeNull();
+    expect(mocks.limit).not.toHaveBeenCalled();
+  });
+
+  it('does not enforce anonymous IP blocks for authenticated browser sessions', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 30_000),
+      reason: 'api_abuse',
+      blockLevel: 1,
+      blockedAt: new Date(),
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/users/database?page=1', 'GET', {
+        cookie:
+          'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+      }),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response).toBeNull();
+    expect(mocks.limit).not.toHaveBeenCalled();
+  });
+
+  it('scopes anonymous read buckets by pathname to avoid cross-route collisions', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValue({
+      success: true,
+      limit: 20,
+      remaining: 19,
+      reset: Date.now() + 60_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    await guardApiProxyRequest(makeRequest('/api/v1/users/me/profile', 'GET'), {
+      prefixBase: 'proxy:test:api',
+    });
+
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:users-me:anonymous::api:v1:users:me:profile:get:minute'
+    );
   });
 
   it('keeps OTP sends on the strict auth bucket', async () => {

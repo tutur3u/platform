@@ -10,6 +10,7 @@ import {
   Wallet,
 } from '@tuturuuu/icons';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -18,6 +19,7 @@ import {
 } from '@tuturuuu/ui/custom/icon-picker';
 import { useFinanceTransactionPreferences } from '@tuturuuu/ui/hooks/use-finance-transaction-preferences';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
+import { useWorkspacePermission } from '@tuturuuu/ui/hooks/use-workspace-permission';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
@@ -36,6 +38,7 @@ import { useWallets } from '@/hooks/use-wallets';
 
 interface Props {
   workspaceId: string;
+  user: WorkspaceUser | null;
 }
 
 const NONE_OPTION = 'none';
@@ -57,7 +60,10 @@ function CategoryIcon({ category }: { category: TransactionCategory }) {
   return <ArrowDownCircle className="h-4 w-4" />;
 }
 
-export default function TransactionDefaultsSettings({ workspaceId }: Props) {
+export default function TransactionDefaultsSettings({
+  workspaceId,
+  user,
+}: Props) {
   const tFinance = useTranslations('settings.finance');
   const tSettings = useTranslations('ws-finance-settings');
   const tWallets = useTranslations('ws-wallets');
@@ -74,6 +80,12 @@ export default function TransactionDefaultsSettings({ workspaceId }: Props) {
     useWorkspaceConfig(workspaceId, 'default_wallet_id', '');
   const { data: defaultCategoryId, isLoading: isLoadingDefaultCategoryConfig } =
     useWorkspaceConfig(workspaceId, 'default_category_id', '');
+  const { hasPermission: canChangeFinanceWallets } = useWorkspacePermission({
+    wsId: workspaceId,
+    permission: 'change_finance_wallets',
+    user: user as WorkspaceUser,
+    enabled: !!workspaceId && !!user,
+  });
 
   const {
     rememberLastSelections,
@@ -320,6 +332,7 @@ export default function TransactionDefaultsSettings({ workspaceId }: Props) {
               <Select
                 onValueChange={setSelectedWalletId}
                 value={selectedWalletId}
+                disabled={canChangeFinanceWallets === false}
               >
                 <SelectTrigger className="h-11 rounded-xl">
                   <SelectValue
@@ -346,6 +359,7 @@ export default function TransactionDefaultsSettings({ workspaceId }: Props) {
               className="w-full rounded-xl"
               disabled={
                 isLoading ||
+                canChangeFinanceWallets === false ||
                 updateWalletMutation.isPending ||
                 selectedWalletId === initialWalletId
               }

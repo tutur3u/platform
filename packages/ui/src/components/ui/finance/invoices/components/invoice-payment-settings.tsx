@@ -49,6 +49,7 @@ interface InvoicePaymentSettingsProps {
   walletLabelClassName?: string;
   categoryLabelClassName?: string;
   currency?: string;
+  walletDisabled?: boolean;
 }
 
 export function InvoicePaymentSettings({
@@ -73,6 +74,7 @@ export function InvoicePaymentSettings({
   walletLabelClassName = 'text-dynamic-red',
   categoryLabelClassName = 'text-dynamic-red',
   currency = 'USD',
+  walletDisabled = false,
 }: InvoicePaymentSettingsProps) {
   const t = useTranslations();
   const shouldShowPromotion = showPromotion && promotionsAllowed;
@@ -127,7 +129,11 @@ export function InvoicePaymentSettings({
           {t('ws-wallets.wallet')}{' '}
           <span className={walletLabelClassName}>*</span>
         </Label>
-        <Select value={selectedWalletId} onValueChange={onWalletChange}>
+        <Select
+          value={selectedWalletId}
+          onValueChange={onWalletChange}
+          disabled={walletDisabled}
+        >
           <SelectTrigger>
             <SelectValue
               placeholder={t('ws-invoices.select_wallet_required')}

@@ -29,6 +29,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import * as z from 'zod';
 import { ImageCropper } from '@/components/image-cropper';
+import { currentUserProfileQueryKey } from '@/hooks/use-current-user-profile';
 
 interface AvatarProps {
   user: WorkspaceUser;
@@ -107,10 +108,12 @@ export default function UserAvatar({ user }: AvatarProps) {
       setPreviewSrc(publicUrl);
       toast.success(t('settings-account.avatar_updated'));
       // Invalidate user queries to refetch data
-      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
-      router.refresh();
+      queryClient.invalidateQueries({
+        queryKey: [...currentUserProfileQueryKey],
+      });
       setOpen(false);
       form.reset();
+      router.refresh();
     },
     onError: (error) => {
       console.error('Error uploading avatar:', error);
@@ -132,9 +135,11 @@ export default function UserAvatar({ user }: AvatarProps) {
       setPreviewSrc(null);
       toast.success(t('settings-account.avatar_removed'));
       // Invalidate user queries to refetch data
-      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
-      router.refresh();
+      queryClient.invalidateQueries({
+        queryKey: [...currentUserProfileQueryKey],
+      });
       form.reset();
+      router.refresh();
     },
     onError: (error) => {
       console.error('Error removing avatar:', error);

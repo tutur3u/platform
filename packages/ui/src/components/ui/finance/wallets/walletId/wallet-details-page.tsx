@@ -54,6 +54,10 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
   // Transaction permissions
   const canUpdateTransactions = containsPermission('update_transactions');
   const canDeleteTransactions = containsPermission('delete_transactions');
+  const canChangeFinanceWallets = containsPermission('change_finance_wallets');
+  const canSetFinanceWalletsOnCreate = containsPermission(
+    'set_finance_wallets_on_create'
+  );
   const canUpdateConfidentialTransactions = containsPermission(
     'update_confidential_transactions'
   );
@@ -137,6 +141,8 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
           canUpdateWallets={canUpdateWallets}
           canCreateTransactions={canCreateTransactions}
           canCreateConfidentialTransactions={canCreateConfidentialTransactions}
+          canChangeFinanceWallets={canChangeFinanceWallets}
+          canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
           canDeleteWallets={canDeleteWallets}
           isPersonalWorkspace={workspace.personal}
         />

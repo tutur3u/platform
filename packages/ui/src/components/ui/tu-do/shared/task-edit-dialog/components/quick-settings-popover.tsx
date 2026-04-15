@@ -50,6 +50,8 @@ export function QuickSettingsPopover({
       return res.json();
     },
     staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const updateSettings = useMutation({

@@ -369,7 +369,9 @@ export type ExternalProjectImportStatus =
 export type ExternalProjectPublishEventKind =
   Database['public']['Enums']['external_project_publish_event_kind'];
 export type PermissionId =
-  Database['public']['Enums']['workspace_role_permission'];
+  | Database['public']['Enums']['workspace_role_permission']
+  | 'change_finance_wallets'
+  | 'set_finance_wallets_on_create';
 
 export type WorkspaceExternalProjectBinding = {
   enabled: boolean;

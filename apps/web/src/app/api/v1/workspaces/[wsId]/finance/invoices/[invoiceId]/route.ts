@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { canReassignFinanceWallet } from '@tuturuuu/utils/finance';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -47,6 +48,39 @@ export async function PUT(req: Request, { params }: Params) {
 
   const payload = parsed.data;
 
+  const { data: existingInvoice, error: existingInvoiceError } = await sbAdmin
+    .from('finance_invoices')
+    .select('id, wallet_id')
+    .eq('id', invoiceId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (existingInvoiceError) {
+    return NextResponse.json(
+      { message: 'Error loading invoice' },
+      { status: 500 }
+    );
+  }
+
+  if (!existingInvoice) {
+    return NextResponse.json({ message: 'Invoice not found' }, { status: 404 });
+  }
+
+  if (
+    !canReassignFinanceWallet({
+      permissions,
+      currentWalletId: existingInvoice.wallet_id,
+      requestedWalletId: payload.wallet_id,
+    })
+  ) {
+    return NextResponse.json(
+      {
+        message: 'Insufficient permissions to change the wallet for invoices',
+      },
+      { status: 403 }
+    );
+  }
+
   if (payload.wallet_id) {
     const { data: wallet, error: walletError } = await sbAdmin
       .from('workspace_wallets')
@@ -73,7 +107,7 @@ export async function PUT(req: Request, { params }: Params) {
     wallet_id: payload.wallet_id ?? undefined,
   };
 
-  const { data: invoice, error } = await sbAdmin
+  const { error } = await sbAdmin
     .from('finance_invoices')
     .update(updatePayload)
     .eq('id', invoiceId)
@@ -86,10 +120,6 @@ export async function PUT(req: Request, { params }: Params) {
       { message: 'Error updating invoice' },
       { status: 500 }
     );
-  }
-
-  if (!invoice) {
-    return NextResponse.json({ message: 'Invoice not found' }, { status: 404 });
   }
 
   return NextResponse.json({ message: 'success' });
