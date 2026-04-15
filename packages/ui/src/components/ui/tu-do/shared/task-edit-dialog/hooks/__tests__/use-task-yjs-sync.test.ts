@@ -135,7 +135,7 @@ describe('useTaskYjsSync', () => {
     ).not.toHaveBeenCalled();
   });
 
-  it('hydrates editor from persisted yjs state when description payload is null', async () => {
+  it('does not rewrite yjs state when description payload is null and persisted state exists', async () => {
     const props = makeProps();
     const yjsState = createValidYjsState();
 

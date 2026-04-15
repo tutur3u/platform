@@ -1,3 +1,4 @@
+import type { QueryClient } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/react';
 import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -198,7 +199,7 @@ describe('task edit dialog utils', () => {
       taskId: 'task-1',
       descriptionString: JSON.stringify(content),
       boardId: 'board-1',
-      queryClient: queryClient as any,
+      queryClient: queryClient as unknown as QueryClient,
     });
   });
 
@@ -219,7 +220,7 @@ describe('task edit dialog utils', () => {
       getContent: () => content,
       getYjsState: () => [1, 2, 3],
       boardId: 'board-1',
-      queryClient: { setQueryData: vi.fn() } as any,
+      queryClient: { setQueryData: vi.fn() } as unknown as QueryClient,
       context: 'test',
     });
 
@@ -261,7 +262,7 @@ describe('task edit dialog utils', () => {
       getContent: () => oversized,
       getYjsState: () => [9, 9, 9],
       boardId: 'board-1',
-      queryClient: { setQueryData } as any,
+      queryClient: { setQueryData } as unknown as QueryClient,
       context: 'test-yjs-only',
     });
 

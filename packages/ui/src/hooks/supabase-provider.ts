@@ -50,7 +50,7 @@ export default class SupabaseProvider extends EventEmitter {
   ) => void;
   private readonly boundDocumentUpdate: (
     update: Uint8Array,
-    origin: any
+    origin: unknown
   ) => void;
   private readonly boundRemoveSelfFromAwarenessOnUnload: () => void;
   private readonly processExitHandler: () => void;
@@ -61,7 +61,7 @@ export default class SupabaseProvider extends EventEmitter {
     return this.connected;
   }
 
-  onDocumentUpdate(update: Uint8Array, origin: any) {
+  onDocumentUpdate(update: Uint8Array, origin: unknown) {
     if (origin !== this) {
       // Only broadcast and save if connected and not destroyed
       if (!this.connected || this.destroyed) {
