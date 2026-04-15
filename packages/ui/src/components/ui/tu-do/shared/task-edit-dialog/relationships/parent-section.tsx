@@ -26,7 +26,7 @@ export function ParentSection({
   }, [taskId, childTaskIds]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       {parentTask ? (
         <ClickableTaskItem
           task={parentTask}
