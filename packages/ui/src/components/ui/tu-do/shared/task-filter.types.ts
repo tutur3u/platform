@@ -5,7 +5,7 @@
  * It has zero runtime dependencies and exists solely for type safety.
  */
 
-import type { TaskLabelSummary } from '@tuturuuu/types';
+import type { TaskLabelSummary } from '@tuturuuu/types/db';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { ListStatusFilter } from './board-header';
 

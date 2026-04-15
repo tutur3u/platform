@@ -4,6 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Check, Plus, Tag, X } from '@tuturuuu/icons';
 import {
   addWorkspaceTaskLabel,
+  listWorkspaceLabels,
   removeWorkspaceTaskLabel,
 } from '@tuturuuu/internal-api/tasks';
 import { Button } from '@tuturuuu/ui/button';
@@ -41,15 +42,17 @@ export function TaskLabelSelector({
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
-  const { data: availableLabels = [], isLoading } = useQuery({
+  const {
+    data: availableLabels,
+    isLoading,
+    isSuccess,
+  } = useQuery({
     queryKey: ['workspace-labels', wsId],
-    queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/labels`);
-      if (!response.ok) throw new Error('Failed to fetch labels');
-      return response.json() as Promise<TaskLabel[]>;
-    },
+    queryFn: async () => listWorkspaceLabels(wsId),
     enabled: !!wsId,
   });
+
+  const labels = availableLabels ?? [];
 
   const assignLabelMutation = useMutation({
     mutationFn: async (labelId: string) => {
@@ -106,7 +109,12 @@ export function TaskLabelSelector({
     }
   };
 
-  if (availableLabels.length === 0 && !isLoading) {
+  if (
+    isSuccess &&
+    !isLoading &&
+    labels.length === 0 &&
+    selectedLabels.length === 0
+  ) {
     return (
       <div className="text-center text-muted-foreground text-sm">
         <Tag className="mx-auto mb-2 h-6 w-6" />
@@ -174,7 +182,7 @@ export function TaskLabelSelector({
                   </div>
                 </CommandEmpty>
                 <CommandGroup>
-                  {availableLabels.map((label) => {
+                  {labels.map((label) => {
                     const isSelected = selectedLabels.some(
                       (l) => l.id === label.id
                     );
