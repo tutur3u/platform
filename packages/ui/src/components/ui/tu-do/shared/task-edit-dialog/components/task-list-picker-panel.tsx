@@ -8,10 +8,12 @@ import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
-import { CreateListDialog } from '../../create-list-dialog';
+import { useMemo } from 'react';
 import { EmptyStateCard } from '../../empty-state-card';
-import { translateTaskListNameForDisplay } from '../../utils/translate-task-list-display-name';
+import {
+  translateTaskListNameForDisplay,
+  type TaskListLabels,
+} from '../../utils/translate-task-list-display-name';
 import {
   taskListStatusIcon,
   taskListStatusToneClass,
@@ -45,29 +47,24 @@ export const taskListPickerRowColorClass: Record<SupportedColor, string> = {
 };
 
 export interface TaskListPickerPanelProps {
-  wsId: string;
-  boardId: string;
   selectedListId: string;
   availableLists: TaskList[];
   disabled?: boolean;
   onSelectList: (listId: string) => void;
-  /** Run before opening create-list dialog (e.g. close parent popover / dropdown) */
-  onBeforeOpenCreateDialog?: () => void;
+  /** Parent-controlled create-list dialog opener */
+  onRequestOpenCreateDialog: () => void;
   className?: string;
 }
 
 export function TaskListPickerPanel({
-  wsId,
-  boardId,
   selectedListId,
   availableLists,
   disabled = false,
   onSelectList,
-  onBeforeOpenCreateDialog,
+  onRequestOpenCreateDialog,
   className,
 }: TaskListPickerPanelProps) {
   const t = useTranslations();
-  const [isCreateListDialogOpen, setIsCreateListDialogOpen] = useState(false);
 
   const statusLabels = useMemo(
     (): Record<TaskBoardStatus, string> => ({
@@ -80,7 +77,7 @@ export function TaskListPickerPanel({
     [t]
   );
 
-  const nameLabels = useMemo(
+  const nameLabels = useMemo<TaskListLabels>(
     () => ({
       toDo: statusLabels.not_started,
       inProgress: statusLabels.active,
@@ -108,17 +105,14 @@ export function TaskListPickerPanel({
     [availableLists]
   );
 
-  const hasClosedList = useMemo(
-    () => availableLists.some((list) => list.status === 'closed'),
-    [availableLists]
-  );
-
   const addNewListLabel = t('ws-task-boards.layout_settings.add_new_list');
   const emptyDescription = t('ws-task-boards.select_or_create_list');
 
   const openCreateDialog = () => {
-    onBeforeOpenCreateDialog?.();
-    setIsCreateListDialogOpen(true);
+    if (disabled) {
+      return;
+    }
+    onRequestOpenCreateDialog();
   };
 
   return (
@@ -220,18 +214,6 @@ export function TaskListPickerPanel({
           </>
         )}
       </div>
-
-      <CreateListDialog
-        open={isCreateListDialogOpen}
-        onOpenChange={setIsCreateListDialogOpen}
-        boardId={boardId}
-        wsId={wsId}
-        initialStatus="active"
-        hasClosedList={hasClosedList}
-        onSuccess={(listId) => {
-          onSelectList(listId);
-        }}
-      />
     </>
   );
 }

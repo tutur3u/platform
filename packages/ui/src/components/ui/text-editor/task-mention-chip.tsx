@@ -51,6 +51,7 @@ import {
   TaskProjectsMenu,
   TaskRelatedMenu,
 } from '../tu-do/boards/boardId/menus';
+import { CreateListDialog } from '../tu-do/shared/create-list-dialog';
 import { TaskCustomDateDialog } from '../tu-do/boards/boardId/task-dialogs/TaskCustomDateDialog';
 import { TaskDeleteDialog } from '../tu-do/boards/boardId/task-dialogs/TaskDeleteDialog';
 import { TaskNewLabelDialog } from '../tu-do/boards/boardId/task-dialogs/TaskNewLabelDialog';
@@ -190,6 +191,7 @@ export function TaskMentionChip({
   // Dialog states
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showCustomDateDialog, setShowCustomDateDialog] = useState(false);
+  const [showCreateListDialog, setShowCreateListDialog] = useState(false);
   const [showNewLabelDialog, setShowNewLabelDialog] = useState(false);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
 
@@ -967,14 +969,15 @@ export function TaskMentionChip({
       {/* Move Menu */}
       {availableLists.length > 0 && boardConfig?.ws_id && task?.board_id && (
         <TaskMoveMenu
-          wsId={boardConfig.ws_id}
-          boardId={task.board_id}
           currentListId={task.list_id}
           availableLists={availableLists}
           isLoading={isLoading}
           onMoveToList={handleMoveToList}
           onMenuItemSelect={handleMenuItemSelect}
-          onCloseMenu={() => setMenuOpen(false)}
+          onRequestOpenCreateDialog={() => {
+            setMenuOpen(false);
+            setShowCreateListDialog(true);
+          }}
         />
       )}
 
@@ -1152,6 +1155,22 @@ export function TaskMentionChip({
                 : undefined
             }
           />
+
+          {boardConfig?.ws_id && task?.board_id && (
+            <CreateListDialog
+              open={showCreateListDialog}
+              onOpenChange={setShowCreateListDialog}
+              boardId={task.board_id}
+              wsId={boardConfig.ws_id}
+              initialStatus="active"
+              hasClosedList={availableLists.some(
+                (list) => list.status === 'closed'
+              )}
+              onSuccess={(listId) => {
+                handleMoveToList(listId);
+              }}
+            />
+          )}
 
           <TaskNewLabelDialog
             open={showNewLabelDialog}

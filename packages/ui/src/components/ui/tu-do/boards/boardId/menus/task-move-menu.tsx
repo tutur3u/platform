@@ -8,29 +8,24 @@ import {
 import { TaskListPickerPanel } from '../../../shared/task-edit-dialog/components/task-list-picker-panel';
 
 interface TaskMoveMenuProps {
-  wsId: string;
-  boardId: string;
   currentListId: string;
   availableLists: TaskList[];
   isLoading: boolean;
   onMoveToList: (listId: string) => void;
   onMenuItemSelect: (e: Event, action: () => void) => void;
-  /** Close root task card dropdown (e.g. before opening create-list dialog) */
-  onCloseMenu?: () => void;
+  onRequestOpenCreateDialog: () => void;
   translations?: {
     move?: string;
   };
 }
 
 export function TaskMoveMenu({
-  wsId,
-  boardId,
   currentListId,
   availableLists,
   isLoading,
   onMoveToList,
   onMenuItemSelect,
-  onCloseMenu,
+  onRequestOpenCreateDialog,
   translations,
 }: TaskMoveMenuProps) {
   const moveLabel = translations?.move ?? 'Move';
@@ -54,8 +49,6 @@ export function TaskMoveMenu({
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="w-80 overflow-hidden p-0">
         <TaskListPickerPanel
-          wsId={wsId}
-          boardId={boardId}
           selectedListId={currentListId}
           availableLists={availableLists}
           disabled={isLoading}
@@ -64,9 +57,7 @@ export function TaskMoveMenu({
               onMoveToList(listId)
             );
           }}
-          onBeforeOpenCreateDialog={() => {
-            onCloseMenu?.();
-          }}
+          onRequestOpenCreateDialog={onRequestOpenCreateDialog}
           className="w-full"
         />
       </DropdownMenuSubContent>

@@ -58,6 +58,7 @@ import {
   getTaskListTriggerIcon,
   getTaskListTriggerSurfaceClass,
 } from './components/task-list-trigger-styles';
+import { translateTaskListNameForDisplay } from '../utils/translate-task-list-display-name';
 
 // Scheduled calendar event type
 export interface ScheduledCalendarEvent {
@@ -322,24 +323,23 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
 
   const t = useTranslations();
 
-  // Translate standard list names (To Do, In Progress, Done, Closed)
-  const translateListName = (name: string): string => {
-    const normalized = name.toLowerCase().replace(/\s+/g, '');
-    const translations: Record<string, string> = {
-      todo: t('common.list_name_to_do'),
-      inprogress: t('common.list_name_in_progress'),
-      done: t('common.list_name_done'),
-      closed: t('common.list_name_closed'),
-    };
-    return translations[normalized] ?? name;
-  };
-
   const selectedListForSummary = useMemo(
     () =>
       selectedListId
         ? availableLists?.find((l) => l.id === selectedListId)
         : undefined,
     [availableLists, selectedListId]
+  );
+
+  const listNameLabels = useMemo(
+    () => ({
+      toDo: t('common.list_name_to_do'),
+      inProgress: t('common.list_name_in_progress'),
+      done: t('common.list_name_done'),
+      closed: t('common.list_name_closed'),
+      documents: t('common.documents'),
+    }),
+    [t]
   );
 
   const ListSummaryTriggerIcon = getTaskListTriggerIcon(selectedListForSummary);
@@ -652,14 +652,12 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   )}
                 >
                   <ListSummaryTriggerIcon className="h-2.5 w-2.5" />
-                  {(() => {
-                    const listName = availableLists?.find(
-                      (l) => l.id === selectedListId
-                    )?.name;
-                    return listName
-                      ? translateListName(listName)
-                      : t('ws-task-boards.dialog.field.list');
-                  })()}
+                  {selectedListForSummary
+                    ? translateTaskListNameForDisplay(
+                        selectedListForSummary.name,
+                        listNameLabels
+                      )
+                    : t('ws-task-boards.dialog.field.list')}
                 </Badge>
               )}
               {(startDate || endDate) && (

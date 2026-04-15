@@ -440,13 +440,12 @@ describe('TaskMoveMenu', () => {
   it('should not render when no lists available', () => {
     const { container } = render(
       <TaskMoveMenu
-        wsId="ws-1"
-        boardId="board-1"
         currentListId="list-1"
         availableLists={[]}
         isLoading={false}
         onMoveToList={mockOnMoveToList}
         onMenuItemSelect={mockOnMenuItemSelect}
+        onRequestOpenCreateDialog={vi.fn()}
       />
     );
 
@@ -456,13 +455,12 @@ describe('TaskMoveMenu', () => {
   it('should render move menu with grouped lists (includes current list)', () => {
     render(
       <TaskMoveMenu
-        wsId="ws-1"
-        boardId="board-1"
         currentListId="list-1"
         availableLists={mockLists}
         isLoading={false}
         onMoveToList={mockOnMoveToList}
         onMenuItemSelect={mockOnMenuItemSelect}
+        onRequestOpenCreateDialog={vi.fn()}
       />
     );
 
@@ -477,13 +475,12 @@ describe('TaskMoveMenu', () => {
     const singleList: TaskList[] = [mockLists[0]!];
     render(
       <TaskMoveMenu
-        wsId="ws-1"
-        boardId="board-1"
         currentListId="list-1"
         availableLists={singleList}
         isLoading={false}
         onMoveToList={mockOnMoveToList}
         onMenuItemSelect={mockOnMenuItemSelect}
+        onRequestOpenCreateDialog={vi.fn()}
       />
     );
 

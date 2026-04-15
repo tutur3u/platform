@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { CreateListDialog } from '../../create-list-dialog';
 import { translateTaskListNameForDisplay } from '../../utils/translate-task-list-display-name';
 import { TaskListPickerPanel } from './task-list-picker-panel';
 import {
@@ -31,6 +32,7 @@ export function TaskListSelector({
 }: TaskListSelectorProps) {
   const t = useTranslations();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [isCreateListDialogOpen, setIsCreateListDialogOpen] = useState(false);
 
   const statusLabels = useMemo(
     () => ({
@@ -59,46 +61,66 @@ export function TaskListSelector({
     [availableLists, selectedListId]
   );
 
+  const hasClosedList = useMemo(
+    () => availableLists.some((list) => list.status === 'closed'),
+    [availableLists]
+  );
+
   const TriggerIcon = getTaskListTriggerIcon(selectedList);
   const triggerSurfaceClass = getTaskListTriggerSurfaceClass(selectedList);
 
   return (
-    <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          disabled={disabled}
-          className={cn(
-            'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
-            selectedList && triggerSurfaceClass
-              ? triggerSurfaceClass
-              : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
-            disabled && 'cursor-not-allowed opacity-50'
-          )}
-        >
-          <TriggerIcon className="h-3.5 w-3.5 shrink-0" />
-          <span>
-            {selectedList
-              ? translateTaskListNameForDisplay(selectedList.name, nameLabels)
-              : t('ws-task-boards.dialog.field.list')}
-          </span>
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-80 p-0">
-        <TaskListPickerPanel
-          wsId={wsId}
-          boardId={boardId}
-          selectedListId={selectedListId}
-          availableLists={availableLists}
-          disabled={disabled}
-          onSelectList={(listId) => {
-            onListChange(listId);
-            setIsPopoverOpen(false);
-          }}
-          onBeforeOpenCreateDialog={() => setIsPopoverOpen(false)}
-          className="w-full"
-        />
-      </PopoverContent>
-    </Popover>
+    <>
+      <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            disabled={disabled}
+            className={cn(
+              'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
+              selectedList && triggerSurfaceClass
+                ? triggerSurfaceClass
+                : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
+              disabled && 'cursor-not-allowed opacity-50'
+            )}
+          >
+            <TriggerIcon className="h-3.5 w-3.5 shrink-0" />
+            <span>
+              {selectedList
+                ? translateTaskListNameForDisplay(selectedList.name, nameLabels)
+                : t('ws-task-boards.dialog.field.list')}
+            </span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-80 p-0">
+          <TaskListPickerPanel
+            selectedListId={selectedListId}
+            availableLists={availableLists}
+            disabled={disabled}
+            onSelectList={(listId) => {
+              onListChange(listId);
+              setIsPopoverOpen(false);
+            }}
+            onRequestOpenCreateDialog={() => {
+              setIsPopoverOpen(false);
+              setIsCreateListDialogOpen(true);
+            }}
+            className="w-full"
+          />
+        </PopoverContent>
+      </Popover>
+
+      <CreateListDialog
+        open={isCreateListDialogOpen}
+        onOpenChange={setIsCreateListDialogOpen}
+        boardId={boardId}
+        wsId={wsId}
+        initialStatus="active"
+        hasClosedList={hasClosedList}
+        onSuccess={(listId) => {
+          onListChange(listId);
+        }}
+      />
+    </>
   );
 }
