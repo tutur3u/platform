@@ -26,7 +26,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as z from 'zod';
 import { ImageCropper } from '@/components/image-cropper';
 import { currentUserProfileQueryKey } from '@/hooks/use-current-user-profile';
@@ -65,11 +65,20 @@ export default function UserAvatar({ user }: AvatarProps) {
   );
 
   const blobUrlRef = useRef<string | null>(null);
+  const selectedImageUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    selectedImageUrlRef.current = selectedImageUrl;
+  }, [selectedImageUrl]);
 
   useEffect(() => {
     return () => {
       if (blobUrlRef.current) {
         URL.revokeObjectURL(blobUrlRef.current);
+      }
+
+      if (selectedImageUrlRef.current) {
+        URL.revokeObjectURL(selectedImageUrlRef.current);
       }
     };
   }, []);
@@ -84,14 +93,15 @@ export default function UserAvatar({ user }: AvatarProps) {
     resolver: zodResolver(FormSchema),
   });
 
-  const cleanupCropSelection = () => {
-    if (selectedImageUrl) {
-      URL.revokeObjectURL(selectedImageUrl);
-      setSelectedImageUrl(null);
+  const cleanupCropSelection = useCallback(() => {
+    if (selectedImageUrlRef.current) {
+      URL.revokeObjectURL(selectedImageUrlRef.current);
+      selectedImageUrlRef.current = null;
     }
+    setSelectedImageUrl(null);
     setSelectedFile(null);
     setCropperOpen(false);
-  };
+  }, []);
 
   const uploadAvatarMutation = useMutation({
     mutationFn: async ({
@@ -103,7 +113,20 @@ export default function UserAvatar({ user }: AvatarProps) {
     }) => {
       return uploadCurrentUserAvatar(compressedFile, filename);
     },
-    onSuccess: ({ publicUrl }) => {
+    onSuccess: ({ publicUrl, finalizeOk, finalizeError }) => {
+      if (!finalizeOk) {
+        setPreviewSrc(committedAvatarUrl);
+        form.reset();
+
+        if (blobUrlRef.current) {
+          URL.revokeObjectURL(blobUrlRef.current);
+          blobUrlRef.current = null;
+        }
+
+        toast.error(finalizeError || t('settings-account.avatar_update_error'));
+        return;
+      }
+
       setCommittedAvatarUrl(publicUrl);
       setPreviewSrc(publicUrl);
       toast.success(t('settings-account.avatar_updated'));
@@ -118,6 +141,14 @@ export default function UserAvatar({ user }: AvatarProps) {
     onError: (error) => {
       console.error('Error uploading avatar:', error);
       toast.error(t('settings-account.avatar_update_error'));
+      setPreviewSrc(committedAvatarUrl);
+
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
+
+      cleanupCropSelection();
       form.reset();
     },
   });
@@ -236,6 +267,7 @@ export default function UserAvatar({ user }: AvatarProps) {
       setIsConverting(true);
       cleanupCropSelection();
       const imageUrl = URL.createObjectURL(file);
+      selectedImageUrlRef.current = imageUrl;
       setSelectedImageUrl(imageUrl);
       setSelectedFile(file);
       setCropperOpen(true);
@@ -373,6 +405,7 @@ export default function UserAvatar({ user }: AvatarProps) {
                     onChange={(e) => {
                       if (e.target.files?.[0] && !isConverting) {
                         handleFileSelect(e.target.files[0]);
+                        e.target.value = '';
                       }
                     }}
                     className="hidden"

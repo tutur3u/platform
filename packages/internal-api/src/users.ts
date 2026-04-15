@@ -28,6 +28,12 @@ type CurrentUserAvatarUploadUrlResponse = {
   publicUrl: string;
 };
 
+export type UploadCurrentUserAvatarResult = {
+  publicUrl: string;
+  finalizeOk: boolean;
+  finalizeError?: string;
+};
+
 export type UpdateCurrentUserProfilePayload = {
   avatar_url?: string | null;
   display_name?: string | null;
@@ -149,7 +155,7 @@ export async function uploadCurrentUserAvatar(
   file: File,
   filename = file.name,
   options?: InternalApiClientOptions
-) {
+): Promise<UploadCurrentUserAvatarResult> {
   const client = getInternalApiClient(options);
   const { uploadUrl, publicUrl } = await createCurrentUserAvatarUploadUrl(
     filename,
@@ -169,9 +175,19 @@ export async function uploadCurrentUserAvatar(
     throw new Error('Failed to upload file');
   }
 
-  await updateCurrentUserProfile({ avatar_url: publicUrl }, options);
-
-  return { publicUrl };
+  try {
+    await updateCurrentUserProfile({ avatar_url: publicUrl }, options);
+    return { publicUrl, finalizeOk: true };
+  } catch (error) {
+    return {
+      publicUrl,
+      finalizeOk: false,
+      finalizeError:
+        error instanceof Error
+          ? error.message
+          : 'Failed to finalize avatar profile update',
+    };
+  }
 }
 
 export async function removeCurrentUserAvatar(
