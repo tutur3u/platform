@@ -1,6 +1,27 @@
 import { render, screen } from '@testing-library/react';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => {
+    const map: Record<string, string> = {
+      'common.list_name_to_do': 'To Do',
+      'common.list_name_in_progress': 'In Progress',
+      'common.list_name_done': 'Done',
+      'common.list_name_closed': 'Closed',
+      'common.documents': 'Documents',
+      'ws-task-boards.layout_settings.add_new_list': 'Add New List',
+      'ws-task-boards.select_or_create_list': 'Select or create a list',
+      'ws-task-boards.dialog.no_lists_found': 'No lists',
+    };
+    return map[key] ?? key;
+  },
+}));
+
+vi.mock('../../../../shared/create-list-dialog', () => ({
+  CreateListDialog: () => null,
+}));
+
 import { TaskDueDateMenu } from '../task-due-date-menu';
 import { TaskEstimationMenu } from '../task-estimation-menu';
 import { TaskLabelsMenu } from '../task-labels-menu';
@@ -408,29 +429,30 @@ describe('TaskProjectsMenu', () => {
 
 describe('TaskMoveMenu', () => {
   const mockLists: TaskList[] = [
-    { id: 'list-1', name: 'To Do', status: 'not_started' } as TaskList,
-    { id: 'list-2', name: 'In Progress', status: 'active' } as TaskList,
-    { id: 'list-3', name: 'Done', status: 'done' } as TaskList,
+    { id: 'list-1', name: 'Backlog A', status: 'not_started' } as TaskList,
+    { id: 'list-2', name: 'Sprint lane', status: 'active' } as TaskList,
+    { id: 'list-3', name: 'Shipped', status: 'done' } as TaskList,
   ];
 
   const mockOnMoveToList = vi.fn();
   const mockOnMenuItemSelect = vi.fn((_, action) => action());
 
-  it('should not render when only one list available', () => {
+  it('should not render when no lists available', () => {
     const { container } = render(
       <TaskMoveMenu
         currentListId="list-1"
-        availableLists={[mockLists[0]!]}
+        availableLists={[]}
         isLoading={false}
         onMoveToList={mockOnMoveToList}
         onMenuItemSelect={mockOnMenuItemSelect}
+        onRequestOpenCreateDialog={vi.fn()}
       />
     );
 
     expect(container.firstChild).toBeNull();
   });
 
-  it('should render move menu with other lists', () => {
+  it('should render move menu with grouped lists (includes current list)', () => {
     render(
       <TaskMoveMenu
         currentListId="list-1"
@@ -438,16 +460,18 @@ describe('TaskMoveMenu', () => {
         isLoading={false}
         onMoveToList={mockOnMoveToList}
         onMenuItemSelect={mockOnMenuItemSelect}
+        onRequestOpenCreateDialog={vi.fn()}
       />
     );
 
     expect(screen.getByText('Move')).toBeInTheDocument();
-    expect(screen.getByText('In Progress')).toBeInTheDocument();
-    expect(screen.getByText('Done')).toBeInTheDocument();
-    expect(screen.queryByText('To Do')).not.toBeInTheDocument(); // Current list should not be shown
+    expect(screen.getByText('Backlog A')).toBeInTheDocument();
+    expect(screen.getByText('Sprint lane')).toBeInTheDocument();
+    expect(screen.getByText('Shipped')).toBeInTheDocument();
+    expect(screen.getByText('Add New List')).toBeInTheDocument();
   });
 
-  it('should show empty state when no other lists available', () => {
+  it('should render move menu when only one list (create flow)', () => {
     const singleList: TaskList[] = [mockLists[0]!];
     render(
       <TaskMoveMenu
@@ -456,10 +480,12 @@ describe('TaskMoveMenu', () => {
         isLoading={false}
         onMoveToList={mockOnMoveToList}
         onMenuItemSelect={mockOnMenuItemSelect}
+        onRequestOpenCreateDialog={vi.fn()}
       />
     );
 
-    // Should not render at all with single list
-    expect(screen.queryByText('Move')).not.toBeInTheDocument();
+    expect(screen.getByText('Move')).toBeInTheDocument();
+    expect(screen.getByText('Backlog A')).toBeInTheDocument();
+    expect(screen.getByText('Add New List')).toBeInTheDocument();
   });
 });

@@ -14308,6 +14308,7 @@
       },
       "unarchive": "Bỏ lưu trữ"
     },
+    "select_or_create_list": "Chọn hoặc tạo danh sách",
     "settings": {
       "configure_description": "Cấu hình các cài đặt riêng của bảng.",
       "ticket_prefix": "Tiền tố Phiếu",

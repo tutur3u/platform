@@ -6530,6 +6530,7 @@
       },
       "unarchive": "Unarchive"
     },
+    "select_or_create_list": "Select or create a list",
     "singular": "Task board"
   },
   "ws-tasks": {

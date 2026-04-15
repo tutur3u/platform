@@ -72,6 +72,7 @@ import {
 } from './board-broadcast-context';
 import { CreateListDialog } from './create-list-dialog';
 import { EditListDialog } from './edit-list-dialog';
+import { translateTaskListNameForDisplay } from './utils/translate-task-list-display-name';
 
 interface BoardLayoutSettingsProps {
   open: boolean;
@@ -253,6 +254,16 @@ function SortableListItem({
     documents: t.documents,
   };
 
+  const rawListName = list.name ?? '';
+
+  const listDisplayName = translateTaskListNameForDisplay(rawListName, {
+    toDo: statusLabels.not_started,
+    inProgress: statusLabels.active,
+    done: statusLabels.done,
+    closed: statusLabels.closed,
+    documents: statusLabels.documents,
+  });
+
   const colorOptions = useMemo(
     () => [
       {
@@ -362,7 +373,7 @@ function SortableListItem({
         {list.status && StatusIcon && (
           <div
             className={cn(
-              'flex h-8 w-8 items-center justify-center rounded-md',
+              'flex h-8 w-8 shrink-0 items-center justify-center rounded-md',
               statusConfig[list.status].bgColor
             )}
           >
@@ -374,14 +385,13 @@ function SortableListItem({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate font-medium text-sm">{list.name}</span>
+            <span className="truncate font-medium text-sm">
+              {listDisplayName}
+            </span>
             <Badge variant="secondary" className="shrink-0 text-[10px]">
               {taskCount} {taskCount === 1 ? t.task : t.tasks}
             </Badge>
           </div>
-          <p className="truncate text-muted-foreground text-xs">
-            {list.status && statusLabels[list.status]}
-          </p>
         </div>
       </div>
 
