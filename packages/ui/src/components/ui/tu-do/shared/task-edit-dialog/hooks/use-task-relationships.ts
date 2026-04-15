@@ -1,8 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
+import { NEW_LABEL_COLOR } from '../../../utils/taskConstants';
 import { useBoardBroadcast } from '../../board-broadcast-context';
 import type { WorkspaceTaskLabel } from '../types';
 import {
@@ -75,7 +76,6 @@ export function useTaskRelationships({
   onUpdate,
 }: UseTaskRelationshipsProps): UseTaskRelationshipsReturn {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const broadcast = useBoardBroadcast();
   const [creatingLabel, setCreatingLabel] = useState(false);
   const [creatingProject, setCreatingProject] = useState(false);
@@ -114,10 +114,8 @@ export function useTaskRelationships({
         broadcast?.('task:relations-changed', { taskId });
         onUpdate();
       } catch (e: any) {
-        toast({
-          title: 'Label update failed',
+        toast.error('Label update failed', {
           description: e.message || 'Unable to update labels',
-          variant: 'destructive',
         });
       }
     },
@@ -128,7 +126,6 @@ export function useTaskRelationships({
       taskId,
       boardId,
       queryClient,
-      toast,
       setSelectedLabels,
       onUpdate,
       broadcast,
@@ -196,10 +193,8 @@ export function useTaskRelationships({
         broadcast?.('task:relations-changed', { taskId });
         onUpdate();
       } catch (e: any) {
-        toast({
-          title: 'Assignee update failed',
+        toast.error('Assignee update failed', {
           description: e.message || 'Unable to update assignees',
-          variant: 'destructive',
         });
       }
     },
@@ -211,7 +206,6 @@ export function useTaskRelationships({
       boardId,
       queryClient,
       onUpdate,
-      toast,
       setSelectedAssignees,
       broadcast,
     ]
@@ -260,10 +254,8 @@ export function useTaskRelationships({
         broadcast?.('task:relations-changed', { taskId });
         onUpdate();
       } catch (e: any) {
-        toast({
-          title: 'Project update failed',
+        toast.error('Project update failed', {
           description: e.message || 'Unable to update projects',
-          variant: 'destructive',
         });
       }
     },
@@ -275,7 +267,6 @@ export function useTaskRelationships({
       queryClient,
       boardId,
       onUpdate,
-      toast,
       setSelectedProjects,
       broadcast,
     ]
@@ -286,12 +277,21 @@ export function useTaskRelationships({
 
     setCreatingLabel(true);
 
+    let newLabel: WorkspaceTaskLabel;
     try {
-      const newLabel = await createWorkspaceLabel(wsId, {
+      newLabel = await createWorkspaceLabel(wsId, {
         name: newLabelName.trim(),
         color: newLabelColor,
       });
+    } catch (e: any) {
+      toast.error('Label creation failed', {
+        description: e.message || 'Unable to create label.',
+      });
+      setCreatingLabel(false);
+      return;
+    }
 
+    try {
       setAvailableLabels((prev) =>
         [newLabel, ...prev].sort((a, b) =>
           (a?.name || '')
@@ -302,8 +302,7 @@ export function useTaskRelationships({
 
       if (isCreateMode) {
         setSelectedLabels((prev) => [...prev, newLabel]);
-        toast({
-          title: 'Label created',
+        toast.success('Label created', {
           description: 'New label will be attached to the task on save.',
         });
       } else if (taskId) {
@@ -338,20 +337,23 @@ export function useTaskRelationships({
         );
         broadcast?.('task:relations-changed', { taskId });
         onUpdate();
-        toast({
-          title: 'Label created & linked',
+        toast.success('Label created & linked', {
           description: 'New label added and attached to this task.',
+        });
+      } else {
+        toast.success('Label created', {
+          description: 'New label has been created, but no task is selected.',
         });
       }
 
       setNewLabelName('');
-      setNewLabelColor('gray');
+      setNewLabelColor(NEW_LABEL_COLOR);
       setShowNewLabelDialog(false);
     } catch (e: any) {
-      toast({
-        title: 'Label creation failed',
-        description: e.message || 'Unable to create or link label.',
-        variant: 'destructive',
+      toast.error('Label created but not linked', {
+        description:
+          e.message ||
+          'The label was created but could not be attached to this task.',
       });
     } finally {
       setCreatingLabel(false);
@@ -364,7 +366,6 @@ export function useTaskRelationships({
     taskId,
     queryClient,
     onUpdate,
-    toast,
     isCreateMode,
     selectedLabels,
     setSelectedLabels,
@@ -391,8 +392,7 @@ export function useTaskRelationships({
 
       if (isCreateMode) {
         setSelectedProjects((prev) => [...prev, newProject]);
-        toast({
-          title: 'Project created',
+        toast.success('Project created', {
           description: 'New project will be attached to the task on save.',
         });
       } else if (taskId) {
@@ -419,8 +419,7 @@ export function useTaskRelationships({
         );
         broadcast?.('task:relations-changed', { taskId });
         onUpdate();
-        toast({
-          title: 'Project created & linked',
+        toast.success('Project created & linked', {
           description: 'New project added and attached to this task.',
         });
       }
@@ -428,10 +427,8 @@ export function useTaskRelationships({
       setNewProjectName('');
       setShowNewProjectDialog(false);
     } catch (e: any) {
-      toast({
-        title: 'Project creation failed',
+      toast.error('Project creation failed', {
         description: e.message || 'Unable to create or link project.',
-        variant: 'destructive',
       });
     } finally {
       setCreatingProject(false);
@@ -443,7 +440,6 @@ export function useTaskRelationships({
     taskId,
     queryClient,
     onUpdate,
-    toast,
     isCreateMode,
     selectedProjects,
     setSelectedProjects,

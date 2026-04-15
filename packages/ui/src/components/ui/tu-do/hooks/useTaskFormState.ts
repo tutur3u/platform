@@ -1,14 +1,13 @@
 import type { JSONContent } from '@tiptap/react';
+import type { TaskLabel as DbTaskLabel } from '@tuturuuu/types/db';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useCallback, useMemo, useState } from 'react';
 
-interface WorkspaceTaskLabel {
-  id: string;
-  name: string;
-  color: string;
-  created_at: string;
-}
+type WorkspaceTaskLabel = Pick<
+  DbTaskLabel,
+  'id' | 'name' | 'color' | 'created_at'
+>;
 
 interface TaskFormState {
   name: string;

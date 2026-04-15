@@ -5,15 +5,14 @@
  * It has zero runtime dependencies and exists solely for type safety.
  */
 
+import type { TaskLabel as DbTaskLabel } from '@tuturuuu/types/db';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { ListStatusFilter } from './board-header';
 
-export interface TaskLabel {
-  id: string;
-  name: string;
-  color: string;
-  created_at: string;
-}
+export type TaskLabel = Pick<
+  DbTaskLabel,
+  'id' | 'name' | 'color' | 'created_at'
+>;
 
 export interface TaskAssignee {
   id: string;
