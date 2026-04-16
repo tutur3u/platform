@@ -39,6 +39,7 @@ vi.mock('motion/react', () => ({
 }));
 
 const mockDispatchRequestOpenTask = vi.fn();
+const mockWaitForTaskOpenResult = vi.fn();
 
 vi.mock('@tuturuuu/ui/tu-do/shared/task-open-events', () => ({
   dispatchRequestOpenTask: (payload: { taskId: string; wsId?: string }) => {
@@ -48,6 +49,8 @@ vi.mock('@tuturuuu/ui/tu-do/shared/task-open-events', () => ({
       requestId: 'test-request-id',
     };
   },
+  waitForTaskOpenResult: (requestId: string, timeoutMs?: number) =>
+    mockWaitForTaskOpenResult(requestId, timeoutMs),
 }));
 
 // Import after mocks
@@ -60,6 +63,7 @@ describe('NotificationCard', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockWaitForTaskOpenResult.mockResolvedValue(true);
   });
 
   const createMockNotification = (

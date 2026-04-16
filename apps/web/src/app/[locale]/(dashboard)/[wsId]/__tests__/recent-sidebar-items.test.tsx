@@ -113,6 +113,7 @@ function readStoredEntries() {
 
 describe('RecentSidebarItems', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     mockPathname = '/personal/dashboard';
     window.localStorage.clear();
     mockPush.mockReset();
@@ -123,7 +124,6 @@ describe('RecentSidebarItems', () => {
       requestId: 'request-1',
     });
     mockWaitForTaskOpenResult.mockResolvedValue(true);
-    vi.clearAllMocks();
   });
 
   it('does not rebroadcast on mount when stored entries are already normalized', async () => {

@@ -14,7 +14,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
-import { dispatchRequestOpenTask } from '@tuturuuu/ui/tu-do/shared/task-open-events';
+import {
+  dispatchRequestOpenTask,
+  waitForTaskOpenResult,
+} from '@tuturuuu/ui/tu-do/shared/task-open-events';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -313,14 +316,18 @@ export function NotificationCard({
               variant="ghost"
               size="sm"
               className="mt-2 h-7 px-2 text-foreground/50 text-xs hover:text-dynamic-blue"
-              onClick={() => {
+              onClick={async () => {
                 if (!notification.entity_id) return;
-                const { handled } = dispatchRequestOpenTask({
+                const { handled, requestId } = dispatchRequestOpenTask({
                   taskId: notification.entity_id,
                   wsId: notification.ws_id || wsId,
                 });
 
-                if (!handled) {
+                const opened = handled
+                  ? await waitForTaskOpenResult(requestId, 6000)
+                  : false;
+
+                if (!opened) {
                   const pathParts = pathname.split('/').filter(Boolean);
                   const firstSegment = pathParts[0] ?? '';
                   const localePrefix =

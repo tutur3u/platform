@@ -50,6 +50,9 @@ import {
 
 const RECENT_SIDEBAR_ITEMS_EVENT = 'tuturuuu:sidebar-recent-items-updated';
 const DEFAULT_VISIBLE_RECENT_SIDEBAR_ITEMS = 1;
+// Reserved task-route segments that should never be treated as task IDs when
+// parsing recent hrefs. This prevents false-positive task dialog lookups for
+// list/filter routes (e.g. /tasks/boards, /tasks/projects) in click handling.
 const TASK_LIST_SEGMENT_BLOCKLIST = new Set([
   'boards',
   'projects',

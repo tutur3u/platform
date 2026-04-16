@@ -140,10 +140,6 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       if (profile?.id) {
         setCurrentUser({
           id: profile.id,
-          email: profile.email ?? undefined,
-        });
-        setCurrentUser({
-          id: profile.id,
           display_name: profile.display_name || undefined,
           email: profile.email ?? undefined,
           avatar_url: profile.avatar_url || undefined,
