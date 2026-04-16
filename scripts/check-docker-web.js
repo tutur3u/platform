@@ -7,6 +7,11 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const WEB_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'web', 'Dockerfile');
 const WEB_COMPOSE_FILE_PATH = path.join(ROOT_DIR, 'docker-compose.web.yml');
 const WORKSPACE_DIRS = ['apps', 'packages'];
+const PACKAGE_JSON_DEPENDENCY_FIELDS = [
+  'dependencies',
+  'devDependencies',
+  'optionalDependencies',
+];
 
 function listWorkspacePackageJsonPaths(rootDir = ROOT_DIR, fsImpl = fs) {
   return WORKSPACE_DIRS.flatMap((workspaceDir) => {
@@ -50,26 +55,71 @@ function getStageContent(dockerfileContent, stageName) {
 }
 
 function getCopiedWorkspaceManifestPaths(stageContent) {
+  return getCopiedRelativePaths(stageContent)
+    .filter((relativePath) =>
+      /^(?:apps|packages)\/[^/]+\/package\.json$/u.test(relativePath)
+    )
+    .sort();
+}
+
+function getCopiedRelativePaths(stageContent) {
   return stageContent
     .split(/\r?\n/u)
     .map((line) => line.trim())
     .map((line) =>
-      line.match(
-        /^COPY ((?:apps|packages)\/[^/]+\/package\.json) \.\/((?:apps|packages)\/[^/]+\/package\.json)$/
-      )
+      line.match(/^COPY ((?:apps|packages)\/.+) \.\/((?:apps|packages)\/.+)$/u)
     )
     .filter(Boolean)
     .map((match) => {
       if (match[1] !== match[2]) {
-        throw new Error(`Mismatched Docker manifest copy: ${match[0]}`);
+        throw new Error(`Mismatched Docker copy: ${match[0]}`);
       }
 
       return match[1];
-    })
-    .sort();
+    });
 }
 
-function validateDockerfile({ dockerfileContent, workspacePackageJsonPaths }) {
+function listFileDependencyPaths(rootDir = ROOT_DIR, fsImpl = fs) {
+  const packageJsonPaths = [
+    'package.json',
+    ...listWorkspacePackageJsonPaths(rootDir, fsImpl),
+  ];
+  const fileDependencyPaths = [];
+
+  for (const packageJsonPath of packageJsonPaths) {
+    const packageJson = JSON.parse(
+      fsImpl.readFileSync(path.join(rootDir, packageJsonPath), 'utf8')
+    );
+    const packageDir = path.posix.dirname(packageJsonPath);
+
+    for (const fieldName of PACKAGE_JSON_DEPENDENCY_FIELDS) {
+      const dependencies = packageJson[fieldName] ?? {};
+
+      for (const dependencySpec of Object.values(dependencies)) {
+        if (
+          typeof dependencySpec !== 'string' ||
+          !dependencySpec.startsWith('file:')
+        ) {
+          continue;
+        }
+
+        fileDependencyPaths.push(
+          path.posix.normalize(
+            path.posix.join(packageDir, dependencySpec.slice(5))
+          )
+        );
+      }
+    }
+  }
+
+  return [...new Set(fileDependencyPaths)].sort();
+}
+
+function validateDockerfile({
+  dockerfileContent,
+  workspacePackageJsonPaths,
+  fileDependencyPaths,
+}) {
   const errors = [];
   const depsStage = getStageContent(dockerfileContent, 'deps');
   const devStage = getStageContent(dockerfileContent, 'dev');
@@ -122,6 +172,7 @@ function validateDockerfile({ dockerfileContent, workspacePackageJsonPaths }) {
     );
   }
 
+  const copiedRelativePaths = getCopiedRelativePaths(depsStage);
   const copiedWorkspacePackageJsonPaths =
     getCopiedWorkspaceManifestPaths(depsStage);
   const missingWorkspacePackageJsonPaths = workspacePackageJsonPaths.filter(
@@ -143,6 +194,18 @@ function validateDockerfile({ dockerfileContent, workspacePackageJsonPaths }) {
   if (unexpectedWorkspacePackageJsonPaths.length > 0) {
     errors.push(
       `apps/web/Dockerfile deps stage copies non-existent workspace manifests: ${unexpectedWorkspacePackageJsonPaths.join(
+        ', '
+      )}`
+    );
+  }
+
+  const missingFileDependencyPaths = fileDependencyPaths.filter(
+    (relativePath) => !copiedRelativePaths.includes(relativePath)
+  );
+
+  if (missingFileDependencyPaths.length > 0) {
+    errors.push(
+      `apps/web/Dockerfile deps stage is missing file-backed dependencies required by package manifests: ${missingFileDependencyPaths.join(
         ', '
       )}`
     );
@@ -228,10 +291,12 @@ function checkDockerWebSetup({
   dockerfileContent = fsImpl.readFileSync(WEB_DOCKERFILE_PATH, 'utf8'),
   composeContent = fsImpl.readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8'),
   workspacePackageJsonPaths = listWorkspacePackageJsonPaths(rootDir, fsImpl),
+  fileDependencyPaths = listFileDependencyPaths(rootDir, fsImpl),
 } = {}) {
   return [
     ...validateDockerfile({
       dockerfileContent,
+      fileDependencyPaths,
       workspacePackageJsonPaths,
     }),
     ...validateDockerCompose(composeContent),
@@ -262,8 +327,10 @@ module.exports = {
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
   checkDockerWebSetup,
+  getCopiedRelativePaths,
   getCopiedWorkspaceManifestPaths,
   getStageContent,
+  listFileDependencyPaths,
   listWorkspacePackageJsonPaths,
   validateDockerCompose,
   validateDockerfile,
