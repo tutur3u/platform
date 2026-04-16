@@ -17,14 +17,14 @@ import { Button } from '@tuturuuu/ui/button';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import {
-  dispatchRequestOpenTask,
-  waitForTaskOpenResult,
-} from '@tuturuuu/ui/tu-do/shared/task-open-events';
-import {
   RECENT_SIDEBAR_VISIT_EVENT,
   type RecentSidebarIconKey,
   type RecentSidebarVisitPayload,
 } from '@tuturuuu/ui/tu-do/shared/recent-sidebar-events';
+import {
+  dispatchRequestOpenTask,
+  waitForTaskOpenResult,
+} from '@tuturuuu/ui/tu-do/shared/task-open-events';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';

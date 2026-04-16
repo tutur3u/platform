@@ -86,6 +86,9 @@ export function waitForTaskOpenResult(
       resolve(false);
     }, timeoutMs);
 
-    window.addEventListener(TASK_OPEN_RESULT_EVENT, handleResult as EventListener);
+    window.addEventListener(
+      TASK_OPEN_RESULT_EVENT,
+      handleResult as EventListener
+    );
   });
 }

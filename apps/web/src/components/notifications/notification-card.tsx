@@ -21,7 +21,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { type ComponentProps, type ReactNode, useState } from 'react';
 import { DescriptionDiffViewer } from '@/components/tasks/description-diff-viewer';
 import type { Notification } from '@/hooks/useNotifications';
 import {
@@ -41,6 +41,19 @@ interface NotificationCardProps {
   isUpdating: boolean;
   onActionComplete?: () => void;
   index?: number;
+}
+
+type WorkspaceInviteActionType =
+  | 'WORKSPACE_INVITE_ACCEPT'
+  | 'WORKSPACE_INVITE_DECLINE';
+
+interface WorkspaceInviteAction {
+  id: string;
+  label: string;
+  icon?: ReactNode;
+  variant?: ComponentProps<typeof Button>['variant'];
+  type: WorkspaceInviteActionType;
+  payload: { wsId: string };
 }
 
 export function NotificationCard({
@@ -63,15 +76,15 @@ export function NotificationCard({
   const isTaskEntityNotification =
     notification.entity_type === 'task' && !!notification.entity_id;
 
-  const handleAction = async (actionType: string, payload: any) => {
+  const handleAction = async (action: WorkspaceInviteAction) => {
     setIsProcessing(true);
 
     try {
-      switch (actionType) {
+      switch (action.type) {
         case 'WORKSPACE_INVITE_ACCEPT':
         case 'WORKSPACE_INVITE_DECLINE': {
-          const accept = actionType === 'WORKSPACE_INVITE_ACCEPT';
-          const targetWsId = payload.wsId;
+          const accept = action.type === 'WORKSPACE_INVITE_ACCEPT';
+          const targetWsId = action.payload.wsId;
           const url = `/api/workspaces/${targetWsId}/${
             accept ? 'accept-invite' : 'decline-invite'
           }`;
@@ -280,9 +293,9 @@ export function NotificationCard({
               {actions.map((action) => (
                 <Button
                   key={action.id}
-                  variant={action.variant as any}
+                  variant={action.variant}
                   size="sm"
-                  onClick={() => handleAction(action.type, action.payload)}
+                  onClick={() => handleAction(action)}
                   disabled={isProcessing}
                   className="h-8 gap-1.5 text-xs"
                 >
@@ -495,25 +508,10 @@ function SingleChangeDetail({
 // Action Helpers
 // ============================================================================
 
-interface NotificationAction {
-  id: string;
-  label: string;
-  icon?: React.ReactNode;
-  variant?:
-    | 'default'
-    | 'destructive'
-    | 'outline'
-    | 'secondary'
-    | 'ghost'
-    | 'link';
-  type: string;
-  payload: any;
-}
-
 function getNotificationActions(
   notification: Notification,
   t: (key: string) => string
-): NotificationAction[] {
+): WorkspaceInviteAction[] {
   const { type, data } = notification;
 
   switch (type) {
@@ -521,7 +519,9 @@ function getNotificationActions(
       if (data?.action_taken) return [];
 
       const workspaceId = data?.workspace_id;
-      if (!workspaceId) return [];
+      if (typeof workspaceId !== 'string' || workspaceId.length === 0) {
+        return [];
+      }
 
       return [
         {

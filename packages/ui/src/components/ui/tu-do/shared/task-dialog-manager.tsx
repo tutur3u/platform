@@ -15,8 +15,8 @@ import {
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
 import { TaskEditDialog } from './task-edit-dialog';
 import {
-  REQUEST_OPEN_TASK_EVENT,
   dispatchTaskOpenResult,
+  REQUEST_OPEN_TASK_EVENT,
   type RequestOpenTaskPayload,
 } from './task-open-events';
 
