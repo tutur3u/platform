@@ -35,15 +35,10 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import Link from 'next/link';
-import {
-  useParams,
-  usePathname,
-  useRouter,
-  useSearchParams,
-} from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useContext, useEffect, useState } from 'react';
+import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
+import { useContext, useState } from 'react';
 import { AccountSwitcherModal } from '@/components/account-switcher';
 import { CommandPalette } from '@/components/command';
 import { SettingsDialog } from '@/components/settings/settings-dialog';
@@ -74,20 +69,27 @@ export default function UserNavClient({
 }) {
   const t = useTranslations();
   const params = useParams();
-  const pathname = usePathname();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [open, setOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [accountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
   const sidebar = useContext(SidebarContext);
   const { accounts } = useAccountSwitcher();
   const { modKey } = usePlatform();
   const wsIdParam = typeof params?.wsId === 'string' ? params.wsId : undefined;
-  const requestedSettingsOpen = searchParams.get('settingsDialog') === 'open';
-  const requestedSettingsTab = searchParams.get('settingsTab') ?? undefined;
-  const linkedProvider =
-    searchParams.get('settingsLinkedProvider') ?? undefined;
+  const [settingsQuery, setSettingsQuery] = useQueryStates(
+    {
+      settingsDialog: parseAsStringLiteral(['open']),
+      settingsTab: parseAsString,
+      settingsLinkedProvider: parseAsString,
+    },
+    {
+      history: 'replace',
+      shallow: true,
+      scroll: false,
+    }
+  );
+  const requestedSettingsOpen = settingsQuery.settingsDialog === 'open';
+  const requestedSettingsTab = settingsQuery.settingsTab ?? undefined;
+  const linkedProvider = settingsQuery.settingsLinkedProvider ?? undefined;
 
   const { data: resolvedWorkspace } = useQuery({
     queryKey: ['user-nav-workspace', wsIdParam],
@@ -100,25 +102,36 @@ export default function UserNavClient({
 
   const wsId = workspace?.id ?? resolvedWorkspace?.id;
 
-  useEffect(() => {
-    if (requestedSettingsOpen) {
-      setOpen(true);
-    }
-  }, [requestedSettingsOpen]);
-
   const handleSettingsOpenChange = (nextOpen: boolean) => {
-    setOpen(nextOpen);
-
     if (!nextOpen) {
-      const nextParams = new URLSearchParams(searchParams.toString());
-      nextParams.delete('settingsDialog');
-      nextParams.delete('settingsTab');
-      nextParams.delete('settingsLinkedProvider');
-      router.replace(
-        nextParams.size > 0 ? `${pathname}?${nextParams.toString()}` : pathname,
-        { scroll: false }
+      void setSettingsQuery(
+        {
+          settingsDialog: null,
+          settingsTab: null,
+          settingsLinkedProvider: null,
+        },
+        {
+          history: 'replace',
+          shallow: true,
+          scroll: false,
+        }
       );
     }
+  };
+
+  const openSettingsDialog = (tab?: string) => {
+    void setSettingsQuery(
+      {
+        settingsDialog: 'open',
+        settingsTab: tab ?? null,
+        settingsLinkedProvider: null,
+      },
+      {
+        history: 'replace',
+        shallow: true,
+        scroll: false,
+      }
+    );
   };
 
   return (
@@ -130,7 +143,10 @@ export default function UserNavClient({
         />
       )}
       {user && (
-        <Dialog open={open} onOpenChange={handleSettingsOpenChange}>
+        <Dialog
+          open={requestedSettingsOpen}
+          onOpenChange={handleSettingsOpenChange}
+        >
           <SettingsDialog
             wsId={wsId}
             user={user}
@@ -190,12 +206,13 @@ export default function UserNavClient({
         >
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col">
-              <Link
-                href="/settings/account"
+              <button
+                type="button"
+                onClick={() => openSettingsDialog('profile')}
                 className="line-clamp-1 w-fit break-all font-medium text-sm hover:underline"
               >
                 {user?.display_name || user?.handle || t('common.unnamed')}
-              </Link>
+              </button>
               <p className="line-clamp-1 break-all text-xs opacity-70">
                 {user?.email}
               </p>
@@ -294,7 +311,7 @@ export default function UserNavClient({
             <ReportProblemMenuItem />
             <DropdownMenuItem
               className="cursor-pointer"
-              onClick={() => setOpen(true)}
+              onClick={() => openSettingsDialog()}
             >
               <Settings className="h-4 w-4" />
               <span>{t('common.settings')}</span>
@@ -312,14 +329,12 @@ export default function UserNavClient({
               <DropdownMenuShortcut>{modKey}⇧A</DropdownMenuShortcut>
             </DropdownMenuItem>
           ) : (
-            <DropdownMenuItem asChild>
-              <Link
-                href="/settings/account/accounts"
-                className="cursor-pointer"
-              >
-                <Users className="h-4 w-4 text-dynamic-orange" />
-                <span>{t('account_switcher.manage_accounts')}</span>
-              </Link>
+            <DropdownMenuItem
+              onSelect={() => openSettingsDialog('accounts')}
+              className="cursor-pointer"
+            >
+              <Users className="h-4 w-4 text-dynamic-orange" />
+              <span>{t('account_switcher.manage_accounts')}</span>
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />

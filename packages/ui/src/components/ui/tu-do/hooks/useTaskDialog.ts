@@ -50,7 +50,7 @@ export function useTaskDialog(): {
       taskWorkspacePersonal?: boolean;
     }
   ) => void;
-  openTaskById: (taskId: string) => Promise<void>;
+  openTaskById: (taskId: string) => Promise<boolean>;
   createTask: (
     boardId: string,
     listId: string,

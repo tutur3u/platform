@@ -17,14 +17,14 @@
     "serwist": "^10.0.0-preview.14"
   },
   "peerDependencies": {
-    "next": ">=16.2.3",
+    "next": ">=16.2.4",
     "react": ">=19.2.5"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
-    "next": "^16.2.3",
+    "next": "^16.2.4",
     "react": "^19.2.5",
     "typescript": "^6.0.2",
     "vitest": "^4.1.4"
