@@ -46,12 +46,12 @@ void main() {
     });
 
     test('prefers fresh user fields when present', () {
-      final previous = TimeTrackingRequest(
+      const previous = TimeTrackingRequest(
         id: 'r1',
         userDisplayName: 'Old',
         userAvatarUrl: 'https://old',
       );
-      final fresh = TimeTrackingRequest(
+      const fresh = TimeTrackingRequest(
         id: 'r1',
         userDisplayName: 'New',
         userAvatarUrl: 'https://new',
@@ -64,6 +64,31 @@ void main() {
 
       expect(merged.userDisplayName, 'New');
       expect(merged.userAvatarUrl, 'https://new');
+    });
+
+    test('allows mutable fields to be cleared to null', () {
+      final previous = TimeTrackingRequest(
+        id: 'r1',
+        taskId: 'task-1',
+        approvedBy: 'manager-1',
+        approvedByName: 'Manager',
+        approvedAt: DateTime.utc(2026, 2, 24, 12),
+        rejectionReason: 'Old reason',
+      );
+      const fresh = TimeTrackingRequest(
+        id: 'r1',
+      );
+
+      final merged = mergeTimeTrackingRequestPreservingUserEnrichment(
+        previous,
+        fresh,
+      );
+
+      expect(merged.taskId, isNull);
+      expect(merged.approvedBy, isNull);
+      expect(merged.approvedByName, isNull);
+      expect(merged.approvedAt, isNull);
+      expect(merged.rejectionReason, isNull);
     });
   });
 }

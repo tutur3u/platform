@@ -372,6 +372,64 @@ void main() {
 
       await cubit.close();
     });
+
+    test(
+      'updateRequest returns merged request preserving user enrichment',
+      () async {
+        const previous = TimeTrackingRequest(
+          id: 'req_1',
+          title: 'Old title',
+          userDisplayName: 'Sam',
+          userAvatarUrl: 'https://example.com/a.png',
+        );
+        const fresh = TimeTrackingRequest(
+          id: 'req_1',
+          title: 'New title',
+        );
+
+        final cubit = TimeTrackerRequestsCubit(
+          repository: repository,
+          initialState: const TimeTrackerRequestsState(
+            status: TimeTrackerRequestsStatus.loaded,
+            workspaceId: 'ws_1',
+            requests: [previous],
+          ),
+        );
+
+        when(
+          () => repository.updateRequest(
+            'ws_1',
+            'req_1',
+            'New title',
+            any(),
+            any(),
+            description: any(named: 'description'),
+            removedImages: any(named: 'removedImages'),
+            newImageLocalPaths: any(named: 'newImageLocalPaths'),
+          ),
+        ).thenAnswer((_) async => fresh);
+
+        final result = await cubit.updateRequest(
+          'ws_1',
+          'req_1',
+          'New title',
+          DateTime.utc(2026, 2, 24, 9),
+          DateTime.utc(2026, 2, 24, 10),
+        );
+
+        expect(result, isNotNull);
+        expect(result!.title, 'New title');
+        expect(result.userDisplayName, 'Sam');
+        expect(result.userAvatarUrl, 'https://example.com/a.png');
+        expect(cubit.state.requests.single.userDisplayName, 'Sam');
+        expect(
+          cubit.state.requests.single.userAvatarUrl,
+          'https://example.com/a.png',
+        );
+
+        await cubit.close();
+      },
+    );
   });
 }
 
