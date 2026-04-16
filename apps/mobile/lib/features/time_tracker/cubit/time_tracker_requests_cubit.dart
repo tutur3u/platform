@@ -529,9 +529,23 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
         newImageLocalPaths: newImageLocalPaths,
       );
 
+      TimeTrackingRequest? previousRow;
+      for (final r in state.requests) {
+        if (r.id == requestId) {
+          previousRow = r;
+          break;
+        }
+      }
+      final mergedRequest = previousRow != null
+          ? mergeTimeTrackingRequestPreservingUserEnrichment(
+              previousRow,
+              updatedRequest,
+            )
+          : updatedRequest;
+
       // Update only the specific request in the list instead of full reload
       final updatedRequests = state.requests.map((r) {
-        return r.id == requestId ? updatedRequest : r;
+        return r.id == requestId ? mergedRequest : r;
       }).toList();
 
       emit(

@@ -11,6 +11,12 @@ import '../../../helpers/helpers.dart';
 class _MockTimeTrackerRepository extends Mock
     implements ITimeTrackerRepository {}
 
+void _setCompactViewport(WidgetTester tester) {
+  tester.view
+    ..physicalSize = const Size(390, 844)
+    ..devicePixelRatio = 1;
+}
+
 void main() {
   group('RequestDetailSheet', () {
     late _MockTimeTrackerRepository repository;
@@ -237,5 +243,142 @@ void main() {
         expect(find.text('Resubmit request'), findsNothing);
       },
     );
+
+    testWidgets('opens edit request in adaptive sheet on compact screens', (
+      tester,
+    ) async {
+      _setCompactViewport(tester);
+      addTearDown(tester.view.reset);
+
+      await tester.pumpApp(
+        Scaffold(
+          body: RequestDetailSheet(
+            request: request,
+            wsId: 'test_ws_id',
+            repository: repository,
+            canEdit: true,
+            onApprove: () async {},
+            onReject: (_) async {},
+            onRequestInfo: (_) async {},
+            onResubmit: () async {},
+            onEdit:
+                (
+                  title,
+                  startTime,
+                  endTime, {
+                  description,
+                  removedImages,
+                  newImageLocalPaths,
+                }) async => request,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(find.text('Edit request'), findsOneWidget);
+    });
+
+    testWidgets('shows success toast after edit request save', (tester) async {
+      _setCompactViewport(tester);
+      addTearDown(tester.view.reset);
+
+      Future<TimeTrackingRequest?> successfulEdit(
+        String title,
+        DateTime startTime,
+        DateTime endTime, {
+        String? description,
+        List<String>? removedImages,
+        List<String>? newImageLocalPaths,
+      }) async {
+        return TimeTrackingRequest(
+          id: request.id,
+          workspaceId: request.workspaceId,
+          userId: request.userId,
+          categoryId: request.categoryId,
+          title: title,
+          description: description,
+          startTime: startTime,
+          endTime: endTime,
+          images: request.images,
+          approvalStatus: request.approvalStatus,
+          createdAt: request.createdAt,
+          updatedAt: DateTime.now().toUtc(),
+        );
+      }
+
+      await tester.pumpApp(
+        Scaffold(
+          body: RequestDetailSheet(
+            request: request,
+            wsId: 'test_ws_id',
+            repository: repository,
+            canEdit: true,
+            onApprove: () async {},
+            onReject: (_) async {},
+            onRequestInfo: (_) async {},
+            onResubmit: () async {},
+            onEdit: successfulEdit,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Save'));
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Request updated'), findsOneWidget);
+
+      await tester.drainShadToastTimers();
+    });
+
+    testWidgets('shows error toast after failed edit request save', (
+      tester,
+    ) async {
+      _setCompactViewport(tester);
+      addTearDown(tester.view.reset);
+
+      await tester.pumpApp(
+        Scaffold(
+          body: RequestDetailSheet(
+            request: request,
+            wsId: 'test_ws_id',
+            repository: repository,
+            canEdit: true,
+            onApprove: () async {},
+            onReject: (_) async {},
+            onRequestInfo: (_) async {},
+            onResubmit: () async {},
+            onEdit:
+                (
+                  title,
+                  startTime,
+                  endTime, {
+                  description,
+                  removedImages,
+                  newImageLocalPaths,
+                }) async => throw Exception('Unable to save request'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Save'));
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Something went wrong'), findsOneWidget);
+      expect(find.textContaining('Unable to save request'), findsOneWidget);
+
+      await tester.drainShadToastTimers();
+    });
   });
 }

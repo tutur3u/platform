@@ -178,3 +178,39 @@ String? _nestedAvatarUrl(dynamic value) {
       ? avatarUrl.trim()
       : null;
 }
+
+/// Content-only update responses often omit nested `user` (list joins).
+/// Reapply [previous] owner/display fields when [fresh] drops them so list
+/// tiles keep avatar and name until the next full fetch.
+TimeTrackingRequest mergeTimeTrackingRequestPreservingUserEnrichment(
+  TimeTrackingRequest previous,
+  TimeTrackingRequest fresh,
+) {
+  return TimeTrackingRequest(
+    id: fresh.id,
+    workspaceId: fresh.workspaceId ?? previous.workspaceId,
+    userId: fresh.userId ?? previous.userId,
+    taskId: fresh.taskId ?? previous.taskId,
+    categoryId: fresh.categoryId ?? previous.categoryId,
+    title: fresh.title,
+    description: fresh.description,
+    userDisplayName: fresh.userDisplayName ?? previous.userDisplayName,
+    userAvatarUrl: fresh.userAvatarUrl ?? previous.userAvatarUrl,
+    startTime: fresh.startTime,
+    endTime: fresh.endTime,
+    images: fresh.images,
+    approvalStatus: fresh.approvalStatus,
+    approvedBy: fresh.approvedBy ?? previous.approvedBy,
+    approvedByName: fresh.approvedByName ?? previous.approvedByName,
+    approvedAt: fresh.approvedAt ?? previous.approvedAt,
+    rejectedBy: fresh.rejectedBy ?? previous.rejectedBy,
+    rejectedByName: fresh.rejectedByName ?? previous.rejectedByName,
+    rejectedAt: fresh.rejectedAt ?? previous.rejectedAt,
+    needsInfoRequestedByName:
+        fresh.needsInfoRequestedByName ?? previous.needsInfoRequestedByName,
+    rejectionReason: fresh.rejectionReason ?? previous.rejectionReason,
+    needsInfoReason: fresh.needsInfoReason ?? previous.needsInfoReason,
+    createdAt: fresh.createdAt ?? previous.createdAt,
+    updatedAt: fresh.updatedAt,
+  );
+}

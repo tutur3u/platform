@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/features/time_tracker/widgets/request_image_gallery.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/image_source_picker_dialog.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class RequestImageEditor extends StatefulWidget {
@@ -81,8 +82,6 @@ class _EditableImageTile extends StatelessWidget {
     );
   }
 }
-
-enum _ImageSourceSelection { camera, gallery }
 
 class _RequestImageEditorState extends State<RequestImageEditor> {
   final ImagePicker _picker = ImagePicker();
@@ -241,44 +240,33 @@ class _RequestImageEditorState extends State<RequestImageEditor> {
 
   Future<void> _pickImageSource() async {
     final l10n = context.l10n;
-    final source = await shad.showDialog<_ImageSourceSelection>(
+    final source = await showImageSourcePickerDialog(
       context: context,
-      builder: (dialogCtx) {
-        return shad.AlertDialog(
-          barrierColor: Colors.transparent,
-          title: Text(l10n.selectImageSource),
-          actions: [
-            shad.OutlineButton(
-              onPressed: () =>
-                  Navigator.of(dialogCtx).pop(_ImageSourceSelection.camera),
-              child: Text(l10n.camera),
-            ),
-            shad.PrimaryButton(
-              onPressed: () =>
-                  Navigator.of(dialogCtx).pop(_ImageSourceSelection.gallery),
-              child: Text(l10n.gallery),
-            ),
-          ],
-        );
-      },
+      title: l10n.selectImageSource,
+      cameraLabel: l10n.camera,
+      galleryLabel: l10n.gallery,
     );
 
-    if (source == null) {
+    if (source == null || !mounted) {
       return;
     }
 
-    if (source == _ImageSourceSelection.camera) {
+    if (source == ImageSource.camera) {
       final image = await _picker.pickImage(
         source: ImageSource.camera,
         imageQuality: 85,
       );
-      if (image != null) {
-        _addNewImage(image);
+      if (!mounted || image == null) {
+        return;
       }
+      _addNewImage(image);
       return;
     }
 
     final images = await _picker.pickMultiImage(imageQuality: 85);
+    if (!mounted) {
+      return;
+    }
     for (final image in images) {
       if (_existingImages.length + _newImages.length >= widget.maxImages) {
         break;
