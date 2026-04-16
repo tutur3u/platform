@@ -5,6 +5,7 @@ import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import { getWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
+import { parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import {
@@ -15,6 +16,7 @@ import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
 import { TaskEditDialog } from './task-edit-dialog';
 import {
   REQUEST_OPEN_TASK_EVENT,
+  dispatchTaskOpenResult,
   type RequestOpenTaskPayload,
 } from './task-open-events';
 
@@ -27,6 +29,10 @@ import {
  * that benefits from immediate availability over bundle size optimization.
  */
 export function TaskDialogManager({ wsId }: { wsId: string }) {
+  const [openTaskId, setOpenTaskId] = useQueryState(
+    'openTaskId',
+    parseAsString.withOptions({ shallow: true })
+  );
   const {
     state,
     isPersonalWorkspace,
@@ -232,10 +238,56 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
   useEffect(() => {
     const handleTaskOpenRequest = (event: Event) => {
       const customEvent = event as CustomEvent<RequestOpenTaskPayload>;
+      if (customEvent.detail) {
+        customEvent.detail.handled = true;
+      }
       const taskId = customEvent.detail?.taskId;
       if (!taskId) return;
+      const requestedWsId = customEvent.detail?.wsId;
+      const requestId = customEvent.detail?.requestId;
 
-      void openTaskById(taskId);
+      const emitOpenResult = (opened: boolean) => {
+        if (!requestId) return;
+        dispatchTaskOpenResult({ requestId, opened });
+      };
+
+      void (async () => {
+        if (requestedWsId) {
+          try {
+            const { task } = await getWorkspaceTask(requestedWsId, taskId, {
+              fetch: (input, init) =>
+                fetch(
+                  new URL(String(input), window.location.origin).toString(),
+                  {
+                    ...init,
+                    cache: 'no-store',
+                  }
+                ),
+            });
+
+            const taskWithList = task as {
+              board_id?: string | null;
+              list?: {
+                board_id?: string | null;
+              } | null;
+            };
+            const boardId =
+              taskWithList.board_id || taskWithList.list?.board_id;
+            if (boardId) {
+              openTask(task as Task, boardId, undefined, false, {
+                taskWsId: requestedWsId,
+              });
+              emitOpenResult(true);
+              return;
+            }
+          } catch {
+            // Fall through to the generic current-user lookup below.
+          }
+        }
+
+        const opened = await openTaskById(taskId);
+        emitOpenResult(opened);
+      })();
     };
 
     window.addEventListener(
@@ -249,7 +301,14 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
         handleTaskOpenRequest as EventListener
       );
     };
-  }, [openTaskById]);
+  }, [openTaskById, openTask]);
+
+  useEffect(() => {
+    if (!openTaskId) return;
+
+    void openTaskById(openTaskId);
+    void setOpenTaskId(null);
+  }, [openTaskId, openTaskById, setOpenTaskId]);
 
   // Open subtask creation dialog for the current task
   const handleAddSubtask = useCallback(() => {

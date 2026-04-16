@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock next-intl
@@ -15,6 +15,7 @@ vi.mock('next/navigation', () => ({
     push: vi.fn(),
     refresh: vi.fn(),
   }),
+  usePathname: () => '/workspace-1',
 }));
 
 // Mock @tanstack/react-query
@@ -34,6 +35,18 @@ vi.mock('motion/react', () => ({
       children: React.ReactNode;
       className?: string;
     }) => <div className={className}>{children}</div>,
+  },
+}));
+
+const mockDispatchRequestOpenTask = vi.fn();
+
+vi.mock('@tuturuuu/ui/tu-do/shared/task-open-events', () => ({
+  dispatchRequestOpenTask: (payload: { taskId: string; wsId?: string }) => {
+    mockDispatchRequestOpenTask(payload);
+    return {
+      handled: true,
+      requestId: 'test-request-id',
+    };
   },
 }));
 
@@ -221,6 +234,33 @@ describe('NotificationCard', () => {
       expect(screen.getByText('Title:')).toBeInTheDocument();
       expect(screen.getByText('Old Title')).toBeInTheDocument();
       expect(screen.getByText('New Title')).toBeInTheDocument();
+    });
+  });
+
+  describe('task detail action', () => {
+    it('should open task dialog event for task notifications', () => {
+      const notification = createMockNotification({
+        entity_type: 'task',
+        entity_id: 'task-open-123',
+      });
+
+      render(
+        <NotificationCard
+          notification={notification}
+          onMarkAsRead={mockOnMarkAsRead}
+          t={mockT}
+          wsId="workspace-1"
+          isUpdating={false}
+        />
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'view_details →' }));
+
+      expect(mockDispatchRequestOpenTask).toHaveBeenCalledTimes(1);
+      expect(mockDispatchRequestOpenTask).toHaveBeenCalledWith({
+        taskId: 'task-open-123',
+        wsId: 'workspace-1',
+      });
     });
   });
 });

@@ -7,6 +7,7 @@ import {
   FolderKanban,
   History,
   LayoutDashboard,
+  Loader2,
   PencilRuler,
   ReceiptText,
   Wallet,
@@ -16,13 +17,17 @@ import { Button } from '@tuturuuu/ui/button';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import {
+  dispatchRequestOpenTask,
+  waitForTaskOpenResult,
+} from '@tuturuuu/ui/tu-do/shared/task-open-events';
+import {
   RECENT_SIDEBAR_VISIT_EVENT,
   type RecentSidebarIconKey,
   type RecentSidebarVisitPayload,
 } from '@tuturuuu/ui/tu-do/shared/recent-sidebar-events';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   type MouseEvent,
@@ -36,6 +41,7 @@ import {
   normalizeRecentSidebarEntries,
   normalizeRecentSidebarHref,
   type RecentSidebarEntry,
+  type ResolvedRecentSidebarItem,
   removeRecentSidebarEntry,
   resolveRecentSidebarEntry,
   resolveRecentSidebarItem,
@@ -44,6 +50,19 @@ import {
 
 const RECENT_SIDEBAR_ITEMS_EVENT = 'tuturuuu:sidebar-recent-items-updated';
 const DEFAULT_VISIBLE_RECENT_SIDEBAR_ITEMS = 1;
+const TASK_LIST_SEGMENT_BLOCKLIST = new Set([
+  'boards',
+  'projects',
+  'templates',
+  'drafts',
+  'habits',
+  'labels',
+  'initiatives',
+  'logs',
+  'notes',
+  'estimates',
+  'cycles',
+]);
 
 interface RecentSidebarItemsProps {
   isCollapsed: boolean;
@@ -133,6 +152,18 @@ function getIcon(iconKey: RecentSidebarIconKey): ReactNode {
   }
 }
 
+function getTaskIdFromRecentHref(href: string): string | null {
+  const [path] = href.split('?');
+  if (!path) return null;
+
+  const segments = path.split('/').filter(Boolean);
+  const tasksIndex = segments.indexOf('tasks');
+  const taskId = tasksIndex >= 0 ? segments[tasksIndex + 1] : null;
+  if (!taskId || TASK_LIST_SEGMENT_BLOCKLIST.has(taskId)) return null;
+
+  return decodeURIComponent(taskId);
+}
+
 export function RecentSidebarItems({
   wsId,
   links,
@@ -140,9 +171,11 @@ export function RecentSidebarItems({
   onNavigate,
 }: RecentSidebarItemsProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const t = useTranslations();
   const [entries, setEntries] = useState<RecentSidebarEntry[]>([]);
   const [showAll, setShowAll] = useState(false);
+  const [openingHref, setOpeningHref] = useState<string | null>(null);
   const eventSourceId = useId();
   const storageKey = getStorageKey(wsId);
 
@@ -365,6 +398,42 @@ export function RecentSidebarItems({
     });
   };
 
+  const handleRecentItemClick = async (
+    event: MouseEvent<HTMLAnchorElement>,
+    item: ResolvedRecentSidebarItem
+  ) => {
+    const taskId =
+      item.iconKey === 'task' ? getTaskIdFromRecentHref(item.href) : null;
+    if (!taskId) {
+      onNavigate();
+      return;
+    }
+
+    event.preventDefault();
+    if (openingHref) return;
+
+    setOpeningHref(item.href);
+    try {
+      const { handled, requestId } = dispatchRequestOpenTask({
+        taskId,
+        wsId,
+      });
+
+      const opened = handled
+        ? await waitForTaskOpenResult(requestId, 6000)
+        : false;
+      if (opened) {
+        onNavigate();
+        return;
+      }
+
+      router.push(item.href);
+      onNavigate();
+    } finally {
+      setOpeningHref(null);
+    }
+  };
+
   if (isCollapsed) {
     if (!resolvedItems.length) return null;
     return (
@@ -375,12 +444,16 @@ export function RecentSidebarItems({
               <TooltipTrigger asChild>
                 <Link
                   href={item.href}
-                  onClick={onNavigate}
+                  onClick={(event) => void handleRecentItemClick(event, item)}
                   className={cn(
                     'flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-accent-foreground'
                   )}
                 >
-                  {getIcon(item.iconKey)}
+                  {openingHref === item.href ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    getIcon(item.iconKey)
+                  )}
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">
@@ -442,11 +515,15 @@ export function RecentSidebarItems({
             <div key={item.href} className="group/item relative">
               <Link
                 href={item.href}
-                onClick={onNavigate}
+                onClick={(event) => void handleRecentItemClick(event, item)}
                 className="flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 pr-2 transition hover:bg-accent/70"
               >
                 <div className="flex h-6 w-6 flex-none items-center justify-center rounded-md bg-foreground/5 text-muted-foreground">
-                  {getIcon(item.iconKey)}
+                  {openingHref === item.href ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    getIcon(item.iconKey)
+                  )}
                 </div>
                 <div className="min-w-0 flex-1 space-y-1">
                   <p className="line-clamp-1 font-medium text-[13px] leading-4">

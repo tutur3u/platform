@@ -80,7 +80,7 @@ interface TaskDialogContextValue {
   ) => void;
 
   // Open task by ID (fetches task data first)
-  openTaskById: (taskId: string) => Promise<void>;
+  openTaskById: (taskId: string) => Promise<boolean>;
 
   // Open dialog for creating new task
   createTask: (
@@ -355,11 +355,11 @@ export function TaskDialogProvider({
               }),
           });
         } catch {
-          return;
+          return false;
         }
 
         if (!response) {
-          return;
+          return false;
         }
 
         const transformedTask = response.task;
@@ -389,8 +389,10 @@ export function TaskDialogProvider({
           taskWorkspacePersonal: isTaskWorkspacePersonal,
           taskWorkspaceTier,
         });
+        return true;
       } catch (error) {
         console.error('Failed to open task:', error);
+        return false;
       }
     },
     [canUseTaskCursors, isPersonalWorkspace, queueDialogState]

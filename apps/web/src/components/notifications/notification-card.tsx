@@ -14,12 +14,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
+import { dispatchRequestOpenTask } from '@tuturuuu/ui/tu-do/shared/task-open-events';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { motion } from 'motion/react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { DescriptionDiffViewer } from '@/components/tasks/description-diff-viewer';
 import type { Notification } from '@/hooks/useNotifications';
@@ -53,11 +54,14 @@ export function NotificationCard({
 }: NotificationCardProps) {
   const isUnread = !notification.read_at;
   const router = useRouter();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const entityLink = getEntityLink(notification, wsId);
   const actions = getNotificationActions(notification, t);
+  const isTaskEntityNotification =
+    notification.entity_type === 'task' && !!notification.entity_id;
 
   const handleAction = async (actionType: string, payload: any) => {
     setIsProcessing(true);
@@ -291,6 +295,33 @@ export function NotificationCard({
                 </Button>
               ))}
             </div>
+          ) : isTaskEntityNotification ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2 h-7 px-2 text-foreground/50 text-xs hover:text-dynamic-blue"
+              onClick={() => {
+                if (!notification.entity_id) return;
+                const { handled } = dispatchRequestOpenTask({
+                  taskId: notification.entity_id,
+                  wsId: notification.ws_id || wsId,
+                });
+
+                if (!handled) {
+                  const pathParts = pathname.split('/').filter(Boolean);
+                  const firstSegment = pathParts[0] ?? '';
+                  const localePrefix =
+                    pathParts.length > 1 && firstSegment.length <= 5
+                      ? `/${firstSegment}`
+                      : '';
+                  router.push(
+                    `${localePrefix}/${notification.ws_id || wsId}?openTaskId=${encodeURIComponent(notification.entity_id)}`
+                  );
+                }
+              }}
+            >
+              {t('view_details')} →
+            </Button>
           ) : entityLink ? (
             <Link href={entityLink} className="mt-2 inline-block">
               <Button

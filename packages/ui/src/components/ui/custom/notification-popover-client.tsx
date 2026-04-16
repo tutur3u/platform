@@ -34,11 +34,15 @@ import {
 } from '@tuturuuu/ui/hooks/use-notifications';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
+import {
+  dispatchRequestOpenTask,
+  waitForTaskOpenResult,
+} from '@tuturuuu/ui/tu-do/shared/task-open-events';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 dayjs.extend(relativeTime);
@@ -61,11 +65,19 @@ interface NotificationPopoverClientProps {
   webAppUrl?: string;
 }
 
-// UUID validation regex
+// Workspace identifier validation regex
 const UUID_REGEX =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+const SPECIAL_WORKSPACE_SLUGS = new Set(['personal', 'internal']);
 
-function isValidUUID(value: unknown): value is string {
+function isValidWorkspaceIdentifier(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    (UUID_REGEX.test(value) || SPECIAL_WORKSPACE_SLUGS.has(value))
+  );
+}
+
+function isValidWorkspaceFilterId(value: unknown): value is string {
   return typeof value === 'string' && UUID_REGEX.test(value);
 }
 
@@ -88,20 +100,27 @@ export default function NotificationPopoverClient({
   const params = useParams();
   const queryClient = useQueryClient();
 
-  const wsId = isValidUUID(params.wsId) ? params.wsId : undefined;
+  const workspaceIdParam =
+    typeof params.wsId === 'string' ? params.wsId : undefined;
+  const wsIdForFiltering = isValidWorkspaceFilterId(workspaceIdParam)
+    ? workspaceIdParam
+    : undefined;
+  const wsIdForTaskContext = isValidWorkspaceIdentifier(workspaceIdParam)
+    ? workspaceIdParam
+    : undefined;
 
   // Accurate unread count from dedicated endpoint
-  const { data: unreadCount = 0 } = useUnreadCount(wsId);
+  const { data: unreadCount = 0 } = useUnreadCount(wsIdForFiltering);
 
   // Infinite scroll for inbox (unread) and archive (read)
   const inboxQuery = useInfiniteNotifications({
-    wsId,
+    wsId: wsIdForFiltering,
     unreadOnly: true,
     pageSize: 15,
   });
 
   const archiveQuery = useInfiniteNotifications({
-    wsId,
+    wsId: wsIdForFiltering,
     readOnly: true,
     pageSize: 15,
   });
@@ -110,7 +129,7 @@ export default function NotificationPopoverClient({
   const updateNotification = useUpdateNotification();
 
   // Subscribe to realtime updates
-  useNotificationSubscription(wsId || '', userId || '');
+  useNotificationSubscription(wsIdForFiltering || '', userId || '');
 
   const activeQuery = activeTab === 'inbox' ? inboxQuery : archiveQuery;
   const allNotifications = dedupeNotifications(
@@ -135,7 +154,7 @@ export default function NotificationPopoverClient({
 
   const handleArchiveAll = async () => {
     try {
-      await markAllAsRead.mutateAsync(wsId);
+      await markAllAsRead.mutateAsync(wsIdForFiltering);
       toast.success('All notifications archived');
     } catch (error) {
       console.error('Failed to archive all:', error);
@@ -234,7 +253,7 @@ export default function NotificationPopoverClient({
           notifications={allNotifications}
           hasNotifications={hasNotifications}
           activeTab={activeTab}
-          wsId={wsId}
+          wsId={wsIdForTaskContext}
           noNotificationsText={noNotificationsText}
           emptyArchiveText={emptyArchiveText}
           loadingMoreText={loadingMoreText}
@@ -422,6 +441,8 @@ function NotificationCard({
   const isUnread = !notification.read_at;
   const [processingAction, setProcessingAction] = useState<string | null>(null);
   const router = useRouter();
+  const params = useParams();
+  const pathname = usePathname();
 
   const handleAction = async (actionType: string, payload: any) => {
     setProcessingAction(actionType);
@@ -498,16 +519,14 @@ function NotificationCard({
   };
 
   const notificationWsId = notification.ws_id || wsId;
+  const isTaskEntityNotification =
+    notification.entity_type === 'task' && !!notification.entity_id;
   const entityLink =
-    notification.entity_type === 'task' &&
+    notification.entity_type === 'time_tracking_request' &&
     notification.entity_id &&
     notificationWsId
-      ? `/${notificationWsId}/tasks/${notification.entity_id}`
-      : notification.entity_type === 'time_tracking_request' &&
-          notification.entity_id &&
-          notificationWsId
-        ? `/${notificationWsId}/time-tracker/requests`
-        : null;
+      ? `/${notificationWsId}/time-tracker/requests`
+      : null;
 
   return (
     <div
@@ -604,6 +623,57 @@ function NotificationCard({
                 Accept
               </Button>
             </div>
+          ) : isTaskEntityNotification ? (
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0 text-xs hover:text-dynamic-blue"
+              disabled={!!processingAction}
+              onClick={async () => {
+                if (!notification.entity_id) return;
+                setProcessingAction('OPEN_TASK');
+                try {
+                  const { handled, requestId } = dispatchRequestOpenTask({
+                    taskId: notification.entity_id,
+                    wsId: notificationWsId,
+                  });
+
+                  const opened = handled
+                    ? await waitForTaskOpenResult(requestId, 6000)
+                    : false;
+
+                  if (!opened && notificationWsId) {
+                    const locale =
+                      typeof params?.locale === 'string' ? params.locale : null;
+                    const targetWorkspacePath = locale
+                      ? `/${locale}/${notificationWsId}`
+                      : `/${notificationWsId}`;
+                    const isAlreadyInTargetWorkspace =
+                      pathname === targetWorkspacePath ||
+                      pathname.startsWith(`${targetWorkspacePath}/`);
+
+                    const openTaskParam = `openTaskId=${encodeURIComponent(notification.entity_id)}`;
+                    const fallbackUrl = isAlreadyInTargetWorkspace
+                      ? `${pathname}?${openTaskParam}`
+                      : `${targetWorkspacePath}?${openTaskParam}`;
+
+                    router.push(fallbackUrl);
+                  }
+                  onActionComplete?.();
+                } finally {
+                  setProcessingAction(null);
+                }
+              }}
+            >
+              {processingAction === 'OPEN_TASK' ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Opening...
+                </>
+              ) : (
+                'View details →'
+              )}
+            </Button>
           ) : entityLink ? (
             <Link href={entityLink} onClick={onActionComplete}>
               <Button
