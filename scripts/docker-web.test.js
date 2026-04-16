@@ -83,10 +83,12 @@ test('getComposeEnvironment derives a server-side Supabase URL for Docker', () =
   });
 
   assert.equal(env.PATH, 'test-path');
+  assert.equal(env.COMPOSE_DOCKER_CLI_BUILD, '1');
   assert.equal(
     env.DOCKER_INTERNAL_SUPABASE_URL,
     `http://${DOCKER_HOST_ALIAS}:8001/`
   );
+  assert.equal(env.DOCKER_BUILDKIT, '1');
 });
 
 test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async () => {
@@ -126,6 +128,8 @@ test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async (
     calls[1].env.DOCKER_INTERNAL_SUPABASE_URL,
     `http://${DOCKER_HOST_ALIAS}:8001/`
   );
+  assert.equal(calls[1].env.COMPOSE_DOCKER_CLI_BUILD, '1');
+  assert.equal(calls[1].env.DOCKER_BUILDKIT, '1');
 });
 
 test('runDockerWebWorkflow starts and resets Supabase before Docker when requested', async () => {

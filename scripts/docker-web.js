@@ -125,7 +125,9 @@ function getComposeEnvironment({
 
   return {
     ...baseEnv,
+    COMPOSE_DOCKER_CLI_BUILD: baseEnv.COMPOSE_DOCKER_CLI_BUILD ?? '1',
     DOCKER_INTERNAL_SUPABASE_URL: dockerInternalSupabaseUrl,
+    DOCKER_BUILDKIT: baseEnv.DOCKER_BUILDKIT ?? '1',
   };
 }
 

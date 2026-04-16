@@ -1,0 +1,75 @@
+name: Docker Setup Check
+
+on:
+  pull_request:
+    paths:
+      - ".dockerignore"
+      - ".github/workflows/docker-setup-check.yaml"
+      - "apps/*/package.json"
+      - "apps/storage-unzip-proxy/Dockerfile"
+      - "apps/web/Dockerfile"
+      - "bun.lock"
+      - "docker-compose.web.yml"
+      - "package.json"
+      - "packages/*/package.json"
+      - "scripts/check-docker-web.js"
+      - "scripts/check-docker-web.test.js"
+      - "scripts/docker-web.js"
+      - "scripts/docker-web.test.js"
+      - "turbo.json"
+  push:
+    branches: ["main", "staging", "production"]
+    paths:
+      - ".dockerignore"
+      - ".github/workflows/docker-setup-check.yaml"
+      - "apps/*/package.json"
+      - "apps/storage-unzip-proxy/Dockerfile"
+      - "apps/web/Dockerfile"
+      - "bun.lock"
+      - "docker-compose.web.yml"
+      - "package.json"
+      - "packages/*/package.json"
+      - "scripts/check-docker-web.js"
+      - "scripts/check-docker-web.test.js"
+      - "scripts/docker-web.js"
+      - "scripts/docker-web.test.js"
+      - "turbo.json"
+  workflow_dispatch:
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: docker-setup-check.yaml
+
+  verify:
+    name: Verify Docker Setup
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Docker parity checks
+        run: node scripts/check-docker-web.js
+
+      - name: Run Docker helper tests
+        run: node --test scripts/check-docker-web.test.js scripts/docker-web.test.js
+
+      - name: Render Docker Compose config
+        run: docker compose -f docker-compose.web.yml config > /tmp/docker-compose.web.yml
+
+      - name: Build web dev image
+        run: docker build --target dev -f apps/web/Dockerfile .
+
+      - name: Build storage unzip proxy image
+        run: docker build -f apps/storage-unzip-proxy/Dockerfile apps/storage-unzip-proxy

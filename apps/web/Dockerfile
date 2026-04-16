@@ -1,5 +1,60 @@
 # syntax=docker/dockerfile:1.7
 
+FROM oven/bun:1.3.12 AS deps
+
+WORKDIR /workspace
+
+ENV CI=1
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Copy workspace manifests first so dependency installation stays cached when
+# application source files change.
+COPY package.json bun.lock turbo.json ./
+COPY scripts/install-git-hooks.js ./scripts/install-git-hooks.js
+COPY apps/calendar/package.json ./apps/calendar/package.json
+COPY apps/database/package.json ./apps/database/package.json
+COPY apps/external/package.json ./apps/external/package.json
+COPY apps/finance/package.json ./apps/finance/package.json
+COPY apps/meet/package.json ./apps/meet/package.json
+COPY apps/mobile/package.json ./apps/mobile/package.json
+COPY apps/nova/package.json ./apps/nova/package.json
+COPY apps/playground/package.json ./apps/playground/package.json
+COPY apps/redis/package.json ./apps/redis/package.json
+COPY apps/rewise/package.json ./apps/rewise/package.json
+COPY apps/shortener/package.json ./apps/shortener/package.json
+COPY apps/storage-unzip-proxy/package.json ./apps/storage-unzip-proxy/package.json
+COPY apps/tasks/package.json ./apps/tasks/package.json
+COPY apps/track/package.json ./apps/track/package.json
+COPY apps/web/package.json ./apps/web/package.json
+COPY packages/ai/package.json ./packages/ai/package.json
+COPY packages/apis/package.json ./packages/apis/package.json
+COPY packages/auth/package.json ./packages/auth/package.json
+COPY packages/email-service/package.json ./packages/email-service/package.json
+COPY packages/games/package.json ./packages/games/package.json
+COPY packages/google/package.json ./packages/google/package.json
+COPY packages/hooks/package.json ./packages/hooks/package.json
+COPY packages/icons/package.json ./packages/icons/package.json
+COPY packages/internal-api/package.json ./packages/internal-api/package.json
+COPY packages/masonry/package.json ./packages/masonry/package.json
+COPY packages/microsoft/package.json ./packages/microsoft/package.json
+COPY packages/offline/package.json ./packages/offline/package.json
+COPY packages/payment/package.json ./packages/payment/package.json
+COPY packages/satellite/package.json ./packages/satellite/package.json
+COPY packages/sdk/package.json ./packages/sdk/package.json
+COPY packages/supabase/package.json ./packages/supabase/package.json
+COPY packages/transactional/package.json ./packages/transactional/package.json
+COPY packages/trigger/package.json ./packages/trigger/package.json
+COPY packages/turnstile/package.json ./packages/turnstile/package.json
+COPY packages/types/package.json ./packages/types/package.json
+COPY packages/typescript-config/package.json ./packages/typescript-config/package.json
+COPY packages/ui/package.json ./packages/ui/package.json
+COPY packages/utils/package.json ./packages/utils/package.json
+COPY packages/vercel/package.json ./packages/vercel/package.json
+COPY packages/workflows/package.json ./packages/workflows/package.json
+
+RUN --mount=type=cache,id=platform-web-bun-install,target=/root/.bun/install/cache \
+  bun install --frozen-lockfile
+
 FROM oven/bun:1.3.12 AS dev
 
 WORKDIR /workspace
@@ -7,9 +62,9 @@ WORKDIR /workspace
 ENV CI=1
 ENV NEXT_TELEMETRY_DISABLED=1
 
+COPY --from=deps /workspace ./
 COPY . .
 
-RUN bun install --frozen-lockfile
 RUN chmod +x apps/web/docker/dev-entrypoint.sh
 
 ENTRYPOINT ["./apps/web/docker/dev-entrypoint.sh"]
@@ -24,10 +79,12 @@ ENV DOCKER_WEB_STANDALONE=1
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+COPY --from=deps /workspace ./
 COPY . .
 
-RUN bun install --frozen-lockfile
-RUN --mount=type=secret,id=web_env,target=/tmp/web.env \
+RUN --mount=type=cache,id=platform-web-turbo,target=/workspace/.turbo \
+  --mount=type=cache,id=platform-web-next-cache,target=/workspace/apps/web/.next/cache \
+  --mount=type=secret,id=web_env,target=/tmp/web.env \
   sh -c 'set -a && if [ -f /tmp/web.env ]; then . /tmp/web.env; fi && set +a && bun run build:web'
 
 FROM node:22-alpine AS runner
