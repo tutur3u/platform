@@ -17,12 +17,23 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 const mockExtractIP = vi.fn().mockReturnValue('192.168.1.1');
 const mockIsIPBlocked = vi.fn().mockResolvedValue(null);
 const mockRecordAuthFailure = vi.fn();
+const mockCascadeBackendRateLimit = vi.fn();
+const mockIsBackendRateLimitError = vi.fn();
 
 vi.mock('@tuturuuu/utils/abuse-protection', () => ({
   extractIPFromHeaders: (h: unknown) => mockExtractIP(h),
   isIPBlocked: (ip: unknown) => mockIsIPBlocked(ip),
   recordApiAuthFailure: (ip: unknown, endpoint: unknown) =>
     mockRecordAuthFailure(ip, endpoint),
+}));
+
+vi.mock('@tuturuuu/utils/abuse-protection/backend-rate-limit', () => ({
+  cascadeBackendRateLimitToProxyBan: (
+    ...args: Parameters<typeof mockCascadeBackendRateLimit>
+  ) => mockCascadeBackendRateLimit(...args),
+  isBackendRateLimitError: (
+    ...args: Parameters<typeof mockIsBackendRateLimitError>
+  ) => mockIsBackendRateLimitError(...args),
 }));
 
 const mockHasAuthenticatedApiSession = vi.fn().mockReturnValue(false);
@@ -77,6 +88,8 @@ describe('withSessionAuth', () => {
     mockCheckRateLimit.mockResolvedValue({ allowed: true, headers: {} });
     mockCheckSuspension.mockResolvedValue({ suspended: false });
     mockHasAuthenticatedApiSession.mockReturnValue(false);
+    mockCascadeBackendRateLimit.mockResolvedValue(null);
+    mockIsBackendRateLimitError.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -169,6 +182,31 @@ describe('withSessionAuth', () => {
     expect(handler).not.toHaveBeenCalled();
     // Auth should never have been called
     expect(mockGetUser).not.toHaveBeenCalled();
+  });
+
+  it('should escalate backend auth 429 responses into a proxy-visible IP block', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: null },
+      error: { status: 429, code: 'over_request_rate_limit' },
+    });
+    mockIsBackendRateLimitError.mockReturnValue(true);
+    mockCascadeBackendRateLimit.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 300_000),
+    });
+
+    const handler = vi.fn();
+    const wrapped = withSessionAuth(handler);
+    const response = await wrapped(makeRequest('POST'));
+
+    expect(response.status).toBe(429);
+    expect(handler).not.toHaveBeenCalled();
+    expect(mockCascadeBackendRateLimit).toHaveBeenCalledWith({
+      endpoint: '/api/test',
+      ipAddress: '192.168.1.1',
+      source: 'auth',
+    });
+    expect(mockRecordAuthFailure).not.toHaveBeenCalled();
+    expect(response.headers.get('Retry-After')).toBe('300');
   });
 
   it('should skip default read rate limiting for GET requests', async () => {

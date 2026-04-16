@@ -59,6 +59,7 @@
     "./permissions": "./src/permissions.tsx",
     "./editor": "./src/editor/index.ts",
     "./abuse-protection": "./src/abuse-protection/index.ts",
+    "./abuse-protection/backend-rate-limit": "./src/abuse-protection/backend-rate-limit.ts",
     "./abuse-protection/edge": "./src/abuse-protection/edge.ts",
     "./abuse-protection/user-suspension": "./src/abuse-protection/user-suspension.ts",
     "./currencies": "./src/currencies.ts",
