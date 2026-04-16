@@ -167,6 +167,43 @@ describe('time tracking request update route', () => {
     );
   });
 
+  it('passes actor auth uid to RPC for CONTENT_UPDATED trigger actor attribution', async () => {
+    const { PUT } = await import(
+      '@/app/api/v1/workspaces/[wsId]/time-tracking/requests/[id]/route'
+    );
+
+    const response = await PUT(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/time-tracking/requests/request-1',
+        {
+          method: 'PUT',
+          headers: {
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: 'Mobile App Authentication + UI/UX changes',
+            description: 'Updated content',
+            startTime: '2026-04-16T02:00:00.000Z',
+            endTime: '2026-04-16T03:00:00.000Z',
+            removedImages: [],
+            newImagePaths: [],
+          }),
+        }
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1', id: 'request-1' }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.adminUpdateRpc).toHaveBeenCalledWith(
+      'update_time_tracking_request_content',
+      expect.objectContaining({
+        p_actor_auth_uid: 'user-1',
+      })
+    );
+  });
+
   it('falls back to admin storage cleanup when request-scoped cleanup hits RLS', async () => {
     mocks.adminUpdateRpc.mockResolvedValue({
       data: null,
