@@ -35,11 +35,9 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
-import {
-  useParams,
-} from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import { useContext, useState } from 'react';
 import { AccountSwitcherModal } from '@/components/account-switcher';
 import { CommandPalette } from '@/components/command';
@@ -106,28 +104,34 @@ export default function UserNavClient({
 
   const handleSettingsOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
-      void setSettingsQuery({
-        settingsDialog: null,
-        settingsTab: null,
-        settingsLinkedProvider: null,
-      }, {
-        history: 'replace',
-        shallow: true,
-        scroll: false,
-      });
+      void setSettingsQuery(
+        {
+          settingsDialog: null,
+          settingsTab: null,
+          settingsLinkedProvider: null,
+        },
+        {
+          history: 'replace',
+          shallow: true,
+          scroll: false,
+        }
+      );
     }
   };
 
   const openSettingsDialog = (tab?: string) => {
-    void setSettingsQuery({
-      settingsDialog: 'open',
-      settingsTab: tab ?? null,
-      settingsLinkedProvider: null,
-    }, {
-      history: 'replace',
-      shallow: true,
-      scroll: false,
-    });
+    void setSettingsQuery(
+      {
+        settingsDialog: 'open',
+        settingsTab: tab ?? null,
+        settingsLinkedProvider: null,
+      },
+      {
+        history: 'replace',
+        shallow: true,
+        scroll: false,
+      }
+    );
   };
 
   return (
