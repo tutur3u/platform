@@ -14,13 +14,17 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
+import {
+  dispatchRequestOpenTask,
+  waitForTaskOpenResult,
+} from '@tuturuuu/ui/tu-do/shared/task-open-events';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { motion } from 'motion/react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { type ComponentProps, type ReactNode, useState } from 'react';
 import { DescriptionDiffViewer } from '@/components/tasks/description-diff-viewer';
 import type { Notification } from '@/hooks/useNotifications';
 import {
@@ -42,6 +46,19 @@ interface NotificationCardProps {
   index?: number;
 }
 
+type WorkspaceInviteActionType =
+  | 'WORKSPACE_INVITE_ACCEPT'
+  | 'WORKSPACE_INVITE_DECLINE';
+
+interface WorkspaceInviteAction {
+  id: string;
+  label: string;
+  icon?: ReactNode;
+  variant?: ComponentProps<typeof Button>['variant'];
+  type: WorkspaceInviteActionType;
+  payload: { wsId: string };
+}
+
 export function NotificationCard({
   notification,
   onMarkAsRead,
@@ -53,21 +70,24 @@ export function NotificationCard({
 }: NotificationCardProps) {
   const isUnread = !notification.read_at;
   const router = useRouter();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const entityLink = getEntityLink(notification, wsId);
   const actions = getNotificationActions(notification, t);
+  const isTaskEntityNotification =
+    notification.entity_type === 'task' && !!notification.entity_id;
 
-  const handleAction = async (actionType: string, payload: any) => {
+  const handleAction = async (action: WorkspaceInviteAction) => {
     setIsProcessing(true);
 
     try {
-      switch (actionType) {
+      switch (action.type) {
         case 'WORKSPACE_INVITE_ACCEPT':
         case 'WORKSPACE_INVITE_DECLINE': {
-          const accept = actionType === 'WORKSPACE_INVITE_ACCEPT';
-          const targetWsId = payload.wsId;
+          const accept = action.type === 'WORKSPACE_INVITE_ACCEPT';
+          const targetWsId = action.payload.wsId;
           const url = `/api/workspaces/${targetWsId}/${
             accept ? 'accept-invite' : 'decline-invite'
           }`;
@@ -276,9 +296,9 @@ export function NotificationCard({
               {actions.map((action) => (
                 <Button
                   key={action.id}
-                  variant={action.variant as any}
+                  variant={action.variant}
                   size="sm"
-                  onClick={() => handleAction(action.type, action.payload)}
+                  onClick={() => handleAction(action)}
                   disabled={isProcessing}
                   className="h-8 gap-1.5 text-xs"
                 >
@@ -291,6 +311,37 @@ export function NotificationCard({
                 </Button>
               ))}
             </div>
+          ) : isTaskEntityNotification ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2 h-7 px-2 text-foreground/50 text-xs hover:text-dynamic-blue"
+              onClick={async () => {
+                if (!notification.entity_id) return;
+                const { handled, requestId } = dispatchRequestOpenTask({
+                  taskId: notification.entity_id,
+                  wsId: notification.ws_id || wsId,
+                });
+
+                const opened = handled
+                  ? await waitForTaskOpenResult(requestId, 6000)
+                  : false;
+
+                if (!opened) {
+                  const pathParts = pathname.split('/').filter(Boolean);
+                  const firstSegment = pathParts[0] ?? '';
+                  const localePrefix =
+                    pathParts.length > 1 && firstSegment.length <= 5
+                      ? `/${firstSegment}`
+                      : '';
+                  router.push(
+                    `${localePrefix}/${notification.ws_id || wsId}?openTaskId=${encodeURIComponent(notification.entity_id)}`
+                  );
+                }
+              }}
+            >
+              {t('view_details')} →
+            </Button>
           ) : entityLink ? (
             <Link href={entityLink} className="mt-2 inline-block">
               <Button
@@ -464,25 +515,10 @@ function SingleChangeDetail({
 // Action Helpers
 // ============================================================================
 
-interface NotificationAction {
-  id: string;
-  label: string;
-  icon?: React.ReactNode;
-  variant?:
-    | 'default'
-    | 'destructive'
-    | 'outline'
-    | 'secondary'
-    | 'ghost'
-    | 'link';
-  type: string;
-  payload: any;
-}
-
 function getNotificationActions(
   notification: Notification,
   t: (key: string) => string
-): NotificationAction[] {
+): WorkspaceInviteAction[] {
   const { type, data } = notification;
 
   switch (type) {
@@ -490,7 +526,9 @@ function getNotificationActions(
       if (data?.action_taken) return [];
 
       const workspaceId = data?.workspace_id;
-      if (!workspaceId) return [];
+      if (typeof workspaceId !== 'string' || workspaceId.length === 0) {
+        return [];
+      }
 
       return [
         {

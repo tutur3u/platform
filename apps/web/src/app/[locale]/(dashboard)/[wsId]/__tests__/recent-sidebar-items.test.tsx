@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { dispatchRecentSidebarVisit } from '@tuturuuu/ui/tu-do/shared/recent-sidebar-events';
 import type {
@@ -11,9 +11,15 @@ import { RecentSidebarItems } from '../recent-sidebar-items';
 import type { RecentSidebarEntry } from '../recent-sidebar-items.utils';
 
 let mockPathname = '/personal/dashboard';
+const mockPush = vi.fn();
+const mockDispatchRequestOpenTask = vi.fn();
+const mockWaitForTaskOpenResult = vi.fn();
 
 vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname,
+  useRouter: () => ({
+    push: mockPush,
+  }),
 }));
 
 vi.mock('next-intl', () => ({
@@ -43,6 +49,13 @@ vi.mock('@tuturuuu/ui/button', () => ({
   ),
 }));
 
+vi.mock('@tuturuuu/ui/tu-do/shared/task-open-events', () => ({
+  dispatchRequestOpenTask: (payload: { taskId: string; wsId?: string }) =>
+    mockDispatchRequestOpenTask(payload),
+  waitForTaskOpenResult: (requestId: string, timeoutMs?: number) =>
+    mockWaitForTaskOpenResult(requestId, timeoutMs),
+}));
+
 vi.mock('@tuturuuu/ui/tooltip', () => ({
   Tooltip: ({ children }: { children: ReactNode }) => <>{children}</>,
   TooltipContent: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -59,6 +72,7 @@ vi.mock('@tuturuuu/icons', () => {
     FolderKanban: Icon,
     History: Icon,
     LayoutDashboard: Icon,
+    Loader2: Icon,
     PencilRuler: Icon,
     ReceiptText: Icon,
     Trash2: Icon,
@@ -81,12 +95,12 @@ const links: (NavLink | null)[] = [
 const wsId = 'personal';
 const storageKey = `tuturuuu:sidebar-recent-items:${wsId}`;
 
-function renderSidebar() {
+function renderSidebar(onNavigate = vi.fn()) {
   return render(
     <RecentSidebarItems
       isCollapsed={false}
       links={links}
-      onNavigate={vi.fn()}
+      onNavigate={onNavigate}
       wsId={wsId}
     />
   );
@@ -99,9 +113,17 @@ function readStoredEntries() {
 
 describe('RecentSidebarItems', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     mockPathname = '/personal/dashboard';
     window.localStorage.clear();
-    vi.clearAllMocks();
+    mockPush.mockReset();
+    mockDispatchRequestOpenTask.mockReset();
+    mockWaitForTaskOpenResult.mockReset();
+    mockDispatchRequestOpenTask.mockReturnValue({
+      handled: true,
+      requestId: 'request-1',
+    });
+    mockWaitForTaskOpenResult.mockResolvedValue(true);
   });
 
   it('does not rebroadcast on mount when stored entries are already normalized', async () => {
@@ -169,5 +191,35 @@ describe('RecentSidebarItems', () => {
         visitedAt: expect.any(String),
       },
     ]);
+  });
+
+  it('opens task dialog for task recent item before navigation fallback', async () => {
+    const onNavigate = vi.fn();
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify([
+        {
+          href: '/personal/tasks/task-123',
+          visitedAt: '2026-03-03T02:00:00.000Z',
+        },
+      ])
+    );
+
+    renderSidebar(onNavigate);
+
+    const taskLink = await screen.findByRole('link', {
+      name: /sidebar_recent_items\.task_item/i,
+    });
+    fireEvent.click(taskLink);
+
+    await waitFor(() => {
+      expect(mockDispatchRequestOpenTask).toHaveBeenCalledWith({
+        taskId: 'task-123',
+        wsId: 'personal',
+      });
+      expect(mockWaitForTaskOpenResult).toHaveBeenCalledWith('request-1', 6000);
+      expect(onNavigate).toHaveBeenCalledTimes(1);
+    });
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });
