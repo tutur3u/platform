@@ -15,10 +15,12 @@ class ProfileCubit extends Cubit<ProfileState> {
   final ProfileRepository _repository;
   static UserProfile? _memoryCachedProfile;
   static DateTime? _memoryCachedAt;
+  static String? _memoryCachedUserId;
 
   static void clearMemoryCache() {
     _memoryCachedProfile = null;
     _memoryCachedAt = null;
+    _memoryCachedUserId = null;
   }
 
   /// Loads the user's profile.
@@ -26,12 +28,23 @@ class ProfileCubit extends Cubit<ProfileState> {
     bool forceRefresh = false,
     bool emitLoading = true,
   }) async {
-    final cachedProfile = _memoryCachedProfile;
+    final currentUserId = _repository.getCurrentUserIdSync();
+    final cachedProfile = _memoryCachedUserId == currentUserId
+        ? _memoryCachedProfile
+        : null;
     final cachedAt = _memoryCachedAt;
     final persistedCache = cachedProfile == null
         ? await _repository.getCachedProfile()
         : (profile: cachedProfile, fetchedAt: cachedAt);
-    final visibleProfile = state.profile ?? persistedCache.profile;
+    final persistedProfile = switch (persistedCache.profile?.id) {
+      final String profileId when profileId == currentUserId =>
+        persistedCache.profile,
+      _ => null,
+    };
+    final visibleProfile = switch (state.profile?.id) {
+      final String profileId when profileId == currentUserId => state.profile,
+      _ => persistedProfile,
+    };
 
     if (visibleProfile != null && state.profile == null) {
       emit(
@@ -42,13 +55,16 @@ class ProfileCubit extends Cubit<ProfileState> {
           isLoading: false,
           isRefreshing: false,
           isFromCache: true,
-          lastUpdatedAt: persistedCache.fetchedAt,
+          lastUpdatedAt: persistedProfile == null
+              ? null
+              : persistedCache.fetchedAt,
         ),
       );
     }
 
     if (!forceRefresh &&
         visibleProfile != null &&
+        persistedProfile != null &&
         persistedCache.fetchedAt != null &&
         isProfileCacheFresh(persistedCache.fetchedAt!)) {
       return;
@@ -78,6 +94,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     if (result.profile != null) {
       _memoryCachedProfile = result.profile;
       _memoryCachedAt = DateTime.now();
+      _memoryCachedUserId = result.profile!.id;
       await _repository.saveCachedProfile(result.profile!);
       emit(
         state.copyWith(

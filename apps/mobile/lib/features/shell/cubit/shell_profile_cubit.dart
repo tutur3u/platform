@@ -19,15 +19,14 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
     // `lastUpdatedAt`. Otherwise `loadFromAuthenticatedUser` treats the new
     // session as "fresh" and skips the API, leaving name/avatar empty until
     // metadata happens to match (e.g. after opening Settings).
-    final switchedAccount =
-        state.userId != null && state.userId != user.id;
+    final switchedAccount = state.userId != null && state.userId != user.id;
     emit(
       _mergeProfile(
         profile: _profileFromUser(user),
         userId: user.id,
-        isFromCache: switchedAccount ? false : state.isFromCache,
+        isFromCache: !switchedAccount && state.isFromCache,
         lastUpdatedAt: switchedAccount ? null : state.lastUpdatedAt,
-        isRefreshing: switchedAccount ? false : state.isRefreshing,
+        isRefreshing: !switchedAccount && state.isRefreshing,
         error: null,
       ),
     );

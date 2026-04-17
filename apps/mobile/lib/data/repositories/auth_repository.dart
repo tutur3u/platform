@@ -165,7 +165,8 @@ class AuthRepository {
       refreshToken: refreshToken,
       sessionJson: sessionJson,
       email: user.email,
-      displayName: _readDisplayName(user) ?? _nonEmptyTrimmed(fallbackDisplayName),
+      displayName:
+          _readDisplayName(user) ?? _nonEmptyTrimmed(fallbackDisplayName),
       avatarUrl: _readAvatarUrl(user) ?? _nonEmptyTrimmed(fallbackAvatarUrl),
       lastWorkspaceId: lastWorkspaceId,
       addedAt: addedAt ?? now,

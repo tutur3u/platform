@@ -8,6 +8,8 @@ import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
@@ -22,12 +24,16 @@ import 'package:mobile/widgets/staggered_entry.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 import '../../../helpers/helpers.dart';
 
 class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
     implements WorkspaceCubit {}
+
+class _MockAuthCubit extends MockCubit<AuthState> implements AuthCubit {}
+
+class _MockProfileRepository extends Mock implements ProfileRepository {}
 
 const _cachedProfileKey = 'cached-user-profile';
 const _cachedProfileFetchedAtKey = 'cached-user-profile-fetched-at';
@@ -42,8 +48,9 @@ const _cachedProfile = UserProfile(
 void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
+    registerFallbackValue(const UserProfile(id: 'fallback-user'));
     SharedPreferences.setMockInitialValues({});
-    await Supabase.initialize(
+    await supa.Supabase.initialize(
       url: 'https://example.supabase.co',
       anonKey: 'test-anon-key',
     );
@@ -66,9 +73,52 @@ void main() {
 
   group('settings motion', () {
     late _MockWorkspaceCubit workspaceCubit;
+    late _MockAuthCubit authCubit;
+    late _MockProfileRepository profileRepository;
 
     setUp(() {
       workspaceCubit = _MockWorkspaceCubit();
+      authCubit = _MockAuthCubit();
+      profileRepository = _MockProfileRepository();
+      final authState = AuthState.authenticated(
+        supa.User.fromJson({
+          'id': 'user-1',
+          'aud': 'authenticated',
+          'role': 'authenticated',
+          'email': 'alex@example.com',
+          'app_metadata': const <String, dynamic>{},
+          'user_metadata': const <String, dynamic>{
+            'display_name': 'Alex Nguyen',
+          },
+          'created_at': '2024-01-01T00:00:00.000000Z',
+        })!,
+      );
+      when(() => authCubit.state).thenReturn(authState);
+      whenListen(
+        authCubit,
+        const Stream<AuthState>.empty(),
+        initialState: authState,
+      );
+      when(() => profileRepository.dispose()).thenReturn(null);
+      when(() => profileRepository.getCurrentUserIdSync()).thenReturn('user-1');
+      when(() => profileRepository.getCachedProfile()).thenAnswer(
+        (_) async => (
+          profile: _cachedProfile,
+          fetchedAt: DateTime.now(),
+        ),
+      );
+      when(() => profileRepository.getProfile()).thenAnswer(
+        (_) async => (
+          profile: _cachedProfile,
+          error: null,
+        ),
+      );
+      when(
+        () => profileRepository.saveCachedProfile(any()),
+      ).thenAnswer((_) async {});
+      when(
+        () => profileRepository.clearCachedProfile(),
+      ).thenAnswer((_) async {});
     });
 
     testWidgets('app settings renders staggered top-level sections', (
@@ -169,11 +219,16 @@ void main() {
       tester,
     ) async {
       await tester.pumpApp(
-        BlocProvider(
-          create: (_) => ShellProfileCubit(
-            profileRepository: ProfileRepository(),
-          ),
-          child: const ProfilePage(),
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthCubit>.value(value: authCubit),
+            BlocProvider(
+              create: (_) => ShellProfileCubit(
+                profileRepository: profileRepository,
+              ),
+            ),
+          ],
+          child: ProfilePage(profileRepository: profileRepository),
         ),
       );
       await tester.pumpAndSettle();

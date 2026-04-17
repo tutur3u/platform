@@ -5,6 +5,7 @@ import 'package:flutter/material.dart'
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/app/view/auth_session_boundary.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/router/app_router.dart';
@@ -455,6 +456,7 @@ class _AppState extends State<App> {
             listenWhen: (prev, curr) =>
                 prev.status != curr.status || prev.user?.id != curr.user?.id,
             listener: (context, state) {
+              ProfileCubit.clearMemoryCache();
               if (state.status == AuthStatus.authenticated) {
                 unawaited(
                   PushNotificationService.instance.startSession(state.user!.id),
@@ -532,9 +534,15 @@ class _AppState extends State<App> {
                   supportedLocales: AppLocalizations.supportedLocales,
                   routerConfig: _router,
                   builder: (context, child) {
+                    final authIdentity = context.select<AuthCubit, String?>(
+                      (cubit) => cubit.state.user?.id,
+                    );
                     return _ShadcnMaterialBridge(
-                      child: DismissKeyboardOnPointerDown(
-                        child: AppVersionGate(child: child!),
+                      child: AuthSessionBoundary(
+                        identity: authIdentity,
+                        child: DismissKeyboardOnPointerDown(
+                          child: AppVersionGate(child: child!),
+                        ),
                       ),
                     );
                   },

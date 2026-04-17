@@ -101,6 +101,8 @@ class _TransactionCategoriesViewState
     );
   }
 
+  String _memoryCacheKey(String wsId) => userScopedCacheKey(wsId);
+
   void _seedFromCache() {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) {
@@ -557,7 +559,7 @@ class _TransactionCategoriesViewState
       wsId,
       forceRefresh: forceRefresh,
     );
-    final cached = _categoriesCache[wsId];
+    final cached = _categoriesCache[_memoryCacheKey(wsId)];
     final diskCached = await CacheStore.instance
         .read<List<TransactionCategory>>(
           key: _categoriesStoreKey(wsId),
@@ -601,7 +603,7 @@ class _TransactionCategoriesViewState
           !_isWorkspaceRequestCurrent(wsId)) {
         return;
       }
-      _categoriesCache[wsId] = _CategoryCacheEntry(
+      _categoriesCache[_memoryCacheKey(wsId)] = _CategoryCacheEntry(
         categories: categories,
         fetchedAt: DateTime.now(),
       );
@@ -659,7 +661,7 @@ class _TransactionCategoriesViewState
       wsId,
       forceRefresh: forceRefresh,
     );
-    final cached = _tagsCache[wsId];
+    final cached = _tagsCache[_memoryCacheKey(wsId)];
     final diskCached = await CacheStore.instance.read<List<FinanceTag>>(
       key: _tagsStoreKey(wsId),
       decode: _decodeTags,
@@ -702,7 +704,7 @@ class _TransactionCategoriesViewState
           !_isWorkspaceRequestCurrent(wsId)) {
         return;
       }
-      _tagsCache[wsId] = _TagCacheEntry(
+      _tagsCache[_memoryCacheKey(wsId)] = _TagCacheEntry(
         tags: tags,
         fetchedAt: DateTime.now(),
       );

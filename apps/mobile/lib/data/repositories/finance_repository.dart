@@ -36,6 +36,9 @@ class FinanceRepository {
     );
   }
 
+  static String _workspaceCurrencyMemoryKey(String wsId) =>
+      userScopedCacheKey(wsId);
+
   static String _decodeWorkspaceCurrency(Object? json) {
     if (json is! String) {
       throw const FormatException(
@@ -59,12 +62,13 @@ class FinanceRepository {
   }
 
   String? peekWorkspaceDefaultCurrency(String wsId) {
-    final cached = _workspaceCurrencyCache[wsId];
+    final cached = _workspaceCurrencyCache[_workspaceCurrencyMemoryKey(wsId)];
     return cached?.currency;
   }
 
   Future<String?> readWorkspaceDefaultCurrencyFromCache(String wsId) async {
-    final memoryCached = _workspaceCurrencyCache[wsId];
+    final memoryCached =
+        _workspaceCurrencyCache[_workspaceCurrencyMemoryKey(wsId)];
     if (memoryCached != null) {
       return memoryCached.currency;
     }
@@ -77,7 +81,9 @@ class FinanceRepository {
       return null;
     }
 
-    _workspaceCurrencyCache[wsId] = _WorkspaceCurrencyCacheEntry(
+    _workspaceCurrencyCache[_workspaceCurrencyMemoryKey(
+      wsId,
+    )] = _WorkspaceCurrencyCacheEntry(
       currency: diskCached.data!,
       fetchedAt: diskCached.fetchedAt ?? DateTime.now(),
     );
@@ -90,7 +96,9 @@ class FinanceRepository {
   }) async {
     final normalized = _normalizeWorkspaceCurrencyValue(currency);
     final now = DateTime.now();
-    _workspaceCurrencyCache[wsId] = _WorkspaceCurrencyCacheEntry(
+    _workspaceCurrencyCache[_workspaceCurrencyMemoryKey(
+      wsId,
+    )] = _WorkspaceCurrencyCacheEntry(
       currency: normalized,
       fetchedAt: now,
     );
@@ -121,7 +129,8 @@ class FinanceRepository {
   }
 
   Future<String> _refreshWorkspaceDefaultCurrency(String wsId) {
-    return _workspaceCurrencyInFlight.putIfAbsent(wsId, () async {
+    final memoryKey = _workspaceCurrencyMemoryKey(wsId);
+    return _workspaceCurrencyInFlight.putIfAbsent(memoryKey, () async {
       try {
         final currency = await _fetchWorkspaceDefaultCurrencyRemote(wsId);
         await _storeWorkspaceDefaultCurrencyCache(
@@ -130,7 +139,7 @@ class FinanceRepository {
         );
         return currency;
       } finally {
-        unawaited(_workspaceCurrencyInFlight.remove(wsId));
+        unawaited(_workspaceCurrencyInFlight.remove(memoryKey));
       }
     });
   }
@@ -150,7 +159,8 @@ class FinanceRepository {
     bool forceRefresh = false,
   }) async {
     if (!forceRefresh) {
-      final memoryCached = _workspaceCurrencyCache[wsId];
+      final memoryCached =
+          _workspaceCurrencyCache[_workspaceCurrencyMemoryKey(wsId)];
       if (memoryCached != null) {
         if (_isWorkspaceCurrencyFresh(memoryCached.fetchedAt)) {
           return memoryCached.currency;
@@ -164,7 +174,9 @@ class FinanceRepository {
         decode: _decodeWorkspaceCurrency,
       );
       if (diskCached.hasValue && diskCached.data != null) {
-        _workspaceCurrencyCache[wsId] = _WorkspaceCurrencyCacheEntry(
+        _workspaceCurrencyCache[_workspaceCurrencyMemoryKey(
+          wsId,
+        )] = _WorkspaceCurrencyCacheEntry(
           currency: diskCached.data!,
           fetchedAt: diskCached.fetchedAt ?? DateTime.now(),
         );

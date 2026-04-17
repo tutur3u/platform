@@ -82,6 +82,8 @@ class _WalletsViewState extends State<_WalletsView> {
     );
   }
 
+  String _memoryCacheKey(String wsId) => userScopedCacheKey(wsId);
+
   void _seedWalletsFromCacheIfNeeded({String? wsId}) {
     final resolvedWsId =
         wsId ?? context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -346,7 +348,7 @@ class _WalletsViewState extends State<_WalletsView> {
       return;
     }
     final requestToken = ++_currentWalletsRequestToken;
-    final cached = _cache[wsId];
+    final cached = _cache[_memoryCacheKey(wsId)];
     final diskCached = await CacheStore.instance.read<List<Wallet>>(
       key: _cacheKey(wsId),
       decode: _decodeWallets,
@@ -409,7 +411,7 @@ class _WalletsViewState extends State<_WalletsView> {
       if (!mounted || requestToken != _currentWalletsRequestToken) {
         return;
       }
-      _cache[wsId] = _WalletsCacheEntry(
+      _cache[_memoryCacheKey(wsId)] = _WalletsCacheEntry(
         wallets: sortedWallets,
         fetchedAt: DateTime.now(),
       );
