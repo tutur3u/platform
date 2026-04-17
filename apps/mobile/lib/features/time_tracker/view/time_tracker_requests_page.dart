@@ -18,6 +18,7 @@ import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.dart';
@@ -259,15 +260,35 @@ class _RequestsViewState extends State<_RequestsView> {
     final workspaceState = context.watch<WorkspaceCubit>().state;
     final wsId = workspaceState.currentWorkspace?.id;
 
-    return BlocListener<WorkspaceCubit, WorkspaceState>(
-      listenWhen: (previous, current) =>
-          previous.currentWorkspace?.id != current.currentWorkspace?.id,
-      listener: (context, state) {
-        final nextWsId = state.currentWorkspace?.id;
-        _permissionsWorkspaceId = nextWsId;
-        _requestLoadToken++;
-        unawaited(_loadPermissionsAndThreshold(nextWsId));
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<WorkspaceCubit, WorkspaceState>(
+          listenWhen: (previous, current) =>
+              previous.currentWorkspace?.id != current.currentWorkspace?.id,
+          listener: (context, state) {
+            final nextWsId = state.currentWorkspace?.id;
+            _permissionsWorkspaceId = nextWsId;
+            _requestLoadToken++;
+            unawaited(_loadPermissionsAndThreshold(nextWsId));
+          },
+        ),
+        BlocListener<AuthCubit, AuthState>(
+          listenWhen: (previous, current) =>
+              previous.user?.id != current.user?.id,
+          listener: (context, state) {
+            _requestLoadToken++;
+            final wsId = context
+                .read<WorkspaceCubit>()
+                .state
+                .currentWorkspace
+                ?.id;
+            if (wsId == null || wsId.isEmpty) {
+              return;
+            }
+            unawaited(_loadRequests(wsIdOverride: wsId, forceRefresh: true));
+          },
+        ),
+      ],
       child: shad.Scaffold(
         child: Stack(
           children: [

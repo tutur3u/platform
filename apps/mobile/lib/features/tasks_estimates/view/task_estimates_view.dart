@@ -12,6 +12,7 @@ import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/tasks_estimates/cubit/task_estimates_cubit.dart';
 import 'package:mobile/features/tasks_estimates/cubit/task_labels_cubit.dart';
@@ -84,18 +85,44 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
   @override
   Widget build(BuildContext context) {
     return shad.Scaffold(
-      child: BlocListener<WorkspaceCubit, WorkspaceState>(
-        listenWhen: (prev, curr) =>
-            prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-        listener: (context, state) {
-          final wsId = state.currentWorkspace?.id;
-          if (wsId != null) {
-            _permissionsWorkspaceId = wsId;
-            unawaited(_loadPermissions());
-            unawaited(context.read<TaskEstimatesCubit>().loadBoards(wsId));
-            unawaited(context.read<TaskLabelsCubit>().loadLabels(wsId));
-          }
-        },
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<WorkspaceCubit, WorkspaceState>(
+            listenWhen: (prev, curr) =>
+                prev.currentWorkspace?.id != curr.currentWorkspace?.id,
+            listener: (context, state) {
+              final wsId = state.currentWorkspace?.id;
+              if (wsId != null) {
+                _permissionsWorkspaceId = wsId;
+                unawaited(_loadPermissions());
+                unawaited(context.read<TaskEstimatesCubit>().loadBoards(wsId));
+                unawaited(context.read<TaskLabelsCubit>().loadLabels(wsId));
+              }
+            },
+          ),
+          BlocListener<AuthCubit, AuthState>(
+            listenWhen: (previous, current) =>
+                previous.user?.id != current.user?.id,
+            listener: (context, state) {
+              final wsId = context
+                  .read<WorkspaceCubit>()
+                  .state
+                  .currentWorkspace
+                  ?.id;
+              if (wsId == null || wsId.isEmpty) {
+                return;
+              }
+              unawaited(_loadPermissions());
+              unawaited(context.read<TaskEstimatesCubit>().loadBoards(wsId));
+              unawaited(
+                context.read<TaskLabelsCubit>().loadLabels(
+                  wsId,
+                  forceRefresh: true,
+                ),
+              );
+            },
+          ),
+        ],
         child: Stack(
           children: [
             _buildContent(context),

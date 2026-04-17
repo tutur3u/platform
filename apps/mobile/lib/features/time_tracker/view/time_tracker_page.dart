@@ -10,6 +10,8 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -203,33 +205,68 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
       ],
     );
 
-    return BlocListener<WorkspaceCubit, WorkspaceState>(
-      listenWhen: (prev, curr) =>
-          prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-      listener: (context, wsState) async {
-        final wsId = wsState.currentWorkspace?.id;
-        final userId = supabase.auth.currentUser?.id;
-        if (wsId != null && userId != null) {
-          if (TimeTrackerCubit.seedStateFor(wsId: wsId, userId: userId) ==
-              null) {
-            context.read<TimeTrackerCubit>().prepareForWorkspaceSwitch();
-          }
-          final calendarSettingsCubit = context.read<CalendarSettingsCubit>();
-          await calendarSettingsCubit.loadWorkspacePreference(wsId);
-          if (!context.mounted) return;
-          final firstDayOfWeek = _resolvedFirstDayOfWeek(
-            context,
-            calendarSettingsCubit,
-          );
-          unawaited(
-            context.read<TimeTrackerCubit>().loadData(
-              wsId,
-              userId,
-              firstDayOfWeek: firstDayOfWeek,
-            ),
-          );
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<WorkspaceCubit, WorkspaceState>(
+          listenWhen: (prev, curr) =>
+              prev.currentWorkspace?.id != curr.currentWorkspace?.id,
+          listener: (context, wsState) async {
+            final wsId = wsState.currentWorkspace?.id;
+            final userId = supabase.auth.currentUser?.id;
+            if (wsId != null && userId != null) {
+              if (TimeTrackerCubit.seedStateFor(wsId: wsId, userId: userId) ==
+                  null) {
+                context.read<TimeTrackerCubit>().prepareForWorkspaceSwitch();
+              }
+              final calendarSettingsCubit = context
+                  .read<CalendarSettingsCubit>();
+              await calendarSettingsCubit.loadWorkspacePreference(wsId);
+              if (!context.mounted) return;
+              final firstDayOfWeek = _resolvedFirstDayOfWeek(
+                context,
+                calendarSettingsCubit,
+              );
+              unawaited(
+                context.read<TimeTrackerCubit>().loadData(
+                  wsId,
+                  userId,
+                  firstDayOfWeek: firstDayOfWeek,
+                ),
+              );
+            }
+          },
+        ),
+        BlocListener<AuthCubit, AuthState>(
+          listenWhen: (previous, current) =>
+              previous.user?.id != current.user?.id,
+          listener: (context, authState) async {
+            final wsId = context
+                .read<WorkspaceCubit>()
+                .state
+                .currentWorkspace
+                ?.id;
+            final userId = authState.user?.id;
+            if (wsId == null || userId == null || userId.isEmpty) {
+              return;
+            }
+            final calendarSettingsCubit = context.read<CalendarSettingsCubit>();
+            await calendarSettingsCubit.loadWorkspacePreference(wsId);
+            if (!context.mounted) return;
+            final firstDayOfWeek = _resolvedFirstDayOfWeek(
+              context,
+              calendarSettingsCubit,
+            );
+            unawaited(
+              context.read<TimeTrackerCubit>().loadData(
+                wsId,
+                userId,
+                firstDayOfWeek: firstDayOfWeek,
+                forceRefresh: true,
+              ),
+            );
+          },
+        ),
+      ],
       child: shad.Scaffold(
         child: BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
           buildWhen: (prev, curr) => prev.status != curr.status,
