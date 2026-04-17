@@ -125,6 +125,7 @@ GoRouter createAppRouter(
 
       final isAuthRoute =
           state.matchedLocation == Routes.login ||
+          state.matchedLocation == Routes.addAccount ||
           state.matchedLocation == Routes.signUp ||
           state.matchedLocation == Routes.forgotPassword ||
           state.matchedLocation == Routes.mfaVerify;
@@ -140,6 +141,10 @@ GoRouter createAppRouter(
 
       // Not authenticated → redirect to login
       if (authState.status == AuthStatus.unauthenticated && !isAuthRoute) {
+        if (authState.isAddAccountFlow &&
+            state.matchedLocation != Routes.addAccount) {
+          return Routes.addAccount;
+        }
         if (state.matchedLocation != Routes.login) {
           return Routes.login;
         }
@@ -212,6 +217,10 @@ GoRouter createAppRouter(
       GoRoute(
         path: Routes.login,
         builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: Routes.addAccount,
+        builder: (context, state) => const LoginPage(addAccountMode: true),
       ),
       GoRoute(
         path: Routes.signUp,

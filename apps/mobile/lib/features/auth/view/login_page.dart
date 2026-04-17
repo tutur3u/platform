@@ -21,7 +21,12 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 enum _LoginStage { identify, otp, password }
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({
+    this.addAccountMode = false,
+    super.key,
+  });
+
+  final bool addAccountMode;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -55,6 +60,14 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      context.read<AuthCubit>().setAddAccountFlow(
+        enabled: widget.addAccountMode,
+      );
+    });
     _otpAvailabilityGraceTimer = Timer(_otpAvailabilityGracePeriod, () {
       if (!mounted) {
         return;
@@ -299,7 +312,7 @@ class _LoginPageState extends State<LoginPage> {
         otpAvailability.isResolving && !_otpAvailabilityGraceExpired;
 
     return AuthScaffold(
-      title: l10n.loginTitle,
+      title: widget.addAccountMode ? l10n.authAddAccountTitle : l10n.loginTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -369,14 +382,22 @@ class _LoginPageState extends State<LoginPage> {
           const shad.Gap(20),
           Center(
             child: GestureDetector(
-              onTap: () => context.push('/signup'),
+              onTap: widget.addAccountMode
+                  ? null
+                  : () => context.push('/signup'),
               child: Text(
-                l10n.loginSignUpPrompt,
+                widget.addAccountMode
+                    ? l10n.authAddAccountHint
+                    : l10n.loginSignUpPrompt,
                 textAlign: TextAlign.center,
                 style: theme.typography.small.copyWith(
-                  color: theme.colorScheme.mutedForeground.withValues(
-                    alpha: 0.82,
-                  ),
+                  color: widget.addAccountMode
+                      ? theme.colorScheme.mutedForeground.withValues(
+                          alpha: 0.92,
+                        )
+                      : theme.colorScheme.mutedForeground.withValues(
+                          alpha: 0.82,
+                        ),
                 ),
               ),
             ),

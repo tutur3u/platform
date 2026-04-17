@@ -492,6 +492,11 @@ class _AppState extends State<App> {
               if (state.currentWorkspace == null) {
                 return;
               }
+              unawaited(
+                context.read<AuthCubit>().updateActiveAccountWorkspaceContext(
+                  state.currentWorkspace!.id,
+                ),
+              );
               unawaited(CacheWarmupCoordinator.instance.prewarmBoot());
             },
           ),

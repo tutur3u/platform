@@ -259,11 +259,101 @@ abstract class AppLocalizations {
   /// **'Unable to open Microsoft sign-in right now.'**
   String get authMicrosoftBrowserLaunchFailed;
 
+  /// No description provided for @authAddAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add account'**
+  String get authAddAccount;
+
+  /// No description provided for @authAddAccountDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with another account on this device.'**
+  String get authAddAccountDescription;
+
+  /// No description provided for @authAddAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start add-account flow.'**
+  String get authAddAccountFailed;
+
+  /// No description provided for @authAddAccountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re adding another account to this device.'**
+  String get authAddAccountHint;
+
+  /// No description provided for @authAddAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add another account'**
+  String get authAddAccountTitle;
+
   /// No description provided for @authLogOut.
   ///
   /// In en, this message translates to:
   /// **'Log out'**
   String get authLogOut;
+
+  /// No description provided for @authLogOutCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out current account'**
+  String get authLogOutCurrent;
+
+  /// No description provided for @authLogOutCurrentConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out this account from this device? If another account exists, we will switch to it automatically.'**
+  String get authLogOutCurrentConfirm;
+
+  /// No description provided for @authLogOutCurrentDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out this account and switch to another saved account if available.'**
+  String get authLogOutCurrentDescription;
+
+  /// No description provided for @authLogOutCurrentFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t log out this account.'**
+  String get authLogOutCurrentFailed;
+
+  /// No description provided for @authLogOutCurrentSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged out current account.'**
+  String get authLogOutCurrentSuccess;
+
+  /// No description provided for @authNoStoredAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved accounts yet.'**
+  String get authNoStoredAccounts;
+
+  /// No description provided for @authSwitchAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch account'**
+  String get authSwitchAccount;
+
+  /// No description provided for @authSwitchAccountDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which account to use right now.'**
+  String get authSwitchAccountDescription;
+
+  /// No description provided for @authSwitchAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t switch account.'**
+  String get authSwitchAccountFailed;
+
+  /// No description provided for @authSwitchAccountSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched account.'**
+  String get authSwitchAccountSuccess;
 
   /// No description provided for @loginForgotPassword.
   ///

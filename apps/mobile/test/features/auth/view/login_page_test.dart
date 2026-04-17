@@ -39,6 +39,9 @@ void main() {
       appVersionCubit = _MockAppVersionCubit();
 
       when(() => authCubit.clearError()).thenReturn(null);
+      when(
+        () => authCubit.setAddAccountFlow(enabled: any(named: 'enabled')),
+      ).thenReturn(null);
       when(() => authCubit.signInWithApple()).thenAnswer((_) async {});
       when(() => authCubit.signInWithGoogle()).thenAnswer((_) async {});
       when(() => authCubit.signInWithMicrosoft()).thenAnswer((_) async {});
@@ -83,6 +86,34 @@ void main() {
         find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('shows add-account copy in add-account mode', (tester) async {
+      const state = AuthState.unauthenticated();
+      when(() => authCubit.state).thenReturn(state);
+      whenListen(
+        authCubit,
+        const Stream<AuthState>.empty(),
+        initialState: state,
+      );
+
+      await tester.pumpApp(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: authCubit),
+            BlocProvider.value(value: appVersionCubit),
+          ],
+          child: const LoginPage(addAccountMode: true),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Add another account'), findsOneWidget);
+      expect(
+        find.text("You're adding another account to this device."),
+        findsOneWidget,
+      );
+      verify(() => authCubit.setAddAccountFlow(enabled: true)).called(1);
     });
 
     testWidgets('disables social buttons while auth is busy', (tester) async {

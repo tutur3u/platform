@@ -229,8 +229,8 @@ class _SettingsViewState extends State<_SettingsView> {
                         children: [
                           SettingsTile(
                             icon: Icons.logout_rounded,
-                            title: context.l10n.settingsSignOut,
-                            subtitle: context.l10n.settingsSignOutDescription,
+                            title: context.l10n.authLogOutCurrent,
+                            subtitle: context.l10n.authLogOutCurrentDescription,
                             isDestructive: true,
                             onTap: () => unawaited(_showSignOutDialog()),
                           ),
@@ -437,15 +437,15 @@ class _SettingsViewState extends State<_SettingsView> {
     final authCubit = context.read<AuthCubit>();
     final confirmed = await showSettingsConfirmationDialog(
       context: context,
-      title: context.l10n.settingsSignOut,
-      description: context.l10n.settingsSignOutConfirm,
-      confirmLabel: context.l10n.settingsSignOut,
+      title: context.l10n.authLogOutCurrent,
+      description: context.l10n.authLogOutCurrentConfirm,
+      confirmLabel: context.l10n.authLogOutCurrent,
       isDestructive: true,
       icon: Icons.logout_rounded,
     );
 
     if (confirmed == true && context.mounted) {
-      await authCubit.signOut();
+      await authCubit.signOutCurrentAccount();
     }
   }
 

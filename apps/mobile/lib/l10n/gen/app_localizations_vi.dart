@@ -99,7 +99,52 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authMicrosoftBrowserLaunchFailed => 'Không thể mở đăng nhập Microsoft lúc này.';
 
   @override
+  String get authAddAccount => 'Thêm tài khoản';
+
+  @override
+  String get authAddAccountDescription => 'Đăng nhập bằng tài khoản khác trên thiết bị này.';
+
+  @override
+  String get authAddAccountFailed => 'Không thể bắt đầu quy trình thêm tài khoản.';
+
+  @override
+  String get authAddAccountHint => 'Bạn đang thêm một tài khoản khác vào thiết bị này.';
+
+  @override
+  String get authAddAccountTitle => 'Thêm tài khoản khác';
+
+  @override
   String get authLogOut => 'Đăng xuất';
+
+  @override
+  String get authLogOutCurrent => 'Đăng xuất tài khoản hiện tại';
+
+  @override
+  String get authLogOutCurrentConfirm => 'Đăng xuất tài khoản này khỏi thiết bị? Nếu có tài khoản khác, ứng dụng sẽ tự động chuyển sang tài khoản đó.';
+
+  @override
+  String get authLogOutCurrentDescription => 'Đăng xuất tài khoản này và tự động chuyển sang tài khoản đã lưu khác nếu có.';
+
+  @override
+  String get authLogOutCurrentFailed => 'Không thể đăng xuất tài khoản này.';
+
+  @override
+  String get authLogOutCurrentSuccess => 'Đã đăng xuất tài khoản hiện tại.';
+
+  @override
+  String get authNoStoredAccounts => 'Chưa có tài khoản nào được lưu.';
+
+  @override
+  String get authSwitchAccount => 'Chuyển tài khoản';
+
+  @override
+  String get authSwitchAccountDescription => 'Chọn tài khoản để sử dụng ngay bây giờ.';
+
+  @override
+  String get authSwitchAccountFailed => 'Không thể chuyển tài khoản.';
+
+  @override
+  String get authSwitchAccountSuccess => 'Đã chuyển tài khoản.';
 
   @override
   String get loginForgotPassword => 'Quên mật khẩu?';

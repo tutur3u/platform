@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/auth_action_result.dart';
+import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -33,6 +34,17 @@ void main() {
       );
       when(() => authRepository.dispose()).thenReturn(null);
       when(() => authRepository.checkMfaRequired()).thenReturn(false);
+      when(
+        () => authRepository.getStoredAccounts(),
+      ).thenAnswer((_) async => const <StoredAuthAccount>[]);
+      when(
+        () => authRepository.getActiveStoredAccountId(),
+      ).thenAnswer((_) async => null);
+      when(
+        () => authRepository.syncCurrentSessionToMultiAccountStore(
+          switchImmediately: any(named: 'switchImmediately'),
+        ),
+      ).thenAnswer((_) async {});
       when(
         () => authRepository.signInWithApple(),
       ).thenAnswer((_) async => const AuthActionResult.externalFlowStarted());

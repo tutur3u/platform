@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/auth_action_result.dart';
+import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
@@ -17,12 +18,40 @@ class AuthCubit extends Cubit<AuthState> {
   }) : _repo = authRepository,
        _onBeforeSignOut = onBeforeSignOut,
        super(_resolveInitialState(authRepository)) {
+    unawaited(_hydrateMultiAccountStore());
     _setupAuthListener();
   }
 
   final AuthRepository _repo;
   final Future<void> Function()? _onBeforeSignOut;
   StreamSubscription<supa.AuthState>? _authSub;
+
+  Future<void> _hydrateMultiAccountStore() async {
+    final accounts = await _repo.getStoredAccounts();
+    final activeAccountId = await _repo.getActiveStoredAccountId();
+    emit(
+      state.copyWith(
+        accounts: accounts,
+        activeAccountId: activeAccountId,
+      ),
+    );
+
+    if (state.status == AuthStatus.authenticated) {
+      await _repo.syncCurrentSessionToMultiAccountStore();
+      await _reloadStoredAccounts();
+    }
+  }
+
+  Future<void> _reloadStoredAccounts() async {
+    final accounts = await _repo.getStoredAccounts();
+    final activeAccountId = await _repo.getActiveStoredAccountId();
+    emit(
+      state.copyWith(
+        accounts: accounts,
+        activeAccountId: activeAccountId,
+      ),
+    );
+  }
 
   /// Resolves auth state synchronously from the cached Supabase session.
   ///
@@ -50,8 +79,19 @@ class AuthCubit extends Cubit<AuthState> {
           } else {
             emit(AuthState.authenticated(session!.user));
           }
+          unawaited(
+            _repo.syncCurrentSessionToMultiAccountStore().then(
+              (_) => _reloadStoredAccounts(),
+            ),
+          );
         } else if (event == supa.AuthChangeEvent.signedOut) {
-          emit(const AuthState.unauthenticated());
+          emit(
+            const AuthState.unauthenticated().copyWith(
+              accounts: const <StoredAuthAccount>[],
+              activeAccountId: null,
+              isAddAccountFlow: state.isAddAccountFlow,
+            ),
+          );
         }
       },
       onError: (Object error, StackTrace stackTrace) {
@@ -93,6 +133,20 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final result = await _repo.verifyOtp(email, otp);
     if (result.success) {
+      if (state.isAddAccountFlow) {
+        final addResult = await _repo.completeAddAccountFlow();
+        if (!addResult.success) {
+          emit(
+            state.copyWith(
+              isLoading: false,
+              error: addResult.error,
+              errorCode: null,
+            ),
+          );
+          return false;
+        }
+      }
+
       final user = await _repo.getCurrentUser();
       if (user != null) {
         if (_repo.checkMfaRequired()) {
@@ -100,6 +154,7 @@ class AuthCubit extends Cubit<AuthState> {
         } else {
           emit(AuthState.authenticated(user));
         }
+        await _reloadStoredAccounts();
         return true;
       }
     }
@@ -127,6 +182,20 @@ class AuthCubit extends Cubit<AuthState> {
       captchaToken: captchaToken,
     );
     if (result.success) {
+      if (state.isAddAccountFlow) {
+        final addResult = await _repo.completeAddAccountFlow();
+        if (!addResult.success) {
+          emit(
+            state.copyWith(
+              isLoading: false,
+              error: addResult.error,
+              errorCode: null,
+            ),
+          );
+          return false;
+        }
+      }
+
       final user = await _repo.getCurrentUser();
       if (user != null) {
         if (_repo.checkMfaRequired()) {
@@ -134,6 +203,7 @@ class AuthCubit extends Cubit<AuthState> {
         } else {
           emit(AuthState.authenticated(user));
         }
+        await _reloadStoredAccounts();
         return true;
       }
     }
@@ -193,6 +263,20 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     switch (result.status) {
       case AuthActionStatus.success:
+        if (state.isAddAccountFlow) {
+          final addResult = await _repo.completeAddAccountFlow();
+          if (!addResult.success) {
+            emit(
+              state.copyWith(
+                isLoading: false,
+                error: addResult.error,
+                errorCode: fallbackErrorCode,
+              ),
+            );
+            return;
+          }
+        }
+
         final user = await _repo.getCurrentUser();
         if (user != null) {
           if (_repo.checkMfaRequired()) {
@@ -200,6 +284,7 @@ class AuthCubit extends Cubit<AuthState> {
           } else {
             emit(AuthState.authenticated(user));
           }
+          await _reloadStoredAccounts();
           return;
         }
         emit(
@@ -280,7 +365,145 @@ class AuthCubit extends Cubit<AuthState> {
     await CacheStore.instance.clearScope(userId: state.user?.id);
     await _onBeforeSignOut?.call();
     await _repo.signOut();
-    emit(const AuthState.unauthenticated());
+    emit(
+      const AuthState.unauthenticated().copyWith(
+        accounts: const <StoredAuthAccount>[],
+        activeAccountId: null,
+      ),
+    );
+  }
+
+  Future<bool> beginAddAccountFlow() async {
+    emit(
+      state.copyWith(
+        isLoading: true,
+        isAddAccountFlow: true,
+        error: null,
+        errorCode: null,
+      ),
+    );
+
+    try {
+      await _repo.syncCurrentSessionToMultiAccountStore();
+      await _repo.signOutLocalSessionOnly();
+      emit(
+        state.copyWith(
+          isLoading: false,
+          status: AuthStatus.unauthenticated,
+          error: null,
+          errorCode: null,
+        ),
+      );
+      return true;
+    } on Exception catch (e) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          error: e.toString(),
+          errorCode: null,
+        ),
+      );
+      return false;
+    }
+  }
+
+  void setAddAccountFlow({required bool enabled}) {
+    emit(state.copyWith(isAddAccountFlow: enabled));
+  }
+
+  Future<void> syncCurrentSessionToStore() async {
+    await _repo.syncCurrentSessionToMultiAccountStore();
+    await _reloadStoredAccounts();
+  }
+
+  Future<bool> switchAccount(String accountId) async {
+    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
+    final previousUserId = state.user?.id;
+    final result = await _repo.switchToStoredAccount(accountId);
+    if (!result.success) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          error: result.error,
+          errorCode: null,
+        ),
+      );
+      return false;
+    }
+
+    if (previousUserId != null && previousUserId != accountId) {
+      await CacheStore.instance.clearScope(userId: previousUserId);
+    }
+
+    await _reloadStoredAccounts();
+    emit(state.copyWith(isLoading: false, error: null, errorCode: null));
+    return true;
+  }
+
+  Future<bool> removeAccount(String accountId) async {
+    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
+    final previousUserId = state.user?.id;
+    final result = await _repo.removeStoredAccount(accountId);
+    if (!result.success) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          error: result.error,
+          errorCode: null,
+        ),
+      );
+      return false;
+    }
+
+    if (previousUserId == accountId) {
+      await CacheStore.instance.clearScope(userId: accountId);
+    }
+
+    await _reloadStoredAccounts();
+    emit(state.copyWith(isLoading: false, error: null, errorCode: null));
+    return true;
+  }
+
+  Future<bool> signOutCurrentAccount() async {
+    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
+    final previousUserId = state.user?.id;
+    final result = await _repo.signOutCurrentAccount();
+    if (result.error != null) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          error: result.error,
+          errorCode: null,
+        ),
+      );
+      return false;
+    }
+
+    if (previousUserId != null) {
+      await CacheStore.instance.clearScope(userId: previousUserId);
+    }
+
+    await _reloadStoredAccounts();
+    emit(state.copyWith(isLoading: false, error: null, errorCode: null));
+    return true;
+  }
+
+  Future<void> signOutAllAccounts() async {
+    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
+    await CacheStore.instance.clearScope(userId: state.user?.id);
+    await _onBeforeSignOut?.call();
+    await _repo.signOutAllAccounts();
+    emit(
+      const AuthState.unauthenticated().copyWith(
+        accounts: const <StoredAuthAccount>[],
+        activeAccountId: null,
+      ),
+    );
+  }
+
+  Future<void> updateActiveAccountWorkspaceContext(String workspaceId) async {
+    await _repo.updateActiveAccountWorkspaceContext(workspaceId);
+    await _reloadStoredAccounts();
   }
 
   void clearError() => emit(state.copyWith(error: null, errorCode: null));

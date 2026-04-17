@@ -10,7 +10,14 @@ import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-enum AvatarMenuAction { workspace, profile, settings, logout }
+enum AvatarMenuAction {
+  workspace,
+  profile,
+  settings,
+  switchAccount,
+  addAccount,
+  logout,
+}
 
 class AvatarDropdownMenuData {
   const AvatarDropdownMenuData({
@@ -349,6 +356,18 @@ class _AvatarMenuContent extends StatelessWidget {
         _ActionGroup(
           children: [
             _ActionTile(
+              icon: Icons.switch_account_rounded,
+              title: context.l10n.authSwitchAccount,
+              subtitle: context.l10n.authSwitchAccountDescription,
+              onTap: () => onSelected(AvatarMenuAction.switchAccount),
+            ),
+            _ActionTile(
+              icon: Icons.person_add_alt_1_rounded,
+              title: context.l10n.authAddAccount,
+              subtitle: context.l10n.authAddAccountDescription,
+              onTap: () => onSelected(AvatarMenuAction.addAccount),
+            ),
+            _ActionTile(
               icon: Icons.settings_outlined,
               title: context.l10n.settingsTitle,
               subtitle: context.l10n.settingsPreferencesSectionDescription,
@@ -369,8 +388,8 @@ class _AvatarMenuContent extends StatelessWidget {
           children: [
             _ActionTile(
               icon: Icons.logout_rounded,
-              title: context.l10n.authLogOut,
-              subtitle: context.l10n.settingsSignOutDescription,
+              title: context.l10n.authLogOutCurrent,
+              subtitle: context.l10n.authLogOutCurrentDescription,
               destructive: true,
               onTap: () => onSelected(AvatarMenuAction.logout),
             ),
