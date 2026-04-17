@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:intl/intl.dart';
+import 'package:mobile/core/theme/dynamic_colors.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
-import 'package:mobile/features/time_tracker/utils/category_color.dart';
+import 'package:mobile/features/time_tracker/widgets/time_tracking_category_chip.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -34,6 +35,12 @@ class SessionTile extends StatelessWidget {
     final durationText = _formatDuration(dur);
 
     final timeRange = _formatTimeRange(session.startTime, session.endTime);
+    final categoryLabel = session.categoryName?.trim().isNotEmpty == true
+        ? session.categoryName!.trim()
+        : l10n.timerNoCategory;
+    final colorKey = session.categoryColor ?? categoryColor;
+
+    final descriptionPreview = _descriptionPreview(session.description);
 
     return Dismissible(
       key: Key(session.id),
@@ -68,45 +75,95 @@ class SessionTile extends StatelessWidget {
           onDelete?.call();
         }
       },
-      child: InkWell(
-        onTap: onTap ?? onEdit,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              _CategoryDot(color: session.categoryColor ?? categoryColor),
-              const shad.Gap(12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      session.title ?? 'Work session',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.base.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (timeRange.isNotEmpty)
-                      Text(
-                        timeRange,
-                        style: theme.typography.small.copyWith(
-                          color: theme.colorScheme.mutedForeground,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+        child: Material(
+          color: theme.colorScheme.card,
+          borderRadius: BorderRadius.circular(12),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: onTap ?? onEdit,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: theme.colorScheme.border),
+              ),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          session.title ?? l10n.timerRunningSessionNoTitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.base.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
+                      const shad.Gap(10),
+                      _SessionDurationBadge(
+                        label: durationText,
+                      ),
+                    ],
+                  ),
+                  const shad.Gap(8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            TimeTrackingCategoryChip(
+                              label: categoryLabel,
+                              rawColor: colorKey,
+                            ),
+                            if (session.pendingApproval)
+                              shad.OutlineBadge(
+                                child: Text(
+                                  l10n.timerRequestPending,
+                                  style: theme.typography.small.copyWith(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (timeRange.isNotEmpty) ...[
+                        const shad.Gap(8),
+                        Flexible(
+                          child: Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: _SessionTimeRangeChip(label: timeRange),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (descriptionPreview != null) ...[
+                    const shad.Gap(6),
+                    Text(
+                      descriptionPreview,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.small.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                        height: 1.25,
+                      ),
+                    ),
                   ],
-                ),
+                ],
               ),
-              const shad.Gap(12),
-              Text(
-                durationText,
-                style: theme.typography.base.copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontFeatures: [const FontFeature.tabularFigures()],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -151,25 +208,92 @@ class SessionTile extends StatelessWidget {
     final endStr = fmt.format(end.toLocal());
     return '$startStr – $endStr';
   }
+
+  String? _descriptionPreview(String? raw) {
+    if (raw == null) return null;
+    final collapsed = raw.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (collapsed.isEmpty) return null;
+    return collapsed;
+  }
 }
 
-class _CategoryDot extends StatelessWidget {
-  const _CategoryDot({this.color});
+/// Matches web session duration: dynamic-orange/10 surface, orange ring, mono text.
+class _SessionDurationBadge extends StatelessWidget {
+  const _SessionDurationBadge({required this.label});
 
-  final String? color;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final orange = DynamicColors.of(context).orange;
+
     return Container(
-      width: 12,
-      height: 12,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: resolveTimeTrackingCategoryColor(
-          context,
-          color,
-          fallback: shad.Theme.of(context).colorScheme.muted,
+        borderRadius: BorderRadius.circular(8),
+        color: orange.withAlpha(26),
+        border: Border.all(color: orange.withAlpha(51)),
+      ),
+      child: Text(
+        label,
+        style: theme.typography.small.copyWith(
+          fontFamily: 'monospace',
+          fontWeight: FontWeight.w700,
+          fontFeatures: const [FontFeature.tabularFigures()],
+          color: orange,
+          fontSize: 14,
+          height: 1.2,
         ),
+      ),
+    );
+  }
+}
+
+/// Clock readout chip: mono digits, dynamic-blue tint (secondary to duration).
+class _SessionTimeRangeChip extends StatelessWidget {
+  const _SessionTimeRangeChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final blue = DynamicColors.of(context).blue;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: blue.withAlpha(26),
+        border: Border.all(color: blue.withAlpha(51)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.schedule,
+            size: 13,
+            color: blue.withAlpha(230),
+          ),
+          const shad.Gap(5),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 168),
+            child: Text(
+              label,
+              style: theme.typography.small.copyWith(
+                fontFamily: 'monospace',
+                fontWeight: FontWeight.w600,
+                fontFeatures: const [FontFeature.tabularFigures()],
+                color: blue,
+                fontSize: 11,
+                height: 1.2,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }
