@@ -1,6 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
 const {
   ROOT_DIR,
@@ -117,4 +119,28 @@ test('validateDockerCompose reports missing bind mounts', () => {
 
 test('checkDockerWebSetup passes for the current repository', () => {
   assert.deepEqual(checkDockerWebSetup({ rootDir: ROOT_DIR }), []);
+});
+
+test('checkDockerWebSetup uses rootDir for default docker reads', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'check-docker-web-rootdir-')
+  );
+
+  fs.mkdirSync(path.join(tempDir, 'apps', 'web'), { recursive: true });
+  fs.writeFileSync(
+    path.join(tempDir, 'apps', 'web', 'Dockerfile'),
+    'FROM scratch AS deps\n'
+  );
+  fs.writeFileSync(path.join(tempDir, 'docker-compose.web.yml'), 'services:\n');
+
+  const errors = checkDockerWebSetup({
+    rootDir: tempDir,
+    fileDependencyPaths: [],
+    workspacePackageJsonPaths: [],
+  });
+
+  assert.match(errors.join('\n'), /missing the dev stage/);
+  assert.match(errors.join('\n'), /missing the expected snippet: {3}web:/);
+
+  fs.rmSync(tempDir, { force: true, recursive: true });
 });

@@ -51,7 +51,8 @@ services:
     environment:
       SRH_CONNECTION_STRING: redis://redis:6379
       SRH_MODE: env
-      SRH_TOKEN: example_token
+      # Override SRH_TOKEN from your shell or CI when you need a non-default local token.
+      SRH_TOKEN: ${SRH_TOKEN:-example_token}
     image: hiett/serverless-redis-http:latest
     ports:
       - "8079:80"

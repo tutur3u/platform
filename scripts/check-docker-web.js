@@ -288,8 +288,14 @@ function validateDockerCompose(composeContent) {
 function checkDockerWebSetup({
   rootDir = ROOT_DIR,
   fsImpl = fs,
-  dockerfileContent = fsImpl.readFileSync(WEB_DOCKERFILE_PATH, 'utf8'),
-  composeContent = fsImpl.readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8'),
+  dockerfileContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'web', 'Dockerfile'),
+    'utf8'
+  ),
+  composeContent = fsImpl.readFileSync(
+    path.join(rootDir, 'docker-compose.web.yml'),
+    'utf8'
+  ),
   workspacePackageJsonPaths = listWorkspacePackageJsonPaths(rootDir, fsImpl),
   fileDependencyPaths = listFileDependencyPaths(rootDir, fsImpl),
 } = {}) {

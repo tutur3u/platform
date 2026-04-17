@@ -172,7 +172,7 @@ bun dev
 
 ## Optional local Redis
 
-If you need a real Redis backend (e.g., to test rate limiting or Upstash clients) there is an optional stack under `apps/redis`. Run `bun redis:start` from the repo root to boot Redis + the Serverless Redis HTTP proxy and point `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` at `http://localhost:8079`/`example_token`. The platform normally falls back to memory-only storage, so this step is only required when you want container-backed persistence.
+If you need a real Redis backend (e.g., to test rate limiting or Upstash clients) there is an optional stack under `apps/redis`. Run `bun redis:start` from the repo root to boot Redis + the Serverless Redis HTTP proxy and point `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` at `http://localhost:8079`/`example_token`. Override `SRH_TOKEN` from your shell or CI when you need a non-default token, for example `export SRH_TOKEN="$(openssl rand -hex 32)"`, and keep that value in local env/secret storage instead of editing the checked-in compose file. The platform normally falls back to memory-only storage, so this step is only required when you want container-backed persistence.
 
 ## Docker web workflow
 
@@ -190,6 +190,8 @@ Redis stays optional. To enable the bundled Redis profile, forward the compose p
 ```bash
 bun dev:web:docker -- --profile redis
 ```
+
+When you enable the Redis profile, `docker-compose.web.yml` defaults `SRH_TOKEN` to `example_token` for local convenience. Override it from your shell or CI before starting the stack when you need a different token.
 
 Production builds use `apps/web/Dockerfile`. The builder keeps secrets external by accepting an optional BuildKit secret sourced from `apps/web/.env.local`:
 
