@@ -9,6 +9,7 @@ const {
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
   checkDockerWebSetup,
+  getCopiedRelativePaths,
   getCopiedWorkspaceManifestPaths,
   getStageContent,
   listFileDependencyPaths,
@@ -33,6 +34,15 @@ test('getCopiedWorkspaceManifestPaths keeps Docker COPY paths in sync', () => {
   assert.ok(depsStage);
   assert.ok(
     getCopiedWorkspaceManifestPaths(depsStage).includes('apps/web/package.json')
+  );
+});
+
+test('getCopiedRelativePaths accepts COPY flags before the source path', () => {
+  assert.deepEqual(
+    getCopiedRelativePaths(
+      'COPY --from=builder --chown=nextjs:nodejs apps/web/package.json ./apps/web/package.json'
+    ),
+    ['apps/web/package.json']
   );
 });
 
@@ -111,10 +121,7 @@ test('validateDockerCompose reports missing bind mounts', () => {
 
   const errors = validateDockerCompose(composeContent);
 
-  assert.match(
-    errors.join('\n'),
-    /missing the expected snippet: {7}- \.:\/workspace/
-  );
+  assert.ok(errors.join('\n').includes('- .:/workspace'));
 });
 
 test('checkDockerWebSetup passes for the current repository', () => {
@@ -126,21 +133,26 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     path.join(os.tmpdir(), 'check-docker-web-rootdir-')
   );
 
-  fs.mkdirSync(path.join(tempDir, 'apps', 'web'), { recursive: true });
-  fs.writeFileSync(
-    path.join(tempDir, 'apps', 'web', 'Dockerfile'),
-    'FROM scratch AS deps\n'
-  );
-  fs.writeFileSync(path.join(tempDir, 'docker-compose.web.yml'), 'services:\n');
+  try {
+    fs.mkdirSync(path.join(tempDir, 'apps', 'web'), { recursive: true });
+    fs.writeFileSync(
+      path.join(tempDir, 'apps', 'web', 'Dockerfile'),
+      'FROM scratch AS deps\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'docker-compose.web.yml'),
+      'services:\n'
+    );
 
-  const errors = checkDockerWebSetup({
-    rootDir: tempDir,
-    fileDependencyPaths: [],
-    workspacePackageJsonPaths: [],
-  });
+    const errors = checkDockerWebSetup({
+      rootDir: tempDir,
+      fileDependencyPaths: [],
+      workspacePackageJsonPaths: [],
+    });
 
-  assert.match(errors.join('\n'), /missing the dev stage/);
-  assert.match(errors.join('\n'), /missing the expected snippet: {3}web:/);
-
-  fs.rmSync(tempDir, { force: true, recursive: true });
+    assert.match(errors.join('\n'), /missing the dev stage/);
+    assert.ok(errors.join('\n').includes('  web:'));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });

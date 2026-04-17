@@ -9,6 +9,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # Copy workspace manifests first so dependency installation stays cached when
 # application source files change.
+# Keep these manifest COPY lines in sync with scripts/check-docker-web.js.
 COPY package.json bun.lock turbo.json ./
 COPY scripts/install-git-hooks.js ./scripts/install-git-hooks.js
 COPY apps/calendar/package.json ./apps/calendar/package.json
@@ -53,6 +54,7 @@ COPY packages/utils/package.json ./packages/utils/package.json
 COPY packages/vercel/package.json ./packages/vercel/package.json
 COPY packages/workflows/package.json ./packages/workflows/package.json
 
+# Keep this install command in sync with scripts/check-docker-web.js.
 RUN --mount=type=cache,id=platform-web-bun-install,target=/root/.bun/install/cache \
   bun install --frozen-lockfile
 
@@ -86,7 +88,7 @@ COPY . .
 RUN --mount=type=cache,id=platform-web-turbo,target=/workspace/.turbo \
   --mount=type=cache,id=platform-web-next-cache,target=/workspace/apps/web/.next/cache \
   --mount=type=secret,id=web_env,target=/tmp/web.env \
-  sh -c 'set -a && if [ -f /tmp/web.env ]; then . /tmp/web.env; fi && set +a && bun run build:web'
+  node --env-file-if-exists=/tmp/web.env ./scripts/build-web-docker.js
 
 FROM node:22-bookworm-slim AS runner
 
@@ -108,6 +110,6 @@ EXPOSE 7803
 USER nextjs
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD ["node", "-e", "fetch(`http://127.0.0.1:${process.env.PORT}/api/health`).then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+  CMD ["node", "-e", "fetch(`http://127.0.0.1:${process.env.PORT || 7803}/api/health`).then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
 
 CMD ["node", "apps/web/server.js"]

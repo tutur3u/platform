@@ -32,7 +32,8 @@ function listWorkspacePackageJsonPaths(rootDir = ROOT_DIR, fsImpl = fs) {
 }
 
 function getStageContent(dockerfileContent, stageName) {
-  const startPattern = new RegExp(`^FROM .* AS ${stageName}$`, 'm');
+  const escapedStageName = stageName.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+  const startPattern = new RegExp(`^FROM .* AS ${escapedStageName}$`, 'm');
   const startMatch = dockerfileContent.match(startPattern);
 
   if (!startMatch || startMatch.index === undefined) {
@@ -67,7 +68,9 @@ function getCopiedRelativePaths(stageContent) {
     .split(/\r?\n/u)
     .map((line) => line.trim())
     .map((line) =>
-      line.match(/^COPY ((?:apps|packages)\/.+) \.\/((?:apps|packages)\/.+)$/u)
+      line.match(
+        /^COPY(?:\s+--[^\s]+(?:=[^\s]+)?)*\s+((?:apps|packages)\/.+)\s+\.\/((?:apps|packages)\/.+)$/u
+      )
     )
     .filter(Boolean)
     .map((match) => {
@@ -271,6 +274,7 @@ function validateDockerCompose(composeContent) {
     '      - .:/workspace',
     '      - platform-bun-install:/root/.bun/install/cache',
     dockerInternalSupabaseSnippet,
+    '      - "host.docker.internal:host-gateway"',
     '    init: true',
   ];
 

@@ -29,6 +29,7 @@ services:
     volumes:
       - .:/workspace
       - platform-bun-install:/root/.bun/install/cache
+      # Root workspace dependencies stay inside the container-managed volume.
       - platform-web-next:/workspace/apps/web/.next
       - platform-web-app-node_modules:/workspace/apps/web/node_modules
       - platform-web-node_modules:/workspace/node_modules
@@ -43,11 +44,17 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   serverless-redis-http:
     profiles: ["redis"]
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     environment:
       SRH_CONNECTION_STRING: redis://redis:6379
       SRH_MODE: env
