@@ -26,7 +26,7 @@
     "@types/react": "^19.2.14",
     "next": "^16.2.4",
     "react": "^19.2.5",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.4"
   },
   "exports": {

@@ -21,11 +21,11 @@
   "dependencies": {
     "@react-email/components": "^1.0.12",
     "react": "^19.2.5",
-    "react-email": "^5.2.10"
+    "react-email": "^6.0.0"
   },
   "devDependencies": {
     "@react-email/preview-server": "^5.2.10",
-    "@react-email/render": "^2.0.6",
+    "@react-email/render": "^2.0.7",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
