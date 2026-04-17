@@ -42,6 +42,9 @@ void main() {
       when(
         () => authCubit.setAddAccountFlow(enabled: any(named: 'enabled')),
       ).thenReturn(null);
+      when(
+        () => authCubit.cancelAddAccountFlow(),
+      ).thenAnswer((_) async => true);
       when(() => authCubit.signInWithApple()).thenAnswer((_) async {});
       when(() => authCubit.signInWithGoogle()).thenAnswer((_) async {});
       when(() => authCubit.signInWithMicrosoft()).thenAnswer((_) async {});

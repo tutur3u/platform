@@ -67,6 +67,28 @@ bool shouldRedirectDisabledHabitsRoutes(
           !habitsAccessState.enabled);
 }
 
+String? resolveUnauthenticatedRedirect({
+  required String matchedLocation,
+  required bool isAuthRoute,
+  required bool isAddAccountFlow,
+  required bool hasStoredAccounts,
+}) {
+  if (isAddAccountFlow && matchedLocation != Routes.addAccount) {
+    return Routes.addAccount;
+  }
+  if (matchedLocation == Routes.addAccount &&
+      (isAddAccountFlow || hasStoredAccounts)) {
+    return null;
+  }
+  if (!isAddAccountFlow && matchedLocation == Routes.addAccount) {
+    return Routes.login;
+  }
+  if (!isAuthRoute && matchedLocation != Routes.login) {
+    return Routes.login;
+  }
+  return null;
+}
+
 HistoryViewMode? _parseHistoryViewMode(String? value) {
   switch (value) {
     case 'day':
@@ -139,16 +161,16 @@ GoRouter createAppRouter(
         return isAuthRoute ? null : Routes.login;
       }
 
-      // Not authenticated → redirect to login
-      if (authState.status == AuthStatus.unauthenticated && !isAuthRoute) {
-        if (authState.isAddAccountFlow &&
-            state.matchedLocation != Routes.addAccount) {
-          return Routes.addAccount;
-        }
-        if (state.matchedLocation != Routes.login) {
-          return Routes.login;
-        }
-        return null;
+      // Not authenticated → enforce auth entry points.
+      if (authState.status == AuthStatus.unauthenticated) {
+        return resolveUnauthenticatedRedirect(
+          matchedLocation: state.matchedLocation,
+          isAuthRoute: isAuthRoute,
+          isAddAccountFlow: authState.isAddAccountFlow,
+          hasStoredAccounts:
+              authState.accounts.isNotEmpty ||
+              authState.activeAccountId != null,
+        );
       }
 
       // MFA required → redirect to MFA verify page

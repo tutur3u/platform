@@ -64,9 +64,9 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) {
         return;
       }
-      context.read<AuthCubit>().setAddAccountFlow(
-        enabled: widget.addAccountMode,
-      );
+      if (widget.addAccountMode) {
+        context.read<AuthCubit>().setAddAccountFlow(enabled: true);
+      }
     });
     _otpAvailabilityGraceTimer = Timer(_otpAvailabilityGracePeriod, () {
       if (!mounted) {
@@ -74,6 +74,19 @@ class _LoginPageState extends State<LoginPage> {
       }
       setState(() => _otpAvailabilityGraceExpired = true);
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant LoginPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.addAccountMode && widget.addAccountMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        context.read<AuthCubit>().setAddAccountFlow(enabled: true);
+      });
+    }
   }
 
   @override
@@ -273,6 +286,28 @@ class _LoginPageState extends State<LoginPage> {
     return context.read<AuthCubit>().signInWithGithub();
   }
 
+  Future<void> _onCancelAddAccount() async {
+    final authCubit = context.read<AuthCubit>();
+    final ok = await authCubit.cancelAddAccountFlow();
+    if (!mounted) {
+      return;
+    }
+    if (ok) {
+      return;
+    }
+    final message = authCubit.state.error;
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    if (!toastContext.mounted) {
+      return;
+    }
+    shad.showToast(
+      context: toastContext,
+      builder: (ctx, _) => shad.Alert.destructive(
+        title: Text(message ?? ctx.l10n.authSwitchAccountFailed),
+      ),
+    );
+  }
+
   Widget _buildTurnstile({required bool enabled}) {
     final theme = shad.Theme.of(context);
 
@@ -311,8 +346,13 @@ class _LoginPageState extends State<LoginPage> {
     final isResolvingOtpEnablement =
         otpAvailability.isResolving && !_otpAvailabilityGraceExpired;
 
-    return AuthScaffold(
+    final authScaffold = AuthScaffold(
       title: widget.addAccountMode ? l10n.authAddAccountTitle : l10n.loginTitle,
+      showBackButton: widget.addAccountMode,
+      backButtonLabel: widget.addAccountMode ? l10n.navHome : null,
+      onBack: widget.addAccountMode
+          ? () => unawaited(_onCancelAddAccount())
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -404,6 +444,21 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ],
       ),
+    );
+
+    if (!widget.addAccountMode) {
+      return authScaffold;
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          return;
+        }
+        unawaited(_onCancelAddAccount());
+      },
+      child: authScaffold,
     );
   }
 

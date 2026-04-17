@@ -8,6 +8,7 @@ class AuthScaffold extends StatelessWidget {
     required this.child,
     this.title,
     this.showBackButton = false,
+    this.backButtonLabel,
     this.onBack,
     super.key,
   });
@@ -15,6 +16,9 @@ class AuthScaffold extends StatelessWidget {
   final Widget child;
   final String? title;
   final bool showBackButton;
+
+  /// Shown next to the back arrow when [showBackButton] is true (e.g. "Home").
+  final String? backButtonLabel;
   final VoidCallback? onBack;
 
   @override
@@ -59,7 +63,16 @@ class AuthScaffold extends StatelessWidget {
                               child: shad.GhostButton(
                                 onPressed:
                                     onBack ?? () => Navigator.of(context).pop(),
-                                child: const Icon(Icons.arrow_back),
+                                child: backButtonLabel == null
+                                    ? const Icon(Icons.arrow_back)
+                                    : Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.arrow_back),
+                                          const SizedBox(width: 8),
+                                          Text(backButtonLabel!),
+                                        ],
+                                      ),
                               ),
                             ),
                           ),

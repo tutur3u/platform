@@ -258,5 +258,78 @@ void main() {
         ),
       ],
     );
+
+    late StreamController<supa.AuthState> addAccountFlowErrorController;
+    blocTest<AuthCubit, AuthState>(
+      'preserves add-account flow when auth stream emits an error',
+      build: () {
+        addAccountFlowErrorController = StreamController<supa.AuthState>();
+        addTearDown(addAccountFlowErrorController.close);
+        when(
+          () => authRepository.onAuthStateChange(),
+        ).thenAnswer((_) => addAccountFlowErrorController.stream);
+        return AuthCubit(authRepository: authRepository);
+      },
+      act: (cubit) async {
+        cubit.setAddAccountFlow(enabled: true);
+        await Future<void>.delayed(Duration.zero);
+        addAccountFlowErrorController.addError(
+          const supa.AuthException('OAuth callback failed'),
+        );
+      },
+      expect: () => <AuthState>[
+        const AuthState.unauthenticated().copyWith(isAddAccountFlow: true),
+        const AuthState.unauthenticated().copyWith(
+          error: 'OAuth callback failed',
+          errorCode: null,
+          isLoading: false,
+          isAddAccountFlow: true,
+        ),
+      ],
+    );
+  });
+
+  group('AuthCubit.addAccountFlow', () {
+    late AuthRepository authRepository;
+
+    setUp(() {
+      authRepository = _MockAuthRepository();
+      when(() => authRepository.getCurrentUserSync()).thenReturn(_user());
+      when(() => authRepository.onAuthStateChange()).thenAnswer(
+        (_) => const Stream<supa.AuthState>.empty(),
+      );
+      when(() => authRepository.dispose()).thenReturn(null);
+      when(() => authRepository.checkMfaRequired()).thenReturn(false);
+      when(
+        () => authRepository.getStoredAccounts(),
+      ).thenAnswer((_) async => const <StoredAuthAccount>[]);
+      when(
+        () => authRepository.getActiveStoredAccountId(),
+      ).thenAnswer((_) async => 'user-1');
+      when(
+        () => authRepository.syncCurrentSessionToMultiAccountStore(
+          switchImmediately: any(named: 'switchImmediately'),
+        ),
+      ).thenAnswer((_) async {});
+      when(
+        () => authRepository.signOutLocalSessionOnly(),
+      ).thenAnswer((_) async {});
+    });
+
+    test(
+      'beginAddAccountFlow keeps a recoverable '
+      'active account id before sign out',
+      () async {
+        final cubit = AuthCubit(authRepository: authRepository);
+        addTearDown(cubit.close);
+
+        final started = await cubit.beginAddAccountFlow();
+
+        expect(started, isTrue);
+        expect(cubit.state.status, AuthStatus.unauthenticated);
+        expect(cubit.state.isAddAccountFlow, isTrue);
+        expect(cubit.state.activeAccountId, 'user-1');
+      },
+    );
   });
 }

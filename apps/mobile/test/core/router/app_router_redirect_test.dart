@@ -86,4 +86,50 @@ void main() {
       expect(shouldRedirectDisabledHabitsRoutes(Routes.timer, state), isFalse);
     });
   });
+
+  group('resolveUnauthenticatedRedirect', () {
+    test('redirects /add-account to /login when add-account flow is off', () {
+      final redirect = resolveUnauthenticatedRedirect(
+        matchedLocation: Routes.addAccount,
+        isAuthRoute: true,
+        isAddAccountFlow: false,
+        hasStoredAccounts: false,
+      );
+
+      expect(redirect, Routes.login);
+    });
+
+    test('keeps /add-account when add-account flow is on', () {
+      final redirect = resolveUnauthenticatedRedirect(
+        matchedLocation: Routes.addAccount,
+        isAuthRoute: true,
+        isAddAccountFlow: true,
+        hasStoredAccounts: false,
+      );
+
+      expect(redirect, isNull);
+    });
+
+    test('redirects non-auth routes to /add-account while flow is on', () {
+      final redirect = resolveUnauthenticatedRedirect(
+        matchedLocation: Routes.home,
+        isAuthRoute: false,
+        isAddAccountFlow: true,
+        hasStoredAccounts: true,
+      );
+
+      expect(redirect, Routes.addAccount);
+    });
+
+    test('keeps /add-account when recoverable stored accounts exist', () {
+      final redirect = resolveUnauthenticatedRedirect(
+        matchedLocation: Routes.addAccount,
+        isAuthRoute: true,
+        isAddAccountFlow: false,
+        hasStoredAccounts: true,
+      );
+
+      expect(redirect, isNull);
+    });
+  });
 }

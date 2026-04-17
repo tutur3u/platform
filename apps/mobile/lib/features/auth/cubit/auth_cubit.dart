@@ -85,13 +85,23 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         } else if (event == supa.AuthChangeEvent.signedOut) {
-          emit(
-            const AuthState.unauthenticated().copyWith(
-              accounts: const <StoredAuthAccount>[],
-              activeAccountId: null,
-              isAddAccountFlow: state.isAddAccountFlow,
-            ),
-          );
+          if (state.isAddAccountFlow) {
+            emit(
+              const AuthState.unauthenticated().copyWith(
+                accounts: state.accounts,
+                activeAccountId: state.activeAccountId,
+                isAddAccountFlow: true,
+              ),
+            );
+            unawaited(_reloadStoredAccounts());
+          } else {
+            emit(
+              const AuthState.unauthenticated().copyWith(
+                accounts: const <StoredAuthAccount>[],
+                activeAccountId: null,
+              ),
+            );
+          }
         }
       },
       onError: (Object error, StackTrace stackTrace) {
@@ -105,6 +115,9 @@ class AuthCubit extends Cubit<AuthState> {
             error: message,
             errorCode: null,
             isLoading: false,
+            accounts: state.accounts,
+            activeAccountId: state.activeAccountId,
+            isAddAccountFlow: state.isAddAccountFlow,
           ),
         );
       },
@@ -374,10 +387,12 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<bool> beginAddAccountFlow() async {
+    final fallbackActiveAccountId = state.activeAccountId ?? state.user?.id;
     emit(
       state.copyWith(
         isLoading: true,
         isAddAccountFlow: true,
+        activeAccountId: fallbackActiveAccountId,
         error: null,
         errorCode: null,
       ),
@@ -385,6 +400,7 @@ class AuthCubit extends Cubit<AuthState> {
 
     try {
       await _repo.syncCurrentSessionToMultiAccountStore();
+      await _reloadStoredAccounts();
       await _repo.signOutLocalSessionOnly();
       emit(
         state.copyWith(
@@ -409,6 +425,77 @@ class AuthCubit extends Cubit<AuthState> {
 
   void setAddAccountFlow({required bool enabled}) {
     emit(state.copyWith(isAddAccountFlow: enabled));
+  }
+
+  /// Restores the previous on-device session after [beginAddAccountFlow] and
+  /// clears the add-account flag. Used when the user dismisses the add-account
+  /// screen (system back or explicit "Home" control).
+  Future<bool> cancelAddAccountFlow() async {
+    final shouldAttemptRestore =
+        state.isAddAccountFlow || state.status == AuthStatus.unauthenticated;
+    if (!shouldAttemptRestore) {
+      return true;
+    }
+
+    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
+    try {
+      var accountId = await _repo.getActiveStoredAccountId();
+      if (accountId == null) {
+        final accounts = await _repo.getStoredAccounts();
+        accountId = accounts.isNotEmpty ? accounts.first.id : null;
+      }
+      if (accountId == null) {
+        emit(state.copyWith(isLoading: false, isAddAccountFlow: false));
+        return false;
+      }
+
+      final result = await _repo.switchToStoredAccount(accountId);
+      if (!result.success) {
+        emit(
+          state.copyWith(
+            isLoading: false,
+            error: result.error,
+            errorCode: null,
+            isAddAccountFlow: false,
+          ),
+        );
+        return false;
+      }
+
+      final user = await _repo.getCurrentUser();
+      if (user == null) {
+        emit(state.copyWith(isLoading: false, isAddAccountFlow: false));
+        return false;
+      }
+
+      if (_repo.checkMfaRequired()) {
+        emit(
+          AuthState.mfaRequired(user).copyWith(
+            isLoading: false,
+            isAddAccountFlow: false,
+          ),
+        );
+      } else {
+        emit(
+          AuthState.authenticated(user).copyWith(
+            isLoading: false,
+            isAddAccountFlow: false,
+          ),
+        );
+      }
+      await _reloadStoredAccounts();
+      return true;
+    } on Exception catch (e) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          error: e.toString(),
+          errorCode: null,
+          isAddAccountFlow: false,
+        ),
+      );
+      return false;
+    }
   }
 
   Future<void> syncCurrentSessionToStore() async {
