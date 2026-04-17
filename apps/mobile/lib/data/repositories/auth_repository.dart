@@ -13,6 +13,7 @@ import 'package:mobile/data/models/auth_action_result.dart';
 import 'package:mobile/data/models/auth_session.dart';
 import 'package:mobile/data/models/multi_account_store.dart';
 import 'package:mobile/data/models/stored_auth_account.dart';
+import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/apple_identity_client.dart';
 import 'package:mobile/data/sources/google_identity_client.dart';
@@ -145,6 +146,33 @@ class AuthRepository {
     return value.trim();
   }
 
+  /// Matches avatar dropdown / shell profile: prefer full name, then display name.
+  String? _primaryLabelFromProfile(UserProfile? profile) {
+    if (profile == null) {
+      return null;
+    }
+    final full = profile.fullName?.trim();
+    if (full != null && full.isNotEmpty) {
+      return full;
+    }
+    final display = profile.displayName?.trim();
+    if (display != null && display.isNotEmpty) {
+      return display;
+    }
+    return null;
+  }
+
+  /// Loads app profile (`/users/me/profile`) so stored accounts get the same
+  /// display name and avatar as the shell when Supabase metadata is sparse.
+  Future<UserProfile?> _fetchCurrentUserProfile() async {
+    try {
+      final json = await _apiClient.getJson(ProfileEndpoints.profile);
+      return UserProfile.fromJson(json);
+    } on Object {
+      return null;
+    }
+  }
+
   StoredAuthAccount _accountFromCurrentSession({
     required User user,
     required Session session,
@@ -154,6 +182,7 @@ class AuthRepository {
     String? lastWorkspaceId,
     String? fallbackDisplayName,
     String? fallbackAvatarUrl,
+    UserProfile? apiProfile,
   }) {
     final refreshToken = session.refreshToken;
     if (refreshToken == null || refreshToken.isEmpty) {
@@ -165,9 +194,12 @@ class AuthRepository {
       refreshToken: refreshToken,
       sessionJson: sessionJson,
       email: user.email,
-      displayName:
-          _readDisplayName(user) ?? _nonEmptyTrimmed(fallbackDisplayName),
-      avatarUrl: _readAvatarUrl(user) ?? _nonEmptyTrimmed(fallbackAvatarUrl),
+      displayName: _readDisplayName(user) ??
+          _primaryLabelFromProfile(apiProfile) ??
+          _nonEmptyTrimmed(fallbackDisplayName),
+      avatarUrl: _readAvatarUrl(user) ??
+          _nonEmptyTrimmed(apiProfile?.avatarUrl) ??
+          _nonEmptyTrimmed(fallbackAvatarUrl),
       lastWorkspaceId: lastWorkspaceId,
       addedAt: addedAt ?? now,
       lastActiveAt: lastActiveAt ?? now,
@@ -203,6 +235,7 @@ class AuthRepository {
     final store = await _loadMultiAccountStore();
     final now = DateTime.now().millisecondsSinceEpoch;
     final existingIndex = store.accounts.indexWhere((a) => a.id == user.id);
+    final apiProfile = await _fetchCurrentUserProfile();
 
     final List<StoredAuthAccount> updated;
     if (existingIndex >= 0) {
@@ -216,6 +249,7 @@ class AuthRepository {
         lastWorkspaceId: existing.lastWorkspaceId,
         fallbackDisplayName: existing.displayName,
         fallbackAvatarUrl: existing.avatarUrl,
+        apiProfile: apiProfile,
       );
       updated = [...store.accounts]..[existingIndex] = refreshed;
     } else {
@@ -223,6 +257,7 @@ class AuthRepository {
         user: user,
         session: session,
         sessionJson: sessionJson,
+        apiProfile: apiProfile,
       );
       updated = [...store.accounts, appended];
     }
@@ -250,6 +285,7 @@ class AuthRepository {
     final store = await _loadMultiAccountStore();
     final now = DateTime.now().millisecondsSinceEpoch;
     final existingIndex = store.accounts.indexWhere((a) => a.id == user.id);
+    final apiProfile = await _fetchCurrentUserProfile();
 
     final List<StoredAuthAccount> updated;
     if (existingIndex >= 0) {
@@ -264,6 +300,7 @@ class AuthRepository {
           lastWorkspaceId: existing.lastWorkspaceId,
           fallbackDisplayName: existing.displayName,
           fallbackAvatarUrl: existing.avatarUrl,
+          apiProfile: apiProfile,
         );
     } else {
       updated = [
@@ -272,6 +309,7 @@ class AuthRepository {
           user: user,
           session: session,
           sessionJson: sessionJson,
+          apiProfile: apiProfile,
         ),
       ];
     }
@@ -308,6 +346,7 @@ class AuthRepository {
 
       final now = DateTime.now().millisecondsSinceEpoch;
       final restoredSessionJson = await _readCurrentPersistedSessionJson();
+      final apiProfile = await _fetchCurrentUserProfile();
       final updatedAccounts = store.accounts.map((account) {
         if (account.id != accountId) {
           return account;
@@ -321,6 +360,7 @@ class AuthRepository {
           lastWorkspaceId: account.lastWorkspaceId,
           fallbackDisplayName: account.displayName,
           fallbackAvatarUrl: account.avatarUrl,
+          apiProfile: apiProfile,
         );
       }).toList();
 
