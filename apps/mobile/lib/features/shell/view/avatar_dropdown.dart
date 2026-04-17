@@ -9,6 +9,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
+import 'package:mobile/features/shell/view/account_switcher_sheet.dart';
 import 'package:mobile/features/shell/view/avatar_dropdown_menu.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
@@ -86,24 +87,7 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
       return;
     }
 
-    final selected = await showSettingsChoiceDialog<String>(
-      context: context,
-      title: context.l10n.authSwitchAccount,
-      description: context.l10n.authSwitchAccountDescription,
-      currentValue: currentState.activeAccountId ?? accounts.first.id,
-      options: accounts.map((account) {
-        final name = account.displayName ?? account.email ?? account.id;
-        final subtitle = account.email ?? account.id;
-        return SettingsChoiceOption<String>(
-          value: account.id,
-          label: name,
-          icon: account.id == currentState.activeAccountId
-              ? Icons.check_circle_rounded
-              : Icons.person_outline_rounded,
-          description: subtitle,
-        );
-      }).toList(),
-    );
+    final selected = await showAccountSwitcherSheet(context);
 
     if (!mounted ||
         selected == null ||
@@ -231,6 +215,10 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
     final displayName = _nonEmpty(profile?.displayName) ?? fallbackDisplayName;
     final name = fullName ?? displayName ?? email ?? l10n.settingsProfile;
 
+    final showSwitchAccount = context.select<AuthCubit, bool>(
+      (c) => c.state.accounts.length > 1,
+    );
+
     final data = AvatarDropdownMenuData(
       name: name,
       email: email,
@@ -238,6 +226,7 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
       avatarIdentityKey: shellProfileState.avatarIdentityKey,
       workspaceName: workspaceName,
       currentWorkspace: currentWorkspace,
+      showSwitchAccount: showSwitchAccount,
     );
 
     return AvatarDropdownTrigger(

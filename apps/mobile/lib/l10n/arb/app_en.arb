@@ -62,6 +62,14 @@
     "authSwitchAccountDescription": "Choose which account to use right now.",
     "authSwitchAccountFailed": "Couldn't switch account.",
     "authSwitchAccountSuccess": "Switched account.",
+    "authRemoveAccount": "Remove account",
+    "authRemoveAccountConfirm": "Remove {email} from this device? This signs it out here. Other saved accounts stay on this device.",
+    "@authRemoveAccountConfirm": {
+        "placeholders": {
+            "email": {}
+        }
+    },
+    "authRemoveAccountFailed": "Couldn't remove this account.",
     "loginForgotPassword": "Forgot password?",
     "loginSignUpPrompt": "Don't have an account? Sign up",
     "emailLabel": "Email",

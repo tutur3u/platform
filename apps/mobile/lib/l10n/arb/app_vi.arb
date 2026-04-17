@@ -62,6 +62,14 @@
     "authSwitchAccountDescription": "Chọn tài khoản để sử dụng ngay bây giờ.",
     "authSwitchAccountFailed": "Không thể chuyển tài khoản.",
     "authSwitchAccountSuccess": "Đã chuyển tài khoản.",
+    "authRemoveAccount": "Xóa tài khoản",
+    "authRemoveAccountConfirm": "Xóa {email} khỏi thiết bị này? Tài khoản sẽ đăng xuất tại đây. Các tài khoản đã lưu khác vẫn ở trên thiết bị.",
+    "@authRemoveAccountConfirm": {
+        "placeholders": {
+            "email": {}
+        }
+    },
+    "authRemoveAccountFailed": "Không thể xóa tài khoản này.",
     "loginForgotPassword": "Quên mật khẩu?",
     "loginSignUpPrompt": "Chưa có tài khoản? Đăng ký",
     "emailLabel": "Email",

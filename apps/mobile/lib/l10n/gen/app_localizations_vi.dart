@@ -147,6 +147,17 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authSwitchAccountSuccess => 'Đã chuyển tài khoản.';
 
   @override
+  String get authRemoveAccount => 'Xóa tài khoản';
+
+  @override
+  String authRemoveAccountConfirm(Object email) {
+    return 'Xóa $email khỏi thiết bị này? Tài khoản sẽ đăng xuất tại đây. Các tài khoản đã lưu khác vẫn ở trên thiết bị.';
+  }
+
+  @override
+  String get authRemoveAccountFailed => 'Không thể xóa tài khoản này.';
+
+  @override
   String get loginForgotPassword => 'Quên mật khẩu?';
 
   @override

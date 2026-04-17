@@ -27,6 +27,7 @@ class AvatarDropdownMenuData {
     this.avatarUrl,
     this.avatarIdentityKey,
     this.currentWorkspace,
+    this.showSwitchAccount = false,
   });
 
   final String name;
@@ -35,6 +36,9 @@ class AvatarDropdownMenuData {
   final String? avatarIdentityKey;
   final String workspaceName;
   final Workspace? currentWorkspace;
+
+  /// Hide "Switch account" when there is only one saved account.
+  final bool showSwitchAccount;
 }
 
 class AvatarDropdownTrigger extends StatelessWidget {
@@ -355,12 +359,13 @@ class _AvatarMenuContent extends StatelessWidget {
         const shad.Gap(10),
         _ActionGroup(
           children: [
-            _ActionTile(
-              icon: Icons.switch_account_rounded,
-              title: context.l10n.authSwitchAccount,
-              subtitle: context.l10n.authSwitchAccountDescription,
-              onTap: () => onSelected(AvatarMenuAction.switchAccount),
-            ),
+            if (data.showSwitchAccount)
+              _ActionTile(
+                icon: Icons.switch_account_rounded,
+                title: context.l10n.authSwitchAccount,
+                subtitle: context.l10n.authSwitchAccountDescription,
+                onTap: () => onSelected(AvatarMenuAction.switchAccount),
+              ),
             _ActionTile(
               icon: Icons.person_add_alt_1_rounded,
               title: context.l10n.authAddAccount,

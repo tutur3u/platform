@@ -355,6 +355,24 @@ abstract class AppLocalizations {
   /// **'Switched account.'**
   String get authSwitchAccountSuccess;
 
+  /// No description provided for @authRemoveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove account'**
+  String get authRemoveAccount;
+
+  /// No description provided for @authRemoveAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {email} from this device? This signs it out here. Other saved accounts stay on this device.'**
+  String authRemoveAccountConfirm(Object email);
+
+  /// No description provided for @authRemoveAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t remove this account.'**
+  String get authRemoveAccountFailed;
+
   /// No description provided for @loginForgotPassword.
   ///
   /// In en, this message translates to:
