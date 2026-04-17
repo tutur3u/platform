@@ -135,10 +135,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authNoStoredAccounts => 'No saved accounts yet.';
 
   @override
-  String get authSwitchAccount => 'Switch account';
+  String get authSwitchAccount => 'Manage accounts';
 
   @override
-  String get authSwitchAccountDescription => 'Choose which account to use right now.';
+  String get authSwitchAccountDescription => 'Switch accounts or add another.';
 
   @override
   String get authSwitchAccountFailed => 'Couldn\'t switch account.';

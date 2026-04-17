@@ -57,9 +57,6 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
       case AvatarMenuAction.switchAccount:
         await _showAccountSwitcher();
         return;
-      case AvatarMenuAction.addAccount:
-        unawaited(_startAddAccountFlow());
-        return;
       case AvatarMenuAction.logout:
         await _signOutCurrentAccount();
         return;
@@ -87,7 +84,10 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
       return;
     }
 
-    final selected = await showAccountSwitcherSheet(context);
+    final selected = await showAccountSwitcherSheet(
+      context,
+      onAddAccount: _startAddAccountFlow,
+    );
 
     if (!mounted ||
         selected == null ||
@@ -215,10 +215,6 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
     final displayName = _nonEmpty(profile?.displayName) ?? fallbackDisplayName;
     final name = fullName ?? displayName ?? email ?? l10n.settingsProfile;
 
-    final showSwitchAccount = context.select<AuthCubit, bool>(
-      (c) => c.state.accounts.length > 1,
-    );
-
     final data = AvatarDropdownMenuData(
       name: name,
       email: email,
@@ -226,7 +222,6 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
       avatarIdentityKey: shellProfileState.avatarIdentityKey,
       workspaceName: workspaceName,
       currentWorkspace: currentWorkspace,
-      showSwitchAccount: showSwitchAccount,
     );
 
     return AvatarDropdownTrigger(

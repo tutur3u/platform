@@ -135,10 +135,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authNoStoredAccounts => 'Chưa có tài khoản nào được lưu.';
 
   @override
-  String get authSwitchAccount => 'Chuyển tài khoản';
+  String get authSwitchAccount => 'Quản lý tài khoản';
 
   @override
-  String get authSwitchAccountDescription => 'Chọn tài khoản để sử dụng ngay bây giờ.';
+  String get authSwitchAccountDescription => 'Chuyển tài khoản hoặc thêm mới.';
 
   @override
   String get authSwitchAccountFailed => 'Không thể chuyển tài khoản.';

@@ -334,13 +334,13 @@ abstract class AppLocalizations {
   /// No description provided for @authSwitchAccount.
   ///
   /// In en, this message translates to:
-  /// **'Switch account'**
+  /// **'Manage accounts'**
   String get authSwitchAccount;
 
   /// No description provided for @authSwitchAccountDescription.
   ///
   /// In en, this message translates to:
-  /// **'Choose which account to use right now.'**
+  /// **'Switch accounts or add another.'**
   String get authSwitchAccountDescription;
 
   /// No description provided for @authSwitchAccountFailed.

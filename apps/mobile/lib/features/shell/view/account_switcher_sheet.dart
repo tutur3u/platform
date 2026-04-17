@@ -14,7 +14,10 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 /// Picks another saved account, or dismisses with null.
 ///
 /// Rows include remove; see [AuthCubit.removeAccount].
-Future<String?> showAccountSwitcherSheet(BuildContext context) async {
+Future<String?> showAccountSwitcherSheet(
+  BuildContext context, {
+  Future<void> Function()? onAddAccount,
+}) async {
   final authCubit = context.read<AuthCubit>();
 
   return showAdaptiveSheet<String?>(
@@ -23,14 +26,16 @@ Future<String?> showAccountSwitcherSheet(BuildContext context) async {
     builder: (dialogContext) {
       return BlocProvider.value(
         value: authCubit,
-        child: const _AccountSwitcherSheet(),
+        child: _AccountSwitcherSheet(onAddAccount: onAddAccount),
       );
     },
   );
 }
 
 class _AccountSwitcherSheet extends StatefulWidget {
-  const _AccountSwitcherSheet();
+  const _AccountSwitcherSheet({this.onAddAccount});
+
+  final Future<void> Function()? onAddAccount;
 
   @override
   State<_AccountSwitcherSheet> createState() => _AccountSwitcherSheetState();
@@ -103,6 +108,23 @@ class _AccountSwitcherSheetState extends State<_AccountSwitcherSheet> {
           title: context.l10n.authSwitchAccount,
           description: context.l10n.authSwitchAccountDescription,
           icon: Icons.tune_rounded,
+          headerTrailing: shad.PrimaryButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              final add = widget.onAddAccount;
+              if (add != null) {
+                await add();
+              }
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.add_rounded, size: 16),
+                const shad.Gap(6),
+                Text(context.l10n.authAddAccount),
+              ],
+            ),
+          ),
           maxWidth: 420,
           maxHeightFactor: 0.72,
           actions: [
