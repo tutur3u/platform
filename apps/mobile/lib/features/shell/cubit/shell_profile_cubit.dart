@@ -15,13 +15,19 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
   final ProfileRepository _repository;
 
   void primeFromAuthenticatedUser(User user) {
+    // When the signed-in user changes, do not reuse the previous user's
+    // `lastUpdatedAt`. Otherwise `loadFromAuthenticatedUser` treats the new
+    // session as "fresh" and skips the API, leaving name/avatar empty until
+    // metadata happens to match (e.g. after opening Settings).
+    final switchedAccount =
+        state.userId != null && state.userId != user.id;
     emit(
       _mergeProfile(
         profile: _profileFromUser(user),
         userId: user.id,
-        isFromCache: state.isFromCache,
-        lastUpdatedAt: state.lastUpdatedAt,
-        isRefreshing: state.isRefreshing,
+        isFromCache: switchedAccount ? false : state.isFromCache,
+        lastUpdatedAt: switchedAccount ? null : state.lastUpdatedAt,
+        isRefreshing: switchedAccount ? false : state.isRefreshing,
         error: null,
       ),
     );

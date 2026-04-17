@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
@@ -5,6 +6,7 @@ import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
+import 'package:mobile/features/shell/avatar_url_identity.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -134,6 +136,126 @@ class _AccountSwitcherSheetState extends State<_AccountSwitcherSheet> {
   }
 }
 
+String _accountPrimaryLabel(StoredAuthAccount account) {
+  final name = account.displayName?.trim();
+  if (name != null && name.isNotEmpty) {
+    return name;
+  }
+  final email = account.email?.trim();
+  if (email != null && email.isNotEmpty) {
+    return email;
+  }
+  return account.id;
+}
+
+/// Subtitle when it adds information (never duplicate the title line).
+String? _accountSecondaryLabel(StoredAuthAccount account) {
+  final primary = _accountPrimaryLabel(account);
+  final email = account.email?.trim();
+  if (email == null || email.isEmpty) {
+    return null;
+  }
+  if (email == primary) {
+    return null;
+  }
+  return email;
+}
+
+String _initialsForAccount(StoredAuthAccount account) {
+  final source = account.displayName?.trim().isNotEmpty == true
+      ? account.displayName!.trim()
+      : (account.email?.trim().isNotEmpty == true
+            ? account.email!.trim()
+            : account.id);
+  return _initialsFromDisplayString(source);
+}
+
+String _initialsFromDisplayString(String value) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) {
+    return 'U';
+  }
+  final parts = trimmed.split(RegExp(r'\s+'));
+  if (parts.length == 1) {
+    return parts.first.characters.first.toUpperCase();
+  }
+  final first = parts.first.characters.first.toUpperCase();
+  final last = parts.last.characters.first.toUpperCase();
+  return '$first$last';
+}
+
+class _AccountSwitcherAvatar extends StatelessWidget {
+  const _AccountSwitcherAvatar({
+    required this.account,
+    required this.isSelected,
+  });
+
+  final StoredAuthAccount account;
+  final bool isSelected;
+
+  static const double _size = 38;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final url = normalizeAvatarUrl(account.avatarUrl);
+    final initials = _initialsForAccount(account);
+
+    return Container(
+      width: _size,
+      height: _size,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isSelected
+              ? theme.colorScheme.primary.withValues(alpha: 0.55)
+              : theme.colorScheme.border.withValues(alpha: 0.35),
+          width: isSelected ? 2 : 1,
+        ),
+        color: colorScheme.surfaceContainerHighest,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: url != null
+          ? Image(
+              image: CachedNetworkImageProvider(
+                url,
+                cacheKey: avatarIdentityKeyForUrl(url) ?? url,
+              ),
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              errorBuilder: (context, error, stackTrace) =>
+                  _AccountSwitcherInitials(initials: initials),
+            )
+          : _AccountSwitcherInitials(initials: initials),
+    );
+  }
+}
+
+class _AccountSwitcherInitials extends StatelessWidget {
+  const _AccountSwitcherInitials({required this.initials});
+
+  final String initials;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    return ColoredBox(
+      color: colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: Text(
+          initials,
+          style: theme.typography.small.copyWith(
+            fontWeight: FontWeight.w700,
+            color: colorScheme.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _AccountSwitcherTile extends StatelessWidget {
   const _AccountSwitcherTile({
     required this.account,
@@ -152,8 +274,8 @@ class _AccountSwitcherTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final name = account.displayName ?? account.email ?? account.id;
-    final subtitle = account.email ?? account.id;
+    final title = _accountPrimaryLabel(account);
+    final subtitle = _accountSecondaryLabel(account);
 
     return Material(
       color: Colors.transparent,
@@ -181,26 +303,9 @@ class _AccountSwitcherTile extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(14, 14, 8, 14),
                     child: Row(
                       children: [
-                        Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? theme.colorScheme.primary.withValues(
-                                    alpha: 0.14,
-                                  )
-                                : theme.colorScheme.background,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            isSelected
-                                ? Icons.check_circle_rounded
-                                : Icons.person_outline_rounded,
-                            size: 18,
-                            color: isSelected
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.foreground,
-                          ),
+                        _AccountSwitcherAvatar(
+                          account: account,
+                          isSelected: isSelected,
                         ),
                         const shad.Gap(12),
                         Expanded(
@@ -208,12 +313,13 @@ class _AccountSwitcherTile extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                name,
+                                title,
                                 style: theme.typography.small.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              if (subtitle.trim().isNotEmpty) ...[
+                              if (subtitle != null &&
+                                  subtitle.trim().isNotEmpty) ...[
                                 const shad.Gap(4),
                                 Text(
                                   subtitle,

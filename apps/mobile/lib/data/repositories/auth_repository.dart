@@ -138,6 +138,13 @@ class AuthRepository {
     return avatarUrl.trim();
   }
 
+  String? _nonEmptyTrimmed(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+    return value.trim();
+  }
+
   StoredAuthAccount _accountFromCurrentSession({
     required User user,
     required Session session,
@@ -145,6 +152,8 @@ class AuthRepository {
     int? addedAt,
     int? lastActiveAt,
     String? lastWorkspaceId,
+    String? fallbackDisplayName,
+    String? fallbackAvatarUrl,
   }) {
     final refreshToken = session.refreshToken;
     if (refreshToken == null || refreshToken.isEmpty) {
@@ -156,8 +165,8 @@ class AuthRepository {
       refreshToken: refreshToken,
       sessionJson: sessionJson,
       email: user.email,
-      displayName: _readDisplayName(user),
-      avatarUrl: _readAvatarUrl(user),
+      displayName: _readDisplayName(user) ?? _nonEmptyTrimmed(fallbackDisplayName),
+      avatarUrl: _readAvatarUrl(user) ?? _nonEmptyTrimmed(fallbackAvatarUrl),
       lastWorkspaceId: lastWorkspaceId,
       addedAt: addedAt ?? now,
       lastActiveAt: lastActiveAt ?? now,
@@ -204,6 +213,8 @@ class AuthRepository {
         addedAt: existing.addedAt,
         lastActiveAt: now,
         lastWorkspaceId: existing.lastWorkspaceId,
+        fallbackDisplayName: existing.displayName,
+        fallbackAvatarUrl: existing.avatarUrl,
       );
       updated = [...store.accounts]..[existingIndex] = refreshed;
     } else {
@@ -250,6 +261,8 @@ class AuthRepository {
           addedAt: existing.addedAt,
           lastActiveAt: now,
           lastWorkspaceId: existing.lastWorkspaceId,
+          fallbackDisplayName: existing.displayName,
+          fallbackAvatarUrl: existing.avatarUrl,
         );
     } else {
       updated = [
@@ -305,6 +318,8 @@ class AuthRepository {
           addedAt: account.addedAt,
           lastActiveAt: now,
           lastWorkspaceId: account.lastWorkspaceId,
+          fallbackDisplayName: account.displayName,
+          fallbackAvatarUrl: account.avatarUrl,
         );
       }).toList();
 
