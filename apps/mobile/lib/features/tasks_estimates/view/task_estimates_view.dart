@@ -45,7 +45,6 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
   static const _tabEstimates = 0;
   static const _tabLabels = 1;
   static const double _fabContentBottomPadding = 96;
-  static final Map<String, bool> _permissionCache = {};
 
   int _activeTab = _tabEstimates;
   late final WorkspacePermissionsRepository _permissionsRepository;
@@ -71,14 +70,8 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
     }
 
     _permissionsWorkspaceId = wsId;
-    final cachedPermission = wsId == null ? null : _permissionCache[wsId];
-    if (cachedPermission != null) {
-      _canManageProjects = cachedPermission;
-      _hasResolvedPermissions = true;
-    } else {
-      _canManageProjects = false;
-      _hasResolvedPermissions = wsId == null;
-    }
+    _canManageProjects = false;
+    _hasResolvedPermissions = wsId == null;
     unawaited(_loadPermissions());
   }
 
@@ -289,7 +282,6 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
         _isCheckingPermissions = false;
         _hasResolvedPermissions = true;
       });
-      _permissionCache[wsId] = _canManageProjects;
     } on Exception {
       if (!_canUpdatePermissionsState(capturedWsId)) {
         return;

@@ -5,8 +5,6 @@ class TaskPortfolioPermissionsController {
     required WorkspacePermissionsRepository permissionsRepository,
   }) : _permissionsRepository = permissionsRepository;
 
-  static final Map<String, bool> _permissionCache = {};
-
   final WorkspacePermissionsRepository _permissionsRepository;
 
   String? _workspaceId;
@@ -23,21 +21,8 @@ class TaskPortfolioPermissionsController {
 
   void primeCachedPermission(String? wsId) {
     _workspaceId = wsId;
-    if (wsId == null) {
-      _canManageProjects = false;
-      _hasResolvedPermissions = true;
-      return;
-    }
-
-    final cachedPermission = _permissionCache[wsId];
-    if (cachedPermission == null) {
-      _canManageProjects = false;
-      _hasResolvedPermissions = false;
-      return;
-    }
-
-    _canManageProjects = cachedPermission;
-    _hasResolvedPermissions = true;
+    _canManageProjects = false;
+    _hasResolvedPermissions = wsId == null;
   }
 
   Future<void> loadPermissions({required String? wsId}) async {
@@ -64,7 +49,6 @@ class TaskPortfolioPermissionsController {
       }
 
       _canManageProjects = permissions.containsPermission('manage_projects');
-      _permissionCache[requestWorkspaceId] = _canManageProjects;
       _isCheckingPermissions = false;
       _hasResolvedPermissions = true;
     } on Exception {
