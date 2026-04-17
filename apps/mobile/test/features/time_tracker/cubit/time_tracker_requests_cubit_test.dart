@@ -395,14 +395,16 @@ void main() {
             requests: [previous],
           ),
         );
+        final startTime = DateTime.utc(2026, 2, 24, 9);
+        final endTime = DateTime.utc(2026, 2, 24, 10);
 
         when(
           () => repository.updateRequest(
             'ws_1',
             'req_1',
             'New title',
-            any(),
-            any(),
+            startTime,
+            endTime,
             description: any(named: 'description'),
             removedImages: any(named: 'removedImages'),
             newImageLocalPaths: any(named: 'newImageLocalPaths'),
@@ -413,8 +415,8 @@ void main() {
           'ws_1',
           'req_1',
           'New title',
-          DateTime.utc(2026, 2, 24, 9),
-          DateTime.utc(2026, 2, 24, 10),
+          startTime,
+          endTime,
         );
 
         expect(result, isNotNull);

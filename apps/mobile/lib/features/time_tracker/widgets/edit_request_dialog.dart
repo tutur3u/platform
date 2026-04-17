@@ -92,7 +92,7 @@ class _EditRequestDialogState extends State<EditRequestDialog> {
             const shad.Gap(4),
             shad.TextField(
               controller: _titleController,
-              placeholder: Text(l10n.timerSessionTitle),
+              hintText: l10n.timerSessionTitle,
             ),
             const shad.Gap(16),
             Text(l10n.timerRequestDescription, style: theme.typography.small),
@@ -100,7 +100,7 @@ class _EditRequestDialogState extends State<EditRequestDialog> {
             shad.TextField(
               controller: _descriptionController,
               maxLines: 3,
-              placeholder: Text(l10n.timerRequestDescriptionOptional),
+              hintText: l10n.timerRequestDescriptionOptional,
             ),
             const shad.Gap(16),
             Text(l10n.timerStartTime, style: theme.typography.small),
