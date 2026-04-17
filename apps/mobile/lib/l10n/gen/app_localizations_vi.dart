@@ -120,6 +120,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authLogOutCurrent => 'Đăng xuất tài khoản hiện tại';
 
   @override
+  String get authLogOutConfirmDialogTitle => 'Đăng xuất khỏi thiết bị này?';
+
+  @override
+  String get authLogOutConfirmDialogBody => 'Nếu có tài khoản đã lưu, ứng dụng sẽ chuyển sang tài khoản đó.';
+
+  @override
   String get authLogOutCurrentConfirm => 'Đăng xuất tài khoản này khỏi thiết bị? Nếu có tài khoản khác, ứng dụng sẽ tự động chuyển sang tài khoản đó.';
 
   @override

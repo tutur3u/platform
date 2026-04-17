@@ -120,6 +120,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authLogOutCurrent => 'Log out current account';
 
   @override
+  String get authLogOutConfirmDialogTitle => 'Log out from this device?';
+
+  @override
+  String get authLogOutConfirmDialogBody => 'We\'ll switch to another saved account if one is available.';
+
+  @override
   String get authLogOutCurrentConfirm => 'Log out this account from this device? If another account exists, we will switch to it automatically.';
 
   @override

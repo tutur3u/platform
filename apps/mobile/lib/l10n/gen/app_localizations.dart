@@ -301,6 +301,18 @@ abstract class AppLocalizations {
   /// **'Log out current account'**
   String get authLogOutCurrent;
 
+  /// No description provided for @authLogOutConfirmDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out from this device?'**
+  String get authLogOutConfirmDialogTitle;
+
+  /// No description provided for @authLogOutConfirmDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll switch to another saved account if one is available.'**
+  String get authLogOutConfirmDialogBody;
+
   /// No description provided for @authLogOutCurrentConfirm.
   ///
   /// In en, this message translates to:

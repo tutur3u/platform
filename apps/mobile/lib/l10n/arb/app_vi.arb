@@ -53,6 +53,8 @@
     "authAddAccountTitle": "Thêm tài khoản khác",
     "authLogOut": "Đăng xuất",
     "authLogOutCurrent": "Đăng xuất tài khoản hiện tại",
+    "authLogOutConfirmDialogTitle": "Đăng xuất khỏi thiết bị này?",
+    "authLogOutConfirmDialogBody": "Nếu có tài khoản đã lưu, ứng dụng sẽ chuyển sang tài khoản đó.",
     "authLogOutCurrentConfirm": "Đăng xuất tài khoản này khỏi thiết bị? Nếu có tài khoản khác, ứng dụng sẽ tự động chuyển sang tài khoản đó.",
     "authLogOutCurrentDescription": "Đăng xuất tài khoản này và tự động chuyển sang tài khoản đã lưu khác nếu có.",
     "authLogOutCurrentFailed": "Không thể đăng xuất tài khoản này.",

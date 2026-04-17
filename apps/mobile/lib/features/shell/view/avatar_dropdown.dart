@@ -137,10 +137,9 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
     final authCubit = context.read<AuthCubit>();
     final confirmed = await showSettingsConfirmationDialog(
       context: context,
-      title: context.l10n.authLogOutCurrent,
-      description: context.l10n.authLogOutCurrentConfirm,
-      confirmLabel: context.l10n.authLogOutCurrent,
-      icon: Icons.logout_rounded,
+      title: context.l10n.authLogOutConfirmDialogTitle,
+      description: context.l10n.authLogOutConfirmDialogBody,
+      confirmLabel: context.l10n.authLogOut,
       isDestructive: true,
     );
 

@@ -381,8 +381,7 @@ class _AvatarMenuContent extends StatelessWidget {
           children: [
             _ActionTile(
               icon: Icons.logout_rounded,
-              title: context.l10n.authLogOutCurrent,
-              subtitle: context.l10n.authLogOutCurrentDescription,
+              title: context.l10n.authLogOut,
               destructive: true,
               onTap: () => onSelected(AvatarMenuAction.logout),
             ),
@@ -604,15 +603,15 @@ class _ActionTile extends StatelessWidget {
   const _ActionTile({
     required this.icon,
     required this.title,
-    required this.subtitle,
     required this.onTap,
+    this.subtitle,
     this.destructive = false,
   });
 
   final IconData icon;
   final String title;
-  final String subtitle;
   final VoidCallback onTap;
+  final String? subtitle;
   final bool destructive;
 
   @override
@@ -658,24 +657,26 @@ class _ActionTile extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const shad.Gap(3),
-                    Text(
-                      subtitle,
-                      style: theme.typography.small.copyWith(
-                        color: destructive
-                            ? colorScheme.error.withValues(alpha: 0.82)
-                            : colorScheme.onSurfaceVariant,
+                    if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
+                      const shad.Gap(3),
+                      Text(
+                        subtitle!,
+                        style: theme.typography.small.copyWith(
+                          color: destructive
+                              ? colorScheme.error.withValues(alpha: 0.82)
+                              : colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
               const shad.Gap(8),
               Icon(
                 destructive
-                    ? Icons.logout_rounded
+                    ? Icons.chevron_right_rounded
                     : Icons.arrow_outward_rounded,
-                size: 18,
+                size: 22,
                 color: destructive
                     ? colorScheme.error.withValues(alpha: 0.84)
                     : colorScheme.onSurfaceVariant,

@@ -437,11 +437,10 @@ class _SettingsViewState extends State<_SettingsView> {
     final authCubit = context.read<AuthCubit>();
     final confirmed = await showSettingsConfirmationDialog(
       context: context,
-      title: context.l10n.authLogOutCurrent,
-      description: context.l10n.authLogOutCurrentConfirm,
-      confirmLabel: context.l10n.authLogOutCurrent,
+      title: context.l10n.authLogOutConfirmDialogTitle,
+      description: context.l10n.authLogOutConfirmDialogBody,
+      confirmLabel: context.l10n.authLogOut,
       isDestructive: true,
-      icon: Icons.logout_rounded,
     );
 
     if (confirmed == true && context.mounted) {

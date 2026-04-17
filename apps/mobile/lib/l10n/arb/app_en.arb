@@ -53,6 +53,8 @@
     "authAddAccountTitle": "Add another account",
     "authLogOut": "Log out",
     "authLogOutCurrent": "Log out current account",
+    "authLogOutConfirmDialogTitle": "Log out from this device?",
+    "authLogOutConfirmDialogBody": "We'll switch to another saved account if one is available.",
     "authLogOutCurrentConfirm": "Log out this account from this device? If another account exists, we will switch to it automatically.",
     "authLogOutCurrentDescription": "Sign out this account and switch to another saved account if available.",
     "authLogOutCurrentFailed": "Couldn't log out this account.",
