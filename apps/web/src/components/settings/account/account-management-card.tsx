@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { ArrowRightLeft, Loader2, Trash2 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -15,16 +16,14 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { formatDistanceToNow } from 'date-fns';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { type JSX, useEffect, useState } from 'react';
+import { type JSX, useState } from 'react';
 import { AddAccountButton } from '@/components/account-switcher';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { RemoveAccountDialog } from './remove-account-dialog';
 
 export function AccountManagementCard(): JSX.Element {
   const t = useTranslations();
-  const router = useRouter();
   const {
     accounts,
     activeAccountId,
@@ -41,17 +40,18 @@ export function AccountManagementCard(): JSX.Element {
     (a, b) => (b.metadata.lastActiveAt ?? 0) - (a.metadata.lastActiveAt ?? 0)
   );
 
-  // Refresh accounts list on mount to ensure fresh data
-  useEffect(() => {
-    router.refresh();
-    refreshAccounts();
-  }, [router, refreshAccounts]);
+  useQuery({
+    queryKey: ['account-management-refresh'],
+    queryFn: async () => {
+      await refreshAccounts();
+      return null;
+    },
+    refetchOnWindowFocus: false,
+  });
 
   const handleSwitchAccount = async (accountId: string) => {
     setSwitchingAccountId(accountId);
     try {
-      // Refresh server components before switching
-      router.refresh();
       await switchAccount(accountId);
       // Navigation will happen automatically in switchAccount
     } catch (error) {

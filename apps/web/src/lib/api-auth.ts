@@ -6,6 +6,10 @@ import {
   isIPBlocked,
   recordApiAuthFailure,
 } from '@tuturuuu/utils/abuse-protection';
+import {
+  cascadeBackendRateLimitToProxyBan,
+  isBackendRateLimitError,
+} from '@tuturuuu/utils/abuse-protection/backend-rate-limit';
 import { hasAuthenticatedApiSession } from '@tuturuuu/utils/api-proxy-guard';
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -265,6 +269,28 @@ export function withSessionAuth<T = unknown>(
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
+
+    if (isBackendRateLimitError(authError)) {
+      const blockInfo = await cascadeBackendRateLimitToProxyBan({
+        endpoint,
+        ipAddress,
+        source: 'auth',
+      });
+      const retryAfter = blockInfo
+        ? Math.max(
+            1,
+            Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
+          )
+        : 60;
+
+      return NextResponse.json(
+        { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+        {
+          status: 429,
+          headers: { 'Retry-After': `${retryAfter}` },
+        }
+      );
+    }
 
     if (authError || !user) {
       // Record auth failure for auto-blocking

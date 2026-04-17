@@ -28,6 +28,13 @@ vi.mock('next/navigation', () => ({
   useParams: () => ({ wsId: 'workspace-1' }),
 }));
 
+vi.mock('nuqs', () => ({
+  parseAsString: {
+    withOptions: () => ({}),
+  },
+  useQueryState: () => [null, vi.fn()],
+}));
+
 const {
   mockGetCurrentUserProfile,
   mockGetCurrentUserTask,
