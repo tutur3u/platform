@@ -89,6 +89,27 @@ String? resolveUnauthenticatedRedirect({
   return null;
 }
 
+String? resolveAuthenticatedRedirect({
+  required String matchedLocation,
+  required bool isAuthRoute,
+  required bool isAddAccountFlow,
+  required WorkspaceState workspaceState,
+}) {
+  if (!isAuthRoute) {
+    return null;
+  }
+  if (matchedLocation == Routes.addAccount && isAddAccountFlow) {
+    return null;
+  }
+  if (workspaceState.hasWorkspace) {
+    return Routes.home;
+  }
+  if (workspaceState.status == WorkspaceStatus.loaded) {
+    return Routes.workspaceSelect;
+  }
+  return Routes.home;
+}
+
 HistoryViewMode? _parseHistoryViewMode(String? value) {
   switch (value) {
     case 'day':
@@ -186,12 +207,12 @@ GoRouter createAppRouter(
 
       // Authenticated but on auth route → go to appropriate destination
       if (authState.status == AuthStatus.authenticated && isAuthRoute) {
-        if (wsState.hasWorkspace) return Routes.home;
-        if (wsState.status == WorkspaceStatus.loaded) {
-          return Routes.workspaceSelect;
-        }
-        // Workspaces still loading → go home (will re-redirect once loaded)
-        return Routes.home;
+        return resolveAuthenticatedRedirect(
+          matchedLocation: state.matchedLocation,
+          isAuthRoute: isAuthRoute,
+          isAddAccountFlow: authState.isAddAccountFlow,
+          workspaceState: wsState,
+        );
       }
 
       // From here on, user is authenticated and NOT on an auth route.

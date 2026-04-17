@@ -132,4 +132,38 @@ void main() {
       expect(redirect, isNull);
     });
   });
+
+  group('resolveAuthenticatedRedirect', () {
+    test('keeps /add-account when authenticated add-account flow is on', () {
+      const state = WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        currentWorkspace: Workspace(id: 'team-1'),
+      );
+
+      final redirect = resolveAuthenticatedRedirect(
+        matchedLocation: Routes.addAccount,
+        isAuthRoute: true,
+        isAddAccountFlow: true,
+        workspaceState: state,
+      );
+
+      expect(redirect, isNull);
+    });
+
+    test('redirects authenticated /login to home when workspace exists', () {
+      const state = WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        currentWorkspace: Workspace(id: 'team-1'),
+      );
+
+      final redirect = resolveAuthenticatedRedirect(
+        matchedLocation: Routes.login,
+        isAuthRoute: true,
+        isAddAccountFlow: false,
+        workspaceState: state,
+      );
+
+      expect(redirect, Routes.home);
+    });
+  });
 }

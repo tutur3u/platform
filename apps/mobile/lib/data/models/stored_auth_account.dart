@@ -6,6 +6,7 @@ class StoredAuthAccount extends Equatable {
     required this.refreshToken,
     required this.lastActiveAt,
     required this.addedAt,
+    this.sessionJson,
     this.email,
     this.displayName,
     this.avatarUrl,
@@ -18,6 +19,7 @@ class StoredAuthAccount extends Equatable {
       refreshToken: json['refreshToken'] as String,
       lastActiveAt: json['lastActiveAt'] as int,
       addedAt: json['addedAt'] as int,
+      sessionJson: json['sessionJson'] as String?,
       email: json['email'] as String?,
       displayName: json['displayName'] as String?,
       avatarUrl: json['avatarUrl'] as String?,
@@ -29,6 +31,7 @@ class StoredAuthAccount extends Equatable {
   final String refreshToken;
   final int lastActiveAt;
   final int addedAt;
+  final String? sessionJson;
   final String? email;
   final String? displayName;
   final String? avatarUrl;
@@ -40,6 +43,7 @@ class StoredAuthAccount extends Equatable {
       'refreshToken': refreshToken,
       'lastActiveAt': lastActiveAt,
       'addedAt': addedAt,
+      'sessionJson': sessionJson,
       'email': email,
       'displayName': displayName,
       'avatarUrl': avatarUrl,
@@ -51,6 +55,7 @@ class StoredAuthAccount extends Equatable {
     String? refreshToken,
     int? lastActiveAt,
     int? addedAt,
+    Object? sessionJson = _sentinel,
     Object? email = _sentinel,
     Object? displayName = _sentinel,
     Object? avatarUrl = _sentinel,
@@ -61,6 +66,9 @@ class StoredAuthAccount extends Equatable {
       refreshToken: refreshToken ?? this.refreshToken,
       lastActiveAt: lastActiveAt ?? this.lastActiveAt,
       addedAt: addedAt ?? this.addedAt,
+      sessionJson: sessionJson == _sentinel
+          ? this.sessionJson
+          : sessionJson as String?,
       email: email == _sentinel ? this.email : email as String?,
       displayName: displayName == _sentinel
           ? this.displayName
@@ -80,6 +88,7 @@ class StoredAuthAccount extends Equatable {
     refreshToken,
     lastActiveAt,
     addedAt,
+    sessionJson,
     email,
     displayName,
     avatarUrl,

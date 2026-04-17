@@ -31,6 +31,7 @@ class AuthRepository {
   AuthRepository({
     ApiClient? apiClient,
     SupabaseClient? supabaseClient,
+    FlutterSecureStorage? secureStorage,
     GoogleIdentityClient? googleIdentityClient,
     AppleIdentityClient? appleIdentityClient,
     OAuthUrlLauncher? oauthUrlLauncher,
@@ -52,7 +53,8 @@ class AuthRepository {
            ),
        _packageInfoLoader = packageInfoLoader ?? PackageInfo.fromPlatform,
        _googleWebClientId = googleWebClientId ?? Env.googleWebClientId,
-       _googleIosClientId = googleIosClientId ?? Env.googleIosClientId;
+       _googleIosClientId = googleIosClientId ?? Env.googleIosClientId,
+       _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
   final ApiClient _apiClient;
   final SupabaseClient _client;
@@ -63,7 +65,7 @@ class AuthRepository {
   final DevicePlatform _devicePlatform;
   final String _googleWebClientId;
   final String _googleIosClientId;
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final FlutterSecureStorage _secureStorage;
 
   static const int _multiAccountStoreVersion = 1;
   static const int _maxStoredAccounts = 5;
@@ -93,7 +95,9 @@ class AuthRepository {
         return MultiAccountStore.empty();
       }
       return store;
-    } on Exception {
+    } on Object {
+      // Catch both Exception and Error (e.g. TypeError from malformed JSON
+      // entries written by an older app version).
       return MultiAccountStore.empty();
     }
   }
@@ -107,6 +111,10 @@ class AuthRepository {
 
   Future<void> _clearMultiAccountStore() async {
     await _secureStorage.delete(key: StorageKeys.multiAccountStore);
+  }
+
+  Future<String?> _readCurrentPersistedSessionJson() async {
+    return _secureStorage.read(key: supabasePersistSessionKey);
   }
 
   String? _readDisplayName(User user) {
@@ -133,6 +141,7 @@ class AuthRepository {
   StoredAuthAccount _accountFromCurrentSession({
     required User user,
     required Session session,
+    String? sessionJson,
     int? addedAt,
     int? lastActiveAt,
     String? lastWorkspaceId,
@@ -145,6 +154,7 @@ class AuthRepository {
     return StoredAuthAccount(
       id: user.id,
       refreshToken: refreshToken,
+      sessionJson: sessionJson,
       email: user.email,
       displayName: _readDisplayName(user),
       avatarUrl: _readAvatarUrl(user),
@@ -179,6 +189,7 @@ class AuthRepository {
       return;
     }
 
+    final sessionJson = await _readCurrentPersistedSessionJson();
     final store = await _loadMultiAccountStore();
     final now = DateTime.now().millisecondsSinceEpoch;
     final existingIndex = store.accounts.indexWhere((a) => a.id == user.id);
@@ -189,13 +200,18 @@ class AuthRepository {
       final refreshed = _accountFromCurrentSession(
         user: user,
         session: session,
+        sessionJson: sessionJson,
         addedAt: existing.addedAt,
         lastActiveAt: now,
         lastWorkspaceId: existing.lastWorkspaceId,
       );
       updated = [...store.accounts]..[existingIndex] = refreshed;
     } else {
-      final appended = _accountFromCurrentSession(user: user, session: session);
+      final appended = _accountFromCurrentSession(
+        user: user,
+        session: session,
+        sessionJson: sessionJson,
+      );
       updated = [...store.accounts, appended];
     }
 
@@ -218,6 +234,7 @@ class AuthRepository {
       return (success: false, error: 'No active session found');
     }
 
+    final sessionJson = await _readCurrentPersistedSessionJson();
     final store = await _loadMultiAccountStore();
     final now = DateTime.now().millisecondsSinceEpoch;
     final existingIndex = store.accounts.indexWhere((a) => a.id == user.id);
@@ -229,6 +246,7 @@ class AuthRepository {
         ..[existingIndex] = _accountFromCurrentSession(
           user: user,
           session: session,
+          sessionJson: sessionJson,
           addedAt: existing.addedAt,
           lastActiveAt: now,
           lastWorkspaceId: existing.lastWorkspaceId,
@@ -236,7 +254,11 @@ class AuthRepository {
     } else {
       updated = [
         ...store.accounts,
-        _accountFromCurrentSession(user: user, session: session),
+        _accountFromCurrentSession(
+          user: user,
+          session: session,
+          sessionJson: sessionJson,
+        ),
       ];
     }
 
@@ -261,7 +283,9 @@ class AuthRepository {
     }
 
     try {
-      final authResponse = await _client.auth.setSession(target.refreshToken);
+      final authResponse = target.sessionJson != null
+          ? await _client.auth.recoverSession(target.sessionJson!)
+          : await _client.auth.setSession(target.refreshToken);
       final session = authResponse.session;
       final user = authResponse.user;
       if (session == null || user == null) {
@@ -269,6 +293,7 @@ class AuthRepository {
       }
 
       final now = DateTime.now().millisecondsSinceEpoch;
+      final restoredSessionJson = await _readCurrentPersistedSessionJson();
       final updatedAccounts = store.accounts.map((account) {
         if (account.id != accountId) {
           return account;
@@ -276,6 +301,7 @@ class AuthRepository {
         return _accountFromCurrentSession(
           user: user,
           session: session,
+          sessionJson: restoredSessionJson ?? target.sessionJson,
           addedAt: account.addedAt,
           lastActiveAt: now,
           lastWorkspaceId: account.lastWorkspaceId,
@@ -401,10 +427,6 @@ class AuthRepository {
 
     await _client.auth.signOut();
     await _clearMultiAccountStore();
-  }
-
-  Future<void> signOutLocalSessionOnly() async {
-    await _client.auth.signOut();
   }
 
   // ── OTP ─────────────────────────────────────────

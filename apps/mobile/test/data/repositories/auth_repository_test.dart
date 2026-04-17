@@ -1,3 +1,4 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mobile/core/platform/device_platform.dart';
@@ -20,6 +21,8 @@ class _MockGoogleIdentityClient extends Mock implements GoogleIdentityClient {}
 class _MockAppleIdentityClient extends Mock implements AppleIdentityClient {}
 
 class _MockOAuthUrlLauncher extends Mock implements OAuthUrlLauncher {}
+
+class _MockFlutterSecureStorage extends Mock implements FlutterSecureStorage {}
 
 class _AndroidPlatform implements DevicePlatform {
   const _AndroidPlatform();
@@ -62,6 +65,8 @@ void main() {
   late GoogleIdentityClient googleIdentityClient;
   late AppleIdentityClient appleIdentityClient;
   late OAuthUrlLauncher oauthUrlLauncher;
+  late FlutterSecureStorage secureStorage;
+  late Map<String, String> secureStorageValues;
   late AuthRepository repository;
 
   setUp(() {
@@ -70,12 +75,40 @@ void main() {
     googleIdentityClient = _MockGoogleIdentityClient();
     appleIdentityClient = _MockAppleIdentityClient();
     oauthUrlLauncher = _MockOAuthUrlLauncher();
+    secureStorage = _MockFlutterSecureStorage();
+    secureStorageValues = <String, String>{};
 
     when(() => supabaseClient.auth).thenReturn(goTrueClient);
     when(() => googleIdentityClient.signOut()).thenAnswer((_) async {});
+    when(
+      () => secureStorage.read(key: any(named: 'key')),
+    ).thenAnswer(
+      (invocation) async =>
+          secureStorageValues[invocation.namedArguments[#key] as String],
+    );
+    when(
+      () => secureStorage.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+      ),
+    ).thenAnswer((invocation) async {
+      final key = invocation.namedArguments[#key] as String;
+      final value = invocation.namedArguments[#value] as String?;
+      if (value == null) {
+        secureStorageValues.remove(key);
+      } else {
+        secureStorageValues[key] = value;
+      }
+    });
+    when(
+      () => secureStorage.delete(key: any(named: 'key')),
+    ).thenAnswer((invocation) async {
+      secureStorageValues.remove(invocation.namedArguments[#key] as String);
+    });
 
     repository = AuthRepository(
       supabaseClient: supabaseClient,
+      secureStorage: secureStorage,
       googleIdentityClient: googleIdentityClient,
       appleIdentityClient: appleIdentityClient,
       oauthUrlLauncher: oauthUrlLauncher,
@@ -263,6 +296,7 @@ void main() {
       () async {
         repository = AuthRepository(
           supabaseClient: supabaseClient,
+          secureStorage: secureStorage,
           googleIdentityClient: googleIdentityClient,
           appleIdentityClient: appleIdentityClient,
           oauthUrlLauncher: oauthUrlLauncher,
@@ -312,6 +346,7 @@ void main() {
       () async {
         repository = AuthRepository(
           supabaseClient: supabaseClient,
+          secureStorage: secureStorage,
           googleIdentityClient: googleIdentityClient,
           appleIdentityClient: appleIdentityClient,
           oauthUrlLauncher: oauthUrlLauncher,
@@ -396,6 +431,7 @@ void main() {
       () async {
         repository = AuthRepository(
           supabaseClient: supabaseClient,
+          secureStorage: secureStorage,
           googleIdentityClient: googleIdentityClient,
           appleIdentityClient: appleIdentityClient,
           oauthUrlLauncher: oauthUrlLauncher,
@@ -453,6 +489,7 @@ void main() {
     test('returns cancelled when native Apple sign-in is cancelled', () async {
       repository = AuthRepository(
         supabaseClient: supabaseClient,
+        secureStorage: secureStorage,
         googleIdentityClient: googleIdentityClient,
         appleIdentityClient: appleIdentityClient,
         oauthUrlLauncher: oauthUrlLauncher,
@@ -493,6 +530,7 @@ void main() {
       () async {
         repository = AuthRepository(
           supabaseClient: supabaseClient,
+          secureStorage: secureStorage,
           googleIdentityClient: googleIdentityClient,
           appleIdentityClient: appleIdentityClient,
           oauthUrlLauncher: oauthUrlLauncher,

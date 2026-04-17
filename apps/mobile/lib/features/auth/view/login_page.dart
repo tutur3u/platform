@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'
     hide AppBar, FilledButton, Scaffold, TextButton, TextField;
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/config/env.dart';
@@ -35,6 +37,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   static const _stepTransitionDuration = Duration(milliseconds: 420);
   static const _otpAvailabilityGracePeriod = Duration(seconds: 3);
+  static const _androidBackChannel = MethodChannel('mobile/shell_back');
 
   final _emailController = TextEditingController(
     text: Env.isDevelopment ? 'local@tuturuuu.com' : '',
@@ -87,6 +90,13 @@ class _LoginPageState extends State<LoginPage> {
         context.read<AuthCubit>().setAddAccountFlow(enabled: true);
       });
     }
+    _syncAndroidBackState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncAndroidBackState();
   }
 
   @override
@@ -284,6 +294,22 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _handleGithubSignIn() {
     return context.read<AuthCubit>().signInWithGithub();
+  }
+
+  void _syncAndroidBackState() {
+    if (!widget.addAccountMode ||
+        defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+
+    final l10n = context.l10n;
+    unawaited(
+      _androidBackChannel.invokeMethod<void>('updateState', {
+        'route': '/add-account',
+        'exitMessage': l10n.commonPressBackAgainToExit,
+        'exitHintMessage': l10n.commonPressBackAgainToExitHint,
+      }),
+    );
   }
 
   Future<void> _onCancelAddAccount() async {

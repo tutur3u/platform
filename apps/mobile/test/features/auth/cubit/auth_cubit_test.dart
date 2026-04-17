@@ -312,13 +312,12 @@ void main() {
         ),
       ).thenAnswer((_) async {});
       when(
-        () => authRepository.signOutLocalSessionOnly(),
-      ).thenAnswer((_) async {});
+        () => authRepository.switchToStoredAccount(any()),
+      ).thenAnswer((_) async => (success: false, error: null));
     });
 
     test(
-      'beginAddAccountFlow keeps a recoverable '
-      'active account id before sign out',
+      'beginAddAccountFlow keeps the current session active',
       () async {
         final cubit = AuthCubit(authRepository: authRepository);
         addTearDown(cubit.close);
@@ -326,9 +325,27 @@ void main() {
         final started = await cubit.beginAddAccountFlow();
 
         expect(started, isTrue);
-        expect(cubit.state.status, AuthStatus.unauthenticated);
+        expect(cubit.state.status, AuthStatus.authenticated);
         expect(cubit.state.isAddAccountFlow, isTrue);
         expect(cubit.state.activeAccountId, 'user-1');
+        verifyNever(() => authRepository.switchToStoredAccount(any()));
+      },
+    );
+
+    test(
+      'cancelAddAccountFlow exits without restoring when still authenticated',
+      () async {
+        final cubit = AuthCubit(authRepository: authRepository);
+        addTearDown(cubit.close);
+
+        final started = await cubit.beginAddAccountFlow();
+        final restored = await cubit.cancelAddAccountFlow();
+
+        expect(started, isTrue);
+        expect(restored, isTrue);
+        expect(cubit.state.status, AuthStatus.authenticated);
+        expect(cubit.state.isAddAccountFlow, isFalse);
+        verifyNever(() => authRepository.switchToStoredAccount(any()));
       },
     );
   });

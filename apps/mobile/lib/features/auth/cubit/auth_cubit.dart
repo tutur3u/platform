@@ -26,6 +26,14 @@ class AuthCubit extends Cubit<AuthState> {
   final Future<void> Function()? _onBeforeSignOut;
   StreamSubscription<supa.AuthState>? _authSub;
 
+  // Instance-level guard for the add-account flow.
+  //
+  // Supabase auth events (signedIn, tokenRefreshed, signedOut) are dispatched
+  // asynchronously and can arrive while beginAddAccountFlow() is in progress,
+  // potentially resetting isAddAccountFlow to false before the flow completes.
+  // This flag lets the listener detect that case and preserve the flag.
+  bool _isInAddAccountFlow = false;
+
   Future<void> _hydrateMultiAccountStore() async {
     final accounts = await _repo.getStoredAccounts();
     final activeAccountId = await _repo.getActiveStoredAccountId();
@@ -74,10 +82,21 @@ class AuthCubit extends Cubit<AuthState> {
         if ((event == supa.AuthChangeEvent.signedIn ||
                 event == supa.AuthChangeEvent.tokenRefreshed) &&
             session?.user != null) {
+          // Preserve the add-account flow flag so that an auto-refresh or
+          // token rotation mid-flow does not silently clear isAddAccountFlow.
+          final keepAddFlow = state.isAddAccountFlow || _isInAddAccountFlow;
           if (_repo.checkMfaRequired()) {
-            emit(AuthState.mfaRequired(session!.user));
+            emit(
+              AuthState.mfaRequired(session!.user).copyWith(
+                isAddAccountFlow: keepAddFlow,
+              ),
+            );
           } else {
-            emit(AuthState.authenticated(session!.user));
+            emit(
+              AuthState.authenticated(session!.user).copyWith(
+                isAddAccountFlow: keepAddFlow,
+              ),
+            );
           }
           unawaited(
             _repo.syncCurrentSessionToMultiAccountStore().then(
@@ -85,7 +104,8 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         } else if (event == supa.AuthChangeEvent.signedOut) {
-          if (state.isAddAccountFlow) {
+          final inAddFlow = state.isAddAccountFlow || _isInAddAccountFlow;
+          if (inAddFlow) {
             emit(
               const AuthState.unauthenticated().copyWith(
                 accounts: state.accounts,
@@ -374,6 +394,7 @@ class AuthCubit extends Cubit<AuthState> {
   // ── Session management ──────────────────────────
 
   Future<void> signOut() async {
+    _isInAddAccountFlow = false;
     emit(state.copyWith(isLoading: true));
     await CacheStore.instance.clearScope(userId: state.user?.id);
     await _onBeforeSignOut?.call();
@@ -387,6 +408,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<bool> beginAddAccountFlow() async {
+    _isInAddAccountFlow = true;
     final fallbackActiveAccountId = state.activeAccountId ?? state.user?.id;
     emit(
       state.copyWith(
@@ -399,22 +421,32 @@ class AuthCubit extends Cubit<AuthState> {
     );
 
     try {
+      // Explicitly refresh before syncing so the stored account entry keeps
+      // the most recent persisted session for the currently active account.
+      try {
+        await _repo.refreshSession();
+      } on Object {
+        // Ignore – we'll sync whatever session is currently available.
+      }
       await _repo.syncCurrentSessionToMultiAccountStore();
       await _reloadStoredAccounts();
-      await _repo.signOutLocalSessionOnly();
       emit(
         state.copyWith(
+          accounts: state.accounts,
+          activeAccountId: state.activeAccountId,
+          isAddAccountFlow: true,
           isLoading: false,
-          status: AuthStatus.unauthenticated,
           error: null,
           errorCode: null,
         ),
       );
       return true;
     } on Exception catch (e) {
+      _isInAddAccountFlow = false;
       emit(
         state.copyWith(
           isLoading: false,
+          isAddAccountFlow: false,
           error: e.toString(),
           errorCode: null,
         ),
@@ -424,39 +456,70 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   void setAddAccountFlow({required bool enabled}) {
+    _isInAddAccountFlow = enabled;
     emit(state.copyWith(isAddAccountFlow: enabled));
   }
 
-  /// Restores the previous on-device session after [beginAddAccountFlow] and
-  /// clears the add-account flag. Used when the user dismisses the add-account
-  /// screen (system back or explicit "Home" control).
+  /// Leaves add-account mode and, when necessary, switches back to a stored
+  /// account before clearing the flag.
   Future<bool> cancelAddAccountFlow() async {
+    if (state.status == AuthStatus.authenticated && state.isAddAccountFlow) {
+      _isInAddAccountFlow = false;
+      emit(
+        state.copyWith(
+          isLoading: false,
+          isAddAccountFlow: false,
+          error: null,
+          errorCode: null,
+        ),
+      );
+      return true;
+    }
+
     final shouldAttemptRestore =
-        state.isAddAccountFlow || state.status == AuthStatus.unauthenticated;
+        state.isAddAccountFlow ||
+        _isInAddAccountFlow ||
+        state.status == AuthStatus.unauthenticated;
     if (!shouldAttemptRestore) {
       return true;
     }
 
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     try {
+      // Try the persistent store first, then fall back to the account ID that
+      // was saved into the cubit state at the start of beginAddAccountFlow(),
+      // and finally to the first account in the in-memory accounts list.
       var accountId = await _repo.getActiveStoredAccountId();
+      accountId ??= state.activeAccountId;
       if (accountId == null) {
-        final accounts = await _repo.getStoredAccounts();
-        accountId = accounts.isNotEmpty ? accounts.first.id : null;
+        final storeAccounts = await _repo.getStoredAccounts();
+        accountId = storeAccounts.isNotEmpty ? storeAccounts.first.id : null;
       }
+      accountId ??= state.accounts.isNotEmpty ? state.accounts.first.id : null;
+
       if (accountId == null) {
-        emit(state.copyWith(isLoading: false, isAddAccountFlow: false));
+        // Truly no account to restore – leave add-account flow entirely.
+        _isInAddAccountFlow = false;
+        emit(
+          state.copyWith(
+            isLoading: false,
+            isAddAccountFlow: false,
+          ),
+        );
         return false;
       }
 
       final result = await _repo.switchToStoredAccount(accountId);
       if (!result.success) {
+        // Restore failed (e.g. expired token, network error).  Keep the
+        // user on the add-account screen so they can see the error and
+        // retry or choose to sign in to a different account.
         emit(
           state.copyWith(
             isLoading: false,
             error: result.error,
             errorCode: null,
-            isAddAccountFlow: false,
+            // isAddAccountFlow intentionally NOT cleared here.
           ),
         );
         return false;
@@ -464,10 +527,17 @@ class AuthCubit extends Cubit<AuthState> {
 
       final user = await _repo.getCurrentUser();
       if (user == null) {
-        emit(state.copyWith(isLoading: false, isAddAccountFlow: false));
+        emit(
+          state.copyWith(
+            isLoading: false,
+            error: 'Failed to restore session',
+            // isAddAccountFlow intentionally NOT cleared here.
+          ),
+        );
         return false;
       }
 
+      _isInAddAccountFlow = false;
       if (_repo.checkMfaRequired()) {
         emit(
           AuthState.mfaRequired(user).copyWith(
@@ -486,12 +556,14 @@ class AuthCubit extends Cubit<AuthState> {
       await _reloadStoredAccounts();
       return true;
     } on Exception catch (e) {
+      // Keep user on add-account screen on unexpected errors so they are
+      // not silently redirected to /login without a recovery path.
       emit(
         state.copyWith(
           isLoading: false,
           error: e.toString(),
           errorCode: null,
-          isAddAccountFlow: false,
+          // isAddAccountFlow intentionally NOT cleared here.
         ),
       );
       return false;
@@ -576,6 +648,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signOutAllAccounts() async {
+    _isInAddAccountFlow = false;
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     await CacheStore.instance.clearScope(userId: state.user?.id);
     await _onBeforeSignOut?.call();
