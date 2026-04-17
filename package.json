@@ -44,6 +44,8 @@
     "dev:web": "turbo run dev -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/web",
     "dev:web:docker": "node scripts/docker-web.js up",
     "dev:web:docker:down": "node scripts/docker-web.js down",
+    "serve:web:docker": "node scripts/docker-web.js up --mode prod",
+    "serve:web:docker:down": "node scripts/docker-web.js down --mode prod",
     "dev:webns": "turbo run dev -F @tuturuuu/types -F @tuturuuu/supabase",
     "dev:external": "turbo run dev -F @tuturuuu/external",
     "dev:calendar": "turbo run dev -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/calendar -F @tuturuuu/web",

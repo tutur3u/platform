@@ -6,6 +6,7 @@ const { spawn } = require('node:child_process');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const COMPOSE_FILE = path.join(ROOT_DIR, 'docker-compose.web.yml');
+const PROD_COMPOSE_FILE = path.join(ROOT_DIR, 'docker-compose.web.prod.yml');
 const WEB_ENV_FILE = path.join(ROOT_DIR, 'apps', 'web', '.env.local');
 const LOCALHOST_HOSTS = new Set(['127.0.0.1', '0.0.0.0', 'localhost']);
 const DOCKER_HOST_ALIAS = 'host.docker.internal';
@@ -20,6 +21,7 @@ function parseArgs(argv) {
 
   const composeGlobalArgs = [];
   const composeArgs = [];
+  let mode = 'dev';
   let withSupabase = false;
   let resetSupabase = false;
 
@@ -49,6 +51,18 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (arg === '--mode') {
+      const value = args[index + 1];
+
+      if (value !== 'dev' && value !== 'prod') {
+        throw new Error('Expected --mode to be either "dev" or "prod".');
+      }
+
+      mode = value;
+      index += 1;
+      continue;
+    }
+
     composeArgs.push(arg);
   }
 
@@ -56,9 +70,14 @@ function parseArgs(argv) {
     action,
     composeArgs,
     composeGlobalArgs,
+    mode,
     resetSupabase,
     withSupabase,
   };
+}
+
+function getComposeFile(mode = 'dev') {
+  return mode === 'prod' ? PROD_COMPOSE_FILE : COMPOSE_FILE;
 }
 
 function parseEnvFile(envFilePath, fsImpl = fs) {
@@ -185,6 +204,7 @@ async function runChecked(command, args, options = {}) {
 async function runDockerWebWorkflow(parsed, options = {}) {
   const run = options.runCommand ?? runCommand;
   const fsImpl = options.fsImpl ?? fs;
+  const composeFile = getComposeFile(parsed.mode);
 
   await runChecked('docker', ['compose', 'version'], {
     env: options.env ?? process.env,
@@ -199,7 +219,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       [
         'compose',
         '-f',
-        COMPOSE_FILE,
+        composeFile,
         ...parsed.composeGlobalArgs,
         'down',
         '--remove-orphans',
@@ -240,7 +260,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     [
       'compose',
       '-f',
-      COMPOSE_FILE,
+      composeFile,
       ...parsed.composeGlobalArgs,
       'up',
       '--build',
@@ -278,8 +298,10 @@ if (require.main === module) {
 module.exports = {
   COMPOSE_FILE,
   DOCKER_HOST_ALIAS,
+  PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
   ensureWebEnvFile,
+  getComposeFile,
   getComposeEnvironment,
   main,
   parseArgs,

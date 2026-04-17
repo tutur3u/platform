@@ -4,7 +4,9 @@ const assert = require('node:assert/strict');
 const {
   COMPOSE_FILE,
   DOCKER_HOST_ALIAS,
+  PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
+  getComposeFile,
   getComposeEnvironment,
   parseArgs,
   parseEnvFile,
@@ -36,6 +38,18 @@ test('parseArgs keeps redis profile before the compose action', () => {
     action: 'up',
     composeArgs: ['-d'],
     composeGlobalArgs: ['--profile', 'redis'],
+    mode: 'dev',
+    resetSupabase: false,
+    withSupabase: false,
+  });
+});
+
+test('parseArgs accepts prod mode', () => {
+  assert.deepEqual(parseArgs(['up', '--mode', 'prod']), {
+    action: 'up',
+    composeArgs: [],
+    composeGlobalArgs: [],
+    mode: 'prod',
     resetSupabase: false,
     withSupabase: false,
   });
@@ -91,6 +105,11 @@ test('getComposeEnvironment derives a server-side Supabase URL for Docker', () =
   assert.equal(env.DOCKER_BUILDKIT, '1');
 });
 
+test('getComposeFile resolves the expected compose file for each mode', () => {
+  assert.equal(getComposeFile('dev'), COMPOSE_FILE);
+  assert.equal(getComposeFile('prod'), PROD_COMPOSE_FILE);
+});
+
 test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async () => {
   const calls = [];
   const fsStub = createFsStub({
@@ -130,6 +149,47 @@ test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async (
   );
   assert.equal(calls[1].env.COMPOSE_DOCKER_CLI_BUILD, '1');
   assert.equal(calls[1].env.DOCKER_BUILDKIT, '1');
+});
+
+test('runDockerWebWorkflow uses the production compose file when requested', async () => {
+  const calls = [];
+  const fsStub = createFsStub({
+    envFileContent: 'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+  });
+  const runCommand = async (command, args, options = {}) => {
+    calls.push({
+      args,
+      command,
+      env: options.env,
+      stdio: options.stdio ?? 'inherit',
+    });
+
+    return { code: 0, signal: null };
+  };
+
+  await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
+    env: { PATH: 'test-path' },
+    fsImpl: fsStub,
+    runCommand,
+  });
+
+  assert.deepEqual(
+    calls.map((call) => [call.command, call.args]),
+    [
+      ['docker', ['compose', 'version']],
+      [
+        'docker',
+        [
+          'compose',
+          '-f',
+          PROD_COMPOSE_FILE,
+          'up',
+          '--build',
+          '--remove-orphans',
+        ],
+      ],
+    ]
+  );
 });
 
 test('runDockerWebWorkflow starts and resets Supabase before Docker when requested', async () => {

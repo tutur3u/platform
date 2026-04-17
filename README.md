@@ -182,6 +182,8 @@ The repo now includes a web-focused Docker workflow that preserves the existing 
 - `bun devx:web:docker` starts local Supabase first, then launches the Dockerized web dev stack.
 - `bun devrs:web:docker` starts and resets local Supabase first, then launches the Dockerized web dev stack.
 - `bun dev:web:docker:down` stops the Docker web stack.
+- `bun serve:web:docker` builds the production runner image and serves it through Docker Compose.
+- `bun serve:web:docker:down` stops the Dockerized production web stack.
 
 The Docker service reads runtime values from `apps/web/.env.local`. For host-run local Supabase, the Docker helper automatically rewrites the server-side Supabase URL to `host.docker.internal` while leaving the browser-facing `NEXT_PUBLIC_SUPABASE_URL` unchanged.
 
@@ -196,6 +198,12 @@ The Docker web flow does not require a host `bun install` just to boot. `apps/we
 When you enable the Redis profile, `docker-compose.web.yml` defaults `SRH_TOKEN` to `example_token` for local convenience. Override it from your shell or CI before starting the stack when you need a different token.
 
 Production builds use `apps/web/Dockerfile`. The builder keeps secrets external by accepting an optional BuildKit secret sourced from `apps/web/.env.local`:
+
+```bash
+bun serve:web:docker
+```
+
+Use `bun serve:web:docker -- --profile redis` when you want the optional Redis companion services in the production-style stack.
 
 ```bash
 docker build \
@@ -219,6 +227,8 @@ docker build \
 | `bun devx:web:docker` | Start local Supabase, then the Docker web dev workflow |
 | `bun devrs:web:docker` | Start/reset local Supabase, then the Docker web dev workflow |
 | `bun dev:web:docker:down` | Stop the Docker web dev workflow |
+| `bun serve:web:docker` | Build and serve the production web image in Docker |
+| `bun serve:web:docker:down` | Stop the Dockerized production web workflow |
 | `bun devx` | Start full stack with persisted database |
 | `bun devrs` | Start full stack with clean, seeded database |
 
