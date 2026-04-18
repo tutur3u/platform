@@ -15,7 +15,9 @@ services:
       NEXT_TELEMETRY_DISABLED: "1"
       NODE_ENV: development
       PORT: "7803"
-      SUPABASE_SERVER_URL: ${DOCKER_INTERNAL_SUPABASE_URL:-http://host.docker.internal:8001}
+      SUPABASE_SERVER_URL: ${DOCKER_INTERNAL_SUPABASE_URL}
+      UPSTASH_REDIS_REST_TOKEN: ${DOCKER_UPSTASH_REDIS_REST_TOKEN}
+      UPSTASH_REDIS_REST_URL: ${DOCKER_UPSTASH_REDIS_REST_URL:-http://serverless-redis-http:80}
       TSC_WATCHDIRECTORY: DynamicPriorityPolling
       TSC_WATCHFILE: DynamicPriorityPolling
       WATCHPACK_POLLING: "true"
@@ -105,8 +107,7 @@ services:
     environment:
       SRH_CONNECTION_STRING: redis://redis:6379
       SRH_MODE: env
-      # Override SRH_TOKEN from your shell or CI when you need a non-default local token.
-      SRH_TOKEN: ${SRH_TOKEN:-example_token}
+      SRH_TOKEN: ${DOCKER_UPSTASH_REDIS_REST_TOKEN}
     image: hiett/serverless-redis-http:latest
     ports:
       - "8079:80"

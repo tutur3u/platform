@@ -55,6 +55,7 @@ test('parseArgs keeps redis profile before the compose action', () => {
     resetSupabase: false,
     strategy: 'in-place',
     withSupabase: false,
+    withRedis: true,
   });
 });
 
@@ -64,13 +65,27 @@ test('parseArgs accepts prod mode and blue-green strategy', () => {
     {
       action: 'up',
       composeArgs: [],
-      composeGlobalArgs: [],
+      composeGlobalArgs: ['--profile', 'redis'],
       mode: 'prod',
       resetSupabase: false,
       strategy: 'blue-green',
       withSupabase: false,
+      withRedis: true,
     }
   );
+});
+
+test('parseArgs allows dockerized commands to disable the bundled redis stack', () => {
+  assert.deepEqual(parseArgs(['up', '--without-redis']), {
+    action: 'up',
+    composeArgs: [],
+    composeGlobalArgs: [],
+    mode: 'dev',
+    resetSupabase: false,
+    strategy: 'in-place',
+    withSupabase: false,
+    withRedis: false,
+  });
 });
 
 test('usesBlueGreenStrategy only enables blue-green for production', () => {
@@ -123,23 +138,74 @@ test('rewriteLocalhostUrl maps local URLs to the Docker host alias', () => {
 });
 
 test('getComposeEnvironment derives a server-side Supabase URL for Docker', () => {
-  const fsStub = createFsStub({
-    envFileContent: 'NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:8001',
-  });
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'docker-web-env-'));
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
 
-  const env = getComposeEnvironment({
-    baseEnv: { PATH: 'test-path' },
-    envFilePath: WEB_ENV_FILE,
-    fsImpl: fsStub,
-  });
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:8001\n'
+    );
 
-  assert.equal(env.PATH, 'test-path');
-  assert.equal(env.COMPOSE_DOCKER_CLI_BUILD, '1');
-  assert.equal(
-    env.DOCKER_INTERNAL_SUPABASE_URL,
-    `http://${DOCKER_HOST_ALIAS}:8001/`
+    const env = getComposeEnvironment({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath,
+      rootDir: tempDir,
+    });
+
+    assert.equal(env.PATH, 'test-path');
+    assert.equal(env.COMPOSE_DOCKER_CLI_BUILD, '1');
+    assert.equal(
+      env.DOCKER_INTERNAL_SUPABASE_URL,
+      `http://${DOCKER_HOST_ALIAS}:8001/`
+    );
+    assert.equal(env.DOCKER_BUILDKIT, '1');
+    assert.equal(
+      env.DOCKER_UPSTASH_REDIS_REST_URL,
+      'http://serverless-redis-http:80'
+    );
+    assert.match(env.DOCKER_UPSTASH_REDIS_REST_TOKEN, /^[a-f0-9]{64}$/u);
+    assert.equal(
+      fs
+        .readFileSync(
+          path.join(tempDir, 'tmp', 'docker-web', 'redis-token'),
+          'utf8'
+        )
+        .trim(),
+      env.DOCKER_UPSTASH_REDIS_REST_TOKEN
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getComposeEnvironment preserves the configured cloud Supabase URL', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-cloud-env-')
   );
-  assert.equal(env.DOCKER_BUILDKIT, '1');
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co\n'
+    );
+
+    const env = getComposeEnvironment({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath,
+      rootDir: tempDir,
+    });
+
+    assert.equal(
+      env.DOCKER_INTERNAL_SUPABASE_URL,
+      'https://project-ref.supabase.co'
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('getComposeFile resolves the expected compose file for each mode', () => {
@@ -197,7 +263,16 @@ test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async (
       ['docker', ['compose', 'version']],
       [
         'docker',
-        ['compose', '-f', COMPOSE_FILE, 'up', '--build', '--remove-orphans'],
+        [
+          'compose',
+          '-f',
+          COMPOSE_FILE,
+          '--profile',
+          'redis',
+          'up',
+          '--build',
+          '--remove-orphans',
+        ],
       ],
     ]
   );
@@ -238,10 +313,14 @@ test('runDockerWebWorkflow uses the production compose file for in-place deploys
       'compose',
       '-f',
       PROD_COMPOSE_FILE,
+      '--profile',
+      'redis',
       'up',
       '--build',
       '--remove-orphans',
       'web',
+      'redis',
+      'serverless-redis-http',
     ],
     command: 'docker',
     stdio: 'inherit',
@@ -270,7 +349,16 @@ test('runDockerWebWorkflow starts and resets Supabase before Docker when request
     ['bun', ['sb:reset']],
     [
       'docker',
-      ['compose', '-f', COMPOSE_FILE, 'up', '--build', '--remove-orphans'],
+      [
+        'compose',
+        '-f',
+        COMPOSE_FILE,
+        '--profile',
+        'redis',
+        'up',
+        '--build',
+        '--remove-orphans',
+      ],
     ],
   ]);
 });
@@ -292,26 +380,45 @@ test('runDockerWebWorkflow throws a clear error when apps/web/.env.local is miss
   );
 });
 
-test('runDockerWebWorkflow requires SRH_TOKEN for the production redis profile', async () => {
-  await assert.rejects(
-    () =>
-      runDockerWebWorkflow(
-        parseArgs(['up', '--mode', 'prod', '--profile', 'redis']),
-        {
-          env: { PATH: 'test-path' },
-          fsImpl: createFsStub({
-            envFileContent: 'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
-          }),
-          runCommand: async () => ({
-            code: 0,
-            signal: null,
-            stderr: '',
-            stdout: '',
-          }),
-        }
-      ),
-    /SRH_TOKEN must be set/
+test('runDockerWebWorkflow auto-generates redis credentials for production docker runs', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'docker-web-prod-'));
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
   );
+
+  try {
+    await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
+      env: { PATH: 'test-path' },
+      envFilePath,
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push({ args, command, env: options.env });
+
+        if (args.includes('ps')) {
+          return { code: 0, signal: null, stderr: '', stdout: '' };
+        }
+
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      },
+    });
+
+    const token = fs
+      .readFileSync(
+        path.join(tempDir, 'tmp', 'docker-web', 'redis-token'),
+        'utf8'
+      )
+      .trim();
+
+    assert.match(token, /^[a-f0-9]{64}$/u);
+    assert.equal(calls.at(-1).env.DOCKER_UPSTASH_REDIS_REST_TOKEN, token);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('runDockerWebWorkflow performs an initial blue-green deployment', async () => {
@@ -364,7 +471,16 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
     );
     assert.deepEqual(calls[1], [
       'docker',
-      ['compose', '-f', PROD_COMPOSE_FILE, 'ps', '-q', 'web'],
+      [
+        'compose',
+        '-f',
+        PROD_COMPOSE_FILE,
+        '--profile',
+        'redis',
+        'ps',
+        '-q',
+        'web',
+      ],
     ]);
     assert.ok(
       calls.some(

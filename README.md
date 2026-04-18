@@ -172,32 +172,32 @@ bun dev
 
 ## Optional local Redis
 
-If you need a real Redis backend (e.g., to test rate limiting or Upstash clients) there is an optional stack under `apps/redis`. Run `bun redis:start` from the repo root to boot Redis + the Serverless Redis HTTP proxy and point `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` at `http://localhost:8079`/`example_token`. Override `SRH_TOKEN` from your shell or CI when you need a non-default token, for example `export SRH_TOKEN="$(openssl rand -hex 32)"`, and keep that value in local env/secret storage instead of editing the checked-in compose file. The platform normally falls back to memory-only storage, so this step is only required when you want container-backed persistence.
+If you need a real Redis backend outside the Dockerized web flow, there is still a standalone stack under `apps/redis`. Run `bun redis:start` from the repo root to boot Redis + the Serverless Redis HTTP proxy and point `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` at `http://localhost:8079` plus your chosen token. The Dockerized web commands no longer require that manual setup because they generate and inject a local token automatically.
 
 ## Docker web workflow
 
 The repo now includes a web-focused Docker workflow that preserves the existing root script contract instead of inventing a separate Docker-only task graph.
 
 - `bun dev:web:docker` runs the same filtered web dev workload as `bun dev:web`, but inside Docker.
-- `bun devx:web:docker` starts local Supabase first, then launches the Dockerized web dev stack.
-- `bun devrs:web:docker` starts and resets local Supabase first, then launches the Dockerized web dev stack.
+- `bun devx:web:docker` explicitly starts local Supabase first, then launches the Dockerized web dev stack.
+- `bun devrs:web:docker` explicitly starts and resets local Supabase first, then launches the Dockerized web dev stack.
 - `bun dev:web:docker:down` stops the Docker web stack.
 - `bun serve:web:docker` builds the production runner image and serves it through Docker Compose.
 - `bun serve:web:docker:bg` performs a blue/green production deployment with a proxy cutover after the new color passes health checks.
 - `bun serve:web:docker:down` stops the Dockerized production web stack.
 - `bun serve:web:docker:bg:down` stops the blue/green production stack and clears the local deployment state.
 
-The Docker service reads runtime values from `apps/web/.env.local`. For host-run local Supabase, the Docker helper automatically rewrites the server-side Supabase URL to `host.docker.internal` while leaving the browser-facing `NEXT_PUBLIC_SUPABASE_URL` unchanged.
+The Docker service reads runtime values from `apps/web/.env.local`. By default it uses whatever Supabase URL is already configured there, which is expected to be the cloud project for normal Tuturuuu development and deployment. Only when that URL explicitly points at a host-run local Supabase instance does the Docker helper rewrite the server-side URL to `host.docker.internal` while leaving the browser-facing `NEXT_PUBLIC_SUPABASE_URL` unchanged.
 
-Redis stays optional. To enable the bundled Redis profile, forward the compose profile through the script:
-
-```bash
-bun dev:web:docker -- --profile redis
-```
+Redis is now enabled by default for the Dockerized web commands. The helper generates a stable local token under `tmp/docker-web/redis-token`, injects `UPSTASH_REDIS_REST_URL=http://serverless-redis-http:80` and the matching `UPSTASH_REDIS_REST_TOKEN` into the web container, and starts the bundled Redis + Serverless Redis HTTP proxy automatically.
 
 The Docker web flow does not require a host `bun install` just to boot. `apps/web/docker/dev-entrypoint.sh` installs dependencies into the container-managed `/workspace/node_modules` volume, and the compose stack also isolates package-local `node_modules` and `dist` directories so host installs cannot shadow container-managed workspace artifacts.
 
-When you enable the Redis profile, `docker-compose.web.yml` defaults `SRH_TOKEN` to `example_token` for local convenience. Override it from your shell or CI before starting the stack when you need a different token.
+Use `--without-redis` only when you explicitly want the old memory-only fallback:
+
+```bash
+bun dev:web:docker -- --without-redis
+```
 
 Production builds use `apps/web/Dockerfile`. Keep `apps/web/.env.local` present for both the build secret and runtime env file. The builder keeps secrets external by accepting a BuildKit secret sourced from that file:
 
@@ -205,7 +205,7 @@ Production builds use `apps/web/Dockerfile`. Keep `apps/web/.env.local` present 
 bun serve:web:docker
 ```
 
-Use `bun serve:web:docker -- --profile redis` when you want the optional Redis companion services in the production-style stack, and export `SRH_TOKEN` from your shell or CI first because the production Redis profile does not fall back to `example_token`.
+The production-style Docker commands now attach the same local Redis companion stack by default and inject the matching Upstash-compatible env values into `apps/web` automatically. Use `--without-redis` only when you want to verify the no-Redis fallback path.
 
 When you want rebuild-before-restart behavior on a server that receives new commits via `git pull`, use the blue/green production path instead of the in-place one:
 

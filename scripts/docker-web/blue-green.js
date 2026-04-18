@@ -188,6 +188,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     baseEnv: options.env ?? process.env,
     envFilePath: options.envFilePath ?? WEB_ENV_FILE,
     fsImpl: options.fsImpl ?? fs,
+    rootDir: options.rootDir,
   });
   const fsImpl = options.fsImpl ?? fs;
   const paths = getBlueGreenPaths(options.rootDir ?? ROOT_DIR);

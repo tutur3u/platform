@@ -270,10 +270,7 @@ function validateDockerCompose(
 ) {
   const errors = [];
   const dockerInternalSupabaseSnippet =
-    '      SUPABASE_SERVER_URL: ' +
-    '${' +
-    'DOCKER_INTERNAL_SUPABASE_URL:-http://host.docker.internal:8001' +
-    '}';
+    '      SUPABASE_SERVER_URL: ' + '${' + 'DOCKER_INTERNAL_SUPABASE_URL' + '}';
   const packageWorkspaceDirs = workspacePackageJsonPaths
     .filter((relativePath) => relativePath.startsWith('packages/'))
     .map((relativePath) => path.posix.dirname(relativePath))
@@ -285,8 +282,17 @@ function validateDockerCompose(
     '      - .:/workspace',
     '      - platform-bun-install:/root/.bun/install/cache',
     dockerInternalSupabaseSnippet,
+    '      UPSTASH_REDIS_REST_TOKEN: ' +
+      '${' +
+      'DOCKER_UPSTASH_REDIS_REST_TOKEN' +
+      '}',
+    '      UPSTASH_REDIS_REST_URL: ' +
+      '${' +
+      'DOCKER_UPSTASH_REDIS_REST_URL:-http://serverless-redis-http:80' +
+      '}',
     '      - "host.docker.internal:host-gateway"',
     '    init: true',
+    '      SRH_TOKEN: ' + '${' + 'DOCKER_UPSTASH_REDIS_REST_TOKEN' + '}',
   ];
 
   for (const packageWorkspaceDir of packageWorkspaceDirs) {
@@ -319,10 +325,16 @@ function validateDockerProdCompose(composeContent) {
     '    image: nginx:1.27-alpine',
     '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',
     '      required: true',
-    '      SRH_TOKEN: ' +
+    '    SUPABASE_SERVER_URL: ' + '${' + 'DOCKER_INTERNAL_SUPABASE_URL' + '}',
+    '    UPSTASH_REDIS_REST_TOKEN: ' +
       '${' +
-      'SRH_TOKEN:?SRH_TOKEN must be set when enabling the redis profile' +
+      'DOCKER_UPSTASH_REDIS_REST_TOKEN' +
       '}',
+    '    UPSTASH_REDIS_REST_URL: ' +
+      '${' +
+      'DOCKER_UPSTASH_REDIS_REST_URL:-http://serverless-redis-http:80' +
+      '}',
+    '      SRH_TOKEN: ' + '${' + 'DOCKER_UPSTASH_REDIS_REST_TOKEN' + '}',
   ];
 
   for (const snippet of requiredSnippets) {

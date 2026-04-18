@@ -28,6 +28,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Flutter L10n Regeneration**: After adding or renaming keys in `apps/mobile/lib/l10n/arb/*.arb`, run `flutter gen-l10n` before `flutter analyze` or tests. The generated `app_localizations*.dart` files are tracked here, and stale generated code will surface as undefined localization getters even when the ARB files are correct.
 - **UI Preflight Hygiene**: For newly added/edited files, format files with `bun ff` before running verification checks to avoid `biome` issues.
 - **Formatting Workflow**: For fixing formatting issues, try `bun ff` first before making manual edits.
+- **Documentation Follow-Through**: At the end of every session, document durable operational, architectural, deployment, or workflow knowledge in `apps/docs` whenever the work changes how the team should build, run, debug, deploy, or operate the system. Do not stop at code changes alone.
 - **Session Retrospective**: Conduct a retrospective at the end of every session to document mistakes and update these guidelines.
 
 ## 3. Repository Structure & Semantics
@@ -73,6 +74,8 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 
 ### 4.4 Documentation
 
+- Changes that introduce or materially change team-facing knowledge MUST be reflected in `apps/docs` within the same session.
+- Prefer updating an existing runbook/page when the knowledge belongs there; create a new page only when the topic does not fit the current docs structure.
 - New pages MUST be added to `apps/docs/mint.json` or they will not be visible.
 
 ### 4.5 Adding Dependencies
@@ -382,6 +385,7 @@ At the **END** of every session, you MUST:
 1. Review mistakes, edge cases, or ambiguities encountered.
 2. Update `AGENTS.md` with durable standards/rules (no chronological logs).
 3. Eliminate redundancy—ensure new knowledge isn't already covered by specialized skills.
-4. Propose future improvements to the human partner.
+4. Update `apps/docs` with any durable team-facing knowledge uncovered or changed during the session.
+5. Propose future improvements to the human partner.
 
 - **Proxy Abuse Test Hygiene**: When hardening API proxy abuse controls, tests must explicitly model anonymous vs authenticated callers (headers/cookies/user-agent) and freeze time with fake timers for block-window assertions. Otherwise CI can miss false positives or time-window regressions.

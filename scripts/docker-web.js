@@ -65,6 +65,7 @@ function parseArgs(argv) {
   let strategy = 'in-place';
   let withSupabase = false;
   let resetSupabase = false;
+  let withRedis = true;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -77,6 +78,11 @@ function parseArgs(argv) {
     if (arg === '--reset-supabase') {
       withSupabase = true;
       resetSupabase = true;
+      continue;
+    }
+
+    if (arg === '--without-redis') {
+      withRedis = false;
       continue;
     }
 
@@ -126,6 +132,10 @@ function parseArgs(argv) {
     composeArgs.push(arg);
   }
 
+  if (withRedis && !hasComposeProfile(composeGlobalArgs, 'redis')) {
+    composeGlobalArgs.push('--profile', 'redis');
+  }
+
   return {
     action,
     composeArgs,
@@ -134,6 +144,7 @@ function parseArgs(argv) {
     resetSupabase,
     strategy,
     withSupabase,
+    withRedis,
   };
 }
 
@@ -179,6 +190,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
           baseEnv: env,
           envFilePath: options.envFilePath ?? WEB_ENV_FILE,
           fsImpl,
+          rootDir: options.rootDir,
         }),
         fsImpl,
         runCommand: run,
@@ -196,7 +208,10 @@ async function runDockerWebWorkflow(parsed, options = {}) {
   }
 
   ensureWebEnvFile(fsImpl, options.envFilePath ?? WEB_ENV_FILE);
-  ensureProductionRedisToken(parsed, env, hasComposeProfile);
+  ensureProductionRedisToken(parsed, env, hasComposeProfile, {
+    fsImpl,
+    rootDir: options.rootDir,
+  });
 
   if (parsed.withSupabase) {
     await runChecked('bun', ['sb:start'], {
@@ -239,6 +254,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
           baseEnv: env,
           envFilePath: options.envFilePath ?? WEB_ENV_FILE,
           fsImpl,
+          rootDir: options.rootDir,
         }),
         runCommand: run,
       }
@@ -261,6 +277,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         baseEnv: env,
         envFilePath: options.envFilePath ?? WEB_ENV_FILE,
         fsImpl,
+        rootDir: options.rootDir,
       }),
       fsImpl,
       runCommand: run,
