@@ -337,8 +337,10 @@ function buildDeploymentTable(
   }
 
   const innerWidth = Math.max(66, Math.min(width, 118));
-  const border = colorize('dim', `+${'-'.repeat(innerWidth + 2)}+`);
-  const rows = deployments.flatMap((entry, index) => {
+  const topBorder = colorize('dim', `┌${'─'.repeat(innerWidth + 2)}┐`);
+  const middleBorder = colorize('dim', `├${'─'.repeat(innerWidth + 2)}┤`);
+  const bottomBorder = colorize('dim', `└${'─'.repeat(innerWidth + 2)}┘`);
+  const rows = deployments.map((entry) => {
     const status =
       entry.status === 'failed'
         ? colorize('red', 'FAILED')
@@ -346,7 +348,7 @@ function buildDeploymentTable(
           ? colorize('cyan', 'ENDED')
           : colorize('green', 'ACTIVE');
     const timestamp = entry.finishedAt ?? entry.startedAt;
-    const heading = `${index + 1}. ${formatClockTime(timestamp)} ${status} ${entry.activeColor ?? '-'}`;
+    const heading = `[${formatClockTime(timestamp)}] ${status} ${entry.activeColor ?? '-'}`;
     const commitLine =
       `${entry.commitShortHash ?? 'unknown'} ${entry.commitSubject ?? ''}`.trim();
     const lifecycle = entry.activatedAt
@@ -366,21 +368,18 @@ function buildDeploymentTable(
     ].join('  ');
 
     return [
-      border,
-      `| ${padCell(heading, innerWidth)} |`,
-      `| ${padCell(commitLine, innerWidth)} |`,
-      colorize('dim', `| ${padCell(metricsOne, innerWidth)} |`),
-      colorize('dim', `| ${padCell(metricsTwo, innerWidth)} |`),
-      colorize('dim', `| ${padCell(lifecycle, innerWidth)} |`),
+      topBorder,
+      `│ ${padCell(heading, innerWidth)} │`,
+      `│ ${padCell(commitLine, innerWidth)} │`,
+      middleBorder,
+      colorize('dim', `│ ${padCell(metricsOne, innerWidth)} │`),
+      colorize('dim', `│ ${padCell(metricsTwo, innerWidth)} │`),
+      colorize('dim', `│ ${padCell(lifecycle, innerWidth)} │`),
+      bottomBorder,
     ];
   });
 
-  return [
-    border,
-    colorize('dim', `| ${padCell('RECENT DEPLOYMENTS', innerWidth)} |`),
-    ...rows,
-    border,
-  ];
+  return rows.flatMap((row, index) => (index === 0 ? row : ['', ...row]));
 }
 
 function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
@@ -464,9 +463,11 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
         : colorize('dim', 'none yet')
     ),
     formatRow('Lock file', state.lockFile ?? colorize('dim', 'not acquired')),
+    '',
     separator,
     colorize('bold', 'Last 3 Deployments'),
     ...deployments,
+    '',
     separator,
     colorize('bold', 'Recent Events'),
     ...events,

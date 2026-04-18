@@ -192,8 +192,10 @@ test('buildDashboardView shows blue/green runtime and the last 3 deployments', (
   assert.match(output, /avg 6\.4 rpm/);
   assert.match(output, /peak 12 rpm/);
   assert.match(output, /Last 3 Deployments/);
-  assert.match(output, /\| RECENT DEPLOYMENTS/);
-  assert.match(output, /\| 1\. .*ACTIVE.*green/);
+  assert.match(output, /┌/);
+  assert.match(output, /\[18:10:00\]/);
+  assert.match(output, /ACTIVE/);
+  assert.match(output, /green/);
   assert.match(output, /ACTIVE/);
   assert.match(output, /42s/);
   assert.match(output, /20m/);
