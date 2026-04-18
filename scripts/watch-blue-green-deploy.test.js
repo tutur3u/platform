@@ -31,6 +31,7 @@ const {
   runDeployWatchIteration,
   runDeployWatchLoop,
   spawnReplacementWatcher,
+  stripAnsi,
   summarizeRequestRate,
   getLatestDeploymentSummary,
   writeDeploymentHistory,
@@ -200,6 +201,16 @@ test('buildDashboardView shows blue/green runtime and the last 3 deployments', (
   assert.match(output, /42s/);
   assert.match(output, /20m/);
   assert.match(output, /Refresh watcher UX and restart logic/);
+
+  const lines = stripAnsi(output).split('\n');
+  const firstCardTop = lines.find((line) => line.startsWith('┌'));
+  const firstCardHeading = lines.find((line) =>
+    line.startsWith('│ [18:10:00]')
+  );
+
+  assert.ok(firstCardTop);
+  assert.ok(firstCardHeading);
+  assert.equal(firstCardTop.length, firstCardHeading.length);
 });
 
 test('createWatchUi records events and renders cleanly in non-TTY mode', () => {

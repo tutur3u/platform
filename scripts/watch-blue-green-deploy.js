@@ -233,6 +233,10 @@ function truncateText(value, maxLength) {
   return `${value.slice(0, Math.max(0, maxLength - 3))}...`;
 }
 
+function stripAnsi(value) {
+  return String(value).replace(new RegExp('\\u001B\\[[0-9;]*m', 'g'), '');
+}
+
 function formatRow(label, value) {
   return `${colorize('dim', `${label}:`.padEnd(14, ' '))} ${value}`;
 }
@@ -319,13 +323,18 @@ function summarizeBlueGreenRuntime(
 }
 
 function padCell(value, width, align = 'left') {
-  const normalized = truncateText(String(value), width);
+  const rawValue = String(value);
+  const visibleValue = stripAnsi(rawValue);
+  const normalized =
+    visibleValue.length > width ? truncateText(visibleValue, width) : rawValue;
+  const visibleLength = stripAnsi(normalized).length;
+  const padding = Math.max(0, width - visibleLength);
 
   if (align === 'right') {
-    return normalized.padStart(width, ' ');
+    return `${' '.repeat(padding)}${normalized}`;
   }
 
-  return normalized.padEnd(width, ' ');
+  return `${normalized}${' '.repeat(padding)}`;
 }
 
 function buildDeploymentTable(
@@ -1752,6 +1761,7 @@ module.exports = {
   runDeployWatchLoop,
   sleep,
   spawnReplacementWatcher,
+  stripAnsi,
   summarizeRequestRate,
   createQuietRunCommand,
   summarizeBlueGreenRuntime,
