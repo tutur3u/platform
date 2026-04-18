@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Clock,
   FolderSync,
-  Send,
   Sparkles,
 } from '@tuturuuu/icons';
 import {
@@ -25,6 +24,7 @@ import {
 import type {
   ExternalProjectBlock,
   ExternalProjectCollection,
+  ExternalProjectDeliveryPayload,
   ExternalProjectEntry,
   ExternalProjectImportJob,
   ExternalProjectLoadingData,
@@ -35,13 +35,7 @@ import type {
 } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
@@ -52,23 +46,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   type ChangeEvent,
   type ReactNode,
+  useDeferredValue,
   useEffect,
   useRef,
   useState,
 } from 'react';
+import {
+  ActivityPanel,
+  ContentRail,
+  EditorPanel,
+  EmptyPanel,
+  EntryCard,
+  EntryList,
+  MetricCard,
+  PreviewPanel,
+  RailCollectionButton,
+  RailSection,
+  StatusBadge,
+  StudioActionBar,
+  StudioHero,
+  StudioShell,
+} from './studio-shell';
+import { useExternalProjectLivePreview } from './use-external-project-live-preview';
 
 type Strings = {
   actionFailedToast: string;
+  activityDescription: string;
   activityTab: string;
   adapterBlueprintLabel: string;
   assetMetadataLabel: string;
@@ -93,16 +104,19 @@ type Strings = {
   collectionSettingsDescription: string;
   collectionSettingsTitle: string;
   contentTab: string;
+  contentRailDescription: string;
+  contentRailTitle: string;
   dateLabel: string;
+  dirtyChangesLabel: string;
   deliveryPreviewDescription: string;
   deliveryPreviewTitle: string;
   descriptionLabel: string;
   detailPanelDescription: string;
   detailPanelTitle: string;
-  emptyPreviewDescription: string;
-  emptyPreviewTitle: string;
   draftBadge: string;
   draftsMetricLabel: string;
+  emptyPreviewDescription: string;
+  emptyPreviewTitle: string;
   entriesMetricLabel: string;
   entryFormDescription: string;
   entryMetadataLabel: string;
@@ -131,20 +145,26 @@ type Strings = {
   noSearchResultsTitle: string;
   noteLabel: string;
   notAvailableLabel: string;
+  openPreviewAction: string;
   operationsDescription: string;
   orientationLabel: string;
-  pendingLabel: string;
   payloadSectionsLabel: string;
+  payloadTabLabel: string;
+  pendingLabel: string;
+  previewErrorDescription: string;
+  previewErrorTitle: string;
+  previewLoadingLabel: string;
+  profileDataLabel: string;
   profileLabel: string;
   publish: string;
   publishEventsEmpty: string;
   publishEventsTitle: string;
   publishedBadge: string;
   publishedMetricLabel: string;
-  profileDataLabel: string;
   rarityLabel: string;
-  remoteSourceLabel: string;
   refreshHint: string;
+  remoteSourceLabel: string;
+  renderedTabLabel: string;
   saveChanges: string;
   saveSuccessToast: string;
   savingLabel: string;
@@ -154,6 +174,7 @@ type Strings = {
   sectionsTab: string;
   slugLabel: string;
   statusLabel: string;
+  studioActionDescription: string;
   studioTitle: string;
   subtitleLabel: string;
   summaryDescription: string;
@@ -169,11 +190,7 @@ type Strings = {
   yearLabel: string;
 };
 
-type StudioTab =
-  | 'artworks'
-  | 'lore-capsules'
-  | 'singleton-sections'
-  | 'activity';
+type StudioTab = 'artworks' | 'lore-capsules' | 'singleton-sections';
 
 function formatCanonicalToken(value: string) {
   return value
@@ -339,18 +356,9 @@ function buildGenericAssetDraft(asset: ExternalProjectStudioAsset | null) {
 }
 
 function inferAssetType(file: File) {
-  if (file.type.startsWith('image/')) {
-    return 'image';
-  }
-
-  if (file.type.startsWith('audio/')) {
-    return 'audio';
-  }
-
-  if (file.type.startsWith('video/')) {
-    return 'video';
-  }
-
+  if (file.type.startsWith('image/')) return 'image';
+  if (file.type.startsWith('audio/')) return 'audio';
+  if (file.type.startsWith('video/')) return 'video';
   return 'file';
 }
 
@@ -365,95 +373,6 @@ function findMarkdownForEntry(entryId: string, blocks: ExternalProjectBlock[]) {
       getMarkdownBlock(blocks.filter((block) => block.entry_id === entryId))
         ?.content
     ).markdown
-  );
-}
-
-function MetricCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-border/70 bg-background/50 p-4">
-      <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/80 bg-background/70 text-muted-foreground">
-        {icon}
-      </div>
-      <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-        {label}
-      </div>
-      <div className="mt-1 font-semibold text-2xl">{value}</div>
-    </div>
-  );
-}
-
-function EmptyPanel({
-  description,
-  title,
-}: {
-  description: string;
-  title: string;
-}) {
-  return (
-    <div className="rounded-xl border border-border/80 border-dashed bg-background/30 px-4 py-10 text-center">
-      <div className="font-medium">{title}</div>
-      <div className="mx-auto mt-2 max-w-xl text-muted-foreground text-sm leading-6">
-        {description}
-      </div>
-    </div>
-  );
-}
-
-function StatusBadge({
-  draftLabel,
-  entry,
-  publishedLabel,
-}: {
-  draftLabel: string;
-  entry: ExternalProjectEntry;
-  publishedLabel: string;
-}) {
-  if (entry.status === 'published') {
-    return <Badge>{publishedLabel}</Badge>;
-  }
-
-  return <Badge variant="secondary">{draftLabel}</Badge>;
-}
-
-function EntryCard({
-  active,
-  accent,
-  body,
-  title,
-  onClick,
-}: {
-  active: boolean;
-  accent: ReactNode;
-  body: ReactNode;
-  title: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full rounded-2xl border p-4 text-left transition-colors ${
-        active
-          ? 'border-foreground/30 bg-background'
-          : 'border-border/70 bg-background/35 hover:border-border'
-      }`}
-    >
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div className="font-medium text-muted-foreground text-sm uppercase tracking-[0.16em]">
-          {title}
-        </div>
-        {accent}
-      </div>
-      {body}
-    </button>
   );
 }
 
@@ -474,7 +393,7 @@ function ActivityPanels({
   >;
 }) {
   return (
-    <div className="grid gap-6 xl:grid-cols-2">
+    <div className="space-y-6">
       <Card className="border-border/70 bg-background/30 shadow-none">
         <CardHeader>
           <CardTitle>{strings.importJobsTitle}</CardTitle>
@@ -547,6 +466,15 @@ function ActivityPanels({
   );
 }
 
+function Field({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <div className="grid gap-2">
+      <Label>{label}</Label>
+      {children}
+    </div>
+  );
+}
+
 export function ExternalProjectStudioClient({
   assets,
   binding,
@@ -571,7 +499,8 @@ export function ExternalProjectStudioClient({
   workspaceId: string;
 }) {
   const router = useRouter();
-  const artworkUploadInputRef = useRef<HTMLInputElement | null>(null);
+  const assetUploadInputRef = useRef<HTMLInputElement | null>(null);
+
   const [activeTab, setActiveTab] = useState<StudioTab>('artworks');
   const [searchQuery, setSearchQuery] = useState('');
   const [artworkCategoryFilter, setArtworkCategoryFilter] = useState('all');
@@ -614,9 +543,11 @@ export function ExternalProjectStudioClient({
       )
     : [];
 
-  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
   const filterByStatus = (entry: ExternalProjectEntry) =>
     statusFilter === 'all' ? true : entry.status === statusFilter;
+
   const filteredArtworkEntries = artworkEntries.filter((entry) => {
     const profile = asRecord(entry.profile_data);
     const matchesCategory =
@@ -632,6 +563,7 @@ export function ExternalProjectStudioClient({
 
     return filterByStatus(entry) && matchesCategory && matchesQuery;
   });
+
   const filteredLoreEntries = loreEntries.filter((entry) => {
     const profile = asRecord(entry.profile_data);
     const markdown = findMarkdownForEntry(entry.id, blocks);
@@ -649,6 +581,7 @@ export function ExternalProjectStudioClient({
 
     return filterByStatus(entry) && matchesQuery;
   });
+
   const filteredSingletonEntries = singletonEntries.filter((entry) => {
     const markdown = findMarkdownForEntry(entry.id, blocks);
     const matchesQuery =
@@ -659,6 +592,7 @@ export function ExternalProjectStudioClient({
 
     return filterByStatus(entry) && matchesQuery;
   });
+
   const filteredGenericEntries = genericCollectionEntries.filter((entry) => {
     const markdown = findMarkdownForEntry(entry.id, blocks);
     const matchesQuery =
@@ -676,14 +610,13 @@ export function ExternalProjectStudioClient({
       ? filteredArtworkEntries
       : activeTab === 'lore-capsules'
         ? filteredLoreEntries
-        : activeTab === 'singleton-sections'
-          ? filteredSingletonEntries
-          : [];
+        : filteredSingletonEntries;
 
   const initialEntryId =
     artworkEntries[0]?.id ??
     loreEntries[0]?.id ??
     singletonEntries[0]?.id ??
+    genericCollectionEntries[0]?.id ??
     null;
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(
     initialEntryId
@@ -692,7 +625,7 @@ export function ExternalProjectStudioClient({
   useEffect(() => {
     if (
       !selectedCollectionId ||
-      !collections.some((c) => c.id === selectedCollectionId)
+      !collections.some((collection) => collection.id === selectedCollectionId)
     ) {
       setSelectedCollectionId(collections[0]?.id ?? null);
     }
@@ -706,10 +639,17 @@ export function ExternalProjectStudioClient({
 
   useEffect(() => {
     if (binding.adapter !== 'yoola') {
-      return;
-    }
+      if (filteredGenericEntries.length === 0) {
+        setSelectedEntryId(null);
+        return;
+      }
 
-    if (activeTab === 'activity') {
+      if (
+        !filteredGenericEntries.some((entry) => entry.id === selectedEntryId)
+      ) {
+        setSelectedEntryId(filteredGenericEntries[0]?.id ?? null);
+      }
+
       return;
     }
 
@@ -721,22 +661,12 @@ export function ExternalProjectStudioClient({
     if (!currentTabEntries.some((entry) => entry.id === selectedEntryId)) {
       setSelectedEntryId(currentTabEntries[0]?.id ?? null);
     }
-  }, [activeTab, binding.adapter, currentTabEntries, selectedEntryId]);
-
-  useEffect(() => {
-    if (binding.adapter === 'yoola') {
-      return;
-    }
-
-    if (filteredGenericEntries.length === 0) {
-      setSelectedEntryId(null);
-      return;
-    }
-
-    if (!filteredGenericEntries.some((entry) => entry.id === selectedEntryId)) {
-      setSelectedEntryId(filteredGenericEntries[0]?.id ?? null);
-    }
-  }, [binding.adapter, filteredGenericEntries, selectedEntryId]);
+  }, [
+    binding.adapter,
+    currentTabEntries,
+    filteredGenericEntries,
+    selectedEntryId,
+  ]);
 
   const selectedEntry =
     entries.find((entry) => entry.id === selectedEntryId) ?? null;
@@ -750,10 +680,9 @@ export function ExternalProjectStudioClient({
         ? artworksCollection
         : activeTab === 'lore-capsules'
           ? loreCollection
-          : activeTab === 'singleton-sections'
-            ? singletonCollection
-            : selectedCollection
+          : singletonCollection
       : genericActiveCollection;
+
   const selectedBlocks = selectedEntry
     ? blocks.filter((block) => block.entry_id === selectedEntry.id)
     : [];
@@ -838,6 +767,7 @@ export function ExternalProjectStudioClient({
   const [genericAssetDraft, setGenericAssetDraft] = useState(
     buildGenericAssetDraft(selectedAsset)
   );
+  const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
 
   useEffect(() => {
     if (selectedEntry && selectedCollection?.collection_type === 'artworks') {
@@ -903,12 +833,16 @@ export function ExternalProjectStudioClient({
   const draftCount = entries.filter(
     (entry) => entry.status !== 'published'
   ).length;
-  const enabledCollectionCount = collections.filter(
-    (collection) => collection.is_enabled
-  ).length;
+  const livePreviewQuery = useExternalProjectLivePreview({
+    enabled: Boolean(selectedEntryId),
+    refreshToken: previewRefreshToken,
+    selectedEntryId,
+    workspaceId,
+  });
 
   const refreshStudio = async () => {
     await getWorkspaceExternalProjectStudio(workspaceId).catch(() => null);
+    setPreviewRefreshToken((current) => current + 1);
     router.refresh();
   };
 
@@ -930,7 +864,7 @@ export function ExternalProjectStudioClient({
   });
 
   const createEntryMutation = useMutation({
-    mutationFn: async (kind: Exclude<StudioTab, 'activity'>) => {
+    mutationFn: async (kind: StudioTab) => {
       const targetCollection =
         kind === 'artworks'
           ? artworksCollection
@@ -1155,23 +1089,20 @@ export function ExternalProjectStudioClient({
         throw new Error(strings.collectionEmptyDescription);
       }
 
-      const createdEntry = await createWorkspaceExternalProjectEntry(
-        workspaceId,
-        {
-          collection_id: activeCollection.id,
-          metadata: {},
-          profile_data: {},
-          slug: createDraftSlug(
-            normalizeSlugSeed(activeCollection.collection_type) || 'entry'
-          ),
-          status: 'draft',
-          subtitle: null,
-          summary: '',
-          title: `Untitled ${formatCanonicalToken(activeCollection.collection_type).replace(/s$/, '')}`,
-        }
-      );
-
-      return createdEntry;
+      return createWorkspaceExternalProjectEntry(workspaceId, {
+        collection_id: activeCollection.id,
+        metadata: {},
+        profile_data: {},
+        slug: createDraftSlug(
+          normalizeSlugSeed(activeCollection.collection_type) || 'entry'
+        ),
+        status: 'draft',
+        subtitle: null,
+        summary: '',
+        title: `Untitled ${formatCanonicalToken(
+          activeCollection.collection_type
+        ).replace(/s$/, '')}`,
+      });
     },
     onError: handleMutationError,
     onSuccess: async (entry) => {
@@ -1375,24 +1306,14 @@ export function ExternalProjectStudioClient({
     },
   });
 
-  const handleArtworkUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+  const handleArtworkUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
 
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
-    uploadArtworkMutation.mutate(file);
-  };
-
-  const handleGenericAssetUpload = async (
-    event: ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-
-    if (!file) {
+    if (binding.adapter === 'yoola') {
+      uploadArtworkMutation.mutate(file);
       return;
     }
 
@@ -1407,142 +1328,322 @@ export function ExternalProjectStudioClient({
       ) ?? null)
     : null;
   const linkedArtworkAsset = linkedArtworkLoadingItem?.assetUrl ?? null;
-  const hasSearchFilters = normalizedQuery.length > 0 || statusFilter !== 'all';
-  const hasArtworkFilters = hasSearchFilters || artworkCategoryFilter !== 'all';
+
+  const collectionDirty =
+    activeCollection !== null &&
+    (collectionDraft.title !== (activeCollection.title ?? '') ||
+      collectionDraft.description !== (activeCollection.description ?? '') ||
+      collectionDraft.isEnabled !== activeCollection.is_enabled);
+  const genericEntryDirty =
+    selectedEntry !== null &&
+    (genericEntryDraft.title !== selectedEntry.title ||
+      genericEntryDraft.subtitle !== (selectedEntry.subtitle ?? '') ||
+      genericEntryDraft.slug !== selectedEntry.slug ||
+      genericEntryDraft.summary !== (selectedEntry.summary ?? '') ||
+      genericEntryDraft.body !==
+        asString(asRecord(markdownBlock?.content).markdown) ||
+      genericEntryDraft.profileDataJson !==
+        formatJsonDraft(selectedEntry.profile_data) ||
+      genericEntryDraft.metadataJson !==
+        formatJsonDraft(selectedEntry.metadata));
+  const genericAssetDirty =
+    selectedAsset !== null &&
+    (genericAssetDraft.altText !== (selectedAsset.alt_text ?? '') ||
+      genericAssetDraft.sourceUrl !== (selectedAsset.source_url ?? '') ||
+      genericAssetDraft.metadataJson !==
+        formatJsonDraft(selectedAsset.metadata));
+  const artworkDirty =
+    selectedEntry !== null &&
+    selectedCollection?.collection_type === 'artworks' &&
+    JSON.stringify(artworkDraft) !==
+      JSON.stringify(buildArtworkDraft(selectedEntry, leadAsset));
+  const loreDirty =
+    selectedEntry !== null &&
+    selectedCollection?.collection_type === 'lore-capsules' &&
+    JSON.stringify(loreDraft) !==
+      JSON.stringify(buildLoreDraft(selectedEntry, markdownBlock));
+  const sectionDirty =
+    selectedEntry !== null &&
+    selectedCollection?.collection_type === 'singleton-sections' &&
+    JSON.stringify(sectionDraft) !==
+      JSON.stringify(buildSectionDraft(selectedEntry, markdownBlock));
+  const currentEditorDirty =
+    binding.adapter !== 'yoola'
+      ? genericEntryDirty || genericAssetDirty
+      : Boolean(artworkDirty || loreDirty || sectionDirty || collectionDirty);
+  const previewPayload = livePreviewQuery.data as
+    | ExternalProjectDeliveryPayload
+    | undefined;
+  const previewCollection = selectedCollection
+    ? (previewPayload?.collections.find(
+        (collection) =>
+          collection.id === selectedCollection.id ||
+          collection.slug === selectedCollection.slug
+      ) ?? null)
+    : null;
+  const previewEntry = selectedEntry
+    ? (previewCollection?.entries.find(
+        (entry) =>
+          entry.id === selectedEntry.id || entry.slug === selectedEntry.slug
+      ) ?? null)
+    : null;
+
+  const payloadPreviewView = !selectedEntry ? (
+    <EmptyPanel
+      title={strings.emptyPreviewTitle}
+      description={strings.emptyPreviewDescription}
+    />
+  ) : livePreviewQuery.isPending ? (
+    <div className="rounded-2xl border border-border/70 bg-background/35 px-4 py-12 text-center text-muted-foreground text-sm">
+      {strings.previewLoadingLabel}
+    </div>
+  ) : livePreviewQuery.isError ? (
+    <EmptyPanel
+      title={strings.previewErrorTitle}
+      description={strings.previewErrorDescription}
+    />
+  ) : (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        <Badge className="rounded-full">
+          {previewPayload?.adapter ??
+            binding.adapter ??
+            strings.notAvailableLabel}
+        </Badge>
+        <Badge variant="secondary" className="rounded-full">
+          {previewCollection?.title ??
+            previewCollection?.slug ??
+            strings.notAvailableLabel}
+        </Badge>
+        <Badge variant="outline" className="rounded-full">
+          {previewEntry?.slug ?? strings.notAvailableLabel}
+        </Badge>
+      </div>
+      <ScrollArea className="h-[24rem] rounded-2xl border border-border/70 bg-background/35">
+        <pre className="overflow-x-auto p-4 text-xs leading-6">
+          {JSON.stringify(previewPayload, null, 2)}
+        </pre>
+      </ScrollArea>
+    </div>
+  );
+
+  const activityPanel = (
+    <ActivityPanel
+      title={strings.activityTab}
+      description={strings.activityDescription}
+    >
+      <ActivityPanels
+        importJobs={importJobs}
+        publishEvents={publishEvents}
+        strings={strings}
+      />
+    </ActivityPanel>
+  );
+
+  const commonHero = (
+    <StudioHero
+      eyebrow={strings.studioTitle}
+      title={binding.canonical_project?.display_name ?? strings.studioTitle}
+      description={
+        binding.adapter === 'yoola'
+          ? strings.summaryDescription
+          : strings.noAdapterEditorDescription
+      }
+      badges={
+        <>
+          {binding.canonical_id ? (
+            <Badge className="rounded-full">{binding.canonical_id}</Badge>
+          ) : null}
+          <Badge variant="secondary" className="rounded-full">
+            {formatCanonicalToken(binding.adapter ?? 'external-project')}
+          </Badge>
+          {binding.adapter === 'yoola' ? (
+            <Badge variant="outline" className="rounded-full">
+              {yoolaLoading?.artworkCategories.length ?? 0}{' '}
+              {strings.adapterBlueprintLabel}
+            </Badge>
+          ) : null}
+        </>
+      }
+      metrics={
+        <>
+          <MetricCard
+            icon={<Sparkles className="h-4 w-4" />}
+            label={strings.collectionsMetricLabel}
+            value={String(collections.length)}
+          />
+          <MetricCard
+            icon={<BriefcaseBusiness className="h-4 w-4" />}
+            label={strings.entriesMetricLabel}
+            value={String(entries.length)}
+          />
+          <MetricCard
+            icon={<CheckCircle2 className="h-4 w-4" />}
+            label={strings.publishedMetricLabel}
+            value={String(publishedCount)}
+          />
+          <MetricCard
+            icon={<Clock className="h-4 w-4" />}
+            label={strings.draftsMetricLabel}
+            value={String(draftCount)}
+          />
+        </>
+      }
+    />
+  );
+
+  const commonActionBar = (
+    <StudioActionBar
+      label={strings.openPreviewAction}
+      description={strings.studioActionDescription}
+      actions={
+        <>
+          {(currentEditorDirty || collectionDirty) && (
+            <Badge variant="secondary" className="rounded-full">
+              {strings.dirtyChangesLabel}
+            </Badge>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => importMutation.mutate()}
+            disabled={importMutation.isPending}
+          >
+            <FolderSync className="mr-2 h-4 w-4" />
+            {strings.importAction}
+          </Button>
+          {selectedEntry ? (
+            <Button
+              variant={
+                selectedEntry.status === 'published' ? 'outline' : 'default'
+              }
+              onClick={() =>
+                publishMutation.mutate(
+                  selectedEntry.status === 'published' ? 'unpublish' : 'publish'
+                )
+              }
+              disabled={publishMutation.isPending}
+            >
+              {selectedEntry.status === 'published'
+                ? strings.unpublish
+                : strings.publish}
+            </Button>
+          ) : null}
+          <Button
+            onClick={() =>
+              binding.adapter === 'yoola'
+                ? saveMutation.mutate()
+                : saveGenericMutation.mutate()
+            }
+            disabled={
+              !selectedEntry ||
+              !currentEditorDirty ||
+              saveMutation.isPending ||
+              saveGenericMutation.isPending ||
+              publishMutation.isPending
+            }
+          >
+            {strings.saveChanges}
+          </Button>
+        </>
+      }
+    />
+  );
 
   if (binding.adapter !== 'yoola') {
-    return (
-      <div className="space-y-6 pb-8">
-        <section className="overflow-hidden rounded-2xl border border-border/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))]">
-          <div className="grid gap-6 p-6 lg:grid-cols-[1.1fr_0.9fr] lg:p-8">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/60 px-3 py-1 text-muted-foreground text-xs uppercase tracking-[0.24em]">
-                <BriefcaseBusiness className="h-3.5 w-3.5" />
-                {strings.studioTitle}
-              </div>
-              <div className="space-y-2">
-                <h1 className="font-semibold text-3xl tracking-tight">
-                  {binding.canonical_project?.display_name}
-                </h1>
-                <p className="max-w-2xl text-muted-foreground text-sm leading-6">
-                  {strings.noAdapterEditorDescription}
-                </p>
-              </div>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <MetricCard
-                icon={<Sparkles className="h-4 w-4" />}
-                label={strings.collectionsMetricLabel}
-                value={String(collections.length)}
-              />
-              <MetricCard
-                icon={<BriefcaseBusiness className="h-4 w-4" />}
-                label={strings.entriesMetricLabel}
-                value={String(entries.length)}
-              />
-              <MetricCard
-                icon={<CheckCircle2 className="h-4 w-4" />}
-                label={strings.publishedMetricLabel}
-                value={String(publishedCount)}
-              />
-              <MetricCard
-                icon={<Clock className="h-4 w-4" />}
-                label={strings.draftsMetricLabel}
-                value={String(draftCount)}
-              />
-            </div>
+    const genericRenderedPreview = !selectedEntry ? (
+      <EmptyPanel
+        title={strings.emptyPreviewTitle}
+        description={strings.emptyPreviewDescription}
+      />
+    ) : (
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          <Badge className="rounded-full">{genericEntryDraft.slug}</Badge>
+          {genericEntryDraft.subtitle ? (
+            <Badge variant="secondary" className="rounded-full">
+              {genericEntryDraft.subtitle}
+            </Badge>
+          ) : null}
+          <StatusBadge
+            draftLabel={strings.draftBadge}
+            isPublished={selectedEntry.status === 'published'}
+            publishedLabel={strings.publishedBadge}
+          />
+        </div>
+        <div className="rounded-2xl border border-border/70 bg-background/35 p-5">
+          <h3 className="font-semibold text-2xl">
+            {genericEntryDraft.title || strings.notAvailableLabel}
+          </h3>
+          <p className="mt-3 text-sm leading-7">
+            {genericEntryDraft.summary || strings.notAvailableLabel}
+          </p>
+          <div className="mt-4 whitespace-pre-wrap rounded-2xl border border-border/70 bg-background/60 p-4 text-sm leading-7">
+            {genericEntryDraft.body || strings.notAvailableLabel}
           </div>
-        </section>
+          {selectedAsset?.preview_url ? (
+            <div className="relative mt-4 aspect-[16/10] overflow-hidden rounded-2xl border border-border/70">
+              <Image
+                src={selectedAsset.preview_url}
+                alt={selectedAsset.alt_text ?? genericEntryDraft.title}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          ) : null}
+        </div>
+      </div>
+    );
 
-        <div className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
-          <div className="space-y-6">
-            <Card className="border-border/70 bg-card/80">
-              <CardHeader>
-                <CardTitle>{strings.importAction}</CardTitle>
-                <CardDescription>
-                  {strings.operationsDescription}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="rounded-xl border border-border/70 bg-background/40 p-4">
-                  <div className="mb-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                    {strings.adapterBlueprintLabel}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {(binding.canonical_project?.allowed_collections ?? []).map(
-                      (collection) => (
-                        <Badge
-                          key={collection}
-                          variant="secondary"
-                          className="rounded-full"
-                        >
-                          {formatCanonicalToken(collection)}
-                        </Badge>
-                      )
-                    )}
-                  </div>
-                </div>
-                <Button
-                  onClick={() => importMutation.mutate()}
-                  disabled={importMutation.isPending}
-                >
-                  <FolderSync className="mr-2 h-4 w-4" />
-                  {strings.importAction}
-                </Button>
-              </CardContent>
-            </Card>
+    return (
+      <StudioShell
+        hero={commonHero}
+        actionBar={commonActionBar}
+        previewDrawerTitle={strings.openPreviewAction}
+        previewDrawerDescription={strings.deliveryPreviewDescription}
+        activityPanel={activityPanel}
+        previewPanel={
+          <PreviewPanel
+            renderedTitle={strings.renderedTabLabel}
+            renderedDescription={strings.deliveryPreviewDescription}
+            renderedView={genericRenderedPreview}
+            payloadTitle={strings.payloadTabLabel}
+            payloadDescription={strings.deliveryPreviewDescription}
+            payloadView={payloadPreviewView}
+          />
+        }
+        contentRail={
+          <ContentRail
+            title={strings.contentRailTitle}
+            description={strings.contentRailDescription}
+            headerAction={
+              <Button
+                size="sm"
+                onClick={() => createGenericEntryMutation.mutate()}
+                disabled={
+                  createGenericEntryMutation.isPending || !activeCollection
+                }
+              >
+                {strings.addEntry}
+              </Button>
+            }
+          >
+            <RailSection label={strings.collectionSelectLabel}>
+              <div className="space-y-3">
+                {collections.map((collection) => {
+                  const collectionEntryCount = entries.filter(
+                    (entry) => entry.collection_id === collection.id
+                  ).length;
 
-            <Card className="border-border/70 bg-card/80">
-              <CardHeader>
-                <CardTitle>{strings.collectionsTitle}</CardTitle>
-                <CardDescription>
-                  {strings.collectionSettingsDescription}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {collections.length === 0 ? (
-                  <EmptyPanel
-                    title={strings.collectionEmptyTitle}
-                    description={strings.collectionEmptyDescription}
-                  />
-                ) : (
-                  collections.map((collection) => {
-                    const collectionEntryCount = entries.filter(
-                      (entry) => entry.collection_id === collection.id
-                    ).length;
-
-                    return (
-                      <button
-                        key={collection.id}
-                        type="button"
-                        onClick={() => setSelectedCollectionId(collection.id)}
-                        className={`w-full rounded-2xl border p-4 text-left transition-colors ${
-                          genericActiveCollection?.id === collection.id
-                            ? 'border-foreground/30 bg-background'
-                            : 'border-border/70 bg-background/35 hover:border-border'
-                        }`}
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div className="space-y-2">
-                            <div className="font-medium">
-                              {collection.title}
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              <Badge variant="outline">{collection.slug}</Badge>
-                              <Badge
-                                variant="secondary"
-                                className="rounded-full"
-                              >
-                                {formatCanonicalToken(
-                                  collection.collection_type
-                                )}
-                              </Badge>
-                              <Badge className="rounded-full">
-                                {collectionEntryCount}{' '}
-                                {strings.entriesMetricLabel}
-                              </Badge>
-                            </div>
-                          </div>
+                  return (
+                    <RailCollectionButton
+                      key={collection.id}
+                      active={genericActiveCollection?.id === collection.id}
+                      title={collection.title}
+                      description={collection.description}
+                      onClick={() => setSelectedCollectionId(collection.id)}
+                      badge={
+                        <div className="flex flex-col items-end gap-2">
                           <Badge
                             variant={
                               collection.is_enabled ? 'default' : 'secondary'
@@ -1553,66 +1654,167 @@ export function ExternalProjectStudioClient({
                               ? strings.collectionEnabledLabel
                               : strings.collectionDisabledLabel}
                           </Badge>
+                          <Badge variant="outline">
+                            {collectionEntryCount}
+                          </Badge>
                         </div>
-                        {collection.description ? (
-                          <p className="mt-3 text-muted-foreground text-sm leading-6">
-                            {collection.description}
-                          </p>
-                        ) : null}
-                      </button>
+                      }
+                    />
+                  );
+                })}
+              </div>
+            </RailSection>
+
+            <RailSection label={strings.searchPlaceholder}>
+              <Input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder={strings.searchPlaceholder}
+              />
+            </RailSection>
+
+            <RailSection label={strings.statusLabel}>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    ['all', strings.allItemsLabel],
+                    ['published', strings.publishedBadge],
+                    ['draft', strings.draftBadge],
+                  ] as const
+                ).map(([value, label]) => (
+                  <Button
+                    key={value}
+                    size="sm"
+                    variant={statusFilter === value ? 'default' : 'outline'}
+                    onClick={() => setStatusFilter(value)}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </RailSection>
+
+            <RailSection label={strings.profileLabel}>
+              {filteredGenericEntries.length === 0 ? (
+                <EmptyPanel
+                  title={
+                    normalizedQuery || statusFilter !== 'all'
+                      ? strings.noSearchResultsTitle
+                      : strings.noItemsTitle
+                  }
+                  description={
+                    normalizedQuery || statusFilter !== 'all'
+                      ? strings.noSearchResultsDescription
+                      : strings.noItemsDescription
+                  }
+                />
+              ) : (
+                <EntryList isEmpty={false}>
+                  {filteredGenericEntries.map((entry) => {
+                    const entryAsset =
+                      assets.find((asset) => asset.entry_id === entry.id) ??
+                      null;
+
+                    return (
+                      <EntryCard
+                        key={entry.id}
+                        active={selectedEntryId === entry.id}
+                        title={entry.title}
+                        onClick={() => setSelectedEntryId(entry.id)}
+                        accent={
+                          <StatusBadge
+                            draftLabel={strings.draftBadge}
+                            isPublished={entry.status === 'published'}
+                            publishedLabel={strings.publishedBadge}
+                          />
+                        }
+                        eyebrow={
+                          <div className="flex flex-wrap gap-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                            <span>{entry.slug}</span>
+                            {entry.subtitle ? (
+                              <span>{entry.subtitle}</span>
+                            ) : null}
+                          </div>
+                        }
+                        body={
+                          <div className="space-y-3">
+                            <div className="flex flex-wrap gap-2">
+                              <Badge variant="outline">{entry.slug}</Badge>
+                              {entryAsset ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="rounded-full"
+                                >
+                                  {formatCanonicalToken(entryAsset.asset_type)}
+                                </Badge>
+                              ) : null}
+                            </div>
+                            <p className="text-muted-foreground text-sm leading-6">
+                              {entry.summary ||
+                                findMarkdownForEntry(entry.id, blocks) ||
+                                strings.noItemsDescription}
+                            </p>
+                          </div>
+                        }
+                      />
                     );
-                  })
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/70 bg-card/80">
-              <CardHeader>
-                <CardTitle>{strings.collectionSettingsTitle}</CardTitle>
-                <CardDescription>
-                  {strings.collectionSettingsDescription}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {activeCollection ? (
-                  <>
-                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/35 p-4">
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap gap-2">
-                          <Badge className="rounded-full">
-                            {activeCollection.slug}
-                          </Badge>
-                          <Badge variant="secondary" className="rounded-full">
-                            {formatCanonicalToken(
-                              activeCollection.collection_type
-                            )}
-                          </Badge>
-                        </div>
-                        <div className="text-muted-foreground text-sm">
-                          {activeCollection.is_enabled
-                            ? strings.collectionEnabledLabel
-                            : strings.collectionDisabledLabel}
-                        </div>
+                  })}
+                </EntryList>
+              )}
+            </RailSection>
+          </ContentRail>
+        }
+        rightColumn={
+          <>
+            <EditorPanel
+              title={strings.collectionSettingsTitle}
+              description={strings.collectionSettingsDescription}
+              headerAction={
+                collectionDirty ? (
+                  <Badge variant="secondary" className="rounded-full">
+                    {strings.dirtyChangesLabel}
+                  </Badge>
+                ) : null
+              }
+            >
+              {activeCollection ? (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/35 p-4">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        <Badge className="rounded-full">
+                          {activeCollection.slug}
+                        </Badge>
+                        <Badge variant="secondary" className="rounded-full">
+                          {formatCanonicalToken(
+                            activeCollection.collection_type
+                          )}
+                        </Badge>
                       </div>
-
-                      <div className="flex items-center gap-3 rounded-full border border-border/70 bg-background/70 px-3 py-2">
-                        <Switch
-                          checked={collectionDraft.isEnabled}
-                          onCheckedChange={(checked) =>
-                            setCollectionDraft((current) => ({
-                              ...current,
-                              isEnabled: checked,
-                            }))
-                          }
-                        />
-                        <span className="text-sm">
-                          {collectionDraft.isEnabled
-                            ? strings.collectionEnabledLabel
-                            : strings.collectionDisabledLabel}
-                        </span>
+                      <div className="text-muted-foreground text-sm">
+                        {activeCollection.description ||
+                          strings.collectionSettingsDescription}
                       </div>
                     </div>
+                    <div className="flex items-center gap-3 rounded-full border border-border/70 bg-background/70 px-3 py-2">
+                      <Switch
+                        checked={collectionDraft.isEnabled}
+                        onCheckedChange={(checked) =>
+                          setCollectionDraft((current) => ({
+                            ...current,
+                            isEnabled: checked,
+                          }))
+                        }
+                      />
+                      <span className="text-sm">
+                        {collectionDraft.isEnabled
+                          ? strings.collectionEnabledLabel
+                          : strings.collectionDisabledLabel}
+                      </span>
+                    </div>
+                  </div>
 
+                  <div className="grid gap-4 lg:grid-cols-2">
                     <Field label={strings.titleLabel}>
                       <Input
                         value={collectionDraft.title}
@@ -1636,1766 +1838,1125 @@ export function ExternalProjectStudioClient({
                         }
                       />
                     </Field>
-
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="text-muted-foreground text-sm">
-                        {saveCollectionMutation.isPending
-                          ? strings.savingLabel
-                          : strings.refreshHint}
-                      </div>
-                      <Button
-                        onClick={() => saveCollectionMutation.mutate()}
-                        disabled={
-                          saveCollectionMutation.isPending ||
-                          !collectionDraft.title.trim()
-                        }
-                      >
-                        {strings.saveChanges}
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <EmptyPanel
-                    title={strings.collectionEmptyTitle}
-                    description={strings.collectionEmptyDescription}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-6">
-            <Card className="border-border/70 bg-card/80">
-              <CardHeader>
-                <CardTitle>{strings.contentTab}</CardTitle>
-                <CardDescription>
-                  {strings.entryFormDescription}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid gap-4 rounded-2xl border border-border/70 bg-background/35 p-4 lg:grid-cols-[1.2fr_0.8fr]">
-                  <Field label={strings.searchPlaceholder}>
-                    <Input
-                      value={searchQuery}
-                      onChange={(event) => setSearchQuery(event.target.value)}
-                      placeholder={strings.searchPlaceholder}
-                    />
-                  </Field>
-
-                  <div className="space-y-2">
-                    <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                      {strings.statusLabel}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {(
-                        [
-                          ['all', strings.allItemsLabel],
-                          ['published', strings.publishedBadge],
-                          ['draft', strings.draftBadge],
-                        ] as const
-                      ).map(([value, label]) => (
-                        <Button
-                          key={value}
-                          size="sm"
-                          variant={
-                            statusFilter === value ? 'default' : 'outline'
-                          }
-                          onClick={() => setStatusFilter(value)}
-                        >
-                          {label}
-                        </Button>
-                      ))}
-                    </div>
                   </div>
-                </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                      {strings.collectionSelectLabel}
-                    </div>
-                    <div className="mt-1 font-medium">
-                      {genericActiveCollection?.title ??
-                        strings.collectionEmptyTitle}
-                    </div>
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => saveCollectionMutation.mutate()}
+                      disabled={
+                        !collectionDirty || saveCollectionMutation.isPending
+                      }
+                    >
+                      {strings.saveChanges}
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => createGenericEntryMutation.mutate()}
-                    disabled={
-                      createGenericEntryMutation.isPending || !activeCollection
-                    }
-                  >
-                    {strings.addEntry}
-                  </Button>
-                </div>
+                </>
+              ) : (
+                <EmptyPanel
+                  title={strings.collectionEmptyTitle}
+                  description={strings.collectionEmptyDescription}
+                />
+              )}
+            </EditorPanel>
 
-                {filteredGenericEntries.length === 0 ? (
-                  <EmptyPanel
-                    title={
-                      normalizedQuery || statusFilter !== 'all'
-                        ? strings.noSearchResultsTitle
-                        : strings.noItemsTitle
-                    }
-                    description={
-                      normalizedQuery || statusFilter !== 'all'
-                        ? strings.noSearchResultsDescription
-                        : strings.noItemsDescription
-                    }
-                  />
-                ) : (
-                  <ScrollArea className="h-[22rem] pr-3">
-                    <div className="space-y-3">
-                      {filteredGenericEntries.map((entry) => {
-                        const entryAsset =
-                          assets.find((asset) => asset.entry_id === entry.id) ??
-                          null;
-
-                        return (
-                          <EntryCard
-                            key={entry.id}
-                            active={selectedEntryId === entry.id}
-                            title={entry.title}
-                            accent={
-                              <StatusBadge
-                                entry={entry}
-                                draftLabel={strings.draftBadge}
-                                publishedLabel={strings.publishedBadge}
-                              />
-                            }
-                            onClick={() => setSelectedEntryId(entry.id)}
-                            body={
-                              <div className="space-y-3">
-                                <div className="flex flex-wrap gap-2">
-                                  <Badge variant="outline">{entry.slug}</Badge>
-                                  {entry.subtitle ? (
-                                    <Badge variant="secondary">
-                                      {entry.subtitle}
-                                    </Badge>
-                                  ) : null}
-                                  {entryAsset ? (
-                                    <Badge className="rounded-full">
-                                      {formatCanonicalToken(
-                                        entryAsset.asset_type
-                                      )}
-                                    </Badge>
-                                  ) : null}
-                                </div>
-                                <p className="text-muted-foreground text-sm leading-6">
-                                  {entry.summary ||
-                                    findMarkdownForEntry(entry.id, blocks) ||
-                                    strings.noItemsDescription}
-                                </p>
-                              </div>
-                            }
-                          />
-                        );
-                      })}
-                    </div>
-                  </ScrollArea>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/70 bg-card/80">
-              <CardHeader>
-                <CardTitle>{strings.detailPanelTitle}</CardTitle>
-                <CardDescription>
-                  {strings.entryFormDescription}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {!selectedEntry ? (
-                  <EmptyPanel
-                    title={strings.noItemsTitle}
-                    description={strings.noItemsDescription}
-                  />
-                ) : (
-                  <>
-                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/35 p-4">
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap gap-2">
-                          <Badge className="rounded-full">
-                            {selectedEntry.slug}
-                          </Badge>
-                          <Badge variant="secondary" className="rounded-full">
-                            {formatCanonicalToken(
-                              selectedCollection?.collection_type ??
-                                binding.adapter ??
-                                'external-project'
-                            )}
-                          </Badge>
-                        </div>
-                        <div className="text-muted-foreground text-sm">
-                          {selectedCollection?.title}
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedEntry.status === 'published' ? (
-                          <Button
-                            variant="outline"
-                            onClick={() => publishMutation.mutate('unpublish')}
-                            disabled={publishMutation.isPending}
-                          >
-                            {strings.unpublish}
-                          </Button>
-                        ) : (
-                          <Button
-                            onClick={() => publishMutation.mutate('publish')}
-                            disabled={publishMutation.isPending}
-                          >
-                            {strings.publish}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid gap-4 lg:grid-cols-2">
-                      <Field label={strings.titleLabel}>
-                        <Input
-                          value={genericEntryDraft.title}
-                          onChange={(event) =>
-                            setGenericEntryDraft((current) => ({
-                              ...current,
-                              title: event.target.value,
-                              slug:
-                                current.slug ||
-                                normalizeSlugSeed(event.target.value),
-                            }))
-                          }
-                        />
-                      </Field>
-                      <Field label={strings.subtitleLabel}>
-                        <Input
-                          value={genericEntryDraft.subtitle}
-                          onChange={(event) =>
-                            setGenericEntryDraft((current) => ({
-                              ...current,
-                              subtitle: event.target.value,
-                            }))
-                          }
-                        />
-                      </Field>
-                    </div>
-
-                    <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-                      <Field label={strings.slugLabel}>
-                        <Input
-                          value={genericEntryDraft.slug}
-                          onChange={(event) =>
-                            setGenericEntryDraft((current) => ({
-                              ...current,
-                              slug: event.target.value,
-                            }))
-                          }
-                        />
-                      </Field>
-                      <Field label={strings.summaryLabel}>
-                        <Textarea
-                          rows={3}
-                          value={genericEntryDraft.summary}
-                          onChange={(event) =>
-                            setGenericEntryDraft((current) => ({
-                              ...current,
-                              summary: event.target.value,
-                            }))
-                          }
-                        />
-                      </Field>
-                    </div>
-
-                    <Field label={strings.bodyLabel}>
-                      <Textarea
-                        rows={10}
-                        value={genericEntryDraft.body}
+            <EditorPanel
+              title={strings.detailPanelTitle}
+              description={strings.detailPanelDescription}
+            >
+              {!selectedEntry ? (
+                <EmptyPanel
+                  title={strings.noItemsTitle}
+                  description={strings.noItemsDescription}
+                />
+              ) : (
+                <>
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <Field label={strings.titleLabel}>
+                      <Input
+                        value={genericEntryDraft.title}
                         onChange={(event) =>
                           setGenericEntryDraft((current) => ({
                             ...current,
-                            body: event.target.value,
+                            title: event.target.value,
+                            slug:
+                              current.slug ||
+                              normalizeSlugSeed(event.target.value),
                           }))
                         }
                       />
                     </Field>
-
-                    <div className="grid gap-4 lg:grid-cols-2">
-                      <Field label={strings.profileDataLabel}>
-                        <Textarea
-                          rows={12}
-                          value={genericEntryDraft.profileDataJson}
-                          onChange={(event) =>
-                            setGenericEntryDraft((current) => ({
-                              ...current,
-                              profileDataJson: event.target.value,
-                            }))
-                          }
-                        />
-                      </Field>
-                      <Field label={strings.entryMetadataLabel}>
-                        <Textarea
-                          rows={12}
-                          value={genericEntryDraft.metadataJson}
-                          onChange={(event) =>
-                            setGenericEntryDraft((current) => ({
-                              ...current,
-                              metadataJson: event.target.value,
-                            }))
-                          }
-                        />
-                      </Field>
-                    </div>
-
-                    <Separator />
-
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="text-muted-foreground text-sm">
-                        {saveGenericMutation.isPending ||
-                        publishMutation.isPending
-                          ? strings.savingLabel
-                          : strings.refreshHint}
-                      </div>
-                      <Button
-                        onClick={() => saveGenericMutation.mutate()}
-                        disabled={
-                          saveGenericMutation.isPending ||
-                          publishMutation.isPending ||
-                          !genericEntryDraft.title.trim()
-                        }
-                      >
-                        {strings.saveChanges}
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/70 bg-card/80">
-              <CardHeader>
-                <CardTitle>{strings.mediaSectionTitle}</CardTitle>
-                <CardDescription>{strings.mediaDescription}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {!selectedEntry ? (
-                  <EmptyPanel
-                    title={strings.noItemsTitle}
-                    description={strings.noItemsDescription}
-                  />
-                ) : (
-                  <>
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="text-muted-foreground text-sm">
-                        {selectedAssets.length} {strings.entriesMetricLabel}
-                      </div>
-                      <input
-                        ref={artworkUploadInputRef}
-                        type="file"
-                        accept="image/*,audio/*,video/*"
-                        className="hidden"
-                        onChange={handleGenericAssetUpload}
-                      />
-                      <Button
-                        variant="outline"
-                        onClick={() => artworkUploadInputRef.current?.click()}
-                        disabled={
-                          uploadGenericAssetMutation.isPending || !selectedEntry
-                        }
-                      >
-                        {strings.uploadAction}
-                      </Button>
-                    </div>
-
-                    {selectedAssets.length > 0 ? (
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {selectedAssets.map((asset) => (
-                          <button
-                            key={asset.id}
-                            type="button"
-                            onClick={() => setSelectedAssetId(asset.id)}
-                            className={`overflow-hidden rounded-2xl border text-left transition-colors ${
-                              selectedAsset?.id === asset.id
-                                ? 'border-foreground/30 bg-background'
-                                : 'border-border/70 bg-background/35 hover:border-border'
-                            }`}
-                          >
-                            <div className="relative aspect-[4/3] bg-background/50">
-                              {asset.preview_url ? (
-                                <Image
-                                  src={asset.preview_url}
-                                  alt={asset.alt_text ?? selectedEntry.title}
-                                  fill
-                                  className="object-cover"
-                                  unoptimized
-                                />
-                              ) : (
-                                <div className="flex h-full items-center justify-center px-4 text-center text-muted-foreground text-sm">
-                                  {asset.storage_path ||
-                                    asset.source_url ||
-                                    strings.noImageDescription}
-                                </div>
-                              )}
-                            </div>
-                            <div className="space-y-2 p-4">
-                              <div className="flex flex-wrap gap-2">
-                                <Badge
-                                  variant="secondary"
-                                  className="rounded-full"
-                                >
-                                  {formatCanonicalToken(asset.asset_type)}
-                                </Badge>
-                                {asset.storage_path ? (
-                                  <Badge variant="outline">uploaded</Badge>
-                                ) : null}
-                              </div>
-                              <div className="text-muted-foreground text-sm">
-                                {asset.alt_text || strings.notAvailableLabel}
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <EmptyPanel
-                        title={strings.noImageTitle}
-                        description={strings.noImageDescription}
-                      />
-                    )}
-
-                    <div className="grid gap-4 lg:grid-cols-2">
-                      <Field label={strings.imageAltLabel}>
-                        <Input
-                          value={genericAssetDraft.altText}
-                          onChange={(event) =>
-                            setGenericAssetDraft((current) => ({
-                              ...current,
-                              altText: event.target.value,
-                            }))
-                          }
-                        />
-                      </Field>
-                      <Field label={strings.remoteSourceLabel}>
-                        <Input
-                          value={genericAssetDraft.sourceUrl}
-                          onChange={(event) =>
-                            setGenericAssetDraft((current) => ({
-                              ...current,
-                              sourceUrl: event.target.value,
-                            }))
-                          }
-                        />
-                      </Field>
-                    </div>
-
-                    <Field label={strings.assetMetadataLabel}>
-                      <Textarea
-                        rows={8}
-                        value={genericAssetDraft.metadataJson}
+                    <Field label={strings.subtitleLabel}>
+                      <Input
+                        value={genericEntryDraft.subtitle}
                         onChange={(event) =>
-                          setGenericAssetDraft((current) => ({
+                          setGenericEntryDraft((current) => ({
+                            ...current,
+                            subtitle: event.target.value,
+                          }))
+                        }
+                      />
+                    </Field>
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+                    <Field label={strings.slugLabel}>
+                      <Input
+                        value={genericEntryDraft.slug}
+                        onChange={(event) =>
+                          setGenericEntryDraft((current) => ({
+                            ...current,
+                            slug: event.target.value,
+                          }))
+                        }
+                      />
+                    </Field>
+                    <Field label={strings.summaryLabel}>
+                      <Textarea
+                        rows={3}
+                        value={genericEntryDraft.summary}
+                        onChange={(event) =>
+                          setGenericEntryDraft((current) => ({
+                            ...current,
+                            summary: event.target.value,
+                          }))
+                        }
+                      />
+                    </Field>
+                  </div>
+
+                  <Field label={strings.bodyLabel}>
+                    <Textarea
+                      rows={10}
+                      value={genericEntryDraft.body}
+                      onChange={(event) =>
+                        setGenericEntryDraft((current) => ({
+                          ...current,
+                          body: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <Field label={strings.profileDataLabel}>
+                      <Textarea
+                        rows={10}
+                        value={genericEntryDraft.profileDataJson}
+                        onChange={(event) =>
+                          setGenericEntryDraft((current) => ({
+                            ...current,
+                            profileDataJson: event.target.value,
+                          }))
+                        }
+                      />
+                    </Field>
+                    <Field label={strings.entryMetadataLabel}>
+                      <Textarea
+                        rows={10}
+                        value={genericEntryDraft.metadataJson}
+                        onChange={(event) =>
+                          setGenericEntryDraft((current) => ({
                             ...current,
                             metadataJson: event.target.value,
                           }))
                         }
                       />
                     </Field>
+                  </div>
+                </>
+              )}
+            </EditorPanel>
 
-                    {selectedAsset?.storage_path ? (
-                      <Field label={strings.assetPathLabel}>
-                        <Input value={selectedAsset.storage_path} readOnly />
-                      </Field>
-                    ) : null}
-                  </>
-                )}
-              </CardContent>
-            </Card>
+            <EditorPanel
+              title={strings.mediaSectionTitle}
+              description={strings.mediaDescription}
+            >
+              {!selectedEntry ? (
+                <EmptyPanel
+                  title={strings.noItemsTitle}
+                  description={strings.noItemsDescription}
+                />
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="text-muted-foreground text-sm">
+                      {selectedAssets.length} {strings.entriesMetricLabel}
+                    </div>
+                    <input
+                      ref={assetUploadInputRef}
+                      type="file"
+                      accept="image/*,audio/*,video/*"
+                      className="hidden"
+                      onChange={handleArtworkUpload}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => assetUploadInputRef.current?.click()}
+                      disabled={uploadGenericAssetMutation.isPending}
+                    >
+                      {strings.uploadAction}
+                    </Button>
+                  </div>
 
-            <ActivityPanels
-              importJobs={importJobs}
-              publishEvents={publishEvents}
-              strings={strings}
-            />
-          </div>
-        </div>
-      </div>
+                  {selectedAssets.length > 0 ? (
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {selectedAssets.map((asset) => (
+                        <button
+                          key={asset.id}
+                          type="button"
+                          onClick={() => setSelectedAssetId(asset.id)}
+                          className={`overflow-hidden rounded-2xl border text-left transition-colors ${
+                            selectedAsset?.id === asset.id
+                              ? 'border-foreground/30 bg-background'
+                              : 'border-border/70 bg-background/35 hover:border-border'
+                          }`}
+                        >
+                          <div className="relative aspect-[4/3] bg-background/50">
+                            {asset.preview_url ? (
+                              <Image
+                                src={asset.preview_url}
+                                alt={asset.alt_text ?? selectedEntry.title}
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                            ) : (
+                              <div className="flex h-full items-center justify-center px-4 text-center text-muted-foreground text-sm">
+                                {asset.storage_path ||
+                                  asset.source_url ||
+                                  strings.noImageDescription}
+                              </div>
+                            )}
+                          </div>
+                          <div className="space-y-2 p-4">
+                            <Badge variant="secondary" className="rounded-full">
+                              {formatCanonicalToken(asset.asset_type)}
+                            </Badge>
+                            <div className="text-muted-foreground text-sm">
+                              {asset.alt_text || strings.notAvailableLabel}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyPanel
+                      title={strings.noImageTitle}
+                      description={strings.noImageDescription}
+                    />
+                  )}
+
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <Field label={strings.imageAltLabel}>
+                      <Input
+                        value={genericAssetDraft.altText}
+                        onChange={(event) =>
+                          setGenericAssetDraft((current) => ({
+                            ...current,
+                            altText: event.target.value,
+                          }))
+                        }
+                      />
+                    </Field>
+                    <Field label={strings.remoteSourceLabel}>
+                      <Input
+                        value={genericAssetDraft.sourceUrl}
+                        onChange={(event) =>
+                          setGenericAssetDraft((current) => ({
+                            ...current,
+                            sourceUrl: event.target.value,
+                          }))
+                        }
+                      />
+                    </Field>
+                  </div>
+
+                  <Field label={strings.assetMetadataLabel}>
+                    <Textarea
+                      rows={8}
+                      value={genericAssetDraft.metadataJson}
+                      onChange={(event) =>
+                        setGenericAssetDraft((current) => ({
+                          ...current,
+                          metadataJson: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+
+                  {selectedAsset?.storage_path ? (
+                    <Field label={strings.assetPathLabel}>
+                      <Input value={selectedAsset.storage_path} readOnly />
+                    </Field>
+                  ) : null}
+                </>
+              )}
+            </EditorPanel>
+          </>
+        }
+      />
     );
   }
 
-  return (
-    <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-3xl border border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.1),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))]">
-        <div className="grid gap-6 p-6 xl:grid-cols-[1.2fr_0.8fr] xl:p-8">
-          <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/60 px-3 py-1 text-muted-foreground text-xs uppercase tracking-[0.24em]">
-              <Sparkles className="h-3.5 w-3.5" />
-              {strings.studioTitle}
+  const renderedYoolaPreview =
+    !selectedEntry || !selectedCollection ? (
+      <EmptyPanel
+        title={strings.emptyPreviewTitle}
+        description={strings.emptyPreviewDescription}
+      />
+    ) : selectedCollection.collection_type === 'artworks' ? (
+      <div className="space-y-4">
+        <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border/70 bg-background/40">
+          {leadImageUrl ? (
+            <Image
+              src={leadImageUrl}
+              alt={leadAsset?.alt_text ?? artworkDraft.title}
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
+              {strings.noImageDescription}
             </div>
-            <div className="space-y-2">
-              <h1 className="font-semibold text-4xl tracking-tight">
-                {binding.canonical_project?.display_name}
-              </h1>
-              <p className="max-w-2xl text-muted-foreground text-sm leading-6">
-                {strings.summaryDescription}
-              </p>
-            </div>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Badge className="rounded-full">
+            {artworkDraft.label || strings.notAvailableLabel}
+          </Badge>
+          <Badge variant="secondary" className="rounded-full">
+            {artworkDraft.category || strings.notAvailableLabel}
+          </Badge>
+          <Badge variant="outline" className="rounded-full">
+            {artworkDraft.rarity || strings.notAvailableLabel}
+          </Badge>
+        </div>
+        <div>
+          <div className="font-semibold text-2xl">
+            {artworkDraft.title || strings.notAvailableLabel}
+          </div>
+          <div className="mt-1 text-muted-foreground text-sm">
+            {artworkDraft.year || strings.notAvailableLabel} ·{' '}
+            {artworkDraft.orientation || strings.notAvailableLabel}
+          </div>
+        </div>
+        <p className="text-sm leading-7">
+          {artworkDraft.summary ||
+            artworkDraft.note ||
+            strings.noImageDescription}
+        </p>
+      </div>
+    ) : selectedCollection.collection_type === 'lore-capsules' ? (
+      <div className="space-y-4">
+        <div className="grid gap-4 lg:grid-cols-[0.82fr_1.18fr]">
+          <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-border/70 bg-background/40">
+            {linkedArtworkAsset ? (
+              <Image
+                src={linkedArtworkAsset}
+                alt={
+                  linkedArtworkLoadingItem?.altText ??
+                  linkedArtworkLoadingItem?.title ??
+                  loreDraft.title
+                }
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
+                {strings.linkedArtworkMissingDescription}
+              </div>
+            )}
+          </div>
+          <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
-              <Badge className="rounded-full">{binding.canonical_id}</Badge>
+              <Badge className="rounded-full">
+                {loreDraft.channel || strings.notAvailableLabel}
+              </Badge>
               <Badge variant="secondary" className="rounded-full">
-                {formatCanonicalToken(binding.adapter ?? 'yoola')}
+                {loreDraft.status || strings.notAvailableLabel}
               </Badge>
               <Badge variant="outline" className="rounded-full">
-                {yoolaLoading?.artworkCategories.length ?? 0}{' '}
-                {strings.adapterBlueprintLabel}
+                {loreDraft.date || strings.notAvailableLabel}
               </Badge>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <MetricCard
-                icon={<Sparkles className="h-4 w-4" />}
-                label={strings.featuredArtworkLabel}
-                value={
-                  yoolaLoading?.featuredArtwork?.label ??
-                  strings.notAvailableLabel
-                }
-              />
-              <MetricCard
-                icon={<Send className="h-4 w-4" />}
-                label={strings.loreQueueLabel}
-                value={String(loreEntries.length)}
-              />
-              <MetricCard
-                icon={<FolderSync className="h-4 w-4" />}
-                label={strings.sectionsLabel}
-                value={String(singletonEntries.length)}
-              />
+            <div>
+              <div className="font-semibold text-2xl">
+                {loreDraft.title || strings.notAvailableLabel}
+              </div>
+              <p className="mt-3 text-sm leading-7">
+                {loreDraft.teaser ||
+                  loreDraft.summary ||
+                  strings.linkedArtworkMissingDescription}
+              </p>
+            </div>
+            <div className="whitespace-pre-wrap rounded-2xl border border-border/70 bg-background/35 p-4 text-sm leading-7">
+              {loreDraft.body || strings.notAvailableLabel}
             </div>
           </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <MetricCard
-              icon={<Sparkles className="h-4 w-4" />}
-              label={strings.collectionsMetricLabel}
-              value={String(collections.length)}
-            />
-            <MetricCard
-              icon={<BriefcaseBusiness className="h-4 w-4" />}
-              label={strings.entriesMetricLabel}
-              value={String(entries.length)}
-            />
-            <MetricCard
-              icon={<CheckCircle2 className="h-4 w-4" />}
-              label={strings.publishedMetricLabel}
-              value={String(publishedCount)}
-            />
-            <MetricCard
-              icon={<Clock className="h-4 w-4" />}
-              label={strings.draftsMetricLabel}
-              value={String(draftCount)}
-            />
-          </div>
         </div>
-      </section>
-
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <div className="space-y-6">
-          <Card className="border-border/70 bg-card/80">
-            <CardHeader>
-              <CardTitle>{strings.importAction}</CardTitle>
-              <CardDescription>{strings.operationsDescription}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="rounded-2xl border border-border/70 bg-background/40 p-4">
-                <div className="mb-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                  {strings.adapterBlueprintLabel}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {(binding.canonical_project?.allowed_collections ?? []).map(
-                    (collection) => (
-                      <Badge
-                        key={collection}
-                        variant="secondary"
-                        className="rounded-full"
-                      >
-                        {formatCanonicalToken(collection)}
-                      </Badge>
-                    )
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  onClick={() => importMutation.mutate()}
-                  disabled={importMutation.isPending}
-                >
-                  <FolderSync className="mr-2 h-4 w-4" />
-                  {strings.importAction}
-                </Button>
-                <p className="text-muted-foreground text-sm leading-6">
-                  {strings.refreshHint}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/70 bg-card/80">
-            <CardHeader>
-              <CardTitle>{strings.contentTab}</CardTitle>
-              <CardDescription>
-                {strings.detailPanelDescription}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="rounded-2xl border border-border/70 bg-background/35 p-4">
-                <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-                  <div className="space-y-2">
-                    <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                      {strings.searchPlaceholder}
-                    </div>
-                    <Input
-                      value={searchQuery}
-                      onChange={(event) => setSearchQuery(event.target.value)}
-                      placeholder={strings.searchPlaceholder}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                      {strings.statusLabel}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {(
-                        [
-                          ['all', strings.allItemsLabel],
-                          ['published', strings.publishedBadge],
-                          ['draft', strings.draftBadge],
-                        ] as const
-                      ).map(([value, label]) => (
-                        <Button
-                          key={value}
-                          size="sm"
-                          variant={
-                            statusFilter === value ? 'default' : 'outline'
-                          }
-                          onClick={() => setStatusFilter(value)}
-                        >
-                          {label}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {activeTab === 'artworks' && yoolaLoading ? (
-                  <div className="mt-4 space-y-2">
-                    <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                      {strings.categoryLabel}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        variant={
-                          artworkCategoryFilter === 'all'
-                            ? 'default'
-                            : 'outline'
-                        }
-                        onClick={() => setArtworkCategoryFilter('all')}
-                      >
-                        {strings.allItemsLabel}
-                      </Button>
-                      {yoolaLoading.artworkCategories.map((category) => (
-                        <Button
-                          key={category}
-                          size="sm"
-                          variant={
-                            artworkCategoryFilter === category
-                              ? 'default'
-                              : 'outline'
-                          }
-                          onClick={() => setArtworkCategoryFilter(category)}
-                        >
-                          {category}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-
-              <Tabs
-                value={activeTab}
-                onValueChange={(value) => setActiveTab(value as StudioTab)}
-                className="w-full"
-              >
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="artworks">
-                    {strings.artworksTab}
-                  </TabsTrigger>
-                  <TabsTrigger value="lore-capsules">
-                    {strings.loreTab}
-                  </TabsTrigger>
-                  <TabsTrigger value="singleton-sections">
-                    {strings.sectionsTab}
-                  </TabsTrigger>
-                  <TabsTrigger value="activity">
-                    {strings.activityTab}
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="artworks" className="mt-6 space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-muted-foreground text-sm">
-                      {strings.profileLabel}
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => createEntryMutation.mutate('artworks')}
-                      disabled={createEntryMutation.isPending}
-                    >
-                      {strings.addArtwork}
-                    </Button>
-                  </div>
-                  {filteredArtworkEntries.length === 0 ? (
-                    <EmptyPanel
-                      title={
-                        hasArtworkFilters
-                          ? strings.noSearchResultsTitle
-                          : strings.noItemsTitle
-                      }
-                      description={
-                        hasArtworkFilters
-                          ? strings.noSearchResultsDescription
-                          : strings.noItemsDescription
-                      }
-                    />
-                  ) : (
-                    <ScrollArea className="h-[36rem] pr-3">
-                      <div className="space-y-3">
-                        {filteredArtworkEntries.map((entry) => {
-                          const entryAsset =
-                            assets.find(
-                              (asset) =>
-                                asset.entry_id === entry.id &&
-                                asset.asset_type === 'image'
-                            ) ?? null;
-                          const profile = asRecord(entry.profile_data);
-
-                          return (
-                            <EntryCard
-                              key={entry.id}
-                              active={selectedEntryId === entry.id}
-                              title={entry.title}
-                              accent={
-                                <StatusBadge
-                                  entry={entry}
-                                  draftLabel={strings.draftBadge}
-                                  publishedLabel={strings.publishedBadge}
-                                />
-                              }
-                              onClick={() => setSelectedEntryId(entry.id)}
-                              body={
-                                <div className="space-y-3">
-                                  {entryAsset?.preview_url ? (
-                                    <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-border/70">
-                                      <Image
-                                        src={entryAsset.preview_url}
-                                        alt={entryAsset.alt_text ?? entry.title}
-                                        fill
-                                        className="object-cover"
-                                        unoptimized
-                                      />
-                                    </div>
-                                  ) : null}
-                                  <div className="flex flex-wrap gap-2">
-                                    <Badge variant="outline">
-                                      {asString(profile.category) ||
-                                        strings.notAvailableLabel}
-                                    </Badge>
-                                    <Badge variant="outline">
-                                      {asString(profile.rarity) ||
-                                        strings.notAvailableLabel}
-                                    </Badge>
-                                    <Badge variant="outline">
-                                      {asString(profile.year) ||
-                                        strings.notAvailableLabel}
-                                    </Badge>
-                                  </div>
-                                  <p className="text-muted-foreground text-sm leading-6">
-                                    {entry.summary ||
-                                      strings.noItemsDescription}
-                                  </p>
-                                </div>
-                              }
-                            />
-                          );
-                        })}
-                      </div>
-                    </ScrollArea>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="lore-capsules" className="mt-6 space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-muted-foreground text-sm">
-                      {strings.loreQueueLabel}
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        createEntryMutation.mutate('lore-capsules')
-                      }
-                      disabled={createEntryMutation.isPending}
-                    >
-                      {strings.addLoreCapsule}
-                    </Button>
-                  </div>
-                  {filteredLoreEntries.length === 0 ? (
-                    <EmptyPanel
-                      title={
-                        hasSearchFilters
-                          ? strings.noSearchResultsTitle
-                          : strings.noItemsTitle
-                      }
-                      description={
-                        hasSearchFilters
-                          ? strings.noSearchResultsDescription
-                          : strings.noItemsDescription
-                      }
-                    />
-                  ) : (
-                    <ScrollArea className="h-[36rem] pr-3">
-                      <div className="space-y-3">
-                        {filteredLoreEntries.map((entry) => {
-                          const profile = asRecord(entry.profile_data);
-
-                          return (
-                            <EntryCard
-                              key={entry.id}
-                              active={selectedEntryId === entry.id}
-                              title={entry.title}
-                              accent={
-                                <Badge variant="secondary">
-                                  {asString(profile.status) ||
-                                    strings.draftBadge}
-                                </Badge>
-                              }
-                              onClick={() => setSelectedEntryId(entry.id)}
-                              body={
-                                <div className="space-y-2">
-                                  <div className="flex flex-wrap gap-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                                    <span>
-                                      {asString(profile.channel) ||
-                                        strings.notAvailableLabel}
-                                    </span>
-                                    <span>
-                                      {asString(profile.date) ||
-                                        strings.notAvailableLabel}
-                                    </span>
-                                  </div>
-                                  <p className="text-sm leading-6">
-                                    {asString(profile.teaser) ||
-                                      entry.summary ||
-                                      strings.noItemsDescription}
-                                  </p>
-                                  <div className="flex flex-wrap gap-2">
-                                    {asStringArray(profile.tags).map((tag) => (
-                                      <Badge key={tag} variant="outline">
-                                        {tag}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              }
-                            />
-                          );
-                        })}
-                      </div>
-                    </ScrollArea>
-                  )}
-                </TabsContent>
-
-                <TabsContent
-                  value="singleton-sections"
-                  className="mt-6 space-y-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-muted-foreground text-sm">
-                      {strings.sectionsLabel}
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        createEntryMutation.mutate('singleton-sections')
-                      }
-                      disabled={createEntryMutation.isPending}
-                    >
-                      {strings.addSection}
-                    </Button>
-                  </div>
-                  {filteredSingletonEntries.length === 0 ? (
-                    <EmptyPanel
-                      title={
-                        hasSearchFilters
-                          ? strings.noSearchResultsTitle
-                          : strings.noItemsTitle
-                      }
-                      description={
-                        hasSearchFilters
-                          ? strings.noSearchResultsDescription
-                          : strings.noItemsDescription
-                      }
-                    />
-                  ) : (
-                    <ScrollArea className="h-[36rem] pr-3">
-                      <div className="space-y-3">
-                        {filteredSingletonEntries.map((entry) => (
-                          <EntryCard
-                            key={entry.id}
-                            active={selectedEntryId === entry.id}
-                            title={entry.title}
-                            accent={
-                              <Badge variant="outline">{entry.slug}</Badge>
-                            }
-                            onClick={() => setSelectedEntryId(entry.id)}
-                            body={
-                              <p className="text-muted-foreground text-sm leading-6">
-                                {entry.summary || strings.noItemsDescription}
-                              </p>
-                            }
-                          />
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="activity" className="mt-6 space-y-6">
-                  <ActivityPanels
-                    importJobs={importJobs}
-                    publishEvents={publishEvents}
-                    strings={strings}
-                  />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card className="border-border/70 bg-card/80">
-            <CardHeader>
-              <CardTitle>{strings.collectionSettingsTitle}</CardTitle>
-              <CardDescription>
-                {strings.collectionSettingsDescription}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {activeCollection ? (
-                <>
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/35 p-4">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2">
-                        <Badge className="rounded-full">
-                          {activeCollection.slug}
-                        </Badge>
-                        <Badge variant="secondary" className="rounded-full">
-                          {formatCanonicalToken(
-                            activeCollection.collection_type
-                          )}
-                        </Badge>
-                      </div>
-                      <div className="text-muted-foreground text-sm">
-                        {activeCollection.is_enabled
-                          ? strings.collectionEnabledLabel
-                          : strings.collectionDisabledLabel}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 rounded-full border border-border/70 bg-background/70 px-3 py-2">
-                      <Switch
-                        checked={collectionDraft.isEnabled}
-                        onCheckedChange={(checked) =>
-                          setCollectionDraft((current) => ({
-                            ...current,
-                            isEnabled: checked,
-                          }))
-                        }
-                      />
-                      <span className="text-sm">
-                        {collectionDraft.isEnabled
-                          ? strings.collectionEnabledLabel
-                          : strings.collectionDisabledLabel}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4">
-                    <Field label={strings.titleLabel}>
-                      <Input
-                        value={collectionDraft.title}
-                        onChange={(event) =>
-                          setCollectionDraft((current) => ({
-                            ...current,
-                            title: event.target.value,
-                          }))
-                        }
-                      />
-                    </Field>
-                    <Field label={strings.descriptionLabel}>
-                      <Textarea
-                        rows={3}
-                        value={collectionDraft.description}
-                        onChange={(event) =>
-                          setCollectionDraft((current) => ({
-                            ...current,
-                            description: event.target.value,
-                          }))
-                        }
-                      />
-                    </Field>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-muted-foreground text-sm">
-                      {saveCollectionMutation.isPending
-                        ? strings.savingLabel
-                        : strings.refreshHint}
-                    </div>
-                    <Button
-                      onClick={() => saveCollectionMutation.mutate()}
-                      disabled={
-                        saveCollectionMutation.isPending ||
-                        !collectionDraft.title.trim()
-                      }
-                    >
-                      {strings.saveChanges}
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <EmptyPanel
-                  title={strings.collectionEmptyTitle}
-                  description={strings.collectionEmptyDescription}
-                />
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/70 bg-card/80">
-            <CardHeader>
-              <CardTitle>{strings.detailPanelTitle}</CardTitle>
-              <CardDescription>
-                {strings.detailPanelDescription}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {activeTab === 'activity' ||
-              !selectedEntry ||
-              !selectedCollection ? (
-                <EmptyPanel
-                  title={strings.collectionEmptyTitle}
-                  description={strings.collectionEmptyDescription}
-                />
-              ) : (
-                <>
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                        {strings.typeLabel}
-                      </div>
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className="font-medium">
-                          {formatCanonicalToken(
-                            selectedCollection.collection_type
-                          )}
-                        </span>
-                        <StatusBadge
-                          entry={selectedEntry}
-                          draftLabel={strings.draftBadge}
-                          publishedLabel={strings.publishedBadge}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      {selectedEntry.status === 'published' ? (
-                        <Button
-                          variant="outline"
-                          onClick={() => publishMutation.mutate('unpublish')}
-                          disabled={publishMutation.isPending}
-                        >
-                          {strings.unpublish}
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => publishMutation.mutate('publish')}
-                          disabled={publishMutation.isPending}
-                        >
-                          <Send className="mr-2 h-4 w-4" />
-                          {strings.publish}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  {selectedCollection.collection_type === 'artworks' ? (
-                    <>
-                      <div className="space-y-3">
-                        <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border/70 bg-background/40">
-                          {leadImageUrl ? (
-                            <Image
-                              src={leadImageUrl}
-                              alt={leadAsset?.alt_text ?? artworkDraft.title}
-                              fill
-                              className="object-cover"
-                              unoptimized
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
-                              {strings.noImageDescription}
-                            </div>
-                          )}
-                        </div>
-                        <div className="rounded-2xl border border-border/70 bg-background/35 p-4">
-                          <div className="mb-3 text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                            {strings.mediaSectionTitle}
-                          </div>
-                          <div className="grid gap-4">
-                            <div className="grid gap-2">
-                              <Label htmlFor="artwork-alt">
-                                {strings.imageAltLabel}
-                              </Label>
-                              <Input
-                                id="artwork-alt"
-                                value={artworkDraft.altText}
-                                onChange={(event) =>
-                                  setArtworkDraft((current) => ({
-                                    ...current,
-                                    altText: event.target.value,
-                                  }))
-                                }
-                              />
-                            </div>
-                            <div className="grid gap-2">
-                              <Label htmlFor="artwork-source-url">
-                                {strings.remoteSourceLabel}
-                              </Label>
-                              <Input
-                                id="artwork-source-url"
-                                value={artworkDraft.sourceUrl}
-                                onChange={(event) =>
-                                  setArtworkDraft((current) => ({
-                                    ...current,
-                                    sourceUrl: event.target.value,
-                                  }))
-                                }
-                                placeholder="https://..."
-                              />
-                            </div>
-                            {leadAsset?.storage_path ? (
-                              <div className="rounded-xl border border-border/70 bg-background/55 p-3">
-                                <div className="mb-1 text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                                  {strings.assetPathLabel}
-                                </div>
-                                <div className="break-all font-mono text-xs">
-                                  {leadAsset.storage_path}
-                                </div>
-                              </div>
-                            ) : null}
-                            <div className="flex flex-wrap gap-3">
-                              <input
-                                ref={artworkUploadInputRef}
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={handleArtworkUpload}
-                              />
-                              <Button
-                                variant="outline"
-                                onClick={() =>
-                                  artworkUploadInputRef.current?.click()
-                                }
-                                disabled={uploadArtworkMutation.isPending}
-                              >
-                                {strings.uploadAction}
-                              </Button>
-                              <p className="text-muted-foreground text-sm leading-6">
-                                {strings.mediaDescription}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid gap-4">
-                        <Field label={strings.titleLabel}>
-                          <Input
-                            value={artworkDraft.title}
-                            onChange={(event) =>
-                              setArtworkDraft((current) => ({
-                                ...current,
-                                title: event.target.value,
-                                slug:
-                                  current.slug ||
-                                  normalizeSlugSeed(event.target.value),
-                              }))
-                            }
-                          />
-                        </Field>
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <Field label={strings.slugLabel}>
-                            <Input
-                              value={artworkDraft.slug}
-                              onChange={(event) =>
-                                setArtworkDraft((current) => ({
-                                  ...current,
-                                  slug: event.target.value,
-                                }))
-                              }
-                            />
-                          </Field>
-                          <Field label={strings.yearLabel}>
-                            <Input
-                              value={artworkDraft.year}
-                              onChange={(event) =>
-                                setArtworkDraft((current) => ({
-                                  ...current,
-                                  year: event.target.value,
-                                }))
-                              }
-                            />
-                          </Field>
-                        </div>
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <Field label={strings.categoryLabel}>
-                            <Input
-                              value={artworkDraft.category}
-                              onChange={(event) =>
-                                setArtworkDraft((current) => ({
-                                  ...current,
-                                  category: event.target.value,
-                                }))
-                              }
-                            />
-                          </Field>
-                          <Field label={strings.rarityLabel}>
-                            <Input
-                              value={artworkDraft.rarity}
-                              onChange={(event) =>
-                                setArtworkDraft((current) => ({
-                                  ...current,
-                                  rarity: event.target.value,
-                                }))
-                              }
-                            />
-                          </Field>
-                        </div>
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <Field label={strings.labelLabel}>
-                            <Input
-                              value={artworkDraft.label}
-                              onChange={(event) =>
-                                setArtworkDraft((current) => ({
-                                  ...current,
-                                  label: event.target.value,
-                                }))
-                              }
-                            />
-                          </Field>
-                          <Field label={strings.orientationLabel}>
-                            <Input
-                              value={artworkDraft.orientation}
-                              onChange={(event) =>
-                                setArtworkDraft((current) => ({
-                                  ...current,
-                                  orientation: event.target.value,
-                                }))
-                              }
-                            />
-                          </Field>
-                        </div>
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <Field label={strings.widthLabel}>
-                            <Input
-                              value={artworkDraft.width}
-                              onChange={(event) =>
-                                setArtworkDraft((current) => ({
-                                  ...current,
-                                  width: event.target.value,
-                                }))
-                              }
-                            />
-                          </Field>
-                          <Field label={strings.heightLabel}>
-                            <Input
-                              value={artworkDraft.height}
-                              onChange={(event) =>
-                                setArtworkDraft((current) => ({
-                                  ...current,
-                                  height: event.target.value,
-                                }))
-                              }
-                            />
-                          </Field>
-                        </div>
-                        <Field label={strings.summaryLabel}>
-                          <Textarea
-                            rows={4}
-                            value={artworkDraft.summary}
-                            onChange={(event) =>
-                              setArtworkDraft((current) => ({
-                                ...current,
-                                summary: event.target.value,
-                              }))
-                            }
-                          />
-                        </Field>
-                        <Field label={strings.noteLabel}>
-                          <Textarea
-                            rows={5}
-                            value={artworkDraft.note}
-                            onChange={(event) =>
-                              setArtworkDraft((current) => ({
-                                ...current,
-                                note: event.target.value,
-                              }))
-                            }
-                          />
-                        </Field>
-                      </div>
-                    </>
-                  ) : null}
-
-                  {selectedCollection.collection_type === 'lore-capsules' ? (
-                    <div className="grid gap-4">
-                      <Field label={strings.titleLabel}>
-                        <Input
-                          value={loreDraft.title}
-                          onChange={(event) =>
-                            setLoreDraft((current) => ({
-                              ...current,
-                              title: event.target.value,
-                              slug:
-                                current.slug ||
-                                normalizeSlugSeed(event.target.value),
-                            }))
-                          }
-                        />
-                      </Field>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <Field label={strings.slugLabel}>
-                          <Input
-                            value={loreDraft.slug}
-                            onChange={(event) =>
-                              setLoreDraft((current) => ({
-                                ...current,
-                                slug: event.target.value,
-                              }))
-                            }
-                          />
-                        </Field>
-                        <Field label={strings.dateLabel}>
-                          <Input
-                            value={loreDraft.date}
-                            onChange={(event) =>
-                              setLoreDraft((current) => ({
-                                ...current,
-                                date: event.target.value,
-                              }))
-                            }
-                          />
-                        </Field>
-                      </div>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <Field label={strings.channelLabel}>
-                          <Input
-                            value={loreDraft.channel}
-                            onChange={(event) =>
-                              setLoreDraft((current) => ({
-                                ...current,
-                                channel: event.target.value,
-                              }))
-                            }
-                          />
-                        </Field>
-                        <Field label={strings.statusLabel}>
-                          <Input
-                            value={loreDraft.status}
-                            onChange={(event) =>
-                              setLoreDraft((current) => ({
-                                ...current,
-                                status: event.target.value,
-                              }))
-                            }
-                          />
-                        </Field>
-                      </div>
-                      <Field label={strings.artworkLinkLabel}>
-                        <Select
-                          value={loreDraft.artworkSlug || '__none__'}
-                          onValueChange={(value) =>
-                            setLoreDraft((current) => ({
-                              ...current,
-                              artworkSlug: value === '__none__' ? '' : value,
-                            }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none__">
-                              {strings.notAvailableLabel}
-                            </SelectItem>
-                            {artworkEntries.map((entry) => (
-                              <SelectItem key={entry.id} value={entry.slug}>
-                                {entry.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </Field>
-                      <Field label={strings.summaryLabel}>
-                        <Textarea
-                          rows={4}
-                          value={loreDraft.summary}
-                          onChange={(event) =>
-                            setLoreDraft((current) => ({
-                              ...current,
-                              summary: event.target.value,
-                            }))
-                          }
-                        />
-                      </Field>
-                      <Field label={strings.teaserLabel}>
-                        <Textarea
-                          rows={4}
-                          value={loreDraft.teaser}
-                          onChange={(event) =>
-                            setLoreDraft((current) => ({
-                              ...current,
-                              teaser: event.target.value,
-                            }))
-                          }
-                        />
-                      </Field>
-                      <Field label={strings.tagsLabel}>
-                        <Input
-                          value={loreDraft.tags}
-                          onChange={(event) =>
-                            setLoreDraft((current) => ({
-                              ...current,
-                              tags: event.target.value,
-                            }))
-                          }
-                        />
-                      </Field>
-                      <Field label={strings.excerptLabel}>
-                        <Textarea
-                          rows={8}
-                          value={loreDraft.body}
-                          onChange={(event) =>
-                            setLoreDraft((current) => ({
-                              ...current,
-                              body: event.target.value,
-                            }))
-                          }
-                        />
-                      </Field>
-                    </div>
-                  ) : null}
-
-                  {selectedCollection.collection_type ===
-                  'singleton-sections' ? (
-                    <div className="grid gap-4">
-                      <Field label={strings.titleLabel}>
-                        <Input
-                          value={sectionDraft.title}
-                          onChange={(event) =>
-                            setSectionDraft((current) => ({
-                              ...current,
-                              title: event.target.value,
-                              slug:
-                                current.slug ||
-                                normalizeSlugSeed(event.target.value),
-                            }))
-                          }
-                        />
-                      </Field>
-                      <Field label={strings.slugLabel}>
-                        <Input
-                          value={sectionDraft.slug}
-                          onChange={(event) =>
-                            setSectionDraft((current) => ({
-                              ...current,
-                              slug: event.target.value,
-                            }))
-                          }
-                        />
-                      </Field>
-                      <Field label={strings.summaryLabel}>
-                        <Textarea
-                          rows={4}
-                          value={sectionDraft.summary}
-                          onChange={(event) =>
-                            setSectionDraft((current) => ({
-                              ...current,
-                              summary: event.target.value,
-                            }))
-                          }
-                        />
-                      </Field>
-                      <Field label={strings.sectionBodyLabel}>
-                        <Textarea
-                          rows={10}
-                          value={sectionDraft.body}
-                          onChange={(event) =>
-                            setSectionDraft((current) => ({
-                              ...current,
-                              body: event.target.value,
-                            }))
-                          }
-                        />
-                      </Field>
-                    </div>
-                  ) : null}
-
-                  <Separator />
-
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-muted-foreground text-sm">
-                      {saveMutation.isPending
-                        ? strings.savingLabel
-                        : strings.refreshHint}
-                    </div>
-                    <Button
-                      onClick={() => saveMutation.mutate()}
-                      disabled={
-                        saveMutation.isPending ||
-                        uploadArtworkMutation.isPending ||
-                        publishMutation.isPending
-                      }
-                    >
-                      {strings.saveChanges}
-                    </Button>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/70 bg-card/80">
-            <CardHeader>
-              <CardTitle>{strings.deliveryPreviewTitle}</CardTitle>
-              <CardDescription>
-                {strings.deliveryPreviewDescription}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {activeTab === 'activity' ||
-              !selectedEntry ||
-              !selectedCollection ? (
-                <EmptyPanel
-                  title={strings.emptyPreviewTitle}
-                  description={strings.emptyPreviewDescription}
-                />
-              ) : selectedCollection.collection_type === 'artworks' ? (
-                <div className="space-y-4">
-                  <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border/70 bg-background/40">
-                    {leadImageUrl ? (
-                      <Image
-                        src={leadImageUrl}
-                        alt={leadAsset?.alt_text ?? artworkDraft.title}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
-                        {strings.noImageDescription}
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge className="rounded-full">
-                        {artworkDraft.label || strings.notAvailableLabel}
-                      </Badge>
-                      <Badge variant="secondary" className="rounded-full">
-                        {artworkDraft.category || strings.notAvailableLabel}
-                      </Badge>
-                      <Badge variant="outline" className="rounded-full">
-                        {artworkDraft.rarity || strings.notAvailableLabel}
-                      </Badge>
-                    </div>
-                    <div>
-                      <div className="font-semibold text-2xl">
-                        {artworkDraft.title || strings.notAvailableLabel}
-                      </div>
-                      <div className="mt-1 text-muted-foreground text-sm">
-                        {artworkDraft.year || strings.notAvailableLabel} ·{' '}
-                        {artworkDraft.orientation || strings.notAvailableLabel}
-                      </div>
-                    </div>
-                    <p className="text-sm leading-7">
-                      {artworkDraft.summary ||
-                        artworkDraft.note ||
-                        strings.noImageDescription}
-                    </p>
-                  </div>
-                </div>
-              ) : selectedCollection.collection_type === 'lore-capsules' ? (
-                <div className="grid gap-4 lg:grid-cols-[0.82fr_1.18fr]">
-                  <div className="space-y-3">
-                    <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-border/70 bg-background/40">
-                      {linkedArtworkAsset ? (
-                        <Image
-                          src={linkedArtworkAsset}
-                          alt={
-                            linkedArtworkLoadingItem?.altText ??
-                            linkedArtworkLoadingItem?.title ??
-                            loreDraft.title
-                          }
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
-                          {strings.linkedArtworkMissingDescription}
-                        </div>
-                      )}
-                    </div>
-                    {linkedArtworkLoadingItem ? (
-                      <div className="rounded-2xl border border-border/70 bg-background/35 p-4">
-                        <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                          {strings.artworkLinkLabel}
-                        </div>
-                        <div className="mt-2 font-medium">
-                          {linkedArtworkLoadingItem.title}
-                        </div>
-                        <div className="mt-1 text-muted-foreground text-sm">
-                          {linkedArtworkLoadingItem.label ??
-                            strings.notAvailableLabel}
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap gap-2">
-                      <Badge className="rounded-full">
-                        {loreDraft.channel || strings.notAvailableLabel}
-                      </Badge>
-                      <Badge variant="secondary" className="rounded-full">
-                        {loreDraft.status || strings.notAvailableLabel}
-                      </Badge>
-                      <Badge variant="outline" className="rounded-full">
-                        {loreDraft.date || strings.notAvailableLabel}
-                      </Badge>
-                    </div>
-                    <div>
-                      <div className="font-semibold text-2xl">
-                        {loreDraft.title || strings.notAvailableLabel}
-                      </div>
-                      <p className="mt-3 text-sm leading-7">
-                        {loreDraft.teaser ||
-                          loreDraft.summary ||
-                          strings.linkedArtworkMissingDescription}
-                      </p>
-                    </div>
-                    <div className="whitespace-pre-wrap rounded-2xl border border-border/70 bg-background/35 p-4 text-sm leading-7">
-                      {loreDraft.body || strings.notAvailableLabel}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {loreDraft.tags
-                        .split(',')
-                        .map((tag) => tag.trim())
-                        .filter(Boolean)
-                        .map((tag) => (
-                          <Badge key={tag} variant="outline">
-                            {tag}
-                          </Badge>
-                        ))}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4 rounded-2xl border border-border/70 bg-background/35 p-5">
-                  <Badge className="rounded-full">{sectionDraft.slug}</Badge>
-                  <div className="font-semibold text-2xl">
-                    {sectionDraft.title || strings.notAvailableLabel}
-                  </div>
-                  <p className="text-sm leading-7">
-                    {sectionDraft.summary || strings.notAvailableLabel}
-                  </p>
-                  <div className="whitespace-pre-wrap rounded-2xl border border-border/70 bg-background/60 p-4 text-sm leading-7">
-                    {sectionDraft.body || strings.notAvailableLabel}
-                  </div>
-                </div>
-              )}
-
-              <Separator />
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <MetricCard
-                  icon={<Sparkles className="h-4 w-4" />}
-                  label={strings.collectionsMetricLabel}
-                  value={`${enabledCollectionCount}/${collections.length}`}
-                />
-                <MetricCard
-                  icon={<BriefcaseBusiness className="h-4 w-4" />}
-                  label={strings.entriesMetricLabel}
-                  value={String(
-                    yoolaLoading?.artworks.length ?? artworkEntries.length
-                  )}
-                />
-                <MetricCard
-                  icon={<FolderSync className="h-4 w-4" />}
-                  label={strings.payloadSectionsLabel}
-                  value={String(
-                    Object.keys(yoolaLoading?.singletonSections ?? {}).length
-                  )}
-                />
-              </div>
-
-              {yoolaLoading ? (
-                <div className="rounded-2xl border border-border/70 bg-background/35 p-4">
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                        {strings.featuredArtworkLabel}
-                      </div>
-                      <div className="mt-1 font-medium">
-                        {yoolaLoading.featuredArtwork?.title ??
-                          strings.notAvailableLabel}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {yoolaLoading.artworkCategories.map((category) => (
-                        <Badge
-                          key={category}
-                          variant="secondary"
-                          className="rounded-full"
-                        >
-                          {category}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-muted-foreground text-sm leading-6">
-                    {strings.deliveryPreviewDescription}
-                  </p>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
+        <div className="flex flex-wrap gap-2">
+          {loreDraft.tags
+            .split(',')
+            .map((tag) => tag.trim())
+            .filter(Boolean)
+            .map((tag) => (
+              <Badge key={tag} variant="outline">
+                {tag}
+              </Badge>
+            ))}
         </div>
       </div>
-    </div>
-  );
-}
+    ) : (
+      <div className="space-y-4 rounded-2xl border border-border/70 bg-background/35 p-5">
+        <Badge className="rounded-full">{sectionDraft.slug}</Badge>
+        <div className="font-semibold text-2xl">
+          {sectionDraft.title || strings.notAvailableLabel}
+        </div>
+        <p className="text-sm leading-7">
+          {sectionDraft.summary || strings.notAvailableLabel}
+        </p>
+        <div className="whitespace-pre-wrap rounded-2xl border border-border/70 bg-background/60 p-4 text-sm leading-7">
+          {sectionDraft.body || strings.notAvailableLabel}
+        </div>
+      </div>
+    );
 
-function Field({ children, label }: { children: ReactNode; label: string }) {
   return (
-    <div className="grid gap-2">
-      <Label>{label}</Label>
-      {children}
-    </div>
+    <StudioShell
+      hero={commonHero}
+      actionBar={commonActionBar}
+      previewDrawerTitle={strings.openPreviewAction}
+      previewDrawerDescription={strings.deliveryPreviewDescription}
+      activityPanel={activityPanel}
+      previewPanel={
+        <PreviewPanel
+          renderedTitle={strings.renderedTabLabel}
+          renderedDescription={strings.deliveryPreviewDescription}
+          renderedView={renderedYoolaPreview}
+          payloadTitle={strings.payloadTabLabel}
+          payloadDescription={strings.deliveryPreviewDescription}
+          payloadView={payloadPreviewView}
+        />
+      }
+      contentRail={
+        <ContentRail
+          title={strings.contentRailTitle}
+          description={strings.contentRailDescription}
+          headerAction={
+            <Button
+              size="sm"
+              onClick={() => createEntryMutation.mutate(activeTab)}
+              disabled={createEntryMutation.isPending}
+            >
+              {activeTab === 'artworks'
+                ? strings.addArtwork
+                : activeTab === 'lore-capsules'
+                  ? strings.addLoreCapsule
+                  : strings.addSection}
+            </Button>
+          }
+        >
+          <RailSection label={strings.collectionSelectLabel}>
+            <div className="space-y-3">
+              {[
+                {
+                  description:
+                    artworksCollection?.description ??
+                    strings.contentRailDescription,
+                  key: 'artworks' as const,
+                  title: artworksCollection?.title ?? strings.artworksTab,
+                  value: filteredArtworkEntries.length,
+                },
+                {
+                  description:
+                    loreCollection?.description ??
+                    strings.contentRailDescription,
+                  key: 'lore-capsules' as const,
+                  title: loreCollection?.title ?? strings.loreTab,
+                  value: filteredLoreEntries.length,
+                },
+                {
+                  description:
+                    singletonCollection?.description ??
+                    strings.contentRailDescription,
+                  key: 'singleton-sections' as const,
+                  title: singletonCollection?.title ?? strings.sectionsTab,
+                  value: filteredSingletonEntries.length,
+                },
+              ].map((collection) => (
+                <RailCollectionButton
+                  key={collection.key}
+                  active={activeTab === collection.key}
+                  title={collection.title}
+                  description={collection.description}
+                  onClick={() => setActiveTab(collection.key)}
+                  badge={<Badge variant="outline">{collection.value}</Badge>}
+                />
+              ))}
+            </div>
+          </RailSection>
+
+          <RailSection label={strings.searchPlaceholder}>
+            <Input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder={strings.searchPlaceholder}
+            />
+          </RailSection>
+
+          <RailSection label={strings.statusLabel}>
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  ['all', strings.allItemsLabel],
+                  ['published', strings.publishedBadge],
+                  ['draft', strings.draftBadge],
+                ] as const
+              ).map(([value, label]) => (
+                <Button
+                  key={value}
+                  size="sm"
+                  variant={statusFilter === value ? 'default' : 'outline'}
+                  onClick={() => setStatusFilter(value)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </RailSection>
+
+          {activeTab === 'artworks' && yoolaLoading ? (
+            <RailSection label={strings.categoryLabel}>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant={
+                    artworkCategoryFilter === 'all' ? 'default' : 'outline'
+                  }
+                  onClick={() => setArtworkCategoryFilter('all')}
+                >
+                  {strings.allItemsLabel}
+                </Button>
+                {yoolaLoading.artworkCategories.map((category) => (
+                  <Button
+                    key={category}
+                    size="sm"
+                    variant={
+                      artworkCategoryFilter === category ? 'default' : 'outline'
+                    }
+                    onClick={() => setArtworkCategoryFilter(category)}
+                  >
+                    {category}
+                  </Button>
+                ))}
+              </div>
+            </RailSection>
+          ) : null}
+
+          <RailSection label={strings.profileLabel}>
+            {currentTabEntries.length === 0 ? (
+              <EmptyPanel
+                title={
+                  normalizedQuery || statusFilter !== 'all'
+                    ? strings.noSearchResultsTitle
+                    : strings.noItemsTitle
+                }
+                description={
+                  normalizedQuery || statusFilter !== 'all'
+                    ? strings.noSearchResultsDescription
+                    : strings.noItemsDescription
+                }
+              />
+            ) : (
+              <EntryList isEmpty={false}>
+                {currentTabEntries.map((entry) => {
+                  const profile = asRecord(entry.profile_data);
+                  const entryAsset =
+                    assets.find(
+                      (asset) =>
+                        asset.entry_id === entry.id &&
+                        asset.asset_type === 'image'
+                    ) ?? null;
+
+                  return (
+                    <EntryCard
+                      key={entry.id}
+                      active={selectedEntryId === entry.id}
+                      title={entry.title}
+                      onClick={() => setSelectedEntryId(entry.id)}
+                      accent={
+                        <StatusBadge
+                          draftLabel={strings.draftBadge}
+                          isPublished={entry.status === 'published'}
+                          publishedLabel={strings.publishedBadge}
+                        />
+                      }
+                      eyebrow={
+                        <div className="flex flex-wrap gap-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                          <span>{entry.slug}</span>
+                          {activeTab === 'lore-capsules' ? (
+                            <span>
+                              {asString(profile.channel) ||
+                                strings.notAvailableLabel}
+                            </span>
+                          ) : null}
+                        </div>
+                      }
+                      body={
+                        activeTab === 'artworks' ? (
+                          <div className="space-y-3">
+                            {entryAsset?.preview_url ? (
+                              <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-border/70">
+                                <Image
+                                  src={entryAsset.preview_url}
+                                  alt={entryAsset.alt_text ?? entry.title}
+                                  fill
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                              </div>
+                            ) : null}
+                            <div className="flex flex-wrap gap-2">
+                              <Badge variant="outline">
+                                {asString(profile.category) ||
+                                  strings.notAvailableLabel}
+                              </Badge>
+                              <Badge variant="outline">
+                                {asString(profile.rarity) ||
+                                  strings.notAvailableLabel}
+                              </Badge>
+                              <Badge variant="outline">
+                                {asString(profile.year) ||
+                                  strings.notAvailableLabel}
+                              </Badge>
+                            </div>
+                            <p className="text-muted-foreground text-sm leading-6">
+                              {entry.summary || strings.noItemsDescription}
+                            </p>
+                          </div>
+                        ) : activeTab === 'lore-capsules' ? (
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap gap-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                              <span>
+                                {asString(profile.channel) ||
+                                  strings.notAvailableLabel}
+                              </span>
+                              <span>
+                                {asString(profile.date) ||
+                                  strings.notAvailableLabel}
+                              </span>
+                            </div>
+                            <p className="text-sm leading-6">
+                              {asString(profile.teaser) ||
+                                entry.summary ||
+                                strings.noItemsDescription}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground text-sm leading-6">
+                            {entry.summary || strings.noItemsDescription}
+                          </p>
+                        )
+                      }
+                    />
+                  );
+                })}
+              </EntryList>
+            )}
+          </RailSection>
+        </ContentRail>
+      }
+      rightColumn={
+        <>
+          <EditorPanel
+            title={strings.collectionSettingsTitle}
+            description={strings.collectionSettingsDescription}
+          >
+            {activeCollection ? (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/35 p-4">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge className="rounded-full">
+                        {activeCollection.slug}
+                      </Badge>
+                      <Badge variant="secondary" className="rounded-full">
+                        {formatCanonicalToken(activeCollection.collection_type)}
+                      </Badge>
+                    </div>
+                    <div className="text-muted-foreground text-sm">
+                      {activeCollection.is_enabled
+                        ? strings.collectionEnabledLabel
+                        : strings.collectionDisabledLabel}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-full border border-border/70 bg-background/70 px-3 py-2">
+                    <Switch
+                      checked={collectionDraft.isEnabled}
+                      onCheckedChange={(checked) =>
+                        setCollectionDraft((current) => ({
+                          ...current,
+                          isEnabled: checked,
+                        }))
+                      }
+                    />
+                    <span className="text-sm">
+                      {collectionDraft.isEnabled
+                        ? strings.collectionEnabledLabel
+                        : strings.collectionDisabledLabel}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <Field label={strings.titleLabel}>
+                    <Input
+                      value={collectionDraft.title}
+                      onChange={(event) =>
+                        setCollectionDraft((current) => ({
+                          ...current,
+                          title: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label={strings.descriptionLabel}>
+                    <Textarea
+                      rows={3}
+                      value={collectionDraft.description}
+                      onChange={(event) =>
+                        setCollectionDraft((current) => ({
+                          ...current,
+                          description: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => saveCollectionMutation.mutate()}
+                    disabled={
+                      !collectionDirty || saveCollectionMutation.isPending
+                    }
+                  >
+                    {strings.saveChanges}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <EmptyPanel
+                title={strings.collectionEmptyTitle}
+                description={strings.collectionEmptyDescription}
+              />
+            )}
+          </EditorPanel>
+
+          <EditorPanel
+            title={strings.detailPanelTitle}
+            description={strings.detailPanelDescription}
+          >
+            {!selectedEntry || !selectedCollection ? (
+              <EmptyPanel
+                title={strings.noItemsTitle}
+                description={strings.noItemsDescription}
+              />
+            ) : selectedCollection.collection_type === 'artworks' ? (
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label={strings.titleLabel}>
+                    <Input
+                      value={artworkDraft.title}
+                      onChange={(event) =>
+                        setArtworkDraft((current) => ({
+                          ...current,
+                          title: event.target.value,
+                          slug:
+                            current.slug ||
+                            normalizeSlugSeed(event.target.value),
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label={strings.slugLabel}>
+                    <Input
+                      value={artworkDraft.slug}
+                      onChange={(event) =>
+                        setArtworkDraft((current) => ({
+                          ...current,
+                          slug: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label={strings.labelLabel}>
+                    <Input
+                      value={artworkDraft.label}
+                      onChange={(event) =>
+                        setArtworkDraft((current) => ({
+                          ...current,
+                          label: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label={strings.categoryLabel}>
+                    <Input
+                      value={artworkDraft.category}
+                      onChange={(event) =>
+                        setArtworkDraft((current) => ({
+                          ...current,
+                          category: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label={strings.rarityLabel}>
+                    <Input
+                      value={artworkDraft.rarity}
+                      onChange={(event) =>
+                        setArtworkDraft((current) => ({
+                          ...current,
+                          rarity: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label={strings.yearLabel}>
+                    <Input
+                      value={artworkDraft.year}
+                      onChange={(event) =>
+                        setArtworkDraft((current) => ({
+                          ...current,
+                          year: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label={strings.orientationLabel}>
+                    <Input
+                      value={artworkDraft.orientation}
+                      onChange={(event) =>
+                        setArtworkDraft((current) => ({
+                          ...current,
+                          orientation: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label={strings.imageAltLabel}>
+                    <Input
+                      value={artworkDraft.altText}
+                      onChange={(event) =>
+                        setArtworkDraft((current) => ({
+                          ...current,
+                          altText: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label={strings.widthLabel}>
+                    <Input
+                      value={artworkDraft.width}
+                      onChange={(event) =>
+                        setArtworkDraft((current) => ({
+                          ...current,
+                          width: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label={strings.heightLabel}>
+                    <Input
+                      value={artworkDraft.height}
+                      onChange={(event) =>
+                        setArtworkDraft((current) => ({
+                          ...current,
+                          height: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                </div>
+
+                <Field label={strings.summaryLabel}>
+                  <Textarea
+                    rows={4}
+                    value={artworkDraft.summary}
+                    onChange={(event) =>
+                      setArtworkDraft((current) => ({
+                        ...current,
+                        summary: event.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label={strings.noteLabel}>
+                  <Textarea
+                    rows={4}
+                    value={artworkDraft.note}
+                    onChange={(event) =>
+                      setArtworkDraft((current) => ({
+                        ...current,
+                        note: event.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label={strings.remoteSourceLabel}>
+                  <Input
+                    value={artworkDraft.sourceUrl}
+                    onChange={(event) =>
+                      setArtworkDraft((current) => ({
+                        ...current,
+                        sourceUrl: event.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+
+                <input
+                  ref={assetUploadInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleArtworkUpload}
+                />
+                <div className="flex justify-between gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => assetUploadInputRef.current?.click()}
+                    disabled={uploadArtworkMutation.isPending}
+                  >
+                    {strings.uploadAction}
+                  </Button>
+                  <div className="text-muted-foreground text-sm">
+                    {leadAsset?.storage_path || strings.refreshHint}
+                  </div>
+                </div>
+              </div>
+            ) : selectedCollection.collection_type === 'lore-capsules' ? (
+              <div className="grid gap-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label={strings.titleLabel}>
+                    <Input
+                      value={loreDraft.title}
+                      onChange={(event) =>
+                        setLoreDraft((current) => ({
+                          ...current,
+                          title: event.target.value,
+                          slug:
+                            current.slug ||
+                            normalizeSlugSeed(event.target.value),
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label={strings.slugLabel}>
+                    <Input
+                      value={loreDraft.slug}
+                      onChange={(event) =>
+                        setLoreDraft((current) => ({
+                          ...current,
+                          slug: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label={strings.dateLabel}>
+                    <Input
+                      value={loreDraft.date}
+                      onChange={(event) =>
+                        setLoreDraft((current) => ({
+                          ...current,
+                          date: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label={strings.channelLabel}>
+                    <Input
+                      value={loreDraft.channel}
+                      onChange={(event) =>
+                        setLoreDraft((current) => ({
+                          ...current,
+                          channel: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label={strings.statusLabel}>
+                    <Input
+                      value={loreDraft.status}
+                      onChange={(event) =>
+                        setLoreDraft((current) => ({
+                          ...current,
+                          status: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label={strings.artworkLinkLabel}>
+                    <Select
+                      value={loreDraft.artworkSlug || '__none__'}
+                      onValueChange={(value) =>
+                        setLoreDraft((current) => ({
+                          ...current,
+                          artworkSlug: value === '__none__' ? '' : value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">
+                          {strings.notAvailableLabel}
+                        </SelectItem>
+                        {artworkEntries.map((entry) => (
+                          <SelectItem key={entry.id} value={entry.slug}>
+                            {entry.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+
+                <Field label={strings.summaryLabel}>
+                  <Textarea
+                    rows={4}
+                    value={loreDraft.summary}
+                    onChange={(event) =>
+                      setLoreDraft((current) => ({
+                        ...current,
+                        summary: event.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label={strings.teaserLabel}>
+                  <Textarea
+                    rows={4}
+                    value={loreDraft.teaser}
+                    onChange={(event) =>
+                      setLoreDraft((current) => ({
+                        ...current,
+                        teaser: event.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label={strings.tagsLabel}>
+                  <Input
+                    value={loreDraft.tags}
+                    onChange={(event) =>
+                      setLoreDraft((current) => ({
+                        ...current,
+                        tags: event.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label={strings.excerptLabel}>
+                  <Textarea
+                    rows={8}
+                    value={loreDraft.body}
+                    onChange={(event) =>
+                      setLoreDraft((current) => ({
+                        ...current,
+                        body: event.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                <Field label={strings.titleLabel}>
+                  <Input
+                    value={sectionDraft.title}
+                    onChange={(event) =>
+                      setSectionDraft((current) => ({
+                        ...current,
+                        title: event.target.value,
+                        slug:
+                          current.slug || normalizeSlugSeed(event.target.value),
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label={strings.slugLabel}>
+                  <Input
+                    value={sectionDraft.slug}
+                    onChange={(event) =>
+                      setSectionDraft((current) => ({
+                        ...current,
+                        slug: event.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label={strings.summaryLabel}>
+                  <Textarea
+                    rows={4}
+                    value={sectionDraft.summary}
+                    onChange={(event) =>
+                      setSectionDraft((current) => ({
+                        ...current,
+                        summary: event.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label={strings.sectionBodyLabel}>
+                  <Textarea
+                    rows={10}
+                    value={sectionDraft.body}
+                    onChange={(event) =>
+                      setSectionDraft((current) => ({
+                        ...current,
+                        body: event.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+              </div>
+            )}
+          </EditorPanel>
+        </>
+      }
+    />
   );
 }

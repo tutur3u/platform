@@ -1,0 +1,41 @@
+---
+title: 'External Project Studio'
+description: 'Control-tower and split-view authoring workflows for canonical external projects and workspace-bound content.'
+updatedAt: '2026-04-18'
+---
+
+## TL;DR
+
+The external-projects surfaces now follow two distinct workflows:
+
+- The **root workspace** owns the canonical registry and workspace bindings through a searchable control tower.
+- Each **bound workspace** edits content in a split-view studio with a content rail, focused editor, and live preview.
+
+## Root Control Tower
+
+- Use the registry search and adapter filter to find canonical projects quickly.
+- Keep project edits in the registry cards so adapter, delivery profile, and recommended collections stay visible while editing.
+- Use the sticky action panel on the right for two jobs:
+  - create a new canonical project
+  - bind or unbind a destination workspace
+- Recent binding audits stay below the registry so operational changes remain visible after edits.
+
+## Workspace Studio
+
+- The left rail is the primary navigation surface for collections, filters, and record selection.
+- The center column holds collection settings plus the active entry editor.
+- The right column shows the live preview.
+  - **Rendered** reflects the current draft immediately in the UI.
+  - **Payload** fetches the real preview delivery response from `GET /api/v1/workspaces/:wsId/external-projects/delivery?preview=true`.
+- Import, save, publish, and unpublish actions stay explicit in the sticky action bar. There is no autosave.
+
+## Implementation Notes
+
+- The preview source of truth is the existing preview delivery API, not a duplicate client-side payload builder.
+- The workspace studio still uses the existing internal API helpers for entry, block, asset, import, publish, and binding operations.
+- Mobile and tablet views collapse the persistent preview into a sheet so the editor remains usable on narrow screens.
+
+## Team Guidance
+
+- When changing external-project authoring UX, keep the live preview wired to the preview delivery endpoint instead of inventing a second payload contract in the client.
+- Add any new user-facing copy to both `apps/web/messages/en.json` and `apps/web/messages/vi.json`, then run `bun i18n:sort`.

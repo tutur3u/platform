@@ -30,6 +30,7 @@
                 "group": "Features",
                 "pages": [
                   "platform/features/command-center-dashboard",
+                  "platform/features/external-project-studio",
                   "platform/features/meet-together",
                   "platform/features/user-management",
                   {
