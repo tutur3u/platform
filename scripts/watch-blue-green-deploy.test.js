@@ -230,6 +230,43 @@ test('buildDashboardView shows blue/green runtime and the last 5 deployments', (
   assert.equal(firstCardTop.length, firstCardHeading.length);
 });
 
+test('buildDashboardView surfaces the latest deploy failure details', () => {
+  const now = Date.parse('2026-04-18T11:30:00.000Z');
+  const plainOutput = stripAnsi(
+    buildDashboardView(
+      {
+        currentBlueGreen: {
+          activeColor: 'green',
+          state: 'degraded',
+        },
+        deployments: [],
+        events: [],
+        intervalMs: DEFAULT_INTERVAL_MS,
+        lastResult: {
+          error: new Error(
+            'Command failed (1): docker compose -f docker-compose.web.prod.yml --profile redis up --build --detach --remove-orphans web-green\nservice "web-green" is unhealthy'
+          ),
+          status: 'deploy-failed',
+        },
+        latestCommit: {
+          committedAt: now,
+          shortHash: 'bbb222',
+          subject: 'current',
+        },
+        startedAt: now - 30_000,
+        target: {
+          branch: 'main',
+          upstreamRef: 'origin/main',
+        },
+      },
+      { now, width: 100 }
+    )
+  );
+
+  assert.match(plainOutput, /Failure:\s+Command failed \(1\): docker compose/);
+  assert.match(plainOutput, /Detail:\s+service "web-green" is unhealthy/);
+});
+
 test('buildDashboardView shows pending deployments in recent deployment cards', () => {
   const output = stripAnsi(
     buildDashboardView(
@@ -1253,6 +1290,10 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       ],
       [
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-blue`,
+        createResult('blue-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q web-blue`,
         createResult('blue-123\n'),
       ],
       [

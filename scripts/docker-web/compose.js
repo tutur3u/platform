@@ -95,7 +95,13 @@ async function runChecked(command, args, options = {}) {
 
 async function getComposeServiceContainerId(
   serviceName,
-  { composeFile, composeGlobalArgs = [], env, runCommand: run }
+  {
+    composeFile,
+    composeGlobalArgs = [],
+    env,
+    includeStopped = false,
+    runCommand: run,
+  }
 ) {
   const result = await runChecked(
     'docker',
@@ -103,6 +109,7 @@ async function getComposeServiceContainerId(
       composeFile,
       composeGlobalArgs,
       'ps',
+      ...(includeStopped ? ['-a'] : []),
       '-q',
       serviceName
     ),
@@ -118,12 +125,19 @@ async function getComposeServiceContainerId(
 
 async function hasComposeServiceContainer(
   serviceName,
-  { composeFile, composeGlobalArgs = [], env, runCommand: run }
+  {
+    composeFile,
+    composeGlobalArgs = [],
+    env,
+    includeStopped = false,
+    runCommand: run,
+  }
 ) {
   const containerId = await getComposeServiceContainerId(serviceName, {
     composeFile,
     composeGlobalArgs,
     env,
+    includeStopped,
     runCommand: run,
   });
 
@@ -172,6 +186,7 @@ async function removeComposeServicesIfPresent(
         composeFile,
         composeGlobalArgs,
         env,
+        includeStopped: true,
         runCommand: run,
       }))
     ) {

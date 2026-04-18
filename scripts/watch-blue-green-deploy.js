@@ -305,6 +305,24 @@ function summarizeResult(result) {
   }
 }
 
+function getResultErrorLines(result) {
+  const message =
+    result?.error instanceof Error
+      ? result.error.message
+      : typeof result?.error === 'string'
+        ? result.error
+        : '';
+
+  if (!message) {
+    return [];
+  }
+
+  return stripAnsi(message)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
 function summarizeBlueGreenRuntime(
   currentBlueGreen,
   { now = Date.now() } = {}
@@ -560,6 +578,7 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
       : [colorize('dim', 'No events yet.')];
   const activePendingDeployment = state.deployments?.[0];
   const lastDeployDetails = [formatRelativeTime(state.lastDeployAt, { now })];
+  const failureLines = getResultErrorLines(state.lastResult);
 
   if (
     activePendingDeployment &&
@@ -584,6 +603,22 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
       )}`
     ),
     formatRow('Status', summarizeResult(state.lastResult)),
+    ...(failureLines.length > 0
+      ? [
+          formatRow(
+            'Failure',
+            colorize('red', truncateText(failureLines[0], contentWidth - 18))
+          ),
+          ...failureLines
+            .slice(1, 3)
+            .map((line, index) =>
+              formatRow(
+                index === 0 ? 'Detail' : 'Detail+',
+                colorize('dim', truncateText(line, contentWidth - 18))
+              )
+            ),
+        ]
+      : []),
     formatRow(
       'Blue/green',
       summarizeBlueGreenRuntime(state.currentBlueGreen, { now })
