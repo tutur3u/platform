@@ -83,7 +83,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=test-publishable-key
           SUPABASE_SECRET_KEY=test-secret-key
           EOF
-          printf 'SRH_TOKEN=test-token\n' >> "$GITHUB_ENV"
+          printf 'UPSTASH_REDIS_REST_TOKEN=test-token\n' >> "$GITHUB_ENV"
 
       - name: Render Docker Compose configs
         run: |

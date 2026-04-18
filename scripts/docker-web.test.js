@@ -200,6 +200,31 @@ test('getComposeEnvironment preserves the configured cloud Supabase URL', () => 
   }
 });
 
+test('getComposeEnvironment rewrites an explicit localhost SUPABASE_SERVER_URL', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-server-url-env-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'SUPABASE_SERVER_URL=http://localhost:8001\n'
+    );
+
+    const env = getComposeEnvironment({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath,
+      rootDir: tempDir,
+    });
+
+    assert.equal(env.SUPABASE_SERVER_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('getComposeEnvironment omits redis env when docker redis is disabled', () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'docker-web-no-redis-env-')

@@ -94,11 +94,12 @@ function getComposeEnvironment({
   const envFile = parseEnvFile(envFilePath, fsImpl);
   const nextPublicSupabaseUrl =
     envFile.NEXT_PUBLIC_SUPABASE_URL ?? baseEnv.NEXT_PUBLIC_SUPABASE_URL;
-  const dockerInternalSupabaseUrl =
+  const dockerInternalSupabaseUrl = rewriteLocalhostUrl(
     envFile.SUPABASE_SERVER_URL ??
-    baseEnv.SUPABASE_SERVER_URL ??
-    baseEnv.DOCKER_INTERNAL_SUPABASE_URL ??
-    rewriteLocalhostUrl(nextPublicSupabaseUrl);
+      baseEnv.SUPABASE_SERVER_URL ??
+      baseEnv.DOCKER_INTERNAL_SUPABASE_URL ??
+      nextPublicSupabaseUrl
+  );
 
   const composeEnv = {
     ...baseEnv,
