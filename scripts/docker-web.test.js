@@ -337,7 +337,10 @@ test('getComposeFile resolves the expected compose file for each mode', () => {
 });
 
 test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
-  const config = renderBlueGreenProxyConfig('green');
+  const config = renderBlueGreenProxyConfig('green', {
+    deploymentStamp: 'deploy-2026-04-18T12-30-00Z',
+    standbyColor: 'blue',
+  });
 
   assert.match(
     config,
@@ -355,7 +358,22 @@ test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
   assert.match(config, /client_header_buffer_size 16k;/);
   assert.match(config, /keepalive_timeout 15s;/);
   assert.match(config, /large_client_header_buffers 8 16k;/);
+  assert.match(
+    config,
+    /add_header X-Platform-Deployment-Stamp "deploy-2026-04-18T12-30-00Z" always;/
+  );
+  assert.match(
+    config,
+    /add_header X-Platform-Blue-Green-Primary "green" always;/
+  );
+  assert.match(
+    config,
+    /add_header X-Platform-Blue-Green-Standby "blue" always;/
+  );
   assert.match(config, /proxy_connect_timeout 3s;/);
+  assert.match(config, /proxy_buffer_size 128k;/);
+  assert.match(config, /proxy_buffers 8 128k;/);
+  assert.match(config, /proxy_busy_buffers_size 256k;/);
   assert.match(
     config,
     /proxy_next_upstream error timeout invalid_header http_502 http_503 http_504;/
@@ -742,6 +760,10 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
       fs.readFileSync(paths.proxyConfigFile, 'utf8'),
       /server web-blue:7803 resolve max_fails=1 fail_timeout=5s;/
     );
+    assert.match(
+      fs.readFileSync(paths.proxyConfigFile, 'utf8'),
+      /X-Platform-Deployment-Stamp/
+    );
     assert.ok(
       calls.some(
         ([command, args]) =>
@@ -860,9 +882,14 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
     );
 
     assert.equal(readBlueGreenActiveColor(paths), 'green');
+    const proxyConfig = fs.readFileSync(paths.proxyConfigFile, 'utf8');
     assert.match(
-      fs.readFileSync(paths.proxyConfigFile, 'utf8'),
+      proxyConfig,
       /server web-green:7803 resolve max_fails=1 fail_timeout=5s;/
+    );
+    assert.match(
+      proxyConfig,
+      /server web-blue:7803 backup resolve max_fails=1 fail_timeout=5s;/
     );
     const promotionUpCall = calls.find(
       ([command, args]) =>
@@ -889,21 +916,6 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
       )
     );
     assert.equal(drainChecks, 2);
-    assert.ok(
-      calls.findIndex(
-        ([command, args]) =>
-          command === 'docker' &&
-          args.includes('stop') &&
-          args.includes('web-blue')
-      ) >
-        calls.findLastIndex(
-          ([command, args]) =>
-            command === 'docker' &&
-            args.includes('exec') &&
-            args.includes('web-blue') &&
-            args.includes('node')
-        )
-    );
     assert.ok(
       calls.some(
         ([command, args]) =>
@@ -951,19 +963,10 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
       )
     );
     assert.ok(
-      calls.some(
+      !calls.some(
         ([command, args]) =>
           command === 'docker' &&
-          args.includes('stop') &&
-          args.includes('web-blue')
-      )
-    );
-    assert.ok(
-      calls.some(
-        ([command, args]) =>
-          command === 'docker' &&
-          args.includes('rm') &&
-          args.includes('-f') &&
+          (args.includes('stop') || args.includes('rm')) &&
           args.includes('web-blue')
       )
     );

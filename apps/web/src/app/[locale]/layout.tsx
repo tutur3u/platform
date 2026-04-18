@@ -50,6 +50,9 @@ export function generateStaticParams() {
 
 export default async function RootLayout({ children, params }: Props) {
   const { locale } = await params;
+  const deploymentStamp =
+    process.env.PLATFORM_DEPLOYMENT_STAMP?.trim() || 'local';
+  const serviceWorkerUrl = `/serwist/sw.js?v=${encodeURIComponent(deploymentStamp)}`;
 
   // Ensure that the incoming `locale` is valid
   if (!routing.locales.includes(locale as Locale)) {
@@ -67,7 +70,10 @@ export default async function RootLayout({ children, params }: Props) {
           font.className
         )}
       >
-        <SerwistProvider>
+        <SerwistProvider
+          options={{ updateViaCache: 'none' }}
+          swUrl={serviceWorkerUrl}
+        >
           <VercelAnalytics />
           <VercelInsights />
           <Suspense>

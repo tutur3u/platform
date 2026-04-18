@@ -4,6 +4,8 @@ const https = require('node:https');
 const DRAIN_STATUS_PATH =
   process.env.DOCKER_WEB_DRAIN_STATUS_PATH ?? '/__platform/drain-status';
 const HEALTH_PATH = '/api/health';
+const DEPLOYMENT_STAMP = process.env.PLATFORM_DEPLOYMENT_STAMP?.trim() || null;
+const DEPLOYMENT_COLOR = process.env.PLATFORM_BLUE_GREEN_COLOR?.trim() || null;
 
 let inflightRequests = 0;
 let shuttingDown = false;
@@ -31,6 +33,7 @@ function isTrackedRequest(request) {
 
 function respondWithDrainStatus(response) {
   response.statusCode = 200;
+  setDeploymentHeaders(response);
   response.setHeader('Cache-Control', 'no-store');
   response.setHeader('Content-Type', 'application/json');
   response.end(
@@ -40,6 +43,16 @@ function respondWithDrainStatus(response) {
       timestamp: Date.now(),
     })
   );
+}
+
+function setDeploymentHeaders(response) {
+  if (DEPLOYMENT_STAMP) {
+    response.setHeader('X-Platform-Deployment-Stamp', DEPLOYMENT_STAMP);
+  }
+
+  if (DEPLOYMENT_COLOR) {
+    response.setHeader('X-Platform-Blue-Green-Color', DEPLOYMENT_COLOR);
+  }
 }
 
 function patchServerModule(serverModule) {
@@ -66,6 +79,8 @@ function patchServerModule(serverModule) {
     }
 
     const tracked = isTrackedRequest(request);
+
+    setDeploymentHeaders(response);
 
     if (!tracked) {
       return originalEmit.call(this, eventName, ...args);

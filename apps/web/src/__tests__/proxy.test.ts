@@ -464,6 +464,31 @@ describe('web proxy api handling', () => {
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
+  it('bypasses auth and locale rewriting for the browser-state recovery route', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/~recover-browser-state')
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('redirects localized browser-state recovery requests to the canonical route', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/en/~recover-browser-state?retry=1')
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'http://localhost/~recover-browser-state?retry=1'
+    );
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
   it('bypasses auth and locale rewriting for reserved root tilde routes', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(new NextRequest('http://localhost/~'));

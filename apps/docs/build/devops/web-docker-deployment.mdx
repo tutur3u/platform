@@ -130,33 +130,44 @@ Blue/green deploy does this:
 6. Validates the generated nginx config with `nginx -t`, then reloads nginx
    inside that existing proxy only after the new color is healthy.
 7. Immediately verifies the proxy can serve `/api/health` through the newly
-   promoted color before retiring the old one.
+   promoted color before marking the new color active.
 8. Polls an internal drain-status endpoint on the old color and waits until it
-   has no in-flight HTTP work left before retiring it. This keeps long-running
-   server actions, route handlers, and other open requests from being cut off
-   mid-flight.
+   has no in-flight HTTP work left before demoting it to standby. This keeps
+   long-running server actions, route handlers, and other open requests from
+   being cut off mid-flight.
 9. Falls back to the short fixed drain window only when the old image predates
    the drain-status endpoint and cannot report its active requests yet.
-10. Stops the old color after traffic has moved.
+10. Keeps the demoted color online as a warm nginx backup target instead of
+    removing it immediately, so stale keepalive workers and Cloudflare Tunnel
+    connections can still fail over cleanly during the post-promotion window.
 
 The stable nginx proxy also raises its request-header buffer limits so larger
 session/auth cookies do not fail at the proxy layer with `400 Request Header Or
-Cookie Too Large` before the active web container sees the request. It also
-uses Docker DNS re-resolution plus a shorter keepalive timeout so promotions are
-less likely to produce transient `502 Host Error` responses for existing
-Cloudflare Tunnel connections, while the old color remains alive until its
-in-flight work count reaches zero. The proxy now keeps both blue and green in
-the nginx upstream group during steady state too, with the active color as the
-primary upstream and the inactive color as a backup. That lets stale keepalive
-workers fail over to the newly promoted color instead of returning `502` when
-some clients or Cloudflare Tunnel connections are still pinned to older nginx
-workers after a reload. The runtime DNS resolver is defined at the nginx
-include/http scope, not just inside `server`, so Docker service-name resolution
-continues to work for the blue/green upstream block at reload time.
+Cookie Too Large` before the active web container sees the request. It now also
+raises its upstream response-header buffers (`proxy_buffer_size`,
+`proxy_buffers`, and `proxy_busy_buffers_size`) so larger Supabase auth
+responses with multiple `Set-Cookie` headers do not fail with `upstream sent too
+big header while reading response header from upstream`. The proxy uses Docker
+DNS re-resolution plus a shorter keepalive timeout so promotions are less
+likely to produce transient `502 Host Error` responses for existing Cloudflare
+Tunnel connections, while the previous color remains alive as a warm standby.
+The proxy keeps both blue and green in the nginx upstream group during steady
+state, with the active color as the primary upstream and the standby color as a
+backup. The runtime DNS resolver is defined at the nginx include/http scope,
+not just inside `server`, so Docker service-name resolution continues to work
+for the blue/green upstream block at reload time.
+
+Every blue/green deployment also stamps the runtime with
+`PLATFORM_DEPLOYMENT_STAMP` and `PLATFORM_BLUE_GREEN_COLOR`. Those values are
+surfaced through both nginx response headers and the web process itself, and
+the web layout appends the deployment stamp to the service-worker URL with
+`updateViaCache: 'none'` so new deployments push browsers toward the latest
+worker instead of lingering on stale cached state.
 
 The local runtime state lives in:
 
 - `tmp/docker-web/prod/active-color`
+- `tmp/docker-web/prod/deployment-stamp`
 - `tmp/docker-web/prod/nginx.conf`
 
 These files are intentionally local-only and safe to regenerate.
@@ -303,11 +314,44 @@ Dashboard details:
   they stay self-hosted and do not require any external analytics service.
 - Internal proxy health checks for `/api/health` are excluded from the request
   totals so the numbers reflect real served traffic more closely.
-- When a new color takes over, the retired blue/green app container is stopped
-  and removed instead of being left behind in an exited state.
 - The watcher uses the same Docker runtime env resolution as the real deploy
   flow, so blue/green status probes still work when the Redis profile is part
   of the production compose file.
+
+## Browser-State 502 Recovery
+
+If some normal browsers still return Cloudflare `502 Host Error` while
+incognito works, treat it as stale client state or an auth-cookie/header-size
+problem before assuming the tunnel itself is broken.
+
+How to recognize each failure mode:
+
+- `upstream sent too big header while reading response header from upstream`
+  means nginx response-header buffers were too small for the auth response.
+- `web-green could not be resolved` or `web-blue could not be resolved` means a
+  stale nginx worker or keepalive connection still tried to reach a color that
+  no longer existed. The current warm-standby model is designed to avoid that.
+- A browser that fails only in regular mode but works in incognito usually has
+  stale Supabase auth cookies, stale service-worker state, or both.
+
+Recovery path:
+
+- Send affected users to `https://tuturuuu.com/~recover-browser-state`.
+- That route is public and bypasses auth/onboarding middleware.
+- It responds with `Clear-Site-Data: "cache", "cookies", "storage",
+  "executionContexts"` and explicitly expires all Supabase auth cookie variants
+  for the current host before redirecting the browser back to
+  `/login?browserStateReset=1`.
+
+Operational signals:
+
+- Inspect `X-Platform-Deployment-Stamp`, `X-Platform-Blue-Green-Primary`, and
+  `X-Platform-Blue-Green-Color` response headers to confirm which rollout is
+  currently serving a request.
+- If the recovery URL fixes the issue for a user, the likely root cause was
+  stale browser state rather than an active deploy outage.
+- If recovery does not help and proxy logs still show `too big header`, focus
+  on auth redirect size or additional cookie bloat.
 
 Operational notes:
 

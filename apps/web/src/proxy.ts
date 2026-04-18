@@ -40,6 +40,7 @@ const ONBOARDING_BYPASS_PATHS = [
   '/logout',
   '/account/delete',
   '/verify',
+  '/~recover-browser-state',
   '/reset-password',
   '/mfa',
   ...PUBLIC_PATHS,
@@ -81,6 +82,7 @@ const WEB_APP_URL = isDev
     resolveConfiguredOrigin(process.env.COOLIFY_FQDN) ||
     'https://tuturuuu.com';
 const OFFLINE_FALLBACK_PATH = '/~offline';
+const BROWSER_STATE_RECOVERY_PATH = '/~recover-browser-state';
 const RESERVED_ROOT_SEGMENT_PREFIX = '~';
 const RESERVED_ROOT_NOT_FOUND_PATH = '/__reserved-root-not-found__';
 const BLOCKED_ROOT_SEGMENT_PREFIX = '.';
@@ -887,6 +889,10 @@ const handleReservedRootRoute = (req: NextRequest): NextResponse | null => {
     return NextResponse.next();
   }
 
+  if (pathname === BROWSER_STATE_RECOVERY_PATH) {
+    return NextResponse.next();
+  }
+
   if (rootDynamicSegment?.startsWith(BLOCKED_ROOT_SEGMENT_PREFIX)) {
     return NextResponse.rewrite(
       new URL(RESERVED_ROOT_NOT_FOUND_PATH, req.nextUrl)
@@ -906,7 +912,9 @@ const handleReservedRootRoute = (req: NextRequest): NextResponse | null => {
     const canonicalReservedPath =
       localizedReservedSegment === OFFLINE_FALLBACK_PATH.slice(1)
         ? OFFLINE_FALLBACK_PATH
-        : `/${segments.slice(1).join('/')}`;
+        : localizedReservedSegment === BROWSER_STATE_RECOVERY_PATH.slice(1)
+          ? BROWSER_STATE_RECOVERY_PATH
+          : `/${segments.slice(1).join('/')}`;
     const redirectUrl = new URL(canonicalReservedPath, req.nextUrl);
     redirectUrl.search = req.nextUrl.search;
     return NextResponse.redirect(redirectUrl);

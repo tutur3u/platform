@@ -320,6 +320,8 @@ function validateDockerProdCompose(composeContent) {
     '    image: nginx:1.27-alpine',
     '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',
     '      required: true',
+    '    - PLATFORM_BLUE_GREEN_COLOR',
+    '    - PLATFORM_DEPLOYMENT_STAMP',
     '    - SUPABASE_SERVER_URL',
     '    - UPSTASH_REDIS_REST_TOKEN',
     '    - UPSTASH_REDIS_REST_URL',
