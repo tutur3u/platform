@@ -2204,6 +2204,7 @@
     "export-content": "Please choose file type to export",
     "export-error": " File export failed due to an error. Please try again",
     "export-success": " File exported successfully.",
+    "facebook_mockup": "Facebook Mockup",
     "failed_to_archive_tasks": "Failed to archive tasks. Please try again.",
     "failed_to_clear_assignees": "Failed to clear assignees.",
     "failed_to_clear_labels": "Failed to clear labels.",
@@ -3964,6 +3965,119 @@
       "upload_complete_toast": "Artwork uploaded",
       "width_label": "Width",
       "year_label": "Year"
+    }
+  },
+  "facebook_mockup": {
+    "actions": {
+      "move_down": "Move down",
+      "move_up": "Move up",
+      "remove": "Remove",
+      "replace": "Replace",
+      "upload": "Upload"
+    },
+    "defaults": {
+      "audience_label": "Public",
+      "caption": "Tuturuuu turns a single creative into a polished Facebook desktop mockup in seconds.",
+      "comments_count": "18",
+      "cta_label": "Learn More",
+      "description": "Desktop-first previews for launches, page posts, education, and product campaigns.",
+      "headline": "A Tuturuuu Facebook mockup preview",
+      "page_handle": "@tuturuuu",
+      "page_name": "Tuturuuu",
+      "reactions_count": "124",
+      "shares_count": "7",
+      "sponsored_label": "Sponsored"
+    },
+    "description": "Switch between a desktop ad preview and a desktop page post preview, upload a single creative, and export the final mockup instantly.",
+    "errors": {
+      "file_too_large": "Images must be {size} or smaller.",
+      "invalid_type": "Use PNG, JPG, or WEBP images."
+    },
+    "fields": {
+      "audience_label": "Audience label",
+      "avatar_image": "Avatar image",
+      "caption": "Caption",
+      "comments": "comments",
+      "creative_image": "Creative image",
+      "cta_label": "CTA label",
+      "description": "Description",
+      "headline": "Headline",
+      "page_handle": "Page handle",
+      "page_name": "Page name",
+      "preview_theme": "Preview theme",
+      "preview_type": "Preview type",
+      "preview_viewport": "Viewport",
+      "reactions": "reactions",
+      "shares": "shares",
+      "sponsored_label": "Sponsored label"
+    },
+    "fullscreen": {
+      "close": "Close fullscreen",
+      "description": "Preview and export the mockup with desktop, tablet, or phone framing.",
+      "open": "Fullscreen preview",
+      "title": "Fullscreen Preview"
+    },
+    "helper_text": {
+      "drag_reactions": "Drag reactions to change the order they appear in the summary bar.",
+      "upload_image": "PNG, JPG, or WEBP up to {size}."
+    },
+    "modes": {
+      "ad": "Facebook ad",
+      "page": "Desktop page post"
+    },
+    "placeholders": {
+      "audience_label": "Public",
+      "caption": "Write your ad copy or post caption",
+      "cta_label": "Learn More",
+      "description": "Describe the supporting copy that appears under the image.",
+      "headline": "Add the short headline under the image",
+      "metric_value": "0",
+      "page_handle": "@yourpage",
+      "page_name": "Page name",
+      "sponsored_label": "Sponsored"
+    },
+    "preview": {
+      "actions_comment": "Comment",
+      "actions_like": "Like",
+      "actions_share": "Share",
+      "avatar_alt": "Preview page avatar",
+      "browser_title": "facebook mockup preview",
+      "close": "Close",
+      "creative_alt": "Preview creative image",
+      "desktop_label": "Desktop preview",
+      "feed_label": "News Feed",
+      "more_actions": "More actions",
+      "placeholder_avatar": "Avatar",
+      "placeholder_image": "Creative image",
+      "search_placeholder": "Search Facebook",
+      "see_more": "See more",
+      "show_less": "See less"
+    },
+    "preview_themes": {
+      "dark": "Dark mode",
+      "light": "Light mode"
+    },
+    "reactions": {
+      "angry": "Angry",
+      "care": "Care",
+      "haha": "Haha",
+      "like": "Like",
+      "love": "Love",
+      "sad": "Sad",
+      "wow": "Wow"
+    },
+    "sections": {
+      "content": "Content",
+      "identity": "Page identity",
+      "media": "Media",
+      "performance": "Performance",
+      "reactions": "Visible reactions"
+    },
+    "title": "Facebook Mockup Tool",
+    "viewport_modes": {
+      "desktop": "Desktop",
+      "phone": "Phone",
+      "tablet": "Tablet"
     }
   },
   "finance": {

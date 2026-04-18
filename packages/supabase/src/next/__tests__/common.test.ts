@@ -58,6 +58,19 @@ describe('common', () => {
       });
     });
 
+    it('should preserve a trailing slash on SUPABASE_SERVER_URL on the server', () => {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:8001';
+      process.env.SUPABASE_SERVER_URL = 'http://host.docker.internal:8001/';
+      process.env.SUPABASE_SECRET_KEY = 'test-secret-key';
+
+      const result = checkEnvVariables({ useSecretKey: true });
+
+      expect(result).toEqual({
+        url: 'http://host.docker.internal:8001/',
+        key: 'test-secret-key',
+      });
+    });
+
     it('should ignore SUPABASE_SERVER_URL in the browser', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.SUPABASE_SERVER_URL = 'http://host.docker.internal:8001';
