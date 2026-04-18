@@ -18,6 +18,7 @@ const {
   createWatchUi,
   formatCountdown,
   formatRelativeTime,
+  formatRequestsPerMinute,
   getWatchPaths,
   isProcessAlive,
   parseArgs,
@@ -30,6 +31,7 @@ const {
   runDeployWatchIteration,
   runDeployWatchLoop,
   spawnReplacementWatcher,
+  summarizeRequestRate,
   writeDeploymentHistory,
 } = require('./watch-blue-green-deploy.js');
 
@@ -105,6 +107,7 @@ test('formatRelativeTime clamps tiny future drift so the dashboard does not flic
     formatCountdown(Date.parse('2026-04-18T11:00:05.000Z'), { now }),
     '5.0s'
   );
+  assert.equal(formatRequestsPerMinute(2.5), '2.5 rpm');
 });
 
 test('buildDashboardView shows blue/green runtime and the last 3 deployments', () => {
@@ -114,7 +117,9 @@ test('buildDashboardView shows blue/green runtime and the last 3 deployments', (
       currentBlueGreen: {
         activeColor: 'green',
         activatedAt: Date.parse('2026-04-18T11:10:00.000Z'),
+        averageRequestsPerMinute: 6.4,
         lifetimeMs: 20 * 60 * 1_000,
+        peakRequestsPerMinute: 12,
         requestCount: 128,
         state: 'serving',
       },
@@ -122,23 +127,27 @@ test('buildDashboardView shows blue/green runtime and the last 3 deployments', (
         {
           activatedAt: Date.parse('2026-04-18T11:10:00.000Z'),
           activeColor: 'green',
+          averageRequestsPerMinute: 6.4,
           buildDurationMs: 42_000,
           commitShortHash: 'bbb222',
           commitSubject: 'Refresh watcher UX and restart logic',
           finishedAt: Date.parse('2026-04-18T11:10:00.000Z'),
           lifetimeMs: 20 * 60 * 1_000,
+          peakRequestsPerMinute: 12,
           requestCount: 128,
           startedAt: Date.parse('2026-04-18T11:09:18.000Z'),
           status: 'successful',
         },
         {
           activeColor: 'blue',
+          averageRequestsPerMinute: 17.1,
           buildDurationMs: 35_000,
           commitShortHash: 'aaa111',
           commitSubject: 'Previous rollout',
           endedAt: Date.parse('2026-04-18T11:10:00.000Z'),
           finishedAt: Date.parse('2026-04-18T10:40:00.000Z'),
           lifetimeMs: 30 * 60 * 1_000,
+          peakRequestsPerMinute: 40,
           requestCount: 512,
           startedAt: Date.parse('2026-04-18T10:39:25.000Z'),
           status: 'successful',
@@ -179,10 +188,14 @@ test('buildDashboardView shows blue/green runtime and the last 3 deployments', (
   assert.match(output, /Blue\/green/);
   assert.match(output, /serving green/);
   assert.match(output, /128 req/);
+  assert.match(output, /avg 6\.4 rpm/);
+  assert.match(output, /peak 12 rpm/);
   assert.match(output, /Last 3 Deployments/);
+  assert.match(output, /\| TIME/);
+  assert.match(output, /\| STATUS/);
   assert.match(output, /ACTIVE/);
-  assert.match(output, /build 42s/);
-  assert.match(output, /life 20m/);
+  assert.match(output, /42s/);
+  assert.match(output, /20m/);
   assert.match(output, /Refresh watcher UX and restart logic/);
 });
 
@@ -509,29 +522,68 @@ test('parseProxyLogEntries keeps only access lines and collectDeploymentTraffic 
 
   assert.equal(enriched[0].requestCount, 1);
   assert.equal(enriched[1].requestCount, 1);
+  assert.equal(enriched[0].averageRequestsPerMinute, 1 / 30);
+  assert.equal(enriched[0].peakRequestsPerMinute, 1);
   assert.equal(enriched[0].lifetimeMs, 30 * 60 * 1_000);
+});
+
+test('summarizeRequestRate computes total, average rpm, and peak rpm', () => {
+  const startTime = Date.parse('2026-04-18T11:00:00.000Z');
+  const endTime = Date.parse('2026-04-18T11:03:00.000Z');
+  const summary = summarizeRequestRate(
+    [
+      { path: '/', time: Date.parse('2026-04-18T11:00:10.000Z') },
+      { path: '/docs', time: Date.parse('2026-04-18T11:00:20.000Z') },
+      { path: '/', time: Date.parse('2026-04-18T11:01:10.000Z') },
+      { path: '/api/health', time: Date.parse('2026-04-18T11:01:20.000Z') },
+      { path: '/about', time: Date.parse('2026-04-18T11:02:10.000Z') },
+    ],
+    startTime,
+    endTime
+  );
+
+  assert.deepEqual(summary, {
+    averageRequestsPerMinute: 4 / 3,
+    peakRequestsPerMinute: 2,
+    requestCount: 4,
+  });
 });
 
 test('resolveCurrentBlueGreenStatus reflects the active color and running services', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-blue-green-'));
   const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const receivedEnvs = [];
 
   try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
     fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
 
     const status = await resolveCurrentBlueGreenStatus({
+      envFilePath,
       fsImpl: fs,
       paths,
-      runCommand: createRunCommandMock(
-        new Map([
-          [
-            prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
-            createResult('proxy-123\n'),
-          ],
-          [prodComposePsKey('web-green'), createResult('green-123\n')],
-        ])
-      ),
+      rootDir: tempDir,
+      runCommand: async (command, args, options) => {
+        receivedEnvs.push(options.env);
+        const key = `${command} ${args.join(' ')}`;
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('proxy-123\n');
+        }
+
+        if (key === prodComposePsKey('web-green')) {
+          return createResult('green-123\n');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
     });
 
     assert.deepEqual(status, {
@@ -540,6 +592,11 @@ test('resolveCurrentBlueGreenStatus reflects the active color and running servic
       proxyRunning: true,
       state: 'serving',
     });
+    assert.equal(receivedEnvs[0].UPSTASH_REDIS_REST_TOKEN.length, 64);
+    assert.equal(
+      receivedEnvs[0].SUPABASE_SERVER_URL,
+      'http://host.docker.internal:8001/'
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -548,6 +605,7 @@ test('resolveCurrentBlueGreenStatus reflects the active color and running servic
 test('runDeployWatchIteration skips dirty worktrees before fetch and still reports runtime state', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-dirty-'));
   const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
   const calls = [];
   const runCommand = async (command, args) => {
     const key = `${command} ${args.join(' ')}`;
@@ -569,6 +627,12 @@ test('runDeployWatchIteration skips dirty worktrees before fetch and still repor
   };
 
   try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
     const result = await runDeployWatchIteration(
       {
         branch: 'main',
@@ -577,10 +641,12 @@ test('runDeployWatchIteration skips dirty worktrees before fetch and still repor
         upstreamRef: 'origin/main',
       },
       {
+        envFilePath,
         fsImpl: fs,
         log: { error() {}, info() {}, warn() {} },
         now: () => 1234,
         paths,
+        rootDir: tempDir,
         runCommand,
       }
     );
@@ -601,6 +667,7 @@ test('runDeployWatchIteration skips dirty worktrees before fetch and still repor
 test('runDeployWatchIteration pulls, deploys, tracks history, traffic, and watcher self-restart', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-deploy-'));
   const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
   const deployCommands = [];
   const commandCounts = new Map();
   let pullCompleted = false;
@@ -685,6 +752,12 @@ test('runDeployWatchIteration pulls, deploys, tracks history, traffic, and watch
   };
 
   try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
     const result = await runDeployWatchIteration(
       {
         branch: 'main',
@@ -693,10 +766,12 @@ test('runDeployWatchIteration pulls, deploys, tracks history, traffic, and watch
         upstreamRef: 'origin/main',
       },
       {
+        envFilePath,
         fsImpl: fs,
         log: { error() {}, info() {}, warn() {} },
         now,
         paths,
+        rootDir: tempDir,
         runCommand,
       }
     );
@@ -706,10 +781,14 @@ test('runDeployWatchIteration pulls, deploys, tracks history, traffic, and watch
     assert.equal(result.currentBlueGreen.state, 'serving');
     assert.equal(result.currentBlueGreen.activeColor, 'green');
     assert.equal(result.currentBlueGreen.requestCount, 1);
+    assert.equal(result.currentBlueGreen.averageRequestsPerMinute, 60);
+    assert.equal(result.currentBlueGreen.peakRequestsPerMinute, 1);
     assert.equal(result.deployments.length, 1);
     assert.equal(result.deployments[0].activeColor, 'green');
     assert.equal(result.deployments[0].buildDurationMs, 2000);
     assert.equal(result.deployments[0].requestCount, 1);
+    assert.equal(result.deployments[0].averageRequestsPerMinute, 60);
+    assert.equal(result.deployments[0].peakRequestsPerMinute, 1);
     assert.equal(deployCommands.length, 1);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -742,11 +821,18 @@ test('runDeployWatchIteration stops when the locked branch changes', async () =>
 test('runDeployWatchLoop honors once mode without sleeping', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-once-'));
   const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
   let slept = false;
   const iterationStarts = [];
   const iterationResults = [];
 
   try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
     const result = await runDeployWatchLoop(
       {
         branch: 'main',
@@ -755,6 +841,7 @@ test('runDeployWatchLoop honors once mode without sleeping', async () => {
         upstreamRef: 'origin/main',
       },
       {
+        envFilePath,
         fsImpl: fs,
         log: { error() {}, info() {}, warn() {} },
         now: () => 1000,
@@ -766,6 +853,7 @@ test('runDeployWatchLoop honors once mode without sleeping', async () => {
           iterationStarts.push(value);
         },
         paths,
+        rootDir: tempDir,
         runCommand: createRunCommandMock(
           new Map([
             ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
