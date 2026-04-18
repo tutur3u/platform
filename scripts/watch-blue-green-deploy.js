@@ -336,88 +336,51 @@ function buildDeploymentTable(
     return [colorize('dim', 'No deployment history yet.')];
   }
 
-  const columns = [
-    { key: 'time', label: 'TIME', width: 8 },
-    { key: 'status', label: 'STATUS', width: 7 },
-    { key: 'color', label: 'CLR', width: 5 },
-    { key: 'build', label: 'BUILD', width: 7, align: 'right' },
-    { key: 'life', label: 'LIFE', width: 8, align: 'right' },
-    { key: 'req', label: 'REQ', width: 7, align: 'right' },
-    { key: 'avg', label: 'AVG', width: 8, align: 'right' },
-    { key: 'peak', label: 'PEAK', width: 8, align: 'right' },
-    {
-      key: 'commit',
-      label: 'COMMIT / SUBJECT',
-      width: Math.max(18, width - 74),
-    },
-  ];
-  const border = colorize(
-    'dim',
-    `+${columns.map((column) => '-'.repeat(column.width + 2)).join('+')}+`
-  );
-  const header = colorize(
-    'dim',
-    `| ${columns
-      .map((column) => padCell(column.label, column.width, column.align))
-      .join(' | ')} |`
-  );
-  const rows = deployments.flatMap((entry) => {
+  const innerWidth = Math.max(66, Math.min(width, 118));
+  const border = colorize('dim', `+${'-'.repeat(innerWidth + 2)}+`);
+  const rows = deployments.flatMap((entry, index) => {
     const status =
-      entry.status === 'failed' ? 'FAILED' : entry.endedAt ? 'ENDED' : 'ACTIVE';
-    const commit =
+      entry.status === 'failed'
+        ? colorize('red', 'FAILED')
+        : entry.endedAt
+          ? colorize('cyan', 'ENDED')
+          : colorize('green', 'ACTIVE');
+    const timestamp = entry.finishedAt ?? entry.startedAt;
+    const heading = `${index + 1}. ${formatClockTime(timestamp)} ${status} ${entry.activeColor ?? '-'}`;
+    const commitLine =
       `${entry.commitShortHash ?? 'unknown'} ${entry.commitSubject ?? ''}`.trim();
-    const primary = `| ${columns
-      .map((column) => {
-        const value =
-          column.key === 'time'
-            ? formatClockTime(entry.finishedAt ?? entry.startedAt)
-            : column.key === 'status'
-              ? status
-              : column.key === 'color'
-                ? (entry.activeColor ?? '-')
-                : column.key === 'build'
-                  ? formatDuration(entry.buildDurationMs)
-                  : column.key === 'life'
-                    ? formatDuration(entry.lifetimeMs)
-                    : column.key === 'req'
-                      ? formatRequestCount(entry.requestCount)
-                      : column.key === 'avg'
-                        ? formatRequestsPerMinute(
-                            entry.averageRequestsPerMinute
-                          )
-                        : column.key === 'peak'
-                          ? formatRequestsPerMinute(entry.peakRequestsPerMinute)
-                          : commit;
+    const lifecycle = entry.activatedAt
+      ? `since ${formatClockTime(entry.activatedAt)}`
+      : entry.startedAt
+        ? `started ${formatClockTime(entry.startedAt)}`
+        : '';
+    const metricsOne = [
+      `build ${formatDuration(entry.buildDurationMs)}`,
+      `life ${formatDuration(entry.lifetimeMs)}`,
+      `req ${formatRequestCount(entry.requestCount)}`,
+    ].join('  ');
+    const metricsTwo = [
+      `avg ${formatRequestsPerMinute(entry.averageRequestsPerMinute)}`,
+      `peak ${formatRequestsPerMinute(entry.peakRequestsPerMinute)}`,
+      `age ${formatRelativeTime(timestamp, { now })}`,
+    ].join('  ');
 
-        return padCell(value, column.width, column.align);
-      })
-      .join(' | ')} |`;
-    const secondary = colorize(
-      'dim',
-      `| ${padCell('', columns[0].width)} | ${padCell(
-        formatRelativeTime(entry.finishedAt ?? entry.startedAt, { now }),
-        columns[1].width +
-          columns[2].width +
-          columns[3].width +
-          columns[4].width +
-          columns[5].width +
-          columns[6].width +
-          columns[7].width +
-          21
-      )} | ${padCell(
-        entry.activatedAt
-          ? `since ${formatClockTime(entry.activatedAt)}`
-          : entry.startedAt
-            ? `started ${formatClockTime(entry.startedAt)}`
-            : '',
-        columns[8].width
-      )} |`
-    );
-
-    return [primary, secondary];
+    return [
+      border,
+      `| ${padCell(heading, innerWidth)} |`,
+      `| ${padCell(commitLine, innerWidth)} |`,
+      colorize('dim', `| ${padCell(metricsOne, innerWidth)} |`),
+      colorize('dim', `| ${padCell(metricsTwo, innerWidth)} |`),
+      colorize('dim', `| ${padCell(lifecycle, innerWidth)} |`),
+    ];
   });
 
-  return [border, header, border, ...rows, border];
+  return [
+    border,
+    colorize('dim', `| ${padCell('RECENT DEPLOYMENTS', innerWidth)} |`),
+    ...rows,
+    border,
+  ];
 }
 
 function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
@@ -513,6 +476,27 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
       'Press Ctrl+C to stop. The watcher will restart itself if this script changes after a pull.'
     ),
   ].join('\n');
+}
+
+function getLatestDeploymentSummary(deployments = []) {
+  const latestDeployment = deployments[0];
+
+  if (!latestDeployment) {
+    return {
+      lastDeployAt: null,
+      lastDeployStatus: null,
+    };
+  }
+
+  return {
+    lastDeployAt:
+      latestDeployment.finishedAt ??
+      latestDeployment.activatedAt ??
+      latestDeployment.startedAt ??
+      null,
+    lastDeployStatus:
+      latestDeployment.status === 'failed' ? 'failed' : 'successful',
+  };
 }
 
 function createWatchUi(initialState = {}, options = {}) {
@@ -1563,12 +1547,17 @@ async function main(argv = process.argv.slice(2), options = {}) {
     rootDir,
     runCommand: run,
   });
+  const initialDeploymentSummary = getLatestDeploymentSummary(
+    initialRuntimeSnapshot.deployments
+  );
   const ui =
     options.ui ??
     createWatchUi({
       currentBlueGreen: initialRuntimeSnapshot.currentBlueGreen,
       deployments: initialRuntimeSnapshot.deployments,
       intervalMs: parsed.intervalMs,
+      lastDeployAt: initialDeploymentSummary.lastDeployAt,
+      lastDeployStatus: initialDeploymentSummary.lastDeployStatus,
       lockFile: paths.lockFile,
       startedAt: Date.now(),
     });
@@ -1640,6 +1629,9 @@ async function main(argv = process.argv.slice(2), options = {}) {
       now: options.now ?? (() => Date.now()),
       once: parsed.once,
       onIterationResult: (iterationResult) => {
+        const latestDeploymentSummary = getLatestDeploymentSummary(
+          iterationResult.deployments ?? ui.state.deployments
+        );
         ui.update({
           currentBlueGreen:
             iterationResult.currentBlueGreen ?? ui.state.currentBlueGreen,
@@ -1652,14 +1644,15 @@ async function main(argv = process.argv.slice(2), options = {}) {
               ? (iterationResult.deployments?.[0]?.finishedAt ??
                 iterationResult.checkedAt ??
                 Date.now())
-              : ui.state.lastDeployAt,
+              : (ui.state.lastDeployAt ?? latestDeploymentSummary.lastDeployAt),
           lastDeployStatus:
             iterationResult.status === 'deploy-failed'
               ? 'failed'
               : iterationResult.status === 'deployed' ||
                   iterationResult.status === 'restarting'
                 ? 'successful'
-                : ui.state.lastDeployStatus,
+                : (ui.state.lastDeployStatus ??
+                  latestDeploymentSummary.lastDeployStatus),
           lastResult: iterationResult,
           latestCommit: iterationResult.latestCommit ?? ui.state.latestCommit,
           nextCheckAt:
@@ -1729,6 +1722,7 @@ module.exports = {
   formatDuration,
   formatRelativeTime,
   formatRequestsPerMinute,
+  getLatestDeploymentSummary,
   getCommitMetadata,
   getCurrentBranch,
   getProdComposeServiceContainerId,

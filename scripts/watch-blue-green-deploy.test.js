@@ -32,6 +32,7 @@ const {
   runDeployWatchLoop,
   spawnReplacementWatcher,
   summarizeRequestRate,
+  getLatestDeploymentSummary,
   writeDeploymentHistory,
 } = require('./watch-blue-green-deploy.js');
 
@@ -191,8 +192,8 @@ test('buildDashboardView shows blue/green runtime and the last 3 deployments', (
   assert.match(output, /avg 6\.4 rpm/);
   assert.match(output, /peak 12 rpm/);
   assert.match(output, /Last 3 Deployments/);
-  assert.match(output, /\| TIME/);
-  assert.match(output, /\| STATUS/);
+  assert.match(output, /\| RECENT DEPLOYMENTS/);
+  assert.match(output, /\| 1\. .*ACTIVE.*green/);
   assert.match(output, /ACTIVE/);
   assert.match(output, /42s/);
   assert.match(output, /20m/);
@@ -547,6 +548,44 @@ test('summarizeRequestRate computes total, average rpm, and peak rpm', () => {
     peakRequestsPerMinute: 2,
     requestCount: 4,
   });
+});
+
+test('getLatestDeploymentSummary derives the last deploy timestamp and status from history', () => {
+  assert.deepEqual(getLatestDeploymentSummary([]), {
+    lastDeployAt: null,
+    lastDeployStatus: null,
+  });
+
+  assert.deepEqual(
+    getLatestDeploymentSummary([
+      {
+        finishedAt: 5000,
+        status: 'successful',
+      },
+      {
+        finishedAt: 1000,
+        status: 'failed',
+      },
+    ]),
+    {
+      lastDeployAt: 5000,
+      lastDeployStatus: 'successful',
+    }
+  );
+
+  assert.deepEqual(
+    getLatestDeploymentSummary([
+      {
+        activatedAt: 2000,
+        startedAt: 1000,
+        status: 'failed',
+      },
+    ]),
+    {
+      lastDeployAt: 2000,
+      lastDeployStatus: 'failed',
+    }
+  );
 });
 
 test('resolveCurrentBlueGreenStatus reflects the active color and running services', async () => {
