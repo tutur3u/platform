@@ -229,15 +229,18 @@ Behavior:
 4. Polls the tracked upstream every `5000ms`.
 5. Auto-clears and redraws the dashboard in place on each state change when
    attached to a TTY.
-6. Skips pulls if the worktree is dirty.
-7. Uses `git pull --ff-only` only when the local branch is strictly behind the
+6. Runs the Git and deploy subprocesses quietly so the dashboard is not
+   disrupted by `git fetch`, `git pull`, or Docker build output during normal
+   watcher operation.
+7. Skips pulls if the worktree is dirty.
+8. Uses `git pull --ff-only` only when the local branch is strictly behind the
    locked upstream.
-8. Runs `bun serve:web:docker:bg` automatically after a successful fast-forward
+9. Runs `bun serve:web:docker:bg` automatically after a successful fast-forward
    pull.
-9. If `scripts/watch-blue-green-deploy.js` itself changed in the pulled
+10. If `scripts/watch-blue-green-deploy.js` itself changed in the pulled
    revision, the current watcher releases its lock, spawns a replacement
    watcher with the same CLI args, and exits.
-10. Stops immediately if the checked-out branch changes while the watcher is
+11. Stops immediately if the checked-out branch changes while the watcher is
     running.
 
 Dashboard details:
@@ -254,6 +257,8 @@ Dashboard details:
   they stay self-hosted and do not require any external analytics service.
 - Internal proxy health checks for `/api/health` are excluded from the request
   totals so the numbers reflect real served traffic more closely.
+- When a new color takes over, the retired blue/green app container is stopped
+  and removed instead of being left behind in an exited state.
 
 Operational notes:
 

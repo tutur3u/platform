@@ -810,6 +810,15 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
           args.includes('web-blue')
       )
     );
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args.includes('rm') &&
+          args.includes('-f') &&
+          args.includes('web-blue')
+      )
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

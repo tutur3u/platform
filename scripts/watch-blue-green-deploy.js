@@ -817,6 +817,14 @@ async function runBlueGreenDeploy({
   });
 }
 
+function createQuietRunCommand(baseRun = runCommand) {
+  return (command, args, options = {}) =>
+    baseRun(command, args, {
+      ...options,
+      stdio: options.stdio ?? 'pipe',
+    });
+}
+
 async function spawnReplacementWatcher({
   argv = process.argv.slice(1),
   cwd = ROOT_DIR,
@@ -1344,12 +1352,13 @@ async function main(argv = process.argv.slice(2), options = {}) {
   const fsImpl = options.fsImpl ?? fs;
   const paths = getWatchPaths(options.rootDir ?? ROOT_DIR);
   const processImpl = options.processImpl ?? process;
+  const run = createQuietRunCommand(options.runCommand ?? runCommand);
   const initialRuntimeSnapshot = await loadRuntimeSnapshot({
     env,
     fsImpl,
     now: Date.now(),
     paths,
-    runCommand: options.runCommand ?? runCommand,
+    runCommand: run,
   });
   const ui =
     options.ui ??
@@ -1385,11 +1394,11 @@ async function main(argv = process.argv.slice(2), options = {}) {
   try {
     const target = await resolveLockedBranchTarget({
       env,
-      runCommand: options.runCommand ?? runCommand,
+      runCommand: run,
     });
     const latestCommit = await getCommitMetadata('HEAD', {
       env,
-      runCommand: options.runCommand ?? runCommand,
+      runCommand: run,
     });
 
     ui.update({
@@ -1462,7 +1471,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
         });
       },
       paths,
-      runCommand: options.runCommand ?? runCommand,
+      runCommand: run,
       sleepImpl: options.sleepImpl ?? sleep,
     });
 
@@ -1541,6 +1550,7 @@ module.exports = {
   runDeployWatchLoop,
   sleep,
   spawnReplacementWatcher,
+  createQuietRunCommand,
   summarizeBlueGreenRuntime,
   summarizeResult,
   writeDeploymentHistory,

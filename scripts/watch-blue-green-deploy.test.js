@@ -14,6 +14,7 @@ const {
   appendDeploymentHistory,
   buildDashboardView,
   collectDeploymentTraffic,
+  createQuietRunCommand,
   createWatchUi,
   formatCountdown,
   formatRelativeTime,
@@ -215,6 +216,34 @@ test('createWatchUi records events and renders cleanly in non-TTY mode', () => {
     writes.map((entry) => entry[0]),
     ['stdout', 'stdout', 'stderr']
   );
+});
+
+test('createQuietRunCommand pipes subprocess output unless a caller overrides stdio', async () => {
+  const calls = [];
+  const quietRun = createQuietRunCommand(async (command, args, options) => {
+    calls.push({ args, command, options });
+    return createResult('');
+  });
+
+  await quietRun('git', ['fetch', 'origin', 'main']);
+  await quietRun('git', ['status'], { stdio: 'inherit' });
+
+  assert.deepEqual(calls, [
+    {
+      args: ['fetch', 'origin', 'main'],
+      command: 'git',
+      options: {
+        stdio: 'pipe',
+      },
+    },
+    {
+      args: ['status'],
+      command: 'git',
+      options: {
+        stdio: 'inherit',
+      },
+    },
+  ]);
 });
 
 test('acquireWatchLock writes a PID-backed lock and releaseWatchLock removes it', () => {

@@ -6,6 +6,7 @@ const {
   getComposeFile,
   hasComposeProfile,
   hasComposeServiceContainer,
+  removeComposeServicesIfPresent,
   runChecked,
   runCommand,
   stopComposeServicesIfPresent,
@@ -260,6 +261,15 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       env,
       runCommand: run,
     });
+    await removeComposeServicesIfPresent(
+      [getBlueGreenServiceName(activeColor)],
+      {
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env,
+        runCommand: run,
+      }
+    );
   }
 }
 

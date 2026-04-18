@@ -162,6 +162,39 @@ async function stopComposeServicesIfPresent(
   }
 }
 
+async function removeComposeServicesIfPresent(
+  serviceNames,
+  { composeFile, composeGlobalArgs = [], env, runCommand: run }
+) {
+  for (const serviceName of serviceNames) {
+    if (
+      !(await hasComposeServiceContainer(serviceName, {
+        composeFile,
+        composeGlobalArgs,
+        env,
+        runCommand: run,
+      }))
+    ) {
+      continue;
+    }
+
+    await runChecked(
+      'docker',
+      getComposeCommandArgs(
+        composeFile,
+        composeGlobalArgs,
+        'rm',
+        '-f',
+        serviceName
+      ),
+      {
+        env,
+        runCommand: run,
+      }
+    );
+  }
+}
+
 async function getContainerHealthStatus(containerId, { env, runCommand: run }) {
   const result = await runChecked(
     'docker',
@@ -239,6 +272,7 @@ module.exports = {
   getContainerHealthStatus,
   hasComposeProfile,
   hasComposeServiceContainer,
+  removeComposeServicesIfPresent,
   runChecked,
   runCommand,
   stopComposeServicesIfPresent,
