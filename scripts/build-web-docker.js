@@ -1,9 +1,14 @@
 #!/usr/bin/env node
 
 const { spawnSync } = require('node:child_process');
+const {
+  applyCoolifyAppUrlFallbacks,
+} = require('../apps/web/docker/coolify-env.js');
+
+const env = applyCoolifyAppUrlFallbacks({ ...process.env });
 
 const result = spawnSync('bun', ['run', 'build:web'], {
-  env: process.env,
+  env,
   stdio: 'inherit',
 });
 

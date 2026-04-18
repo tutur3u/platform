@@ -57,6 +57,35 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 - If that configured URL explicitly points at host-run local Supabase, the helper rewrites the server-side Supabase URL to `host.docker.internal` while leaving `NEXT_PUBLIC_SUPABASE_URL` alone for browsers.
 - Dockerized web commands auto-enable the local Redis companion stack and inject `UPSTASH_REDIS_REST_URL` plus a generated `UPSTASH_REDIS_REST_TOKEN` into the web container.
 
+## Coolify
+
+Coolify can provide enough default deployment metadata for Tuturuuu's Dockerfile
+setup to derive the app origin even when you do not manually define the usual
+app URL variables.
+
+- During Dockerfile builds, `scripts/build-web-docker.js` now derives missing
+  `WEB_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`, and `NEXT_PUBLIC_APP_URL` values
+  from Coolify's `COOLIFY_URL` or `COOLIFY_FQDN` defaults before running
+  `bun run build:web`.
+- During production container startup, `apps/web/docker/prod-entrypoint.js`
+  applies the same Coolify fallback so server-side runtime code sees the same
+  derived values.
+- The runtime URL resolvers used by the web proxy, internal API client, and
+  drive export/auto-extract flows also fall back to `COOLIFY_URL` and
+  `COOLIFY_FQDN`.
+
+Recommended setup in Coolify:
+
+- Still set explicit Tuturuuu env like `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, and any email
+  or storage secrets yourself.
+- You can omit `WEB_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`, and
+  `NEXT_PUBLIC_APP_URL` if Coolify already injects `COOLIFY_URL` or
+  `COOLIFY_FQDN` for the deployment.
+- If you need one specific canonical domain while Coolify exposes multiple
+  domains, set the Tuturuuu app URL variables explicitly instead of relying on
+  the automatic fallback.
+
 ## Development Mode
 
 Development mode exists to preserve the normal root script contract while moving the

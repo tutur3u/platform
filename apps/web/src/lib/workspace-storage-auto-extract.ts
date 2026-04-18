@@ -39,7 +39,20 @@ function resolveConfiguredOrigin(value?: string) {
   }
 
   try {
-    return new URL(value).origin;
+    const [firstValue] = value
+      .split(/[,\n]/u)
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+
+    if (!firstValue) {
+      return null;
+    }
+
+    const normalized = /^[a-z]+:\/\//iu.test(firstValue)
+      ? firstValue
+      : `https://${firstValue}`;
+
+    return new URL(normalized).origin;
   } catch {
     return null;
   }
@@ -51,6 +64,8 @@ function resolveAutoExtractCallbackOrigin(requestOrigin: string) {
     resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
     resolveConfiguredOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
     resolveConfiguredOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
+    resolveConfiguredOrigin(process.env.COOLIFY_URL) ||
+    resolveConfiguredOrigin(process.env.COOLIFY_FQDN) ||
     requestOrigin ||
     (DEV_MODE ? 'http://localhost:7803' : 'https://tuturuuu.com')
   );

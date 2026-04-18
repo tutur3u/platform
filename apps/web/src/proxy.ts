@@ -47,7 +47,39 @@ const ONBOARDING_BYPASS_PATHS = [
 
 const isDev = process.env.NODE_ENV !== 'production';
 
-const WEB_APP_URL = isDev ? `http://localhost:${PORT}` : 'https://tuturuuu.com';
+function resolveConfiguredOrigin(value?: string) {
+  if (!value) {
+    return null;
+  }
+
+  const [firstValue] = value
+    .split(/[,\n]/u)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  if (!firstValue) {
+    return null;
+  }
+
+  const normalized = /^[a-z]+:\/\//iu.test(firstValue)
+    ? firstValue
+    : `https://${firstValue}`;
+
+  try {
+    return new URL(normalized).origin;
+  } catch {
+    return null;
+  }
+}
+
+const WEB_APP_URL = isDev
+  ? `http://localhost:${PORT}`
+  : resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
+    resolveConfiguredOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
+    resolveConfiguredOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
+    resolveConfiguredOrigin(process.env.COOLIFY_URL) ||
+    resolveConfiguredOrigin(process.env.COOLIFY_FQDN) ||
+    'https://tuturuuu.com';
 const OFFLINE_FALLBACK_PATH = '/~offline';
 const RESERVED_ROOT_SEGMENT_PREFIX = '~';
 const RESERVED_ROOT_NOT_FOUND_PATH = '/__reserved-root-not-found__';

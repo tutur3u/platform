@@ -19,6 +19,25 @@ describe('resolveInternalApiUrl', () => {
       'https://internal.example.com/api/v1/workspaces'
     );
   });
+
+  it('falls back to Coolify URLs when explicit app origins are missing', () => {
+    vi.stubEnv(
+      'COOLIFY_URL',
+      'https://app.example.com,https://secondary.example.com'
+    );
+
+    expect(resolveInternalApiUrl('/api/v1/workspaces')).toBe(
+      'https://app.example.com/api/v1/workspaces'
+    );
+  });
+
+  it('falls back to Coolify FQDN values when URLs are missing', () => {
+    vi.stubEnv('COOLIFY_FQDN', 'app.example.com,secondary.example.com');
+
+    expect(resolveInternalApiUrl('/api/v1/workspaces')).toBe(
+      'https://app.example.com/api/v1/workspaces'
+    );
+  });
 });
 
 describe('createInternalApiClient', () => {

@@ -103,6 +103,8 @@ RUN groupadd --system nodejs && useradd --system --gid nodejs --home-dir /app ne
 
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/docker/coolify-env.js ./apps/web/docker/coolify-env.js
+COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/docker/prod-entrypoint.js ./apps/web/docker/prod-entrypoint.js
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/public ./apps/web/public
 
 EXPOSE 7803
@@ -111,4 +113,4 @@ USER nextjs
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["node", "-e", "fetch(`http://127.0.0.1:${process.env.PORT || 7803}/api/health`).then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
 
-CMD ["node", "apps/web/server.js"]
+CMD ["node", "apps/web/docker/prod-entrypoint.js"]
