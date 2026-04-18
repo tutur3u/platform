@@ -8,6 +8,7 @@
     "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
     "build": "NODE_OPTIONS='--max-old-space-size=8192 --experimental-require-module' next build --turbopack",
     "start": "NODE_OPTIONS='--experimental-require-module' next start",
+    "serve:web": "NODE_OPTIONS='--experimental-require-module' next start -p 7803",
     "preview": "NODE_OPTIONS='--max-old-space-size=8192 --experimental-require-module' next build --turbopack && NODE_OPTIONS='--experimental-require-module' next start -p 7803 --turbopack",
     "test": "vitest run",
     "test:watch": "vitest",

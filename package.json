@@ -34,6 +34,7 @@
     "build:meet": "turbo run build -F @tuturuuu/meet",
     "build:track": "turbo run build -F @tuturuuu/track",
     "buildx": "turbo test build",
+    "serve:web": "cd apps/web && bun serve:web",
     "dev": "turbo run dev --parallel",
     "check": "node scripts/check.js",
     "check:mobile": "node scripts/check-mobile.js",
