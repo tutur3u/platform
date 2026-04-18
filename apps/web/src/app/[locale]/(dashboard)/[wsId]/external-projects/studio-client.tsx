@@ -6,6 +6,8 @@ import {
   CheckCircle2,
   Clock,
   FolderSync,
+  Info,
+  Search,
   Sparkles,
 } from '@tuturuuu/icons';
 import {
@@ -56,10 +58,12 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   type ChangeEvent,
+  type ComponentProps,
   type ReactNode,
   useDeferredValue,
   useEffect,
@@ -479,6 +483,57 @@ function Field({ children, label }: { children: ReactNode; label: string }) {
     <div className="grid gap-2">
       <Label>{label}</Label>
       {children}
+    </div>
+  );
+}
+
+function SearchField({
+  onChange,
+  placeholder,
+  value,
+}: {
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  placeholder: string;
+  value: string;
+}) {
+  return (
+    <div className="relative">
+      <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="h-10 rounded-xl border-border/70 bg-background/55 pl-9"
+      />
+    </div>
+  );
+}
+
+function TooltippedButton({
+  children,
+  tooltip,
+  ...buttonProps
+}: ComponentProps<typeof Button> & {
+  children: ReactNode;
+  tooltip: string;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button {...buttonProps}>{children}</Button>
+      </TooltipTrigger>
+      <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+function SummaryStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-background/45 px-3 py-2">
+      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.22em]">
+        {label}
+      </div>
+      <div className="mt-1 font-medium text-sm">{value}</div>
     </div>
   );
 }
@@ -1528,18 +1583,25 @@ export function ExternalProjectStudioClient({
               {strings.dirtyChangesLabel}
             </Badge>
           )}
-          <Button
+          <TooltippedButton
             variant="outline"
+            className="h-9 rounded-full px-4"
             onClick={() => importMutation.mutate()}
             disabled={importMutation.isPending}
+            tooltip={strings.operationsDescription}
           >
             <FolderSync className="mr-2 h-4 w-4" />
             {strings.importAction}
-          </Button>
+          </TooltippedButton>
           {selectedEntry ? (
-            <Button variant="secondary" onClick={() => openEntryEditor()}>
+            <TooltippedButton
+              variant="secondary"
+              className="h-9 rounded-full px-4"
+              onClick={() => openEntryEditor()}
+              tooltip={strings.detailPanelDescription}
+            >
               {strings.openEditorAction}
-            </Button>
+            </TooltippedButton>
           ) : null}
         </>
       }
@@ -1589,31 +1651,49 @@ export function ExternalProjectStudioClient({
       title={strings.collectionSettingsTitle}
       description={strings.collectionSettingsDescription}
       headerAction={
-        collectionDirty ? (
-          <Badge variant="secondary" className="rounded-full">
-            {strings.dirtyChangesLabel}
-          </Badge>
-        ) : null
+        <div className="flex items-center gap-2">
+          {collectionDirty ? (
+            <Badge variant="secondary" className="rounded-full">
+              {strings.dirtyChangesLabel}
+            </Badge>
+          ) : null}
+          <TooltippedButton
+            size="sm"
+            variant="outline"
+            className="rounded-full"
+            onClick={() => saveCollectionMutation.mutate()}
+            disabled={!collectionDirty || saveCollectionMutation.isPending}
+            tooltip={strings.collectionSettingsDescription}
+          >
+            {strings.saveChanges}
+          </TooltippedButton>
+        </div>
       }
     >
       {activeCollection ? (
         <>
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/35 p-4">
-            <div className="space-y-2">
+          <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-border/70 bg-background/35 p-4">
+            <div className="min-w-0 flex-1 space-y-3">
               <div className="flex flex-wrap gap-2">
                 <Badge className="rounded-full">{activeCollection.slug}</Badge>
                 <Badge variant="secondary" className="rounded-full">
                   {formatCanonicalToken(activeCollection.collection_type)}
                 </Badge>
               </div>
-              <div className="text-muted-foreground text-sm">
-                {activeCollection.description ||
-                  (activeCollection.is_enabled
-                    ? strings.collectionEnabledLabel
-                    : strings.collectionDisabledLabel)}
+              <div className="space-y-1">
+                <div className="font-medium">
+                  {collectionDraft.title || activeCollection.title}
+                </div>
+                <div className="line-clamp-2 text-muted-foreground text-sm leading-6">
+                  {collectionDraft.description ||
+                    activeCollection.description ||
+                    (activeCollection.is_enabled
+                      ? strings.collectionEnabledLabel
+                      : strings.collectionDisabledLabel)}
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-3 rounded-full border border-border/70 bg-background/70 px-3 py-2">
+            <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-3 py-2">
               <Switch
                 checked={collectionDraft.isEnabled}
                 onCheckedChange={(checked) =>
@@ -1628,12 +1708,28 @@ export function ExternalProjectStudioClient({
                   ? strings.collectionEnabledLabel
                   : strings.collectionDisabledLabel}
               </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 rounded-full"
+                  >
+                    <Info className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {strings.collectionSettingsDescription}
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
             <Field label={strings.titleLabel}>
               <Input
+                className="rounded-xl"
                 value={collectionDraft.title}
                 onChange={(event) =>
                   setCollectionDraft((current) => ({
@@ -1645,7 +1741,8 @@ export function ExternalProjectStudioClient({
             </Field>
             <Field label={strings.descriptionLabel}>
               <Textarea
-                rows={4}
+                rows={3}
+                className="rounded-xl"
                 value={collectionDraft.description}
                 onChange={(event) =>
                   setCollectionDraft((current) => ({
@@ -1655,16 +1752,6 @@ export function ExternalProjectStudioClient({
                 }
               />
             </Field>
-          </div>
-
-          <div className="flex justify-end">
-            <Button
-              variant="outline"
-              onClick={() => saveCollectionMutation.mutate()}
-              disabled={!collectionDirty || saveCollectionMutation.isPending}
-            >
-              {strings.saveChanges}
-            </Button>
           </div>
         </>
       ) : (
@@ -1739,9 +1826,13 @@ export function ExternalProjectStudioClient({
         description={strings.detailPanelDescription}
         headerAction={
           selectedEntry ? (
-            <Button onClick={() => openEntryEditor()}>
+            <TooltippedButton
+              className="rounded-full"
+              onClick={() => openEntryEditor()}
+              tooltip={strings.detailPanelDescription}
+            >
               {strings.openEditorAction}
-            </Button>
+            </TooltippedButton>
           ) : null
         }
       >
@@ -1751,7 +1842,7 @@ export function ExternalProjectStudioClient({
             description={strings.noItemsDescription}
           />
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
               <Badge className="rounded-full">{genericEntryDraft.slug}</Badge>
               {genericEntryDraft.subtitle ? (
@@ -1766,8 +1857,8 @@ export function ExternalProjectStudioClient({
               />
             </div>
 
-            <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-              <div className="space-y-3">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_220px]">
+              <div className="space-y-4">
                 <div>
                   <div className="font-semibold text-2xl">
                     {genericEntryDraft.title || strings.notAvailableLabel}
@@ -1777,23 +1868,23 @@ export function ExternalProjectStudioClient({
                   </p>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-border/70 bg-background/35 p-4">
-                    <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                      {strings.sectionsLabel}
-                    </div>
-                    <div className="mt-2 font-semibold text-2xl">
-                      {selectedBlocks.length}
-                    </div>
-                  </div>
-                  <div className="rounded-2xl border border-border/70 bg-background/35 p-4">
-                    <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                      {strings.mediaSectionTitle}
-                    </div>
-                    <div className="mt-2 font-semibold text-2xl">
-                      {selectedAssets.length}
-                    </div>
-                  </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <SummaryStat
+                    label={strings.sectionsLabel}
+                    value={String(selectedBlocks.length)}
+                  />
+                  <SummaryStat
+                    label={strings.mediaSectionTitle}
+                    value={String(selectedAssets.length)}
+                  />
+                  <SummaryStat
+                    label={strings.statusLabel}
+                    value={
+                      selectedEntry.status === 'published'
+                        ? strings.publishedBadge
+                        : strings.draftBadge
+                    }
+                  />
                 </div>
 
                 <div className="rounded-2xl border border-border/70 bg-background/35 p-4 text-sm leading-7">
@@ -1801,10 +1892,27 @@ export function ExternalProjectStudioClient({
                 </div>
               </div>
 
-              <div className="rounded-[1.75rem] border border-border/70 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.1),transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-4">
-                <div className="max-h-[26rem] overflow-y-auto pr-1">
-                  {genericRenderedPreview}
-                </div>
+              <div className="space-y-3 rounded-[1.4rem] border border-border/70 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.1),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-3.5">
+                {selectedAsset?.preview_url ? (
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border/70 bg-background/40">
+                    <Image
+                      src={selectedAsset.preview_url}
+                      alt={selectedAsset.alt_text ?? genericEntryDraft.title}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                ) : (
+                  <div className="flex aspect-[4/3] items-center justify-center rounded-xl border border-border/70 border-dashed bg-background/30 px-4 text-center text-muted-foreground text-sm">
+                    {strings.noImageDescription}
+                  </div>
+                )}
+                <p className="line-clamp-4 text-muted-foreground text-sm leading-6">
+                  {genericEntryDraft.summary ||
+                    genericEntryDraft.body ||
+                    strings.noItemsDescription}
+                </p>
               </div>
             </div>
           </div>
@@ -2058,6 +2166,7 @@ export function ExternalProjectStudioClient({
               headerAction={
                 <Button
                   size="sm"
+                  className="rounded-full"
                   onClick={() => createGenericEntryMutation.mutate()}
                   disabled={
                     createGenericEntryMutation.isPending || !activeCollection
@@ -2105,7 +2214,7 @@ export function ExternalProjectStudioClient({
               </RailSection>
 
               <RailSection label={strings.searchPlaceholder}>
-                <Input
+                <SearchField
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder={strings.searchPlaceholder}
@@ -2124,6 +2233,7 @@ export function ExternalProjectStudioClient({
                     <Button
                       key={value}
                       size="sm"
+                      className="rounded-full"
                       variant={statusFilter === value ? 'default' : 'outline'}
                       onClick={() => setStatusFilter(value)}
                     >
@@ -2176,7 +2286,7 @@ export function ExternalProjectStudioClient({
                             </div>
                           }
                           body={
-                            <div className="space-y-3">
+                            <div className="space-y-2.5">
                               <div className="flex flex-wrap gap-2">
                                 <Badge variant="outline">{entry.slug}</Badge>
                                 {entryAsset ? (
@@ -2190,7 +2300,7 @@ export function ExternalProjectStudioClient({
                                   </Badge>
                                 ) : null}
                               </div>
-                              <p className="text-muted-foreground text-sm leading-6">
+                              <p className="line-clamp-2 text-muted-foreground text-sm leading-6">
                                 {entry.summary ||
                                   findMarkdownForEntry(entry.id, blocks) ||
                                   strings.noItemsDescription}
@@ -2207,8 +2317,8 @@ export function ExternalProjectStudioClient({
           }
           rightColumn={
             <>
-              {collectionSettingsPanel}
               {genericFocusedItemPanel}
+              {collectionSettingsPanel}
             </>
           }
         />
@@ -2394,9 +2504,13 @@ export function ExternalProjectStudioClient({
       description={strings.detailPanelDescription}
       headerAction={
         selectedEntry ? (
-          <Button onClick={() => openEntryEditor()}>
+          <TooltippedButton
+            className="rounded-full"
+            onClick={() => openEntryEditor()}
+            tooltip={strings.detailPanelDescription}
+          >
             {strings.openEditorAction}
-          </Button>
+          </TooltippedButton>
         ) : null
       }
     >
@@ -2406,7 +2520,7 @@ export function ExternalProjectStudioClient({
           description={strings.noItemsDescription}
         />
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
             <Badge className="rounded-full">{selectedEntry.slug}</Badge>
             <StatusBadge
@@ -2419,8 +2533,8 @@ export function ExternalProjectStudioClient({
             </Badge>
           </div>
 
-          <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-            <div className="space-y-3">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_220px]">
+            <div className="space-y-4">
               <div>
                 <div className="font-semibold text-2xl">
                   {selectedEntry.title || strings.notAvailableLabel}
@@ -2430,23 +2544,23 @@ export function ExternalProjectStudioClient({
                 </p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-border/70 bg-background/35 p-4">
-                  <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                    {strings.sectionsLabel}
-                  </div>
-                  <div className="mt-2 font-semibold text-2xl">
-                    {selectedBlocks.length}
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-border/70 bg-background/35 p-4">
-                  <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                    {strings.mediaSectionTitle}
-                  </div>
-                  <div className="mt-2 font-semibold text-2xl">
-                    {selectedAssets.length}
-                  </div>
-                </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <SummaryStat
+                  label={strings.sectionsLabel}
+                  value={String(selectedBlocks.length)}
+                />
+                <SummaryStat
+                  label={strings.mediaSectionTitle}
+                  value={String(selectedAssets.length)}
+                />
+                <SummaryStat
+                  label={strings.statusLabel}
+                  value={
+                    selectedEntry.status === 'published'
+                      ? strings.publishedBadge
+                      : strings.draftBadge
+                  }
+                />
               </div>
 
               <div className="rounded-2xl border border-border/70 bg-background/35 p-4 text-sm leading-7">
@@ -2462,10 +2576,53 @@ export function ExternalProjectStudioClient({
               </div>
             </div>
 
-            <div className="rounded-[1.75rem] border border-border/70 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.1),transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-4">
-              <div className="max-h-[26rem] overflow-y-auto pr-1">
-                {renderedYoolaPreview}
+            <div className="space-y-3 rounded-[1.4rem] border border-border/70 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.1),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-3.5">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border/70 bg-background/40">
+                {selectedCollection.collection_type === 'artworks' &&
+                leadImageUrl ? (
+                  <Image
+                    src={leadImageUrl}
+                    alt={leadAsset?.alt_text ?? artworkDraft.title}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : selectedCollection.collection_type === 'lore-capsules' &&
+                  linkedArtworkAsset ? (
+                  <Image
+                    src={linkedArtworkAsset}
+                    alt={
+                      linkedArtworkLoadingItem?.altText ??
+                      linkedArtworkLoadingItem?.title ??
+                      loreDraft.title
+                    }
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center px-4 text-center text-muted-foreground text-sm">
+                    {selectedCollection.collection_type === 'artworks'
+                      ? strings.noImageDescription
+                      : selectedCollection.collection_type === 'lore-capsules'
+                        ? strings.linkedArtworkMissingDescription
+                        : strings.sectionsLabel}
+                  </div>
+                )}
               </div>
+              <p className="line-clamp-4 text-muted-foreground text-sm leading-6">
+                {selectedCollection.collection_type === 'artworks'
+                  ? artworkDraft.summary ||
+                    artworkDraft.note ||
+                    strings.noItemsDescription
+                  : selectedCollection.collection_type === 'lore-capsules'
+                    ? loreDraft.teaser ||
+                      loreDraft.summary ||
+                      strings.noItemsDescription
+                    : sectionDraft.summary ||
+                      sectionDraft.body ||
+                      strings.noItemsDescription}
+              </p>
             </div>
           </div>
         </div>
@@ -2899,6 +3056,7 @@ export function ExternalProjectStudioClient({
             headerAction={
               <Button
                 size="sm"
+                className="rounded-full"
                 onClick={() => createEntryMutation.mutate(activeTab)}
                 disabled={createEntryMutation.isPending}
               >
@@ -2951,7 +3109,7 @@ export function ExternalProjectStudioClient({
             </RailSection>
 
             <RailSection label={strings.searchPlaceholder}>
-              <Input
+              <SearchField
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder={strings.searchPlaceholder}
@@ -2970,6 +3128,7 @@ export function ExternalProjectStudioClient({
                   <Button
                     key={value}
                     size="sm"
+                    className="rounded-full"
                     variant={statusFilter === value ? 'default' : 'outline'}
                     onClick={() => setStatusFilter(value)}
                   >
@@ -2984,6 +3143,7 @@ export function ExternalProjectStudioClient({
                 <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
+                    className="rounded-full"
                     variant={
                       artworkCategoryFilter === 'all' ? 'default' : 'outline'
                     }
@@ -2995,6 +3155,7 @@ export function ExternalProjectStudioClient({
                     <Button
                       key={category}
                       size="sm"
+                      className="rounded-full"
                       variant={
                         artworkCategoryFilter === category
                           ? 'default'
@@ -3060,9 +3221,9 @@ export function ExternalProjectStudioClient({
                         }
                         body={
                           activeTab === 'artworks' ? (
-                            <div className="space-y-3">
-                              {entryAsset?.preview_url ? (
-                                <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-border/70">
+                            <div className="flex gap-3">
+                              <div className="relative h-14 w-[4.5rem] shrink-0 overflow-hidden rounded-lg border border-border/70 bg-background/45">
+                                {entryAsset?.preview_url ? (
                                   <Image
                                     src={entryAsset.preview_url}
                                     alt={entryAsset.alt_text ?? entry.title}
@@ -3070,25 +3231,31 @@ export function ExternalProjectStudioClient({
                                     className="object-cover"
                                     unoptimized
                                   />
-                                </div>
-                              ) : null}
-                              <div className="flex flex-wrap gap-2">
-                                <Badge variant="outline">
-                                  {asString(profile.category) ||
-                                    strings.notAvailableLabel}
-                                </Badge>
-                                <Badge variant="outline">
-                                  {asString(profile.rarity) ||
-                                    strings.notAvailableLabel}
-                                </Badge>
-                                <Badge variant="outline">
-                                  {asString(profile.year) ||
-                                    strings.notAvailableLabel}
-                                </Badge>
+                                ) : (
+                                  <div className="flex h-full items-center justify-center px-2 text-center text-[11px] text-muted-foreground">
+                                    {strings.noImageTitle}
+                                  </div>
+                                )}
                               </div>
-                              <p className="text-muted-foreground text-sm leading-6">
-                                {entry.summary || strings.noItemsDescription}
-                              </p>
+                              <div className="min-w-0 space-y-2">
+                                <div className="flex flex-wrap gap-1.5">
+                                  <Badge variant="outline">
+                                    {asString(profile.category) ||
+                                      strings.notAvailableLabel}
+                                  </Badge>
+                                  <Badge variant="outline">
+                                    {asString(profile.rarity) ||
+                                      strings.notAvailableLabel}
+                                  </Badge>
+                                  <Badge variant="outline">
+                                    {asString(profile.year) ||
+                                      strings.notAvailableLabel}
+                                  </Badge>
+                                </div>
+                                <p className="line-clamp-2 text-muted-foreground text-sm leading-6">
+                                  {entry.summary || strings.noItemsDescription}
+                                </p>
+                              </div>
                             </div>
                           ) : activeTab === 'lore-capsules' ? (
                             <div className="space-y-2">
@@ -3102,14 +3269,14 @@ export function ExternalProjectStudioClient({
                                     strings.notAvailableLabel}
                                 </span>
                               </div>
-                              <p className="text-sm leading-6">
+                              <p className="line-clamp-3 text-sm leading-6">
                                 {asString(profile.teaser) ||
                                   entry.summary ||
                                   strings.noItemsDescription}
                               </p>
                             </div>
                           ) : (
-                            <p className="text-muted-foreground text-sm leading-6">
+                            <p className="line-clamp-3 text-muted-foreground text-sm leading-6">
                               {entry.summary || strings.noItemsDescription}
                             </p>
                           )
@@ -3124,8 +3291,8 @@ export function ExternalProjectStudioClient({
         }
         rightColumn={
           <>
-            {collectionSettingsPanel}
             {yoolaFocusedItemPanel}
+            {collectionSettingsPanel}
           </>
         }
       />

@@ -24,9 +24,12 @@ The external-projects surfaces now follow two distinct workflows:
 
 - The left rail is the primary navigation surface for collections, filters, and record selection.
 - The center column keeps collection settings inline and uses a compact active-item summary instead of forcing every edit into the page body.
+  Secondary explanations belong in tooltips on actions and controls, not as permanently visible helper text on every card.
 - Each selected item opens in a near-fullscreen editor dialog.
   - Use the rail cards to jump directly into item editing.
   - New draft items should open into the same editor immediately after creation so admins can stay in one flow.
+- Keep rail cards visually dense.
+  Use small thumbnails, tight metadata chips, and 2-3 line excerpts rather than large preview tiles that push the list below the fold.
 - The right column shows the live preview.
   - **Rendered** reflects the current draft immediately in the UI.
   - **Payload** fetches the real preview delivery response from `GET /api/v1/workspaces/:wsId/external-projects/delivery?preview=true`.
@@ -42,4 +45,6 @@ The external-projects surfaces now follow two distinct workflows:
 
 - When changing external-project authoring UX, keep the live preview wired to the preview delivery endpoint instead of inventing a second payload contract in the client.
 - For dense admin surfaces, keep collection-level controls inline but move item-level authoring into a dedicated editor page or near-fullscreen dialog. Do not render the same heavy editor twice in both the page body and an overlay.
+- In split-view admin pages, prefer one compact selected-item summary in the main column and reserve the dedicated preview column for the actual live preview. Do not repeat full preview treatments in both places.
+- Use tooltips for secondary control explanations so the default layout stays compact, especially in sticky action bars and collection controls.
 - Add any new user-facing copy to both `apps/web/messages/en.json` and `apps/web/messages/vi.json`, then run `bun i18n:sort`.
