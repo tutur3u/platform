@@ -86,7 +86,7 @@
     "trigger:dev": "bun run --filter @tuturuuu/trigger trigger:dev",
     "trigger:deploy": "bun run --filter @tuturuuu/trigger trigger:deploy",
     "test": "turbo run test",
-    "test:scripts": "node --test scripts/android-self-sign.test.js scripts/apple-p8-jwt-signer.test.js scripts/check-docker-web.test.js scripts/check-mobile.test.js scripts/check.test.js scripts/docker-docs.test.js scripts/docker-web.test.js scripts/install-git-hooks.test.js scripts/pre-commit.test.js scripts/run-i18n-check.test.js scripts/run-tsgo-build.test.js scripts/type-check-consistency.test.js scripts/proxy-guard-parity.test.js scripts/internal-api-migration.test.js",
+    "test:scripts": "node --test scripts/android-self-sign.test.js scripts/apple-p8-jwt-signer.test.js scripts/buildkit-builder.test.js scripts/check-docker-web.test.js scripts/check-mobile.test.js scripts/check.test.js scripts/docker-docs.test.js scripts/docker-web.test.js scripts/install-git-hooks.test.js scripts/pre-commit.test.js scripts/run-i18n-check.test.js scripts/run-tsgo-build.test.js scripts/type-check-consistency.test.js scripts/proxy-guard-parity.test.js scripts/internal-api-migration.test.js",
     "test:watch": "turbo run test:watch",
     "test:e2e": "turbo run test:e2e",
     "tc": "turbo run type-check",

@@ -58,6 +58,7 @@ import { useTaskCardRelationships } from '../tu-do/hooks/useTaskCardRelationship
 import { useTaskLabelManagement } from '../tu-do/hooks/useTaskLabelManagement';
 import { useTaskProjectManagement } from '../tu-do/hooks/useTaskProjectManagement';
 import { CreateListDialog } from '../tu-do/shared/create-list-dialog';
+import { buildWorkspaceTaskUrl } from '../tu-do/shared/task-url';
 import { computeAccessibleLabelStyles } from '../tu-do/utils/label-colors';
 import {
   getAssigneeInitials,
@@ -228,6 +229,7 @@ export function TaskMentionChip({
 
   const task = taskPayload?.task as TaskWithBoardId | undefined;
   const taskWorkspaceId = taskPayload?.taskWsId;
+  const taskWorkspacePersonal = taskPayload?.taskWorkspacePersonal;
   const boardWorkspaceId = routeWsId ?? taskWorkspaceId;
 
   // Get board config - only fetch when menu opens and we have task data
@@ -651,8 +653,16 @@ export function TaskMentionChip({
 
   const getTaskUrl = () => {
     const wsId = routeWsId ?? taskWorkspaceId ?? boardConfig?.ws_id;
-    if (!wsId) return null;
-    return `${window.location.origin}/${wsId}/tasks/${entityId}`;
+    const boardId = task?.board_id ?? currentTaskList?.board_id ?? null;
+    if (!wsId || !boardId || typeof window === 'undefined') return null;
+    return buildWorkspaceTaskUrl({
+      boardId,
+      currentPathname: window.location.pathname,
+      origin: window.location.origin,
+      taskId: entityId,
+      workspaceId: wsId,
+      isPersonalWorkspace: taskWorkspacePersonal,
+    });
   };
 
   const handleGoToTask = () => {
