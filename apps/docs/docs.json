@@ -81,7 +81,9 @@
               },
               {
                 "group": "AI",
-                "pages": ["platform/ai/structured-data"]
+                "pages": [
+                  "platform/ai/structured-data"
+                ]
               },
               {
                 "group": "Personalization",
@@ -130,7 +132,9 @@
               "learn/overview",
               {
                 "group": "Examples",
-                "pages": ["learn/examples/overview"]
+                "pages": [
+                  "learn/examples/overview"
+                ]
               },
               {
                 "group": "Workshops",
@@ -204,7 +208,9 @@
               },
               {
                 "group": "API Reference",
-                "pages": ["reference/api-reference/endpoint/generate"]
+                "pages": [
+                  "reference/api-reference/endpoint/generate"
+                ]
               }
             ]
           }

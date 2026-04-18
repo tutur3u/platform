@@ -76,7 +76,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 
 - Changes that introduce or materially change team-facing knowledge MUST be reflected in `apps/docs` within the same session.
 - Prefer updating an existing runbook/page when the knowledge belongs there; create a new page only when the topic does not fit the current docs structure.
-- New pages MUST be added to `apps/docs/mint.json` or they will not be visible.
+- New pages MUST be added to `apps/docs/docs.json` or they will not be visible.
 
 ### 4.5 Adding Dependencies
 
