@@ -223,14 +223,22 @@ Behavior:
 
 1. Locks the current local branch and tracked upstream at startup.
 2. Writes a PID-backed lock file at `tmp/docker-web/watch/blue-green-auto-deploy.lock`.
-3. Polls the tracked upstream every `5000ms`.
-4. Skips pulls if the worktree is dirty.
-5. Uses `git pull --ff-only` only when the local branch is strictly behind the
+3. Renders a live terminal dashboard with the locked branch, tracked upstream,
+   latest local commit, relative commit age, last check time, next poll time,
+   and recent watcher events.
+4. Polls the tracked upstream every `5000ms`.
+5. Auto-clears and redraws the dashboard in place on each state change when
+   attached to a TTY.
+6. Skips pulls if the worktree is dirty.
+7. Uses `git pull --ff-only` only when the local branch is strictly behind the
    locked upstream.
-6. Runs `bun serve:web:docker:bg` automatically after a successful fast-forward
+8. Runs `bun serve:web:docker:bg` automatically after a successful fast-forward
    pull.
-7. Stops immediately if the checked-out branch changes while the watcher is
-   running.
+9. If `scripts/watch-blue-green-deploy.js` itself changed in the pulled
+   revision, the current watcher releases its lock, spawns a replacement
+   watcher with the same CLI args, and exits.
+10. Stops immediately if the checked-out branch changes while the watcher is
+    running.
 
 Operational notes:
 
@@ -238,6 +246,9 @@ Operational notes:
   developer worktrees.
 - If the local branch is ahead of or diverged from the tracked upstream, the
   watcher logs and skips the pull instead of forcing a merge or reset.
+- The self-restart path only triggers when the watcher script itself changed in
+  the fetched revision; normal app-code deploys keep the current watcher
+  process alive.
 - The watcher inherits the default blue/green build caps from
   `bun serve:web:docker:bg`, so the current defaults still apply during
   auto-deploys.

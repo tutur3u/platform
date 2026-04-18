@@ -7,7 +7,12 @@ const path = require('node:path');
 const {
   DEFAULT_DEPLOY_COMMAND,
   DEFAULT_INTERVAL_MS,
+  SELF_WATCHED_FILES,
   acquireWatchLock,
+  buildDashboardView,
+  createWatchUi,
+  formatCountdown,
+  formatRelativeTime,
   getWatchPaths,
   isProcessAlive,
   parseArgs,
@@ -16,6 +21,7 @@ const {
   releaseWatchLock,
   runDeployWatchIteration,
   runDeployWatchLoop,
+  spawnReplacementWatcher,
 } = require('./watch-blue-green-deploy.js');
 
 function createRunCommandMock(responses) {
@@ -58,6 +64,98 @@ test('parseUpstreamRef keeps remote and branch components intact', () => {
     remote: 'origin',
     upstreamRef: 'origin/feat/docker-watch',
   });
+});
+
+test('formatRelativeTime and formatCountdown render friendly terminal strings', () => {
+  const now = Date.parse('2026-04-18T11:00:00.000Z');
+
+  assert.equal(
+    formatRelativeTime(Date.parse('2026-04-18T10:58:00.000Z'), { now }),
+    '2m ago'
+  );
+  assert.equal(
+    formatRelativeTime(Date.parse('2026-04-18T11:00:10.000Z'), { now }),
+    'in 10s'
+  );
+  assert.equal(
+    formatCountdown(Date.parse('2026-04-18T11:00:05.000Z'), { now }),
+    '5.0s'
+  );
+});
+
+test('buildDashboardView shows commit subject, relative time, and recent events', () => {
+  const now = Date.parse('2026-04-18T11:00:00.000Z');
+  const output = buildDashboardView(
+    {
+      events: [
+        {
+          level: 'info',
+          message: 'Pulled main from aaa111 to bbb222.',
+          time: Date.parse('2026-04-18T10:59:58.000Z'),
+        },
+      ],
+      intervalMs: 5_000,
+      lastCheckAt: Date.parse('2026-04-18T10:59:59.000Z'),
+      lastDeployAt: Date.parse('2026-04-18T10:59:58.000Z'),
+      lastDeployStatus: 'successful',
+      lastResult: { status: 'deployed' },
+      latestCommit: {
+        committedAt: Date.parse('2026-04-18T10:57:00.000Z'),
+        hash: 'bbbb2222',
+        shortHash: 'bbb222',
+        subject: 'Refresh watcher UX and restart logic',
+      },
+      lockFile: '/tmp/watch.lock',
+      nextCheckAt: Date.parse('2026-04-18T11:00:05.000Z'),
+      startedAt: Date.parse('2026-04-18T10:55:00.000Z'),
+      target: {
+        branch: 'main',
+        upstreamRef: 'origin/main',
+      },
+    },
+    {
+      now,
+      width: 100,
+    }
+  );
+
+  assert.match(output, /Tuturuuu Auto Deploy Watcher/);
+  assert.match(output, /Refresh watcher UX and restart logic/);
+  assert.match(output, /3m ago/);
+  assert.match(output, /Pulled main from aaa111 to bbb222/);
+  assert.match(output, /5\.0s/);
+});
+
+test('createWatchUi records events and renders cleanly in non-TTY mode', () => {
+  const writes = [];
+  const ui = createWatchUi(
+    {
+      intervalMs: 5_000,
+    },
+    {
+      isTTY: false,
+      stderr: {
+        write(value) {
+          writes.push(['stderr', value]);
+        },
+      },
+      stdout: {
+        write(value) {
+          writes.push(['stdout', value]);
+        },
+      },
+    }
+  );
+
+  ui.info('Watcher online.');
+  ui.warn('Dirty worktree.');
+  ui.error('Deploy failed.');
+
+  assert.equal(ui.state.events.length, 3);
+  assert.deepEqual(
+    writes.map((entry) => entry[0]),
+    ['stdout', 'stdout', 'stderr']
+  );
 });
 
 test('acquireWatchLock writes a PID-backed lock and releaseWatchLock removes it', () => {
@@ -218,15 +316,19 @@ test('runDeployWatchIteration skips dirty worktrees before fetch', async () => {
     },
     {
       log: { error() {}, info() {}, warn() {} },
+      now: () => 1234,
       runCommand,
     }
   );
 
-  assert.equal(result.status, 'dirty');
+  assert.deepEqual(result, {
+    checkedAt: 1234,
+    status: 'dirty',
+  });
   assert.deepEqual(calls, ['branch', 'status']);
 });
 
-test('runDeployWatchIteration pulls and triggers blue/green deployment when upstream advances', async () => {
+test('runDeployWatchIteration pulls, deploys, and flags watcher self-restart when the script changed', async () => {
   const deployCommands = [];
   const commandCounts = new Map();
   const runCommand = async (command, args) => {
@@ -274,6 +376,28 @@ test('runDeployWatchIteration pulls and triggers blue/green deployment when upst
 
     if (
       key ===
+      `git diff --name-only aaa111 bbb222 -- ${SELF_WATCHED_FILES.join(' ')}`
+    ) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: `${SELF_WATCHED_FILES[0]}\n`,
+      };
+    }
+
+    if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout:
+          'bbb222222222222222222\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:58:00.000Z\n',
+      };
+    }
+
+    if (
+      key ===
       `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
     ) {
       deployCommands.push(key);
@@ -292,14 +416,23 @@ test('runDeployWatchIteration pulls and triggers blue/green deployment when upst
     },
     {
       log: { error() {}, info() {}, warn() {} },
+      now: () => 9999,
       runCommand,
     }
   );
 
   assert.deepEqual(result, {
+    checkedAt: 9999,
+    latestCommit: {
+      committedAt: Date.parse('2026-04-18T10:58:00.000Z'),
+      hash: 'bbb222222222222222222',
+      shortHash: 'bbb222',
+      subject: 'Refresh watcher UX and restart logic',
+    },
     newHead: 'bbb222',
     oldHead: 'aaa111',
-    status: 'deployed',
+    restartRequired: true,
+    status: 'restarting',
   });
   assert.equal(deployCommands.length, 1);
 });
@@ -332,6 +465,8 @@ test('runDeployWatchIteration stops when the locked branch changes', async () =>
 
 test('runDeployWatchLoop honors once mode without sleeping', async () => {
   let slept = false;
+  const iterationStarts = [];
+  const iterationResults = [];
 
   const result = await runDeployWatchLoop(
     {
@@ -342,7 +477,14 @@ test('runDeployWatchLoop honors once mode without sleeping', async () => {
     },
     {
       log: { error() {}, info() {}, warn() {} },
+      now: () => 1000,
       once: true,
+      onIterationResult: (value) => {
+        iterationResults.push(value);
+      },
+      onIterationStart: (value) => {
+        iterationStarts.push(value);
+      },
       runCommand: createRunCommandMock(
         new Map([
           [
@@ -365,6 +507,16 @@ test('runDeployWatchLoop honors once mode without sleeping', async () => {
             'git rev-parse origin/main',
             { code: 0, signal: null, stderr: '', stdout: 'aaa111\n' },
           ],
+          [
+            'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
+            {
+              code: 0,
+              signal: null,
+              stderr: '',
+              stdout:
+                'aaa111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n',
+            },
+          ],
         ])
       ),
       sleepImpl: async () => {
@@ -373,6 +525,54 @@ test('runDeployWatchLoop honors once mode without sleeping', async () => {
     }
   );
 
-  assert.deepEqual(result, { status: 'up-to-date' });
+  assert.deepEqual(result, {
+    checkedAt: 1000,
+    latestCommit: {
+      committedAt: Date.parse('2026-04-18T10:58:00.000Z'),
+      hash: 'aaa111111111111111111',
+      shortHash: 'aaa111',
+      subject: 'Keep branch current',
+    },
+    status: 'up-to-date',
+  });
+  assert.deepEqual(iterationStarts, [1000]);
+  assert.deepEqual(iterationResults, [result]);
   assert.equal(slept, false);
+});
+
+test('spawnReplacementWatcher relaunches the watcher with inherited args', async () => {
+  const calls = [];
+
+  await spawnReplacementWatcher({
+    argv: ['scripts/watch-blue-green-deploy.js', '--interval-ms', '5000'],
+    cwd: '/tmp/platform',
+    env: { PATH: 'test-path' },
+    execPath: '/usr/local/bin/node',
+    spawnImpl(command, args, options) {
+      calls.push({ args, command, options });
+
+      return {
+        once(event, handler) {
+          if (event === 'spawn') {
+            handler();
+          }
+          return this;
+        },
+        unref() {},
+      };
+    },
+  });
+
+  assert.deepEqual(calls, [
+    {
+      args: ['scripts/watch-blue-green-deploy.js', '--interval-ms', '5000'],
+      command: '/usr/local/bin/node',
+      options: {
+        cwd: '/tmp/platform',
+        detached: true,
+        env: { PATH: 'test-path' },
+        stdio: 'inherit',
+      },
+    },
+  ]);
 });
