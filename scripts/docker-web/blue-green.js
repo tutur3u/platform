@@ -675,6 +675,93 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
   }
 }
 
+async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
+  const composeFile = getComposeFile(parsed.mode);
+  const env = getComposeEnvironment({
+    baseEnv: options.env ?? process.env,
+    envFilePath: options.envFilePath ?? WEB_ENV_FILE,
+    fsImpl: options.fsImpl ?? fs,
+    rootDir: options.rootDir,
+    withRedis: hasComposeProfile(parsed.composeGlobalArgs, 'redis'),
+  });
+  const fsImpl = options.fsImpl ?? fs;
+  const paths = getBlueGreenPaths(options.rootDir ?? ROOT_DIR);
+  const run = options.runCommand ?? runCommand;
+  const activeColor = await resolveBlueGreenActiveColor(
+    readBlueGreenActiveColor(paths, fsImpl),
+    {
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env,
+      runCommand: run,
+    }
+  );
+
+  if (!activeColor) {
+    return {
+      activeColor: null,
+      deploymentStamp: readBlueGreenDeploymentStamp(paths, fsImpl),
+      refreshedStandby: false,
+      standbyColor: null,
+    };
+  }
+
+  const standbyColor = getNextBlueGreenColor(activeColor);
+  const deploymentStamp =
+    readBlueGreenDeploymentStamp(paths, fsImpl) ??
+    options.deploymentStamp ??
+    generateBlueGreenDeploymentStamp();
+  const standbyEnv = {
+    ...env,
+    PLATFORM_BLUE_GREEN_COLOR: standbyColor,
+    PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
+  };
+
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      parsed.composeGlobalArgs,
+      'up',
+      '--build',
+      '--detach',
+      '--remove-orphans',
+      ...parsed.composeArgs,
+      ...getBlueGreenProdServicesWithProxyOption(parsed, standbyColor, false)
+    ),
+    {
+      env: standbyEnv,
+      fsImpl,
+      runCommand: run,
+    }
+  );
+
+  await waitForComposeServiceHealthy(getBlueGreenServiceName(standbyColor), {
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: standbyEnv,
+    runCommand: run,
+  });
+
+  writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
+
+  await refreshBlueGreenProxyIfRunning({
+    env: standbyEnv,
+    envFilePath: options.envFilePath ?? WEB_ENV_FILE,
+    fsImpl,
+    paths,
+    rootDir: options.rootDir ?? ROOT_DIR,
+    runCommand: run,
+  });
+
+  return {
+    activeColor,
+    deploymentStamp,
+    refreshedStandby: true,
+    standbyColor,
+  };
+}
+
 module.exports = {
   BLUE_GREEN_COLORS,
   BLUE_GREEN_DRAIN_POLL_MS,
@@ -704,6 +791,7 @@ module.exports = {
   resolveBlueGreenActiveColor,
   resolveBlueGreenStandbyColor,
   runBlueGreenProdWorkflow,
+  runBlueGreenStandbyRefreshWorkflow,
   sleep,
   testBlueGreenProxyRouting,
   validateBlueGreenProxyConfig,

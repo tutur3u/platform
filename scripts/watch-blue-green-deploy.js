@@ -9,6 +9,7 @@ const {
   getBlueGreenPaths,
   readBlueGreenActiveColor,
   refreshBlueGreenProxyIfRunning,
+  runBlueGreenStandbyRefreshWorkflow,
 } = require('./docker-web/blue-green.js');
 const { getComposeEnvironment, WEB_ENV_FILE } = require('./docker-web/env.js');
 const {
@@ -21,6 +22,7 @@ const {
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DEFAULT_INTERVAL_MS = 1_000;
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
+const DEFAULT_STANDBY_REFRESH_AFTER_MS = 15 * 60_000;
 const MAX_DEPLOYMENTS = 3;
 const MAX_EVENTS = 8;
 const BLUE_GREEN_COLORS = ['blue', 'green'];
@@ -299,6 +301,10 @@ function summarizeResult(result) {
       return colorize('yellow', 'Branch diverged, waiting');
     case 'restarting':
       return colorize('magenta', 'Restarting watcher');
+    case 'standby-refresh-failed':
+      return colorize('red', 'Standby refresh failed');
+    case 'standby-refreshed':
+      return colorize('green', 'Standby refreshed');
     case 'up-to-date':
       return colorize('green', 'Up to date');
     default:
@@ -678,6 +684,7 @@ function getLatestDeploymentSummary(deployments = []) {
 
 function createPendingDeploymentEntry({
   activeColor = null,
+  deploymentKind = 'promotion',
   latestCommit = null,
   startedAt,
   status = 'deploying',
@@ -688,6 +695,7 @@ function createPendingDeploymentEntry({
     commitHash: latestCommit?.hash ?? null,
     commitShortHash: latestCommit?.shortHash ?? null,
     commitSubject: latestCommit?.subject ?? null,
+    deploymentKind,
     startedAt,
     status,
   };
@@ -1028,6 +1036,7 @@ function appendDeploymentHistory(
   const nextHistory = history.map((existing, index) => {
     if (
       entry.status === 'successful' &&
+      entry.deploymentKind !== 'standby-refresh' &&
       index >= 0 &&
       existing.status === 'successful' &&
       !existing.endedAt
@@ -1046,6 +1055,67 @@ function appendDeploymentHistory(
   const trimmed = nextHistory.slice(0, MAX_DEPLOYMENTS);
   writeDeploymentHistory(trimmed, paths, fsImpl);
   return trimmed;
+}
+
+function getRuntimeDeployment(deployments, runtimeState) {
+  return (deployments ?? []).find(
+    (entry) => entry.runtimeState === runtimeState
+  );
+}
+
+function getStandbyRefreshCandidate(
+  runtimeSnapshot,
+  latestCommit,
+  { now = Date.now(), refreshAfterMs = DEFAULT_STANDBY_REFRESH_AFTER_MS } = {}
+) {
+  const activeDeployment = getRuntimeDeployment(
+    runtimeSnapshot?.deployments,
+    'active'
+  );
+
+  if (
+    !runtimeSnapshot?.currentBlueGreen?.activeColor ||
+    !latestCommit?.hash ||
+    !activeDeployment?.activatedAt
+  ) {
+    return null;
+  }
+
+  const standbyDeployment = getRuntimeDeployment(
+    runtimeSnapshot.deployments,
+    'standby'
+  );
+  let standbyColor =
+    runtimeSnapshot.currentBlueGreen.standbyColor ??
+    runtimeSnapshot.currentBlueGreen.liveColors?.find(
+      (color) => color !== runtimeSnapshot.currentBlueGreen.activeColor
+    ) ??
+    null;
+
+  if (!standbyColor) {
+    standbyColor =
+      runtimeSnapshot.currentBlueGreen.activeColor === 'blue'
+        ? 'green'
+        : 'blue';
+  }
+
+  if (!standbyColor) {
+    return null;
+  }
+
+  if (now - activeDeployment.activatedAt < refreshAfterMs) {
+    return null;
+  }
+
+  if (standbyDeployment?.commitHash === latestCommit.hash) {
+    return null;
+  }
+
+  return {
+    activeDeployment,
+    standbyColor,
+    standbyDeployment,
+  };
 }
 
 async function getRevision(ref, { env, runCommand: run = runCommand } = {}) {
@@ -1121,6 +1191,31 @@ async function runBlueGreenDeploy({
     env,
     runCommand: run,
   });
+}
+
+async function runBlueGreenStandbyRefresh({
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  return runBlueGreenStandbyRefreshWorkflow(
+    {
+      action: 'up',
+      composeArgs: [],
+      composeGlobalArgs: ['--profile', 'redis'],
+      mode: 'prod',
+      strategy: 'blue-green',
+    },
+    {
+      env,
+      envFilePath,
+      fsImpl,
+      rootDir,
+      runCommand: run,
+    }
+  );
 }
 
 async function runPendingDeployAfterRestart({
@@ -1693,11 +1788,119 @@ async function runDeployWatchIteration(
   });
 
   if (localHead === upstreamHead) {
-    return attachRuntime({
+    const latestCommit = await getCommitMetadata('HEAD', {
+      env,
+      runCommand: run,
+    });
+    const runtimeSnapshot = await attachRuntime({
       checkedAt,
-      latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
+      latestCommit,
       status: 'up-to-date',
     });
+    const standbyRefreshCandidate = getStandbyRefreshCandidate(
+      runtimeSnapshot,
+      latestCommit,
+      {
+        now: checkedAt,
+      }
+    );
+
+    if (!standbyRefreshCandidate) {
+      return runtimeSnapshot;
+    }
+
+    log.info?.(
+      `Refreshing standby ${standbyRefreshCandidate.standbyColor} to ${latestCommit.shortHash} after the 15 minute stale window.`
+    );
+
+    const refreshStartedAt = now();
+    onDeploymentStart({
+      checkedAt,
+      latestCommit,
+      pendingDeployment: createPendingDeploymentEntry({
+        activeColor: standbyRefreshCandidate.standbyColor,
+        deploymentKind: 'standby-refresh',
+        latestCommit,
+        startedAt: refreshStartedAt,
+        status: 'building',
+      }),
+    });
+
+    try {
+      await runBlueGreenStandbyRefresh({
+        env,
+        envFilePath,
+        fsImpl,
+        rootDir,
+        runCommand: run,
+      });
+
+      const refreshFinishedAt = now();
+      const history = appendDeploymentHistory(
+        {
+          activatedAt: refreshFinishedAt,
+          activeColor: standbyRefreshCandidate.standbyColor,
+          buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
+          commitHash: latestCommit.hash,
+          commitShortHash: latestCommit.shortHash,
+          commitSubject: latestCommit.subject,
+          deploymentKind: 'standby-refresh',
+          finishedAt: refreshFinishedAt,
+          startedAt: refreshStartedAt,
+          status: 'successful',
+        },
+        {
+          fsImpl,
+          paths,
+        }
+      );
+
+      log.info?.(
+        `Standby ${standbyRefreshCandidate.standbyColor} now matches ${latestCommit.shortHash}.`
+      );
+
+      return attachRuntime(
+        {
+          checkedAt,
+          latestCommit,
+          status: 'standby-refreshed',
+        },
+        history
+      );
+    } catch (error) {
+      const refreshFinishedAt = now();
+      const history = appendDeploymentHistory(
+        {
+          activeColor: standbyRefreshCandidate.standbyColor,
+          buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
+          commitHash: latestCommit.hash,
+          commitShortHash: latestCommit.shortHash,
+          commitSubject: latestCommit.subject,
+          deploymentKind: 'standby-refresh',
+          finishedAt: refreshFinishedAt,
+          startedAt: refreshStartedAt,
+          status: 'failed',
+        },
+        {
+          fsImpl,
+          paths,
+        }
+      );
+
+      log.error?.(
+        `Standby ${standbyRefreshCandidate.standbyColor} refresh failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+      );
+
+      return attachRuntime(
+        {
+          checkedAt,
+          error,
+          latestCommit,
+          status: 'standby-refresh-failed',
+        },
+        history
+      );
+    }
   }
 
   if (await isAncestor(localHead, upstreamHead, { env, runCommand: run })) {
@@ -2143,19 +2346,23 @@ async function main(argv = process.argv.slice(2), options = {}) {
           lastDeployAt:
             iterationResult.status === 'deployed' ||
             iterationResult.status === 'deploy-failed' ||
+            iterationResult.status === 'standby-refreshed' ||
+            iterationResult.status === 'standby-refresh-failed' ||
             iterationResult.status === 'restarting'
               ? (iterationResult.deployments?.[0]?.finishedAt ??
                 iterationResult.checkedAt ??
                 Date.now())
               : (ui.state.lastDeployAt ?? latestDeploymentSummary.lastDeployAt),
           lastDeployStatus:
-            iterationResult.status === 'deploy-failed'
+            iterationResult.status === 'deploy-failed' ||
+            iterationResult.status === 'standby-refresh-failed'
               ? 'failed'
               : iterationResult.status === 'deploying'
                 ? 'deploying'
                 : iterationResult.status === 'building'
                   ? 'building'
                   : iterationResult.status === 'deployed' ||
+                      iterationResult.status === 'standby-refreshed' ||
                       iterationResult.status === 'restarting'
                     ? 'successful'
                     : (ui.state.lastDeployStatus ??

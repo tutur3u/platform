@@ -540,6 +540,62 @@ test('appendDeploymentHistory closes the prior active deployment and keeps only 
   }
 });
 
+test('appendDeploymentHistory keeps the active deployment open during standby refreshes', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-history-standby-refresh-')
+  );
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: 1000,
+          activeColor: 'green',
+          buildDurationMs: 30_000,
+          commitHash: 'green-current',
+          commitShortHash: 'g1',
+          commitSubject: 'green current',
+          finishedAt: 1000,
+          startedAt: 0,
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+
+    appendDeploymentHistory(
+      {
+        activatedAt: 2000,
+        activeColor: 'blue',
+        buildDurationMs: 28_000,
+        commitHash: 'green-current',
+        commitShortHash: 'b2',
+        commitSubject: 'blue catch-up',
+        deploymentKind: 'standby-refresh',
+        finishedAt: 2000,
+        startedAt: 1500,
+        status: 'successful',
+      },
+      {
+        fsImpl: fs,
+        paths,
+      }
+    );
+
+    const history = readDeploymentHistory(paths, fs);
+
+    assert.equal(history.length, 2);
+    assert.equal(history[0].deploymentKind, 'standby-refresh');
+    assert.equal(history[0].activeColor, 'blue');
+    assert.equal(history[1].activeColor, 'green');
+    assert.equal(history[1].endedAt, undefined);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('parseProxyLogEntries keeps only access lines and collectDeploymentTraffic counts non-health requests', async () => {
   const deployments = [
     {
@@ -1087,6 +1143,152 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
   assert.equal(pendingStates[0].pendingDeployment.status, 'deploying');
   assert.equal(pendingStates[0].pendingDeployment.commitShortHash, 'bbb222');
   assert.equal(result.status, 'deployed');
+});
+
+test('runDeployWatchIteration refreshes a stale standby deployment after 15 minutes', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-standby-refresh-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const pendingStates = [];
+  const nowValues = [
+    Date.parse('2026-04-18T11:16:00.000Z'),
+    Date.parse('2026-04-18T11:16:00.000Z'),
+    Date.parse('2026-04-18T11:16:01.000Z'),
+    Date.parse('2026-04-18T11:16:05.000Z'),
+    Date.parse('2026-04-18T11:16:05.000Z'),
+  ];
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: Date.parse('2026-04-18T11:00:00.000Z'),
+          activeColor: 'green',
+          buildDurationMs: 30_000,
+          commitHash: 'bbb222222222222222222',
+          commitShortHash: 'bbb222',
+          commitSubject: 'current',
+          finishedAt: Date.parse('2026-04-18T11:00:00.000Z'),
+          startedAt: Date.parse('2026-04-18T10:59:30.000Z'),
+          status: 'successful',
+        },
+        {
+          activatedAt: Date.parse('2026-04-18T10:30:00.000Z'),
+          activeColor: 'blue',
+          buildDurationMs: 25_000,
+          commitHash: 'aaa111111111111111111',
+          commitShortHash: 'aaa111',
+          commitSubject: 'previous',
+          endedAt: Date.parse('2026-04-18T11:00:00.000Z'),
+          finishedAt: Date.parse('2026-04-18T10:30:00.000Z'),
+          startedAt: Date.parse('2026-04-18T10:29:35.000Z'),
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        envFilePath,
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        now: () => nowValues.shift() ?? Date.parse('2026-04-18T11:16:05.000Z'),
+        onDeploymentStart: (state) => {
+          pendingStates.push(state);
+        },
+        paths,
+        rootDir: tempDir,
+        runCommand: createRunCommandMock(
+          new Map([
+            ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
+            ['git status --porcelain', createResult('')],
+            ['git fetch origin main', createResult('')],
+            ['git rev-parse HEAD', createResult('bbb222\n')],
+            ['git rev-parse origin/main', createResult('bbb222\n')],
+            [
+              'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
+              createResult(
+                'bbb222222222222222222\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:58:00.000Z\n'
+              ),
+            ],
+            [
+              prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
+              createResult('proxy-123\n'),
+            ],
+            [prodComposePsKey('web-green'), createResult('green-123\n')],
+            [prodComposePsKey('web-blue'), createResult('blue-123\n')],
+            [
+              `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-green`,
+              createResult('green-123\n'),
+            ],
+            [
+              `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-blue`,
+              createResult('blue-123\n'),
+            ],
+            [
+              'docker logs --timestamps --since 2026-04-18T10:30:00.000Z proxy-123',
+              createResult(''),
+            ],
+            [
+              `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue redis serverless-redis-http`,
+              createResult(''),
+            ],
+            [
+              `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123`,
+              createResult('healthy\n'),
+            ],
+            [
+              `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -t`,
+              createResult(''),
+            ],
+            [
+              `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload`,
+              createResult(''),
+            ],
+            [
+              `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/api/health`,
+              createResult(''),
+            ],
+          ])
+        ),
+      }
+    );
+
+    assert.equal(pendingStates.length, 1);
+    assert.equal(pendingStates[0].pendingDeployment.status, 'building');
+    assert.equal(
+      pendingStates[0].pendingDeployment.deploymentKind,
+      'standby-refresh'
+    );
+    assert.equal(pendingStates[0].pendingDeployment.activeColor, 'blue');
+    assert.equal(result.status, 'standby-refreshed');
+    assert.equal(result.currentBlueGreen.activeColor, 'green');
+    assert.equal(result.currentBlueGreen.standbyColor, 'blue');
+    assert.equal(result.deployments[0].runtimeState, 'standby');
+    assert.equal(result.deployments[0].commitHash, 'bbb222222222222222222');
+    assert.equal(result.deployments[1].runtimeState, 'active');
+    assert.equal(result.deployments[1].endedAt, undefined);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('runPendingDeployAfterRestart refreshes the live proxy before running blue/green deploy', async () => {
