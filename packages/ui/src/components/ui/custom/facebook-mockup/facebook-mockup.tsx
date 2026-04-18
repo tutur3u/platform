@@ -1,4 +1,5 @@
 'use client';
+import { Download, Monitor, Smartphone, Tablet, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
@@ -62,6 +63,8 @@ export default function FacebookMockup() {
     useState<FacebookPreviewTheme>('light');
   const [previewViewport, setPreviewViewport] =
     useState<FacebookPreviewViewport>('phone');
+  const [inlinePreviewViewport, setInlinePreviewViewport] =
+    useState<Extract<FacebookPreviewViewport, 'phone' | 'tablet'>>('phone');
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
 
   useEffect(() => {
@@ -154,11 +157,15 @@ export default function FacebookMockup() {
 
     try {
       const html2canvas = (await import('html2canvas-pro')).default;
+      const previewBounds = activePreviewRef.getBoundingClientRect();
       const canvas = await html2canvas(activePreviewRef, {
-        backgroundColor: null,
+        backgroundColor:
+          window.getComputedStyle(activePreviewRef).backgroundColor,
+        height: Math.round(previewBounds.height),
         logging: false,
         scale: 2,
         useCORS: true,
+        width: Math.round(previewBounds.width),
       });
 
       downloadCanvasImage(canvas);
@@ -169,11 +176,29 @@ export default function FacebookMockup() {
     }
   }, [isFullscreenOpen, t]);
 
+  const handlePreviewViewportChange = useCallback(
+    (viewport: FacebookPreviewViewport) => {
+      setPreviewViewport(viewport);
+      if (viewport !== 'desktop') {
+        setInlinePreviewViewport(viewport);
+      }
+    },
+    []
+  );
+
+  const handleCloseFullscreen = useCallback(() => {
+    setIsFullscreenOpen(false);
+    setPreviewViewport((currentViewport) =>
+      currentViewport === 'desktop' ? inlinePreviewViewport : currentViewport
+    );
+  }, [inlinePreviewViewport]);
+
   const handleReset = useCallback(() => {
     setError(null);
     setState(defaults);
     setPreviewTheme(detectCurrentTheme());
     setPreviewViewport('phone');
+    setInlinePreviewViewport('phone');
   }, [defaults]);
 
   return (
@@ -186,7 +211,7 @@ export default function FacebookMockup() {
         previewTheme={previewTheme}
         onPreviewThemeChange={setPreviewTheme}
         previewViewport={previewViewport}
-        onPreviewViewportChange={setPreviewViewport}
+        onPreviewViewportChange={handlePreviewViewportChange}
         onOpenFullscreen={() => setIsFullscreenOpen(true)}
         onValueChange={handleValueChange}
         onAvatarChange={(file) =>
@@ -223,7 +248,13 @@ export default function FacebookMockup() {
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <div className="grid grid-cols-3 rounded-lg bg-muted/70 p-1">
-                  {(['phone', 'tablet', 'desktop'] as const).map((viewport) => (
+                  {(
+                    [
+                      { icon: Smartphone, viewport: 'phone' },
+                      { icon: Tablet, viewport: 'tablet' },
+                      { icon: Monitor, viewport: 'desktop' },
+                    ] as const
+                  ).map(({ icon: Icon, viewport }) => (
                     <Button
                       key={viewport}
                       type="button"
@@ -234,9 +265,12 @@ export default function FacebookMockup() {
                         previewViewport === viewport &&
                           'bg-background text-foreground shadow-sm hover:bg-background'
                       )}
-                      onClick={() => setPreviewViewport(viewport)}
+                      onClick={() => handlePreviewViewportChange(viewport)}
                     >
-                      {t(`facebook_mockup.viewport_modes.${viewport}`)}
+                      <Icon className="size-4" />
+                      <span>
+                        {t(`facebook_mockup.viewport_modes.${viewport}`)}
+                      </span>
                     </Button>
                   ))}
                 </div>
@@ -245,14 +279,17 @@ export default function FacebookMockup() {
                   variant="outline"
                   onClick={handleDownload}
                 >
-                  {t('common.download')}
+                  <Download className="size-4" />
+                  <span>{t('common.download')}</span>
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => setIsFullscreenOpen(false)}
+                  size="icon"
+                  aria-label={t('facebook_mockup.fullscreen.close')}
+                  onClick={handleCloseFullscreen}
                 >
-                  {t('facebook_mockup.fullscreen.close')}
+                  <X className="size-4" />
                 </Button>
               </div>
             </div>

@@ -1,7 +1,7 @@
 ---
 title: 'Agent Operating Manual'
 description: 'Field guide summarizing the AGENTS.md policies for autonomous contributors inside the Tuturuuu monorepo.'
-updatedAt: '2025-09-26'
+updatedAt: '2026-04-18'
 ---
 
 This page distills the canonical rules defined in [AGENTS.md](https://github.com/tutur3u/platform/blob/main/AGENTS.md). Treat the original document as the source of truth—this guide exists to make the most important expectations discoverable inside the docs site.
@@ -68,5 +68,6 @@ See AGENTS.md §4 for full step-by-step instructions across all workflows.
 - Add happy-path and edge-case coverage where feasible; default to Vitest via `bun run test` or filtered scope.
 - For DB changes, provide migrations, request the user apply them, then verify regenerated types.
 - Performance-sensitive changes should document rationale in-code (≤3 lines) plus PR notes.
+- For `html2canvas`-based preview exports, inline critical SVG brand marks (or use raster assets) and provide a solid export background color so downloaded images do not lose logos or pick up transparent-edge artifacts.
 
 For deeper detail—such as React Query policy, toast usage rules, or Tailwind dynamic color guidance—refer directly to [AGENTS.md](https://github.com/tutur3u/platform/blob/main/AGENTS.md#readme).

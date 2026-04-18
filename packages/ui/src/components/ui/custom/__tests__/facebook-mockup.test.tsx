@@ -264,4 +264,28 @@ describe('FacebookMockup', () => {
     await waitFor(() => expect(html2canvasMock).toHaveBeenCalledTimes(1));
     expect(anchorClickSpy).toHaveBeenCalledTimes(1);
   });
+
+  it('keeps desktop framing exclusive to fullscreen mode', async () => {
+    render(<FacebookMockup />);
+
+    expect(
+      screen.queryByRole('button', { name: 'Desktop' })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tablet' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fullscreen preview' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Desktop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close fullscreen' }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: 'Desktop' })
+      ).not.toBeInTheDocument()
+    );
+    expect(screen.getByRole('button', { name: 'Tablet' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+  });
 });

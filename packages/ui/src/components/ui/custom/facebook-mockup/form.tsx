@@ -394,12 +394,6 @@ export function FacebookMockupForm({
                   active={previewViewport === 'tablet'}
                   onClick={() => onPreviewViewportChange('tablet')}
                 />
-                <ToolbarIconButton
-                  icon={Monitor}
-                  label={t('facebook_mockup.viewport_modes.desktop')}
-                  active={previewViewport === 'desktop'}
-                  onClick={() => onPreviewViewportChange('desktop')}
-                />
               </ToolbarGroup>
             </div>
           </div>
