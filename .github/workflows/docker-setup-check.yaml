@@ -78,7 +78,11 @@ jobs:
             }
           }
           EOF
-          touch apps/web/.env.local
+          cat <<'EOF' > apps/web/.env.local
+          NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=test-publishable-key
+          SUPABASE_SECRET_KEY=test-secret-key
+          EOF
           printf 'SRH_TOKEN=test-token\n' >> "$GITHUB_ENV"
 
       - name: Render Docker Compose configs
