@@ -6,6 +6,10 @@ const path = require('node:path');
 const ROOT_DIR = path.resolve(__dirname, '..');
 const WEB_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'web', 'Dockerfile');
 const WEB_COMPOSE_FILE_PATH = path.join(ROOT_DIR, 'docker-compose.web.yml');
+const WEB_PROD_COMPOSE_FILE_PATH = path.join(
+  ROOT_DIR,
+  'docker-compose.web.prod.yml'
+);
 const WORKSPACE_DIRS = ['apps', 'packages'];
 const PACKAGE_JSON_DEPENDENCY_FIELDS = [
   'dependencies',
@@ -304,6 +308,31 @@ function validateDockerCompose(
   return errors;
 }
 
+function validateDockerProdCompose(composeContent) {
+  const errors = [];
+  const requiredSnippets = [
+    'x-web-service: &web-service',
+    '  web:',
+    '  web-blue:',
+    '  web-green:',
+    '  web-proxy:',
+    '    image: nginx:1.27-alpine',
+    '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',
+    '      required: true',
+    '      SRH_TOKEN: ' + '${' + 'SRH_TOKEN' + '}',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!composeContent.includes(snippet)) {
+      errors.push(
+        `docker-compose.web.prod.yml is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
 function checkDockerWebSetup({
   rootDir = ROOT_DIR,
   fsImpl = fs,
@@ -313,6 +342,10 @@ function checkDockerWebSetup({
   ),
   composeContent = fsImpl.readFileSync(
     path.join(rootDir, 'docker-compose.web.yml'),
+    'utf8'
+  ),
+  prodComposeContent = fsImpl.readFileSync(
+    path.join(rootDir, 'docker-compose.web.prod.yml'),
     'utf8'
   ),
   workspacePackageJsonPaths = listWorkspacePackageJsonPaths(rootDir, fsImpl),
@@ -325,6 +358,7 @@ function checkDockerWebSetup({
       workspacePackageJsonPaths,
     }),
     ...validateDockerCompose(composeContent, { workspacePackageJsonPaths }),
+    ...validateDockerProdCompose(prodComposeContent),
   ];
 }
 
@@ -351,6 +385,7 @@ module.exports = {
   ROOT_DIR,
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
+  WEB_PROD_COMPOSE_FILE_PATH,
   checkDockerWebSetup,
   getCopiedRelativePaths,
   getCopiedWorkspaceManifestPaths,
@@ -358,5 +393,6 @@ module.exports = {
   listFileDependencyPaths,
   listWorkspacePackageJsonPaths,
   validateDockerCompose,
+  validateDockerProdCompose,
   validateDockerfile,
 };

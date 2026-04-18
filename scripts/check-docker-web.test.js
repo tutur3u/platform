@@ -8,6 +8,7 @@ const {
   ROOT_DIR,
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
+  WEB_PROD_COMPOSE_FILE_PATH,
   checkDockerWebSetup,
   getCopiedRelativePaths,
   getCopiedWorkspaceManifestPaths,
@@ -15,6 +16,7 @@ const {
   listFileDependencyPaths,
   listWorkspacePackageJsonPaths,
   validateDockerCompose,
+  validateDockerProdCompose,
   validateDockerfile,
 } = require('./check-docker-web.js');
 
@@ -143,6 +145,31 @@ test('validateDockerCompose reports missing package-local artifact isolation', (
   );
 });
 
+test('validateDockerProdCompose accepts the current production compose file', () => {
+  const composeContent = fs.readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8');
+
+  assert.deepEqual(validateDockerProdCompose(composeContent), []);
+});
+
+test('validateDockerProdCompose reports missing blue-green proxy wiring', () => {
+  const composeContent = fs
+    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
+    .replace(
+      '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro\n',
+      ''
+    );
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.ok(
+    errors
+      .join('\n')
+      .includes(
+        './tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro'
+      )
+  );
+});
+
 test('checkDockerWebSetup passes for the current repository', () => {
   assert.deepEqual(checkDockerWebSetup({ rootDir: ROOT_DIR }), []);
 });
@@ -160,6 +187,10 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     );
     fs.writeFileSync(
       path.join(tempDir, 'docker-compose.web.yml'),
+      'services:\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'docker-compose.web.prod.yml'),
       'services:\n'
     );
 

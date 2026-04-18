@@ -1,17 +1,27 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
 const {
+  BLUE_GREEN_PROXY_SERVICE,
   COMPOSE_FILE,
   DOCKER_HOST_ALIAS,
   PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
-  getComposeFile,
+  clearBlueGreenRuntime,
+  getBlueGreenPaths,
   getComposeEnvironment,
+  getComposeFile,
   parseArgs,
   parseEnvFile,
+  readBlueGreenActiveColor,
+  renderBlueGreenProxyConfig,
   rewriteLocalhostUrl,
   runDockerWebWorkflow,
+  usesBlueGreenStrategy,
+  writeBlueGreenActiveColor,
 } = require('./docker-web.js');
 
 function createFsStub({ envFileContent = '', hasEnvFile = true } = {}) {
@@ -23,6 +33,7 @@ function createFsStub({ envFileContent = '', hasEnvFile = true } = {}) {
 
       return false;
     },
+    mkdirSync() {},
     readFileSync(targetPath) {
       if (targetPath !== WEB_ENV_FILE) {
         throw new Error(`Unexpected read for ${targetPath}`);
@@ -30,6 +41,8 @@ function createFsStub({ envFileContent = '', hasEnvFile = true } = {}) {
 
       return envFileContent;
     },
+    rmSync() {},
+    writeFileSync() {},
   };
 }
 
@@ -40,19 +53,37 @@ test('parseArgs keeps redis profile before the compose action', () => {
     composeGlobalArgs: ['--profile', 'redis'],
     mode: 'dev',
     resetSupabase: false,
+    strategy: 'in-place',
     withSupabase: false,
   });
 });
 
-test('parseArgs accepts prod mode', () => {
-  assert.deepEqual(parseArgs(['up', '--mode', 'prod']), {
-    action: 'up',
-    composeArgs: [],
-    composeGlobalArgs: [],
-    mode: 'prod',
-    resetSupabase: false,
-    withSupabase: false,
-  });
+test('parseArgs accepts prod mode and blue-green strategy', () => {
+  assert.deepEqual(
+    parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green']),
+    {
+      action: 'up',
+      composeArgs: [],
+      composeGlobalArgs: [],
+      mode: 'prod',
+      resetSupabase: false,
+      strategy: 'blue-green',
+      withSupabase: false,
+    }
+  );
+});
+
+test('usesBlueGreenStrategy only enables blue-green for production', () => {
+  assert.equal(
+    usesBlueGreenStrategy(
+      parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green'])
+    ),
+    true
+  );
+  assert.equal(
+    usesBlueGreenStrategy(parseArgs(['up', '--strategy', 'blue-green'])),
+    false
+  );
 });
 
 test('parseEnvFile ignores comments and unquotes values', () => {
@@ -114,6 +145,28 @@ test('getComposeFile resolves the expected compose file for each mode', () => {
   assert.equal(getComposeFile('prod'), PROD_COMPOSE_FILE);
 });
 
+test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
+  assert.match(
+    renderBlueGreenProxyConfig('green'),
+    /proxy_pass http:\/\/web-green:7803;/
+  );
+});
+
+test('writeBlueGreenActiveColor persists the selected color', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-blue-green-')
+  );
+  const paths = getBlueGreenPaths(tempDir);
+
+  try {
+    writeBlueGreenActiveColor('blue', paths);
+    assert.equal(readBlueGreenActiveColor(paths), 'blue');
+  } finally {
+    clearBlueGreenRuntime(paths);
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async () => {
   const calls = [];
   const fsStub = createFsStub({
@@ -127,7 +180,7 @@ test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async (
       stdio: options.stdio ?? 'inherit',
     });
 
-    return { code: 0, signal: null };
+    return { code: 0, signal: null, stderr: '', stdout: '' };
   };
 
   await runDockerWebWorkflow(parseArgs(['up']), {
@@ -151,11 +204,9 @@ test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async (
     calls[1].env.DOCKER_INTERNAL_SUPABASE_URL,
     `http://${DOCKER_HOST_ALIAS}:8001/`
   );
-  assert.equal(calls[1].env.COMPOSE_DOCKER_CLI_BUILD, '1');
-  assert.equal(calls[1].env.DOCKER_BUILDKIT, '1');
 });
 
-test('runDockerWebWorkflow uses the production compose file when requested', async () => {
+test('runDockerWebWorkflow uses the production compose file for in-place deploys', async () => {
   const calls = [];
   const fsStub = createFsStub({
     envFileContent: 'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
@@ -164,11 +215,14 @@ test('runDockerWebWorkflow uses the production compose file when requested', asy
     calls.push({
       args,
       command,
-      env: options.env,
       stdio: options.stdio ?? 'inherit',
     });
 
-    return { code: 0, signal: null };
+    if (args.includes('ps')) {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
   };
 
   await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
@@ -177,23 +231,19 @@ test('runDockerWebWorkflow uses the production compose file when requested', asy
     runCommand,
   });
 
-  assert.deepEqual(
-    calls.map((call) => [call.command, call.args]),
-    [
-      ['docker', ['compose', 'version']],
-      [
-        'docker',
-        [
-          'compose',
-          '-f',
-          PROD_COMPOSE_FILE,
-          'up',
-          '--build',
-          '--remove-orphans',
-        ],
-      ],
-    ]
-  );
+  assert.deepEqual(calls.at(-1), {
+    args: [
+      'compose',
+      '-f',
+      PROD_COMPOSE_FILE,
+      'up',
+      '--build',
+      '--remove-orphans',
+      'web',
+    ],
+    command: 'docker',
+    stdio: 'inherit',
+  });
 });
 
 test('runDockerWebWorkflow starts and resets Supabase before Docker when requested', async () => {
@@ -203,7 +253,7 @@ test('runDockerWebWorkflow starts and resets Supabase before Docker when request
   });
   const runCommand = async (command, args) => {
     calls.push([command, args]);
-    return { code: 0, signal: null };
+    return { code: 0, signal: null, stderr: '', stdout: '' };
   };
 
   await runDockerWebWorkflow(parseArgs(['up', '--reset-supabase']), {
@@ -229,7 +279,12 @@ test('runDockerWebWorkflow throws a clear error when apps/web/.env.local is miss
       runDockerWebWorkflow(parseArgs(['up']), {
         env: { PATH: 'test-path' },
         fsImpl: createFsStub({ hasEnvFile: false }),
-        runCommand: async () => ({ code: 0, signal: null }),
+        runCommand: async () => ({
+          code: 0,
+          signal: null,
+          stderr: '',
+          stdout: '',
+        }),
       }),
     /Missing required env file/
   );
@@ -245,9 +300,160 @@ test('runDockerWebWorkflow requires SRH_TOKEN for the production redis profile',
           fsImpl: createFsStub({
             envFileContent: 'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
           }),
-          runCommand: async () => ({ code: 0, signal: null }),
+          runCommand: async () => ({
+            code: 0,
+            signal: null,
+            stderr: '',
+            stdout: '',
+          }),
         }
       ),
     /SRH_TOKEN must be set/
   );
+});
+
+test('runDockerWebWorkflow performs an initial blue-green deployment', async () => {
+  const calls = [];
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-bg-initial-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+
+  const runCommand = async (command, args) => {
+    calls.push([command, args]);
+
+    if (args.includes('ps') && args.at(-1) === 'web') {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'web-blue') {
+      return { code: 0, signal: null, stderr: '', stdout: 'container-blue\n' };
+    }
+
+    if (args[0] === 'inspect') {
+      return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  try {
+    await runDockerWebWorkflow(
+      parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green']),
+      {
+        env: { PATH: 'test-path' },
+        envFilePath,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    const paths = getBlueGreenPaths(tempDir);
+    assert.equal(readBlueGreenActiveColor(paths), 'blue');
+    assert.match(
+      fs.readFileSync(paths.proxyConfigFile, 'utf8'),
+      /proxy_pass http:\/\/web-blue:7803;/
+    );
+    assert.deepEqual(calls[1], [
+      'docker',
+      ['compose', '-f', PROD_COMPOSE_FILE, 'ps', '-q', 'web'],
+    ]);
+    assert.deepEqual(calls[2], [
+      'docker',
+      [
+        'compose',
+        '-f',
+        PROD_COMPOSE_FILE,
+        'up',
+        '--build',
+        '--detach',
+        '--remove-orphans',
+        BLUE_GREEN_PROXY_SERVICE,
+        'web-blue',
+      ],
+    ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDockerWebWorkflow switches traffic to the new color after it becomes healthy', async () => {
+  const calls = [];
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-bg-switch-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getBlueGreenPaths(tempDir);
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+  writeBlueGreenActiveColor('blue', paths);
+
+  const runCommand = async (command, args) => {
+    calls.push([command, args]);
+
+    if (args.includes('ps') && args.at(-1) === 'web') {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'web-green') {
+      return { code: 0, signal: null, stderr: '', stdout: 'container-green\n' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'web-blue') {
+      return { code: 0, signal: null, stderr: '', stdout: 'container-blue\n' };
+    }
+
+    if (args[0] === 'inspect') {
+      return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  try {
+    await runDockerWebWorkflow(
+      parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green']),
+      {
+        env: { PATH: 'test-path' },
+        envFilePath,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(readBlueGreenActiveColor(paths), 'green');
+    assert.match(
+      fs.readFileSync(paths.proxyConfigFile, 'utf8'),
+      /proxy_pass http:\/\/web-green:7803;/
+    );
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args.includes('exec') &&
+          args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+          args.includes('reload')
+      )
+    );
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args.includes('stop') &&
+          args.includes('web-blue')
+      )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });

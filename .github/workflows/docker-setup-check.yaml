@@ -9,6 +9,7 @@ on:
       - "apps/storage-unzip-proxy/Dockerfile"
       - "apps/web/Dockerfile"
       - "bun.lock"
+      - "docker-compose.web.prod.yml"
       - "docker-compose.web.yml"
       - "package.json"
       - "packages/*/package.json"
@@ -26,6 +27,7 @@ on:
       - "apps/storage-unzip-proxy/Dockerfile"
       - "apps/web/Dockerfile"
       - "bun.lock"
+      - "docker-compose.web.prod.yml"
       - "docker-compose.web.yml"
       - "package.json"
       - "packages/*/package.json"
@@ -65,8 +67,23 @@ jobs:
       - name: Run Docker helper tests
         run: node --test scripts/check-docker-web.test.js scripts/docker-web.test.js
 
-      - name: Render Docker Compose config
-        run: docker compose -f docker-compose.web.yml config > /tmp/docker-compose.web.yml
+      - name: Prepare production Docker runtime files
+        run: |
+          mkdir -p tmp/docker-web/prod
+          cat <<'EOF' > tmp/docker-web/prod/nginx.conf
+          server {
+            listen 7803;
+            location / {
+              proxy_pass http://web-blue:7803;
+            }
+          }
+          EOF
+          touch apps/web/.env.local
+
+      - name: Render Docker Compose configs
+        run: |
+          docker compose -f docker-compose.web.yml config > /tmp/docker-compose.web.yml
+          docker compose -f docker-compose.web.prod.yml config > /tmp/docker-compose.web.prod.yml
 
       - name: Build web dev image
         run: docker build --target dev -f apps/web/Dockerfile .
