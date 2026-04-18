@@ -5,24 +5,44 @@ const os = require('node:os');
 const path = require('node:path');
 
 const {
+  BLUE_GREEN_PROXY_SERVICE,
   DEFAULT_DEPLOY_COMMAND,
   DEFAULT_INTERVAL_MS,
+  MAX_DEPLOYMENTS,
   SELF_WATCHED_FILES,
   acquireWatchLock,
+  appendDeploymentHistory,
   buildDashboardView,
+  collectDeploymentTraffic,
   createWatchUi,
   formatCountdown,
   formatRelativeTime,
   getWatchPaths,
   isProcessAlive,
   parseArgs,
+  parseProxyLogEntries,
   parseUpstreamRef,
+  readDeploymentHistory,
   readWatchLock,
   releaseWatchLock,
+  resolveCurrentBlueGreenStatus,
   runDeployWatchIteration,
   runDeployWatchLoop,
   spawnReplacementWatcher,
+  writeDeploymentHistory,
 } = require('./watch-blue-green-deploy.js');
+
+const ROOT_DIR = path.resolve(__dirname, '..');
+const PROD_COMPOSE_FILE = path.join(ROOT_DIR, 'docker-compose.web.prod.yml');
+
+function createResult(stdout = '', { code = 0, stderr = '' } = {}) {
+  return {
+    code,
+    signal: null,
+    stderr,
+    stdout,
+  };
+}
 
 function createRunCommandMock(responses) {
   return async (command, args) => {
@@ -33,13 +53,12 @@ function createRunCommandMock(responses) {
     }
 
     const response = responses.get(key);
-
-    if (typeof response === 'function') {
-      return response();
-    }
-
-    return response;
+    return typeof response === 'function' ? response() : response;
   };
+}
+
+function prodComposePsKey(serviceName) {
+  return `docker compose -f ${PROD_COMPOSE_FILE} ps -q ${serviceName}`;
 }
 
 test('parseArgs uses a 5s interval by default and accepts --once', () => {
@@ -66,12 +85,16 @@ test('parseUpstreamRef keeps remote and branch components intact', () => {
   });
 });
 
-test('formatRelativeTime and formatCountdown render friendly terminal strings', () => {
+test('formatRelativeTime clamps tiny future drift so the dashboard does not flicker', () => {
   const now = Date.parse('2026-04-18T11:00:00.000Z');
 
   assert.equal(
     formatRelativeTime(Date.parse('2026-04-18T10:58:00.000Z'), { now }),
     '2m ago'
+  );
+  assert.equal(
+    formatRelativeTime(Date.parse('2026-04-18T11:00:00.900Z'), { now }),
+    'just now'
   );
   assert.equal(
     formatRelativeTime(Date.parse('2026-04-18T11:00:10.000Z'), { now }),
@@ -83,31 +106,64 @@ test('formatRelativeTime and formatCountdown render friendly terminal strings', 
   );
 });
 
-test('buildDashboardView shows commit subject, relative time, and recent events', () => {
-  const now = Date.parse('2026-04-18T11:00:00.000Z');
+test('buildDashboardView shows blue/green runtime and the last 3 deployments', () => {
+  const now = Date.parse('2026-04-18T11:30:00.000Z');
   const output = buildDashboardView(
     {
+      currentBlueGreen: {
+        activeColor: 'green',
+        activatedAt: Date.parse('2026-04-18T11:10:00.000Z'),
+        lifetimeMs: 20 * 60 * 1_000,
+        requestCount: 128,
+        state: 'serving',
+      },
+      deployments: [
+        {
+          activatedAt: Date.parse('2026-04-18T11:10:00.000Z'),
+          activeColor: 'green',
+          buildDurationMs: 42_000,
+          commitShortHash: 'bbb222',
+          commitSubject: 'Refresh watcher UX and restart logic',
+          finishedAt: Date.parse('2026-04-18T11:10:00.000Z'),
+          lifetimeMs: 20 * 60 * 1_000,
+          requestCount: 128,
+          startedAt: Date.parse('2026-04-18T11:09:18.000Z'),
+          status: 'successful',
+        },
+        {
+          activeColor: 'blue',
+          buildDurationMs: 35_000,
+          commitShortHash: 'aaa111',
+          commitSubject: 'Previous rollout',
+          endedAt: Date.parse('2026-04-18T11:10:00.000Z'),
+          finishedAt: Date.parse('2026-04-18T10:40:00.000Z'),
+          lifetimeMs: 30 * 60 * 1_000,
+          requestCount: 512,
+          startedAt: Date.parse('2026-04-18T10:39:25.000Z'),
+          status: 'successful',
+        },
+      ],
       events: [
         {
           level: 'info',
           message: 'Pulled main from aaa111 to bbb222.',
-          time: Date.parse('2026-04-18T10:59:58.000Z'),
+          time: Date.parse('2026-04-18T11:29:58.000Z'),
         },
       ],
       intervalMs: 5_000,
-      lastCheckAt: Date.parse('2026-04-18T10:59:59.000Z'),
-      lastDeployAt: Date.parse('2026-04-18T10:59:58.000Z'),
+      lastCheckAt: Date.parse('2026-04-18T11:29:59.000Z'),
+      lastDeployAt: Date.parse('2026-04-18T11:10:00.000Z'),
       lastDeployStatus: 'successful',
       lastResult: { status: 'deployed' },
       latestCommit: {
-        committedAt: Date.parse('2026-04-18T10:57:00.000Z'),
+        committedAt: Date.parse('2026-04-18T11:08:00.000Z'),
         hash: 'bbbb2222',
         shortHash: 'bbb222',
         subject: 'Refresh watcher UX and restart logic',
       },
       lockFile: '/tmp/watch.lock',
-      nextCheckAt: Date.parse('2026-04-18T11:00:05.000Z'),
-      startedAt: Date.parse('2026-04-18T10:55:00.000Z'),
+      nextCheckAt: Date.parse('2026-04-18T11:30:05.000Z'),
+      startedAt: Date.parse('2026-04-18T11:00:00.000Z'),
       target: {
         branch: 'main',
         upstreamRef: 'origin/main',
@@ -119,11 +175,14 @@ test('buildDashboardView shows commit subject, relative time, and recent events'
     }
   );
 
-  assert.match(output, /Tuturuuu Auto Deploy Watcher/);
+  assert.match(output, /Blue\/green/);
+  assert.match(output, /serving green/);
+  assert.match(output, /128 req/);
+  assert.match(output, /Last 3 Deployments/);
+  assert.match(output, /ACTIVE/);
+  assert.match(output, /build 42s/);
+  assert.match(output, /life 20m/);
   assert.match(output, /Refresh watcher UX and restart logic/);
-  assert.match(output, /3m ago/);
-  assert.match(output, /Pulled main from aaa111 to bbb222/);
-  assert.match(output, /5\.0s/);
 });
 
 test('createWatchUi records events and renders cleanly in non-TTY mode', () => {
@@ -281,119 +340,288 @@ test('isProcessAlive handles missing and inaccessible processes safely', () => {
   );
 });
 
-test('runDeployWatchIteration skips dirty worktrees before fetch', async () => {
-  const calls = [];
-  const runCommand = createRunCommandMock(
-    new Map([
+test('appendDeploymentHistory closes the prior active deployment and keeps only the last 3 entries', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-history-'));
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    writeDeploymentHistory(
       [
-        'git rev-parse --abbrev-ref HEAD',
-        () => {
-          calls.push('branch');
-          return { code: 0, signal: null, stderr: '', stdout: 'main\n' };
+        {
+          activatedAt: 1000,
+          activeColor: 'blue',
+          buildDurationMs: 30_000,
+          commitShortHash: 'a1',
+          commitSubject: 'one',
+          finishedAt: 1000,
+          startedAt: 0,
+          status: 'successful',
         },
       ],
-      [
-        'git status --porcelain',
-        () => {
-          calls.push('status');
-          return {
-            code: 0,
-            signal: null,
-            stderr: '',
-            stdout: ' M package.json\n',
-          };
-        },
-      ],
-    ])
-  );
+      paths,
+      fs
+    );
 
-  const result = await runDeployWatchIteration(
-    {
-      branch: 'main',
-      remote: 'origin',
-      upstreamBranch: 'main',
-      upstreamRef: 'origin/main',
-    },
-    {
-      log: { error() {}, info() {}, warn() {} },
-      now: () => 1234,
-      runCommand,
-    }
-  );
+    appendDeploymentHistory(
+      {
+        activatedAt: 2000,
+        activeColor: 'green',
+        buildDurationMs: 35_000,
+        commitShortHash: 'b2',
+        commitSubject: 'two',
+        finishedAt: 2000,
+        startedAt: 1500,
+        status: 'successful',
+      },
+      {
+        fsImpl: fs,
+        paths,
+      }
+    );
+    appendDeploymentHistory(
+      {
+        buildDurationMs: 10_000,
+        commitShortHash: 'c3',
+        commitSubject: 'three',
+        finishedAt: 3000,
+        startedAt: 2500,
+        status: 'failed',
+      },
+      {
+        fsImpl: fs,
+        paths,
+      }
+    );
+    appendDeploymentHistory(
+      {
+        activatedAt: 4000,
+        activeColor: 'blue',
+        buildDurationMs: 25_000,
+        commitShortHash: 'd4',
+        commitSubject: 'four',
+        finishedAt: 4000,
+        startedAt: 3500,
+        status: 'successful',
+      },
+      {
+        fsImpl: fs,
+        paths,
+      }
+    );
 
-  assert.deepEqual(result, {
-    checkedAt: 1234,
-    status: 'dirty',
-  });
-  assert.deepEqual(calls, ['branch', 'status']);
+    const history = readDeploymentHistory(paths, fs);
+
+    assert.equal(history.length, MAX_DEPLOYMENTS);
+    assert.equal(history[0].commitShortHash, 'd4');
+    assert.equal(history[1].commitShortHash, 'c3');
+    assert.equal(history[2].commitShortHash, 'b2');
+    assert.equal(history[2].endedAt, 4000);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
-test('runDeployWatchIteration pulls, deploys, and flags watcher self-restart when the script changed', async () => {
-  const deployCommands = [];
-  const commandCounts = new Map();
+test('parseProxyLogEntries keeps only access lines and collectDeploymentTraffic counts non-health requests', async () => {
+  const deployments = [
+    {
+      activatedAt: Date.parse('2026-04-18T11:00:00.000Z'),
+      activeColor: 'green',
+      buildDurationMs: 30_000,
+      commitShortHash: 'bbb222',
+      commitSubject: 'current',
+      finishedAt: Date.parse('2026-04-18T11:00:00.000Z'),
+      startedAt: Date.parse('2026-04-18T10:59:30.000Z'),
+      status: 'successful',
+    },
+    {
+      activatedAt: Date.parse('2026-04-18T10:30:00.000Z'),
+      activeColor: 'blue',
+      buildDurationMs: 25_000,
+      commitShortHash: 'aaa111',
+      commitSubject: 'previous',
+      endedAt: Date.parse('2026-04-18T11:00:00.000Z'),
+      finishedAt: Date.parse('2026-04-18T10:30:00.000Z'),
+      startedAt: Date.parse('2026-04-18T10:29:35.000Z'),
+      status: 'successful',
+    },
+  ];
+  const parsed = parseProxyLogEntries(
+    [
+      '2026-04-18T10:35:00.000000000Z 10.0.0.1 - - [18/Apr/2026:10:35:00 +0000] "GET /docs HTTP/1.1" 200 120 "-" "Mozilla/5.0" "-"',
+      '2026-04-18T11:05:00.000000000Z 10.0.0.1 - - [18/Apr/2026:11:05:00 +0000] "GET / HTTP/1.1" 200 120 "-" "Mozilla/5.0" "-"',
+      '2026-04-18T11:06:00.000000000Z 127.0.0.1 - - [18/Apr/2026:11:06:00 +0000] "GET /api/health HTTP/1.1" 200 2 "-" "Wget/1.21" "-"',
+      '2026-04-18T11:07:00.000000000Z nginx: configuration file /etc/nginx/nginx.conf test is successful',
+    ].join('\n')
+  );
+
+  assert.equal(parsed.length, 3);
+
+  const enriched = await collectDeploymentTraffic(deployments, {
+    now: Date.parse('2026-04-18T11:30:00.000Z'),
+    runCommand: createRunCommandMock(
+      new Map([
+        [
+          prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
+          createResult('proxy-123\n'),
+        ],
+        [
+          'docker logs --timestamps --since 2026-04-18T10:30:00.000Z proxy-123',
+          createResult(
+            [
+              '2026-04-18T10:35:00.000000000Z 10.0.0.1 - - [18/Apr/2026:10:35:00 +0000] "GET /docs HTTP/1.1" 200 120 "-" "Mozilla/5.0" "-"',
+              '2026-04-18T11:05:00.000000000Z 10.0.0.1 - - [18/Apr/2026:11:05:00 +0000] "GET / HTTP/1.1" 200 120 "-" "Mozilla/5.0" "-"',
+              '2026-04-18T11:06:00.000000000Z 127.0.0.1 - - [18/Apr/2026:11:06:00 +0000] "GET /api/health HTTP/1.1" 200 2 "-" "Wget/1.21" "-"',
+            ].join('\n')
+          ),
+        ],
+      ])
+    ),
+  });
+
+  assert.equal(enriched[0].requestCount, 1);
+  assert.equal(enriched[1].requestCount, 1);
+  assert.equal(enriched[0].lifetimeMs, 30 * 60 * 1_000);
+});
+
+test('resolveCurrentBlueGreenStatus reflects the active color and running services', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-blue-green-'));
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
+
+    const status = await resolveCurrentBlueGreenStatus({
+      fsImpl: fs,
+      paths,
+      runCommand: createRunCommandMock(
+        new Map([
+          [
+            prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
+            createResult('proxy-123\n'),
+          ],
+          [prodComposePsKey('web-green'), createResult('green-123\n')],
+        ])
+      ),
+    });
+
+    assert.deepEqual(status, {
+      activeColor: 'green',
+      activeServiceRunning: true,
+      proxyRunning: true,
+      state: 'serving',
+    });
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeployWatchIteration skips dirty worktrees before fetch and still reports runtime state', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-dirty-'));
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
   const runCommand = async (command, args) => {
     const key = `${command} ${args.join(' ')}`;
-    const count = (commandCounts.get(key) ?? 0) + 1;
-    commandCounts.set(key, count);
+    calls.push(key);
 
     if (key === 'git rev-parse --abbrev-ref HEAD') {
-      return { code: 0, signal: null, stderr: '', stdout: 'main\n' };
+      return createResult('main\n');
     }
 
     if (key === 'git status --porcelain') {
-      return { code: 0, signal: null, stderr: '', stdout: '' };
+      return createResult(' M package.json\n');
+    }
+
+    if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+      return createResult('');
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        now: () => 1234,
+        paths,
+        runCommand,
+      }
+    );
+
+    assert.equal(result.status, 'dirty');
+    assert.equal(result.currentBlueGreen.state, 'idle');
+    assert.deepEqual(result.deployments, []);
+    assert.deepEqual(calls, [
+      'git rev-parse --abbrev-ref HEAD',
+      'git status --porcelain',
+      prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
+    ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeployWatchIteration pulls, deploys, tracks history, traffic, and watcher self-restart', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-deploy-'));
+  const paths = getWatchPaths(tempDir);
+  const deployCommands = [];
+  const commandCounts = new Map();
+  let pullCompleted = false;
+  let deployCompleted = false;
+  const nowValues = [1000, 2000, 4000, 5000];
+  const now = () => nowValues.shift() ?? 5000;
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    commandCounts.set(key, (commandCounts.get(key) ?? 0) + 1);
+
+    if (key === 'git rev-parse --abbrev-ref HEAD') {
+      return createResult('main\n');
+    }
+
+    if (key === 'git status --porcelain') {
+      return createResult('');
     }
 
     if (key === 'git fetch origin main') {
-      return { code: 0, signal: null, stderr: '', stdout: '' };
+      return createResult('');
     }
 
     if (key === 'git rev-parse HEAD') {
-      return {
-        code: 0,
-        signal: null,
-        stderr: '',
-        stdout: count === 1 ? 'aaa111\n' : 'bbb222\n',
-      };
+      return createResult(pullCompleted ? 'bbb222\n' : 'aaa111\n');
     }
 
     if (key === 'git rev-parse origin/main') {
-      return { code: 0, signal: null, stderr: '', stdout: 'bbb222\n' };
+      return createResult('bbb222\n');
     }
 
     if (key === 'git merge-base --is-ancestor aaa111 bbb222') {
-      return { code: 0, signal: null, stderr: '', stdout: '' };
+      return createResult('');
     }
 
     if (key === 'git pull --ff-only origin main') {
-      return {
-        code: 0,
-        signal: null,
-        stderr: '',
-        stdout: 'Updating aaa111..bbb222\n',
-      };
+      pullCompleted = true;
+      return createResult('Updating aaa111..bbb222\n');
     }
 
     if (
       key ===
       `git diff --name-only aaa111 bbb222 -- ${SELF_WATCHED_FILES.join(' ')}`
     ) {
-      return {
-        code: 0,
-        signal: null,
-        stderr: '',
-        stdout: `${SELF_WATCHED_FILES[0]}\n`,
-      };
+      return createResult(`${SELF_WATCHED_FILES[0]}\n`);
     }
 
     if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
-      return {
-        code: 0,
-        signal: null,
-        stderr: '',
-        stdout:
-          'bbb222222222222222222\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:58:00.000Z\n',
-      };
+      return createResult(
+        'bbb222222222222222222\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:58:00.000Z\n'
+      );
     }
 
     if (
@@ -401,40 +629,62 @@ test('runDeployWatchIteration pulls, deploys, and flags watcher self-restart whe
       `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
     ) {
       deployCommands.push(key);
-      return { code: 0, signal: null, stderr: '', stdout: '' };
+      deployCompleted = true;
+      fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+      fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
+      return createResult('');
+    }
+
+    if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+      return createResult(deployCompleted ? 'proxy-123\n' : '');
+    }
+
+    if (key === prodComposePsKey('web-green')) {
+      return createResult(deployCompleted ? 'green-123\n' : '');
+    }
+
+    if (
+      key ===
+      'docker logs --timestamps --since 1970-01-01T00:00:04.000Z proxy-123'
+    ) {
+      return createResult(
+        '1970-01-01T00:00:04.500Z 10.0.0.1 - - [01/Jan/1970:00:00:04 +0000] "GET / HTTP/1.1" 200 120 "-" "Mozilla/5.0" "-"\n'
+      );
     }
 
     throw new Error(`Unexpected command: ${key}`);
   };
 
-  const result = await runDeployWatchIteration(
-    {
-      branch: 'main',
-      remote: 'origin',
-      upstreamBranch: 'main',
-      upstreamRef: 'origin/main',
-    },
-    {
-      log: { error() {}, info() {}, warn() {} },
-      now: () => 9999,
-      runCommand,
-    }
-  );
+  try {
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        now,
+        paths,
+        runCommand,
+      }
+    );
 
-  assert.deepEqual(result, {
-    checkedAt: 9999,
-    latestCommit: {
-      committedAt: Date.parse('2026-04-18T10:58:00.000Z'),
-      hash: 'bbb222222222222222222',
-      shortHash: 'bbb222',
-      subject: 'Refresh watcher UX and restart logic',
-    },
-    newHead: 'bbb222',
-    oldHead: 'aaa111',
-    restartRequired: true,
-    status: 'restarting',
-  });
-  assert.equal(deployCommands.length, 1);
+    assert.equal(result.status, 'restarting');
+    assert.equal(result.restartRequired, true);
+    assert.equal(result.currentBlueGreen.state, 'serving');
+    assert.equal(result.currentBlueGreen.activeColor, 'green');
+    assert.equal(result.currentBlueGreen.requestCount, 1);
+    assert.equal(result.deployments.length, 1);
+    assert.equal(result.deployments[0].activeColor, 'green');
+    assert.equal(result.deployments[0].buildDurationMs, 2000);
+    assert.equal(result.deployments[0].requestCount, 1);
+    assert.equal(deployCommands.length, 1);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('runDeployWatchIteration stops when the locked branch changes', async () => {
@@ -451,10 +701,7 @@ test('runDeployWatchIteration stops when the locked branch changes', async () =>
           log: { error() {}, info() {}, warn() {} },
           runCommand: createRunCommandMock(
             new Map([
-              [
-                'git rev-parse --abbrev-ref HEAD',
-                { code: 0, signal: null, stderr: '', stdout: 'release\n' },
-              ],
+              ['git rev-parse --abbrev-ref HEAD', createResult('release\n')],
             ])
           ),
         }
@@ -464,80 +711,62 @@ test('runDeployWatchIteration stops when the locked branch changes', async () =>
 });
 
 test('runDeployWatchLoop honors once mode without sleeping', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-once-'));
+  const paths = getWatchPaths(tempDir);
   let slept = false;
   const iterationStarts = [];
   const iterationResults = [];
 
-  const result = await runDeployWatchLoop(
-    {
-      branch: 'main',
-      remote: 'origin',
-      upstreamBranch: 'main',
-      upstreamRef: 'origin/main',
-    },
-    {
-      log: { error() {}, info() {}, warn() {} },
-      now: () => 1000,
-      once: true,
-      onIterationResult: (value) => {
-        iterationResults.push(value);
+  try {
+    const result = await runDeployWatchLoop(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
       },
-      onIterationStart: (value) => {
-        iterationStarts.push(value);
-      },
-      runCommand: createRunCommandMock(
-        new Map([
-          [
-            'git rev-parse --abbrev-ref HEAD',
-            { code: 0, signal: null, stderr: '', stdout: 'main\n' },
-          ],
-          [
-            'git status --porcelain',
-            { code: 0, signal: null, stderr: '', stdout: '' },
-          ],
-          [
-            'git fetch origin main',
-            { code: 0, signal: null, stderr: '', stdout: '' },
-          ],
-          [
-            'git rev-parse HEAD',
-            { code: 0, signal: null, stderr: '', stdout: 'aaa111\n' },
-          ],
-          [
-            'git rev-parse origin/main',
-            { code: 0, signal: null, stderr: '', stdout: 'aaa111\n' },
-          ],
-          [
-            'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
-            {
-              code: 0,
-              signal: null,
-              stderr: '',
-              stdout:
-                'aaa111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n',
-            },
-          ],
-        ])
-      ),
-      sleepImpl: async () => {
-        slept = true;
-      },
-    }
-  );
+      {
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        now: () => 1000,
+        once: true,
+        onIterationResult: (value) => {
+          iterationResults.push(value);
+        },
+        onIterationStart: (value) => {
+          iterationStarts.push(value);
+        },
+        paths,
+        runCommand: createRunCommandMock(
+          new Map([
+            ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
+            ['git status --porcelain', createResult('')],
+            ['git fetch origin main', createResult('')],
+            ['git rev-parse HEAD', createResult('aaa111\n')],
+            ['git rev-parse origin/main', createResult('aaa111\n')],
+            [
+              'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
+              createResult(
+                'aaa111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n'
+              ),
+            ],
+            [prodComposePsKey(BLUE_GREEN_PROXY_SERVICE), createResult('')],
+          ])
+        ),
+        sleepImpl: async () => {
+          slept = true;
+        },
+      }
+    );
 
-  assert.deepEqual(result, {
-    checkedAt: 1000,
-    latestCommit: {
-      committedAt: Date.parse('2026-04-18T10:58:00.000Z'),
-      hash: 'aaa111111111111111111',
-      shortHash: 'aaa111',
-      subject: 'Keep branch current',
-    },
-    status: 'up-to-date',
-  });
-  assert.deepEqual(iterationStarts, [1000]);
-  assert.deepEqual(iterationResults, [result]);
-  assert.equal(slept, false);
+    assert.equal(result.status, 'up-to-date');
+    assert.equal(result.currentBlueGreen.state, 'idle');
+    assert.deepEqual(iterationStarts, [1000]);
+    assert.deepEqual(iterationResults, [result]);
+    assert.equal(slept, false);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('spawnReplacementWatcher relaunches the watcher with inherited args', async () => {

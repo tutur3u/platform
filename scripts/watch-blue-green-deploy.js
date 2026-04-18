@@ -5,17 +5,33 @@ const fs = require('node:fs');
 const path = require('node:path');
 const readline = require('node:readline');
 
-const { runChecked, runCommand } = require('./docker-web/compose.js');
+const {
+  getBlueGreenPaths,
+  readBlueGreenActiveColor,
+} = require('./docker-web/blue-green.js');
+const {
+  getComposeCommandArgs,
+  getComposeFile,
+  runChecked,
+  runCommand,
+} = require('./docker-web/compose.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DEFAULT_INTERVAL_MS = 5_000;
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
+const MAX_DEPLOYMENTS = 3;
 const MAX_EVENTS = 8;
+const PROD_COMPOSE_FILE = getComposeFile('prod');
+const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const SELF_WATCHED_FILES = [path.relative(ROOT_DIR, __filename)];
 const WATCH_RUNTIME_DIR = path.join(ROOT_DIR, 'tmp', 'docker-web', 'watch');
 const WATCH_LOCK_FILE = path.join(
   WATCH_RUNTIME_DIR,
   'blue-green-auto-deploy.lock'
+);
+const WATCH_HISTORY_FILE = path.join(
+  WATCH_RUNTIME_DIR,
+  'blue-green-auto-deploy.history.json'
 );
 const ANSI = {
   bold: '\x1b[1m',
@@ -70,6 +86,8 @@ function getWatchPaths(rootDir = ROOT_DIR) {
   const runtimeDir = path.join(rootDir, 'tmp', 'docker-web', 'watch');
 
   return {
+    blueGreen: getBlueGreenPaths(rootDir),
+    historyFile: path.join(runtimeDir, 'blue-green-auto-deploy.history.json'),
     lockFile: path.join(runtimeDir, 'blue-green-auto-deploy.lock'),
     runtimeDir,
   };
@@ -101,10 +119,9 @@ function formatRelativeTime(time, { now = Date.now() } = {}) {
 
   const diffMs = time - now;
   const absoluteMs = Math.abs(diffMs);
-  const suffix = diffMs >= 0 ? 'from now' : 'ago';
 
-  if (absoluteMs < 1_000) {
-    return diffMs >= 0 ? 'in less than 1s' : 'just now';
+  if (absoluteMs < 1_000 || (diffMs >= 0 && absoluteMs < 5_000)) {
+    return 'just now';
   }
 
   const units = [
@@ -117,11 +134,11 @@ function formatRelativeTime(time, { now = Date.now() } = {}) {
   for (const [label, size] of units) {
     if (absoluteMs >= size) {
       const value = Math.floor(absoluteMs / size);
-      return diffMs >= 0 ? `in ${value}${label}` : `${value}${label} ${suffix}`;
+      return diffMs >= 0 ? `in ${value}${label}` : `${value}${label} ago`;
     }
   }
 
-  return diffMs >= 0 ? 'in less than 1s' : 'just now';
+  return 'just now';
 }
 
 function formatCountdown(time, { now = Date.now() } = {}) {
@@ -131,6 +148,54 @@ function formatCountdown(time, { now = Date.now() } = {}) {
 
   const remainingMs = Math.max(0, time - now);
   return `${(remainingMs / 1_000).toFixed(1)}s`;
+}
+
+function formatDuration(durationMs) {
+  if (!Number.isFinite(durationMs) || durationMs < 0) {
+    return 'n/a';
+  }
+
+  if (durationMs < 1_000) {
+    return '<1s';
+  }
+
+  const units = [
+    ['d', 86_400_000],
+    ['h', 3_600_000],
+    ['m', 60_000],
+    ['s', 1_000],
+  ];
+  const parts = [];
+  let remaining = durationMs;
+
+  for (const [label, size] of units) {
+    if (remaining < size && parts.length === 0) {
+      continue;
+    }
+
+    const value = Math.floor(remaining / size);
+
+    if (value <= 0) {
+      continue;
+    }
+
+    parts.push(`${value}${label}`);
+    remaining -= value * size;
+
+    if (parts.length === 2) {
+      break;
+    }
+  }
+
+  return parts.join(' ') || '<1s';
+}
+
+function formatRequestCount(count) {
+  if (!Number.isFinite(count) || count < 0) {
+    return 'n/a';
+  }
+
+  return `${new Intl.NumberFormat('en-US').format(count)} req`;
 }
 
 function truncateText(value, maxLength) {
@@ -166,6 +231,83 @@ function summarizeResult(result) {
   }
 }
 
+function summarizeBlueGreenRuntime(
+  currentBlueGreen,
+  { now = Date.now() } = {}
+) {
+  if (!currentBlueGreen || currentBlueGreen.state === 'idle') {
+    return colorize('dim', 'idle');
+  }
+
+  if (currentBlueGreen.state === 'unknown') {
+    return colorize('yellow', currentBlueGreen.message ?? 'unknown');
+  }
+
+  const base =
+    currentBlueGreen.state === 'degraded'
+      ? colorize(
+          'yellow',
+          `degraded${currentBlueGreen.activeColor ? ` (${currentBlueGreen.activeColor})` : ''}`
+        )
+      : colorize(
+          'green',
+          `serving ${currentBlueGreen.activeColor ?? 'unknown'}`
+        );
+  const details = [];
+
+  if (currentBlueGreen.lifetimeMs != null) {
+    details.push(`life ${formatDuration(currentBlueGreen.lifetimeMs)}`);
+  }
+
+  if (currentBlueGreen.requestCount != null) {
+    details.push(formatRequestCount(currentBlueGreen.requestCount));
+  }
+
+  if (currentBlueGreen.activatedAt) {
+    details.push(
+      `since ${formatClockTime(currentBlueGreen.activatedAt)} (${formatRelativeTime(
+        currentBlueGreen.activatedAt,
+        { now }
+      )})`
+    );
+  }
+
+  if (details.length === 0) {
+    return base;
+  }
+
+  return `${base} ${colorize('dim', `(${details.join(' · ')})`)}`;
+}
+
+function formatDeploymentEntry(entry, { now = Date.now(), width = 100 } = {}) {
+  const statusLabel =
+    entry.status === 'failed'
+      ? colorize('red', 'FAILED')
+      : entry.endedAt
+        ? colorize('cyan', 'ENDED ')
+        : colorize('green', 'ACTIVE ');
+  const metadata = [
+    entry.activeColor ? `${entry.activeColor}` : 'n/a',
+    entry.commitShortHash ?? 'unknown',
+    `build ${formatDuration(entry.buildDurationMs)}`,
+  ];
+
+  if (entry.lifetimeMs != null) {
+    metadata.push(`life ${formatDuration(entry.lifetimeMs)}`);
+  }
+
+  if (entry.requestCount != null) {
+    metadata.push(formatRequestCount(entry.requestCount));
+  }
+
+  const timestamp = entry.finishedAt ?? entry.startedAt;
+  const subject = entry.commitSubject
+    ? truncateText(entry.commitSubject, Math.max(20, width - 62))
+    : 'No commit metadata';
+
+  return `${colorize('dim', `[${formatClockTime(timestamp)}]`)} ${statusLabel} ${metadata.join(' · ')} ${colorize('dim', `(${formatRelativeTime(timestamp, { now })})`)} ${subject}`;
+}
+
 function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
   const contentWidth = Math.max(72, Math.min(width, 120));
   const separator = colorize('dim', '-'.repeat(contentWidth));
@@ -175,6 +317,15 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
         Math.max(24, contentWidth - 32)
       )}`
     : colorize('dim', 'unknown');
+  const deployments =
+    state.deployments?.length > 0
+      ? state.deployments.map((entry) =>
+          formatDeploymentEntry(entry, {
+            now,
+            width: contentWidth,
+          })
+        )
+      : [colorize('dim', 'No deployment history yet.')];
   const events =
     state.events.length > 0
       ? state.events.map((event) => {
@@ -200,6 +351,10 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
       )}`
     ),
     formatRow('Status', summarizeResult(state.lastResult)),
+    formatRow(
+      'Blue/green',
+      summarizeBlueGreenRuntime(state.currentBlueGreen, { now })
+    ),
     formatRow('Interval', `${(state.intervalMs / 1_000).toFixed(1)}s`),
     formatRow('Started', formatClockTime(state.startedAt)),
     formatRow(
@@ -237,6 +392,9 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
     ),
     formatRow('Lock file', state.lockFile ?? colorize('dim', 'not acquired')),
     separator,
+    colorize('bold', 'Last 3 Deployments'),
+    ...deployments,
+    separator,
     colorize('bold', 'Recent Events'),
     ...events,
     separator,
@@ -254,6 +412,7 @@ function createWatchUi(initialState = {}, options = {}) {
   const isTTY = options.isTTY ?? Boolean(stdout.isTTY);
   const maxEvents = options.maxEvents ?? MAX_EVENTS;
   const state = {
+    deployments: [],
     events: [],
     intervalMs: DEFAULT_INTERVAL_MS,
     lastResult: null,
@@ -533,6 +692,56 @@ function releaseWatchLock({
   fsImpl.rmSync(paths.lockFile, { force: true });
 }
 
+function readDeploymentHistory(paths = getWatchPaths(), fsImpl = fs) {
+  if (!fsImpl.existsSync(paths.historyFile)) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(fsImpl.readFileSync(paths.historyFile, 'utf8'));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeDeploymentHistory(history, paths = getWatchPaths(), fsImpl = fs) {
+  fsImpl.mkdirSync(paths.runtimeDir, { recursive: true });
+  fsImpl.writeFileSync(
+    paths.historyFile,
+    JSON.stringify(history, null, 2),
+    'utf8'
+  );
+}
+
+function appendDeploymentHistory(
+  entry,
+  { fsImpl = fs, paths = getWatchPaths() } = {}
+) {
+  const history = readDeploymentHistory(paths, fsImpl);
+  const nextHistory = history.map((existing, index) => {
+    if (
+      entry.status === 'successful' &&
+      index >= 0 &&
+      existing.status === 'successful' &&
+      !existing.endedAt
+    ) {
+      return {
+        ...existing,
+        endedAt: entry.activatedAt ?? entry.finishedAt ?? entry.startedAt,
+      };
+    }
+
+    return existing;
+  });
+
+  nextHistory.unshift(entry);
+
+  const trimmed = nextHistory.slice(0, MAX_DEPLOYMENTS);
+  writeDeploymentHistory(trimmed, paths, fsImpl);
+  return trimmed;
+}
+
 async function getRevision(ref, { env, runCommand: run = runCommand } = {}) {
   return gitStdout(['rev-parse', ref], { env, runCommand: run });
 }
@@ -631,16 +840,282 @@ async function spawnReplacementWatcher({
   });
 }
 
+async function getProdComposeServiceContainerId(
+  serviceName,
+  { env, runCommand: run = runCommand } = {}
+) {
+  const result = await runChecked(
+    'docker',
+    getComposeCommandArgs(PROD_COMPOSE_FILE, [], 'ps', '-q', serviceName),
+    {
+      env,
+      runCommand: run,
+      stdio: 'pipe',
+    }
+  );
+
+  return result.stdout.trim();
+}
+
+async function resolveCurrentBlueGreenStatus({
+  env,
+  fsImpl = fs,
+  paths = getWatchPaths(),
+  runCommand: run = runCommand,
+} = {}) {
+  const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+
+  try {
+    const proxyContainerId = await getProdComposeServiceContainerId(
+      BLUE_GREEN_PROXY_SERVICE,
+      {
+        env,
+        runCommand: run,
+      }
+    );
+
+    if (!activeColor && !proxyContainerId) {
+      return {
+        activeColor: null,
+        proxyRunning: false,
+        state: 'idle',
+      };
+    }
+
+    const activeServiceName = activeColor ? `web-${activeColor}` : null;
+    const activeContainerId = activeServiceName
+      ? await getProdComposeServiceContainerId(activeServiceName, {
+          env,
+          runCommand: run,
+        })
+      : '';
+
+    return {
+      activeColor,
+      activeServiceRunning: Boolean(activeContainerId),
+      proxyRunning: Boolean(proxyContainerId),
+      state:
+        activeColor && proxyContainerId && activeContainerId
+          ? 'serving'
+          : proxyContainerId || activeContainerId || activeColor
+            ? 'degraded'
+            : 'idle',
+    };
+  } catch (error) {
+    return {
+      activeColor,
+      message:
+        error instanceof Error ? error.message : 'Unable to inspect blue/green',
+      state: 'unknown',
+    };
+  }
+}
+
+function parseProxyLogEntries(output) {
+  return output
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const timestampMatch = line.match(/^(\d{4}-\d{2}-\d{2}T\S+)\s+(.*)$/);
+
+      if (!timestampMatch) {
+        return null;
+      }
+
+      const [, isoTime, message] = timestampMatch;
+      const time = Date.parse(isoTime);
+      const requestMatch = message.match(
+        /"([A-Z]+)\s+([^"\s]+)\s+HTTP\/[0-9.]+"/
+      );
+
+      if (!Number.isFinite(time) || !requestMatch) {
+        return null;
+      }
+
+      return {
+        path: requestMatch[2],
+        time,
+      };
+    })
+    .filter(Boolean);
+}
+
+async function collectDeploymentTraffic(
+  deployments,
+  { env, now = Date.now(), runCommand: run = runCommand } = {}
+) {
+  const successfulDeployments = deployments.filter(
+    (entry) => entry.status === 'successful' && entry.activatedAt
+  );
+
+  if (successfulDeployments.length === 0) {
+    return deployments.map((entry) => ({
+      ...entry,
+      lifetimeMs:
+        entry.status === 'successful' && entry.activatedAt
+          ? Math.max(0, (entry.endedAt ?? now) - entry.activatedAt)
+          : null,
+      requestCount: null,
+    }));
+  }
+
+  try {
+    const containerId = await getProdComposeServiceContainerId(
+      BLUE_GREEN_PROXY_SERVICE,
+      {
+        env,
+        runCommand: run,
+      }
+    );
+
+    if (!containerId) {
+      return deployments.map((entry) => ({
+        ...entry,
+        lifetimeMs:
+          entry.status === 'successful' && entry.activatedAt
+            ? Math.max(0, (entry.endedAt ?? now) - entry.activatedAt)
+            : null,
+        requestCount: null,
+      }));
+    }
+
+    const earliestActivatedAt = Math.min(
+      ...successfulDeployments.map((entry) => entry.activatedAt)
+    );
+    const result = await runChecked(
+      'docker',
+      [
+        'logs',
+        '--timestamps',
+        '--since',
+        new Date(earliestActivatedAt).toISOString(),
+        containerId,
+      ],
+      {
+        env,
+        runCommand: run,
+        stdio: 'pipe',
+      }
+    );
+    const entries = parseProxyLogEntries(result.stdout);
+
+    return deployments.map((deployment) => {
+      const lifetimeMs =
+        deployment.status === 'successful' && deployment.activatedAt
+          ? Math.max(0, (deployment.endedAt ?? now) - deployment.activatedAt)
+          : null;
+
+      if (deployment.status !== 'successful' || !deployment.activatedAt) {
+        return {
+          ...deployment,
+          lifetimeMs,
+          requestCount: null,
+        };
+      }
+
+      const endTime = deployment.endedAt ?? now;
+      const requestCount = entries.reduce((count, entry) => {
+        if (entry.path === '/api/health') {
+          return count;
+        }
+
+        if (entry.time >= deployment.activatedAt && entry.time < endTime) {
+          return count + 1;
+        }
+
+        return count;
+      }, 0);
+
+      return {
+        ...deployment,
+        lifetimeMs,
+        requestCount,
+      };
+    });
+  } catch {
+    return deployments.map((entry) => ({
+      ...entry,
+      lifetimeMs:
+        entry.status === 'successful' && entry.activatedAt
+          ? Math.max(0, (entry.endedAt ?? now) - entry.activatedAt)
+          : null,
+      requestCount: null,
+    }));
+  }
+}
+
+async function loadRuntimeSnapshot({
+  env,
+  fsImpl = fs,
+  now = Date.now(),
+  paths = getWatchPaths(),
+  runCommand: run = runCommand,
+  history = null,
+} = {}) {
+  const currentBlueGreen = await resolveCurrentBlueGreenStatus({
+    env,
+    fsImpl,
+    paths,
+    runCommand: run,
+  });
+  const deployments = await collectDeploymentTraffic(
+    history ?? readDeploymentHistory(paths, fsImpl),
+    {
+      env,
+      now,
+      runCommand: run,
+    }
+  );
+  const activeDeployment = deployments.find(
+    (entry) =>
+      entry.status === 'successful' &&
+      !entry.endedAt &&
+      entry.activeColor &&
+      entry.activeColor === currentBlueGreen.activeColor
+  );
+
+  return {
+    currentBlueGreen: activeDeployment
+      ? {
+          ...currentBlueGreen,
+          activatedAt: activeDeployment.activatedAt,
+          lifetimeMs: activeDeployment.lifetimeMs,
+          requestCount: activeDeployment.requestCount,
+        }
+      : currentBlueGreen,
+    deployments,
+  };
+}
+
 async function runDeployWatchIteration(
   target,
   {
     deployCommand = DEFAULT_DEPLOY_COMMAND,
     env,
+    fsImpl = fs,
     log = console,
     now = () => Date.now(),
+    paths = getWatchPaths(),
     runCommand: run = runCommand,
   } = {}
 ) {
+  const checkedAt = now();
+  const attachRuntime = async (result, history = null) => {
+    const snapshotNow = now();
+
+    return {
+      ...result,
+      ...(await loadRuntimeSnapshot({
+        env,
+        fsImpl,
+        now: snapshotNow,
+        paths,
+        runCommand: run,
+        history,
+      })),
+    };
+  };
   const currentBranch = await getCurrentBranch({ env, runCommand: run });
 
   if (currentBranch !== target.branch) {
@@ -653,10 +1128,10 @@ async function runDeployWatchIteration(
     log.warn?.(
       `Skipping poll because the worktree has uncommitted changes on ${target.branch}.`
     );
-    return {
-      checkedAt: now(),
+    return attachRuntime({
+      checkedAt,
       status: 'dirty',
-    };
+    });
   }
 
   await fetchTrackedBranch(target, { env, runCommand: run });
@@ -668,11 +1143,11 @@ async function runDeployWatchIteration(
   });
 
   if (localHead === upstreamHead) {
-    return {
-      checkedAt: now(),
+    return attachRuntime({
+      checkedAt,
       latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
       status: 'up-to-date',
-    };
+    });
   }
 
   if (await isAncestor(localHead, upstreamHead, { env, runCommand: run })) {
@@ -681,11 +1156,11 @@ async function runDeployWatchIteration(
     const updatedHead = await getRevision('HEAD', { env, runCommand: run });
 
     if (updatedHead === localHead) {
-      return {
-        checkedAt: now(),
+      return attachRuntime({
+        checkedAt,
         latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
         status: 'up-to-date',
-      };
+      });
     }
 
     const restartRequired = await hasWatchedScriptChanges(
@@ -708,46 +1183,96 @@ async function runDeployWatchIteration(
       )} to ${updatedHead.slice(0, 12)}. Starting blue/green deployment.`
     );
 
+    const deployStartedAt = now();
+
     try {
       await runBlueGreenDeploy({
         deployCommand,
         env,
         runCommand: run,
       });
+
+      const deployFinishedAt = now();
+      const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+      const history = appendDeploymentHistory(
+        {
+          activatedAt: deployFinishedAt,
+          activeColor,
+          buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+          commitHash: latestCommit.hash,
+          commitShortHash: latestCommit.shortHash,
+          commitSubject: latestCommit.subject,
+          finishedAt: deployFinishedAt,
+          startedAt: deployStartedAt,
+          status: 'successful',
+        },
+        {
+          fsImpl,
+          paths,
+        }
+      );
+
       log.info?.(
         `Blue/green deployment completed for ${updatedHead.slice(0, 12)}.`
       );
+
       if (restartRequired) {
         log.warn?.(
           'Watcher script changed in the pulled revision. Restarting.'
         );
       }
-      return {
-        checkedAt: now(),
-        latestCommit,
-        newHead: updatedHead,
-        oldHead: localHead,
-        restartRequired,
-        status: restartRequired ? 'restarting' : 'deployed',
-      };
+
+      return attachRuntime(
+        {
+          checkedAt,
+          latestCommit,
+          newHead: updatedHead,
+          oldHead: localHead,
+          restartRequired,
+          status: restartRequired ? 'restarting' : 'deployed',
+        },
+        history
+      );
     } catch (error) {
+      const deployFinishedAt = now();
+      const history = appendDeploymentHistory(
+        {
+          buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+          commitHash: latestCommit.hash,
+          commitShortHash: latestCommit.shortHash,
+          commitSubject: latestCommit.subject,
+          finishedAt: deployFinishedAt,
+          startedAt: deployStartedAt,
+          status: 'failed',
+        },
+        {
+          fsImpl,
+          paths,
+        }
+      );
+
       log.error?.(
         `Blue/green deployment failed for ${updatedHead.slice(0, 12)}: ${error instanceof Error ? error.message : String(error)}`
       );
+
       if (restartRequired) {
         log.warn?.(
           'Watcher script changed in the pulled revision. Restarting.'
         );
       }
-      return {
-        checkedAt: now(),
-        error,
-        latestCommit,
-        newHead: updatedHead,
-        oldHead: localHead,
-        restartRequired,
-        status: 'deploy-failed',
-      };
+
+      return attachRuntime(
+        {
+          checkedAt,
+          error,
+          latestCommit,
+          newHead: updatedHead,
+          oldHead: localHead,
+          restartRequired,
+          status: 'deploy-failed',
+        },
+        history
+      );
     }
   }
 
@@ -755,21 +1280,21 @@ async function runDeployWatchIteration(
     log.warn?.(
       `Local branch ${target.branch} is ahead of ${target.upstreamRef}; skipping auto-pull.`
     );
-    return {
-      checkedAt: now(),
+    return attachRuntime({
+      checkedAt,
       latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
       status: 'ahead',
-    };
+    });
   }
 
   log.warn?.(
     `Local branch ${target.branch} diverged from ${target.upstreamRef}; skipping auto-pull.`
   );
-  return {
-    checkedAt: now(),
+  return attachRuntime({
+    checkedAt,
     latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
     status: 'diverged',
-  };
+  });
 }
 
 async function runDeployWatchLoop(
@@ -777,12 +1302,14 @@ async function runDeployWatchLoop(
   {
     deployCommand = DEFAULT_DEPLOY_COMMAND,
     env,
+    fsImpl = fs,
     intervalMs = DEFAULT_INTERVAL_MS,
     log = console,
     now = () => Date.now(),
     once = false,
     onIterationResult = () => {},
     onIterationStart = () => {},
+    paths = getWatchPaths(),
     runCommand: run = runCommand,
     sleepImpl = sleep,
   } = {}
@@ -794,8 +1321,10 @@ async function runDeployWatchLoop(
     const result = await runDeployWatchIteration(target, {
       deployCommand,
       env,
+      fsImpl,
       log,
       now,
+      paths,
       runCommand: run,
     });
 
@@ -815,9 +1344,18 @@ async function main(argv = process.argv.slice(2), options = {}) {
   const fsImpl = options.fsImpl ?? fs;
   const paths = getWatchPaths(options.rootDir ?? ROOT_DIR);
   const processImpl = options.processImpl ?? process;
+  const initialRuntimeSnapshot = await loadRuntimeSnapshot({
+    env,
+    fsImpl,
+    now: Date.now(),
+    paths,
+    runCommand: options.runCommand ?? runCommand,
+  });
   const ui =
     options.ui ??
     createWatchUi({
+      currentBlueGreen: initialRuntimeSnapshot.currentBlueGreen,
+      deployments: initialRuntimeSnapshot.deployments,
       intervalMs: parsed.intervalMs,
       lockFile: paths.lockFile,
       startedAt: Date.now(),
@@ -883,18 +1421,24 @@ async function main(argv = process.argv.slice(2), options = {}) {
     const result = await runDeployWatchLoop(target, {
       deployCommand: options.deployCommand ?? DEFAULT_DEPLOY_COMMAND,
       env,
+      fsImpl,
       intervalMs: parsed.intervalMs,
       log: ui,
       now: options.now ?? (() => Date.now()),
       once: parsed.once,
       onIterationResult: (iterationResult) => {
         ui.update({
+          currentBlueGreen:
+            iterationResult.currentBlueGreen ?? ui.state.currentBlueGreen,
+          deployments: iterationResult.deployments ?? ui.state.deployments,
           lastCheckAt: iterationResult.checkedAt ?? Date.now(),
           lastDeployAt:
             iterationResult.status === 'deployed' ||
             iterationResult.status === 'deploy-failed' ||
             iterationResult.status === 'restarting'
-              ? (iterationResult.checkedAt ?? Date.now())
+              ? (iterationResult.deployments?.[0]?.finishedAt ??
+                iterationResult.checkedAt ??
+                Date.now())
               : ui.state.lastDeployAt,
           lastDeployStatus:
             iterationResult.status === 'deploy-failed'
@@ -917,6 +1461,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
           nextCheckAt: startedAt + parsed.intervalMs,
         });
       },
+      paths,
       runCommand: options.runCommand ?? runCommand,
       sleepImpl: options.sleepImpl ?? sleep,
     });
@@ -950,21 +1495,28 @@ if (require.main === module) {
 }
 
 module.exports = {
+  BLUE_GREEN_PROXY_SERVICE,
   DEFAULT_DEPLOY_COMMAND,
   DEFAULT_INTERVAL_MS,
+  MAX_DEPLOYMENTS,
   MAX_EVENTS,
   SELF_WATCHED_FILES,
+  WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
   WATCH_RUNTIME_DIR,
   acquireWatchLock,
+  appendDeploymentHistory,
   buildDashboardView,
+  collectDeploymentTraffic,
   createWatchUi,
   fetchTrackedBranch,
   formatClockTime,
   formatCountdown,
+  formatDuration,
   formatRelativeTime,
   getCommitMetadata,
   getCurrentBranch,
+  getProdComposeServiceContainerId,
   getRevision,
   getTrackedUpstream,
   getWatchPaths,
@@ -973,18 +1525,23 @@ module.exports = {
   isAncestor,
   isProcessAlive,
   listChangedFilesBetweenRevisions,
+  loadRuntimeSnapshot,
   main,
   parseArgs,
+  parseProxyLogEntries,
   parseUpstreamRef,
   pullTrackedBranch,
+  readDeploymentHistory,
   readWatchLock,
   releaseWatchLock,
+  resolveCurrentBlueGreenStatus,
   resolveLockedBranchTarget,
   runBlueGreenDeploy,
   runDeployWatchIteration,
   runDeployWatchLoop,
   sleep,
   spawnReplacementWatcher,
+  summarizeBlueGreenRuntime,
   summarizeResult,
-  truncateText,
+  writeDeploymentHistory,
 };

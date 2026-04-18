@@ -225,7 +225,7 @@ Behavior:
 2. Writes a PID-backed lock file at `tmp/docker-web/watch/blue-green-auto-deploy.lock`.
 3. Renders a live terminal dashboard with the locked branch, tracked upstream,
    latest local commit, relative commit age, last check time, next poll time,
-   and recent watcher events.
+   current blue/green runtime state, and recent watcher events.
 4. Polls the tracked upstream every `5000ms`.
 5. Auto-clears and redraws the dashboard in place on each state change when
    attached to a TTY.
@@ -240,6 +240,21 @@ Behavior:
 10. Stops immediately if the checked-out branch changes while the watcher is
     running.
 
+Dashboard details:
+
+- Shows the current active blue/green color when `web-proxy` is serving live
+  traffic.
+- Persists and renders the last 3 auto-deployments with:
+  - deploy status (`ACTIVE`, `ENDED`, or `FAILED`)
+  - build time
+  - activation/finish time
+  - deployment lifetime while it served traffic
+  - total requests served during that deployment window
+- Request counters are derived from the local `web-proxy` container logs, so
+  they stay self-hosted and do not require any external analytics service.
+- Internal proxy health checks for `/api/health` are excluded from the request
+  totals so the numbers reflect real served traffic more closely.
+
 Operational notes:
 
 - This is intended for clean deployment clones on a server, not for active
@@ -252,6 +267,10 @@ Operational notes:
 - The watcher inherits the default blue/green build caps from
   `bun serve:web:docker:bg`, so the current defaults still apply during
   auto-deploys.
+- Deployment history is watcher-managed. Manual blue/green rollouts still show
+  up in the live runtime status if the stack is active, but they do not
+  backfill the watcher’s last-3 deployment list unless they were performed
+  through the watcher itself.
 
 ## Validation And CI
 
