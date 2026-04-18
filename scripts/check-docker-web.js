@@ -261,6 +261,16 @@ function validateDockerfile({
     }
   }
 
+  if (
+    !runnerStage?.includes(
+      'fetch(`http://127.0.0.1:${process.env.PORT || 7803}/__platform/drain-status`)'
+    )
+  ) {
+    errors.push(
+      'apps/web/Dockerfile runner stage must health-check the internal /__platform/drain-status endpoint.'
+    );
+  }
+
   return errors;
 }
 
@@ -318,6 +328,7 @@ function validateDockerProdCompose(composeContent) {
     '  web-green:',
     '  web-proxy:',
     '    image: nginx:1.27-alpine',
+    'http://127.0.0.1:7803/__platform/drain-status',
     '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',
     '      required: true',
     '    - PLATFORM_BLUE_GREEN_COLOR',

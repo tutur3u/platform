@@ -110,6 +110,25 @@ test('validateDockerfile reports missing file-backed dependency copies', () => {
   );
 });
 
+test('validateDockerfile reports a drifted internal healthcheck path', () => {
+  const dockerfileContent = fs
+    .readFileSync(WEB_DOCKERFILE_PATH, 'utf8')
+    .replace('/__platform/drain-status', '/api/health');
+  const fileDependencyPaths = listFileDependencyPaths();
+  const workspacePackageJsonPaths = listWorkspacePackageJsonPaths();
+
+  const errors = validateDockerfile({
+    dockerfileContent,
+    fileDependencyPaths,
+    workspacePackageJsonPaths,
+  });
+
+  assert.match(
+    errors.join('\n'),
+    /runner stage must health-check the internal \/__platform\/drain-status endpoint/
+  );
+});
+
 test('validateDockerCompose accepts the current compose file', () => {
   const composeContent = fs.readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8');
 
@@ -167,6 +186,19 @@ test('validateDockerProdCompose reports missing blue-green proxy wiring', () => 
       .includes(
         './tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro'
       )
+  );
+});
+
+test('validateDockerProdCompose reports a drifted proxy healthcheck path', () => {
+  const composeContent = fs
+    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
+    .replace('/__platform/drain-status', '/api/health');
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(
+    errors.join('\n'),
+    /http:\/\/127\.0\.0\.1:7803\/__platform\/drain-status/
   );
 });
 

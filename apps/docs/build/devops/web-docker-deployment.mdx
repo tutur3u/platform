@@ -166,6 +166,10 @@ state, with the active color as the primary upstream and the standby color as a
 backup. The runtime DNS resolver is defined at the nginx include/http scope,
 not just inside `server`, so Docker service-name resolution continues to work
 for the blue/green upstream block at reload time.
+Both the production web image healthcheck and the `web-proxy` compose
+healthcheck now use the internal `/__platform/drain-status` endpoint too, so
+raw `bun serve:web:docker:bg` waits on the same non-rate-limited readiness path
+as the blue/green promotion gate.
 
 Every blue/green deployment also stamps the runtime with
 `PLATFORM_DEPLOYMENT_STAMP` and `PLATFORM_BLUE_GREEN_COLOR`. Those values are
