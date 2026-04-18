@@ -24,6 +24,7 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 | `bun dev:web:docker:down` | Stop the Docker dev workflow |
 | `bun serve:web:docker` | Build and run the production web image in-place |
 | `bun serve:web:docker:bg` | Blue/green production deploy with health-checked cutover |
+| `bun serve:web:docker:bg:watch` | Poll the tracked GitHub branch every 5s and auto-run blue/green after a successful fast-forward pull |
 | `bun serve:web:docker:down` | Stop the production Docker stack |
 | `bun serve:web:docker:bg:down` | Stop the blue/green stack and clear local runtime state |
 | `bun check:docker` | Validate Dockerfile and compose parity rules |
@@ -208,6 +209,38 @@ bun dev:web:docker -- --without-redis
 That opt-out disables both the bundled Redis companion services and the
 Docker-injected `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
 variables, so `apps/web` falls back to its non-Redis behavior cleanly.
+
+## Auto-Pull Blue/Green Watcher
+
+For simple self-hosted boxes that deploy directly from a Git branch, the repo
+also provides a long-running auto-deploy watcher:
+
+```bash
+bun serve:web:docker:bg:watch
+```
+
+Behavior:
+
+1. Locks the current local branch and tracked upstream at startup.
+2. Writes a PID-backed lock file at `tmp/docker-web/watch/blue-green-auto-deploy.lock`.
+3. Polls the tracked upstream every `5000ms`.
+4. Skips pulls if the worktree is dirty.
+5. Uses `git pull --ff-only` only when the local branch is strictly behind the
+   locked upstream.
+6. Runs `bun serve:web:docker:bg` automatically after a successful fast-forward
+   pull.
+7. Stops immediately if the checked-out branch changes while the watcher is
+   running.
+
+Operational notes:
+
+- This is intended for clean deployment clones on a server, not for active
+  developer worktrees.
+- If the local branch is ahead of or diverged from the tracked upstream, the
+  watcher logs and skips the pull instead of forcing a merge or reset.
+- The watcher inherits the default blue/green build caps from
+  `bun serve:web:docker:bg`, so the current defaults still apply during
+  auto-deploys.
 
 ## Validation And CI
 
