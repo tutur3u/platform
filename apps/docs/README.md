@@ -90,7 +90,7 @@ All sidebar navigation lives in `apps/docs/mint.json`. When adding a page:
 1. Place the file in the correct directory.
 2. Update the relevant `index.mdx` with a pointer to your new doc.
 3. Add the path to the appropriate `navigation` group in `mint.json` (e.g., `platform/index`).
-4. Run `bun --filter @tuturuuu/docs dev` to verify links render correctly.
+4. Run `bun dev:docs` from the repo root to verify links render correctly.
 
 ## 🚀 Quick Start for Contributors
 

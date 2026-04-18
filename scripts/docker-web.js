@@ -191,6 +191,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
           envFilePath: options.envFilePath ?? WEB_ENV_FILE,
           fsImpl,
           rootDir: options.rootDir,
+          withRedis: hasComposeProfile(parsed.composeGlobalArgs, 'redis'),
         }),
         fsImpl,
         runCommand: run,
@@ -255,6 +256,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
           envFilePath: options.envFilePath ?? WEB_ENV_FILE,
           fsImpl,
           rootDir: options.rootDir,
+          withRedis: hasComposeProfile(parsed.composeGlobalArgs, 'redis'),
         }),
         runCommand: run,
       }
@@ -278,6 +280,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         envFilePath: options.envFilePath ?? WEB_ENV_FILE,
         fsImpl,
         rootDir: options.rootDir,
+        withRedis: hasComposeProfile(parsed.composeGlobalArgs, 'redis'),
       }),
       fsImpl,
       runCommand: run,

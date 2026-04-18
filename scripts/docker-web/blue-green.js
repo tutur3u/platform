@@ -189,6 +189,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     envFilePath: options.envFilePath ?? WEB_ENV_FILE,
     fsImpl: options.fsImpl ?? fs,
     rootDir: options.rootDir,
+    withRedis: hasComposeProfile(parsed.composeGlobalArgs, 'redis'),
   });
   const fsImpl = options.fsImpl ?? fs;
   const paths = getBlueGreenPaths(options.rootDir ?? ROOT_DIR);

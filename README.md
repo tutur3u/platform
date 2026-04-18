@@ -193,7 +193,7 @@ Redis is now enabled by default for the Dockerized web commands. The helper gene
 
 The Docker web flow does not require a host `bun install` just to boot. `apps/web/docker/dev-entrypoint.sh` installs dependencies into the container-managed `/workspace/node_modules` volume, and the compose stack also isolates package-local `node_modules` and `dist` directories so host installs cannot shadow container-managed workspace artifacts.
 
-Use `--without-redis` only when you explicitly want the old memory-only fallback:
+Use `--without-redis` only when you explicitly want the old memory-only fallback. That opt-out also skips injecting the Docker-local Redis URL and token into the web container:
 
 ```bash
 bun dev:web:docker -- --without-redis
@@ -205,7 +205,7 @@ Production builds use `apps/web/Dockerfile`. Keep `apps/web/.env.local` present 
 bun serve:web:docker
 ```
 
-The production-style Docker commands now attach the same local Redis companion stack by default and inject the matching Upstash-compatible env values into `apps/web` automatically. Use `--without-redis` only when you want to verify the no-Redis fallback path.
+The production-style Docker commands now attach the same local Redis companion stack by default and inject the matching Upstash-compatible env values into `apps/web` automatically. Use `--without-redis` only when you want to verify the no-Redis fallback path without Docker injecting Redis env values.
 
 When you want rebuild-before-restart behavior on a server that receives new commits via `git pull`, use the blue/green production path instead of the in-place one:
 

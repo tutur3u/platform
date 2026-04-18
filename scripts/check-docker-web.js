@@ -284,15 +284,15 @@ function validateDockerCompose(
     dockerInternalSupabaseSnippet,
     '      UPSTASH_REDIS_REST_TOKEN: ' +
       '${' +
-      'DOCKER_UPSTASH_REDIS_REST_TOKEN' +
+      'DOCKER_UPSTASH_REDIS_REST_TOKEN:-' +
       '}',
     '      UPSTASH_REDIS_REST_URL: ' +
       '${' +
-      'DOCKER_UPSTASH_REDIS_REST_URL:-http://serverless-redis-http:80' +
+      'DOCKER_UPSTASH_REDIS_REST_URL:-' +
       '}',
     '      - "host.docker.internal:host-gateway"',
     '    init: true',
-    '      SRH_TOKEN: ' + '${' + 'DOCKER_UPSTASH_REDIS_REST_TOKEN' + '}',
+    '      SRH_TOKEN: ' + '${' + 'DOCKER_UPSTASH_REDIS_REST_TOKEN:-' + '}',
   ];
 
   for (const packageWorkspaceDir of packageWorkspaceDirs) {
@@ -328,13 +328,13 @@ function validateDockerProdCompose(composeContent) {
     '    SUPABASE_SERVER_URL: ' + '${' + 'DOCKER_INTERNAL_SUPABASE_URL' + '}',
     '    UPSTASH_REDIS_REST_TOKEN: ' +
       '${' +
-      'DOCKER_UPSTASH_REDIS_REST_TOKEN' +
+      'DOCKER_UPSTASH_REDIS_REST_TOKEN:-' +
       '}',
     '    UPSTASH_REDIS_REST_URL: ' +
       '${' +
-      'DOCKER_UPSTASH_REDIS_REST_URL:-http://serverless-redis-http:80' +
+      'DOCKER_UPSTASH_REDIS_REST_URL:-' +
       '}',
-    '      SRH_TOKEN: ' + '${' + 'DOCKER_UPSTASH_REDIS_REST_TOKEN' + '}',
+    '      SRH_TOKEN: ' + '${' + 'DOCKER_UPSTASH_REDIS_REST_TOKEN:-' + '}',
   ];
 
   for (const snippet of requiredSnippets) {

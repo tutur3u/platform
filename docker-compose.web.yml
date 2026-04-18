@@ -16,8 +16,8 @@ services:
       NODE_ENV: development
       PORT: "7803"
       SUPABASE_SERVER_URL: ${DOCKER_INTERNAL_SUPABASE_URL}
-      UPSTASH_REDIS_REST_TOKEN: ${DOCKER_UPSTASH_REDIS_REST_TOKEN}
-      UPSTASH_REDIS_REST_URL: ${DOCKER_UPSTASH_REDIS_REST_URL:-http://serverless-redis-http:80}
+      UPSTASH_REDIS_REST_TOKEN: ${DOCKER_UPSTASH_REDIS_REST_TOKEN:-}
+      UPSTASH_REDIS_REST_URL: ${DOCKER_UPSTASH_REDIS_REST_URL:-}
       TSC_WATCHDIRECTORY: DynamicPriorityPolling
       TSC_WATCHFILE: DynamicPriorityPolling
       WATCHPACK_POLLING: "true"
@@ -107,7 +107,7 @@ services:
     environment:
       SRH_CONNECTION_STRING: redis://redis:6379
       SRH_MODE: env
-      SRH_TOKEN: ${DOCKER_UPSTASH_REDIS_REST_TOKEN}
+      SRH_TOKEN: ${DOCKER_UPSTASH_REDIS_REST_TOKEN:-}
     image: hiett/serverless-redis-http:latest
     ports:
       - "8079:80"

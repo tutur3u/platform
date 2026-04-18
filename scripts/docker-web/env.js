@@ -89,6 +89,7 @@ function getComposeEnvironment({
   envFilePath = WEB_ENV_FILE,
   fsImpl = fs,
   rootDir = ROOT_DIR,
+  withRedis = true,
 } = {}) {
   const envFile = parseEnvFile(envFilePath, fsImpl);
   const nextPublicSupabaseUrl =
@@ -96,23 +97,27 @@ function getComposeEnvironment({
   const dockerInternalSupabaseUrl =
     baseEnv.DOCKER_INTERNAL_SUPABASE_URL ??
     rewriteLocalhostUrl(nextPublicSupabaseUrl);
-  const dockerRedisRuntime = getDockerRedisRuntime({
-    baseEnv,
-    fsImpl,
-    rootDir,
-  });
 
   const composeEnv = {
     ...baseEnv,
     COMPOSE_DOCKER_CLI_BUILD: baseEnv.COMPOSE_DOCKER_CLI_BUILD ?? '1',
-    DOCKER_UPSTASH_REDIS_REST_TOKEN: dockerRedisRuntime.token,
-    DOCKER_UPSTASH_REDIS_REST_URL:
-      baseEnv.DOCKER_UPSTASH_REDIS_REST_URL ?? DOCKER_REDIS_SERVICE_URL,
     DOCKER_BUILDKIT: baseEnv.DOCKER_BUILDKIT ?? '1',
   };
 
   if (dockerInternalSupabaseUrl) {
     composeEnv.DOCKER_INTERNAL_SUPABASE_URL = dockerInternalSupabaseUrl;
+  }
+
+  if (withRedis) {
+    const dockerRedisRuntime = getDockerRedisRuntime({
+      baseEnv,
+      fsImpl,
+      rootDir,
+    });
+
+    composeEnv.DOCKER_UPSTASH_REDIS_REST_TOKEN = dockerRedisRuntime.token;
+    composeEnv.DOCKER_UPSTASH_REDIS_REST_URL =
+      baseEnv.DOCKER_UPSTASH_REDIS_REST_URL ?? DOCKER_REDIS_SERVICE_URL;
   }
 
   return composeEnv;

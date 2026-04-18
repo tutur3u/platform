@@ -99,6 +99,10 @@ If you intentionally want the memory-only fallback, opt out:
 bun dev:web:docker -- --without-redis
 ```
 
+That opt-out disables both the bundled Redis companion services and the
+Docker-injected `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
+variables, so `apps/web` falls back to its non-Redis behavior cleanly.
+
 ## Validation And CI
 
 `docker-setup-check.yaml` now validates all of the following:
