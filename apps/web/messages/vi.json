@@ -3949,6 +3949,7 @@
       "no_search_results_title": "Không có mục nào khớp bộ lọc hiện tại",
       "not_available_label": "Không khả dụng",
       "note_label": "Ghi chú hình ảnh",
+      "open_editor_action": "Mở trình chỉnh sửa toàn màn hình",
       "open_preview_action": "Mở xem trước trực tiếp",
       "operations_description": "Chạy nhập liệu có kiểm soát, tổ chức bộ sưu tập nội dung, và xuất bản payload cho workspace đích mà không thay đổi adapter đã khóa.",
       "orientation_label": "Tỷ lệ",

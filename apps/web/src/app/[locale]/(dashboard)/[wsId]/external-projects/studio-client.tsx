@@ -36,6 +36,13 @@ import type {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
@@ -145,6 +152,7 @@ type Strings = {
   noSearchResultsTitle: string;
   noteLabel: string;
   notAvailableLabel: string;
+  openEditorAction: string;
   openPreviewAction: string;
   operationsDescription: string;
   orientationLabel: string;
@@ -767,6 +775,7 @@ export function ExternalProjectStudioClient({
   const [genericAssetDraft, setGenericAssetDraft] = useState(
     buildGenericAssetDraft(selectedAsset)
   );
+  const [entryEditorOpen, setEntryEditorOpen] = useState(false);
   const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
 
   useEffect(() => {
@@ -827,6 +836,12 @@ export function ExternalProjectStudioClient({
     }
   }, [binding.adapter, selectedAsset]);
 
+  useEffect(() => {
+    if (!selectedEntry) {
+      setEntryEditorOpen(false);
+    }
+  }, [selectedEntry]);
+
   const publishedCount = entries.filter(
     (entry) => entry.status === 'published'
   ).length;
@@ -844,6 +859,14 @@ export function ExternalProjectStudioClient({
     await getWorkspaceExternalProjectStudio(workspaceId).catch(() => null);
     setPreviewRefreshToken((current) => current + 1);
     router.refresh();
+  };
+
+  const openEntryEditor = (entryId?: string | null) => {
+    if (entryId) {
+      setSelectedEntryId(entryId);
+    }
+
+    setEntryEditorOpen(true);
   };
 
   const handleMutationError = (error: unknown) => {
@@ -932,7 +955,9 @@ export function ExternalProjectStudioClient({
       return createWorkspaceExternalProjectEntry(workspaceId, payload);
     },
     onError: handleMutationError,
-    onSuccess: async () => {
+    onSuccess: async (entry) => {
+      setSelectedEntryId(entry.id);
+      setEntryEditorOpen(true);
       toast.success(strings.saveSuccessToast);
       await refreshStudio();
     },
@@ -1512,41 +1537,143 @@ export function ExternalProjectStudioClient({
             {strings.importAction}
           </Button>
           {selectedEntry ? (
-            <Button
-              variant={
-                selectedEntry.status === 'published' ? 'outline' : 'default'
-              }
-              onClick={() =>
-                publishMutation.mutate(
-                  selectedEntry.status === 'published' ? 'unpublish' : 'publish'
-                )
-              }
-              disabled={publishMutation.isPending}
-            >
-              {selectedEntry.status === 'published'
-                ? strings.unpublish
-                : strings.publish}
+            <Button variant="secondary" onClick={() => openEntryEditor()}>
+              {strings.openEditorAction}
             </Button>
           ) : null}
-          <Button
-            onClick={() =>
-              binding.adapter === 'yoola'
-                ? saveMutation.mutate()
-                : saveGenericMutation.mutate()
-            }
-            disabled={
-              !selectedEntry ||
-              !currentEditorDirty ||
-              saveMutation.isPending ||
-              saveGenericMutation.isPending ||
-              publishMutation.isPending
-            }
-          >
-            {strings.saveChanges}
-          </Button>
         </>
       }
     />
+  );
+
+  const editorDialogActions = selectedEntry ? (
+    <>
+      {currentEditorDirty ? (
+        <Badge variant="secondary" className="rounded-full">
+          {strings.dirtyChangesLabel}
+        </Badge>
+      ) : null}
+      <Button
+        variant={selectedEntry.status === 'published' ? 'outline' : 'default'}
+        onClick={() =>
+          publishMutation.mutate(
+            selectedEntry.status === 'published' ? 'unpublish' : 'publish'
+          )
+        }
+        disabled={publishMutation.isPending}
+      >
+        {selectedEntry.status === 'published'
+          ? strings.unpublish
+          : strings.publish}
+      </Button>
+      <Button
+        onClick={() =>
+          binding.adapter === 'yoola'
+            ? saveMutation.mutate()
+            : saveGenericMutation.mutate()
+        }
+        disabled={
+          !currentEditorDirty ||
+          saveMutation.isPending ||
+          saveGenericMutation.isPending ||
+          publishMutation.isPending
+        }
+      >
+        {strings.saveChanges}
+      </Button>
+    </>
+  ) : null;
+
+  const collectionSettingsPanel = (
+    <EditorPanel
+      title={strings.collectionSettingsTitle}
+      description={strings.collectionSettingsDescription}
+      headerAction={
+        collectionDirty ? (
+          <Badge variant="secondary" className="rounded-full">
+            {strings.dirtyChangesLabel}
+          </Badge>
+        ) : null
+      }
+    >
+      {activeCollection ? (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/35 p-4">
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                <Badge className="rounded-full">{activeCollection.slug}</Badge>
+                <Badge variant="secondary" className="rounded-full">
+                  {formatCanonicalToken(activeCollection.collection_type)}
+                </Badge>
+              </div>
+              <div className="text-muted-foreground text-sm">
+                {activeCollection.description ||
+                  (activeCollection.is_enabled
+                    ? strings.collectionEnabledLabel
+                    : strings.collectionDisabledLabel)}
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-full border border-border/70 bg-background/70 px-3 py-2">
+              <Switch
+                checked={collectionDraft.isEnabled}
+                onCheckedChange={(checked) =>
+                  setCollectionDraft((current) => ({
+                    ...current,
+                    isEnabled: checked,
+                  }))
+                }
+              />
+              <span className="text-sm">
+                {collectionDraft.isEnabled
+                  ? strings.collectionEnabledLabel
+                  : strings.collectionDisabledLabel}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Field label={strings.titleLabel}>
+              <Input
+                value={collectionDraft.title}
+                onChange={(event) =>
+                  setCollectionDraft((current) => ({
+                    ...current,
+                    title: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label={strings.descriptionLabel}>
+              <Textarea
+                rows={4}
+                value={collectionDraft.description}
+                onChange={(event) =>
+                  setCollectionDraft((current) => ({
+                    ...current,
+                    description: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              onClick={() => saveCollectionMutation.mutate()}
+              disabled={!collectionDirty || saveCollectionMutation.isPending}
+            >
+              {strings.saveChanges}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <EmptyPanel
+          title={strings.collectionEmptyTitle}
+          description={strings.collectionEmptyDescription}
+        />
+      )}
+    </EditorPanel>
   );
 
   if (binding.adapter !== 'yoola') {
@@ -1595,507 +1722,533 @@ export function ExternalProjectStudioClient({
       </div>
     );
 
-    return (
-      <StudioShell
-        hero={commonHero}
-        actionBar={commonActionBar}
-        previewDrawerTitle={strings.openPreviewAction}
-        previewDrawerDescription={strings.deliveryPreviewDescription}
-        activityPanel={activityPanel}
-        previewPanel={
-          <PreviewPanel
-            renderedTitle={strings.renderedTabLabel}
-            renderedDescription={strings.deliveryPreviewDescription}
-            renderedView={genericRenderedPreview}
-            payloadTitle={strings.payloadTabLabel}
-            payloadDescription={strings.deliveryPreviewDescription}
-            payloadView={payloadPreviewView}
-          />
+    const renderGenericPreviewPanel = () => (
+      <PreviewPanel
+        renderedTitle={strings.renderedTabLabel}
+        renderedDescription={strings.deliveryPreviewDescription}
+        renderedView={genericRenderedPreview}
+        payloadTitle={strings.payloadTabLabel}
+        payloadDescription={strings.deliveryPreviewDescription}
+        payloadView={payloadPreviewView}
+      />
+    );
+
+    const genericFocusedItemPanel = (
+      <EditorPanel
+        title={strings.detailPanelTitle}
+        description={strings.detailPanelDescription}
+        headerAction={
+          selectedEntry ? (
+            <Button onClick={() => openEntryEditor()}>
+              {strings.openEditorAction}
+            </Button>
+          ) : null
         }
-        contentRail={
-          <ContentRail
-            title={strings.contentRailTitle}
-            description={strings.contentRailDescription}
-            headerAction={
-              <Button
-                size="sm"
-                onClick={() => createGenericEntryMutation.mutate()}
-                disabled={
-                  createGenericEntryMutation.isPending || !activeCollection
-                }
-              >
-                {strings.addEntry}
-              </Button>
-            }
-          >
-            <RailSection label={strings.collectionSelectLabel}>
-              <div className="space-y-3">
-                {collections.map((collection) => {
-                  const collectionEntryCount = entries.filter(
-                    (entry) => entry.collection_id === collection.id
-                  ).length;
-
-                  return (
-                    <RailCollectionButton
-                      key={collection.id}
-                      active={genericActiveCollection?.id === collection.id}
-                      title={collection.title}
-                      description={collection.description}
-                      onClick={() => setSelectedCollectionId(collection.id)}
-                      badge={
-                        <div className="flex flex-col items-end gap-2">
-                          <Badge
-                            variant={
-                              collection.is_enabled ? 'default' : 'secondary'
-                            }
-                            className="rounded-full"
-                          >
-                            {collection.is_enabled
-                              ? strings.collectionEnabledLabel
-                              : strings.collectionDisabledLabel}
-                          </Badge>
-                          <Badge variant="outline">
-                            {collectionEntryCount}
-                          </Badge>
-                        </div>
-                      }
-                    />
-                  );
-                })}
-              </div>
-            </RailSection>
-
-            <RailSection label={strings.searchPlaceholder}>
-              <Input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder={strings.searchPlaceholder}
+      >
+        {!selectedEntry ? (
+          <EmptyPanel
+            title={strings.noItemsTitle}
+            description={strings.noItemsDescription}
+          />
+        ) : (
+          <div className="space-y-5">
+            <div className="flex flex-wrap gap-2">
+              <Badge className="rounded-full">{genericEntryDraft.slug}</Badge>
+              {genericEntryDraft.subtitle ? (
+                <Badge variant="secondary" className="rounded-full">
+                  {genericEntryDraft.subtitle}
+                </Badge>
+              ) : null}
+              <StatusBadge
+                draftLabel={strings.draftBadge}
+                isPublished={selectedEntry.status === 'published'}
+                publishedLabel={strings.publishedBadge}
               />
-            </RailSection>
+            </div>
 
-            <RailSection label={strings.statusLabel}>
-              <div className="flex flex-wrap gap-2">
-                {(
-                  [
-                    ['all', strings.allItemsLabel],
-                    ['published', strings.publishedBadge],
-                    ['draft', strings.draftBadge],
-                  ] as const
-                ).map(([value, label]) => (
-                  <Button
-                    key={value}
-                    size="sm"
-                    variant={statusFilter === value ? 'default' : 'outline'}
-                    onClick={() => setStatusFilter(value)}
-                  >
-                    {label}
-                  </Button>
-                ))}
+            <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+              <div className="space-y-3">
+                <div>
+                  <div className="font-semibold text-2xl">
+                    {genericEntryDraft.title || strings.notAvailableLabel}
+                  </div>
+                  <p className="mt-2 text-muted-foreground text-sm leading-6">
+                    {genericEntryDraft.summary || strings.noItemsDescription}
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-border/70 bg-background/35 p-4">
+                    <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                      {strings.sectionsLabel}
+                    </div>
+                    <div className="mt-2 font-semibold text-2xl">
+                      {selectedBlocks.length}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-border/70 bg-background/35 p-4">
+                    <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                      {strings.mediaSectionTitle}
+                    </div>
+                    <div className="mt-2 font-semibold text-2xl">
+                      {selectedAssets.length}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-border/70 bg-background/35 p-4 text-sm leading-7">
+                  {genericEntryDraft.body || strings.noItemsDescription}
+                </div>
               </div>
-            </RailSection>
 
-            <RailSection label={strings.profileLabel}>
-              {filteredGenericEntries.length === 0 ? (
-                <EmptyPanel
-                  title={
-                    normalizedQuery || statusFilter !== 'all'
-                      ? strings.noSearchResultsTitle
-                      : strings.noItemsTitle
-                  }
-                  description={
-                    normalizedQuery || statusFilter !== 'all'
-                      ? strings.noSearchResultsDescription
-                      : strings.noItemsDescription
+              <div className="rounded-[1.75rem] border border-border/70 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.1),transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-4">
+                <div className="max-h-[26rem] overflow-y-auto pr-1">
+                  {genericRenderedPreview}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </EditorPanel>
+    );
+
+    const genericEditorWorkspace = !selectedEntry ? (
+      <EmptyPanel
+        title={strings.noItemsTitle}
+        description={strings.noItemsDescription}
+      />
+    ) : (
+      <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+        <div className="space-y-6">
+          <EditorPanel
+            title={strings.detailPanelTitle}
+            description={strings.detailPanelDescription}
+          >
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Field label={strings.titleLabel}>
+                <Input
+                  value={genericEntryDraft.title}
+                  onChange={(event) =>
+                    setGenericEntryDraft((current) => ({
+                      ...current,
+                      title: event.target.value,
+                      slug:
+                        current.slug || normalizeSlugSeed(event.target.value),
+                    }))
                   }
                 />
-              ) : (
-                <EntryList isEmpty={false}>
-                  {filteredGenericEntries.map((entry) => {
-                    const entryAsset =
-                      assets.find((asset) => asset.entry_id === entry.id) ??
-                      null;
+              </Field>
+              <Field label={strings.subtitleLabel}>
+                <Input
+                  value={genericEntryDraft.subtitle}
+                  onChange={(event) =>
+                    setGenericEntryDraft((current) => ({
+                      ...current,
+                      subtitle: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+              <Field label={strings.slugLabel}>
+                <Input
+                  value={genericEntryDraft.slug}
+                  onChange={(event) =>
+                    setGenericEntryDraft((current) => ({
+                      ...current,
+                      slug: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label={strings.summaryLabel}>
+                <Textarea
+                  rows={3}
+                  value={genericEntryDraft.summary}
+                  onChange={(event) =>
+                    setGenericEntryDraft((current) => ({
+                      ...current,
+                      summary: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+
+            <Field label={strings.bodyLabel}>
+              <Textarea
+                rows={10}
+                value={genericEntryDraft.body}
+                onChange={(event) =>
+                  setGenericEntryDraft((current) => ({
+                    ...current,
+                    body: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Field label={strings.profileDataLabel}>
+                <Textarea
+                  rows={10}
+                  value={genericEntryDraft.profileDataJson}
+                  onChange={(event) =>
+                    setGenericEntryDraft((current) => ({
+                      ...current,
+                      profileDataJson: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label={strings.entryMetadataLabel}>
+                <Textarea
+                  rows={10}
+                  value={genericEntryDraft.metadataJson}
+                  onChange={(event) =>
+                    setGenericEntryDraft((current) => ({
+                      ...current,
+                      metadataJson: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+          </EditorPanel>
+
+          <EditorPanel
+            title={strings.mediaSectionTitle}
+            description={strings.mediaDescription}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="text-muted-foreground text-sm">
+                {selectedAssets.length} {strings.entriesMetricLabel}
+              </div>
+              <input
+                ref={assetUploadInputRef}
+                type="file"
+                accept="image/*,audio/*,video/*"
+                className="hidden"
+                onChange={handleArtworkUpload}
+              />
+              <Button
+                variant="outline"
+                onClick={() => assetUploadInputRef.current?.click()}
+                disabled={uploadGenericAssetMutation.isPending}
+              >
+                {strings.uploadAction}
+              </Button>
+            </div>
+
+            {selectedAssets.length > 0 ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {selectedAssets.map((asset) => (
+                  <button
+                    key={asset.id}
+                    type="button"
+                    onClick={() => setSelectedAssetId(asset.id)}
+                    className={`overflow-hidden rounded-2xl border text-left transition-colors ${
+                      selectedAsset?.id === asset.id
+                        ? 'border-foreground/30 bg-background'
+                        : 'border-border/70 bg-background/35 hover:border-border'
+                    }`}
+                  >
+                    <div className="relative aspect-[4/3] bg-background/50">
+                      {asset.preview_url ? (
+                        <Image
+                          src={asset.preview_url}
+                          alt={asset.alt_text ?? selectedEntry.title}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center px-4 text-center text-muted-foreground text-sm">
+                          {asset.storage_path ||
+                            asset.source_url ||
+                            strings.noImageDescription}
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-2 p-4">
+                      <Badge variant="secondary" className="rounded-full">
+                        {formatCanonicalToken(asset.asset_type)}
+                      </Badge>
+                      <div className="text-muted-foreground text-sm">
+                        {asset.alt_text || strings.notAvailableLabel}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <EmptyPanel
+                title={strings.noImageTitle}
+                description={strings.noImageDescription}
+              />
+            )}
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Field label={strings.imageAltLabel}>
+                <Input
+                  value={genericAssetDraft.altText}
+                  onChange={(event) =>
+                    setGenericAssetDraft((current) => ({
+                      ...current,
+                      altText: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label={strings.remoteSourceLabel}>
+                <Input
+                  value={genericAssetDraft.sourceUrl}
+                  onChange={(event) =>
+                    setGenericAssetDraft((current) => ({
+                      ...current,
+                      sourceUrl: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+
+            <Field label={strings.assetMetadataLabel}>
+              <Textarea
+                rows={8}
+                value={genericAssetDraft.metadataJson}
+                onChange={(event) =>
+                  setGenericAssetDraft((current) => ({
+                    ...current,
+                    metadataJson: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+
+            {selectedAsset?.storage_path ? (
+              <Field label={strings.assetPathLabel}>
+                <Input value={selectedAsset.storage_path} readOnly />
+              </Field>
+            ) : null}
+          </EditorPanel>
+        </div>
+
+        <div className="xl:sticky xl:top-0 xl:self-start">
+          {renderGenericPreviewPanel()}
+        </div>
+      </div>
+    );
+
+    return (
+      <>
+        <StudioShell
+          hero={commonHero}
+          actionBar={commonActionBar}
+          previewDrawerTitle={strings.openPreviewAction}
+          previewDrawerDescription={strings.deliveryPreviewDescription}
+          activityPanel={activityPanel}
+          previewPanel={renderGenericPreviewPanel()}
+          contentRail={
+            <ContentRail
+              title={strings.contentRailTitle}
+              description={strings.contentRailDescription}
+              headerAction={
+                <Button
+                  size="sm"
+                  onClick={() => createGenericEntryMutation.mutate()}
+                  disabled={
+                    createGenericEntryMutation.isPending || !activeCollection
+                  }
+                >
+                  {strings.addEntry}
+                </Button>
+              }
+            >
+              <RailSection label={strings.collectionSelectLabel}>
+                <div className="space-y-3">
+                  {collections.map((collection) => {
+                    const collectionEntryCount = entries.filter(
+                      (entry) => entry.collection_id === collection.id
+                    ).length;
 
                     return (
-                      <EntryCard
-                        key={entry.id}
-                        active={selectedEntryId === entry.id}
-                        title={entry.title}
-                        onClick={() => setSelectedEntryId(entry.id)}
-                        accent={
-                          <StatusBadge
-                            draftLabel={strings.draftBadge}
-                            isPublished={entry.status === 'published'}
-                            publishedLabel={strings.publishedBadge}
-                          />
-                        }
-                        eyebrow={
-                          <div className="flex flex-wrap gap-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                            <span>{entry.slug}</span>
-                            {entry.subtitle ? (
-                              <span>{entry.subtitle}</span>
-                            ) : null}
-                          </div>
-                        }
-                        body={
-                          <div className="space-y-3">
-                            <div className="flex flex-wrap gap-2">
-                              <Badge variant="outline">{entry.slug}</Badge>
-                              {entryAsset ? (
-                                <Badge
-                                  variant="secondary"
-                                  className="rounded-full"
-                                >
-                                  {formatCanonicalToken(entryAsset.asset_type)}
-                                </Badge>
-                              ) : null}
-                            </div>
-                            <p className="text-muted-foreground text-sm leading-6">
-                              {entry.summary ||
-                                findMarkdownForEntry(entry.id, blocks) ||
-                                strings.noItemsDescription}
-                            </p>
+                      <RailCollectionButton
+                        key={collection.id}
+                        active={genericActiveCollection?.id === collection.id}
+                        title={collection.title}
+                        description={collection.description}
+                        onClick={() => setSelectedCollectionId(collection.id)}
+                        badge={
+                          <div className="flex flex-col items-end gap-2">
+                            <Badge
+                              variant={
+                                collection.is_enabled ? 'default' : 'secondary'
+                              }
+                              className="rounded-full"
+                            >
+                              {collection.is_enabled
+                                ? strings.collectionEnabledLabel
+                                : strings.collectionDisabledLabel}
+                            </Badge>
+                            <Badge variant="outline">
+                              {collectionEntryCount}
+                            </Badge>
                           </div>
                         }
                       />
                     );
                   })}
-                </EntryList>
-              )}
-            </RailSection>
-          </ContentRail>
-        }
-        rightColumn={
-          <>
-            <EditorPanel
-              title={strings.collectionSettingsTitle}
-              description={strings.collectionSettingsDescription}
-              headerAction={
-                collectionDirty ? (
-                  <Badge variant="secondary" className="rounded-full">
-                    {strings.dirtyChangesLabel}
-                  </Badge>
-                ) : null
-              }
-            >
-              {activeCollection ? (
-                <>
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/35 p-4">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2">
-                        <Badge className="rounded-full">
-                          {activeCollection.slug}
-                        </Badge>
-                        <Badge variant="secondary" className="rounded-full">
-                          {formatCanonicalToken(
-                            activeCollection.collection_type
-                          )}
-                        </Badge>
-                      </div>
-                      <div className="text-muted-foreground text-sm">
-                        {activeCollection.description ||
-                          strings.collectionSettingsDescription}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 rounded-full border border-border/70 bg-background/70 px-3 py-2">
-                      <Switch
-                        checked={collectionDraft.isEnabled}
-                        onCheckedChange={(checked) =>
-                          setCollectionDraft((current) => ({
-                            ...current,
-                            isEnabled: checked,
-                          }))
-                        }
-                      />
-                      <span className="text-sm">
-                        {collectionDraft.isEnabled
-                          ? strings.collectionEnabledLabel
-                          : strings.collectionDisabledLabel}
-                      </span>
-                    </div>
-                  </div>
+                </div>
+              </RailSection>
 
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <Field label={strings.titleLabel}>
-                      <Input
-                        value={collectionDraft.title}
-                        onChange={(event) =>
-                          setCollectionDraft((current) => ({
-                            ...current,
-                            title: event.target.value,
-                          }))
-                        }
-                      />
-                    </Field>
-                    <Field label={strings.descriptionLabel}>
-                      <Textarea
-                        rows={4}
-                        value={collectionDraft.description}
-                        onChange={(event) =>
-                          setCollectionDraft((current) => ({
-                            ...current,
-                            description: event.target.value,
-                          }))
-                        }
-                      />
-                    </Field>
-                  </div>
+              <RailSection label={strings.searchPlaceholder}>
+                <Input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder={strings.searchPlaceholder}
+                />
+              </RailSection>
 
-                  <div className="flex justify-end">
+              <RailSection label={strings.statusLabel}>
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    [
+                      ['all', strings.allItemsLabel],
+                      ['published', strings.publishedBadge],
+                      ['draft', strings.draftBadge],
+                    ] as const
+                  ).map(([value, label]) => (
                     <Button
-                      variant="outline"
-                      onClick={() => saveCollectionMutation.mutate()}
-                      disabled={
-                        !collectionDirty || saveCollectionMutation.isPending
-                      }
+                      key={value}
+                      size="sm"
+                      variant={statusFilter === value ? 'default' : 'outline'}
+                      onClick={() => setStatusFilter(value)}
                     >
-                      {strings.saveChanges}
+                      {label}
                     </Button>
-                  </div>
-                </>
-              ) : (
-                <EmptyPanel
-                  title={strings.collectionEmptyTitle}
-                  description={strings.collectionEmptyDescription}
-                />
-              )}
-            </EditorPanel>
+                  ))}
+                </div>
+              </RailSection>
 
-            <EditorPanel
-              title={strings.detailPanelTitle}
-              description={strings.detailPanelDescription}
-            >
-              {!selectedEntry ? (
-                <EmptyPanel
-                  title={strings.noItemsTitle}
-                  description={strings.noItemsDescription}
-                />
-              ) : (
-                <>
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <Field label={strings.titleLabel}>
-                      <Input
-                        value={genericEntryDraft.title}
-                        onChange={(event) =>
-                          setGenericEntryDraft((current) => ({
-                            ...current,
-                            title: event.target.value,
-                            slug:
-                              current.slug ||
-                              normalizeSlugSeed(event.target.value),
-                          }))
-                        }
-                      />
-                    </Field>
-                    <Field label={strings.subtitleLabel}>
-                      <Input
-                        value={genericEntryDraft.subtitle}
-                        onChange={(event) =>
-                          setGenericEntryDraft((current) => ({
-                            ...current,
-                            subtitle: event.target.value,
-                          }))
-                        }
-                      />
-                    </Field>
-                  </div>
+              <RailSection label={strings.profileLabel}>
+                {filteredGenericEntries.length === 0 ? (
+                  <EmptyPanel
+                    title={
+                      normalizedQuery || statusFilter !== 'all'
+                        ? strings.noSearchResultsTitle
+                        : strings.noItemsTitle
+                    }
+                    description={
+                      normalizedQuery || statusFilter !== 'all'
+                        ? strings.noSearchResultsDescription
+                        : strings.noItemsDescription
+                    }
+                  />
+                ) : (
+                  <EntryList isEmpty={false}>
+                    {filteredGenericEntries.map((entry) => {
+                      const entryAsset =
+                        assets.find((asset) => asset.entry_id === entry.id) ??
+                        null;
 
-                  <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-                    <Field label={strings.slugLabel}>
-                      <Input
-                        value={genericEntryDraft.slug}
-                        onChange={(event) =>
-                          setGenericEntryDraft((current) => ({
-                            ...current,
-                            slug: event.target.value,
-                          }))
-                        }
-                      />
-                    </Field>
-                    <Field label={strings.summaryLabel}>
-                      <Textarea
-                        rows={3}
-                        value={genericEntryDraft.summary}
-                        onChange={(event) =>
-                          setGenericEntryDraft((current) => ({
-                            ...current,
-                            summary: event.target.value,
-                          }))
-                        }
-                      />
-                    </Field>
-                  </div>
-
-                  <Field label={strings.bodyLabel}>
-                    <Textarea
-                      rows={10}
-                      value={genericEntryDraft.body}
-                      onChange={(event) =>
-                        setGenericEntryDraft((current) => ({
-                          ...current,
-                          body: event.target.value,
-                        }))
-                      }
-                    />
-                  </Field>
-
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <Field label={strings.profileDataLabel}>
-                      <Textarea
-                        rows={10}
-                        value={genericEntryDraft.profileDataJson}
-                        onChange={(event) =>
-                          setGenericEntryDraft((current) => ({
-                            ...current,
-                            profileDataJson: event.target.value,
-                          }))
-                        }
-                      />
-                    </Field>
-                    <Field label={strings.entryMetadataLabel}>
-                      <Textarea
-                        rows={10}
-                        value={genericEntryDraft.metadataJson}
-                        onChange={(event) =>
-                          setGenericEntryDraft((current) => ({
-                            ...current,
-                            metadataJson: event.target.value,
-                          }))
-                        }
-                      />
-                    </Field>
-                  </div>
-                </>
-              )}
-            </EditorPanel>
-
-            <EditorPanel
-              title={strings.mediaSectionTitle}
-              description={strings.mediaDescription}
-            >
-              {!selectedEntry ? (
-                <EmptyPanel
-                  title={strings.noItemsTitle}
-                  description={strings.noItemsDescription}
-                />
-              ) : (
-                <>
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-muted-foreground text-sm">
-                      {selectedAssets.length} {strings.entriesMetricLabel}
-                    </div>
-                    <input
-                      ref={assetUploadInputRef}
-                      type="file"
-                      accept="image/*,audio/*,video/*"
-                      className="hidden"
-                      onChange={handleArtworkUpload}
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => assetUploadInputRef.current?.click()}
-                      disabled={uploadGenericAssetMutation.isPending}
-                    >
-                      {strings.uploadAction}
-                    </Button>
-                  </div>
-
-                  {selectedAssets.length > 0 ? (
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {selectedAssets.map((asset) => (
-                        <button
-                          key={asset.id}
-                          type="button"
-                          onClick={() => setSelectedAssetId(asset.id)}
-                          className={`overflow-hidden rounded-2xl border text-left transition-colors ${
-                            selectedAsset?.id === asset.id
-                              ? 'border-foreground/30 bg-background'
-                              : 'border-border/70 bg-background/35 hover:border-border'
-                          }`}
-                        >
-                          <div className="relative aspect-[4/3] bg-background/50">
-                            {asset.preview_url ? (
-                              <Image
-                                src={asset.preview_url}
-                                alt={asset.alt_text ?? selectedEntry.title}
-                                fill
-                                className="object-cover"
-                                unoptimized
-                              />
-                            ) : (
-                              <div className="flex h-full items-center justify-center px-4 text-center text-muted-foreground text-sm">
-                                {asset.storage_path ||
-                                  asset.source_url ||
-                                  strings.noImageDescription}
-                              </div>
-                            )}
-                          </div>
-                          <div className="space-y-2 p-4">
-                            <Badge variant="secondary" className="rounded-full">
-                              {formatCanonicalToken(asset.asset_type)}
-                            </Badge>
-                            <div className="text-muted-foreground text-sm">
-                              {asset.alt_text || strings.notAvailableLabel}
+                      return (
+                        <EntryCard
+                          key={entry.id}
+                          active={selectedEntryId === entry.id}
+                          title={entry.title}
+                          onClick={() => openEntryEditor(entry.id)}
+                          accent={
+                            <StatusBadge
+                              draftLabel={strings.draftBadge}
+                              isPublished={entry.status === 'published'}
+                              publishedLabel={strings.publishedBadge}
+                            />
+                          }
+                          eyebrow={
+                            <div className="flex flex-wrap gap-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                              <span>{entry.slug}</span>
+                              {entry.subtitle ? (
+                                <span>{entry.subtitle}</span>
+                              ) : null}
                             </div>
-                          </div>
-                        </button>
-                      ))}
+                          }
+                          body={
+                            <div className="space-y-3">
+                              <div className="flex flex-wrap gap-2">
+                                <Badge variant="outline">{entry.slug}</Badge>
+                                {entryAsset ? (
+                                  <Badge
+                                    variant="secondary"
+                                    className="rounded-full"
+                                  >
+                                    {formatCanonicalToken(
+                                      entryAsset.asset_type
+                                    )}
+                                  </Badge>
+                                ) : null}
+                              </div>
+                              <p className="text-muted-foreground text-sm leading-6">
+                                {entry.summary ||
+                                  findMarkdownForEntry(entry.id, blocks) ||
+                                  strings.noItemsDescription}
+                              </p>
+                            </div>
+                          }
+                        />
+                      );
+                    })}
+                  </EntryList>
+                )}
+              </RailSection>
+            </ContentRail>
+          }
+          rightColumn={
+            <>
+              {collectionSettingsPanel}
+              {genericFocusedItemPanel}
+            </>
+          }
+        />
+
+        <Dialog open={entryEditorOpen} onOpenChange={setEntryEditorOpen}>
+          <DialogContent className="flex max-h-dvh max-w-[100vw] flex-col gap-0 overflow-hidden p-0 sm:max-h-[94vh] sm:max-w-[min(96vw,1400px)] sm:rounded-[2rem]">
+            <DialogHeader className="border-border/60 border-b bg-background/95 px-5 py-4">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <DialogTitle className="text-2xl tracking-tight">
+                    {selectedEntry?.title || strings.detailPanelTitle}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {selectedCollection?.title ||
+                      strings.detailPanelDescription}
+                  </DialogDescription>
+                  {selectedEntry ? (
+                    <div className="flex flex-wrap gap-2">
+                      <Badge className="rounded-full">
+                        {selectedEntry.slug}
+                      </Badge>
+                      <StatusBadge
+                        draftLabel={strings.draftBadge}
+                        isPublished={selectedEntry.status === 'published'}
+                        publishedLabel={strings.publishedBadge}
+                      />
                     </div>
-                  ) : (
-                    <EmptyPanel
-                      title={strings.noImageTitle}
-                      description={strings.noImageDescription}
-                    />
-                  )}
-
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <Field label={strings.imageAltLabel}>
-                      <Input
-                        value={genericAssetDraft.altText}
-                        onChange={(event) =>
-                          setGenericAssetDraft((current) => ({
-                            ...current,
-                            altText: event.target.value,
-                          }))
-                        }
-                      />
-                    </Field>
-                    <Field label={strings.remoteSourceLabel}>
-                      <Input
-                        value={genericAssetDraft.sourceUrl}
-                        onChange={(event) =>
-                          setGenericAssetDraft((current) => ({
-                            ...current,
-                            sourceUrl: event.target.value,
-                          }))
-                        }
-                      />
-                    </Field>
-                  </div>
-
-                  <Field label={strings.assetMetadataLabel}>
-                    <Textarea
-                      rows={8}
-                      value={genericAssetDraft.metadataJson}
-                      onChange={(event) =>
-                        setGenericAssetDraft((current) => ({
-                          ...current,
-                          metadataJson: event.target.value,
-                        }))
-                      }
-                    />
-                  </Field>
-
-                  {selectedAsset?.storage_path ? (
-                    <Field label={strings.assetPathLabel}>
-                      <Input value={selectedAsset.storage_path} readOnly />
-                    </Field>
                   ) : null}
-                </>
-              )}
-            </EditorPanel>
-          </>
-        }
-      />
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {editorDialogActions}
+                </div>
+              </div>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
+              {genericEditorWorkspace}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
@@ -2224,349 +2377,116 @@ export function ExternalProjectStudioClient({
       </div>
     );
 
-  return (
-    <StudioShell
-      hero={commonHero}
-      actionBar={commonActionBar}
-      previewDrawerTitle={strings.openPreviewAction}
-      previewDrawerDescription={strings.deliveryPreviewDescription}
-      activityPanel={activityPanel}
-      previewPanel={
-        <PreviewPanel
-          renderedTitle={strings.renderedTabLabel}
-          renderedDescription={strings.deliveryPreviewDescription}
-          renderedView={renderedYoolaPreview}
-          payloadTitle={strings.payloadTabLabel}
-          payloadDescription={strings.deliveryPreviewDescription}
-          payloadView={payloadPreviewView}
+  const renderYoolaPreviewPanel = () => (
+    <PreviewPanel
+      renderedTitle={strings.renderedTabLabel}
+      renderedDescription={strings.deliveryPreviewDescription}
+      renderedView={renderedYoolaPreview}
+      payloadTitle={strings.payloadTabLabel}
+      payloadDescription={strings.deliveryPreviewDescription}
+      payloadView={payloadPreviewView}
+    />
+  );
+
+  const yoolaFocusedItemPanel = (
+    <EditorPanel
+      title={strings.detailPanelTitle}
+      description={strings.detailPanelDescription}
+      headerAction={
+        selectedEntry ? (
+          <Button onClick={() => openEntryEditor()}>
+            {strings.openEditorAction}
+          </Button>
+        ) : null
+      }
+    >
+      {!selectedEntry || !selectedCollection ? (
+        <EmptyPanel
+          title={strings.noItemsTitle}
+          description={strings.noItemsDescription}
         />
-      }
-      contentRail={
-        <ContentRail
-          title={strings.contentRailTitle}
-          description={strings.contentRailDescription}
-          headerAction={
-            <Button
-              size="sm"
-              onClick={() => createEntryMutation.mutate(activeTab)}
-              disabled={createEntryMutation.isPending}
-            >
-              {activeTab === 'artworks'
-                ? strings.addArtwork
-                : activeTab === 'lore-capsules'
-                  ? strings.addLoreCapsule
-                  : strings.addSection}
-            </Button>
-          }
-        >
-          <RailSection label={strings.collectionSelectLabel}>
-            <div className="space-y-3">
-              {[
-                {
-                  description:
-                    artworksCollection?.description ??
-                    strings.contentRailDescription,
-                  key: 'artworks' as const,
-                  title: artworksCollection?.title ?? strings.artworksTab,
-                  value: filteredArtworkEntries.length,
-                },
-                {
-                  description:
-                    loreCollection?.description ??
-                    strings.contentRailDescription,
-                  key: 'lore-capsules' as const,
-                  title: loreCollection?.title ?? strings.loreTab,
-                  value: filteredLoreEntries.length,
-                },
-                {
-                  description:
-                    singletonCollection?.description ??
-                    strings.contentRailDescription,
-                  key: 'singleton-sections' as const,
-                  title: singletonCollection?.title ?? strings.sectionsTab,
-                  value: filteredSingletonEntries.length,
-                },
-              ].map((collection) => (
-                <RailCollectionButton
-                  key={collection.key}
-                  active={activeTab === collection.key}
-                  title={collection.title}
-                  description={collection.description}
-                  onClick={() => setActiveTab(collection.key)}
-                  badge={<Badge variant="outline">{collection.value}</Badge>}
-                />
-              ))}
-            </div>
-          </RailSection>
-
-          <RailSection label={strings.searchPlaceholder}>
-            <Input
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder={strings.searchPlaceholder}
+      ) : (
+        <div className="space-y-5">
+          <div className="flex flex-wrap gap-2">
+            <Badge className="rounded-full">{selectedEntry.slug}</Badge>
+            <StatusBadge
+              draftLabel={strings.draftBadge}
+              isPublished={selectedEntry.status === 'published'}
+              publishedLabel={strings.publishedBadge}
             />
-          </RailSection>
+            <Badge variant="secondary" className="rounded-full">
+              {formatCanonicalToken(selectedCollection.collection_type)}
+            </Badge>
+          </div>
 
-          <RailSection label={strings.statusLabel}>
-            <div className="flex flex-wrap gap-2">
-              {(
-                [
-                  ['all', strings.allItemsLabel],
-                  ['published', strings.publishedBadge],
-                  ['draft', strings.draftBadge],
-                ] as const
-              ).map(([value, label]) => (
-                <Button
-                  key={value}
-                  size="sm"
-                  variant={statusFilter === value ? 'default' : 'outline'}
-                  onClick={() => setStatusFilter(value)}
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
-          </RailSection>
-
-          {activeTab === 'artworks' && yoolaLoading ? (
-            <RailSection label={strings.categoryLabel}>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant={
-                    artworkCategoryFilter === 'all' ? 'default' : 'outline'
-                  }
-                  onClick={() => setArtworkCategoryFilter('all')}
-                >
-                  {strings.allItemsLabel}
-                </Button>
-                {yoolaLoading.artworkCategories.map((category) => (
-                  <Button
-                    key={category}
-                    size="sm"
-                    variant={
-                      artworkCategoryFilter === category ? 'default' : 'outline'
-                    }
-                    onClick={() => setArtworkCategoryFilter(category)}
-                  >
-                    {category}
-                  </Button>
-                ))}
+          <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+            <div className="space-y-3">
+              <div>
+                <div className="font-semibold text-2xl">
+                  {selectedEntry.title || strings.notAvailableLabel}
+                </div>
+                <p className="mt-2 text-muted-foreground text-sm leading-6">
+                  {selectedEntry.summary || strings.noItemsDescription}
+                </p>
               </div>
-            </RailSection>
-          ) : null}
 
-          <RailSection label={strings.profileLabel}>
-            {currentTabEntries.length === 0 ? (
-              <EmptyPanel
-                title={
-                  normalizedQuery || statusFilter !== 'all'
-                    ? strings.noSearchResultsTitle
-                    : strings.noItemsTitle
-                }
-                description={
-                  normalizedQuery || statusFilter !== 'all'
-                    ? strings.noSearchResultsDescription
-                    : strings.noItemsDescription
-                }
-              />
-            ) : (
-              <EntryList isEmpty={false}>
-                {currentTabEntries.map((entry) => {
-                  const profile = asRecord(entry.profile_data);
-                  const entryAsset =
-                    assets.find(
-                      (asset) =>
-                        asset.entry_id === entry.id &&
-                        asset.asset_type === 'image'
-                    ) ?? null;
-
-                  return (
-                    <EntryCard
-                      key={entry.id}
-                      active={selectedEntryId === entry.id}
-                      title={entry.title}
-                      onClick={() => setSelectedEntryId(entry.id)}
-                      accent={
-                        <StatusBadge
-                          draftLabel={strings.draftBadge}
-                          isPublished={entry.status === 'published'}
-                          publishedLabel={strings.publishedBadge}
-                        />
-                      }
-                      eyebrow={
-                        <div className="flex flex-wrap gap-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                          <span>{entry.slug}</span>
-                          {activeTab === 'lore-capsules' ? (
-                            <span>
-                              {asString(profile.channel) ||
-                                strings.notAvailableLabel}
-                            </span>
-                          ) : null}
-                        </div>
-                      }
-                      body={
-                        activeTab === 'artworks' ? (
-                          <div className="space-y-3">
-                            {entryAsset?.preview_url ? (
-                              <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-border/70">
-                                <Image
-                                  src={entryAsset.preview_url}
-                                  alt={entryAsset.alt_text ?? entry.title}
-                                  fill
-                                  className="object-cover"
-                                  unoptimized
-                                />
-                              </div>
-                            ) : null}
-                            <div className="flex flex-wrap gap-2">
-                              <Badge variant="outline">
-                                {asString(profile.category) ||
-                                  strings.notAvailableLabel}
-                              </Badge>
-                              <Badge variant="outline">
-                                {asString(profile.rarity) ||
-                                  strings.notAvailableLabel}
-                              </Badge>
-                              <Badge variant="outline">
-                                {asString(profile.year) ||
-                                  strings.notAvailableLabel}
-                              </Badge>
-                            </div>
-                            <p className="text-muted-foreground text-sm leading-6">
-                              {entry.summary || strings.noItemsDescription}
-                            </p>
-                          </div>
-                        ) : activeTab === 'lore-capsules' ? (
-                          <div className="space-y-2">
-                            <div className="flex flex-wrap gap-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                              <span>
-                                {asString(profile.channel) ||
-                                  strings.notAvailableLabel}
-                              </span>
-                              <span>
-                                {asString(profile.date) ||
-                                  strings.notAvailableLabel}
-                              </span>
-                            </div>
-                            <p className="text-sm leading-6">
-                              {asString(profile.teaser) ||
-                                entry.summary ||
-                                strings.noItemsDescription}
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="text-muted-foreground text-sm leading-6">
-                            {entry.summary || strings.noItemsDescription}
-                          </p>
-                        )
-                      }
-                    />
-                  );
-                })}
-              </EntryList>
-            )}
-          </RailSection>
-        </ContentRail>
-      }
-      rightColumn={
-        <>
-          <EditorPanel
-            title={strings.collectionSettingsTitle}
-            description={strings.collectionSettingsDescription}
-          >
-            {activeCollection ? (
-              <>
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/35 p-4">
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap gap-2">
-                      <Badge className="rounded-full">
-                        {activeCollection.slug}
-                      </Badge>
-                      <Badge variant="secondary" className="rounded-full">
-                        {formatCanonicalToken(activeCollection.collection_type)}
-                      </Badge>
-                    </div>
-                    <div className="text-muted-foreground text-sm">
-                      {activeCollection.is_enabled
-                        ? strings.collectionEnabledLabel
-                        : strings.collectionDisabledLabel}
-                    </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-border/70 bg-background/35 p-4">
+                  <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                    {strings.sectionsLabel}
                   </div>
-                  <div className="flex items-center gap-3 rounded-full border border-border/70 bg-background/70 px-3 py-2">
-                    <Switch
-                      checked={collectionDraft.isEnabled}
-                      onCheckedChange={(checked) =>
-                        setCollectionDraft((current) => ({
-                          ...current,
-                          isEnabled: checked,
-                        }))
-                      }
-                    />
-                    <span className="text-sm">
-                      {collectionDraft.isEnabled
-                        ? strings.collectionEnabledLabel
-                        : strings.collectionDisabledLabel}
-                    </span>
+                  <div className="mt-2 font-semibold text-2xl">
+                    {selectedBlocks.length}
                   </div>
                 </div>
-
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <Field label={strings.titleLabel}>
-                    <Input
-                      value={collectionDraft.title}
-                      onChange={(event) =>
-                        setCollectionDraft((current) => ({
-                          ...current,
-                          title: event.target.value,
-                        }))
-                      }
-                    />
-                  </Field>
-                  <Field label={strings.descriptionLabel}>
-                    <Textarea
-                      rows={3}
-                      value={collectionDraft.description}
-                      onChange={(event) =>
-                        setCollectionDraft((current) => ({
-                          ...current,
-                          description: event.target.value,
-                        }))
-                      }
-                    />
-                  </Field>
+                <div className="rounded-2xl border border-border/70 bg-background/35 p-4">
+                  <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                    {strings.mediaSectionTitle}
+                  </div>
+                  <div className="mt-2 font-semibold text-2xl">
+                    {selectedAssets.length}
+                  </div>
                 </div>
+              </div>
 
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => saveCollectionMutation.mutate()}
-                    disabled={
-                      !collectionDirty || saveCollectionMutation.isPending
-                    }
-                  >
-                    {strings.saveChanges}
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <EmptyPanel
-                title={strings.collectionEmptyTitle}
-                description={strings.collectionEmptyDescription}
-              />
-            )}
-          </EditorPanel>
+              <div className="rounded-2xl border border-border/70 bg-background/35 p-4 text-sm leading-7">
+                {selectedCollection.collection_type === 'artworks'
+                  ? artworkDraft.note ||
+                    artworkDraft.summary ||
+                    strings.noItemsDescription
+                  : selectedCollection.collection_type === 'lore-capsules'
+                    ? loreDraft.teaser ||
+                      loreDraft.summary ||
+                      strings.noItemsDescription
+                    : sectionDraft.body || strings.noItemsDescription}
+              </div>
+            </div>
 
+            <div className="rounded-[1.75rem] border border-border/70 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.1),transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-4">
+              <div className="max-h-[26rem] overflow-y-auto pr-1">
+                {renderedYoolaPreview}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </EditorPanel>
+  );
+
+  const yoolaEditorWorkspace =
+    !selectedEntry || !selectedCollection ? (
+      <EmptyPanel
+        title={strings.noItemsTitle}
+        description={strings.noItemsDescription}
+      />
+    ) : (
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="space-y-6">
           <EditorPanel
             title={strings.detailPanelTitle}
             description={strings.detailPanelDescription}
           >
-            {!selectedEntry || !selectedCollection ? (
-              <EmptyPanel
-                title={strings.noItemsTitle}
-                description={strings.noItemsDescription}
-              />
-            ) : selectedCollection.collection_type === 'artworks' ? (
+            {selectedCollection.collection_type === 'artworks' ? (
               <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field label={strings.titleLabel}>
@@ -2955,8 +2875,298 @@ export function ExternalProjectStudioClient({
               </div>
             )}
           </EditorPanel>
-        </>
-      }
-    />
+        </div>
+
+        <div className="xl:sticky xl:top-0 xl:self-start">
+          {renderYoolaPreviewPanel()}
+        </div>
+      </div>
+    );
+
+  return (
+    <>
+      <StudioShell
+        hero={commonHero}
+        actionBar={commonActionBar}
+        previewDrawerTitle={strings.openPreviewAction}
+        previewDrawerDescription={strings.deliveryPreviewDescription}
+        activityPanel={activityPanel}
+        previewPanel={renderYoolaPreviewPanel()}
+        contentRail={
+          <ContentRail
+            title={strings.contentRailTitle}
+            description={strings.contentRailDescription}
+            headerAction={
+              <Button
+                size="sm"
+                onClick={() => createEntryMutation.mutate(activeTab)}
+                disabled={createEntryMutation.isPending}
+              >
+                {activeTab === 'artworks'
+                  ? strings.addArtwork
+                  : activeTab === 'lore-capsules'
+                    ? strings.addLoreCapsule
+                    : strings.addSection}
+              </Button>
+            }
+          >
+            <RailSection label={strings.collectionSelectLabel}>
+              <div className="space-y-3">
+                {[
+                  {
+                    description:
+                      artworksCollection?.description ??
+                      strings.contentRailDescription,
+                    key: 'artworks' as const,
+                    title: artworksCollection?.title ?? strings.artworksTab,
+                    value: filteredArtworkEntries.length,
+                  },
+                  {
+                    description:
+                      loreCollection?.description ??
+                      strings.contentRailDescription,
+                    key: 'lore-capsules' as const,
+                    title: loreCollection?.title ?? strings.loreTab,
+                    value: filteredLoreEntries.length,
+                  },
+                  {
+                    description:
+                      singletonCollection?.description ??
+                      strings.contentRailDescription,
+                    key: 'singleton-sections' as const,
+                    title: singletonCollection?.title ?? strings.sectionsTab,
+                    value: filteredSingletonEntries.length,
+                  },
+                ].map((collection) => (
+                  <RailCollectionButton
+                    key={collection.key}
+                    active={activeTab === collection.key}
+                    title={collection.title}
+                    description={collection.description}
+                    onClick={() => setActiveTab(collection.key)}
+                    badge={<Badge variant="outline">{collection.value}</Badge>}
+                  />
+                ))}
+              </div>
+            </RailSection>
+
+            <RailSection label={strings.searchPlaceholder}>
+              <Input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder={strings.searchPlaceholder}
+              />
+            </RailSection>
+
+            <RailSection label={strings.statusLabel}>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    ['all', strings.allItemsLabel],
+                    ['published', strings.publishedBadge],
+                    ['draft', strings.draftBadge],
+                  ] as const
+                ).map(([value, label]) => (
+                  <Button
+                    key={value}
+                    size="sm"
+                    variant={statusFilter === value ? 'default' : 'outline'}
+                    onClick={() => setStatusFilter(value)}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </RailSection>
+
+            {activeTab === 'artworks' && yoolaLoading ? (
+              <RailSection label={strings.categoryLabel}>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant={
+                      artworkCategoryFilter === 'all' ? 'default' : 'outline'
+                    }
+                    onClick={() => setArtworkCategoryFilter('all')}
+                  >
+                    {strings.allItemsLabel}
+                  </Button>
+                  {yoolaLoading.artworkCategories.map((category) => (
+                    <Button
+                      key={category}
+                      size="sm"
+                      variant={
+                        artworkCategoryFilter === category
+                          ? 'default'
+                          : 'outline'
+                      }
+                      onClick={() => setArtworkCategoryFilter(category)}
+                    >
+                      {category}
+                    </Button>
+                  ))}
+                </div>
+              </RailSection>
+            ) : null}
+
+            <RailSection label={strings.profileLabel}>
+              {currentTabEntries.length === 0 ? (
+                <EmptyPanel
+                  title={
+                    normalizedQuery || statusFilter !== 'all'
+                      ? strings.noSearchResultsTitle
+                      : strings.noItemsTitle
+                  }
+                  description={
+                    normalizedQuery || statusFilter !== 'all'
+                      ? strings.noSearchResultsDescription
+                      : strings.noItemsDescription
+                  }
+                />
+              ) : (
+                <EntryList isEmpty={false}>
+                  {currentTabEntries.map((entry) => {
+                    const profile = asRecord(entry.profile_data);
+                    const entryAsset =
+                      assets.find(
+                        (asset) =>
+                          asset.entry_id === entry.id &&
+                          asset.asset_type === 'image'
+                      ) ?? null;
+
+                    return (
+                      <EntryCard
+                        key={entry.id}
+                        active={selectedEntryId === entry.id}
+                        title={entry.title}
+                        onClick={() => openEntryEditor(entry.id)}
+                        accent={
+                          <StatusBadge
+                            draftLabel={strings.draftBadge}
+                            isPublished={entry.status === 'published'}
+                            publishedLabel={strings.publishedBadge}
+                          />
+                        }
+                        eyebrow={
+                          <div className="flex flex-wrap gap-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                            <span>{entry.slug}</span>
+                            {activeTab === 'lore-capsules' ? (
+                              <span>
+                                {asString(profile.channel) ||
+                                  strings.notAvailableLabel}
+                              </span>
+                            ) : null}
+                          </div>
+                        }
+                        body={
+                          activeTab === 'artworks' ? (
+                            <div className="space-y-3">
+                              {entryAsset?.preview_url ? (
+                                <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-border/70">
+                                  <Image
+                                    src={entryAsset.preview_url}
+                                    alt={entryAsset.alt_text ?? entry.title}
+                                    fill
+                                    className="object-cover"
+                                    unoptimized
+                                  />
+                                </div>
+                              ) : null}
+                              <div className="flex flex-wrap gap-2">
+                                <Badge variant="outline">
+                                  {asString(profile.category) ||
+                                    strings.notAvailableLabel}
+                                </Badge>
+                                <Badge variant="outline">
+                                  {asString(profile.rarity) ||
+                                    strings.notAvailableLabel}
+                                </Badge>
+                                <Badge variant="outline">
+                                  {asString(profile.year) ||
+                                    strings.notAvailableLabel}
+                                </Badge>
+                              </div>
+                              <p className="text-muted-foreground text-sm leading-6">
+                                {entry.summary || strings.noItemsDescription}
+                              </p>
+                            </div>
+                          ) : activeTab === 'lore-capsules' ? (
+                            <div className="space-y-2">
+                              <div className="flex flex-wrap gap-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                                <span>
+                                  {asString(profile.channel) ||
+                                    strings.notAvailableLabel}
+                                </span>
+                                <span>
+                                  {asString(profile.date) ||
+                                    strings.notAvailableLabel}
+                                </span>
+                              </div>
+                              <p className="text-sm leading-6">
+                                {asString(profile.teaser) ||
+                                  entry.summary ||
+                                  strings.noItemsDescription}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-muted-foreground text-sm leading-6">
+                              {entry.summary || strings.noItemsDescription}
+                            </p>
+                          )
+                        }
+                      />
+                    );
+                  })}
+                </EntryList>
+              )}
+            </RailSection>
+          </ContentRail>
+        }
+        rightColumn={
+          <>
+            {collectionSettingsPanel}
+            {yoolaFocusedItemPanel}
+          </>
+        }
+      />
+
+      <Dialog open={entryEditorOpen} onOpenChange={setEntryEditorOpen}>
+        <DialogContent className="flex max-h-dvh max-w-[100vw] flex-col gap-0 overflow-hidden p-0 sm:max-h-[94vh] sm:max-w-[min(96vw,1400px)] sm:rounded-[2rem]">
+          <DialogHeader className="border-border/60 border-b bg-background/95 px-5 py-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-2">
+                <DialogTitle className="text-2xl tracking-tight">
+                  {selectedEntry?.title || strings.detailPanelTitle}
+                </DialogTitle>
+                <DialogDescription>
+                  {selectedCollection?.title || strings.detailPanelDescription}
+                </DialogDescription>
+                {selectedEntry ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Badge className="rounded-full">{selectedEntry.slug}</Badge>
+                    <StatusBadge
+                      draftLabel={strings.draftBadge}
+                      isPublished={selectedEntry.status === 'published'}
+                      publishedLabel={strings.publishedBadge}
+                    />
+                    <Badge variant="secondary" className="rounded-full">
+                      {formatCanonicalToken(
+                        selectedCollection?.collection_type ?? activeTab
+                      )}
+                    </Badge>
+                  </div>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {editorDialogActions}
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
+            {yoolaEditorWorkspace}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

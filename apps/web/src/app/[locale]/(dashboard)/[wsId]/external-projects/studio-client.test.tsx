@@ -96,7 +96,7 @@ describe('ExternalProjectStudioClient', () => {
     });
   });
 
-  it('renders the split-view studio and switches preview tabs', async () => {
+  it('opens the dedicated item editor and switches preview tabs', async () => {
     render(
       <ExternalProjectStudioClient
         assets={[
@@ -256,6 +256,7 @@ describe('ExternalProjectStudioClient', () => {
           noSearchResultsTitle: 'No results',
           noteLabel: 'Note',
           notAvailableLabel: 'N/A',
+          openEditorAction: 'Open full editor',
           openPreviewAction: 'Open preview',
           operationsDescription: 'Operations',
           orientationLabel: 'Orientation',
@@ -309,11 +310,18 @@ describe('ExternalProjectStudioClient', () => {
     expect(screen.getAllByText('Editor').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Rendered').length).toBeGreaterThan(0);
 
+    fireEvent.click(screen.getByRole('button', { name: /Artwork One/ }));
+
+    expect(screen.getAllByText('Open full editor').length).toBeGreaterThan(0);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole('tab', { name: 'Payload' }));
 
     await waitFor(() =>
       expect(getWorkspaceExternalProjectDeliveryMock).toHaveBeenCalled()
     );
-    expect(screen.getByText('Preview description')).toBeInTheDocument();
+    expect(screen.getAllByText('Preview description').length).toBeGreaterThan(
+      0
+    );
   });
 });

@@ -133,6 +133,7 @@ export default async function ExternalProjectStudioPage({ params }: Props) {
         noSearchResultsTitle: t('studio.no_search_results_title'),
         noteLabel: t('studio.note_label'),
         notAvailableLabel: t('studio.not_available_label'),
+        openEditorAction: t('studio.open_editor_action'),
         openPreviewAction: t('studio.open_preview_action'),
         operationsDescription: t('studio.operations_description'),
         orientationLabel: t('studio.orientation_label'),

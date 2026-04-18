@@ -3949,6 +3949,7 @@
       "no_search_results_title": "Nothing matches the current filters",
       "not_available_label": "Not available",
       "note_label": "Visual note",
+      "open_editor_action": "Open full editor",
       "open_preview_action": "Open live preview",
       "operations_description": "Run controlled imports, shape content collections, and publish destination-workspace payloads without changing the locked adapter assignment.",
       "orientation_label": "Orientation",
