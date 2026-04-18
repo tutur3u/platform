@@ -214,6 +214,7 @@ export function getEditorExtensions({
       height: 360,
       HTMLAttributes: {
         class: 'rounded-md my-4',
+        referrerpolicy: 'strict-origin-when-cross-origin',
       },
     }),
   ];

@@ -9,6 +9,7 @@ export const YoutubeEmbed = ({ embedId }: { embedId: string | undefined }) => {
       height="480"
       src={`https://www.youtube.com/embed/${embedId}`}
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      referrerPolicy="strict-origin-when-cross-origin"
       allowFullScreen
       title="Embedded youtube"
       className="aspect-video h-48 w-full rounded-lg md:h-64 lg:h-96"

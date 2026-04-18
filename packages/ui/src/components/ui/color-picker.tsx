@@ -1,9 +1,9 @@
 'use client';
 
 import { TextIcon } from '@tuturuuu/icons';
-import { useTheme } from 'next-themes';
 import { forwardRef, useMemo, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
+import { useDomResolvedTheme } from '../../hooks/use-dom-resolved-theme';
 import { useForwardedRef } from '../../hooks/use-forwarded-ref';
 import type { ButtonProps } from './button';
 import { Button } from './button';
@@ -26,7 +26,7 @@ const ColorPicker = forwardRef<
     { disabled, value, onChange, onBlur, text, name, className, ...props },
     forwardedRef
   ) => {
-    const { resolvedTheme } = useTheme();
+    const resolvedTheme = useDomResolvedTheme();
 
     const ref = useForwardedRef(forwardedRef);
     const [open, setOpen] = useState(false);
@@ -36,7 +36,7 @@ const ColorPicker = forwardRef<
     }, [value]);
 
     const color = useMemo(() => {
-      return ensureVisibleColor(parsedValue, resolvedTheme as 'light' | 'dark');
+      return ensureVisibleColor(parsedValue, resolvedTheme);
     }, [parsedValue, resolvedTheme]);
 
     return (
