@@ -35,6 +35,7 @@ const WATCH_HISTORY_FILE = path.join(
   'blue-green-auto-deploy.history.json'
 );
 const ANSI = {
+  blue: '\x1b[34m',
   bold: '\x1b[1m',
   cyan: '\x1b[36m',
   dim: '\x1b[2m',
@@ -47,6 +48,10 @@ const ANSI = {
 
 function colorize(color, value) {
   return `${ANSI[color] ?? ''}${value}${ANSI.reset}`;
+}
+
+function emphasize(color, value) {
+  return `${ANSI.bold}${ANSI[color] ?? ''}${value}${ANSI.reset}`;
 }
 
 function parseArgs(argv) {
@@ -225,6 +230,29 @@ function formatRequestsPerMinute(value) {
   }).format(value)} rpm`;
 }
 
+function formatRequestsPerDay(value) {
+  if (!Number.isFinite(value) || value < 0) {
+    return 'n/a';
+  }
+
+  return `${new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: value >= 100 ? 0 : 1,
+    minimumFractionDigits: value > 0 && value < 10 ? 1 : 0,
+  }).format(value)}/day`;
+}
+
+function formatDailyRequestCount(count) {
+  if (!Number.isFinite(count) || count < 0) {
+    return 'n/a';
+  }
+
+  return `${new Intl.NumberFormat('en-US').format(count)} req`;
+}
+
+function formatMetric(label, value, color) {
+  return `${colorize(color, label)} ${emphasize(color, value)}`;
+}
+
 function truncateText(value, maxLength) {
   if (value.length <= maxLength) {
     return value;
@@ -287,31 +315,86 @@ function summarizeBlueGreenRuntime(
   const details = [];
 
   if (currentBlueGreen.lifetimeMs != null) {
-    details.push(`life ${formatDuration(currentBlueGreen.lifetimeMs)}`);
+    details.push(
+      formatMetric(
+        'life',
+        formatDuration(currentBlueGreen.lifetimeMs),
+        'magenta'
+      )
+    );
   }
 
   if (currentBlueGreen.requestCount != null) {
-    details.push(formatRequestCount(currentBlueGreen.requestCount));
+    details.push(
+      formatMetric(
+        'req',
+        formatRequestCount(currentBlueGreen.requestCount),
+        'green'
+      )
+    );
   }
 
   if (currentBlueGreen.averageRequestsPerMinute != null) {
     details.push(
-      `avg ${formatRequestsPerMinute(currentBlueGreen.averageRequestsPerMinute)}`
+      formatMetric(
+        'avg',
+        formatRequestsPerMinute(currentBlueGreen.averageRequestsPerMinute),
+        'blue'
+      )
     );
   }
 
   if (currentBlueGreen.peakRequestsPerMinute != null) {
     details.push(
-      `peak ${formatRequestsPerMinute(currentBlueGreen.peakRequestsPerMinute)}`
+      formatMetric(
+        'peak',
+        formatRequestsPerMinute(currentBlueGreen.peakRequestsPerMinute),
+        'yellow'
+      )
+    );
+  }
+
+  if (currentBlueGreen.dailyRequestCount != null) {
+    details.push(
+      formatMetric(
+        'day',
+        formatDailyRequestCount(currentBlueGreen.dailyRequestCount),
+        'cyan'
+      )
+    );
+  }
+
+  if (currentBlueGreen.dailyAverageRequests != null) {
+    details.push(
+      formatMetric(
+        'davg',
+        formatRequestsPerDay(currentBlueGreen.dailyAverageRequests),
+        'blue'
+      )
+    );
+  }
+
+  if (currentBlueGreen.dailyPeakRequests != null) {
+    details.push(
+      formatMetric(
+        'dpeak',
+        formatRequestsPerDay(currentBlueGreen.dailyPeakRequests),
+        'red'
+      )
     );
   }
 
   if (currentBlueGreen.activatedAt) {
     details.push(
-      `since ${formatClockTime(currentBlueGreen.activatedAt)} (${formatRelativeTime(
-        currentBlueGreen.activatedAt,
-        { now }
-      )})`
+      `${colorize('dim', 'since')} ${emphasize(
+        'cyan',
+        formatClockTime(currentBlueGreen.activatedAt)
+      )} ${colorize(
+        'dim',
+        `(${formatRelativeTime(currentBlueGreen.activatedAt, {
+          now,
+        })})`
+      )}`
     );
   }
 
@@ -361,19 +444,50 @@ function buildDeploymentTable(
     const commitLine =
       `${entry.commitShortHash ?? 'unknown'} ${entry.commitSubject ?? ''}`.trim();
     const lifecycle = entry.activatedAt
-      ? `since ${formatClockTime(entry.activatedAt)}`
+      ? `${colorize('dim', 'since')} ${emphasize(
+          'cyan',
+          formatClockTime(entry.activatedAt)
+        )}`
       : entry.startedAt
-        ? `started ${formatClockTime(entry.startedAt)}`
+        ? `${colorize('dim', 'started')} ${emphasize(
+            'cyan',
+            formatClockTime(entry.startedAt)
+          )}`
         : '';
     const metricsOne = [
-      `build ${formatDuration(entry.buildDurationMs)}`,
-      `life ${formatDuration(entry.lifetimeMs)}`,
-      `req ${formatRequestCount(entry.requestCount)}`,
+      formatMetric('build', formatDuration(entry.buildDurationMs), 'cyan'),
+      formatMetric('life', formatDuration(entry.lifetimeMs), 'magenta'),
+      formatMetric('age', formatRelativeTime(timestamp, { now }), 'dim'),
     ].join('  ');
     const metricsTwo = [
-      `avg ${formatRequestsPerMinute(entry.averageRequestsPerMinute)}`,
-      `peak ${formatRequestsPerMinute(entry.peakRequestsPerMinute)}`,
-      `age ${formatRelativeTime(timestamp, { now })}`,
+      formatMetric('req', formatRequestCount(entry.requestCount), 'green'),
+      formatMetric(
+        'avg',
+        formatRequestsPerMinute(entry.averageRequestsPerMinute),
+        'blue'
+      ),
+      formatMetric(
+        'peak',
+        formatRequestsPerMinute(entry.peakRequestsPerMinute),
+        'yellow'
+      ),
+    ].join('  ');
+    const metricsThree = [
+      formatMetric(
+        'day',
+        formatDailyRequestCount(entry.dailyRequestCount),
+        'cyan'
+      ),
+      formatMetric(
+        'davg',
+        formatRequestsPerDay(entry.dailyAverageRequests),
+        'blue'
+      ),
+      formatMetric(
+        'dpeak',
+        formatRequestsPerDay(entry.dailyPeakRequests),
+        'red'
+      ),
     ].join('  ');
 
     return [
@@ -381,9 +495,10 @@ function buildDeploymentTable(
       `│ ${padCell(heading, innerWidth)} │`,
       `│ ${padCell(commitLine, innerWidth)} │`,
       middleBorder,
-      colorize('dim', `│ ${padCell(metricsOne, innerWidth)} │`),
-      colorize('dim', `│ ${padCell(metricsTwo, innerWidth)} │`),
-      colorize('dim', `│ ${padCell(lifecycle, innerWidth)} │`),
+      `│ ${padCell(metricsOne, innerWidth)} │`,
+      `│ ${padCell(metricsTwo, innerWidth)} │`,
+      `│ ${padCell(metricsThree, innerWidth)} │`,
+      `│ ${padCell(lifecycle, innerWidth)} │`,
       bottomBorder,
     ];
   });
@@ -1081,12 +1196,16 @@ function summarizeRequestRate(entries, startTime, endTime) {
   ) {
     return {
       averageRequestsPerMinute: 0,
+      dailyAverageRequests: 0,
+      dailyPeakRequests: 0,
+      dailyRequestCount: 0,
       peakRequestsPerMinute: 0,
       requestCount: 0,
     };
   }
 
-  const bucketCounts = new Map();
+  const minuteBucketCounts = new Map();
+  const dayBucketCounts = new Map();
   let requestCount = 0;
 
   for (const entry of entries) {
@@ -1099,15 +1218,27 @@ function summarizeRequestRate(entries, startTime, endTime) {
     }
 
     requestCount += 1;
-    const bucket = Math.floor(entry.time / 60_000);
-    bucketCounts.set(bucket, (bucketCounts.get(bucket) ?? 0) + 1);
+    const minuteBucket = Math.floor(entry.time / 60_000);
+    const dayBucket = Math.floor(entry.time / 86_400_000);
+    minuteBucketCounts.set(
+      minuteBucket,
+      (minuteBucketCounts.get(minuteBucket) ?? 0) + 1
+    );
+    dayBucketCounts.set(dayBucket, (dayBucketCounts.get(dayBucket) ?? 0) + 1);
   }
 
   const durationMinutes = Math.max((endTime - startTime) / 60_000, 1 / 60);
+  const durationDays = Math.max((endTime - startTime) / 86_400_000, 1 / 86_400);
+  const finalDayBucket = Math.floor(
+    Math.max(startTime, endTime - 1) / 86_400_000
+  );
 
   return {
     averageRequestsPerMinute: requestCount / durationMinutes,
-    peakRequestsPerMinute: Math.max(0, ...bucketCounts.values()),
+    dailyAverageRequests: requestCount / durationDays,
+    dailyPeakRequests: Math.max(0, ...dayBucketCounts.values()),
+    dailyRequestCount: dayBucketCounts.get(finalDayBucket) ?? 0,
+    peakRequestsPerMinute: Math.max(0, ...minuteBucketCounts.values()),
     requestCount,
   };
 }
@@ -1131,6 +1262,9 @@ async function collectDeploymentTraffic(
     return deployments.map((entry) => ({
       ...entry,
       averageRequestsPerMinute: null,
+      dailyAverageRequests: null,
+      dailyPeakRequests: null,
+      dailyRequestCount: null,
       lifetimeMs:
         entry.status === 'successful' && entry.activatedAt
           ? Math.max(0, (entry.endedAt ?? now) - entry.activatedAt)
@@ -1156,6 +1290,9 @@ async function collectDeploymentTraffic(
       return deployments.map((entry) => ({
         ...entry,
         averageRequestsPerMinute: null,
+        dailyAverageRequests: null,
+        dailyPeakRequests: null,
+        dailyRequestCount: null,
         lifetimeMs:
           entry.status === 'successful' && entry.activatedAt
             ? Math.max(0, (entry.endedAt ?? now) - entry.activatedAt)
@@ -1194,7 +1331,12 @@ async function collectDeploymentTraffic(
       if (deployment.status !== 'successful' || !deployment.activatedAt) {
         return {
           ...deployment,
+          averageRequestsPerMinute: null,
+          dailyAverageRequests: null,
+          dailyPeakRequests: null,
+          dailyRequestCount: null,
           lifetimeMs,
+          peakRequestsPerMinute: null,
           requestCount: null,
         };
       }
@@ -1209,6 +1351,9 @@ async function collectDeploymentTraffic(
       return {
         ...deployment,
         averageRequestsPerMinute: rateSummary.averageRequestsPerMinute,
+        dailyAverageRequests: rateSummary.dailyAverageRequests,
+        dailyPeakRequests: rateSummary.dailyPeakRequests,
+        dailyRequestCount: rateSummary.dailyRequestCount,
         lifetimeMs,
         peakRequestsPerMinute: rateSummary.peakRequestsPerMinute,
         requestCount: rateSummary.requestCount,
@@ -1218,6 +1363,9 @@ async function collectDeploymentTraffic(
     return deployments.map((entry) => ({
       ...entry,
       averageRequestsPerMinute: null,
+      dailyAverageRequests: null,
+      dailyPeakRequests: null,
+      dailyRequestCount: null,
       lifetimeMs:
         entry.status === 'successful' && entry.activatedAt
           ? Math.max(0, (entry.endedAt ?? now) - entry.activatedAt)
@@ -1271,6 +1419,9 @@ async function loadRuntimeSnapshot({
           ...currentBlueGreen,
           activatedAt: activeDeployment.activatedAt,
           averageRequestsPerMinute: activeDeployment.averageRequestsPerMinute,
+          dailyAverageRequests: activeDeployment.dailyAverageRequests,
+          dailyPeakRequests: activeDeployment.dailyPeakRequests,
+          dailyRequestCount: activeDeployment.dailyRequestCount,
           lifetimeMs: activeDeployment.lifetimeMs,
           peakRequestsPerMinute: activeDeployment.peakRequestsPerMinute,
           requestCount: activeDeployment.requestCount,

@@ -120,6 +120,9 @@ test('buildDashboardView shows blue/green runtime and the last 3 deployments', (
         activeColor: 'green',
         activatedAt: Date.parse('2026-04-18T11:10:00.000Z'),
         averageRequestsPerMinute: 6.4,
+        dailyAverageRequests: 88.4,
+        dailyPeakRequests: 120,
+        dailyRequestCount: 54,
         lifetimeMs: 20 * 60 * 1_000,
         peakRequestsPerMinute: 12,
         requestCount: 128,
@@ -133,6 +136,9 @@ test('buildDashboardView shows blue/green runtime and the last 3 deployments', (
           buildDurationMs: 42_000,
           commitShortHash: 'bbb222',
           commitSubject: 'Refresh watcher UX and restart logic',
+          dailyAverageRequests: 88.4,
+          dailyPeakRequests: 120,
+          dailyRequestCount: 54,
           finishedAt: Date.parse('2026-04-18T11:10:00.000Z'),
           lifetimeMs: 20 * 60 * 1_000,
           peakRequestsPerMinute: 12,
@@ -146,6 +152,9 @@ test('buildDashboardView shows blue/green runtime and the last 3 deployments', (
           buildDurationMs: 35_000,
           commitShortHash: 'aaa111',
           commitSubject: 'Previous rollout',
+          dailyAverageRequests: 240,
+          dailyPeakRequests: 320,
+          dailyRequestCount: 180,
           endedAt: Date.parse('2026-04-18T11:10:00.000Z'),
           finishedAt: Date.parse('2026-04-18T10:40:00.000Z'),
           lifetimeMs: 30 * 60 * 1_000,
@@ -187,22 +196,26 @@ test('buildDashboardView shows blue/green runtime and the last 3 deployments', (
     }
   );
 
-  assert.match(output, /Blue\/green/);
-  assert.match(output, /serving green/);
-  assert.match(output, /128 req/);
-  assert.match(output, /avg 6\.4 rpm/);
-  assert.match(output, /peak 12 rpm/);
-  assert.match(output, /Last 3 Deployments/);
-  assert.match(output, /┌/);
-  assert.match(output, /\[18:10:00\]/);
-  assert.match(output, /ACTIVE/);
-  assert.match(output, /green/);
-  assert.match(output, /ACTIVE/);
-  assert.match(output, /42s/);
-  assert.match(output, /20m/);
-  assert.match(output, /Refresh watcher UX and restart logic/);
+  const plainOutput = stripAnsi(output);
 
-  const lines = stripAnsi(output).split('\n');
+  assert.match(plainOutput, /Blue\/green/);
+  assert.match(plainOutput, /serving green/);
+  assert.match(plainOutput, /req 128 req/);
+  assert.match(plainOutput, /avg 6\.4 rpm/);
+  assert.match(plainOutput, /peak 12 rpm/);
+  assert.match(plainOutput, /day 54 req/);
+  assert.match(plainOutput, /davg 88\.4\/day/);
+  assert.match(plainOutput, /dpeak 120\/day/);
+  assert.match(plainOutput, /Last 3 Deployments/);
+  assert.match(plainOutput, /┌/);
+  assert.match(plainOutput, /\[18:10:00\]/);
+  assert.match(plainOutput, /ACTIVE/);
+  assert.match(plainOutput, /green/);
+  assert.match(plainOutput, /42s/);
+  assert.match(plainOutput, /20m/);
+  assert.match(plainOutput, /Refresh watcher UX and restart logic/);
+
+  const lines = plainOutput.split('\n');
   const firstCardTop = lines.find((line) => line.startsWith('┌'));
   const firstCardHeading = lines.find((line) =>
     line.startsWith('│ [18:10:00]')
@@ -537,29 +550,36 @@ test('parseProxyLogEntries keeps only access lines and collectDeploymentTraffic 
   assert.equal(enriched[0].requestCount, 1);
   assert.equal(enriched[1].requestCount, 1);
   assert.equal(enriched[0].averageRequestsPerMinute, 1 / 30);
+  assert.equal(enriched[0].dailyAverageRequests, 48);
+  assert.equal(enriched[0].dailyPeakRequests, 1);
+  assert.equal(enriched[0].dailyRequestCount, 1);
   assert.equal(enriched[0].peakRequestsPerMinute, 1);
   assert.equal(enriched[0].lifetimeMs, 30 * 60 * 1_000);
 });
 
-test('summarizeRequestRate computes total, average rpm, and peak rpm', () => {
-  const startTime = Date.parse('2026-04-18T11:00:00.000Z');
-  const endTime = Date.parse('2026-04-18T11:03:00.000Z');
+test('summarizeRequestRate computes total, per-minute, and per-day traffic stats', () => {
+  const startTime = Date.parse('2026-04-18T00:00:00.000Z');
+  const endTime = Date.parse('2026-04-20T00:00:00.000Z');
   const summary = summarizeRequestRate(
     [
       { path: '/', time: Date.parse('2026-04-18T11:00:10.000Z') },
       { path: '/docs', time: Date.parse('2026-04-18T11:00:20.000Z') },
-      { path: '/', time: Date.parse('2026-04-18T11:01:10.000Z') },
-      { path: '/api/health', time: Date.parse('2026-04-18T11:01:20.000Z') },
-      { path: '/about', time: Date.parse('2026-04-18T11:02:10.000Z') },
+      { path: '/', time: Date.parse('2026-04-19T11:01:10.000Z') },
+      { path: '/about', time: Date.parse('2026-04-19T11:01:20.000Z') },
+      { path: '/about', time: Date.parse('2026-04-19T11:02:10.000Z') },
+      { path: '/api/health', time: Date.parse('2026-04-19T11:02:20.000Z') },
     ],
     startTime,
     endTime
   );
 
   assert.deepEqual(summary, {
-    averageRequestsPerMinute: 4 / 3,
+    averageRequestsPerMinute: 5 / (48 * 60),
+    dailyAverageRequests: 2.5,
+    dailyPeakRequests: 3,
+    dailyRequestCount: 3,
     peakRequestsPerMinute: 2,
-    requestCount: 4,
+    requestCount: 5,
   });
 });
 

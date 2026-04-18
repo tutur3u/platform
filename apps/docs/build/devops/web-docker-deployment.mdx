@@ -257,6 +257,14 @@ Dashboard details:
   - total requests served during that deployment window
   - average requests per minute
   - peak requests per minute
+  - `day`: requests served on the current day for the active deployment, or the
+    final active day for an ended deployment
+  - `davg`: average requests per day across that deployment's serving lifetime
+  - `dpeak`: busiest single-day request count across that deployment's serving
+    lifetime
+- The live blue/green summary uses the same traffic metrics as the deployment
+  history cards, with consistent color coding for build/lifetime/traffic/age
+  metrics so the dashboard is easier to scan quickly.
 - Request counters are derived from the local `web-proxy` container logs, so
   they stay self-hosted and do not require any external analytics service.
 - Internal proxy health checks for `/api/health` are excluded from the request
