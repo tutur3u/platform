@@ -80,14 +80,6 @@ function normalizeBuilderConfig(rawConfig, env = process.env) {
       ? (rawConfig?.memory ?? env.DOCKER_WEB_BUILD_MEMORY).trim() || null
       : null;
 
-  if (!memory && !cpus && !maxParallelism) {
-    return null;
-  }
-
-  if (!builderName.trim()) {
-    throw new Error('DOCKER_WEB_BUILD_BUILDER_NAME must not be empty.');
-  }
-
   if (rawConfig?.cpus !== undefined && rawConfig?.cpus !== null && !cpus) {
     throw new Error('Build CPUs must be a positive number.');
   }
@@ -98,6 +90,14 @@ function normalizeBuilderConfig(rawConfig, env = process.env) {
     !maxParallelism
   ) {
     throw new Error('Build max parallelism must be a positive integer.');
+  }
+
+  if (!memory && !cpus && !maxParallelism) {
+    return null;
+  }
+
+  if (!builderName.trim()) {
+    throw new Error('DOCKER_WEB_BUILD_BUILDER_NAME must not be empty.');
   }
 
   return {
