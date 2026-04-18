@@ -1,14 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Agent, fetch as undiciFetch } from 'undici';
 import { DEV_MODE } from '@/constants/common';
-
-// Custom dispatcher with increased header size limit (128KB)
-// This prevents HeadersOverflowError when external API returns many headers
-const customAgent = DEV_MODE
-  ? new Agent({
-      maxHeaderSize: 128 * 1024, // 128KB (default is ~16KB)
-    })
-  : undefined;
 
 // Default Tuturuuu API endpoint (production v2)
 const DEFAULT_TUTURUUU_API_ENDPOINT = 'https://tuturuuu.com/api/v2';
@@ -27,6 +18,25 @@ const ALLOWED_API_DOMAINS = [
 
 // Allowed ports for local development to prevent SSRF to internal services
 const ALLOWED_LOCAL_PORTS = [3000, 7803, 8080];
+let proxyFetchOptionsPromise:
+  | Promise<{ dispatcher: import('undici').Agent }>
+  | undefined;
+
+async function getProxyFetchOptions() {
+  if (!DEV_MODE) {
+    return {};
+  }
+
+  proxyFetchOptionsPromise ??= import('undici').then(({ Agent }) => ({
+    // Increase the header size limit in development to tolerate noisy upstream
+    // responses without evaluating Undici at module-load time during prod builds.
+    dispatcher: new Agent({
+      maxHeaderSize: 128 * 1024,
+    }),
+  }));
+
+  return proxyFetchOptionsPromise;
+}
 
 /**
  * Validate that the path parameter is safe and doesn't contain URL manipulation
@@ -184,13 +194,13 @@ export async function GET(request: Request) {
 
     // Make the request to Tuturuuu API using Bearer token (SDK authentication)
     // Use undici with custom agent to handle large response headers
-    const response = await undiciFetch(finalUrl, {
+    const response = await fetch(finalUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
-      dispatcher: customAgent,
+      ...(await getProxyFetchOptions()),
     });
 
     // Check if response is JSON

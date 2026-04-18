@@ -2207,6 +2207,7 @@
     "export-content": "Xin hãy chọn định dạng thư mục",
     "export-error": "Không thể xuất file. Vui lòng thử lại",
     "export-success": "Xuất thành công",
+    "facebook_mockup": "Mockup Facebook",
     "failed_to_archive_tasks": "Không thể lưu trữ công việc. Vui lòng thử lại.",
     "failed_to_clear_assignees": "Không thể xóa người thực hiện.",
     "failed_to_clear_labels": "Không thể xóa nhãn.",
@@ -3972,6 +3973,125 @@
       "upload_complete_toast": "Đã tải artwork lên",
       "width_label": "Chiều rộng",
       "year_label": "Năm"
+    }
+  },
+  "facebook_mockup": {
+    "actions": {
+      "drag_to_reorder": "Kéo {reaction} để sắp xếp lại",
+      "move_down": "Di chuyển {reaction} xuống",
+      "move_up": "Di chuyển {reaction} lên",
+      "remove": "Xóa",
+      "replace": "Thay ảnh",
+      "upload": "Tải lên"
+    },
+    "defaults": {
+      "audience_label": "Công khai",
+      "caption": "Tuturuuu biến một ảnh duy nhất thành mockup Facebook desktop chỉ trong vài giây.",
+      "comments_count": "18",
+      "cta_label": "Tìm hiểu thêm",
+      "description": "Bản xem trước desktop phù hợp cho ra mắt sản phẩm, bài đăng fanpage, giáo dục và chiến dịch quảng bá.",
+      "headline": "Bản xem trước Facebook mockup của Tuturuuu",
+      "page_handle": "@tuturuuu",
+      "page_name": "Tuturuuu",
+      "reactions_count": "124",
+      "shares_count": "7",
+      "sponsored_label": "Được tài trợ"
+    },
+    "description": "Chuyển đổi giữa mockup quảng cáo desktop và bài đăng trang Facebook trên máy tính, tải lên một ảnh chính, rồi xuất mockup ngay lập tức.",
+    "errors": {
+      "download_failed": "Không thể tải xuống ảnh mockup.",
+      "file_too_large": "Ảnh phải nhỏ hơn hoặc bằng {size}.",
+      "invalid_type": "Chỉ dùng ảnh PNG, JPG hoặc WEBP."
+    },
+    "fields": {
+      "audience_label": "Nhãn đối tượng",
+      "avatar_image": "Ảnh đại diện",
+      "caption": "Nội dung bài viết",
+      "comments": "bình luận",
+      "creative_image": "Ảnh nội dung chính",
+      "cta_label": "Nhãn CTA",
+      "description": "Mô tả",
+      "headline": "Tiêu đề",
+      "page_handle": "Tên tài khoản trang",
+      "page_name": "Tên trang",
+      "preview_theme": "Giao diện xem trước",
+      "preview_type": "Loại xem trước",
+      "preview_viewport": "Thiết bị",
+      "reactions": "lượt cảm xúc",
+      "shares": "lượt chia sẻ",
+      "sponsored_label": "Nhãn tài trợ"
+    },
+    "fullscreen": {
+      "close": "Đóng toàn màn hình",
+      "description": "Xem trước và xuất mockup với khung desktop, tablet hoặc điện thoại.",
+      "open": "Xem toàn màn hình",
+      "title": "Xem trước toàn màn hình"
+    },
+    "helper_text": {
+      "drag_reactions": "Kéo thả cảm xúc để đổi thứ tự hiển thị trên thanh tổng hợp.",
+      "upload_image": "PNG, JPG hoặc WEBP tối đa {size}."
+    },
+    "meta": {
+      "description": "Tạo mockup quảng cáo hoặc bài đăng Facebook trên desktop ngay trong trình duyệt.",
+      "title": "Công cụ mockup Facebook"
+    },
+    "modes": {
+      "ad": "Quảng cáo Facebook",
+      "page": "Bài đăng trang desktop"
+    },
+    "placeholders": {
+      "audience_label": "Công khai",
+      "caption": "Nhập nội dung quảng cáo hoặc bài đăng",
+      "cta_label": "Tìm hiểu thêm",
+      "description": "Mô tả phần nội dung hỗ trợ phía dưới ảnh.",
+      "headline": "Thêm tiêu đề ngắn bên dưới ảnh",
+      "metric_value": "0",
+      "page_handle": "@trangcuaban",
+      "page_name": "Tên trang",
+      "sponsored_label": "Được tài trợ"
+    },
+    "preview": {
+      "actions_comment": "Bình luận",
+      "actions_like": "Thích",
+      "actions_share": "Chia sẻ",
+      "avatar_alt": "Ảnh đại diện xem trước",
+      "browser_title": "xem trước mockup facebook",
+      "close": "Đóng",
+      "creative_alt": "Ảnh nội dung xem trước",
+      "desktop_label": "Bản xem trước desktop",
+      "feed_label": "Bảng tin",
+      "more_actions": "Thêm hành động",
+      "placeholder_avatar": "Avatar",
+      "placeholder_image": "Ảnh nội dung",
+      "search_placeholder": "Tìm kiếm trên Facebook",
+      "see_more": "Xem thêm",
+      "show_less": "Ẩn bớt"
+    },
+    "preview_themes": {
+      "dark": "Chế độ tối",
+      "light": "Chế độ sáng"
+    },
+    "reactions": {
+      "angry": "Phẫn nộ",
+      "care": "Thương thương",
+      "haha": "Haha",
+      "like": "Thích",
+      "love": "Yêu thích",
+      "sad": "Buồn",
+      "wow": "Wow"
+    },
+    "sections": {
+      "content": "Nội dung",
+      "identity": "Thông tin trang",
+      "media": "Hình ảnh",
+      "performance": "Chỉ số tương tác",
+      "reactions": "Cảm xúc hiển thị"
+    },
+    "title": "Công cụ Mockup Facebook",
+    "viewport_modes": {
+      "desktop": "Desktop",
+      "phone": "Điện thoại",
+      "tablet": "Tablet"
     }
   },
   "finance": {

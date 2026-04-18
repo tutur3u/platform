@@ -14,7 +14,11 @@ export function checkEnvVariables({
   url: string;
   key: string;
 } {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url =
+    typeof window === 'undefined'
+      ? (process.env.SUPABASE_SERVER_URL ??
+        process.env.NEXT_PUBLIC_SUPABASE_URL)
+      : process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = useSecretKey
     ? process.env.SUPABASE_SECRET_KEY
     : process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

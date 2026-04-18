@@ -28,6 +28,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Flutter L10n Regeneration**: After adding or renaming keys in `apps/mobile/lib/l10n/arb/*.arb`, run `flutter gen-l10n` before `flutter analyze` or tests. The generated `app_localizations*.dart` files are tracked here, and stale generated code will surface as undefined localization getters even when the ARB files are correct.
 - **UI Preflight Hygiene**: For newly added/edited files, format files with `bun ff` before running verification checks to avoid `biome` issues.
 - **Formatting Workflow**: For fixing formatting issues, try `bun ff` first before making manual edits.
+- **Documentation Follow-Through**: At the end of every session, document durable operational, architectural, deployment, or workflow knowledge in `apps/docs` whenever the work changes how the team should build, run, debug, deploy, or operate the system. Do not stop at code changes alone.
 - **Session Retrospective**: Conduct a retrospective at the end of every session to document mistakes and update these guidelines.
 
 ## 3. Repository Structure & Semantics
@@ -73,7 +74,9 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 
 ### 4.4 Documentation
 
-- New pages MUST be added to `apps/docs/mint.json` or they will not be visible.
+- Changes that introduce or materially change team-facing knowledge MUST be reflected in `apps/docs` within the same session.
+- Prefer updating an existing runbook/page when the knowledge belongs there; create a new page only when the topic does not fit the current docs structure.
+- New pages MUST be added to `apps/docs/docs.json` or they will not be visible.
 
 ### 4.5 Adding Dependencies
 
@@ -110,6 +113,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Supabase Typegen Requires Applied Migrations**: After adding or changing a Supabase migration that affects schema types, apply it to the local database with `bun sb:up` before running `bun sb:typegen`. The generator reads the live local schema, not unapplied SQL files, so skipping the local apply step leaves generated types stale.
 - **Supabase Typegen Redirect Truncation**: Before running `bun sb:typegen`, confirm the local Docker/Supabase stack is actually reachable. The script redirects generator output straight into `packages/types/src/supabase.ts`, so if the generator fails before producing content, the file can be truncated to zero bytes and break unrelated type-checks until it is restored.
 - **Supabase Helper ReturnType Can Erase Table Inference**: Do not define helper client aliases as `Awaited<ReturnType<typeof createAdminClient>>` or similar generic `ReturnType` wrappers around Supabase client factories. That loses the concrete `Database` binding in some call sites and turns `.from(...)` rows into `never`. Use `TypedSupabaseClient` (or cast the awaited helper result to it) for shared admin/request client parameters instead.
+- **Admin Routes Must Not Use Service-Role Clients For `auth.uid()`-Guarded RPCs**: If a `SECURITY DEFINER` RPC still validates `auth.uid()` internally, call it with the authenticated request-scoped Supabase client after permission checks, not `createAdminClient()`. Service-role clients bypass RLS but do not carry the caller session, so these RPCs fail with `Unauthorized` even for properly authorized admins.
 - **Trigger Hardening Must Rewrite DDL Checks Too**: If you tighten text or payload limits with a trigger/helper migration, also rebuild the underlying `CHECK` constraints for those columns. Leaving legacy `char_length`/`octet_length` constraints in place means Supabase table definitions still advertise and enforce stale loose limits even though the trigger looks strict.
 - **Workspace-Member Cleanup Triggers Need SECURITY DEFINER**: If a `workspace_members` trigger updates another protected workspace table (for example clearing `task_projects.lead_id` on member delete), define the trigger function with `SECURITY DEFINER` and `SET search_path = public`. Invoker-security trigger functions can fail with `permission denied` during member removal even when the outer delete itself is allowed.
 - **Workspace-Scoped Mutation Follow-Through**: For workspace-scoped `UPDATE`/`DELETE` API handlers, request returning rows (`select(...).maybeSingle()` or equivalent) and stop follow-up side effects when no row matched; never run dependent child-table deletes/updates based only on a requested ID.
@@ -374,6 +378,8 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Fixture Paths Must Be File-Relative In Tests**: For package tests that read fixture files, resolve paths from the test file directory (`__dirname` in CommonJS-compatible NodeNext packages) instead of `process.cwd()`. CI often runs from repo root, so cwd-based fixture paths can pass locally and fail in pipelines.
 - **Cross-Platform Path Assertions In Node Tests**: In root `scripts/*.test.js` suites, do not hardcode POSIX-style absolute paths in assertions (for example `/workspace/...`). Build expected paths with `path.resolve`/`path.join` from the same test input so Windows and POSIX runners assert identical behavior.
 - **Self-Hosted Service Dockerfiles Should Be Multi-Stage**: For small helper services (for example proxy/unzip workers), use a multi-stage Dockerfile that installs dependencies in one stage and copies only runtime artifacts into the final image. Do not ship single-stage images that keep the full install/build context by default.
+- **Monorepo Docker Dependency Layers Must Copy Every Workspace Manifest And File Dependency First**: In Bun/Turbo monorepos, dependency stages must copy the root manifests, every workspace `apps/*/package.json` and `packages/*/package.json`, and any local `file:` dependency assets referenced by those manifests before `bun install`. If a workspace or vendored file-backed dependency is added, update the Docker copy list and keep the parity check script green in the same patch.
+- **Docker Workflow Changes Need Script Checks And CI Coverage**: When changing `apps/web/Dockerfile`, `docker-compose.web.yml`, or `scripts/docker-web.js`, keep BuildKit enabled in the helper environment, maintain script-level parity tests for cache mounts/stage wiring, and add or update GitHub Actions coverage that runs those checks plus `docker compose config` and representative image builds.
 
 ## 7. Continuous Improvement (Session Retrospective)
 
@@ -382,6 +388,7 @@ At the **END** of every session, you MUST:
 1. Review mistakes, edge cases, or ambiguities encountered.
 2. Update `AGENTS.md` with durable standards/rules (no chronological logs).
 3. Eliminate redundancy—ensure new knowledge isn't already covered by specialized skills.
-4. Propose future improvements to the human partner.
+4. Update `apps/docs` with any durable team-facing knowledge uncovered or changed during the session.
+5. Propose future improvements to the human partner.
 
 - **Proxy Abuse Test Hygiene**: When hardening API proxy abuse controls, tests must explicitly model anonymous vs authenticated callers (headers/cookies/user-agent) and freeze time with fake timers for block-window assertions. Otherwise CI can miss false positives or time-window regressions.
