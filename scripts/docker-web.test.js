@@ -24,6 +24,7 @@ const {
   usesBlueGreenStrategy,
   writeBlueGreenActiveColor,
 } = require('./docker-web.js');
+const { getWatchPaths } = require('./watch-blue-green/paths.js');
 
 function createFsStub({ envFileContent = '', hasEnvFile = true } = {}) {
   return {
@@ -755,7 +756,14 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
     );
 
     const paths = getBlueGreenPaths(tempDir);
+    const watchPaths = getWatchPaths(tempDir);
     assert.equal(readBlueGreenActiveColor(paths), 'blue');
+    const history = JSON.parse(
+      fs.readFileSync(watchPaths.historyFile, 'utf8')
+    );
+    assert.equal(history.length, 1);
+    assert.equal(history[0].status, 'successful');
+    assert.equal(history[0].activeColor, 'blue');
     assert.match(
       fs.readFileSync(paths.proxyConfigFile, 'utf8'),
       /server web-blue:7803 resolve max_fails=1 fail_timeout=5s;/

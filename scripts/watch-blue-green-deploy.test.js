@@ -210,7 +210,7 @@ test('buildDashboardView shows blue/green runtime and the last 3 deployments', (
   assert.match(plainOutput, /day 54 req/);
   assert.match(plainOutput, /davg 88\.4\/day/);
   assert.match(plainOutput, /dpeak 120\/day/);
-  assert.match(plainOutput, /Last 3 Deployments/);
+  assert.match(plainOutput, /Last 5 Deployments/);
   assert.match(plainOutput, /┌/);
   assert.match(plainOutput, /\[18:10:00\]/);
   assert.match(plainOutput, /ACTIVE/);
@@ -459,7 +459,7 @@ test('isProcessAlive handles missing and inaccessible processes safely', () => {
   );
 });
 
-test('appendDeploymentHistory closes the prior active deployment and keeps only the last 3 entries', () => {
+test('appendDeploymentHistory closes the prior active deployment and keeps only the last 5 entries', () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-history-'));
   const paths = getWatchPaths(tempDir);
 
@@ -527,14 +527,46 @@ test('appendDeploymentHistory closes the prior active deployment and keeps only 
         paths,
       }
     );
+    appendDeploymentHistory(
+      {
+        buildDurationMs: 8_000,
+        commitShortHash: 'e5',
+        commitSubject: 'five',
+        finishedAt: 5000,
+        startedAt: 4500,
+        status: 'failed',
+      },
+      {
+        fsImpl: fs,
+        paths,
+      }
+    );
+    appendDeploymentHistory(
+      {
+        activatedAt: 6000,
+        activeColor: 'green',
+        buildDurationMs: 20_000,
+        commitShortHash: 'f6',
+        commitSubject: 'six',
+        finishedAt: 6000,
+        startedAt: 5500,
+        status: 'successful',
+      },
+      {
+        fsImpl: fs,
+        paths,
+      }
+    );
 
     const history = readDeploymentHistory(paths, fs);
 
     assert.equal(history.length, MAX_DEPLOYMENTS);
-    assert.equal(history[0].commitShortHash, 'd4');
-    assert.equal(history[1].commitShortHash, 'c3');
-    assert.equal(history[2].commitShortHash, 'b2');
-    assert.equal(history[2].endedAt, 4000);
+    assert.equal(history[0].commitShortHash, 'f6');
+    assert.equal(history[1].commitShortHash, 'e5');
+    assert.equal(history[2].commitShortHash, 'd4');
+    assert.equal(history[3].commitShortHash, 'c3');
+    assert.equal(history[4].commitShortHash, 'b2');
+    assert.equal(history[4].endedAt, 4000);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

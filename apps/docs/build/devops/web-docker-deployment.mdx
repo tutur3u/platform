@@ -193,6 +193,10 @@ Additional behavior:
 - Standby catch-up rebuilds reuse the current deployment stamp so the warm
   backup matches the latest deployment state instead of serving an older build
   if nginx needs to fail over.
+- The watcher dashboard keeps the latest 5 deployments, and direct manual
+  `bun serve:web:docker:bg` runs are written into that same history so the
+  recent deployments list stays complete even when a rollout did not come from
+  the watcher.
 
 ## Build Resource Caps
 

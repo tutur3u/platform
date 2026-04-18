@@ -18,26 +18,31 @@ const {
   runChecked,
   runCommand,
 } = require('./docker-web/compose.js');
-
-const ROOT_DIR = path.resolve(__dirname, '..');
+const {
+  ROOT_DIR,
+  WATCH_HISTORY_FILE,
+  WATCH_LOCK_FILE,
+  WATCH_RUNTIME_DIR,
+  getWatchPaths,
+} = require('./watch-blue-green/paths.js');
+const {
+  MAX_DEPLOYMENTS,
+  SKIP_WATCH_HISTORY_ENV,
+  appendDeploymentHistory,
+  createPendingDeploymentEntry,
+  getLatestDeploymentSummary,
+  prependPendingDeployment,
+  readDeploymentHistory,
+  writeDeploymentHistory,
+} = require('./watch-blue-green/history.js');
 const DEFAULT_INTERVAL_MS = 1_000;
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
 const DEFAULT_STANDBY_REFRESH_AFTER_MS = 15 * 60_000;
-const MAX_DEPLOYMENTS = 3;
 const MAX_EVENTS = 8;
 const BLUE_GREEN_COLORS = ['blue', 'green'];
 const PROD_COMPOSE_FILE = getComposeFile('prod');
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const SELF_WATCHED_FILES = [path.relative(ROOT_DIR, __filename)];
-const WATCH_RUNTIME_DIR = path.join(ROOT_DIR, 'tmp', 'docker-web', 'watch');
-const WATCH_LOCK_FILE = path.join(
-  WATCH_RUNTIME_DIR,
-  'blue-green-auto-deploy.lock'
-);
-const WATCH_HISTORY_FILE = path.join(
-  WATCH_RUNTIME_DIR,
-  'blue-green-auto-deploy.history.json'
-);
 const WATCH_PENDING_DEPLOY_ENV = 'WATCHER_PENDING_BLUE_GREEN_DEPLOY';
 const ANSI = {
   blue: '\x1b[34m',
@@ -90,17 +95,6 @@ function parseArgs(argv) {
   return {
     intervalMs,
     once,
-  };
-}
-
-function getWatchPaths(rootDir = ROOT_DIR) {
-  const runtimeDir = path.join(rootDir, 'tmp', 'docker-web', 'watch');
-
-  return {
-    blueGreen: getBlueGreenPaths(rootDir),
-    historyFile: path.join(runtimeDir, 'blue-green-auto-deploy.history.json'),
-    lockFile: path.join(runtimeDir, 'blue-green-auto-deploy.lock'),
-    runtimeDir,
   };
 }
 
@@ -642,7 +636,7 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
     formatRow('Lock file', state.lockFile ?? colorize('dim', 'not acquired')),
     '',
     separator,
-    colorize('bold', 'Last 3 Deployments'),
+    colorize('bold', `Last ${MAX_DEPLOYMENTS} Deployments`),
     ...deployments,
     '',
     separator,
@@ -654,65 +648,6 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
       'Press Ctrl+C to stop. The watcher will restart itself if this script changes after a pull.'
     ),
   ].join('\n');
-}
-
-function getLatestDeploymentSummary(deployments = []) {
-  const latestDeployment = deployments[0];
-
-  if (!latestDeployment) {
-    return {
-      lastDeployAt: null,
-      lastDeployStatus: null,
-    };
-  }
-
-  return {
-    lastDeployAt:
-      latestDeployment.finishedAt ??
-      latestDeployment.activatedAt ??
-      latestDeployment.startedAt ??
-      null,
-    lastDeployStatus:
-      latestDeployment.status === 'failed'
-        ? 'failed'
-        : latestDeployment.status === 'building' ||
-            latestDeployment.status === 'deploying'
-          ? latestDeployment.status
-          : 'successful',
-  };
-}
-
-function createPendingDeploymentEntry({
-  activeColor = null,
-  deploymentKind = 'promotion',
-  latestCommit = null,
-  startedAt,
-  status = 'deploying',
-} = {}) {
-  return {
-    activeColor,
-    buildDurationMs: null,
-    commitHash: latestCommit?.hash ?? null,
-    commitShortHash: latestCommit?.shortHash ?? null,
-    commitSubject: latestCommit?.subject ?? null,
-    deploymentKind,
-    startedAt,
-    status,
-  };
-}
-
-function prependPendingDeployment(deployments, pendingDeployment) {
-  return [
-    pendingDeployment,
-    ...(deployments ?? []).filter(
-      (entry) =>
-        !(
-          pendingDeployment.commitHash &&
-          entry.commitHash === pendingDeployment.commitHash &&
-          (entry.status === 'building' || entry.status === 'deploying')
-        )
-    ),
-  ].slice(0, MAX_DEPLOYMENTS);
 }
 
 function hasPendingDeployRequest(env = process.env) {
@@ -1006,57 +941,6 @@ function releaseWatchLock({
   fsImpl.rmSync(paths.lockFile, { force: true });
 }
 
-function readDeploymentHistory(paths = getWatchPaths(), fsImpl = fs) {
-  if (!fsImpl.existsSync(paths.historyFile)) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(fsImpl.readFileSync(paths.historyFile, 'utf8'));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeDeploymentHistory(history, paths = getWatchPaths(), fsImpl = fs) {
-  fsImpl.mkdirSync(paths.runtimeDir, { recursive: true });
-  fsImpl.writeFileSync(
-    paths.historyFile,
-    JSON.stringify(history, null, 2),
-    'utf8'
-  );
-}
-
-function appendDeploymentHistory(
-  entry,
-  { fsImpl = fs, paths = getWatchPaths() } = {}
-) {
-  const history = readDeploymentHistory(paths, fsImpl);
-  const nextHistory = history.map((existing, index) => {
-    if (
-      entry.status === 'successful' &&
-      entry.deploymentKind !== 'standby-refresh' &&
-      index >= 0 &&
-      existing.status === 'successful' &&
-      !existing.endedAt
-    ) {
-      return {
-        ...existing,
-        endedAt: entry.activatedAt ?? entry.finishedAt ?? entry.startedAt,
-      };
-    }
-
-    return existing;
-  });
-
-  nextHistory.unshift(entry);
-
-  const trimmed = nextHistory.slice(0, MAX_DEPLOYMENTS);
-  writeDeploymentHistory(trimmed, paths, fsImpl);
-  return trimmed;
-}
-
 function getRuntimeDeployment(deployments, runtimeState) {
   return (deployments ?? []).find(
     (entry) => entry.runtimeState === runtimeState
@@ -1188,7 +1072,10 @@ async function runBlueGreenDeploy({
 } = {}) {
   const [command, ...args] = deployCommand;
   await runChecked(command, args, {
-    env,
+    env: {
+      ...(env ?? process.env),
+      [SKIP_WATCH_HISTORY_ENV]: '1',
+    },
     runCommand: run,
   });
 }

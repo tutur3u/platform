@@ -56,8 +56,43 @@ const {
   DEFAULT_BUILDER_NAME,
   ensureBuildkitBuilder,
 } = require('./docker-web/buildkit-builder.js');
+const {
+  SKIP_WATCH_HISTORY_ENV,
+  appendDeploymentHistory,
+} = require('./watch-blue-green/history.js');
+const { getWatchPaths } = require('./watch-blue-green/paths.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
+
+async function getCurrentGitCommitMetadata({
+  env,
+  runCommand: run = runCommand,
+} = {}) {
+  try {
+    const result = await runChecked(
+      'git',
+      ['log', '-1', '--format=%H%n%h%n%s'],
+      {
+        env,
+        runCommand: run,
+        stdio: 'pipe',
+      }
+    );
+    const [hash, shortHash, subject] = result.stdout.trim().split('\n');
+
+    return {
+      hash: hash || null,
+      shortHash: shortHash || null,
+      subject: subject || null,
+    };
+  } catch {
+    return {
+      hash: null,
+      shortHash: null,
+      subject: null,
+    };
+  }
+}
 
 function parseArgs(argv) {
   const args = [...argv];
@@ -322,16 +357,70 @@ async function runDockerWebWorkflow(parsed, options = {}) {
   }
 
   if (usesBlueGreenStrategy(parsed)) {
-    await runBlueGreenProdWorkflow(parsed, {
-      drainPollMs: options.drainPollMs,
-      drainTimeoutMs: options.drainTimeoutMs,
+    const deployStartedAt = Date.now();
+    const latestCommit = await getCurrentGitCommitMetadata({
       env,
-      envFilePath: options.envFilePath,
-      fsImpl,
-      proxyDrainMs: options.proxyDrainMs,
-      rootDir: options.rootDir,
       runCommand: run,
     });
+
+    try {
+      await runBlueGreenProdWorkflow(parsed, {
+        drainPollMs: options.drainPollMs,
+        drainTimeoutMs: options.drainTimeoutMs,
+        env,
+        envFilePath: options.envFilePath,
+        fsImpl,
+        proxyDrainMs: options.proxyDrainMs,
+        rootDir: options.rootDir,
+        runCommand: run,
+      });
+
+      if (env[SKIP_WATCH_HISTORY_ENV] !== '1') {
+        const deployFinishedAt = Date.now();
+        const blueGreenPaths = getBlueGreenPaths(options.rootDir ?? ROOT_DIR);
+
+        appendDeploymentHistory(
+          {
+            activatedAt: deployFinishedAt,
+            activeColor: readBlueGreenActiveColor(blueGreenPaths, fsImpl),
+            buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            finishedAt: deployFinishedAt,
+            startedAt: deployStartedAt,
+            status: 'successful',
+          },
+          {
+            fsImpl,
+            paths: getWatchPaths(options.rootDir ?? ROOT_DIR),
+          }
+        );
+      }
+    } catch (error) {
+      if (env[SKIP_WATCH_HISTORY_ENV] !== '1') {
+        const deployFinishedAt = Date.now();
+
+        appendDeploymentHistory(
+          {
+            buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            finishedAt: deployFinishedAt,
+            startedAt: deployStartedAt,
+            status: 'failed',
+          },
+          {
+            fsImpl,
+            paths: getWatchPaths(options.rootDir ?? ROOT_DIR),
+          }
+        );
+      }
+
+      throw error;
+    }
+
     return;
   }
 
