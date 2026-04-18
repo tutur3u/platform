@@ -124,8 +124,13 @@ Blue/green deploy does this:
 2. Ignores that state if the corresponding container no longer exists.
 3. Builds and starts the inactive color.
 4. Waits for the new container healthcheck to pass.
-5. Reloads the stable `web-proxy` nginx service on port `7803`.
-6. Stops the old color after traffic has moved.
+5. Keeps the stable `web-proxy` container running in place during ordinary
+   promotions instead of re-running `compose up` against the public `:7803`
+   listener.
+6. Reloads nginx inside that existing proxy only after the new color is healthy.
+7. Immediately verifies the proxy can serve `/api/health` through the newly
+   promoted color before retiring the old one.
+8. Stops the old color after traffic has moved.
 
 The stable nginx proxy also raises its request-header buffer limits so larger
 session/auth cookies do not fail at the proxy layer with `400 Request Header Or
@@ -247,6 +252,9 @@ Dashboard details:
 
 - Shows the current active blue/green color when `web-proxy` is serving live
   traffic.
+- Normal promotions keep the long-lived `web-proxy` container and bound port
+  stable, which avoids transient listener drops for upstreams such as
+  Cloudflare Tunnel that are connected to `:7803`.
 - Persists and renders the last 3 auto-deployments as stacked terminal cards
   that favor vertical scanability over very wide lines.
 - Each deployment block includes:

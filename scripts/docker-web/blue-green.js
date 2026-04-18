@@ -127,10 +127,19 @@ function writeBlueGreenProxyConfig(
 }
 
 function getBlueGreenProdServices(parsed, targetColor) {
-  const services = [
-    BLUE_GREEN_PROXY_SERVICE,
-    getBlueGreenServiceName(targetColor),
-  ];
+  return getBlueGreenProdServicesWithProxyOption(parsed, targetColor, true);
+}
+
+function getBlueGreenProdServicesWithProxyOption(
+  parsed,
+  targetColor,
+  includeProxy = true
+) {
+  const services = [getBlueGreenServiceName(targetColor)];
+
+  if (includeProxy) {
+    services.unshift(BLUE_GREEN_PROXY_SERVICE);
+  }
 
   if (hasComposeProfile(parsed.composeGlobalArgs, 'redis')) {
     services.push('redis', 'serverless-redis-http');
@@ -156,6 +165,33 @@ async function reloadBlueGreenProxy({
       'nginx',
       '-s',
       'reload'
+    ),
+    {
+      env,
+      runCommand: run,
+    }
+  );
+}
+
+async function testBlueGreenProxyRouting({
+  composeFile,
+  composeGlobalArgs = [],
+  env,
+  runCommand: run,
+}) {
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'exec',
+      '-T',
+      BLUE_GREEN_PROXY_SERVICE,
+      'wget',
+      '-q',
+      '-O',
+      '/dev/null',
+      'http://127.0.0.1:7803/api/health'
     ),
     {
       env,
@@ -206,8 +242,19 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
   });
   const targetColor = getNextBlueGreenColor(activeColor);
   const initialProxyColor = activeColor ?? targetColor;
+  const needsProxyBootstrap = !(await hasComposeServiceContainer(
+    BLUE_GREEN_PROXY_SERVICE,
+    {
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env,
+      runCommand: run,
+    }
+  ));
 
-  writeBlueGreenProxyConfig(initialProxyColor, { fsImpl, paths });
+  if (needsProxyBootstrap) {
+    writeBlueGreenProxyConfig(initialProxyColor, { fsImpl, paths });
+  }
 
   await stopComposeServicesIfPresent(['web'], {
     composeFile,
@@ -226,7 +273,11 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       '--detach',
       '--remove-orphans',
       ...parsed.composeArgs,
-      ...getBlueGreenProdServices(parsed, targetColor)
+      ...getBlueGreenProdServicesWithProxyOption(
+        parsed,
+        targetColor,
+        needsProxyBootstrap
+      )
     ),
     {
       env,
@@ -242,6 +293,15 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     runCommand: run,
   });
 
+  if (needsProxyBootstrap) {
+    await waitForComposeServiceHealthy(BLUE_GREEN_PROXY_SERVICE, {
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env,
+      runCommand: run,
+    });
+  }
+
   if (initialProxyColor !== targetColor) {
     writeBlueGreenProxyConfig(targetColor, { fsImpl, paths });
     await reloadBlueGreenProxy({
@@ -251,6 +311,13 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       runCommand: run,
     });
   }
+
+  await testBlueGreenProxyRouting({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env,
+    runCommand: run,
+  });
 
   writeBlueGreenActiveColor(targetColor, paths, fsImpl);
 
@@ -283,6 +350,7 @@ module.exports = {
   ensureBlueGreenRuntime,
   getBlueGreenPaths,
   getBlueGreenProdServices,
+  getBlueGreenProdServicesWithProxyOption,
   getBlueGreenServiceName,
   getNextBlueGreenColor,
   isBlueGreenColor,
@@ -291,6 +359,7 @@ module.exports = {
   renderBlueGreenProxyConfig,
   resolveBlueGreenActiveColor,
   runBlueGreenProdWorkflow,
+  testBlueGreenProxyRouting,
   writeBlueGreenActiveColor,
   writeBlueGreenProxyConfig,
 };

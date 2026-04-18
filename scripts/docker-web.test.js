@@ -664,6 +664,7 @@ test('runDockerWebWorkflow auto-generates redis credentials for production docke
 
 test('runDockerWebWorkflow performs an initial blue-green deployment', async () => {
   const calls = [];
+  let webProxyPsCalls = 0;
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'docker-web-bg-initial-')
   );
@@ -680,6 +681,16 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
 
     if (args.includes('ps') && args.at(-1) === 'web') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === BLUE_GREEN_PROXY_SERVICE) {
+      webProxyPsCalls += 1;
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: webProxyPsCalls === 1 ? '' : 'proxy-123\n',
+      };
     }
 
     if (args.includes('ps') && args.at(-1) === 'web-blue') {
@@ -710,19 +721,17 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
       fs.readFileSync(paths.proxyConfigFile, 'utf8'),
       /proxy_pass http:\/\/web-blue:7803;/
     );
-    assert.deepEqual(calls[1], [
-      'docker',
-      [
-        'compose',
-        '-f',
-        PROD_COMPOSE_FILE,
-        '--profile',
-        'redis',
-        'ps',
-        '-q',
-        'web',
-      ],
-    ]);
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args[1] === '-f' &&
+          args[2] === PROD_COMPOSE_FILE &&
+          args.includes('ps') &&
+          args.at(-1) === 'web'
+      )
+    );
     assert.ok(
       calls.some(
         ([command, args]) =>
@@ -733,6 +742,16 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
           args.includes('up') &&
           args.includes(BLUE_GREEN_PROXY_SERVICE) &&
           args.includes('web-blue')
+      )
+    );
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args.includes('exec') &&
+          args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+          args.includes('wget') &&
+          args.includes('http://127.0.0.1:7803/api/health')
       )
     );
   } finally {
@@ -760,6 +779,10 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
 
     if (args.includes('ps') && args.at(-1) === 'web') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === BLUE_GREEN_PROXY_SERVICE) {
+      return { code: 0, signal: null, stderr: '', stdout: 'proxy-123\n' };
     }
 
     if (args.includes('ps') && args.at(-1) === 'web-green') {
@@ -793,6 +816,16 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
       fs.readFileSync(paths.proxyConfigFile, 'utf8'),
       /proxy_pass http:\/\/web-green:7803;/
     );
+    const promotionUpCall = calls.find(
+      ([command, args]) =>
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args[1] === '-f' &&
+        args[2] === PROD_COMPOSE_FILE &&
+        args.includes('up')
+    );
+    assert.ok(promotionUpCall);
+    assert.ok(!promotionUpCall[1].includes(BLUE_GREEN_PROXY_SERVICE));
     assert.ok(
       calls.some(
         ([command, args]) =>
@@ -800,6 +833,16 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
           args.includes('exec') &&
           args.includes(BLUE_GREEN_PROXY_SERVICE) &&
           args.includes('reload')
+      )
+    );
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args.includes('exec') &&
+          args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+          args.includes('wget') &&
+          args.includes('http://127.0.0.1:7803/api/health')
       )
     );
     assert.ok(
@@ -827,6 +870,7 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
 test('runDockerWebWorkflow ignores stale active colors without live containers', async () => {
   const calls = [];
   let webBluePsCalls = 0;
+  let webProxyPsCalls = 0;
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'docker-web-bg-stale-')
   );
@@ -845,6 +889,16 @@ test('runDockerWebWorkflow ignores stale active colors without live containers',
 
     if (args.includes('ps') && args.at(-1) === 'web') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === BLUE_GREEN_PROXY_SERVICE) {
+      webProxyPsCalls += 1;
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: webProxyPsCalls === 1 ? '' : 'proxy-123\n',
+      };
     }
 
     if (args.includes('ps') && args.at(-1) === 'web-blue') {
