@@ -377,7 +377,7 @@ async function testBlueGreenProxyRouting({
       '-q',
       '-O',
       '/dev/null',
-      'http://127.0.0.1:7803/api/health'
+      `http://127.0.0.1:7803${BLUE_GREEN_DRAIN_STATUS_PATH}`
     ),
     {
       env,

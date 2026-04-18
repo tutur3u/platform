@@ -41,6 +41,10 @@ const MAX_EVENTS = 8;
 const BLUE_GREEN_COLORS = ['blue', 'green'];
 const PROD_COMPOSE_FILE = getComposeFile('prod');
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
+const INTERNAL_PROXY_METRIC_EXCLUDE_PATHS = new Set([
+  '/api/health',
+  '/__platform/drain-status',
+]);
 const SELF_WATCHED_FILES = [path.relative(ROOT_DIR, __filename)];
 const WATCH_PENDING_DEPLOY_ENV = 'WATCHER_PENDING_BLUE_GREEN_DEPLOY';
 const ANSI = {
@@ -1389,7 +1393,7 @@ function summarizeRequestRate(entries, startTime, endTime) {
   let requestCount = 0;
 
   for (const entry of entries) {
-    if (entry.path === '/api/health') {
+    if (INTERNAL_PROXY_METRIC_EXCLUDE_PATHS.has(entry.path)) {
       continue;
     }
 

@@ -130,8 +130,10 @@ Blue/green deploy does this:
    listener.
 6. Validates the generated nginx config with `nginx -t`, then reloads nginx
    inside that existing proxy only after the new color is healthy.
-7. Immediately verifies the proxy can serve `/api/health` through the newly
-   promoted color before marking the new color active.
+7. Immediately verifies the proxy can serve the internal
+   `/__platform/drain-status` endpoint through the newly promoted color before
+   marking the new color active. This avoids false deployment failures from
+   public API middleware or rate limits.
 8. Polls an internal drain-status endpoint on the old color and waits until it
    has no in-flight HTTP work left before demoting it to standby. This keeps
    long-running server actions, route handlers, and other open requests from
@@ -307,8 +309,8 @@ Behavior:
    exits first.
 11. The replacement watcher refreshes the live `web-proxy` nginx config and
    workers in place if blue/green is already serving traffic, verifies proxy
-   routing through `/api/health`, and only then starts the new blue/green
-   build/promotion.
+   routing through `/__platform/drain-status`, and only then starts the new
+   blue/green build/promotion.
 12. Stops immediately if the checked-out branch changes while the watcher is
     running.
 
@@ -342,8 +344,9 @@ Dashboard details:
   metrics so the dashboard is easier to scan quickly.
 - Request counters are derived from the local `web-proxy` container logs, so
   they stay self-hosted and do not require any external analytics service.
-- Internal proxy health checks for `/api/health` are excluded from the request
-  totals so the numbers reflect real served traffic more closely.
+- Internal proxy health checks for `/api/health` and
+  `/__platform/drain-status` are excluded from the request totals so the
+  numbers reflect real served traffic more closely.
 - The watcher uses the same Docker runtime env resolution as the real deploy
   flow, so blue/green status probes still work when the Redis profile is part
   of the production compose file.

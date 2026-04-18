@@ -800,7 +800,7 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
           args.includes('exec') &&
           args.includes(BLUE_GREEN_PROXY_SERVICE) &&
           args.includes('wget') &&
-          args.includes('http://127.0.0.1:7803/api/health')
+          args.includes('http://127.0.0.1:7803/__platform/drain-status')
       )
     );
   } finally {
@@ -995,7 +995,7 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
           args.includes('exec') &&
           args.includes(BLUE_GREEN_PROXY_SERVICE) &&
           args.includes('wget') &&
-          args.includes('http://127.0.0.1:7803/api/health')
+          args.includes('http://127.0.0.1:7803/__platform/drain-status')
       )
     );
     assert.ok(

@@ -742,7 +742,10 @@ test('summarizeRequestRate computes total, per-minute, and per-day traffic stats
       { path: '/', time: Date.parse('2026-04-19T11:01:10.000Z') },
       { path: '/about', time: Date.parse('2026-04-19T11:01:20.000Z') },
       { path: '/about', time: Date.parse('2026-04-19T11:02:10.000Z') },
-      { path: '/api/health', time: Date.parse('2026-04-19T11:02:20.000Z') },
+      {
+        path: '/__platform/drain-status',
+        time: Date.parse('2026-04-19T11:02:20.000Z'),
+      },
     ],
     startTime,
     endTime
@@ -1325,7 +1328,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         createResult(''),
       ],
       [
-        `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/api/health`,
+        `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`,
         createResult(''),
       ],
     ]);
@@ -1470,7 +1473,7 @@ test('runPendingDeployAfterRestart refreshes the live proxy before running blue/
 
         if (
           key ===
-          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/api/health`
+          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`
         ) {
           return createResult('');
         }
@@ -1492,7 +1495,7 @@ test('runPendingDeployAfterRestart refreshes the live proxy before running blue/
       prodComposePsKey('web-blue'),
       `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -t`,
       `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload`,
-      `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/api/health`,
+      `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`,
       `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`,
     ]);
     assert.equal(result.refreshedProxy, true);
