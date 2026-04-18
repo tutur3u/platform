@@ -38,6 +38,7 @@ const {
   summarizeRequestRate,
   getLatestDeploymentSummary,
   writeDeploymentHistory,
+  loadRuntimeSnapshot,
 } = require('./watch-blue-green-deploy.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
@@ -703,6 +704,10 @@ test('resolveCurrentBlueGreenStatus reflects the active color and running servic
           return createResult('green-123\n');
         }
 
+        if (key === prodComposePsKey('web-blue')) {
+          return createResult('blue-123\n');
+        }
+
         throw new Error(`Unexpected command: ${key}`);
       },
     });
@@ -710,13 +715,112 @@ test('resolveCurrentBlueGreenStatus reflects the active color and running servic
     assert.deepEqual(status, {
       activeColor: 'green',
       activeServiceRunning: true,
+      liveColors: ['blue', 'green'],
       proxyRunning: true,
       state: 'serving',
+      standbyColor: 'blue',
     });
     assert.equal(receivedEnvs[0].UPSTASH_REDIS_REST_TOKEN.length, 64);
     assert.equal(
       receivedEnvs[0].SUPABASE_SERVER_URL,
       'http://host.docker.internal:8001/'
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('loadRuntimeSnapshot keeps both live colors marked active in deployment cards', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-runtime-live-'));
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
+
+    const now = Date.parse('2026-04-18T11:30:00.000Z');
+    const snapshot = await loadRuntimeSnapshot({
+      envFilePath,
+      fsImpl: fs,
+      history: [
+        {
+          activatedAt: Date.parse('2026-04-18T11:00:00.000Z'),
+          activeColor: 'green',
+          buildDurationMs: 30_000,
+          commitShortHash: 'bbb222',
+          commitSubject: 'current',
+          finishedAt: Date.parse('2026-04-18T11:00:00.000Z'),
+          startedAt: Date.parse('2026-04-18T10:59:30.000Z'),
+          status: 'successful',
+        },
+        {
+          activatedAt: Date.parse('2026-04-18T10:30:00.000Z'),
+          activeColor: 'blue',
+          buildDurationMs: 25_000,
+          commitShortHash: 'aaa111',
+          commitSubject: 'previous',
+          endedAt: Date.parse('2026-04-18T11:00:00.000Z'),
+          finishedAt: Date.parse('2026-04-18T10:30:00.000Z'),
+          startedAt: Date.parse('2026-04-18T10:29:35.000Z'),
+          status: 'successful',
+        },
+      ],
+      now,
+      paths,
+      rootDir: tempDir,
+      runCommand: createRunCommandMock(
+        new Map([
+          [
+            prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
+            createResult('proxy-123\n'),
+          ],
+          [prodComposePsKey('web-green'), createResult('green-123\n')],
+          [prodComposePsKey('web-blue'), createResult('blue-123\n')],
+          [
+            'docker logs --timestamps --since 2026-04-18T10:30:00.000Z proxy-123',
+            createResult(''),
+          ],
+        ])
+      ),
+    });
+
+    assert.equal(snapshot.deployments[0].runtimeState, 'active');
+    assert.equal(snapshot.deployments[1].runtimeState, 'standby');
+    assert.match(
+      stripAnsi(
+        buildDashboardView(
+          {
+            currentBlueGreen: snapshot.currentBlueGreen,
+            deployments: snapshot.deployments,
+            events: [],
+            intervalMs: DEFAULT_INTERVAL_MS,
+            lastDeployAt: now,
+            lastDeployStatus: 'successful',
+            lastResult: { status: 'up-to-date' },
+            latestCommit: {
+              committedAt: now,
+              hash: 'bbb222222',
+              shortHash: 'bbb222',
+              subject: 'current',
+            },
+            lockFile: '/tmp/watch.lock',
+            startedAt: now - 30_000,
+            target: {
+              branch: 'main',
+              upstreamRef: 'origin/main',
+            },
+          },
+          { now, width: 100 }
+        )
+      ),
+      /ACTIVE green[\s\S]*ACTIVE blue/
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });

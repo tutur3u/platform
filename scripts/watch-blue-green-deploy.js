@@ -23,6 +23,7 @@ const DEFAULT_INTERVAL_MS = 1_000;
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
 const MAX_DEPLOYMENTS = 3;
 const MAX_EVENTS = 8;
+const BLUE_GREEN_COLORS = ['blue', 'green'];
 const PROD_COMPOSE_FILE = getComposeFile('prod');
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const SELF_WATCHED_FILES = [path.relative(ROOT_DIR, __filename)];
@@ -448,8 +449,9 @@ function buildDeploymentTable(
   const middleBorder = colorize('dim', `├${'─'.repeat(innerWidth + 2)}┤`);
   const bottomBorder = colorize('dim', `└${'─'.repeat(innerWidth + 2)}┘`);
   const rows = deployments.map((entry) => {
-    const status =
-      entry.status === 'failed'
+    const status = entry.runtimeState
+      ? colorize('green', 'ACTIVE')
+      : entry.status === 'failed'
         ? colorize('red', 'FAILED')
         : entry.status === 'building'
           ? colorize('magenta', 'BUILDING')
@@ -1253,6 +1255,7 @@ async function resolveCurrentBlueGreenStatus({
   runCommand: run = runCommand,
 } = {}) {
   const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+  const serviceStates = {};
 
   try {
     const proxyContainerId = await getProdComposeServiceContainerId(
@@ -1274,34 +1277,47 @@ async function resolveCurrentBlueGreenStatus({
       };
     }
 
-    const activeServiceName = activeColor ? `web-${activeColor}` : null;
-    const activeContainerId = activeServiceName
-      ? await getProdComposeServiceContainerId(activeServiceName, {
+    for (const color of BLUE_GREEN_COLORS) {
+      serviceStates[color] = await getProdComposeServiceContainerId(
+        `web-${color}`,
+        {
           env,
           envFilePath,
           fsImpl,
           rootDir,
           runCommand: run,
-        })
-      : '';
+        }
+      );
+    }
+
+    const liveColors = BLUE_GREEN_COLORS.filter((color) =>
+      Boolean(serviceStates[color])
+    );
+    const activeContainerId = activeColor ? serviceStates[activeColor] : '';
+    const standbyColor =
+      liveColors.find((color) => color !== activeColor) ?? null;
 
     return {
       activeColor,
       activeServiceRunning: Boolean(activeContainerId),
+      liveColors,
       proxyRunning: Boolean(proxyContainerId),
+      standbyColor,
       state:
         activeColor && proxyContainerId && activeContainerId
           ? 'serving'
-          : proxyContainerId || activeContainerId || activeColor
+          : proxyContainerId || liveColors.length > 0 || activeColor
             ? 'degraded'
             : 'idle',
     };
   } catch (error) {
     return {
       activeColor,
+      liveColors: [],
       message:
         error instanceof Error ? error.message : 'Unable to inspect blue/green',
       state: 'unknown',
+      standbyColor: null,
     };
   }
 }
@@ -1553,12 +1569,28 @@ async function loadRuntimeSnapshot({
       runCommand: run,
     }
   );
-  const activeDeployment = deployments.find(
-    (entry) =>
+  const liveColors = new Set(currentBlueGreen.liveColors ?? []);
+  const runtimeAwareDeployments = deployments.map((entry) => {
+    const isLive =
       entry.status === 'successful' &&
-      !entry.endedAt &&
-      entry.activeColor &&
-      entry.activeColor === currentBlueGreen.activeColor
+      typeof entry.activeColor === 'string' &&
+      liveColors.has(entry.activeColor);
+
+    return {
+      ...entry,
+      lifetimeMs:
+        isLive && entry.activatedAt
+          ? Math.max(0, now - entry.activatedAt)
+          : entry.lifetimeMs,
+      runtimeState: isLive
+        ? entry.activeColor === currentBlueGreen.activeColor
+          ? 'active'
+          : 'standby'
+        : null,
+    };
+  });
+  const activeDeployment = runtimeAwareDeployments.find(
+    (entry) => entry.runtimeState === 'active'
   );
 
   return {
@@ -1575,7 +1607,7 @@ async function loadRuntimeSnapshot({
           requestCount: activeDeployment.requestCount,
         }
       : currentBlueGreen,
-    deployments,
+    deployments: runtimeAwareDeployments,
   };
 }
 
