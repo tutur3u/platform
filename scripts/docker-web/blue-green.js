@@ -107,6 +107,8 @@ function renderBlueGreenProxyConfig(color) {
     "  '' close;",
     '}',
     '',
+    'resolver 127.0.0.11 ipv6=off valid=5s;',
+    '',
     'upstream web_upstream {',
     '  zone web_upstream 64k;',
     `  server ${primaryServiceName}:7803 resolve max_fails=1 fail_timeout=5s;`,
@@ -118,7 +120,6 @@ function renderBlueGreenProxyConfig(color) {
     '  client_header_buffer_size 16k;',
     '  keepalive_timeout 15s;',
     '  large_client_header_buffers 8 16k;',
-    '  resolver 127.0.0.11 ipv6=off valid=5s;',
     '',
     '  location / {',
     '    proxy_connect_timeout 3s;',
@@ -170,6 +171,30 @@ function getBlueGreenProdServicesWithProxyOption(
   }
 
   return services;
+}
+
+async function validateBlueGreenProxyConfig({
+  composeFile,
+  composeGlobalArgs = [],
+  env,
+  runCommand: run,
+}) {
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'exec',
+      '-T',
+      BLUE_GREEN_PROXY_SERVICE,
+      'nginx',
+      '-t'
+    ),
+    {
+      env,
+      runCommand: run,
+    }
+  );
 }
 
 async function reloadBlueGreenProxy({
@@ -242,6 +267,12 @@ async function refreshBlueGreenProxyIfRunning({
   }
 
   writeBlueGreenProxyConfig(activeColor, { fsImpl, paths });
+  await validateBlueGreenProxyConfig({
+    composeFile,
+    composeGlobalArgs: [],
+    env: composeEnv,
+    runCommand: run,
+  });
   await reloadBlueGreenProxy({
     composeFile,
     composeGlobalArgs: [],
@@ -474,6 +505,12 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
 
   if (initialProxyColor !== targetColor) {
     writeBlueGreenProxyConfig(targetColor, { fsImpl, paths });
+    await validateBlueGreenProxyConfig({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env,
+      runCommand: run,
+    });
     await reloadBlueGreenProxy({
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
@@ -547,6 +584,7 @@ module.exports = {
   runBlueGreenProdWorkflow,
   sleep,
   testBlueGreenProxyRouting,
+  validateBlueGreenProxyConfig,
   waitForBlueGreenServiceDrain,
   writeBlueGreenActiveColor,
   writeBlueGreenProxyConfig,

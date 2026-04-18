@@ -339,6 +339,10 @@ test('getComposeFile resolves the expected compose file for each mode', () => {
 test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
   const config = renderBlueGreenProxyConfig('green');
 
+  assert.match(
+    config,
+    /map \$http_upgrade \$connection_upgrade \{[\s\S]*resolver 127\.0\.0\.11 ipv6=off valid=5s;\n\nupstream web_upstream \{/u
+  );
   assert.match(config, /upstream web_upstream {/);
   assert.match(
     config,
@@ -358,7 +362,6 @@ test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
   );
   assert.match(config, /proxy_next_upstream_tries 2;/);
   assert.match(config, /proxy_pass http:\/\/web_upstream;/);
-  assert.match(config, /resolver 127\.0\.0\.11 ipv6=off valid=5s;/);
 });
 
 test('writeBlueGreenActiveColor persists the selected color', () => {
@@ -907,8 +910,35 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
           command === 'docker' &&
           args.includes('exec') &&
           args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+          args.includes('nginx') &&
+          args.includes('-t')
+      )
+    );
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args.includes('exec') &&
+          args.includes(BLUE_GREEN_PROXY_SERVICE) &&
           args.includes('reload')
       )
+    );
+    assert.ok(
+      calls.findIndex(
+        ([command, args]) =>
+          command === 'docker' &&
+          args.includes('exec') &&
+          args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+          args.includes('nginx') &&
+          args.includes('-t')
+      ) <
+        calls.findIndex(
+          ([command, args]) =>
+            command === 'docker' &&
+            args.includes('exec') &&
+            args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+            args.includes('reload')
+        )
     );
     assert.ok(
       calls.some(

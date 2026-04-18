@@ -127,7 +127,8 @@ Blue/green deploy does this:
 5. Keeps the stable `web-proxy` container running in place during ordinary
    promotions instead of re-running `compose up` against the public `:7803`
    listener.
-6. Reloads nginx inside that existing proxy only after the new color is healthy.
+6. Validates the generated nginx config with `nginx -t`, then reloads nginx
+   inside that existing proxy only after the new color is healthy.
 7. Immediately verifies the proxy can serve `/api/health` through the newly
    promoted color before retiring the old one.
 8. Polls an internal drain-status endpoint on the old color and waits until it
@@ -149,7 +150,9 @@ the nginx upstream group during steady state too, with the active color as the
 primary upstream and the inactive color as a backup. That lets stale keepalive
 workers fail over to the newly promoted color instead of returning `502` when
 some clients or Cloudflare Tunnel connections are still pinned to older nginx
-workers after a reload.
+workers after a reload. The runtime DNS resolver is defined at the nginx
+include/http scope, not just inside `server`, so Docker service-name resolution
+continues to work for the blue/green upstream block at reload time.
 
 The local runtime state lives in:
 

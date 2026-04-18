@@ -213,7 +213,7 @@ When you want rebuild-before-restart behavior on a server that receives new comm
 bun serve:web:docker:bg
 ```
 
-That command keeps a stable proxy on port `7803`, builds the inactive color (`web-blue` or `web-green`), waits for the new container to pass the image healthcheck, then reloads the proxy and stops the old color. The active color state and generated proxy config live under `tmp/docker-web/prod/`, which is intentionally local-only and survives normal `git pull` updates.
+That command keeps a stable proxy on port `7803`, builds the inactive color (`web-blue` or `web-green`), waits for the new container to pass the image healthcheck, validates the generated nginx config with `nginx -t`, then reloads the proxy and stops the old color. The active color state and generated proxy config live under `tmp/docker-web/prod/`, which is intentionally local-only and survives normal `git pull` updates.
 
 ```bash
 docker build \

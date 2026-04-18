@@ -1021,6 +1021,13 @@ test('runPendingDeployAfterRestart refreshes the live proxy before running blue/
 
         if (
           key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -t`
+        ) {
+          return createResult('');
+        }
+
+        if (
+          key ===
           `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload`
         ) {
           return createResult('');
@@ -1047,6 +1054,7 @@ test('runPendingDeployAfterRestart refreshes the live proxy before running blue/
     assert.deepEqual(calls, [
       prodComposePsKey('web-green'),
       prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
+      `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -t`,
       `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload`,
       `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/api/health`,
       `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`,
