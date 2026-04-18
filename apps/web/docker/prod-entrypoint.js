@@ -3,10 +3,14 @@
 const { spawn } = require('node:child_process');
 const { applyCoolifyAppUrlFallbacks } = require('./coolify-env.js');
 
-const child = spawn('node', ['apps/web/server.js'], {
-  env: applyCoolifyAppUrlFallbacks({ ...process.env }),
-  stdio: 'inherit',
-});
+const child = spawn(
+  'node',
+  ['--require', './apps/web/docker/request-tracker.js', 'apps/web/server.js'],
+  {
+    env: applyCoolifyAppUrlFallbacks({ ...process.env }),
+    stdio: 'inherit',
+  }
+);
 
 child.on('error', (error) => {
   throw error;

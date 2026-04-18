@@ -765,6 +765,7 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
 
 test('runDockerWebWorkflow switches traffic to the new color after it becomes healthy', async () => {
   const calls = [];
+  let drainChecks = 0;
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'docker-web-bg-switch-')
   );
@@ -801,6 +802,29 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
       return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
     }
 
+    if (
+      args.includes('exec') &&
+      args.includes('web-blue') &&
+      args.includes('node') &&
+      args.some(
+        (arg) =>
+          typeof arg === 'string' &&
+          arg.includes('http://127.0.0.1:7803/__platform/drain-status')
+      )
+    ) {
+      drainChecks += 1;
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: JSON.stringify({
+          inflightRequests: drainChecks === 1 ? 2 : 0,
+          shuttingDown: false,
+          timestamp: Date.now(),
+        }),
+      };
+    }
+
     return { code: 0, signal: null, stderr: '', stdout: '' };
   };
 
@@ -808,6 +832,8 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
     await runDockerWebWorkflow(
       parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green']),
       {
+        drainPollMs: 0,
+        drainTimeoutMs: 5_000,
         env: { PATH: 'test-path' },
         envFilePath,
         proxyDrainMs: 0,
@@ -831,6 +857,36 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
     );
     assert.ok(promotionUpCall);
     assert.ok(!promotionUpCall[1].includes(BLUE_GREEN_PROXY_SERVICE));
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args.includes('exec') &&
+          args.includes('web-blue') &&
+          args.includes('node') &&
+          args.some(
+            (arg) =>
+              typeof arg === 'string' &&
+              arg.includes('http://127.0.0.1:7803/__platform/drain-status')
+          )
+      )
+    );
+    assert.equal(drainChecks, 2);
+    assert.ok(
+      calls.findIndex(
+        ([command, args]) =>
+          command === 'docker' &&
+          args.includes('stop') &&
+          args.includes('web-blue')
+      ) >
+        calls.findLastIndex(
+          ([command, args]) =>
+            command === 'docker' &&
+            args.includes('exec') &&
+            args.includes('web-blue') &&
+            args.includes('node')
+        )
+    );
     assert.ok(
       calls.some(
         ([command, args]) =>

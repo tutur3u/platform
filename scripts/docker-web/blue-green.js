@@ -22,6 +22,9 @@ const BLUE_GREEN_PROXY_CONFIG_FILE = path.join(
   'nginx.conf'
 );
 const BLUE_GREEN_STATE_FILE = path.join(BLUE_GREEN_RUNTIME_DIR, 'active-color');
+const BLUE_GREEN_DRAIN_STATUS_PATH = '/__platform/drain-status';
+const BLUE_GREEN_DRAIN_POLL_MS = 1_000;
+const BLUE_GREEN_DRAIN_TIMEOUT_MS = 5 * 60_000;
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const BLUE_GREEN_COLORS = ['blue', 'green'];
 const BLUE_GREEN_PROXY_DRAIN_MS = 20_000;
@@ -210,6 +213,88 @@ async function testBlueGreenProxyRouting({
   );
 }
 
+async function getBlueGreenServiceDrainStatus(
+  serviceName,
+  { composeFile, composeGlobalArgs = [], env, runCommand: run }
+) {
+  const result = await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'exec',
+      '-T',
+      serviceName,
+      'node',
+      '-e',
+      `fetch('http://127.0.0.1:7803${BLUE_GREEN_DRAIN_STATUS_PATH}', { cache: 'no-store' }).then(async (response) => { if (!response.ok) { throw new Error(\`Unexpected status \${response.status}\`); } process.stdout.write(await response.text()); }).catch((error) => { console.error(error instanceof Error ? error.message : String(error)); process.exit(1); });`
+    ),
+    {
+      env,
+      runCommand: run,
+      stdio: 'pipe',
+    }
+  );
+
+  return JSON.parse(result.stdout.trim());
+}
+
+async function waitForBlueGreenServiceDrain(
+  serviceName,
+  {
+    composeFile,
+    composeGlobalArgs = [],
+    env,
+    pollMs = BLUE_GREEN_DRAIN_POLL_MS,
+    proxyDrainMs = BLUE_GREEN_PROXY_DRAIN_MS,
+    runCommand: run,
+    timeoutMs = BLUE_GREEN_DRAIN_TIMEOUT_MS,
+  }
+) {
+  const fallbackDelayMs = Math.max(0, proxyDrainMs);
+
+  try {
+    const deadline = Date.now() + timeoutMs;
+    let lastInflightRequests = Number.POSITIVE_INFINITY;
+
+    while (Date.now() <= deadline) {
+      const status = await getBlueGreenServiceDrainStatus(serviceName, {
+        composeFile,
+        composeGlobalArgs,
+        env,
+        runCommand: run,
+      });
+      lastInflightRequests =
+        typeof status?.inflightRequests === 'number'
+          ? status.inflightRequests
+          : Number.POSITIVE_INFINITY;
+
+      if (lastInflightRequests <= 0) {
+        return;
+      }
+
+      await sleep(pollMs);
+    }
+
+    throw new Error(
+      `${serviceName} still has ${lastInflightRequests} in-flight requests after ${timeoutMs}ms.`
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
+    if (
+      fallbackDelayMs > 0 &&
+      (/Unexpected status 404/.test(message) ||
+        message.includes(BLUE_GREEN_DRAIN_STATUS_PATH))
+    ) {
+      await sleep(fallbackDelayMs);
+      return;
+    }
+
+    throw error;
+  }
+}
+
 async function resolveBlueGreenActiveColor(
   persistedActiveColor,
   { composeFile, composeGlobalArgs = [], env, runCommand: run }
@@ -245,6 +330,8 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
   const run = options.runCommand ?? runCommand;
   const persistedActiveColor = readBlueGreenActiveColor(paths, fsImpl);
   const proxyDrainMs = options.proxyDrainMs ?? BLUE_GREEN_PROXY_DRAIN_MS;
+  const drainPollMs = options.drainPollMs ?? BLUE_GREEN_DRAIN_POLL_MS;
+  const drainTimeoutMs = options.drainTimeoutMs ?? BLUE_GREEN_DRAIN_TIMEOUT_MS;
   const activeColor = await resolveBlueGreenActiveColor(persistedActiveColor, {
     composeFile,
     composeGlobalArgs: parsed.composeGlobalArgs,
@@ -333,9 +420,15 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
   writeBlueGreenActiveColor(targetColor, paths, fsImpl);
 
   if (activeColor && activeColor !== targetColor) {
-    if (proxyDrainMs > 0) {
-      await sleep(proxyDrainMs);
-    }
+    await waitForBlueGreenServiceDrain(getBlueGreenServiceName(activeColor), {
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env,
+      pollMs: drainPollMs,
+      proxyDrainMs,
+      runCommand: run,
+      timeoutMs: drainTimeoutMs,
+    });
 
     await stopComposeServicesIfPresent([getBlueGreenServiceName(activeColor)], {
       composeFile,
@@ -357,6 +450,9 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
 
 module.exports = {
   BLUE_GREEN_COLORS,
+  BLUE_GREEN_DRAIN_POLL_MS,
+  BLUE_GREEN_DRAIN_STATUS_PATH,
+  BLUE_GREEN_DRAIN_TIMEOUT_MS,
   BLUE_GREEN_PROXY_CONFIG_FILE,
   BLUE_GREEN_PROXY_DRAIN_MS,
   BLUE_GREEN_PROXY_SERVICE,
@@ -368,6 +464,7 @@ module.exports = {
   getBlueGreenProdServices,
   getBlueGreenProdServicesWithProxyOption,
   getBlueGreenServiceName,
+  getBlueGreenServiceDrainStatus,
   getNextBlueGreenColor,
   isBlueGreenColor,
   readBlueGreenActiveColor,
@@ -377,6 +474,7 @@ module.exports = {
   runBlueGreenProdWorkflow,
   sleep,
   testBlueGreenProxyRouting,
+  waitForBlueGreenServiceDrain,
   writeBlueGreenActiveColor,
   writeBlueGreenProxyConfig,
 };

@@ -105,6 +105,7 @@ COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/.next/standalone .
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/docker/coolify-env.js ./apps/web/docker/coolify-env.js
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/docker/prod-entrypoint.js ./apps/web/docker/prod-entrypoint.js
+COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/docker/request-tracker.js ./apps/web/docker/request-tracker.js
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/public ./apps/web/public
 
 EXPOSE 7803

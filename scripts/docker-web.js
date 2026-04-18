@@ -323,6 +323,8 @@ async function runDockerWebWorkflow(parsed, options = {}) {
 
   if (usesBlueGreenStrategy(parsed)) {
     await runBlueGreenProdWorkflow(parsed, {
+      drainPollMs: options.drainPollMs,
+      drainTimeoutMs: options.drainTimeoutMs,
       env,
       envFilePath: options.envFilePath,
       fsImpl,
