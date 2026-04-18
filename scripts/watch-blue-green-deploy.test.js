@@ -116,7 +116,7 @@ test('formatRelativeTime clamps tiny future drift so the dashboard does not flic
   assert.equal(formatRequestsPerMinute(2.5), '2.5 rpm');
 });
 
-test('buildDashboardView shows blue/green runtime and the last 3 deployments', () => {
+test('buildDashboardView shows blue/green runtime and the last 5 deployments', () => {
   const now = Date.parse('2026-04-18T11:30:00.000Z');
   const output = buildDashboardView(
     {
@@ -1183,6 +1183,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
   );
   const paths = getWatchPaths(tempDir);
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
   const pendingStates = [];
   const nowValues = [
     Date.parse('2026-04-18T11:16:00.000Z'),
@@ -1231,6 +1232,73 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       fs
     );
 
+    const responses = new Map([
+      ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
+      ['git status --porcelain', createResult('')],
+      ['git fetch origin main', createResult('')],
+      ['git rev-parse HEAD', createResult('bbb222\n')],
+      ['git rev-parse origin/main', createResult('bbb222\n')],
+      [
+        'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
+        createResult(
+          'bbb222222222222222222\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:58:00.000Z\n'
+        ),
+      ],
+      [prodComposePsKey(BLUE_GREEN_PROXY_SERVICE), createResult('proxy-123\n')],
+      [prodComposePsKey('web-green'), createResult('green-123\n')],
+      [prodComposePsKey('web-blue'), createResult('blue-123\n')],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-green`,
+        createResult('green-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-blue`,
+        createResult('blue-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop web-blue`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f web-blue`,
+        createResult(''),
+      ],
+      [
+        'docker logs --timestamps --since 2026-04-18T10:30:00.000Z proxy-123',
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue redis serverless-redis-http`,
+        createResult(''),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -t`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/api/health`,
+        createResult(''),
+      ],
+    ]);
+    const runCommand = async (command, args) => {
+      const key = `${command} ${args.join(' ')}`;
+      calls.push(key);
+
+      if (!responses.has(key)) {
+        throw new Error(`Unexpected command: ${key}`);
+      }
+
+      return responses.get(key);
+    };
+
     const result = await runDeployWatchIteration(
       {
         branch: 'main',
@@ -1248,59 +1316,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         },
         paths,
         rootDir: tempDir,
-        runCommand: createRunCommandMock(
-          new Map([
-            ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
-            ['git status --porcelain', createResult('')],
-            ['git fetch origin main', createResult('')],
-            ['git rev-parse HEAD', createResult('bbb222\n')],
-            ['git rev-parse origin/main', createResult('bbb222\n')],
-            [
-              'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
-              createResult(
-                'bbb222222222222222222\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:58:00.000Z\n'
-              ),
-            ],
-            [
-              prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
-              createResult('proxy-123\n'),
-            ],
-            [prodComposePsKey('web-green'), createResult('green-123\n')],
-            [prodComposePsKey('web-blue'), createResult('blue-123\n')],
-            [
-              `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-green`,
-              createResult('green-123\n'),
-            ],
-            [
-              `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-blue`,
-              createResult('blue-123\n'),
-            ],
-            [
-              'docker logs --timestamps --since 2026-04-18T10:30:00.000Z proxy-123',
-              createResult(''),
-            ],
-            [
-              `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue redis serverless-redis-http`,
-              createResult(''),
-            ],
-            [
-              `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123`,
-              createResult('healthy\n'),
-            ],
-            [
-              `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -t`,
-              createResult(''),
-            ],
-            [
-              `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload`,
-              createResult(''),
-            ],
-            [
-              `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/api/health`,
-              createResult(''),
-            ],
-          ])
-        ),
+        runCommand,
       }
     );
 
@@ -1318,6 +1334,28 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
     assert.equal(result.deployments[0].commitHash, 'bbb222222222222222222');
     assert.equal(result.deployments[1].runtimeState, 'active');
     assert.equal(result.deployments[1].endedAt, undefined);
+    assert.ok(
+      calls.includes(
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop web-blue`
+      )
+    );
+    assert.ok(
+      calls.includes(
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f web-blue`
+      )
+    );
+    assert.ok(
+      calls.indexOf(
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f web-blue`
+      ) <
+        calls.indexOf(
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue redis serverless-redis-http`
+        )
+    );
+    assert.ok(
+      result.deployments.length >= 2,
+      'expected refreshed standby and active primary deployments'
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

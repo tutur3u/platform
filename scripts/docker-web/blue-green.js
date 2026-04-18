@@ -6,6 +6,7 @@ const {
   getComposeFile,
   hasComposeProfile,
   hasComposeServiceContainer,
+  removeComposeServicesIfPresent,
   runChecked,
   runCommand,
   stopComposeServicesIfPresent,
@@ -577,6 +578,19 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     runCommand: run,
   });
 
+  await stopComposeServicesIfPresent([getBlueGreenServiceName(targetColor)], {
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env,
+    runCommand: run,
+  });
+  await removeComposeServicesIfPresent([getBlueGreenServiceName(targetColor)], {
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env,
+    runCommand: run,
+  });
+
   await runChecked(
     'docker',
     getComposeCommandArgs(
@@ -716,6 +730,22 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     PLATFORM_BLUE_GREEN_COLOR: standbyColor,
     PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
   };
+
+  await stopComposeServicesIfPresent([getBlueGreenServiceName(standbyColor)], {
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env,
+    runCommand: run,
+  });
+  await removeComposeServicesIfPresent(
+    [getBlueGreenServiceName(standbyColor)],
+    {
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env,
+      runCommand: run,
+    }
+  );
 
   await runChecked(
     'docker',

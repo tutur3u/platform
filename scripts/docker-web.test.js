@@ -758,9 +758,7 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
     const paths = getBlueGreenPaths(tempDir);
     const watchPaths = getWatchPaths(tempDir);
     assert.equal(readBlueGreenActiveColor(paths), 'blue');
-    const history = JSON.parse(
-      fs.readFileSync(watchPaths.historyFile, 'utf8')
-    );
+    const history = JSON.parse(fs.readFileSync(watchPaths.historyFile, 'utf8'));
     assert.equal(history.length, 1);
     assert.equal(history[0].status, 'successful');
     assert.equal(history[0].activeColor, 'blue');
@@ -909,6 +907,36 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
     );
     assert.ok(promotionUpCall);
     assert.ok(!promotionUpCall[1].includes(BLUE_GREEN_PROXY_SERVICE));
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args.includes('stop') &&
+          args.includes('web-green')
+      )
+    );
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args.includes('rm') &&
+          args.includes('web-green')
+      )
+    );
+    assert.ok(
+      calls.findIndex(
+        ([command, args]) =>
+          command === 'docker' &&
+          args.includes('rm') &&
+          args.includes('web-green')
+      ) <
+        calls.findIndex(
+          ([command, args]) =>
+            command === 'docker' &&
+            args.includes('up') &&
+            args.includes('web-green')
+        )
+    );
     assert.ok(
       calls.some(
         ([command, args]) =>

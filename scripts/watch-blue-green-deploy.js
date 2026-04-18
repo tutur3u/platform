@@ -6,7 +6,6 @@ const path = require('node:path');
 const readline = require('node:readline');
 
 const {
-  getBlueGreenPaths,
   readBlueGreenActiveColor,
   refreshBlueGreenProxyIfRunning,
   runBlueGreenStandbyRefreshWorkflow,

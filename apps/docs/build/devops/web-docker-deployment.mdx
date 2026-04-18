@@ -122,7 +122,8 @@ Blue/green deploy does this:
 
 1. Reads the last active color from `tmp/docker-web/prod/active-color`.
 2. Ignores that state if the corresponding container no longer exists.
-3. Builds and starts the inactive color.
+3. Stops and removes the old inactive-color container, then builds and starts
+   its fresh replacement.
 4. Waits for the new container healthcheck to pass.
 5. Keeps the stable `web-proxy` container running in place during ordinary
    promotions instead of re-running `compose up` against the public `:7803`
@@ -190,6 +191,9 @@ Additional behavior:
 - If blue/green is already live and the standby color remains on an older
   revision for 15 minutes, the watcher rebuilds only the standby color in
   place. The active color remains primary for new traffic the whole time.
+- That standby catch-up path also stops and removes the stale standby
+  container before rebuilding it, so health checks target the fresh
+  replacement container rather than an outdated standby instance.
 - Standby catch-up rebuilds reuse the current deployment stamp so the warm
   backup matches the latest deployment state instead of serving an older build
   if nginx needs to fail over.
