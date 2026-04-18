@@ -183,7 +183,9 @@ The repo now includes a web-focused Docker workflow that preserves the existing 
 - `bun devrs:web:docker` starts and resets local Supabase first, then launches the Dockerized web dev stack.
 - `bun dev:web:docker:down` stops the Docker web stack.
 - `bun serve:web:docker` builds the production runner image and serves it through Docker Compose.
+- `bun serve:web:docker:bg` performs a blue/green production deployment with a proxy cutover after the new color passes health checks.
 - `bun serve:web:docker:down` stops the Dockerized production web stack.
+- `bun serve:web:docker:bg:down` stops the blue/green production stack and clears the local deployment state.
 
 The Docker service reads runtime values from `apps/web/.env.local`. For host-run local Supabase, the Docker helper automatically rewrites the server-side Supabase URL to `host.docker.internal` while leaving the browser-facing `NEXT_PUBLIC_SUPABASE_URL` unchanged.
 
@@ -204,6 +206,14 @@ bun serve:web:docker
 ```
 
 Use `bun serve:web:docker -- --profile redis` when you want the optional Redis companion services in the production-style stack, and export `SRH_TOKEN` from your shell or CI first because the production Redis profile does not fall back to `example_token`.
+
+When you want rebuild-before-restart behavior on a server that receives new commits via `git pull`, use the blue/green production path instead of the in-place one:
+
+```bash
+bun serve:web:docker:bg
+```
+
+That command keeps a stable proxy on port `7803`, builds the inactive color (`web-blue` or `web-green`), waits for the new container to pass the image healthcheck, then reloads the proxy and stops the old color. The active color state and generated proxy config live under `tmp/docker-web/prod/`, which is intentionally local-only and survives normal `git pull` updates.
 
 ```bash
 docker build \
@@ -228,7 +238,9 @@ docker build \
 | `bun devrs:web:docker` | Start/reset local Supabase, then the Docker web dev workflow |
 | `bun dev:web:docker:down` | Stop the Docker web dev workflow |
 | `bun serve:web:docker` | Build and serve the production web image in Docker |
+| `bun serve:web:docker:bg` | Blue/green deploy the production web image in Docker |
 | `bun serve:web:docker:down` | Stop the Dockerized production web workflow |
+| `bun serve:web:docker:bg:down` | Stop the blue/green production web workflow |
 | `bun devx` | Start full stack with persisted database |
 | `bun devrs` | Start full stack with clean, seeded database |
 

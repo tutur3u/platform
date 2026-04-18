@@ -319,7 +319,10 @@ function validateDockerProdCompose(composeContent) {
     '    image: nginx:1.27-alpine',
     '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',
     '      required: true',
-    '      SRH_TOKEN: ' + '${' + 'SRH_TOKEN' + '}',
+    '      SRH_TOKEN: ' +
+      '${' +
+      'SRH_TOKEN:?SRH_TOKEN must be set when enabling the redis profile' +
+      '}',
   ];
 
   for (const snippet of requiredSnippets) {

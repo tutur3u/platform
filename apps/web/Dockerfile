@@ -88,7 +88,7 @@ COPY . .
 RUN --mount=type=cache,id=platform-web-turbo,target=/workspace/.turbo \
   --mount=type=cache,id=platform-web-next-cache,target=/workspace/apps/web/.next/cache \
   --mount=type=secret,id=web_env,target=/tmp/web.env \
-  node --env-file-if-exists=/tmp/web.env ./scripts/build-web-docker.js
+  bun --env-file=/tmp/web.env ./scripts/build-web-docker.js
 
 FROM node:22-bookworm-slim AS runner
 

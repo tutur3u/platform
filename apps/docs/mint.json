@@ -121,6 +121,16 @@
       "group": "Build",
       "pages": [
         "build/overview",
+        {
+          "group": "DevOps & Deployment",
+          "pages": [
+            "build/devops/overview",
+            "build/devops/environments-release-flow",
+            "build/devops/web-docker-deployment",
+            "build/devops/github-actions-runbook",
+            "build/devops/secrets-and-configuration"
+          ]
+        },
         "build/development-tools/overview",
         "build/development-tools/development",
         "build/development-tools/monorepo-architecture",

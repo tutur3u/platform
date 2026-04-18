@@ -1,0 +1,63 @@
+---
+title: 'DevOps & Deployment'
+description: 'The operational map for how Tuturuuu is built, deployed, migrated, and validated.'
+updatedAt: '2026-04-18'
+---
+
+This section is the runbook for shipping and operating Tuturuuu. It documents the
+deployment surfaces that exist in this repository today, the workflows that own
+them, and the commands the team should use when something needs to be built,
+released, or recovered.
+
+## Deployment Surfaces
+
+| Surface | Source of truth | Delivery target |
+| --- | --- | --- |
+| Web apps (`apps/web`, `apps/nova`, `apps/rewise`, `apps/calendar`, `apps/finance`, `apps/meet`, `apps/tasks`, `apps/track`, `apps/shortener`) | `.github/workflows/vercel-*.yaml` | Vercel preview and production deployments |
+| Database schema (`apps/database`) | `.github/workflows/supabase-staging.yaml`, `.github/workflows/supabase-production.yaml` | Supabase staging and production projects |
+| Self-hosted web runtime (`apps/web`) | `apps/web/Dockerfile`, `docker-compose.web.yml`, `docker-compose.web.prod.yml`, `scripts/docker-web.js` | Docker dev stacks and production blue/green deployments |
+| Discord utilities (`apps/discord`) | `.github/workflows/discord-modal-deploy.yml` | Modal |
+| Mobile artifacts (`apps/mobile`) | `.github/workflows/mobile-build-*.yaml` | Build artifacts for Android, iOS, macOS, Windows |
+| Shared packages (`packages/*`) | `.github/workflows/release-*.yaml` | npm, GitHub Packages, JSR |
+
+## Read This In Order
+
+1. [Environments & Release Flow](/build/devops/environments-release-flow)
+2. [Web Docker Deployment](/build/devops/web-docker-deployment)
+3. [GitHub Actions Runbook](/build/devops/github-actions-runbook)
+4. [Secrets & Configuration](/build/devops/secrets-and-configuration)
+
+## Core Principles
+
+- GitHub Actions is the canonical automation layer for hosted deployments and database migrations.
+- `tuturuuu.ts` can disable individual workflows; `ci-check.yml` enforces that toggle before a job does real work.
+- Vercel handles hosted web deployments. Supabase migrations run as separate workflows with explicit staging and production gates.
+- Self-hosted web deployment is Docker-based, and blue/green rollout is the supported rebuild-before-restart path.
+- Secrets live in GitHub Actions secrets/variables or local env files such as `apps/web/.env.local`. They do not belong in the repo.
+
+## Operational Flow
+
+```mermaid
+flowchart LR
+    Branch["Git branch or manual dispatch"]
+    Preview["Vercel preview workflow"]
+    Staging["Supabase staging migration"]
+    Production["Vercel production workflow"]
+    ProdDb["Supabase production migration"]
+    Docker["Self-hosted Docker deploy"]
+
+    Branch --> Preview
+    Preview --> Staging
+    Branch --> Production
+    Production --> ProdDb
+    Branch --> Docker
+```
+
+## What Changed Recently
+
+- `apps/web` now supports both in-place Docker production deploys and blue/green deploys.
+- `docker-setup-check.yaml` validates Docker parity, renders both compose files, and builds both the dev and production web images.
+- Production Redis in Docker now requires `SRH_TOKEN` explicitly instead of silently falling back to an empty value.
+
+If you are changing deployment behavior, update this section and add any new page to
+[`apps/docs/mint.json`](/Users/vhpx/Documents/GitHub/platform/apps/docs/mint.json).

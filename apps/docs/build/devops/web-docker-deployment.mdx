@@ -1,0 +1,116 @@
+---
+title: 'Web Docker Deployment'
+description: 'Run the web app in Docker for development, production, and blue/green self-hosted rollout.'
+updatedAt: '2026-04-18'
+---
+
+This is the operational guide for the Docker-based `apps/web` runtime.
+
+## Files That Define The Stack
+
+- [`apps/web/Dockerfile`](/Users/vhpx/Documents/GitHub/platform/apps/web/Dockerfile)
+- [`docker-compose.web.yml`](/Users/vhpx/Documents/GitHub/platform/docker-compose.web.yml)
+- [`docker-compose.web.prod.yml`](/Users/vhpx/Documents/GitHub/platform/docker-compose.web.prod.yml)
+- [`scripts/docker-web.js`](/Users/vhpx/Documents/GitHub/platform/scripts/docker-web.js)
+- [`scripts/check-docker-web.js`](/Users/vhpx/Documents/GitHub/platform/scripts/check-docker-web.js)
+
+## Supported Commands
+
+| Command | Purpose |
+| --- | --- |
+| `bun dev:web:docker` | Run the web dev workflow inside Docker |
+| `bun devx:web:docker` | Start local Supabase, then the Docker dev workflow |
+| `bun devrs:web:docker` | Start and reset local Supabase, then the Docker dev workflow |
+| `bun dev:web:docker:down` | Stop the Docker dev workflow |
+| `bun serve:web:docker` | Build and run the production web image in-place |
+| `bun serve:web:docker:bg` | Blue/green production deploy with health-checked cutover |
+| `bun serve:web:docker:down` | Stop the production Docker stack |
+| `bun serve:web:docker:bg:down` | Stop the blue/green stack and clear local runtime state |
+| `bun check:docker` | Validate Dockerfile and compose parity rules |
+
+## Runtime Requirements
+
+- `apps/web/.env.local` must exist for both the build secret and the runtime env file.
+- Docker BuildKit must be available. The helper sets `COMPOSE_DOCKER_CLI_BUILD=1` and `DOCKER_BUILDKIT=1`.
+- If local Supabase is running on the host, the helper rewrites the server-side Supabase URL to `host.docker.internal` while leaving `NEXT_PUBLIC_SUPABASE_URL` alone for browsers.
+
+## Development Mode
+
+Development mode exists to preserve the normal root script contract while moving the
+web runtime into containers.
+
+- Container-managed `node_modules` are isolated from the host.
+- Package-local `node_modules` and `dist` directories are also isolated so host installs do not shadow container artifacts.
+- A host `bun install` is not required just to boot the Dockerized web stack.
+
+## Production Mode
+
+The production compose file uses the `runner` target from `apps/web/Dockerfile`.
+
+### In-Place
+
+```bash
+bun serve:web:docker
+```
+
+Use this when a short restart is acceptable.
+
+### Blue/Green
+
+```bash
+bun serve:web:docker:bg
+```
+
+Blue/green deploy does this:
+
+1. Reads the last active color from `tmp/docker-web/prod/active-color`.
+2. Ignores that state if the corresponding container no longer exists.
+3. Builds and starts the inactive color.
+4. Waits for the new container healthcheck to pass.
+5. Reloads the stable `web-proxy` nginx service on port `7803`.
+6. Stops the old color after traffic has moved.
+
+The local runtime state lives in:
+
+- `tmp/docker-web/prod/active-color`
+- `tmp/docker-web/prod/nginx.conf`
+
+These files are intentionally local-only and safe to regenerate.
+
+## Redis Profile
+
+Redis is optional in both dev and production-style stacks.
+
+### Local convenience
+
+`docker-compose.web.yml` defaults `SRH_TOKEN` to `example_token`.
+
+### Production-style stack
+
+`docker-compose.web.prod.yml` requires `SRH_TOKEN` explicitly:
+
+```bash
+export SRH_TOKEN="$(openssl rand -hex 32)"
+bun serve:web:docker:bg -- --profile redis
+```
+
+Do not edit the checked-in compose files to change secrets.
+
+## Validation And CI
+
+`docker-setup-check.yaml` now validates all of the following:
+
+- `node scripts/check-docker-web.js`
+- `node --test scripts/check-docker-web.test.js scripts/docker-web.test.js`
+- `docker compose -f docker-compose.web.yml config`
+- `docker compose -f docker-compose.web.prod.yml config`
+- `docker build --target dev -f apps/web/Dockerfile .`
+- `docker build --target runner --secret id=web_env,src=apps/web/.env.local -f apps/web/Dockerfile .`
+
+That means Docker CI now covers both the dev image and the real production path.
+
+## Operator Notes
+
+- Do not paste `docker compose config` output into chat or tickets; it expands env values.
+- If you need rebuild-before-restart on a server, use `bun serve:web:docker:bg`.
+- If a blue/green deploy is interrupted, rerunning the same command from the intended commit is the normal recovery path.

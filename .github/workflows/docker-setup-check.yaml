@@ -79,6 +79,7 @@ jobs:
           }
           EOF
           touch apps/web/.env.local
+          printf 'SRH_TOKEN=test-token\n' >> "$GITHUB_ENV"
 
       - name: Render Docker Compose configs
         run: |
@@ -87,6 +88,9 @@ jobs:
 
       - name: Build web dev image
         run: docker build --target dev -f apps/web/Dockerfile .
+
+      - name: Build web prod image
+        run: docker build --target runner --secret id=web_env,src=apps/web/.env.local -f apps/web/Dockerfile .
 
       - name: Build storage unzip proxy image
         run: docker build -f apps/storage-unzip-proxy/Dockerfile apps/storage-unzip-proxy

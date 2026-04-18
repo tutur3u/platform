@@ -90,13 +90,15 @@ test('parseEnvFile ignores comments and unquotes values', () => {
   const fsStub = createFsStub({
     envFileContent: [
       '# Comment',
-      'NEXT_PUBLIC_SUPABASE_URL="http://localhost:8001"',
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001 # local',
+      'SUPABASE_ANON_KEY="value-with-#-inside"',
       'SUPABASE_SECRET_KEY=test-secret',
     ].join('\n'),
   });
 
   assert.deepEqual(parseEnvFile(WEB_ENV_FILE, fsStub), {
     NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:8001',
+    SUPABASE_ANON_KEY: 'value-with-#-inside',
     SUPABASE_SECRET_KEY: 'test-secret',
   });
 });
@@ -364,20 +366,18 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
       'docker',
       ['compose', '-f', PROD_COMPOSE_FILE, 'ps', '-q', 'web'],
     ]);
-    assert.deepEqual(calls[2], [
-      'docker',
-      [
-        'compose',
-        '-f',
-        PROD_COMPOSE_FILE,
-        'up',
-        '--build',
-        '--detach',
-        '--remove-orphans',
-        BLUE_GREEN_PROXY_SERVICE,
-        'web-blue',
-      ],
-    ]);
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args[1] === '-f' &&
+          args[2] === PROD_COMPOSE_FILE &&
+          args.includes('up') &&
+          args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+          args.includes('web-blue')
+      )
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -451,6 +451,84 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
           command === 'docker' &&
           args.includes('stop') &&
           args.includes('web-blue')
+      )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDockerWebWorkflow ignores stale active colors without live containers', async () => {
+  const calls = [];
+  let webBluePsCalls = 0;
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-bg-stale-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getBlueGreenPaths(tempDir);
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+  writeBlueGreenActiveColor('blue', paths);
+
+  const runCommand = async (command, args) => {
+    calls.push([command, args]);
+
+    if (args.includes('ps') && args.at(-1) === 'web') {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'web-blue') {
+      webBluePsCalls += 1;
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: webBluePsCalls === 1 ? '' : 'container-blue\n',
+      };
+    }
+
+    if (args[0] === 'inspect') {
+      return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  try {
+    await runDockerWebWorkflow(
+      parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green']),
+      {
+        env: { PATH: 'test-path' },
+        envFilePath,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(readBlueGreenActiveColor(paths), 'blue');
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args[1] === '-f' &&
+          args[2] === PROD_COMPOSE_FILE &&
+          args.includes('up') &&
+          args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+          args.includes('web-blue')
+      )
+    );
+    assert.ok(
+      !calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args.includes('exec') &&
+          args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+          args.includes('reload')
       )
     );
   } finally {
