@@ -294,10 +294,11 @@ test('getComposeFile resolves the expected compose file for each mode', () => {
 });
 
 test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
-  assert.match(
-    renderBlueGreenProxyConfig('green'),
-    /proxy_pass http:\/\/web-green:7803;/
-  );
+  const config = renderBlueGreenProxyConfig('green');
+
+  assert.match(config, /proxy_pass http:\/\/web-green:7803;/);
+  assert.match(config, /client_header_buffer_size 16k;/);
+  assert.match(config, /large_client_header_buffers 8 16k;/);
 });
 
 test('writeBlueGreenActiveColor persists the selected color', () => {

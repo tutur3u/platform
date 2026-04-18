@@ -122,6 +122,10 @@ Blue/green deploy does this:
 5. Reloads the stable `web-proxy` nginx service on port `7803`.
 6. Stops the old color after traffic has moved.
 
+The stable nginx proxy also raises its request-header buffer limits so larger
+session/auth cookies do not fail at the proxy layer with `400 Request Header Or
+Cookie Too Large` before the active web container sees the request.
+
 The local runtime state lives in:
 
 - `tmp/docker-web/prod/active-color`

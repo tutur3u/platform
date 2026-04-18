@@ -95,6 +95,8 @@ function renderBlueGreenProxyConfig(color) {
     '',
     'server {',
     '  listen 7803;',
+    '  client_header_buffer_size 16k;',
+    '  large_client_header_buffers 8 16k;',
     '',
     '  location / {',
     `    proxy_pass http://${serviceName}:7803;`,
