@@ -12,7 +12,7 @@
     "type-check": "tsgo --project tsconfig.typecheck.json"
   },
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "^4.0.95",
+    "@ai-sdk/amazon-bedrock": "^4.0.96",
     "@ai-sdk/anthropic": "^3.0.71",
     "@ai-sdk/azure": "^3.0.54",
     "@ai-sdk/cerebras": "^2.0.45",
@@ -47,8 +47,8 @@
     "@chat-adapter/slack": "^4.26.0",
     "@chat-adapter/state-redis": "^4.26.0",
     "@chat-adapter/teams": "^4.26.0",
-    "@json-render/core": "^0.17.0",
-    "@json-render/react": "^0.17.0",
+    "@json-render/core": "^0.18.0",
+    "@json-render/react": "^0.18.0",
     "@octokit/rest": "^22.0.1",
     "@streamdown/cjk": "^1.0.3",
     "@streamdown/code": "^1.1.1",
