@@ -193,17 +193,17 @@ Redis stays optional. To enable the bundled Redis profile, forward the compose p
 bun dev:web:docker -- --profile redis
 ```
 
-The Docker web flow does not require a host `bun install` just to boot. `apps/web/docker/dev-entrypoint.sh` installs dependencies into the container-managed `/workspace/node_modules` volume, while the extra named volumes only isolate the mutable `.next` and package-local artifacts that the current web dev flow updates in `apps/web`, `packages/supabase`, and `packages/types`.
+The Docker web flow does not require a host `bun install` just to boot. `apps/web/docker/dev-entrypoint.sh` installs dependencies into the container-managed `/workspace/node_modules` volume, and the compose stack also isolates package-local `node_modules` and `dist` directories so host installs cannot shadow container-managed workspace artifacts.
 
 When you enable the Redis profile, `docker-compose.web.yml` defaults `SRH_TOKEN` to `example_token` for local convenience. Override it from your shell or CI before starting the stack when you need a different token.
 
-Production builds use `apps/web/Dockerfile`. The builder keeps secrets external by accepting an optional BuildKit secret sourced from `apps/web/.env.local`:
+Production builds use `apps/web/Dockerfile`. Keep `apps/web/.env.local` present for both the build secret and runtime env file. The builder keeps secrets external by accepting a BuildKit secret sourced from that file:
 
 ```bash
 bun serve:web:docker
 ```
 
-Use `bun serve:web:docker -- --profile redis` when you want the optional Redis companion services in the production-style stack.
+Use `bun serve:web:docker -- --profile redis` when you want the optional Redis companion services in the production-style stack, and export `SRH_TOKEN` from your shell or CI first because the production Redis profile does not fall back to `example_token`.
 
 ```bash
 docker build \

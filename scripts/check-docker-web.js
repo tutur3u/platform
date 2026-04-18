@@ -69,7 +69,7 @@ function getCopiedRelativePaths(stageContent) {
     .map((line) => line.trim())
     .map((line) =>
       line.match(
-        /^COPY(?:\s+--[^\s]+(?:=[^\s]+)?)*\s+((?:apps|packages)\/.+)\s+\.\/((?:apps|packages)\/.+)$/u
+        /^COPY(?:\s+--\S+)*\s+((?:apps|packages)\/\S+)\s+\.\/((?:apps|packages)\/\S+)$/u
       )
     )
     .filter(Boolean)
@@ -260,13 +260,20 @@ function validateDockerfile({
   return errors;
 }
 
-function validateDockerCompose(composeContent) {
+function validateDockerCompose(
+  composeContent,
+  { workspacePackageJsonPaths = listWorkspacePackageJsonPaths() } = {}
+) {
   const errors = [];
   const dockerInternalSupabaseSnippet =
     '      SUPABASE_SERVER_URL: ' +
     '${' +
     'DOCKER_INTERNAL_SUPABASE_URL:-http://host.docker.internal:8001' +
     '}';
+  const packageWorkspaceDirs = workspacePackageJsonPaths
+    .filter((relativePath) => relativePath.startsWith('packages/'))
+    .map((relativePath) => path.posix.dirname(relativePath))
+    .sort();
   const requiredSnippets = [
     'services:',
     '  web:',
@@ -277,6 +284,14 @@ function validateDockerCompose(composeContent) {
     '      - "host.docker.internal:host-gateway"',
     '    init: true',
   ];
+
+  for (const packageWorkspaceDir of packageWorkspaceDirs) {
+    const packageName = path.posix.basename(packageWorkspaceDir);
+    requiredSnippets.push(
+      `      - platform-web-${packageName}-node_modules:/workspace/${packageWorkspaceDir}/node_modules`,
+      `      - platform-web-${packageName}-dist:/workspace/${packageWorkspaceDir}/dist`
+    );
+  }
 
   for (const snippet of requiredSnippets) {
     if (!composeContent.includes(snippet)) {
@@ -309,7 +324,7 @@ function checkDockerWebSetup({
       fileDependencyPaths,
       workspacePackageJsonPaths,
     }),
-    ...validateDockerCompose(composeContent),
+    ...validateDockerCompose(composeContent, { workspacePackageJsonPaths }),
   ];
 }
 

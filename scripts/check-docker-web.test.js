@@ -124,6 +124,25 @@ test('validateDockerCompose reports missing bind mounts', () => {
   assert.ok(errors.join('\n').includes('- .:/workspace'));
 });
 
+test('validateDockerCompose reports missing package-local artifact isolation', () => {
+  const composeContent = fs
+    .readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8')
+    .replace(
+      '      - platform-web-ui-node_modules:/workspace/packages/ui/node_modules\n',
+      ''
+    );
+
+  const errors = validateDockerCompose(composeContent);
+
+  assert.ok(
+    errors
+      .join('\n')
+      .includes(
+        'platform-web-ui-node_modules:/workspace/packages/ui/node_modules'
+      )
+  );
+});
+
 test('checkDockerWebSetup passes for the current repository', () => {
   assert.deepEqual(checkDockerWebSetup({ rootDir: ROOT_DIR }), []);
 });

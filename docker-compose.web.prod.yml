@@ -8,7 +8,7 @@ services:
         - web_env
     env_file:
       - path: apps/web/.env.local
-        required: false
+        required: true
     environment:
       HOSTNAME: "0.0.0.0"
       NEXT_TELEMETRY_DISABLED: "1"
@@ -40,8 +40,8 @@ services:
     environment:
       SRH_CONNECTION_STRING: redis://redis:6379
       SRH_MODE: env
-      # Override SRH_TOKEN from your shell or CI when you need a non-default local token.
-      SRH_TOKEN: ${SRH_TOKEN:-example_token}
+      # Export SRH_TOKEN from your shell or CI before enabling the production Redis profile.
+      SRH_TOKEN: ${SRH_TOKEN}
     image: hiett/serverless-redis-http:latest
     ports:
       - "8079:80"

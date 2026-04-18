@@ -8,7 +8,13 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const COMPOSE_FILE = path.join(ROOT_DIR, 'docker-compose.web.yml');
 const PROD_COMPOSE_FILE = path.join(ROOT_DIR, 'docker-compose.web.prod.yml');
 const WEB_ENV_FILE = path.join(ROOT_DIR, 'apps', 'web', '.env.local');
-const LOCALHOST_HOSTS = new Set(['127.0.0.1', '0.0.0.0', 'localhost']);
+const LOCALHOST_HOSTS = new Set([
+  '127.0.0.1',
+  '0.0.0.0',
+  'localhost',
+  '::1',
+  '[::1]',
+]);
 const DOCKER_HOST_ALIAS = 'host.docker.internal';
 
 function parseArgs(argv) {
@@ -78,6 +84,19 @@ function parseArgs(argv) {
 
 function getComposeFile(mode = 'dev') {
   return mode === 'prod' ? PROD_COMPOSE_FILE : COMPOSE_FILE;
+}
+
+function hasComposeProfile(composeGlobalArgs, profileName) {
+  for (let index = 0; index < composeGlobalArgs.length; index += 1) {
+    if (
+      composeGlobalArgs[index] === '--profile' &&
+      composeGlobalArgs[index + 1] === profileName
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function parseEnvFile(envFilePath, fsImpl = fs) {
@@ -156,6 +175,23 @@ function ensureWebEnvFile(fsImpl = fs, envFilePath = WEB_ENV_FILE) {
       `Missing required env file: ${path.relative(ROOT_DIR, envFilePath)}`
     );
   }
+}
+
+function ensureProductionRedisToken(parsed, baseEnv = process.env) {
+  if (
+    parsed.mode !== 'prod' ||
+    !hasComposeProfile(parsed.composeGlobalArgs, 'redis')
+  ) {
+    return;
+  }
+
+  if (baseEnv.SRH_TOKEN) {
+    return;
+  }
+
+  throw new Error(
+    'Missing required environment variable: SRH_TOKEN must be set before using the production Redis profile.'
+  );
 }
 
 function runCommand(command, args, options = {}) {
@@ -238,6 +274,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
   }
 
   ensureWebEnvFile(fsImpl);
+  ensureProductionRedisToken(parsed, options.env ?? process.env);
 
   if (parsed.withSupabase) {
     await runChecked('bun', ['sb:start'], {
@@ -308,4 +345,6 @@ module.exports = {
   parseEnvFile,
   rewriteLocalhostUrl,
   runDockerWebWorkflow,
+  hasComposeProfile,
+  ensureProductionRedisToken,
 };

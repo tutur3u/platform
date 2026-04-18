@@ -76,6 +76,10 @@ test('rewriteLocalhostUrl maps local URLs to the Docker host alias', () => {
     `http://${DOCKER_HOST_ALIAS}:8001/`
   );
   assert.equal(
+    rewriteLocalhostUrl('http://[::1]:8001'),
+    `http://${DOCKER_HOST_ALIAS}:8001/`
+  );
+  assert.equal(
     rewriteLocalhostUrl('https://127.0.0.1:9999/path'),
     `https://${DOCKER_HOST_ALIAS}:9999/path`
   );
@@ -228,5 +232,22 @@ test('runDockerWebWorkflow throws a clear error when apps/web/.env.local is miss
         runCommand: async () => ({ code: 0, signal: null }),
       }),
     /Missing required env file/
+  );
+});
+
+test('runDockerWebWorkflow requires SRH_TOKEN for the production redis profile', async () => {
+  await assert.rejects(
+    () =>
+      runDockerWebWorkflow(
+        parseArgs(['up', '--mode', 'prod', '--profile', 'redis']),
+        {
+          env: { PATH: 'test-path' },
+          fsImpl: createFsStub({
+            envFileContent: 'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+          }),
+          runCommand: async () => ({ code: 0, signal: null }),
+        }
+      ),
+    /SRH_TOKEN must be set/
   );
 });
