@@ -241,7 +241,7 @@ Behavior:
 3. Renders a live terminal dashboard with the locked branch, tracked upstream,
    latest local commit, relative commit age, last check time, next poll time,
    current blue/green runtime state, and recent watcher events.
-4. Polls the tracked upstream every `5000ms`.
+4. Polls the tracked upstream every `1000ms` by default.
 5. Auto-clears and redraws the dashboard in place on each state change when
    attached to a TTY.
 6. Runs the Git and deploy subprocesses quietly so the dashboard is not
@@ -267,6 +267,9 @@ Dashboard details:
   Cloudflare Tunnel that are connected to `:7803`.
 - Persists and renders the last 3 auto-deployments as stacked terminal cards
   that favor vertical scanability over very wide lines.
+- As soon as a new commit starts rolling out, the recent deployment section
+  shows it immediately as `DEPLOYING` instead of waiting for the rollout to
+  finish.
 - Each deployment block includes:
   - deploy status (`ACTIVE`, `ENDED`, or `FAILED`)
   - build time

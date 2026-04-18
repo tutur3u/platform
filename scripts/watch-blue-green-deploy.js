@@ -18,7 +18,7 @@ const {
 } = require('./docker-web/compose.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
-const DEFAULT_INTERVAL_MS = 5_000;
+const DEFAULT_INTERVAL_MS = 1_000;
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
 const MAX_DEPLOYMENTS = 3;
 const MAX_EVENTS = 8;
@@ -436,9 +436,13 @@ function buildDeploymentTable(
     const status =
       entry.status === 'failed'
         ? colorize('red', 'FAILED')
-        : entry.endedAt
-          ? colorize('cyan', 'ENDED')
-          : colorize('green', 'ACTIVE');
+        : entry.status === 'building'
+          ? colorize('magenta', 'BUILDING')
+          : entry.status === 'deploying'
+            ? colorize('cyan', 'DEPLOYING')
+            : entry.endedAt
+              ? colorize('cyan', 'ENDED')
+              : colorize('green', 'ACTIVE');
     const timestamp = entry.finishedAt ?? entry.startedAt;
     const heading = `[${formatClockTime(timestamp)}] ${status} ${entry.activeColor ?? '-'}`;
     const commitLine =
@@ -578,8 +582,20 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
       'Last deploy',
       state.lastDeployAt
         ? `${colorize(
-            state.lastDeployStatus === 'failed' ? 'red' : 'green',
-            state.lastDeployStatus === 'failed' ? 'failed' : 'successful'
+            state.lastDeployStatus === 'failed'
+              ? 'red'
+              : state.lastDeployStatus === 'deploying'
+                ? 'cyan'
+                : state.lastDeployStatus === 'building'
+                  ? 'magenta'
+                  : 'green',
+            state.lastDeployStatus === 'failed'
+              ? 'failed'
+              : state.lastDeployStatus === 'deploying'
+                ? 'deploying'
+                : state.lastDeployStatus === 'building'
+                  ? 'building'
+                  : 'successful'
           )} ${colorize(
             'dim',
             `(${formatRelativeTime(state.lastDeployAt, { now })})`
@@ -620,7 +636,29 @@ function getLatestDeploymentSummary(deployments = []) {
       latestDeployment.startedAt ??
       null,
     lastDeployStatus:
-      latestDeployment.status === 'failed' ? 'failed' : 'successful',
+      latestDeployment.status === 'failed'
+        ? 'failed'
+        : latestDeployment.status === 'building' ||
+            latestDeployment.status === 'deploying'
+          ? latestDeployment.status
+          : 'successful',
+  };
+}
+
+function createPendingDeploymentEntry({
+  activeColor = null,
+  latestCommit = null,
+  startedAt,
+  status = 'deploying',
+} = {}) {
+  return {
+    activeColor,
+    buildDurationMs: null,
+    commitHash: latestCommit?.hash ?? null,
+    commitShortHash: latestCommit?.shortHash ?? null,
+    commitSubject: latestCommit?.subject ?? null,
+    startedAt,
+    status,
   };
 }
 
@@ -1440,6 +1478,7 @@ async function runDeployWatchIteration(
     fsImpl = fs,
     log = console,
     now = () => Date.now(),
+    onDeploymentStart = () => {},
     paths = getWatchPaths(),
     rootDir = ROOT_DIR,
     runCommand: run = runCommand,
@@ -1531,6 +1570,15 @@ async function runDeployWatchIteration(
     );
 
     const deployStartedAt = now();
+    onDeploymentStart({
+      checkedAt,
+      latestCommit,
+      pendingDeployment: createPendingDeploymentEntry({
+        latestCommit,
+        startedAt: deployStartedAt,
+        status: 'deploying',
+      }),
+    });
 
     try {
       await runBlueGreenDeploy({
@@ -1655,6 +1703,7 @@ async function runDeployWatchLoop(
     log = console,
     now = () => Date.now(),
     once = false,
+    onDeploymentStart = () => {},
     onIterationResult = () => {},
     onIterationStart = () => {},
     paths = getWatchPaths(),
@@ -1674,6 +1723,7 @@ async function runDeployWatchLoop(
       fsImpl,
       log,
       now,
+      onDeploymentStart,
       paths,
       rootDir,
       runCommand: run,
@@ -1789,6 +1839,31 @@ async function main(argv = process.argv.slice(2), options = {}) {
       log: ui,
       now: options.now ?? (() => Date.now()),
       once: parsed.once,
+      onDeploymentStart: ({ checkedAt, latestCommit, pendingDeployment }) => {
+        const currentDeployments = ui.state.deployments ?? [];
+        const nextDeployments = [
+          pendingDeployment,
+          ...currentDeployments.filter(
+            (entry) =>
+              !(
+                pendingDeployment.commitHash &&
+                entry.commitHash === pendingDeployment.commitHash &&
+                (entry.status === 'building' || entry.status === 'deploying')
+              )
+          ),
+        ].slice(0, MAX_DEPLOYMENTS);
+        const latestDeploymentSummary =
+          getLatestDeploymentSummary(nextDeployments);
+
+        ui.update({
+          deployments: nextDeployments,
+          lastCheckAt: checkedAt ?? Date.now(),
+          lastDeployAt: latestDeploymentSummary.lastDeployAt,
+          lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
+          latestCommit: latestCommit ?? ui.state.latestCommit,
+          nextCheckAt: null,
+        });
+      },
       onIterationResult: (iterationResult) => {
         const latestDeploymentSummary = getLatestDeploymentSummary(
           iterationResult.deployments ?? ui.state.deployments
@@ -1809,11 +1884,15 @@ async function main(argv = process.argv.slice(2), options = {}) {
           lastDeployStatus:
             iterationResult.status === 'deploy-failed'
               ? 'failed'
-              : iterationResult.status === 'deployed' ||
-                  iterationResult.status === 'restarting'
-                ? 'successful'
-                : (ui.state.lastDeployStatus ??
-                  latestDeploymentSummary.lastDeployStatus),
+              : iterationResult.status === 'deploying'
+                ? 'deploying'
+                : iterationResult.status === 'building'
+                  ? 'building'
+                  : iterationResult.status === 'deployed' ||
+                      iterationResult.status === 'restarting'
+                    ? 'successful'
+                    : (ui.state.lastDeployStatus ??
+                      latestDeploymentSummary.lastDeployStatus),
           lastResult: iterationResult,
           latestCommit: iterationResult.latestCommit ?? ui.state.latestCommit,
           nextCheckAt:
@@ -1914,6 +1993,7 @@ module.exports = {
   spawnReplacementWatcher,
   stripAnsi,
   summarizeRequestRate,
+  createPendingDeploymentEntry,
   createQuietRunCommand,
   summarizeBlueGreenRuntime,
   summarizeResult,

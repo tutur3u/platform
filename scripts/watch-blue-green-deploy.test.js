@@ -66,7 +66,7 @@ function prodComposePsKey(serviceName) {
   return `docker compose -f ${PROD_COMPOSE_FILE} ps -q ${serviceName}`;
 }
 
-test('parseArgs uses a 5s interval by default and accepts --once', () => {
+test('parseArgs uses a 1s interval by default and accepts --once', () => {
   assert.deepEqual(parseArgs([]), {
     intervalMs: DEFAULT_INTERVAL_MS,
     once: false,
@@ -224,6 +224,51 @@ test('buildDashboardView shows blue/green runtime and the last 3 deployments', (
   assert.ok(firstCardTop);
   assert.ok(firstCardHeading);
   assert.equal(firstCardTop.length, firstCardHeading.length);
+});
+
+test('buildDashboardView shows pending deployments in recent deployment cards', () => {
+  const output = stripAnsi(
+    buildDashboardView(
+      {
+        currentBlueGreen: {
+          state: 'idle',
+        },
+        deployments: [
+          {
+            commitShortHash: 'ccc333',
+            commitSubject: 'Ship hotfix through blue green',
+            startedAt: Date.parse('2026-04-18T11:29:40.000Z'),
+            status: 'deploying',
+          },
+        ],
+        events: [],
+        intervalMs: DEFAULT_INTERVAL_MS,
+        lastDeployAt: Date.parse('2026-04-18T11:29:40.000Z'),
+        lastDeployStatus: 'deploying',
+        lastResult: { status: 'up-to-date' },
+        latestCommit: {
+          committedAt: Date.parse('2026-04-18T11:29:00.000Z'),
+          hash: 'ccc333333333333',
+          shortHash: 'ccc333',
+          subject: 'Ship hotfix through blue green',
+        },
+        lockFile: '/tmp/watch.lock',
+        startedAt: Date.parse('2026-04-18T11:00:00.000Z'),
+        target: {
+          branch: 'main',
+          upstreamRef: 'origin/main',
+        },
+      },
+      {
+        now: Date.parse('2026-04-18T11:30:00.000Z'),
+        width: 100,
+      }
+    )
+  );
+
+  assert.match(output, /DEPLOYING/);
+  assert.match(output, /Ship hotfix through blue green/);
+  assert.match(output, /Last deploy:\s+deploying/);
 });
 
 test('createWatchUi records events and renders cleanly in non-TTY mode', () => {
@@ -865,6 +910,94 @@ test('runDeployWatchIteration pulls, deploys, tracks history, traffic, and watch
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
+});
+
+test('runDeployWatchIteration emits a pending deployment before deploy completion', async () => {
+  const pendingStates = [];
+  let pullCompleted = false;
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+
+    if (key === 'git rev-parse --abbrev-ref HEAD') {
+      return createResult('main\n');
+    }
+
+    if (key === 'git status --porcelain') {
+      return createResult('');
+    }
+
+    if (key === 'git fetch origin main') {
+      return createResult('');
+    }
+
+    if (key === 'git rev-parse HEAD') {
+      return createResult(pullCompleted ? 'bbb222\n' : 'aaa111\n');
+    }
+
+    if (key === 'git rev-parse origin/main') {
+      return createResult('bbb222\n');
+    }
+
+    if (key === 'git merge-base --is-ancestor aaa111 bbb222') {
+      return createResult('');
+    }
+
+    if (key === 'git pull --ff-only origin main') {
+      pullCompleted = true;
+      return createResult('Updating aaa111..bbb222\n');
+    }
+
+    if (
+      key ===
+      `git diff --name-only aaa111 bbb222 -- ${SELF_WATCHED_FILES.join(' ')}`
+    ) {
+      return createResult('');
+    }
+
+    if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+      return createResult(
+        'bbb222222222222222222\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:58:00.000Z\n'
+      );
+    }
+
+    if (
+      key ===
+      `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+    ) {
+      return createResult('');
+    }
+
+    if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+      return createResult('');
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  const result = await runDeployWatchIteration(
+    {
+      branch: 'main',
+      remote: 'origin',
+      upstreamBranch: 'main',
+      upstreamRef: 'origin/main',
+    },
+    {
+      log: { error() {}, info() {}, warn() {} },
+      now: (() => {
+        const values = [1000, 2000, 3000, 4000];
+        return () => values.shift() ?? 4000;
+      })(),
+      onDeploymentStart: (state) => {
+        pendingStates.push(state);
+      },
+      runCommand,
+    }
+  );
+
+  assert.equal(pendingStates.length, 1);
+  assert.equal(pendingStates[0].pendingDeployment.status, 'deploying');
+  assert.equal(pendingStates[0].pendingDeployment.commitShortHash, 'bbb222');
+  assert.equal(result.status, 'deployed');
 });
 
 test('runDeployWatchIteration stops when the locked branch changes', async () => {
