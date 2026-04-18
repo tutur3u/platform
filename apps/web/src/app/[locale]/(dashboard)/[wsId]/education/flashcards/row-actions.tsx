@@ -1,7 +1,9 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
+import { deleteWorkspaceFlashcard } from '@tuturuuu/internal-api';
 import type { WorkspaceFlashcard } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
@@ -30,24 +32,18 @@ export function WorkspaceFlashcardRowActions({
 
   const data = row.original;
 
-  const deleteWorkspaceFlashcard = async () => {
-    const res = await fetch(
-      `/api/v1/workspaces/${data.ws_id}/flashcards/${data.id}`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    if (res.ok) {
+  const deleteMutation = useMutation({
+    mutationFn: async () => deleteWorkspaceFlashcard(data.ws_id, data.id),
+    onSuccess: () => {
       router.refresh();
-    } else {
-      const data = await res.json();
+    },
+    onError: (error) => {
       toast({
-        title: 'Failed to delete workspace user group tag',
-        description: data.message,
+        title: 'Failed to delete workspace flashcard',
+        description: error instanceof Error ? error.message : String(error),
       });
-    }
-  };
+    },
+  });
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
@@ -70,7 +66,10 @@ export function WorkspaceFlashcardRowActions({
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteWorkspaceFlashcard}>
+          <DropdownMenuItem
+            onClick={() => deleteMutation.mutate()}
+            disabled={deleteMutation.isPending}
+          >
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>

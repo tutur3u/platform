@@ -1,5 +1,5 @@
 import { Paperclip } from '@tuturuuu/icons';
-import { createDynamicClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { DeleteResourceButton } from '@tuturuuu/ui/custom/education/modules/resources/delete-resource';
 import { FileDisplay } from '@tuturuuu/ui/custom/education/modules/resources/file-display';
 import { StorageObjectForm } from '@tuturuuu/ui/custom/education/modules/resources/file-upload-form';
@@ -7,6 +7,7 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 
 export const metadata: Metadata = {
   title: 'Resources',
@@ -25,8 +26,9 @@ interface Props {
 export default async function ModuleResourcesPage({ params }: Props) {
   const t = await getTranslations();
 
-  const { wsId, courseId, moduleId } = await params;
-  const storagePath = `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`;
+  const { wsId: routeWsId, courseId, moduleId } = await params;
+  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const storagePath = `${resolvedWsId}/courses/${courseId}/modules/${moduleId}/resources/`;
   const resources = await getResources({ path: storagePath });
 
   return (
@@ -46,7 +48,7 @@ export default async function ModuleResourcesPage({ params }: Props) {
         createDescription={t('ws-course-modules.add_resource_description')}
         form={
           <StorageObjectForm
-            wsId={wsId}
+            wsId={resolvedWsId}
             submitLabel={t('common.upload')}
             path={storagePath}
           />
@@ -79,7 +81,7 @@ export default async function ModuleResourcesPage({ params }: Props) {
 }
 
 async function getResources({ path }: { path: string }) {
-  const supabase = await createDynamicClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase.storage.from('workspaces').list(path, {
     sortBy: { column: 'created_at', order: 'desc' },

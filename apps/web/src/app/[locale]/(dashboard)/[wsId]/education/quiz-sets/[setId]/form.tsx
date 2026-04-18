@@ -1,6 +1,11 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import { Loader, Pencil, Plus, PlusCircle, Wand } from '@tuturuuu/icons';
+import {
+  createWorkspaceQuiz,
+  updateWorkspaceQuiz,
+} from '@tuturuuu/internal-api';
 import type { WorkspaceQuiz } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -96,33 +101,37 @@ export default function QuizForm({
   const isValid = form.formState.isValid;
   const isSubmitting = form.formState.isSubmitting;
 
-  const disabled = !isDirty || !isValid || isSubmitting;
-
-  const onSubmit = async (data: z.infer<typeof FormSchema>) => {
-    try {
-      const res = await fetch(
-        data.id
-          ? `/api/v1/workspaces/${wsId}/quizzes/${data.id}`
-          : `/api/v1/workspaces/${wsId}/quizzes`,
-        {
-          method: data.id ? 'PUT' : 'POST',
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (res.ok) {
-        onFinish?.(data);
-        router.refresh();
-      } else {
-        const resData = await res.json();
-        toast({
-          title: `Failed to ${data.id ? 'edit' : 'create'} quiz`,
-          description: resData.message,
-        });
+  const saveMutation = useMutation({
+    mutationFn: async (payload: z.infer<typeof FormSchema>) => {
+      if (payload.id) {
+        await updateWorkspaceQuiz(wsId, payload.id, payload);
+        return;
       }
+
+      await createWorkspaceQuiz(wsId, {
+        moduleId: payload.moduleId,
+        setId: payload.setId,
+        quizzes: [
+          {
+            question: payload.question,
+            quiz_options: payload.quiz_options,
+          },
+        ],
+      });
+    },
+  });
+
+  const disabled =
+    !isDirty || !isValid || isSubmitting || saveMutation.isPending;
+
+  const onSubmit = async (payload: z.infer<typeof FormSchema>) => {
+    try {
+      await saveMutation.mutateAsync(payload);
+      onFinish?.(payload);
+      router.refresh();
     } catch (error) {
       toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} quiz`,
+        title: `Failed to ${payload.id ? 'edit' : 'create'} quiz`,
         description: error instanceof Error ? error.message : String(error),
       });
     }

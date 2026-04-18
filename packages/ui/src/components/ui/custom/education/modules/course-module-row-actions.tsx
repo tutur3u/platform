@@ -1,7 +1,9 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
+import { deleteWorkspaceCourseModule } from '@tuturuuu/internal-api';
 import type { WorkspaceCourseModule } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { CourseModuleForm } from '@tuturuuu/ui/custom/education/modules/course-module-form';
@@ -35,24 +37,20 @@ export function WorkspaceCourseModuleRowActions({
   const data = row.original;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const deleteWorkspaceCourseModule = async () => {
-    const res = await fetch(
-      `/api/v1/workspaces/${wsId}/course-modules/${data.id}`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    if (res.ok) {
+  const deleteMutation = useMutation({
+    mutationFn: async () => deleteWorkspaceCourseModule(wsId, data.id),
+    onSuccess: () => {
       router.refresh();
-    } else {
-      const data = await res.json();
+      setShowDeleteDialog(false);
+    },
+    onError: (error) => {
       toast({
-        title: 'Failed to delete workspace user group tag',
-        description: data.message,
+        title: 'Failed to delete workspace course module',
+        description: error instanceof Error ? error.message : String(error),
       });
-    }
-  };
+      setShowDeleteDialog(false);
+    },
+  });
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
@@ -113,7 +111,11 @@ export function WorkspaceCourseModuleRowActions({
             >
               {t('common.cancel')}
             </Button>
-            <Button variant="destructive" onClick={deleteWorkspaceCourseModule}>
+            <Button
+              variant="destructive"
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+            >
               {t('common.delete')}
             </Button>
           </div>

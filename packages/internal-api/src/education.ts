@@ -4,6 +4,133 @@ import {
   type InternalApiClientOptions,
 } from './client';
 
+export interface UpsertWorkspaceCoursePayload {
+  id?: string;
+  name: string;
+  description?: string;
+  cert_template?: string;
+}
+
+export interface UpsertWorkspaceCourseModulePayload {
+  id?: string;
+  name: string;
+  content?: unknown;
+  extra_content?: unknown;
+  is_public?: boolean;
+  is_published?: boolean;
+  youtube_links?: string[];
+}
+
+export interface UpsertWorkspaceQuizPayload {
+  id?: string;
+  question: string;
+  quiz_options: Array<{
+    id?: string;
+    value: string;
+    is_correct: boolean;
+    explanation?: string | null;
+  }>;
+}
+
+export interface CreateWorkspaceQuizPayload {
+  moduleId?: string;
+  quizzes: UpsertWorkspaceQuizPayload[];
+  setId?: string;
+}
+
+export interface UpsertWorkspaceQuizSetPayload {
+  id?: string;
+  moduleId?: string;
+  name: string;
+}
+
+export interface UpsertWorkspaceFlashcardPayload {
+  id?: string;
+  moduleId?: string;
+  front: string;
+  back: string;
+}
+
+export interface WorkspaceEducationAttemptListQuery {
+  dateFrom?: string;
+  dateTo?: string;
+  learnerId?: string;
+  page?: number;
+  pageSize?: number;
+  setId?: string;
+  sortBy?: 'duration' | 'newest' | 'score';
+  sortDirection?: 'asc' | 'desc';
+  status?: 'all' | 'completed' | 'incomplete';
+}
+
+export async function createWorkspaceCourse(
+  workspaceId: string,
+  payload: UpsertWorkspaceCoursePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/courses`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceCourse(
+  workspaceId: string,
+  courseId: string,
+  payload: Partial<UpsertWorkspaceCoursePayload>,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/courses/${encodePathSegment(courseId)}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteWorkspaceCourse(
+  workspaceId: string,
+  courseId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/courses/${encodePathSegment(courseId)}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceCourseModule(
+  workspaceId: string,
+  courseId: string,
+  payload: UpsertWorkspaceCourseModulePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/courses/${encodePathSegment(courseId)}/modules`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function updateWorkspaceCourseModule(
   workspaceId: string,
   moduleId: string,
@@ -19,6 +146,24 @@ export async function updateWorkspaceCourseModule(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function reorderWorkspaceCourseModules(
+  workspaceId: string,
+  courseId: string,
+  moduleIds: string[],
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/courses/${encodePathSegment(courseId)}/module-order`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ moduleIds }),
       cache: 'no-store',
     }
   );
@@ -75,6 +220,41 @@ export async function unlinkQuizSetModule(
   );
 }
 
+export async function createWorkspaceQuiz(
+  workspaceId: string,
+  payload: CreateWorkspaceQuizPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quizzes`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceQuiz(
+  workspaceId: string,
+  quizId: string,
+  payload: Partial<UpsertWorkspaceQuizPayload>,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quizzes/${encodePathSegment(quizId)}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function deleteWorkspaceQuiz(
   workspaceId: string,
   quizId: string,
@@ -90,6 +270,91 @@ export async function deleteWorkspaceQuiz(
   );
 }
 
+export async function createWorkspaceQuizSet(
+  workspaceId: string,
+  payload: UpsertWorkspaceQuizSetPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quiz-sets`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceQuizSet(
+  workspaceId: string,
+  setId: string,
+  payload: Partial<UpsertWorkspaceQuizSetPayload>,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quiz-sets/${encodePathSegment(setId)}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteWorkspaceQuizSet(
+  workspaceId: string,
+  setId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quiz-sets/${encodePathSegment(setId)}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceFlashcard(
+  workspaceId: string,
+  payload: UpsertWorkspaceFlashcardPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/flashcards`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceFlashcard(
+  workspaceId: string,
+  flashcardId: string,
+  payload: Partial<UpsertWorkspaceFlashcardPayload>,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/flashcards/${encodePathSegment(flashcardId)}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function deleteWorkspaceFlashcard(
   workspaceId: string,
   flashcardId: string,
@@ -100,6 +365,54 @@ export async function deleteWorkspaceFlashcard(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/flashcards/${encodePathSegment(flashcardId)}`,
     {
       method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceEducationAttempts(
+  workspaceId: string,
+  query: WorkspaceEducationAttemptListQuery = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const search = new URLSearchParams();
+
+  if (query.page) search.set('page', `${query.page}`);
+  if (query.pageSize) search.set('pageSize', `${query.pageSize}`);
+  if (query.setId) search.set('setId', query.setId);
+  if (query.learnerId) search.set('learnerId', query.learnerId);
+  if (query.status) search.set('status', query.status);
+  if (query.dateFrom) search.set('dateFrom', query.dateFrom);
+  if (query.dateTo) search.set('dateTo', query.dateTo);
+  if (query.sortBy) search.set('sortBy', query.sortBy);
+  if (query.sortDirection) search.set('sortDirection', query.sortDirection);
+
+  const suffix = search.size > 0 ? `?${search.toString()}` : '';
+  return client.json<{
+    attempts: Array<Record<string, unknown>>;
+    count: number;
+    page: number;
+    pageSize: number;
+  }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/education/attempts${suffix}`,
+    { cache: 'no-store' }
+  );
+}
+
+export async function getWorkspaceEducationAttemptDetail(
+  workspaceId: string,
+  attemptId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{
+    attempt: Record<string, unknown>;
+    learner: Record<string, unknown> | null;
+    answers: Array<Record<string, unknown>>;
+  }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/education/attempts/${encodePathSegment(attemptId)}`,
+    {
       cache: 'no-store',
     }
   );

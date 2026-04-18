@@ -1,7 +1,11 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import { Check, Trash } from '@tuturuuu/icons';
-import { uploadWorkspaceStorageFile } from '@tuturuuu/internal-api';
+import {
+  createWorkspaceStorageFolder,
+  uploadWorkspaceStorageFile,
+} from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -87,31 +91,31 @@ export function StorageFolderForm({
     },
   });
 
+  const createFolderMutation = useMutation({
+    mutationFn: async (payload: z.infer<typeof FolderFormSchema>) =>
+      createWorkspaceStorageFolder(
+        wsId,
+        {
+          path: normalizeWorkspaceStoragePath(wsId, uploadPath),
+          name: payload.name,
+        },
+        { fetch }
+      ),
+  });
+
   async function onSubmit(data: z.infer<typeof FolderFormSchema>) {
     setLoading(true);
-    const response = await fetch(`/api/v1/workspaces/${wsId}/storage/folders`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-      body: JSON.stringify({
-        path: normalizeWorkspaceStoragePath(wsId, uploadPath),
-        name: data.name,
-      }),
-    });
-
-    if (response.ok) {
+    try {
+      await createFolderMutation.mutateAsync(data);
       onComplete?.();
       setLoading(false);
       router.refresh();
-    } else {
-      const errorBody = (await response.json().catch(() => null)) as {
-        message?: string;
-      } | null;
+    } catch (error) {
       setLoading(false);
       toast.error(
-        errorBody?.message || 'An error occurred while creating the folder'
+        error instanceof Error
+          ? error.message
+          : 'An error occurred while creating the folder'
       );
     }
   }

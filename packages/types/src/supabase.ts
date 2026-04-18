@@ -16574,6 +16574,7 @@ export type Database = {
           is_public: boolean;
           is_published: boolean;
           name: string;
+          sort_key: number | null;
           youtube_links: string[] | null;
         };
         Insert: {
@@ -16585,6 +16586,7 @@ export type Database = {
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
+          sort_key?: number | null;
           youtube_links?: string[] | null;
         };
         Update: {
@@ -16596,6 +16598,7 @@ export type Database = {
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
+          sort_key?: number | null;
           youtube_links?: string[] | null;
         };
         Relationships: [

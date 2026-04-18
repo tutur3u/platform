@@ -1,5 +1,5 @@
 import { Box, Eye, Paperclip } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceQuizSet } from '@tuturuuu/types';
 import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -70,7 +70,7 @@ export default async function QuizSetDetailsLayout({
 }
 
 async function getData(setId: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase
     .from('workspace_quiz_sets')
@@ -85,7 +85,7 @@ async function getData(setId: string) {
 }
 
 async function getLinkedQuizzes(setId: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { count, error } = await supabase
     .from('quiz_set_quizzes')
@@ -97,7 +97,7 @@ async function getLinkedQuizzes(setId: string) {
 }
 
 async function getLinkedModules(setId: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { count, error } = await supabase
     .from('course_module_quiz_sets')

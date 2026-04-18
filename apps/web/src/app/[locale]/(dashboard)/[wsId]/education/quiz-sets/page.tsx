@@ -1,111 +1,14 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceQuizSet } from '@tuturuuu/types';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
-import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
-import { getQuizSetColumns } from './columns';
-import QuizForm from './form';
-
-export const metadata: Metadata = {
-  title: 'Quiz Sets',
-  description:
-    'Manage Quiz Sets in the Education area of your Tuturuuu workspace.',
-};
-
-interface SearchParams {
-  q?: string;
-  page?: string;
-  pageSize?: string;
-  includedTags?: string | string[];
-  excludedTags?: string | string[];
-}
+import { permanentRedirect } from 'next/navigation';
 
 interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<SearchParams>;
 }
 
-export default async function WorkspaceQuizzesPage({
+export default async function WorkspaceQuizSetsLegacyRedirectPage({
   params,
-  searchParams,
 }: Props) {
-  const t = await getTranslations();
   const { wsId } = await params;
-
-  const { data, count } = await getData(wsId, await searchParams);
-
-  const quizSets = data.map((quizSet) => ({
-    ...quizSet,
-    href: `/${wsId}/education/quiz-sets/${quizSet.id}`,
-  }));
-
-  return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-quiz-sets.plural')}
-        singularTitle={t('ws-quiz-sets.singular')}
-        description={t('ws-quiz-sets.description')}
-        createTitle={t('ws-quiz-sets.create')}
-        createDescription={t('ws-quiz-sets.create_description')}
-        form={<QuizForm wsId={wsId} />}
-      />
-      <Separator className="my-4" />
-      <CustomDataTable
-        data={quizSets}
-        columnGenerator={getQuizSetColumns}
-        namespace="quiz-set-data-table"
-        count={count}
-        extraData={{ wsId }}
-        defaultVisibility={{
-          id: false,
-          created_at: false,
-        }}
-      />
-    </>
-  );
-}
-
-async function getData(
-  wsId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-    retry = true,
-  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
-) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_quiz_sets')
-    .select(
-      '*, linked_modules:course_module_quiz_sets(...workspace_course_modules(module_id:id, module_name:name, ...workspace_courses(course_id:id, course_name:name)))',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
-
-  if (q) queryBuilder.ilike('name', `%${q}%`);
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
-
-  const { data, error, count } = await queryBuilder;
-  if (error) {
-    if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false });
-  }
-
-  return { data, count } as { data: WorkspaceQuizSet[]; count: number };
+  permanentRedirect(`/${wsId}/education/library/quiz-sets`);
 }

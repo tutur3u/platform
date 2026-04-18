@@ -63,13 +63,36 @@ export {
   resolveInternalApiUrl,
   withForwardedInternalApiAuth,
 } from './client';
+export type {
+  CreateWorkspaceQuizPayload,
+  UpsertWorkspaceCourseModulePayload,
+  UpsertWorkspaceCoursePayload,
+  UpsertWorkspaceFlashcardPayload,
+  UpsertWorkspaceQuizPayload,
+  UpsertWorkspaceQuizSetPayload,
+  WorkspaceEducationAttemptListQuery,
+} from './education';
 export {
+  createWorkspaceCourse,
+  createWorkspaceCourseModule,
+  createWorkspaceFlashcard,
+  createWorkspaceQuiz,
+  createWorkspaceQuizSet,
+  deleteWorkspaceCourse,
   deleteWorkspaceCourseModule,
   deleteWorkspaceFlashcard,
   deleteWorkspaceQuiz,
+  deleteWorkspaceQuizSet,
+  getWorkspaceEducationAttemptDetail,
   linkQuizSetModules,
+  listWorkspaceEducationAttempts,
+  reorderWorkspaceCourseModules,
   unlinkQuizSetModule,
+  updateWorkspaceCourse,
   updateWorkspaceCourseModule,
+  updateWorkspaceFlashcard,
+  updateWorkspaceQuiz,
+  updateWorkspaceQuizSet,
 } from './education';
 export {
   createCanonicalExternalProject,

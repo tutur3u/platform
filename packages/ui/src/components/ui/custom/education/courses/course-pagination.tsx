@@ -27,7 +27,7 @@ export function CoursePagination({
       const params = new URLSearchParams(searchParams.toString());
       params.set('page', page.toString());
 
-      const route = wsId ? `/${wsId}/courses` : '/courses';
+      const route = wsId ? `/${wsId}/education/courses` : '/courses';
       router.push(`${route}?${params.toString()}`);
     },
     [router, searchParams, wsId]
@@ -39,7 +39,7 @@ export function CoursePagination({
       params.set('pageSize', newPageSize.toString());
       params.set('page', '1');
 
-      const route = wsId ? `/${wsId}/courses` : '/courses';
+      const route = wsId ? `/${wsId}/education/courses` : '/courses';
       router.push(`${route}?${params.toString()}`);
     },
     [router, searchParams, wsId]
