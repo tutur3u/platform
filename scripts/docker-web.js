@@ -42,6 +42,7 @@ const {
   DOCKER_HOST_ALIAS,
   WEB_ENV_FILE,
   ensureProductionRedisToken,
+  ensureRequiredComposeEnvironment,
   ensureWebEnvFile,
   getComposeEnvironment,
   parseEnvFile,
@@ -167,6 +168,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
   const fsImpl = options.fsImpl ?? fs;
   const composeFile = getComposeFile(parsed.mode);
   const env = options.env ?? process.env;
+  const withRedis = hasComposeProfile(parsed.composeGlobalArgs, 'redis');
 
   await runChecked('docker', ['compose', 'version'], {
     env,
@@ -176,6 +178,14 @@ async function runDockerWebWorkflow(parsed, options = {}) {
   });
 
   if (parsed.action === 'down') {
+    const composeEnv = getComposeEnvironment({
+      baseEnv: env,
+      envFilePath: options.envFilePath ?? WEB_ENV_FILE,
+      fsImpl,
+      rootDir: options.rootDir,
+      withRedis,
+    });
+
     await runChecked(
       'docker',
       getComposeCommandArgs(
@@ -186,13 +196,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         ...parsed.composeArgs
       ),
       {
-        env: getComposeEnvironment({
-          baseEnv: env,
-          envFilePath: options.envFilePath ?? WEB_ENV_FILE,
-          fsImpl,
-          rootDir: options.rootDir,
-          withRedis: hasComposeProfile(parsed.composeGlobalArgs, 'redis'),
-        }),
+        env: composeEnv,
         fsImpl,
         runCommand: run,
       }
@@ -213,6 +217,14 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     fsImpl,
     rootDir: options.rootDir,
   });
+  const composeEnv = getComposeEnvironment({
+    baseEnv: env,
+    envFilePath: options.envFilePath ?? WEB_ENV_FILE,
+    fsImpl,
+    rootDir: options.rootDir,
+    withRedis,
+  });
+  ensureRequiredComposeEnvironment(composeEnv, { withRedis });
 
   if (parsed.withSupabase) {
     await runChecked('bun', ['sb:start'], {
@@ -251,13 +263,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       {
         composeFile,
         composeGlobalArgs: parsed.composeGlobalArgs,
-        env: getComposeEnvironment({
-          baseEnv: env,
-          envFilePath: options.envFilePath ?? WEB_ENV_FILE,
-          fsImpl,
-          rootDir: options.rootDir,
-          withRedis: hasComposeProfile(parsed.composeGlobalArgs, 'redis'),
-        }),
+        env: composeEnv,
         runCommand: run,
       }
     );
@@ -275,13 +281,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       ...(parsed.mode === 'prod' ? getInPlaceProdServices(parsed) : [])
     ),
     {
-      env: getComposeEnvironment({
-        baseEnv: env,
-        envFilePath: options.envFilePath ?? WEB_ENV_FILE,
-        fsImpl,
-        rootDir: options.rootDir,
-        withRedis: hasComposeProfile(parsed.composeGlobalArgs, 'redis'),
-      }),
+      env: composeEnv,
       fsImpl,
       runCommand: run,
     }

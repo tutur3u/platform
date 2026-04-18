@@ -3969,8 +3969,9 @@
   },
   "facebook_mockup": {
     "actions": {
-      "move_down": "Di chuyển xuống",
-      "move_up": "Di chuyển lên",
+      "drag_to_reorder": "Kéo {reaction} để sắp xếp lại",
+      "move_down": "Di chuyển {reaction} xuống",
+      "move_up": "Di chuyển {reaction} lên",
       "remove": "Xóa",
       "replace": "Thay ảnh",
       "upload": "Tải lên"
@@ -3990,6 +3991,7 @@
     },
     "description": "Chuyển đổi giữa mockup quảng cáo desktop và bài đăng trang Facebook trên máy tính, tải lên một ảnh chính, rồi xuất mockup ngay lập tức.",
     "errors": {
+      "download_failed": "Không thể tải xuống ảnh mockup.",
       "file_too_large": "Ảnh phải nhỏ hơn hoặc bằng {size}.",
       "invalid_type": "Chỉ dùng ảnh PNG, JPG hoặc WEBP."
     },
@@ -4020,6 +4022,10 @@
     "helper_text": {
       "drag_reactions": "Kéo thả cảm xúc để đổi thứ tự hiển thị trên thanh tổng hợp.",
       "upload_image": "PNG, JPG hoặc WEBP tối đa {size}."
+    },
+    "meta": {
+      "description": "Tạo mockup quảng cáo hoặc bài đăng Facebook trên desktop ngay trong trình duyệt.",
+      "title": "Công cụ mockup Facebook"
     },
     "modes": {
       "ad": "Quảng cáo Facebook",

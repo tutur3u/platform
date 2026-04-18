@@ -88,7 +88,9 @@ jobs:
       - name: Render Docker Compose configs
         run: |
           docker compose -f docker-compose.web.yml config > /tmp/docker-compose.web.yml
+          docker compose -f docker-compose.web.yml --profile redis config > /tmp/docker-compose.web.redis.yml
           docker compose -f docker-compose.web.prod.yml config > /tmp/docker-compose.web.prod.yml
+          docker compose -f docker-compose.web.prod.yml --profile redis config > /tmp/docker-compose.web.prod.redis.yml
 
       - name: Build web dev image
         run: docker build --target dev -f apps/web/Dockerfile .

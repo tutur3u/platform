@@ -69,7 +69,10 @@ export function isDefaultFacebookMockupState(
       (reaction) =>
         state.enabledReactions[reaction] === defaults.enabledReactions[reaction]
     ) &&
-    state.reactionOrder.join(',') === defaults.reactionOrder.join(',') &&
+    state.reactionOrder.length === defaults.reactionOrder.length &&
+    state.reactionOrder.every(
+      (reaction, index) => reaction === defaults.reactionOrder[index]
+    ) &&
     state.avatarImageUrl === defaults.avatarImageUrl &&
     state.avatarFileName === defaults.avatarFileName &&
     state.creativeImageUrl === defaults.creativeImageUrl &&

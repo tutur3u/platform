@@ -28,8 +28,9 @@ bun dev:docs:down
 
 ### Custom Ports
 
-Mintlify uses port 3000 by default. You can use the `--port` flag to customize
-the port exposed by the Docker stack. For example:
+The docs stack exposes port `3000` by default through `${DOCS_PORT:-3000}` in
+`docker-compose.docs.yml`. You can use the `--port` flag to customize the
+host-side port binding. For example:
 
 ```bash
 bun dev:docs -- --port 3333

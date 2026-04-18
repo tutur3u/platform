@@ -1,8 +1,8 @@
 'use client';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ALLOWED_IMAGE_TYPES,
   createInitialFacebookMockupState,
@@ -51,16 +51,12 @@ function detectCurrentTheme(): FacebookPreviewTheme {
 }
 
 export default function FacebookMockup() {
+  const locale = useLocale();
   const t = useTranslations() as TranslationFn;
   const previewRef = useRef<HTMLDivElement>(null);
   const fullscreenPreviewRef = useRef<HTMLDivElement>(null);
-  const createDefaults = useCallback(
-    () => createInitialFacebookMockupState(t),
-    [t]
-  );
-  const [state, setState] = useState<FacebookMockupState>(() =>
-    createDefaults()
-  );
+  const defaults = useMemo(() => createInitialFacebookMockupState(t), [t]);
+  const [state, setState] = useState<FacebookMockupState>(() => defaults);
   const [error, setError] = useState<string | null>(null);
   const [previewTheme, setPreviewTheme] =
     useState<FacebookPreviewTheme>('light');
@@ -156,25 +152,29 @@ export default function FacebookMockup() {
 
     if (!activePreviewRef) return;
 
-    const html2canvas = (await import('html2canvas-pro')).default;
-    const canvas = await html2canvas(activePreviewRef, {
-      backgroundColor: null,
-      logging: false,
-      scale: 2,
-      useCORS: true,
-    });
+    try {
+      const html2canvas = (await import('html2canvas-pro')).default;
+      const canvas = await html2canvas(activePreviewRef, {
+        backgroundColor: null,
+        logging: false,
+        scale: 2,
+        useCORS: true,
+      });
 
-    downloadCanvasImage(canvas);
-  }, [isFullscreenOpen]);
+      downloadCanvasImage(canvas);
+      setError(null);
+    } catch (error) {
+      console.error('Facebook mockup download failed', error);
+      setError(t('facebook_mockup.errors.download_failed'));
+    }
+  }, [isFullscreenOpen, t]);
 
   const handleReset = useCallback(() => {
     setError(null);
-    setState(createDefaults());
+    setState(defaults);
     setPreviewTheme(detectCurrentTheme());
     setPreviewViewport('phone');
-  }, [createDefaults]);
-
-  const defaults = createDefaults();
+  }, [defaults]);
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,430px)_minmax(0,1fr)]">
@@ -201,6 +201,7 @@ export default function FacebookMockup() {
       <div className="xl:sticky xl:top-24 xl:self-start">
         <FacebookMockupPreview
           ref={previewRef}
+          locale={locale}
           state={state}
           t={t}
           previewTheme={previewTheme}
@@ -259,6 +260,7 @@ export default function FacebookMockup() {
               <div className="mx-auto flex min-h-full items-start justify-center">
                 <FacebookMockupPreview
                   ref={fullscreenPreviewRef}
+                  locale={locale}
                   state={state}
                   t={t}
                   previewTheme={previewTheme}

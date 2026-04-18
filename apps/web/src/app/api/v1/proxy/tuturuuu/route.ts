@@ -18,21 +18,24 @@ const ALLOWED_API_DOMAINS = [
 
 // Allowed ports for local development to prevent SSRF to internal services
 const ALLOWED_LOCAL_PORTS = [3000, 7803, 8080];
+let proxyFetchOptionsPromise:
+  | Promise<{ dispatcher: import('undici').Agent }>
+  | undefined;
 
 async function getProxyFetchOptions() {
   if (!DEV_MODE) {
     return {};
   }
 
-  const { Agent } = await import('undici');
-
-  return {
+  proxyFetchOptionsPromise ??= import('undici').then(({ Agent }) => ({
     // Increase the header size limit in development to tolerate noisy upstream
     // responses without evaluating Undici at module-load time during prod builds.
     dispatcher: new Agent({
       maxHeaderSize: 128 * 1024,
     }),
-  };
+  }));
+
+  return proxyFetchOptionsPromise;
 }
 
 /**

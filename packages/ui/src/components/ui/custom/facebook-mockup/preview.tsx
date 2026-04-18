@@ -31,6 +31,7 @@ import type {
 } from './types';
 
 interface FacebookMockupPreviewProps {
+  locale: string;
   state: FacebookMockupState;
   t: TranslationFn;
   previewTheme: 'dark' | 'light';
@@ -230,14 +231,14 @@ function renderAvatar(imageUrl: string | null, alt: string, fallback: string) {
   );
 }
 
-function formatCompactCount(value: string) {
+function formatCompactCount(value: string, locale: string) {
   const numericValue = Number(value);
 
   if (!Number.isFinite(numericValue)) {
     return value;
   }
 
-  return new Intl.NumberFormat('en', {
+  return new Intl.NumberFormat(locale, {
     notation: numericValue >= 1000 ? 'compact' : 'standard',
     maximumFractionDigits: numericValue >= 10000 ? 0 : 1,
   }).format(numericValue);
@@ -266,7 +267,7 @@ export const FacebookMockupPreview = forwardRef<
   HTMLDivElement,
   FacebookMockupPreviewProps
 >(function FacebookMockupPreview(
-  { state, t, previewTheme, viewportMode },
+  { locale, state, t, previewTheme, viewportMode },
   ref
 ) {
   const [isCaptionExpanded, setIsCaptionExpanded] = useState(false);
@@ -667,16 +668,16 @@ export const FacebookMockupPreview = forwardRef<
                     </div>
                   ) : null}
                   <ReactionSummaryLink className="min-w-0" theme={previewTheme}>
-                    {formatCompactCount(state.reactions)}
+                    {formatCompactCount(state.reactions, locale)}
                   </ReactionSummaryLink>
                 </div>
                 <div className="flex shrink-0 items-center gap-3 text-[13px]">
                   <ReactionSummaryLink theme={previewTheme}>
-                    {formatCompactCount(state.comments)}{' '}
+                    {formatCompactCount(state.comments, locale)}{' '}
                     {t('facebook_mockup.fields.comments')}
                   </ReactionSummaryLink>
                   <ReactionSummaryLink theme={previewTheme}>
-                    {formatCompactCount(state.shares)}{' '}
+                    {formatCompactCount(state.shares, locale)}{' '}
                     {t('facebook_mockup.fields.shares')}
                   </ReactionSummaryLink>
                 </div>

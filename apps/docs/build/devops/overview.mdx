@@ -57,7 +57,9 @@ flowchart LR
 
 - `apps/web` now supports both in-place Docker production deploys and blue/green deploys.
 - `docker-setup-check.yaml` validates Docker parity, renders both compose files, and builds both the dev and production web images.
-- Production Redis in Docker now requires `SRH_TOKEN` explicitly instead of silently falling back to an empty value.
+- Production Redis in Docker now requires a token, but `scripts/docker-web.js`
+  satisfies that automatically by generating and injecting the value unless you
+  explicitly opt out with `--without-redis`.
 
-If you are changing deployment behavior, update this section and add any new page to
-[`apps/docs/docs.json`](/Users/vhpx/Documents/GitHub/platform/apps/docs/docs.json).
+If you are changing deployment behavior, update this section and add any new
+page to `apps/docs/docs.json`.

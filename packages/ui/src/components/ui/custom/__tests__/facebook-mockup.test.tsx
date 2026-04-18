@@ -15,11 +15,12 @@ const { html2canvasMock, translations } = vi.hoisted(() => ({
   translations: {
     'common.download': 'Download',
     'common.reset': 'Reset',
+    'facebook_mockup.actions.drag_to_reorder': 'Drag {reaction} to reorder',
     'facebook_mockup.actions.remove': 'Remove',
-    'facebook_mockup.actions.replace': 'Replace',
+    'facebook_mockup.actions.replace': 'Replace image',
     'facebook_mockup.actions.upload': 'Upload',
-    'facebook_mockup.actions.move_down': 'Move down',
-    'facebook_mockup.actions.move_up': 'Move up',
+    'facebook_mockup.actions.move_down': 'Move {reaction} down',
+    'facebook_mockup.actions.move_up': 'Move {reaction} up',
     'facebook_mockup.defaults.audience_label': 'Public',
     'facebook_mockup.defaults.caption':
       'Tuturuuu turns a single creative into a polished Facebook desktop mockup in seconds.',
@@ -38,6 +39,7 @@ const { html2canvasMock, translations } = vi.hoisted(() => ({
     'facebook_mockup.errors.file_too_large':
       'Images must be {size} or smaller.',
     'facebook_mockup.errors.invalid_type': 'Use PNG, JPG, or WEBP images.',
+    'facebook_mockup.errors.download_failed': 'Download failed.',
     'facebook_mockup.fields.audience_label': 'Audience label',
     'facebook_mockup.fields.avatar_image': 'Avatar image',
     'facebook_mockup.fields.caption': 'Caption',
@@ -65,6 +67,9 @@ const { html2canvasMock, translations } = vi.hoisted(() => ({
       'PNG, JPG, or WEBP up to {size}.',
     'facebook_mockup.modes.ad': 'Facebook ad',
     'facebook_mockup.modes.page': 'Desktop page post',
+    'facebook_mockup.meta.description':
+      'Create a desktop Facebook ad or page-post mockup in your browser.',
+    'facebook_mockup.meta.title': 'Facebook Mockup Tool',
     'facebook_mockup.placeholders.audience_label': 'Public',
     'facebook_mockup.placeholders.caption':
       'Write your ad copy or post caption',
@@ -114,6 +119,7 @@ const { html2canvasMock, translations } = vi.hoisted(() => ({
 }));
 
 vi.mock('next-intl', () => ({
+  useLocale: () => 'en',
   useTranslations: () => (key: string, values?: Record<string, string>) => {
     let value = translations[key] ?? key;
     if (values) {
@@ -223,14 +229,26 @@ describe('FacebookMockup', () => {
   it('shows only individually enabled reactions in the preview', async () => {
     render(<FacebookMockup />);
     const preview = within(screen.getByTestId('facebook-mockup-post-card'));
+    const getReactionSources = () =>
+      Array.from(preview.getAllByLabelText('reaction-badge'), (badge) =>
+        badge.querySelector('img')?.getAttribute('src')
+      );
 
-    expect(preview.getAllByLabelText('reaction-badge')).toHaveLength(3);
+    expect(getReactionSources()).toEqual([
+      '/media/facebook-reactions/love.png',
+      '/media/facebook-reactions/like.png',
+      '/media/facebook-reactions/haha.png',
+    ]);
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Care' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Love' }));
 
     await waitFor(() =>
-      expect(preview.getAllByLabelText('reaction-badge')).toHaveLength(3)
+      expect(getReactionSources()).toEqual([
+        '/media/facebook-reactions/like.png',
+        '/media/facebook-reactions/care.png',
+        '/media/facebook-reactions/haha.png',
+      ])
     );
   });
 

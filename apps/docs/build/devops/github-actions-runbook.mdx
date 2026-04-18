@@ -9,10 +9,10 @@ GitHub Actions is the primary automation plane for Tuturuuu.
 ## Workflow Gatekeeping
 
 Every major workflow can be disabled centrally through
-[`tuturuuu.ts`](/Users/vhpx/Documents/GitHub/platform/tuturuuu.ts).
+`tuturuuu.ts`.
 
 The reusable workflow
-[`ci-check.yml`](/Users/vhpx/Documents/GitHub/platform/.github/workflows/ci-check.yml)
+`ci-check.yml`
 reads that config and emits `should_run`, which downstream jobs use before doing
 real work.
 

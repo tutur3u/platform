@@ -8,11 +8,11 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 
 ## Files That Define The Stack
 
-- [`apps/web/Dockerfile`](/Users/vhpx/Documents/GitHub/platform/apps/web/Dockerfile)
-- [`docker-compose.web.yml`](/Users/vhpx/Documents/GitHub/platform/docker-compose.web.yml)
-- [`docker-compose.web.prod.yml`](/Users/vhpx/Documents/GitHub/platform/docker-compose.web.prod.yml)
-- [`scripts/docker-web.js`](/Users/vhpx/Documents/GitHub/platform/scripts/docker-web.js)
-- [`scripts/check-docker-web.js`](/Users/vhpx/Documents/GitHub/platform/scripts/check-docker-web.js)
+- `apps/web/Dockerfile`
+- `docker-compose.web.yml`
+- `docker-compose.web.prod.yml`
+- `scripts/docker-web.js`
+- `scripts/check-docker-web.js`
 
 ## Supported Commands
 
@@ -27,6 +27,26 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 | `bun serve:web:docker:down` | Stop the production Docker stack |
 | `bun serve:web:docker:bg:down` | Stop the blue/green stack and clear local runtime state |
 | `bun check:docker` | Validate Dockerfile and compose parity rules |
+
+## Flags And Implicit Mappings
+
+| Flag | Meaning |
+| --- | --- |
+| `--without-redis` | Disable the bundled Redis profile and skip Docker-injected Redis env |
+| `--with-supabase` | Start local Supabase before the Docker web flow |
+| `--reset-supabase` | Start and reset local Supabase before the Docker web flow |
+| `--mode prod` | Use the production compose file instead of the dev stack |
+| `--strategy blue-green` | Use blue/green production deployment instead of in-place replacement |
+| `--profile redis` | Explicitly enable the Redis profile when calling the helper directly |
+
+| Command | Implicit flags |
+| --- | --- |
+| `bun dev:web:docker` | none |
+| `bun devx:web:docker` | `--with-supabase` |
+| `bun devrs:web:docker` | `--reset-supabase` |
+| `bun serve:web:docker` | `--mode prod` |
+| `bun serve:web:docker:bg` | `--mode prod --strategy blue-green` |
+| `bun dev:web:docker -- --without-redis` | `--without-redis` |
 
 ## Runtime Requirements
 
@@ -110,7 +130,9 @@ variables, so `apps/web` falls back to its non-Redis behavior cleanly.
 - `node scripts/check-docker-web.js`
 - `node --test scripts/check-docker-web.test.js scripts/docker-web.test.js`
 - `docker compose -f docker-compose.web.yml config`
+- `docker compose -f docker-compose.web.yml --profile redis config`
 - `docker compose -f docker-compose.web.prod.yml config`
+- `docker compose -f docker-compose.web.prod.yml --profile redis config`
 - `docker build --target dev -f apps/web/Dockerfile .`
 - `docker build --target runner --secret id=web_env,src=apps/web/.env.local -f apps/web/Dockerfile .`
 

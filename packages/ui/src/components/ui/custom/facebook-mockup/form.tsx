@@ -158,9 +158,16 @@ function ReactionVisibilityToggle({
   reaction,
   label,
   checked,
+  dragLabel,
+  moveUpLabel,
+  moveDownLabel,
+  canMoveUp,
+  canMoveDown,
   onCheckedChange,
   isDragging,
   isDropTarget,
+  onMoveUp,
+  onMoveDown,
   onDragStart,
   onDragEnter,
   onDragEnd,
@@ -169,9 +176,16 @@ function ReactionVisibilityToggle({
   reaction: FacebookMockupReactionVariant;
   label: string;
   checked: boolean;
+  dragLabel: string;
+  moveUpLabel: string;
+  moveDownLabel: string;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
   onCheckedChange: (value: boolean) => void;
   isDragging: boolean;
   isDropTarget: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
   onDragStart: (reaction: FacebookMockupReactionVariant) => void;
   onDragEnter: (reaction: FacebookMockupReactionVariant) => void;
   onDragEnd: () => void;
@@ -198,7 +212,7 @@ function ReactionVisibilityToggle({
       <button
         type="button"
         className="flex size-8 shrink-0 cursor-grab items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground active:cursor-grabbing"
-        aria-label="Drag to reorder"
+        aria-label={dragLabel}
       >
         <GripVertical className="size-4" />
       </button>
@@ -224,6 +238,34 @@ function ReactionVisibilityToggle({
         />
         <span className="truncate text-sm">{label}</span>
       </label>
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={moveUpLabel}
+          className="size-8 rounded-lg"
+          disabled={!canMoveUp}
+          onClick={onMoveUp}
+        >
+          <span aria-hidden="true" className="text-base leading-none">
+            ↑
+          </span>
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={moveDownLabel}
+          className="size-8 rounded-lg"
+          disabled={!canMoveDown}
+          onClick={onMoveDown}
+        >
+          <span aria-hidden="true" className="text-base leading-none">
+            ↓
+          </span>
+        </Button>
+      </div>
     </div>
   );
 }
@@ -253,6 +295,27 @@ export function FacebookMockupForm({
     useState<FacebookMockupReactionVariant | null>(null);
   const [dropTargetReaction, setDropTargetReaction] =
     useState<FacebookMockupReactionVariant | null>(null);
+  const reorderReaction = (
+    order: FacebookMockupReactionVariant[],
+    reaction: FacebookMockupReactionVariant,
+    targetIndex: number
+  ) => {
+    const currentIndex = order.indexOf(reaction);
+
+    if (
+      currentIndex === -1 ||
+      targetIndex < 0 ||
+      targetIndex >= order.length ||
+      currentIndex === targetIndex
+    ) {
+      return order;
+    }
+
+    const nextOrder = [...order];
+    nextOrder.splice(currentIndex, 1);
+    nextOrder.splice(targetIndex, 0, reaction);
+    return nextOrder;
+  };
 
   return (
     <div className="grid gap-4">
@@ -485,51 +548,83 @@ export function FacebookMockupForm({
           <CardTitle>{t('facebook_mockup.sections.reactions')}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
-          {state.reactionOrder.map((reaction) => (
-            <ReactionVisibilityToggle
-              key={reaction}
-              reaction={reaction}
-              label={createReactionLabel(t, reaction)}
-              checked={state.enabledReactions[reaction]}
-              isDragging={draggedReaction === reaction}
-              isDropTarget={
-                dropTargetReaction === reaction && draggedReaction !== reaction
-              }
-              onCheckedChange={(nextState) => {
-                onValueChange('enabledReactions', {
-                  ...state.enabledReactions,
-                  [reaction]: nextState,
-                });
-              }}
-              onDragStart={(nextReaction) => {
-                setDraggedReaction(nextReaction);
-                setDropTargetReaction(nextReaction);
-              }}
-              onDragEnter={(nextReaction) => {
-                setDropTargetReaction(nextReaction);
-              }}
-              onDragEnd={() => {
-                setDraggedReaction(null);
-                setDropTargetReaction(null);
-              }}
-              onDrop={(targetReaction) => {
-                if (!draggedReaction || draggedReaction === targetReaction) {
+          {state.reactionOrder.map((reaction, index) => {
+            const reactionLabel = createReactionLabel(t, reaction);
+
+            return (
+              <ReactionVisibilityToggle
+                key={reaction}
+                reaction={reaction}
+                label={reactionLabel}
+                checked={state.enabledReactions[reaction]}
+                dragLabel={t('facebook_mockup.actions.drag_to_reorder', {
+                  reaction: reactionLabel,
+                })}
+                moveUpLabel={t('facebook_mockup.actions.move_up', {
+                  reaction: reactionLabel,
+                })}
+                moveDownLabel={t('facebook_mockup.actions.move_down', {
+                  reaction: reactionLabel,
+                })}
+                canMoveUp={index > 0}
+                canMoveDown={index < state.reactionOrder.length - 1}
+                isDragging={draggedReaction === reaction}
+                isDropTarget={
+                  dropTargetReaction === reaction &&
+                  draggedReaction !== reaction
+                }
+                onCheckedChange={(nextState) => {
+                  onValueChange('enabledReactions', {
+                    ...state.enabledReactions,
+                    [reaction]: nextState,
+                  });
+                }}
+                onMoveUp={() => {
+                  onValueChange(
+                    'reactionOrder',
+                    reorderReaction(state.reactionOrder, reaction, index - 1)
+                  );
+                }}
+                onMoveDown={() => {
+                  onValueChange(
+                    'reactionOrder',
+                    reorderReaction(state.reactionOrder, reaction, index + 1)
+                  );
+                }}
+                onDragStart={(nextReaction) => {
+                  setDraggedReaction(nextReaction);
+                  setDropTargetReaction(nextReaction);
+                }}
+                onDragEnter={(nextReaction) => {
+                  setDropTargetReaction(nextReaction);
+                }}
+                onDragEnd={() => {
                   setDraggedReaction(null);
                   setDropTargetReaction(null);
-                  return;
-                }
+                }}
+                onDrop={(targetReaction) => {
+                  if (!draggedReaction || draggedReaction === targetReaction) {
+                    setDraggedReaction(null);
+                    setDropTargetReaction(null);
+                    return;
+                  }
 
-                const nextOrder = state.reactionOrder.filter(
-                  (item) => item !== draggedReaction
-                );
-                const targetIndex = nextOrder.indexOf(targetReaction);
-                nextOrder.splice(targetIndex, 0, draggedReaction);
-                onValueChange('reactionOrder', nextOrder);
-                setDraggedReaction(null);
-                setDropTargetReaction(null);
-              }}
-            />
-          ))}
+                  const targetIndex =
+                    state.reactionOrder.indexOf(targetReaction);
+                  onValueChange(
+                    'reactionOrder',
+                    reorderReaction(
+                      state.reactionOrder,
+                      draggedReaction,
+                      targetIndex
+                    )
+                  );
+                  setDraggedReaction(null);
+                  setDropTargetReaction(null);
+                }}
+              />
+            );
+          })}
           <p className="text-muted-foreground text-xs">
             {t('facebook_mockup.helper_text.drag_reactions')}
           </p>

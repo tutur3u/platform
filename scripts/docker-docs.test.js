@@ -91,3 +91,35 @@ test('runDockerDocsWorkflow runs docker compose with the requested port', async 
   assert.equal(calls[1].env.DOCS_PORT, '3333');
   assert.equal(calls[1].env.PATH, 'test-path');
 });
+
+test('runDockerDocsWorkflow supports compose down and preserves caller env', async () => {
+  const calls = [];
+
+  await runDockerDocsWorkflow(parseArgs(['down']), {
+    env: { PATH: 'test-path', TEST_ENV: 'kept' },
+    runCommand: async (command, args, options = {}) => {
+      calls.push({
+        args,
+        command,
+        env: options.env,
+        stdio: options.stdio ?? 'inherit',
+      });
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+  });
+
+  assert.deepEqual(
+    calls.map((call) => [call.command, call.args]),
+    [
+      ['docker', ['compose', 'version']],
+      [
+        'docker',
+        ['compose', '-f', DOCS_COMPOSE_FILE, 'down', '--remove-orphans'],
+      ],
+    ]
+  );
+  assert.equal(calls[1].env.DOCS_PORT, DEFAULT_DOCS_PORT);
+  assert.equal(calls[1].env.TEST_ENV, 'kept');
+  assert.equal(calls[1].env.PATH, 'test-path');
+});

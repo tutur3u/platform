@@ -3969,10 +3969,11 @@
   },
   "facebook_mockup": {
     "actions": {
-      "move_down": "Move down",
-      "move_up": "Move up",
+      "drag_to_reorder": "Drag {reaction} to reorder",
+      "move_down": "Move {reaction} down",
+      "move_up": "Move {reaction} up",
       "remove": "Remove",
-      "replace": "Replace",
+      "replace": "Replace image",
       "upload": "Upload"
     },
     "defaults": {
@@ -3990,6 +3991,7 @@
     },
     "description": "Switch between a desktop ad preview and a desktop page post preview, upload a single creative, and export the final mockup instantly.",
     "errors": {
+      "download_failed": "Failed to download the mockup image.",
       "file_too_large": "Images must be {size} or smaller.",
       "invalid_type": "Use PNG, JPG, or WEBP images."
     },
@@ -4020,6 +4022,10 @@
     "helper_text": {
       "drag_reactions": "Drag reactions to change the order they appear in the summary bar.",
       "upload_image": "PNG, JPG, or WEBP up to {size}."
+    },
+    "meta": {
+      "description": "Create a desktop Facebook ad or page-post mockup in your browser.",
+      "title": "Facebook Mockup Tool"
     },
     "modes": {
       "ad": "Facebook ad",

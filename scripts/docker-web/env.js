@@ -95,6 +95,8 @@ function getComposeEnvironment({
   const nextPublicSupabaseUrl =
     envFile.NEXT_PUBLIC_SUPABASE_URL ?? baseEnv.NEXT_PUBLIC_SUPABASE_URL;
   const dockerInternalSupabaseUrl =
+    envFile.SUPABASE_SERVER_URL ??
+    baseEnv.SUPABASE_SERVER_URL ??
     baseEnv.DOCKER_INTERNAL_SUPABASE_URL ??
     rewriteLocalhostUrl(nextPublicSupabaseUrl);
 
@@ -105,7 +107,7 @@ function getComposeEnvironment({
   };
 
   if (dockerInternalSupabaseUrl) {
-    composeEnv.DOCKER_INTERNAL_SUPABASE_URL = dockerInternalSupabaseUrl;
+    composeEnv.SUPABASE_SERVER_URL = dockerInternalSupabaseUrl;
   }
 
   if (withRedis) {
@@ -115,12 +117,43 @@ function getComposeEnvironment({
       rootDir,
     });
 
-    composeEnv.DOCKER_UPSTASH_REDIS_REST_TOKEN = dockerRedisRuntime.token;
-    composeEnv.DOCKER_UPSTASH_REDIS_REST_URL =
-      baseEnv.DOCKER_UPSTASH_REDIS_REST_URL ?? DOCKER_REDIS_SERVICE_URL;
+    composeEnv.UPSTASH_REDIS_REST_TOKEN = dockerRedisRuntime.token;
+    composeEnv.UPSTASH_REDIS_REST_URL = dockerRedisRuntime.url;
+    composeEnv.SRH_TOKEN = dockerRedisRuntime.token;
   }
 
   return composeEnv;
+}
+
+function ensureRequiredComposeEnvironment(
+  composeEnv,
+  { withRedis = true } = {}
+) {
+  const missing = [];
+
+  if (
+    typeof composeEnv.SUPABASE_SERVER_URL !== 'string' ||
+    composeEnv.SUPABASE_SERVER_URL.trim().length === 0
+  ) {
+    missing.push('SUPABASE_SERVER_URL');
+  }
+
+  if (withRedis) {
+    for (const key of ['UPSTASH_REDIS_REST_TOKEN', 'UPSTASH_REDIS_REST_URL']) {
+      if (
+        typeof composeEnv[key] !== 'string' ||
+        composeEnv[key].trim().length === 0
+      ) {
+        missing.push(key);
+      }
+    }
+  }
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing required Docker runtime env: ${missing.join(', ')}`
+    );
+  }
 }
 
 function ensureWebEnvFile(fsImpl = fs, envFilePath = WEB_ENV_FILE) {
@@ -195,9 +228,16 @@ function getDockerRedisRuntime({
   fsImpl = fs,
   rootDir = ROOT_DIR,
 } = {}) {
+  const envToken = [
+    baseEnv.DOCKER_UPSTASH_REDIS_REST_TOKEN,
+    baseEnv.UPSTASH_REDIS_REST_TOKEN,
+  ].find((value) => typeof value === 'string' && value.trim().length > 0);
+  const envUrl = [
+    baseEnv.DOCKER_UPSTASH_REDIS_REST_URL,
+    baseEnv.UPSTASH_REDIS_REST_URL,
+  ].find((value) => typeof value === 'string' && value.trim().length > 0);
   const token =
-    baseEnv.DOCKER_UPSTASH_REDIS_REST_TOKEN ??
-    baseEnv.UPSTASH_REDIS_REST_TOKEN ??
+    envToken ??
     getPersistedDockerRedisToken(getDockerWebRuntimePaths(rootDir), fsImpl) ??
     generateDockerRedisToken();
 
@@ -210,7 +250,7 @@ function getDockerRedisRuntime({
 
   return {
     token,
-    url: baseEnv.DOCKER_UPSTASH_REDIS_REST_URL ?? DOCKER_REDIS_SERVICE_URL,
+    url: envUrl ?? DOCKER_REDIS_SERVICE_URL,
   };
 }
 
@@ -221,6 +261,7 @@ module.exports = {
   DOCKER_HOST_ALIAS,
   WEB_ENV_FILE,
   ensureProductionRedisToken,
+  ensureRequiredComposeEnvironment,
   ensureDockerWebRuntime,
   ensureWebEnvFile,
   generateDockerRedisToken,

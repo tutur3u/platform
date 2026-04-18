@@ -53,6 +53,7 @@ export function FacebookMockupImageUploadField({
 
       <button
         type="button"
+        aria-label={imageUrl ? t('facebook_mockup.actions.replace') : label}
         className={cn(
           'flex min-h-36 w-full items-center justify-center rounded-2xl border border-dynamic-blue/25 border-dashed bg-linear-to-br from-dynamic-blue/8 via-background to-dynamic-cyan/10 p-3 transition-colors hover:border-dynamic-blue/40 hover:bg-dynamic-blue/8',
           imageUrl && 'border-border border-solid bg-background'

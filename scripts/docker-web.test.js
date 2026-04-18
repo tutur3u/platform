@@ -156,16 +156,11 @@ test('getComposeEnvironment derives a server-side Supabase URL for Docker', () =
 
     assert.equal(env.PATH, 'test-path');
     assert.equal(env.COMPOSE_DOCKER_CLI_BUILD, '1');
-    assert.equal(
-      env.DOCKER_INTERNAL_SUPABASE_URL,
-      `http://${DOCKER_HOST_ALIAS}:8001/`
-    );
+    assert.equal(env.SUPABASE_SERVER_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
     assert.equal(env.DOCKER_BUILDKIT, '1');
-    assert.equal(
-      env.DOCKER_UPSTASH_REDIS_REST_URL,
-      'http://serverless-redis-http:80'
-    );
-    assert.match(env.DOCKER_UPSTASH_REDIS_REST_TOKEN, /^[a-f0-9]{64}$/u);
+    assert.equal(env.UPSTASH_REDIS_REST_URL, 'http://serverless-redis-http:80');
+    assert.match(env.UPSTASH_REDIS_REST_TOKEN, /^[a-f0-9]{64}$/u);
+    assert.equal(env.SRH_TOKEN, env.UPSTASH_REDIS_REST_TOKEN);
     assert.equal(
       fs
         .readFileSync(
@@ -173,7 +168,7 @@ test('getComposeEnvironment derives a server-side Supabase URL for Docker', () =
           'utf8'
         )
         .trim(),
-      env.DOCKER_UPSTASH_REDIS_REST_TOKEN
+      env.UPSTASH_REDIS_REST_TOKEN
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -199,10 +194,7 @@ test('getComposeEnvironment preserves the configured cloud Supabase URL', () => 
       rootDir: tempDir,
     });
 
-    assert.equal(
-      env.DOCKER_INTERNAL_SUPABASE_URL,
-      'https://project-ref.supabase.co'
-    );
+    assert.equal(env.SUPABASE_SERVER_URL, 'https://project-ref.supabase.co');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -229,12 +221,43 @@ test('getComposeEnvironment omits redis env when docker redis is disabled', () =
     });
 
     assert.equal(env.PATH, 'test-path');
-    assert.equal(env.DOCKER_UPSTASH_REDIS_REST_URL, undefined);
-    assert.equal(env.DOCKER_UPSTASH_REDIS_REST_TOKEN, undefined);
+    assert.equal(env.UPSTASH_REDIS_REST_URL, undefined);
+    assert.equal(env.UPSTASH_REDIS_REST_TOKEN, undefined);
+    assert.equal(env.SRH_TOKEN, undefined);
     assert.equal(
       fs.existsSync(path.join(tempDir, 'tmp', 'docker-web', 'redis-token')),
       false
     );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getComposeEnvironment treats blank redis env overrides as missing', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-blank-redis-env-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co\n'
+    );
+
+    const env = getComposeEnvironment({
+      baseEnv: {
+        PATH: 'test-path',
+        UPSTASH_REDIS_REST_TOKEN: '   ',
+        UPSTASH_REDIS_REST_URL: '',
+      },
+      envFilePath,
+      rootDir: tempDir,
+    });
+
+    assert.match(env.UPSTASH_REDIS_REST_TOKEN, /^[a-f0-9]{64}$/u);
+    assert.equal(env.UPSTASH_REDIS_REST_URL, 'http://serverless-redis-http:80');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -310,7 +333,7 @@ test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async (
   );
   assert.equal(calls[0].stdio, 'ignore');
   assert.equal(
-    calls[1].env.DOCKER_INTERNAL_SUPABASE_URL,
+    calls[1].env.SUPABASE_SERVER_URL,
     `http://${DOCKER_HOST_ALIAS}:8001/`
   );
 });
@@ -345,8 +368,9 @@ test('runDockerWebWorkflow omits redis env when dockerized redis is disabled', a
       ],
     ]
   );
-  assert.equal(calls[1].env.DOCKER_UPSTASH_REDIS_REST_URL, undefined);
-  assert.equal(calls[1].env.DOCKER_UPSTASH_REDIS_REST_TOKEN, undefined);
+  assert.equal(calls[1].env.UPSTASH_REDIS_REST_URL, undefined);
+  assert.equal(calls[1].env.UPSTASH_REDIS_REST_TOKEN, undefined);
+  assert.equal(calls[1].env.SRH_TOKEN, undefined);
 });
 
 test('runDockerWebWorkflow uses the production compose file for in-place deploys', async () => {
@@ -446,6 +470,36 @@ test('runDockerWebWorkflow throws a clear error when apps/web/.env.local is miss
   );
 });
 
+test('runDockerWebWorkflow fails fast when required Docker runtime env is missing', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-missing-runtime-env-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(envFilePath, 'SUPABASE_SECRET_KEY=test-secret\n');
+
+  try {
+    await assert.rejects(
+      () =>
+        runDockerWebWorkflow(parseArgs(['up']), {
+          env: { PATH: 'test-path' },
+          envFilePath,
+          rootDir: tempDir,
+          runCommand: async () => ({
+            code: 0,
+            signal: null,
+            stderr: '',
+            stdout: '',
+          }),
+        }),
+      /Missing required Docker runtime env: SUPABASE_SERVER_URL/
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('runDockerWebWorkflow auto-generates redis credentials for production docker runs', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'docker-web-prod-'));
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
@@ -481,7 +535,8 @@ test('runDockerWebWorkflow auto-generates redis credentials for production docke
       .trim();
 
     assert.match(token, /^[a-f0-9]{64}$/u);
-    assert.equal(calls.at(-1).env.DOCKER_UPSTASH_REDIS_REST_TOKEN, token);
+    assert.equal(calls.at(-1).env.UPSTASH_REDIS_REST_TOKEN, token);
+    assert.equal(calls.at(-1).env.SRH_TOKEN, token);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
