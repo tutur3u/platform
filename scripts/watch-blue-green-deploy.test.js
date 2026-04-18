@@ -771,6 +771,18 @@ test('loadRuntimeSnapshot keeps both live colors marked active in deployment car
           startedAt: Date.parse('2026-04-18T10:29:35.000Z'),
           status: 'successful',
         },
+        {
+          activatedAt: Date.parse('2026-04-18T10:00:00.000Z'),
+          activeColor: 'green',
+          buildDurationMs: 22_000,
+          commitHash: 'old-green-commit',
+          commitShortHash: 'ggg000',
+          commitSubject: 'older green',
+          endedAt: Date.parse('2026-04-18T10:59:00.000Z'),
+          finishedAt: Date.parse('2026-04-18T10:00:00.000Z'),
+          startedAt: Date.parse('2026-04-18T09:59:38.000Z'),
+          status: 'successful',
+        },
       ],
       now,
       paths,
@@ -793,6 +805,7 @@ test('loadRuntimeSnapshot keeps both live colors marked active in deployment car
 
     assert.equal(snapshot.deployments[0].runtimeState, 'active');
     assert.equal(snapshot.deployments[1].runtimeState, 'standby');
+    assert.equal(snapshot.deployments[2].runtimeState, null);
     assert.match(
       stripAnsi(
         buildDashboardView(

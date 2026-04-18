@@ -1570,11 +1570,33 @@ async function loadRuntimeSnapshot({
     }
   );
   const liveColors = new Set(currentBlueGreen.liveColors ?? []);
+  const latestLiveCommitByColor = new Map();
+
+  for (const entry of deployments) {
+    if (
+      entry.status !== 'successful' ||
+      typeof entry.activeColor !== 'string' ||
+      !liveColors.has(entry.activeColor) ||
+      latestLiveCommitByColor.has(entry.activeColor)
+    ) {
+      continue;
+    }
+
+    latestLiveCommitByColor.set(
+      entry.activeColor,
+      entry.commitHash ??
+        `${entry.activeColor}:${entry.activatedAt ?? entry.finishedAt ?? entry.startedAt ?? 'unknown'}`
+    );
+  }
+
   const runtimeAwareDeployments = deployments.map((entry) => {
     const isLive =
       entry.status === 'successful' &&
       typeof entry.activeColor === 'string' &&
-      liveColors.has(entry.activeColor);
+      liveColors.has(entry.activeColor) &&
+      latestLiveCommitByColor.get(entry.activeColor) ===
+        (entry.commitHash ??
+          `${entry.activeColor}:${entry.activatedAt ?? entry.finishedAt ?? entry.startedAt ?? 'unknown'}`);
 
     return {
       ...entry,
