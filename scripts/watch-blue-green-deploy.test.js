@@ -39,6 +39,10 @@ const {
   getLatestDeploymentSummary,
   writeDeploymentHistory,
   loadRuntimeSnapshot,
+  mirrorExistingWatchSession,
+  readWatchStatus,
+  terminateExistingWatcher,
+  writeWatchStatus,
 } = require('./watch-blue-green-deploy.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
@@ -73,11 +77,23 @@ function prodComposePsKey(serviceName) {
 test('parseArgs uses a 1s interval by default and accepts --once', () => {
   assert.deepEqual(parseArgs([]), {
     intervalMs: DEFAULT_INTERVAL_MS,
+    lockConflictAction: 'fail',
     once: false,
   });
   assert.deepEqual(parseArgs(['--interval-ms', '2500', '--once']), {
     intervalMs: 2500,
+    lockConflictAction: 'fail',
     once: true,
+  });
+  assert.deepEqual(parseArgs(['--resume-if-running']), {
+    intervalMs: DEFAULT_INTERVAL_MS,
+    lockConflictAction: 'resume',
+    once: false,
+  });
+  assert.deepEqual(parseArgs(['--replace-existing']), {
+    intervalMs: DEFAULT_INTERVAL_MS,
+    lockConflictAction: 'replace',
+    once: false,
   });
 });
 
@@ -462,6 +478,157 @@ test('acquireWatchLock rejects a live existing watcher', () => {
         ),
       /already locked by PID 1234/
     );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('writeWatchStatus persists a serializable watcher snapshot', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-status-'));
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    writeWatchStatus(
+      {
+        deployments: [],
+        lastResult: {
+          error: new Error('deploy failed'),
+          status: 'deploy-failed',
+        },
+        latestCommit: {
+          shortHash: 'abc123',
+          subject: 'Test commit',
+        },
+      },
+      {
+        fsImpl: fs,
+        now: 1234,
+        paths,
+        processImpl: { pid: 4321 },
+      }
+    );
+
+    assert.deepEqual(readWatchStatus(paths, fs), {
+      deployments: [],
+      lastResult: {
+        error: 'deploy failed',
+        status: 'deploy-failed',
+      },
+      latestCommit: {
+        shortHash: 'abc123',
+        subject: 'Test commit',
+      },
+      ownerPid: 4321,
+      updatedAt: 1234,
+    });
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('terminateExistingWatcher gracefully stops a running watcher pid', async () => {
+  const signals = [];
+  const processImpl = {
+    kill(_pid, signal) {
+      if (signal === 0 || signal == null) {
+        if (signals.includes('SIGTERM')) {
+          const error = new Error('missing');
+          error.code = 'ESRCH';
+          throw error;
+        }
+
+        return;
+      }
+
+      signals.push(signal);
+    },
+  };
+
+  const terminated = await terminateExistingWatcher(
+    { pid: 4321 },
+    {
+      processImpl,
+      sleepImpl: async () => {},
+      timeoutMs: 100,
+    }
+  );
+
+  assert.equal(terminated, true);
+  assert.deepEqual(signals, ['SIGTERM']);
+});
+
+test('mirrorExistingWatchSession loads the persisted watcher state when resuming', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-resume-'));
+  const paths = getWatchPaths(tempDir);
+  const updates = [];
+  const infos = [];
+
+  try {
+    fs.mkdirSync(paths.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      paths.lockFile,
+      JSON.stringify({
+        branch: 'main',
+        pid: 4321,
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      }),
+      'utf8'
+    );
+    writeWatchStatus(
+      {
+        currentBlueGreen: {
+          activeColor: 'green',
+          state: 'serving',
+        },
+        deployments: [],
+        intervalMs: 1000,
+        lastDeployStatus: 'successful',
+        target: {
+          branch: 'main',
+          upstreamRef: 'origin/main',
+        },
+      },
+      {
+        fsImpl: fs,
+        now: 1234,
+        paths,
+        processImpl: { pid: 4321 },
+      }
+    );
+
+    const result = await mirrorExistingWatchSession(
+      {
+        branch: 'main',
+        pid: 4321,
+        upstreamRef: 'origin/main',
+      },
+      {
+        fsImpl: fs,
+        log: {
+          close() {},
+          error() {},
+          info(message) {
+            infos.push(message);
+          },
+          start() {},
+          update(patch) {
+            updates.push(patch);
+          },
+          warn() {},
+        },
+        once: true,
+        paths,
+        processImpl: {
+          kill() {},
+        },
+      }
+    );
+
+    assert.equal(result.resumedPid, 4321);
+    assert.equal(updates[0].currentBlueGreen.activeColor, 'green');
+    assert.match(infos[0], /Resuming watcher view for PID 4321/);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

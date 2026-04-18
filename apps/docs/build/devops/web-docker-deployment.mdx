@@ -43,6 +43,9 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 | `--build-cpus 2` | Run builds through a capped Buildx builder with an approximate CPU limit |
 | `--build-max-parallelism 2` | Limit concurrent BuildKit solve steps for lower build pressure |
 | `--build-builder-name platform-web-capped-builder` | Override the throttled Buildx builder name |
+| `--resume-if-running` | If another watcher PID already holds the lock, mirror its live dashboard instead of failing |
+| `--replace-existing` | If another watcher PID already holds the lock, stop it and take over |
+| `--if-locked <fail|resume|replace>` | Explicit lock-conflict policy for the watcher |
 
 | Command | Implicit flags |
 | --- | --- |
@@ -313,6 +316,9 @@ Behavior:
    blue/green build/promotion.
 12. Stops immediately if the checked-out branch changes while the watcher is
     running.
+13. If another watcher already owns the lock, a new invocation can fail with
+    guidance, mirror the active watcher with `--resume-if-running`, or replace
+    it with `--replace-existing`.
 
 Dashboard details:
 
@@ -321,7 +327,8 @@ Dashboard details:
 - Normal promotions keep the long-lived `web-proxy` container and bound port
   stable, which avoids transient listener drops for upstreams such as
   Cloudflare Tunnel that are connected to `:7803`.
-- Persists and renders the last 3 auto-deployments as stacked terminal cards
+- Persists and renders the last 5 deployments, including manual
+  `bun serve:web:docker:bg` runs, as stacked terminal cards
   that favor vertical scanability over very wide lines.
 - As soon as a new commit starts rolling out, the recent deployment section
   shows it immediately as `DEPLOYING` instead of waiting for the rollout to
@@ -350,6 +357,9 @@ Dashboard details:
 - The watcher uses the same Docker runtime env resolution as the real deploy
   flow, so blue/green status probes still work when the Redis profile is part
   of the production compose file.
+- The active watcher also persists a live status snapshot under
+  `tmp/docker-web/watch/`, which is what `--resume-if-running` uses to mirror
+  the dashboard without taking over the PID lock.
 
 ## Browser-State 502 Recovery
 

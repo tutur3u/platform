@@ -22,6 +22,7 @@ const {
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
   WATCH_RUNTIME_DIR,
+  WATCH_STATUS_FILE,
   getWatchPaths,
 } = require('./watch-blue-green/paths.js');
 const {
@@ -37,6 +38,8 @@ const {
 const DEFAULT_INTERVAL_MS = 1_000;
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
 const DEFAULT_STANDBY_REFRESH_AFTER_MS = 15 * 60_000;
+const DEFAULT_LOCK_CONFLICT_ACTION = 'fail';
+const DEFAULT_REPLACE_WATCHER_TIMEOUT_MS = 5_000;
 const MAX_EVENTS = 8;
 const BLUE_GREEN_COLORS = ['blue', 'green'];
 const PROD_COMPOSE_FILE = getComposeFile('prod');
@@ -70,6 +73,7 @@ function emphasize(color, value) {
 function parseArgs(argv) {
   const args = [...argv];
   let intervalMs = DEFAULT_INTERVAL_MS;
+  let lockConflictAction = DEFAULT_LOCK_CONFLICT_ACTION;
   let once = false;
 
   for (let index = 0; index < args.length; index += 1) {
@@ -92,11 +96,36 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (arg === '--resume-if-running') {
+      lockConflictAction = 'resume';
+      continue;
+    }
+
+    if (arg === '--replace-existing') {
+      lockConflictAction = 'replace';
+      continue;
+    }
+
+    if (arg === '--if-locked') {
+      const value = args[index + 1];
+
+      if (!['fail', 'resume', 'replace'].includes(value)) {
+        throw new Error(
+          'Expected --if-locked to be one of: fail, resume, replace.'
+        );
+      }
+
+      lockConflictAction = value;
+      index += 1;
+      continue;
+    }
+
     throw new Error(`Unsupported argument "${arg}".`);
   }
 
   return {
     intervalMs,
+    lockConflictAction,
     once,
   };
 }
@@ -696,6 +725,7 @@ function createWatchUi(initialState = {}, options = {}) {
   const stdout = options.stdout ?? process.stdout;
   const stderr = options.stderr ?? process.stderr;
   const now = options.now ?? (() => Date.now());
+  const onStateChange = options.onStateChange ?? null;
   const isTTY = options.isTTY ?? Boolean(stdout.isTTY);
   const maxEvents = options.maxEvents ?? MAX_EVENTS;
   const state = {
@@ -723,12 +753,18 @@ function createWatchUi(initialState = {}, options = {}) {
     stdout.write(output);
   }
 
+  function emitStateChange() {
+    onStateChange?.(state);
+  }
+
   function start() {
     if (isTTY && !cursorHidden) {
       stdout.write('\x1b[?25l');
       cursorHidden = true;
       render();
     }
+
+    emitStateChange();
   }
 
   function pushEvent(level, message) {
@@ -747,11 +783,13 @@ function createWatchUi(initialState = {}, options = {}) {
     }
 
     render();
+    emitStateChange();
   }
 
   function update(patch) {
     Object.assign(state, patch);
     render();
+    emitStateChange();
   }
 
   function close() {
@@ -766,6 +804,8 @@ function createWatchUi(initialState = {}, options = {}) {
       stdout.write(`\n\x1b[?25h`);
       cursorHidden = false;
     }
+
+    emitStateChange();
   }
 
   return {
@@ -923,6 +963,70 @@ function readWatchLock(paths = getWatchPaths(), fsImpl = fs) {
   } catch {
     return null;
   }
+}
+
+function readWatchStatus(paths = getWatchPaths(), fsImpl = fs) {
+  if (!fsImpl.existsSync(paths.statusFile)) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(fsImpl.readFileSync(paths.statusFile, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function serializeWatchStatus(
+  state,
+  { now = Date.now(), processImpl = process } = {}
+) {
+  return {
+    ...state,
+    lastResult:
+      state.lastResult == null
+        ? null
+        : {
+            ...state.lastResult,
+            error:
+              state.lastResult.error instanceof Error
+                ? state.lastResult.error.message
+                : (state.lastResult.error ?? null),
+          },
+    ownerPid: processImpl.pid,
+    updatedAt: now,
+  };
+}
+
+function writeWatchStatus(
+  state,
+  {
+    fsImpl = fs,
+    now = Date.now(),
+    paths = getWatchPaths(),
+    processImpl = process,
+  } = {}
+) {
+  fsImpl.mkdirSync(paths.runtimeDir, { recursive: true });
+  fsImpl.writeFileSync(
+    paths.statusFile,
+    JSON.stringify(serializeWatchStatus(state, { now, processImpl }), null, 2),
+    'utf8'
+  );
+}
+
+function clearWatchStatus({
+  fsImpl = fs,
+  paths = getWatchPaths(),
+  processImpl = process,
+} = {}) {
+  const status = readWatchStatus(paths, fsImpl);
+
+  if (!status || status.ownerPid !== processImpl.pid) {
+    return;
+  }
+
+  fsImpl.rmSync(paths.statusFile, { force: true });
 }
 
 function isProcessAlive(pid, processImpl = process) {
@@ -1235,6 +1339,138 @@ async function spawnReplacementWatcher({
       resolve(child);
     });
   });
+}
+
+async function waitForProcessExit(
+  pid,
+  {
+    pollMs = 100,
+    processImpl = process,
+    sleepImpl = sleep,
+    timeoutMs = DEFAULT_REPLACE_WATCHER_TIMEOUT_MS,
+  } = {}
+) {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() <= deadline) {
+    if (!isProcessAlive(pid, processImpl)) {
+      return true;
+    }
+
+    await sleepImpl(pollMs);
+  }
+
+  return !isProcessAlive(pid, processImpl);
+}
+
+async function terminateExistingWatcher(
+  existingLock,
+  {
+    processImpl = process,
+    sleepImpl = sleep,
+    timeoutMs = DEFAULT_REPLACE_WATCHER_TIMEOUT_MS,
+  } = {}
+) {
+  if (!existingLock?.pid || !isProcessAlive(existingLock.pid, processImpl)) {
+    return false;
+  }
+
+  processImpl.kill(existingLock.pid, 'SIGTERM');
+  const exitedGracefully = await waitForProcessExit(existingLock.pid, {
+    processImpl,
+    sleepImpl,
+    timeoutMs,
+  });
+
+  if (exitedGracefully) {
+    return true;
+  }
+
+  processImpl.kill(existingLock.pid, 'SIGKILL');
+  return waitForProcessExit(existingLock.pid, {
+    processImpl,
+    sleepImpl,
+    timeoutMs: Math.min(timeoutMs, 1_000),
+  });
+}
+
+async function mirrorExistingWatchSession(
+  existingLock,
+  {
+    env,
+    envFilePath,
+    fsImpl = fs,
+    log,
+    now = () => Date.now(),
+    once = false,
+    paths = getWatchPaths(),
+    processImpl = process,
+    rootDir = ROOT_DIR,
+    runCommand: run = runCommand,
+    sleepImpl = sleep,
+  } = {}
+) {
+  const ui = log;
+
+  ui.start();
+  ui.info(
+    `Resuming watcher view for PID ${existingLock.pid} on ${existingLock.branch} (${existingLock.upstreamRef}).`
+  );
+
+  while (true) {
+    const status = readWatchStatus(paths, fsImpl);
+
+    if (status) {
+      ui.update({
+        ...status,
+        lockFile: paths.lockFile,
+      });
+    } else {
+      const runtimeSnapshot = await loadRuntimeSnapshot({
+        env,
+        envFilePath,
+        fsImpl,
+        now: now(),
+        paths,
+        rootDir,
+        runCommand: run,
+      });
+      const deploymentSummary = getLatestDeploymentSummary(
+        runtimeSnapshot.deployments
+      );
+
+      ui.update({
+        currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+        deployments: runtimeSnapshot.deployments,
+        lastDeployAt: deploymentSummary.lastDeployAt,
+        lastDeployStatus: deploymentSummary.lastDeployStatus,
+        lockFile: paths.lockFile,
+        target: existingLock,
+      });
+    }
+
+    if (once) {
+      return {
+        resumedPid: existingLock.pid,
+        status: readWatchStatus(paths, fsImpl),
+      };
+    }
+
+    const activeLock = readWatchLock(paths, fsImpl);
+    if (
+      !activeLock ||
+      activeLock.pid !== existingLock.pid ||
+      !isProcessAlive(existingLock.pid, processImpl)
+    ) {
+      ui.info(`Watcher PID ${existingLock.pid} is no longer active.`);
+      return {
+        resumedPid: existingLock.pid,
+        status: 'ended',
+      };
+    }
+
+    await sleepImpl(DEFAULT_INTERVAL_MS);
+  }
 }
 
 async function getProdComposeServiceContainerId(
@@ -2062,15 +2298,27 @@ async function main(argv = process.argv.slice(2), options = {}) {
   );
   const ui =
     options.ui ??
-    createWatchUi({
-      currentBlueGreen: initialRuntimeSnapshot.currentBlueGreen,
-      deployments: initialRuntimeSnapshot.deployments,
-      intervalMs: parsed.intervalMs,
-      lastDeployAt: initialDeploymentSummary.lastDeployAt,
-      lastDeployStatus: initialDeploymentSummary.lastDeployStatus,
-      lockFile: paths.lockFile,
-      startedAt: Date.now(),
-    });
+    createWatchUi(
+      {
+        currentBlueGreen: initialRuntimeSnapshot.currentBlueGreen,
+        deployments: initialRuntimeSnapshot.deployments,
+        intervalMs: parsed.intervalMs,
+        lastDeployAt: initialDeploymentSummary.lastDeployAt,
+        lastDeployStatus: initialDeploymentSummary.lastDeployStatus,
+        lockFile: paths.lockFile,
+        startedAt: Date.now(),
+      },
+      {
+        onStateChange: (state) => {
+          writeWatchStatus(state, {
+            fsImpl,
+            now: Date.now(),
+            paths,
+            processImpl,
+          });
+        },
+      }
+    );
   let released = false;
 
   const cleanup = () => {
@@ -2080,6 +2328,11 @@ async function main(argv = process.argv.slice(2), options = {}) {
 
     released = true;
     releaseWatchLock({
+      fsImpl,
+      paths,
+      processImpl,
+    });
+    clearWatchStatus({
       fsImpl,
       paths,
       processImpl,
@@ -2107,11 +2360,56 @@ async function main(argv = process.argv.slice(2), options = {}) {
       latestCommit,
       target,
     });
-    acquireWatchLock(target, {
-      fsImpl,
-      paths,
-      processImpl,
-    });
+    const existingLock = readWatchLock(paths, fsImpl);
+
+    if (existingLock && isProcessAlive(existingLock.pid, processImpl)) {
+      if (parsed.lockConflictAction === 'resume') {
+        await mirrorExistingWatchSession(existingLock, {
+          env,
+          envFilePath,
+          fsImpl,
+          log: ui,
+          now: options.now ?? (() => Date.now()),
+          once: parsed.once,
+          paths,
+          processImpl,
+          rootDir,
+          runCommand: run,
+          sleepImpl: options.sleepImpl ?? sleep,
+        });
+        return;
+      }
+
+      if (parsed.lockConflictAction === 'replace') {
+        ui.warn(
+          `Replacing existing watcher PID ${existingLock.pid} on ${existingLock.branch}.`
+        );
+        const terminated = await terminateExistingWatcher(existingLock, {
+          processImpl,
+          sleepImpl: options.sleepImpl ?? sleep,
+        });
+
+        if (!terminated) {
+          throw new Error(
+            `Unable to stop existing watcher PID ${existingLock.pid}.`
+          );
+        }
+      }
+    }
+
+    try {
+      acquireWatchLock(target, {
+        fsImpl,
+        paths,
+        processImpl,
+      });
+    } catch (error) {
+      if (parsed.lockConflictAction === 'fail' && error instanceof Error) {
+        error.message = `${error.message} Re-run with --resume-if-running to mirror the existing session or --replace-existing to stop it and take over.`;
+      }
+
+      throw error;
+    }
 
     ui.start();
     ui.info(
@@ -2354,9 +2652,11 @@ module.exports = {
   WATCH_LOCK_FILE,
   WATCH_PENDING_DEPLOY_ENV,
   WATCH_RUNTIME_DIR,
+  WATCH_STATUS_FILE,
   acquireWatchLock,
   appendDeploymentHistory,
   buildDashboardView,
+  clearWatchStatus,
   collectDeploymentTraffic,
   createWatchUi,
   fetchTrackedBranch,
@@ -2380,6 +2680,7 @@ module.exports = {
   listChangedFilesBetweenRevisions,
   loadRuntimeSnapshot,
   main,
+  mirrorExistingWatchSession,
   parseArgs,
   parseProxyLogEntries,
   parseUpstreamRef,
@@ -2387,6 +2688,7 @@ module.exports = {
   pullTrackedBranch,
   readDeploymentHistory,
   readWatchLock,
+  readWatchStatus,
   releaseWatchLock,
   resolveCurrentBlueGreenStatus,
   resolveLockedBranchTarget,
@@ -2398,9 +2700,12 @@ module.exports = {
   spawnReplacementWatcher,
   stripAnsi,
   summarizeRequestRate,
+  terminateExistingWatcher,
   createPendingDeploymentEntry,
   createQuietRunCommand,
   summarizeBlueGreenRuntime,
   summarizeResult,
+  waitForProcessExit,
+  writeWatchStatus,
   writeDeploymentHistory,
 };
