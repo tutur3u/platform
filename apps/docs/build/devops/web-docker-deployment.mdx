@@ -38,6 +38,10 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 | `--mode prod` | Use the production compose file instead of the dev stack |
 | `--strategy blue-green` | Use blue/green production deployment instead of in-place replacement |
 | `--profile redis` | Explicitly enable the Redis profile when calling the helper directly |
+| `--build-memory 4g` | Run builds through a capped Buildx builder with a memory ceiling |
+| `--build-cpus 2` | Run builds through a capped Buildx builder with an approximate CPU limit |
+| `--build-max-parallelism 2` | Limit concurrent BuildKit solve steps for lower build pressure |
+| `--build-builder-name platform-web-capped-builder` | Override the throttled Buildx builder name |
 
 | Command | Implicit flags |
 | --- | --- |
@@ -132,6 +136,55 @@ The local runtime state lives in:
 - `tmp/docker-web/prod/nginx.conf`
 
 These files are intentionally local-only and safe to regenerate.
+
+## Build Resource Caps
+
+When build and serve run on the same machine, use the Docker web helper's
+Buildx throttling options instead of letting BuildKit consume the full host.
+
+Example:
+
+```bash
+bun serve:web:docker:bg -- --build-memory 4g --build-cpus 2 --build-max-parallelism 2
+```
+
+Current root-script defaults:
+
+- `bun serve:web:docker` defaults to `--build-memory 16g --build-cpus 8`
+- `bun serve:web:docker:bg` defaults to `--build-memory 16g --build-cpus 8`
+
+You can still override those defaults per run by appending your own flags after
+`--`, for example:
+
+```bash
+bun serve:web:docker:bg -- --build-memory 8g --build-cpus 4 --build-max-parallelism 2
+```
+
+Equivalent environment variables:
+
+- `DOCKER_WEB_BUILD_MEMORY=4g`
+- `DOCKER_WEB_BUILD_CPUS=2`
+- `DOCKER_WEB_BUILD_MAX_PARALLELISM=2`
+- `DOCKER_WEB_BUILD_BUILDER_NAME=platform-web-capped-builder`
+
+How it works:
+
+- The helper creates or reuses a dedicated `docker-container` Buildx builder
+  instead of the default daemon-bound builder.
+- `DOCKER_WEB_BUILD_MEMORY` caps the BuildKit container's memory budget.
+- `DOCKER_WEB_BUILD_CPUS` is converted to Docker CPU quota settings for the
+  BuildKit container.
+- `DOCKER_WEB_BUILD_MAX_PARALLELISM` writes a BuildKit config that limits
+  concurrent solve steps, which is often the most effective way to reduce
+  CPU spikes on smaller machines.
+
+Operational notes:
+
+- These caps affect image builds, not the runtime `apps/web` container after it
+  has started.
+- If no build caps are configured, the helper continues using Docker's default
+  builder behavior.
+- A lower parallelism setting usually trades build speed for host stability.
 
 ## Redis Profile
 

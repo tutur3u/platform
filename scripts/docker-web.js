@@ -49,6 +49,10 @@ const {
   rewriteLocalhostUrl,
   stripUnquotedInlineComment,
 } = require('./docker-web/env.js');
+const {
+  DEFAULT_BUILDER_NAME,
+  ensureBuildkitBuilder,
+} = require('./docker-web/buildkit-builder.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 
@@ -67,6 +71,10 @@ function parseArgs(argv) {
   let withSupabase = false;
   let resetSupabase = false;
   let withRedis = true;
+  let buildMemory = null;
+  let buildCpus = null;
+  let buildMaxParallelism = null;
+  let buildBuilderName = null;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -116,6 +124,56 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (arg === '--build-memory') {
+      const value = args[index + 1];
+
+      if (!value) {
+        throw new Error('Expected a memory value after --build-memory.');
+      }
+
+      buildMemory = value;
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--build-cpus') {
+      const value = args[index + 1];
+
+      if (!value) {
+        throw new Error('Expected a CPU value after --build-cpus.');
+      }
+
+      buildCpus = value;
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--build-max-parallelism') {
+      const value = args[index + 1];
+
+      if (!value) {
+        throw new Error(
+          'Expected an integer value after --build-max-parallelism.'
+        );
+      }
+
+      buildMaxParallelism = value;
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--build-builder-name') {
+      const value = args[index + 1];
+
+      if (!value) {
+        throw new Error('Expected a builder name after --build-builder-name.');
+      }
+
+      buildBuilderName = value;
+      index += 1;
+      continue;
+    }
+
     if (arg === '--strategy') {
       const value = args[index + 1];
 
@@ -144,6 +202,10 @@ function parseArgs(argv) {
     mode,
     resetSupabase,
     strategy,
+    buildBuilderName,
+    buildCpus,
+    buildMaxParallelism,
+    buildMemory,
     withSupabase,
     withRedis,
   };
@@ -217,13 +279,27 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     fsImpl,
     rootDir: options.rootDir,
   });
-  const composeEnv = getComposeEnvironment({
+  let composeEnv = getComposeEnvironment({
     baseEnv: env,
     envFilePath: options.envFilePath ?? WEB_ENV_FILE,
     fsImpl,
     rootDir: options.rootDir,
     withRedis,
   });
+  composeEnv = await ensureBuildkitBuilder(
+    {
+      builderName: parsed.buildBuilderName,
+      cpus: parsed.buildCpus,
+      maxParallelism: parsed.buildMaxParallelism,
+      memory: parsed.buildMemory,
+    },
+    {
+      env: composeEnv,
+      fsImpl,
+      rootDir: options.rootDir,
+      runCommand: run,
+    }
+  );
   ensureRequiredComposeEnvironment(composeEnv, { withRedis });
 
   if (parsed.withSupabase) {
@@ -313,9 +389,11 @@ module.exports = {
   BLUE_GREEN_STATE_FILE,
   COMPOSE_FILE,
   DOCKER_HOST_ALIAS,
+  DEFAULT_BUILDER_NAME,
   PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
   clearBlueGreenRuntime,
+  ensureBuildkitBuilder,
   ensureBlueGreenRuntime,
   ensureProductionRedisToken,
   ensureWebEnvFile,

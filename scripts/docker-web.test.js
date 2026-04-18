@@ -7,6 +7,7 @@ const path = require('node:path');
 const {
   BLUE_GREEN_PROXY_SERVICE,
   COMPOSE_FILE,
+  DEFAULT_BUILDER_NAME,
   DOCKER_HOST_ALIAS,
   PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
@@ -49,6 +50,10 @@ function createFsStub({ envFileContent = '', hasEnvFile = true } = {}) {
 test('parseArgs keeps redis profile before the compose action', () => {
   assert.deepEqual(parseArgs(['up', '--profile', 'redis', '-d']), {
     action: 'up',
+    buildBuilderName: null,
+    buildCpus: null,
+    buildMaxParallelism: null,
+    buildMemory: null,
     composeArgs: ['-d'],
     composeGlobalArgs: ['--profile', 'redis'],
     mode: 'dev',
@@ -64,6 +69,10 @@ test('parseArgs accepts prod mode and blue-green strategy', () => {
     parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green']),
     {
       action: 'up',
+      buildBuilderName: null,
+      buildCpus: null,
+      buildMaxParallelism: null,
+      buildMemory: null,
       composeArgs: [],
       composeGlobalArgs: ['--profile', 'redis'],
       mode: 'prod',
@@ -78,6 +87,10 @@ test('parseArgs accepts prod mode and blue-green strategy', () => {
 test('parseArgs allows dockerized commands to disable the bundled redis stack', () => {
   assert.deepEqual(parseArgs(['up', '--without-redis']), {
     action: 'up',
+    buildBuilderName: null,
+    buildCpus: null,
+    buildMaxParallelism: null,
+    buildMemory: null,
     composeArgs: [],
     composeGlobalArgs: [],
     mode: 'dev',
@@ -86,6 +99,36 @@ test('parseArgs allows dockerized commands to disable the bundled redis stack', 
     withSupabase: false,
     withRedis: false,
   });
+});
+
+test('parseArgs accepts build resource throttling flags', () => {
+  assert.deepEqual(
+    parseArgs([
+      'up',
+      '--build-memory',
+      '4g',
+      '--build-cpus',
+      '2',
+      '--build-max-parallelism',
+      '2',
+      '--build-builder-name',
+      'platform-web-throttled',
+    ]),
+    {
+      action: 'up',
+      buildBuilderName: 'platform-web-throttled',
+      buildCpus: '2',
+      buildMaxParallelism: '2',
+      buildMemory: '4g',
+      composeArgs: [],
+      composeGlobalArgs: ['--profile', 'redis'],
+      mode: 'dev',
+      resetSupabase: false,
+      strategy: 'in-place',
+      withSupabase: false,
+      withRedis: true,
+    }
+  );
 });
 
 test('usesBlueGreenStrategy only enables blue-green for production', () => {
@@ -397,6 +440,57 @@ test('runDockerWebWorkflow omits redis env when dockerized redis is disabled', a
   assert.equal(calls[1].env.UPSTASH_REDIS_REST_URL, undefined);
   assert.equal(calls[1].env.UPSTASH_REDIS_REST_TOKEN, undefined);
   assert.equal(calls[1].env.SRH_TOKEN, undefined);
+});
+
+test('runDockerWebWorkflow routes builds through a capped buildx builder when requested', async () => {
+  const calls = [];
+  const fsStub = createFsStub({
+    envFileContent: 'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+  });
+
+  await runDockerWebWorkflow(
+    parseArgs([
+      'up',
+      '--build-memory',
+      '4g',
+      '--build-cpus',
+      '2',
+      '--build-max-parallelism',
+      '2',
+    ]),
+    {
+      env: { PATH: 'test-path' },
+      fsImpl: fsStub,
+      runCommand: async (command, args, options = {}) => {
+        calls.push({
+          args,
+          command,
+          env: options.env,
+          stdio: options.stdio ?? 'inherit',
+        });
+
+        if (args[0] === 'buildx' && args[1] === 'inspect') {
+          return { code: 1, signal: null, stderr: '', stdout: '' };
+        }
+
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      },
+    }
+  );
+
+  assert.ok(
+    calls.some(
+      (call) =>
+        call.command === 'docker' &&
+        call.args[0] === 'buildx' &&
+        call.args[1] === 'create' &&
+        call.args.includes(DEFAULT_BUILDER_NAME) &&
+        call.args.includes('memory=4g') &&
+        call.args.includes('cpu-period=100000') &&
+        call.args.includes('cpu-quota=200000')
+    )
+  );
+  assert.equal(calls.at(-1).env.BUILDX_BUILDER, DEFAULT_BUILDER_NAME);
 });
 
 test('runDockerWebWorkflow uses the production compose file for in-place deploys', async () => {
