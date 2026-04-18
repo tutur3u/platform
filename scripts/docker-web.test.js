@@ -339,9 +339,12 @@ test('getComposeFile resolves the expected compose file for each mode', () => {
 test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
   const config = renderBlueGreenProxyConfig('green');
 
-  assert.match(config, /proxy_pass http:\/\/web-green:7803;/);
+  assert.match(config, /set \$upstream web-green:7803;/);
+  assert.match(config, /proxy_pass http:\/\/\$upstream;/);
   assert.match(config, /client_header_buffer_size 16k;/);
+  assert.match(config, /keepalive_timeout 15s;/);
   assert.match(config, /large_client_header_buffers 8 16k;/);
+  assert.match(config, /resolver 127\.0\.0\.11 ipv6=off valid=5s;/);
 });
 
 test('writeBlueGreenActiveColor persists the selected color', () => {
@@ -710,6 +713,7 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
       {
         env: { PATH: 'test-path' },
         envFilePath,
+        proxyDrainMs: 0,
         rootDir: tempDir,
         runCommand,
       }
@@ -719,7 +723,7 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
     assert.equal(readBlueGreenActiveColor(paths), 'blue');
     assert.match(
       fs.readFileSync(paths.proxyConfigFile, 'utf8'),
-      /proxy_pass http:\/\/web-blue:7803;/
+      /set \$upstream web-blue:7803;/
     );
     assert.ok(
       calls.some(
@@ -806,6 +810,7 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
       {
         env: { PATH: 'test-path' },
         envFilePath,
+        proxyDrainMs: 0,
         rootDir: tempDir,
         runCommand,
       }
@@ -814,7 +819,7 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
     assert.equal(readBlueGreenActiveColor(paths), 'green');
     assert.match(
       fs.readFileSync(paths.proxyConfigFile, 'utf8'),
-      /proxy_pass http:\/\/web-green:7803;/
+      /set \$upstream web-green:7803;/
     );
     const promotionUpCall = calls.find(
       ([command, args]) =>
@@ -924,6 +929,7 @@ test('runDockerWebWorkflow ignores stale active colors without live containers',
       {
         env: { PATH: 'test-path' },
         envFilePath,
+        proxyDrainMs: 0,
         rootDir: tempDir,
         runCommand,
       }

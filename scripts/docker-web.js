@@ -6,6 +6,7 @@ const path = require('node:path');
 const {
   BLUE_GREEN_COLORS,
   BLUE_GREEN_PROXY_CONFIG_FILE,
+  BLUE_GREEN_PROXY_DRAIN_MS,
   BLUE_GREEN_PROXY_SERVICE,
   BLUE_GREEN_RUNTIME_DIR,
   BLUE_GREEN_STATE_FILE,
@@ -325,6 +326,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       env,
       envFilePath: options.envFilePath,
       fsImpl,
+      proxyDrainMs: options.proxyDrainMs,
       rootDir: options.rootDir,
       runCommand: run,
     });
@@ -386,6 +388,7 @@ if (require.main === module) {
 module.exports = {
   BLUE_GREEN_COLORS,
   BLUE_GREEN_PROXY_CONFIG_FILE,
+  BLUE_GREEN_PROXY_DRAIN_MS,
   BLUE_GREEN_PROXY_SERVICE,
   BLUE_GREEN_RUNTIME_DIR,
   BLUE_GREEN_STATE_FILE,

@@ -130,11 +130,17 @@ Blue/green deploy does this:
 6. Reloads nginx inside that existing proxy only after the new color is healthy.
 7. Immediately verifies the proxy can serve `/api/health` through the newly
    promoted color before retiring the old one.
-8. Stops the old color after traffic has moved.
+8. Waits through a short drain window before stopping the old color so
+   long-lived upstream connections from Cloudflare Tunnel or browsers can roll
+   over to the reloaded proxy workers cleanly.
+9. Stops the old color after traffic has moved.
 
 The stable nginx proxy also raises its request-header buffer limits so larger
 session/auth cookies do not fail at the proxy layer with `400 Request Header Or
-Cookie Too Large` before the active web container sees the request.
+Cookie Too Large` before the active web container sees the request. It also
+uses Docker DNS re-resolution plus a shorter keepalive timeout so promotions are
+less likely to produce transient `502 Host Error` responses for existing
+Cloudflare Tunnel connections.
 
 The local runtime state lives in:
 

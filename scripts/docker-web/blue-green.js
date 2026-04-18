@@ -24,6 +24,13 @@ const BLUE_GREEN_PROXY_CONFIG_FILE = path.join(
 const BLUE_GREEN_STATE_FILE = path.join(BLUE_GREEN_RUNTIME_DIR, 'active-color');
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const BLUE_GREEN_COLORS = ['blue', 'green'];
+const BLUE_GREEN_PROXY_DRAIN_MS = 20_000;
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
 function getBlueGreenPaths(rootDir = ROOT_DIR) {
   const runtimeDir = path.join(rootDir, 'tmp', 'docker-web', 'prod');
@@ -97,10 +104,13 @@ function renderBlueGreenProxyConfig(color) {
     'server {',
     '  listen 7803;',
     '  client_header_buffer_size 16k;',
+    '  keepalive_timeout 15s;',
     '  large_client_header_buffers 8 16k;',
+    '  resolver 127.0.0.11 ipv6=off valid=5s;',
     '',
     '  location / {',
-    `    proxy_pass http://${serviceName}:7803;`,
+    `    set $upstream ${serviceName}:7803;`,
+    '    proxy_pass http://$upstream;',
     '    proxy_http_version 1.1;',
     '    proxy_set_header Host $host;',
     '    proxy_set_header X-Real-IP $remote_addr;',
@@ -234,6 +244,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
   const paths = getBlueGreenPaths(options.rootDir ?? ROOT_DIR);
   const run = options.runCommand ?? runCommand;
   const persistedActiveColor = readBlueGreenActiveColor(paths, fsImpl);
+  const proxyDrainMs = options.proxyDrainMs ?? BLUE_GREEN_PROXY_DRAIN_MS;
   const activeColor = await resolveBlueGreenActiveColor(persistedActiveColor, {
     composeFile,
     composeGlobalArgs: parsed.composeGlobalArgs,
@@ -322,6 +333,10 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
   writeBlueGreenActiveColor(targetColor, paths, fsImpl);
 
   if (activeColor && activeColor !== targetColor) {
+    if (proxyDrainMs > 0) {
+      await sleep(proxyDrainMs);
+    }
+
     await stopComposeServicesIfPresent([getBlueGreenServiceName(activeColor)], {
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
@@ -343,6 +358,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
 module.exports = {
   BLUE_GREEN_COLORS,
   BLUE_GREEN_PROXY_CONFIG_FILE,
+  BLUE_GREEN_PROXY_DRAIN_MS,
   BLUE_GREEN_PROXY_SERVICE,
   BLUE_GREEN_RUNTIME_DIR,
   BLUE_GREEN_STATE_FILE,
@@ -359,6 +375,7 @@ module.exports = {
   renderBlueGreenProxyConfig,
   resolveBlueGreenActiveColor,
   runBlueGreenProdWorkflow,
+  sleep,
   testBlueGreenProxyRouting,
   writeBlueGreenActiveColor,
   writeBlueGreenProxyConfig,
