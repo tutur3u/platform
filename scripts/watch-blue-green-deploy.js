@@ -255,6 +255,18 @@ function formatMetric(label, value, color) {
   return `${colorize(color, label)} ${emphasize(color, value)}`;
 }
 
+function getDeploymentElapsedMs(entry, { now = Date.now() } = {}) {
+  if (!entry?.startedAt) {
+    return null;
+  }
+
+  if (entry.status !== 'building' && entry.status !== 'deploying') {
+    return null;
+  }
+
+  return Math.max(0, now - entry.startedAt);
+}
+
 function truncateText(value, maxLength) {
   if (value.length <= maxLength) {
     return value;
@@ -264,6 +276,7 @@ function truncateText(value, maxLength) {
 }
 
 function stripAnsi(value) {
+  // biome-ignore lint/complexity/useRegexLiterals: literal form triggers noControlCharactersInRegex here
   return String(value).replace(new RegExp('\\u001B\\[[0-9;]*m', 'g'), '');
 }
 
@@ -460,8 +473,11 @@ function buildDeploymentTable(
             formatClockTime(entry.startedAt)
           )}`
         : '';
+    const elapsedMs = getDeploymentElapsedMs(entry, { now });
     const metricsOne = [
-      formatMetric('build', formatDuration(entry.buildDurationMs), 'cyan'),
+      elapsedMs != null
+        ? formatMetric('elapsed', formatDuration(elapsedMs), 'cyan')
+        : formatMetric('build', formatDuration(entry.buildDurationMs), 'cyan'),
       formatMetric('life', formatDuration(entry.lifetimeMs), 'magenta'),
       formatMetric('age', formatRelativeTime(timestamp, { now }), 'dim'),
     ].join('  ');
@@ -541,6 +557,20 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
           return `${colorize('dim', `[${formatClockTime(event.time)}]`)} ${colorize(levelColor, event.level.toUpperCase().padEnd(5, ' '))} ${truncateText(event.message, Math.max(24, contentWidth - 20))}`;
         })
       : [colorize('dim', 'No events yet.')];
+  const activePendingDeployment = state.deployments?.[0];
+  const lastDeployDetails = [formatRelativeTime(state.lastDeployAt, { now })];
+
+  if (
+    activePendingDeployment &&
+    (state.lastDeployStatus === 'deploying' ||
+      state.lastDeployStatus === 'building')
+  ) {
+    const elapsedMs = getDeploymentElapsedMs(activePendingDeployment, { now });
+
+    if (elapsedMs != null) {
+      lastDeployDetails.push(`${formatDuration(elapsedMs)} elapsed`);
+    }
+  }
 
   return [
     colorize('bold', 'Tuturuuu Auto Deploy Watcher'),
@@ -598,10 +628,7 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
                 : state.lastDeployStatus === 'building'
                   ? 'building'
                   : 'successful'
-          )} ${colorize(
-            'dim',
-            `(${formatRelativeTime(state.lastDeployAt, { now })})`
-          )}`
+          )} ${colorize('dim', `(${lastDeployDetails.join(' · ')})`)}`
         : colorize('dim', 'none yet')
     ),
     formatRow('Lock file', state.lockFile ?? colorize('dim', 'not acquired')),

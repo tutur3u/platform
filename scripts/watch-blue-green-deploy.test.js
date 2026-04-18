@@ -272,6 +272,7 @@ test('buildDashboardView shows pending deployments in recent deployment cards', 
   assert.match(output, /DEPLOYING/);
   assert.match(output, /Ship hotfix through blue green/);
   assert.match(output, /Last deploy:\s+deploying/);
+  assert.match(output, /elapsed 20s/);
 });
 
 test('createWatchUi records events and renders cleanly in non-TTY mode', () => {
