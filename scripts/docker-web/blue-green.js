@@ -96,12 +96,21 @@ function getBlueGreenServiceName(color) {
 }
 
 function renderBlueGreenProxyConfig(color) {
-  const serviceName = getBlueGreenServiceName(color);
+  const primaryServiceName = getBlueGreenServiceName(color);
+  const backupServiceName = getBlueGreenServiceName(
+    getNextBlueGreenColor(color)
+  );
 
   return [
     'map $http_upgrade $connection_upgrade {',
     '  default upgrade;',
     "  '' close;",
+    '}',
+    '',
+    'upstream web_upstream {',
+    '  zone web_upstream 64k;',
+    `  server ${primaryServiceName}:7803 resolve max_fails=1 fail_timeout=5s;`,
+    `  server ${backupServiceName}:7803 backup resolve max_fails=1 fail_timeout=5s;`,
     '}',
     '',
     'server {',
@@ -112,9 +121,11 @@ function renderBlueGreenProxyConfig(color) {
     '  resolver 127.0.0.11 ipv6=off valid=5s;',
     '',
     '  location / {',
-    `    set $upstream ${serviceName}:7803;`,
-    '    proxy_pass http://$upstream;',
+    '    proxy_connect_timeout 3s;',
     '    proxy_http_version 1.1;',
+    '    proxy_next_upstream error timeout invalid_header http_502 http_503 http_504;',
+    '    proxy_next_upstream_tries 2;',
+    '    proxy_pass http://web_upstream;',
     '    proxy_set_header Host $host;',
     '    proxy_set_header X-Real-IP $remote_addr;',
     '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;',
@@ -184,6 +195,67 @@ async function reloadBlueGreenProxy({
       runCommand: run,
     }
   );
+}
+
+async function refreshBlueGreenProxyIfRunning({
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  paths = getBlueGreenPaths(),
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const composeFile = getComposeFile('prod');
+  const composeEnv = getComposeEnvironment({
+    baseEnv: env ?? process.env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+    withRedis: true,
+  });
+  const activeColor = await resolveBlueGreenActiveColor(
+    readBlueGreenActiveColor(paths, fsImpl),
+    {
+      composeFile,
+      composeGlobalArgs: [],
+      env: composeEnv,
+      runCommand: run,
+    }
+  );
+
+  if (!activeColor) {
+    return false;
+  }
+
+  const proxyRunning = await hasComposeServiceContainer(
+    BLUE_GREEN_PROXY_SERVICE,
+    {
+      composeFile,
+      composeGlobalArgs: [],
+      env: composeEnv,
+      runCommand: run,
+    }
+  );
+
+  if (!proxyRunning) {
+    return false;
+  }
+
+  writeBlueGreenProxyConfig(activeColor, { fsImpl, paths });
+  await reloadBlueGreenProxy({
+    composeFile,
+    composeGlobalArgs: [],
+    env: composeEnv,
+    runCommand: run,
+  });
+  await testBlueGreenProxyRouting({
+    composeFile,
+    composeGlobalArgs: [],
+    env: composeEnv,
+    runCommand: run,
+  });
+
+  return true;
 }
 
 async function testBlueGreenProxyRouting({
@@ -468,6 +540,7 @@ module.exports = {
   getNextBlueGreenColor,
   isBlueGreenColor,
   readBlueGreenActiveColor,
+  refreshBlueGreenProxyIfRunning,
   reloadBlueGreenProxy,
   renderBlueGreenProxyConfig,
   resolveBlueGreenActiveColor,

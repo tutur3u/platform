@@ -8,6 +8,7 @@ const readline = require('node:readline');
 const {
   getBlueGreenPaths,
   readBlueGreenActiveColor,
+  refreshBlueGreenProxyIfRunning,
 } = require('./docker-web/blue-green.js');
 const { getComposeEnvironment, WEB_ENV_FILE } = require('./docker-web/env.js');
 const {
@@ -34,6 +35,7 @@ const WATCH_HISTORY_FILE = path.join(
   WATCH_RUNTIME_DIR,
   'blue-green-auto-deploy.history.json'
 );
+const WATCH_PENDING_DEPLOY_ENV = 'WATCHER_PENDING_BLUE_GREEN_DEPLOY';
 const ANSI = {
   blue: '\x1b[34m',
   bold: '\x1b[1m',
@@ -662,6 +664,24 @@ function createPendingDeploymentEntry({
   };
 }
 
+function prependPendingDeployment(deployments, pendingDeployment) {
+  return [
+    pendingDeployment,
+    ...(deployments ?? []).filter(
+      (entry) =>
+        !(
+          pendingDeployment.commitHash &&
+          entry.commitHash === pendingDeployment.commitHash &&
+          (entry.status === 'building' || entry.status === 'deploying')
+        )
+    ),
+  ].slice(0, MAX_DEPLOYMENTS);
+}
+
+function hasPendingDeployRequest(env = process.env) {
+  return env[WATCH_PENDING_DEPLOY_ENV] === '1';
+}
+
 function createWatchUi(initialState = {}, options = {}) {
   const stdout = options.stdout ?? process.stdout;
   const stderr = options.stderr ?? process.stderr;
@@ -1072,6 +1092,69 @@ async function runBlueGreenDeploy({
     env,
     runCommand: run,
   });
+}
+
+async function runPendingDeployAfterRestart({
+  deployCommand = DEFAULT_DEPLOY_COMMAND,
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  latestCommit,
+  log = console,
+  now = () => Date.now(),
+  paths = getWatchPaths(),
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const refreshedProxy = await refreshBlueGreenProxyIfRunning({
+    env,
+    envFilePath,
+    fsImpl,
+    paths: paths.blueGreen,
+    rootDir,
+    runCommand: run,
+  });
+
+  log.info?.(
+    refreshedProxy
+      ? 'Refreshed live blue/green proxy config before deployment.'
+      : 'No live blue/green proxy was running; skipping proxy refresh.'
+  );
+
+  const deployStartedAt = now();
+  await runBlueGreenDeploy({
+    deployCommand,
+    env,
+    runCommand: run,
+  });
+  const deployFinishedAt = now();
+  const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+  const history = appendDeploymentHistory(
+    {
+      activatedAt: deployFinishedAt,
+      activeColor,
+      buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+      commitHash: latestCommit.hash,
+      commitShortHash: latestCommit.shortHash,
+      commitSubject: latestCommit.subject,
+      finishedAt: deployFinishedAt,
+      startedAt: deployStartedAt,
+      status: 'successful',
+    },
+    {
+      fsImpl,
+      paths,
+    }
+  );
+
+  return {
+    activeColor,
+    buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+    deployFinishedAt,
+    deployStartedAt,
+    history,
+    refreshedProxy,
+  };
 }
 
 function createQuietRunCommand(baseRun = runCommand) {
@@ -1566,7 +1649,7 @@ async function runDeployWatchIteration(
       `Pulled ${target.branch} from ${localHead.slice(
         0,
         12
-      )} to ${updatedHead.slice(0, 12)}. Starting blue/green deployment.`
+      )} to ${updatedHead.slice(0, 12)}.`
     );
 
     const deployStartedAt = now();
@@ -1581,6 +1664,25 @@ async function runDeployWatchIteration(
     });
 
     try {
+      if (restartRequired) {
+        log.warn?.(
+          'Watcher script changed in the pulled revision. Restarting watcher before deployment.'
+        );
+
+        return attachRuntime({
+          checkedAt,
+          latestCommit,
+          newHead: updatedHead,
+          oldHead: localHead,
+          restartRequired,
+          status: 'restarting',
+        });
+      }
+
+      log.info?.(
+        `Starting blue/green deployment for ${updatedHead.slice(0, 12)}.`
+      );
+
       await runBlueGreenDeploy({
         deployCommand,
         env,
@@ -1611,20 +1713,14 @@ async function runDeployWatchIteration(
         `Blue/green deployment completed for ${updatedHead.slice(0, 12)}.`
       );
 
-      if (restartRequired) {
-        log.warn?.(
-          'Watcher script changed in the pulled revision. Restarting.'
-        );
-      }
-
       return attachRuntime(
         {
           checkedAt,
           latestCommit,
           newHead: updatedHead,
           oldHead: localHead,
-          restartRequired,
-          status: restartRequired ? 'restarting' : 'deployed',
+          restartRequired: false,
+          status: 'deployed',
         },
         history
       );
@@ -1650,12 +1746,6 @@ async function runDeployWatchIteration(
         `Blue/green deployment failed for ${updatedHead.slice(0, 12)}: ${error instanceof Error ? error.message : String(error)}`
       );
 
-      if (restartRequired) {
-        log.warn?.(
-          'Watcher script changed in the pulled revision. Restarting.'
-        );
-      }
-
       return attachRuntime(
         {
           checkedAt,
@@ -1663,7 +1753,7 @@ async function runDeployWatchIteration(
           latestCommit,
           newHead: updatedHead,
           oldHead: localHead,
-          restartRequired,
+          restartRequired: false,
           status: 'deploy-failed',
         },
         history
@@ -1830,6 +1920,109 @@ async function main(argv = process.argv.slice(2), options = {}) {
       handleTermination('SIGTERM');
     });
 
+    if (hasPendingDeployRequest(env)) {
+      const pendingStartedAt =
+        typeof options.now === 'function' ? options.now() : Date.now();
+      const buildingDeployment = createPendingDeploymentEntry({
+        latestCommit,
+        startedAt: pendingStartedAt,
+        status: 'building',
+      });
+      const buildingDeployments = prependPendingDeployment(
+        ui.state.deployments,
+        buildingDeployment
+      );
+      const buildingSummary = getLatestDeploymentSummary(buildingDeployments);
+
+      ui.update({
+        deployments: buildingDeployments,
+        lastDeployAt: buildingSummary.lastDeployAt,
+        lastDeployStatus: buildingSummary.lastDeployStatus,
+        nextCheckAt: null,
+      });
+
+      try {
+        const pendingResult = await runPendingDeployAfterRestart({
+          deployCommand: options.deployCommand ?? DEFAULT_DEPLOY_COMMAND,
+          env,
+          envFilePath,
+          fsImpl,
+          latestCommit,
+          log: ui,
+          now: options.now ?? (() => Date.now()),
+          paths,
+          rootDir,
+          runCommand: run,
+        });
+        const runtimeSnapshot = await loadRuntimeSnapshot({
+          env,
+          envFilePath,
+          fsImpl,
+          now: typeof options.now === 'function' ? options.now() : Date.now(),
+          paths,
+          rootDir,
+          runCommand: run,
+          history: pendingResult.history,
+        });
+        const latestDeploymentSummary = getLatestDeploymentSummary(
+          runtimeSnapshot.deployments
+        );
+
+        ui.update({
+          currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+          deployments: runtimeSnapshot.deployments,
+          lastDeployAt: latestDeploymentSummary.lastDeployAt,
+          lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
+          lastResult: { status: 'deployed' },
+          nextCheckAt: Date.now() + parsed.intervalMs,
+        });
+        ui.info(
+          `Blue/green deployment completed for ${latestCommit.shortHash}.`
+        );
+      } catch (error) {
+        const deployFinishedAt =
+          typeof options.now === 'function' ? options.now() : Date.now();
+        const history = appendDeploymentHistory(
+          {
+            buildDurationMs: Math.max(0, deployFinishedAt - pendingStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            finishedAt: deployFinishedAt,
+            startedAt: pendingStartedAt,
+            status: 'failed',
+          },
+          {
+            fsImpl,
+            paths,
+          }
+        );
+        const runtimeSnapshot = await loadRuntimeSnapshot({
+          env,
+          envFilePath,
+          fsImpl,
+          now: deployFinishedAt,
+          paths,
+          rootDir,
+          runCommand: run,
+          history,
+        });
+        const latestDeploymentSummary = getLatestDeploymentSummary(
+          runtimeSnapshot.deployments
+        );
+
+        ui.update({
+          currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+          deployments: runtimeSnapshot.deployments,
+          lastDeployAt: latestDeploymentSummary.lastDeployAt,
+          lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
+          lastResult: { error, status: 'deploy-failed' },
+          nextCheckAt: Date.now() + parsed.intervalMs,
+        });
+        throw error;
+      }
+    }
+
     const result = await runDeployWatchLoop(target, {
       deployCommand: options.deployCommand ?? DEFAULT_DEPLOY_COMMAND,
       env,
@@ -1841,17 +2034,10 @@ async function main(argv = process.argv.slice(2), options = {}) {
       once: parsed.once,
       onDeploymentStart: ({ checkedAt, latestCommit, pendingDeployment }) => {
         const currentDeployments = ui.state.deployments ?? [];
-        const nextDeployments = [
-          pendingDeployment,
-          ...currentDeployments.filter(
-            (entry) =>
-              !(
-                pendingDeployment.commitHash &&
-                entry.commitHash === pendingDeployment.commitHash &&
-                (entry.status === 'building' || entry.status === 'deploying')
-              )
-          ),
-        ].slice(0, MAX_DEPLOYMENTS);
+        const nextDeployments = prependPendingDeployment(
+          currentDeployments,
+          pendingDeployment
+        );
         const latestDeploymentSummary =
           getLatestDeploymentSummary(nextDeployments);
 
@@ -1918,7 +2104,10 @@ async function main(argv = process.argv.slice(2), options = {}) {
       await spawnReplacementWatcher({
         argv: options.restartArgv ?? process.argv.slice(1),
         cwd: rootDir,
-        env,
+        env: {
+          ...env,
+          [WATCH_PENDING_DEPLOY_ENV]: '1',
+        },
         execPath: options.execPath ?? process.execPath,
         spawnImpl: options.spawnImpl ?? spawn,
       });
@@ -1950,6 +2139,7 @@ module.exports = {
   SELF_WATCHED_FILES,
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
+  WATCH_PENDING_DEPLOY_ENV,
   WATCH_RUNTIME_DIR,
   acquireWatchLock,
   appendDeploymentHistory,
@@ -1980,6 +2170,7 @@ module.exports = {
   parseArgs,
   parseProxyLogEntries,
   parseUpstreamRef,
+  prependPendingDeployment,
   pullTrackedBranch,
   readDeploymentHistory,
   readWatchLock,
@@ -1987,6 +2178,7 @@ module.exports = {
   resolveCurrentBlueGreenStatus,
   resolveLockedBranchTarget,
   runBlueGreenDeploy,
+  runPendingDeployAfterRestart,
   runDeployWatchIteration,
   runDeployWatchLoop,
   sleep,

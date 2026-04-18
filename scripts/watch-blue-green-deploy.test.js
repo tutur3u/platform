@@ -10,6 +10,7 @@ const {
   DEFAULT_INTERVAL_MS,
   MAX_DEPLOYMENTS,
   SELF_WATCHED_FILES,
+  WATCH_PENDING_DEPLOY_ENV,
   acquireWatchLock,
   appendDeploymentHistory,
   buildDashboardView,
@@ -28,8 +29,10 @@ const {
   readWatchLock,
   releaseWatchLock,
   resolveCurrentBlueGreenStatus,
+  runPendingDeployAfterRestart,
   runDeployWatchIteration,
   runDeployWatchLoop,
+  main,
   spawnReplacementWatcher,
   stripAnsi,
   summarizeRequestRate,
@@ -781,19 +784,16 @@ test('runDeployWatchIteration skips dirty worktrees before fetch and still repor
   }
 });
 
-test('runDeployWatchIteration pulls, deploys, tracks history, traffic, and watcher self-restart', async () => {
+test('runDeployWatchIteration restarts before deployment when the watcher script changed', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-deploy-'));
   const paths = getWatchPaths(tempDir);
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
   const deployCommands = [];
-  const commandCounts = new Map();
   let pullCompleted = false;
-  let deployCompleted = false;
-  const nowValues = [1000, 2000, 4000, 5000];
-  const now = () => nowValues.shift() ?? 5000;
+  const nowValues = [1000, 2000, 4000];
+  const now = () => nowValues.shift() ?? 4000;
   const runCommand = async (command, args) => {
     const key = `${command} ${args.join(' ')}`;
-    commandCounts.set(key, (commandCounts.get(key) ?? 0) + 1);
 
     if (key === 'git rev-parse --abbrev-ref HEAD') {
       return createResult('main\n');
@@ -837,32 +837,12 @@ test('runDeployWatchIteration pulls, deploys, tracks history, traffic, and watch
       );
     }
 
-    if (
-      key ===
-      `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
-    ) {
-      deployCommands.push(key);
-      deployCompleted = true;
-      fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
-      fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
+    if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
       return createResult('');
     }
 
-    if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
-      return createResult(deployCompleted ? 'proxy-123\n' : '');
-    }
-
     if (key === prodComposePsKey('web-green')) {
-      return createResult(deployCompleted ? 'green-123\n' : '');
-    }
-
-    if (
-      key ===
-      'docker logs --timestamps --since 1970-01-01T00:00:04.000Z proxy-123'
-    ) {
-      return createResult(
-        '1970-01-01T00:00:04.500Z 10.0.0.1 - - [01/Jan/1970:00:00:04 +0000] "GET / HTTP/1.1" 200 120 "-" "Mozilla/5.0" "-"\n'
-      );
+      return createResult('');
     }
 
     throw new Error(`Unexpected command: ${key}`);
@@ -895,18 +875,9 @@ test('runDeployWatchIteration pulls, deploys, tracks history, traffic, and watch
 
     assert.equal(result.status, 'restarting');
     assert.equal(result.restartRequired, true);
-    assert.equal(result.currentBlueGreen.state, 'serving');
-    assert.equal(result.currentBlueGreen.activeColor, 'green');
-    assert.equal(result.currentBlueGreen.requestCount, 1);
-    assert.equal(result.currentBlueGreen.averageRequestsPerMinute, 60);
-    assert.equal(result.currentBlueGreen.peakRequestsPerMinute, 1);
-    assert.equal(result.deployments.length, 1);
-    assert.equal(result.deployments[0].activeColor, 'green');
-    assert.equal(result.deployments[0].buildDurationMs, 2000);
-    assert.equal(result.deployments[0].requestCount, 1);
-    assert.equal(result.deployments[0].averageRequestsPerMinute, 60);
-    assert.equal(result.deployments[0].peakRequestsPerMinute, 1);
-    assert.equal(deployCommands.length, 1);
+    assert.equal(result.currentBlueGreen.state, 'idle');
+    assert.deepEqual(result.deployments, []);
+    assert.equal(deployCommands.length, 0);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -998,6 +969,100 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
   assert.equal(pendingStates[0].pendingDeployment.status, 'deploying');
   assert.equal(pendingStates[0].pendingDeployment.commitShortHash, 'bbb222');
   assert.equal(result.status, 'deployed');
+});
+
+test('runPendingDeployAfterRestart refreshes the live proxy before running blue/green deploy', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-pending-'));
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const logs = [];
+  const calls = [];
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
+
+    const result = await runPendingDeployAfterRestart({
+      envFilePath,
+      fsImpl: fs,
+      latestCommit: {
+        hash: 'bbb222222222222222222',
+        shortHash: 'bbb222',
+        subject: 'Refresh watcher UX and restart logic',
+      },
+      log: {
+        info(message) {
+          logs.push(message);
+        },
+      },
+      now: (() => {
+        const values = [2000, 5000];
+        return () => values.shift() ?? 5000;
+      })(),
+      paths,
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey('web-green')) {
+          return createResult('green-123\n');
+        }
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('proxy-123\n');
+        }
+
+        if (
+          key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload`
+        ) {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/api/health`
+        ) {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+        ) {
+          return createResult('');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+    });
+
+    assert.deepEqual(calls, [
+      prodComposePsKey('web-green'),
+      prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
+      `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload`,
+      `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/api/health`,
+      `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`,
+    ]);
+    assert.equal(result.refreshedProxy, true);
+    assert.equal(result.activeColor, 'green');
+    assert.equal(result.buildDurationMs, 3000);
+    assert.equal(result.history.length, 1);
+    assert.equal(result.history[0].status, 'successful');
+    assert.match(
+      logs[0],
+      /Refreshed live blue\/green proxy config before deployment/
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('runDeployWatchIteration stops when the locked branch changes', async () => {
@@ -1126,4 +1191,123 @@ test('spawnReplacementWatcher relaunches the watcher with inherited args', async
       },
     },
   ]);
+});
+
+test('main restarts the watcher with a pending deploy handoff env when the watcher script changed', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-main-restart-'));
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const spawnCalls = [];
+  const uiState = {};
+  let pullCompleted = false;
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    await main([], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      processImpl: {
+        argv: ['node', 'scripts/watch-blue-green-deploy.js'],
+        exit() {},
+        on() {},
+        pid: 4321,
+      },
+      restartArgv: ['scripts/watch-blue-green-deploy.js'],
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult('main\n');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref --symbolic-full-name @{u}') {
+          return createResult('origin/main\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return pullCompleted
+            ? createResult(
+                'bbb222222222222222222\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:59:00.000Z\n'
+              )
+            : createResult(
+                'aaa111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n'
+              );
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git fetch origin main') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse HEAD') {
+          return createResult(pullCompleted ? 'bbb222\n' : 'aaa111\n');
+        }
+
+        if (key === 'git rev-parse origin/main') {
+          return createResult('bbb222\n');
+        }
+
+        if (key === 'git merge-base --is-ancestor aaa111 bbb222') {
+          return createResult('');
+        }
+
+        if (key === 'git pull --ff-only origin main') {
+          pullCompleted = true;
+          return createResult('Updating aaa111..bbb222\n');
+        }
+
+        if (
+          key ===
+          `git diff --name-only aaa111 bbb222 -- ${SELF_WATCHED_FILES.join(' ')}`
+        ) {
+          return createResult(`${SELF_WATCHED_FILES[0]}\n`);
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      spawnImpl(command, args, options) {
+        spawnCalls.push({ args, command, options });
+        return {
+          once(event, handler) {
+            if (event === 'spawn') {
+              handler();
+            }
+            return this;
+          },
+          unref() {},
+        };
+      },
+      ui: {
+        close() {},
+        error() {},
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn() {},
+      },
+    });
+
+    assert.equal(spawnCalls.length, 1);
+    assert.equal(spawnCalls[0].options.env[WATCH_PENDING_DEPLOY_ENV], '1');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });

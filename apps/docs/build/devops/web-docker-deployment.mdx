@@ -144,7 +144,12 @@ Cookie Too Large` before the active web container sees the request. It also
 uses Docker DNS re-resolution plus a shorter keepalive timeout so promotions are
 less likely to produce transient `502 Host Error` responses for existing
 Cloudflare Tunnel connections, while the old color remains alive until its
-in-flight work count reaches zero.
+in-flight work count reaches zero. The proxy now keeps both blue and green in
+the nginx upstream group during steady state too, with the active color as the
+primary upstream and the inactive color as a backup. That lets stale keepalive
+workers fail over to the newly promoted color instead of returning `502` when
+some clients or Cloudflare Tunnel connections are still pinned to older nginx
+workers after a reload.
 
 The local runtime state lives in:
 
@@ -253,9 +258,14 @@ Behavior:
 9. Runs `bun serve:web:docker:bg` automatically after a successful fast-forward
    pull.
 10. If `scripts/watch-blue-green-deploy.js` itself changed in the pulled
-   revision, the current watcher releases its lock, spawns a replacement
-   watcher with the same CLI args, and exits.
-11. Stops immediately if the checked-out branch changes while the watcher is
+   revision, the current watcher does not deploy from the old process. It
+   releases its lock, spawns a replacement watcher with the same CLI args, and
+   exits first.
+11. The replacement watcher refreshes the live `web-proxy` nginx config and
+   workers in place if blue/green is already serving traffic, verifies proxy
+   routing through `/api/health`, and only then starts the new blue/green
+   build/promotion.
+12. Stops immediately if the checked-out branch changes while the watcher is
     running.
 
 Dashboard details:
@@ -305,6 +315,9 @@ Operational notes:
 - The self-restart path only triggers when the watcher script itself changed in
   the fetched revision; normal app-code deploys keep the current watcher
   process alive.
+- During that self-restart path, nginx keeps the assigned proxy port up the
+  whole time because the replacement watcher refreshes the existing proxy
+  container in place before it starts the new build.
 - The watcher inherits the default blue/green build caps from
   `bun serve:web:docker:bg`, so the current defaults still apply during
   auto-deploys.

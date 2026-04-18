@@ -339,11 +339,25 @@ test('getComposeFile resolves the expected compose file for each mode', () => {
 test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
   const config = renderBlueGreenProxyConfig('green');
 
-  assert.match(config, /set \$upstream web-green:7803;/);
-  assert.match(config, /proxy_pass http:\/\/\$upstream;/);
+  assert.match(config, /upstream web_upstream {/);
+  assert.match(
+    config,
+    /server web-green:7803 resolve max_fails=1 fail_timeout=5s;/
+  );
+  assert.match(
+    config,
+    /server web-blue:7803 backup resolve max_fails=1 fail_timeout=5s;/
+  );
   assert.match(config, /client_header_buffer_size 16k;/);
   assert.match(config, /keepalive_timeout 15s;/);
   assert.match(config, /large_client_header_buffers 8 16k;/);
+  assert.match(config, /proxy_connect_timeout 3s;/);
+  assert.match(
+    config,
+    /proxy_next_upstream error timeout invalid_header http_502 http_503 http_504;/
+  );
+  assert.match(config, /proxy_next_upstream_tries 2;/);
+  assert.match(config, /proxy_pass http:\/\/web_upstream;/);
   assert.match(config, /resolver 127\.0\.0\.11 ipv6=off valid=5s;/);
 });
 
@@ -723,7 +737,7 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
     assert.equal(readBlueGreenActiveColor(paths), 'blue');
     assert.match(
       fs.readFileSync(paths.proxyConfigFile, 'utf8'),
-      /set \$upstream web-blue:7803;/
+      /server web-blue:7803 resolve max_fails=1 fail_timeout=5s;/
     );
     assert.ok(
       calls.some(
@@ -845,7 +859,7 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
     assert.equal(readBlueGreenActiveColor(paths), 'green');
     assert.match(
       fs.readFileSync(paths.proxyConfigFile, 'utf8'),
-      /set \$upstream web-green:7803;/
+      /server web-green:7803 resolve max_fails=1 fail_timeout=5s;/
     );
     const promotionUpCall = calls.find(
       ([command, args]) =>
