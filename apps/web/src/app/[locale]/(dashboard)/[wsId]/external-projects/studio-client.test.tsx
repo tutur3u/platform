@@ -308,9 +308,14 @@ describe('ExternalProjectStudioClient', () => {
 
     expect(screen.getAllByText('Content rail').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Editor').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Rendered').length).toBeGreaterThan(0);
+    const artworkButton = screen.getByRole('button', { name: /Artwork One/ });
 
-    fireEvent.click(screen.getByRole('button', { name: /Artwork One/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open preview' }));
+
+    expect(screen.getAllByText('Rendered').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    fireEvent.click(artworkButton);
 
     expect(screen.getAllByText('Open full editor').length).toBeGreaterThan(0);
     expect(screen.getByRole('dialog')).toBeInTheDocument();

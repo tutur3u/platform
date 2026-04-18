@@ -52,7 +52,7 @@ export function StudioShell({
           <div className="min-w-0 flex-1">{actionBar}</div>
           <Button
             variant="outline"
-            className="h-9 rounded-full px-4 xl:hidden"
+            className="h-9 rounded-full px-4"
             onClick={() => setPreviewOpen(true)}
           >
             <Eye className="mr-2 h-4 w-4" />
@@ -61,16 +61,13 @@ export function StudioShell({
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)_360px] 2xl:grid-cols-[340px_minmax(0,1fr)_390px]">
+      <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)]">
         <div className="space-y-4">
           {contentRail}
           <div className="xl:hidden">{activityPanel}</div>
           <div className="hidden xl:block">{activityPanel}</div>
         </div>
         <div className="space-y-4">{rightColumn}</div>
-        <div className="hidden xl:block">
-          <div className="sticky top-40">{previewPanel}</div>
-        </div>
       </div>
 
       <Sheet open={previewOpen} onOpenChange={setPreviewOpen}>

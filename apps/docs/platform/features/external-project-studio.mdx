@@ -30,7 +30,8 @@ The external-projects surfaces now follow two distinct workflows:
   - New draft items should open into the same editor immediately after creation so admins can stay in one flow.
 - Keep rail cards visually dense.
   Use small thumbnails, tight metadata chips, and 2-3 line excerpts rather than large preview tiles that push the list below the fold.
-- The right column shows the live preview.
+- Live preview is on demand instead of permanently visible.
+  - Open it from the sticky action bar when you need a rendered or payload check.
   - **Rendered** reflects the current draft immediately in the UI.
   - **Payload** fetches the real preview delivery response from `GET /api/v1/workspaces/:wsId/external-projects/delivery?preview=true`.
 - Import, save, publish, and unpublish actions stay explicit in the sticky action bar. There is no autosave.
@@ -39,12 +40,12 @@ The external-projects surfaces now follow two distinct workflows:
 
 - The preview source of truth is the existing preview delivery API, not a duplicate client-side payload builder.
 - The workspace studio still uses the existing internal API helpers for entry, block, asset, import, publish, and binding operations.
-- Mobile and tablet views collapse the persistent preview into a sheet so the editor remains usable on narrow screens.
+- Preview now opens in a sheet so the default workspace stays focused on navigation and editing first.
 
 ## Team Guidance
 
 - When changing external-project authoring UX, keep the live preview wired to the preview delivery endpoint instead of inventing a second payload contract in the client.
 - For dense admin surfaces, keep collection-level controls inline but move item-level authoring into a dedicated editor page or near-fullscreen dialog. Do not render the same heavy editor twice in both the page body and an overlay.
-- In split-view admin pages, prefer one compact selected-item summary in the main column and reserve the dedicated preview column for the actual live preview. Do not repeat full preview treatments in both places.
+- In split-view admin pages, prefer one compact selected-item summary in the main column and keep preview as an explicit secondary action when it would otherwise crowd the default workspace.
 - Use tooltips for secondary control explanations so the default layout stays compact, especially in sticky action bars and collection controls.
 - Add any new user-facing copy to both `apps/web/messages/en.json` and `apps/web/messages/vi.json`, then run `bun i18n:sort`.
