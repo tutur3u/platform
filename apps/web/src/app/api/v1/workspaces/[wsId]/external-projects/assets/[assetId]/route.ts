@@ -8,7 +8,10 @@ import {
   requireWorkspaceExternalProjectAccess,
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
-import { updateWorkspaceExternalProjectAsset } from '@/lib/external-projects/store';
+import {
+  deleteWorkspaceExternalProjectAsset as deleteWorkspaceExternalProjectAssetInStore,
+  updateWorkspaceExternalProjectAsset,
+} from '@/lib/external-projects/store';
 
 function isStorageObjectMissing(message: string | null | undefined) {
   if (!message) {
@@ -159,6 +162,37 @@ export async function PATCH(
     console.error('Failed to update workspace external project asset', error);
     return NextResponse.json(
       { error: 'Failed to update workspace external project asset' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ assetId: string; wsId: string }> }
+) {
+  const { assetId, wsId } = await params;
+  const access = await requireWorkspaceExternalProjectAccess({
+    mode: 'manage',
+    request,
+    wsId,
+  });
+  if (!access.ok) return access.response;
+
+  try {
+    const result = await deleteWorkspaceExternalProjectAssetInStore(
+      assetId,
+      {
+        workspaceId: access.normalizedWorkspaceId,
+      },
+      access.admin
+    );
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('Failed to delete workspace external project asset', error);
+    return NextResponse.json(
+      { error: 'Failed to delete workspace external project asset' },
       { status: 500 }
     );
   }

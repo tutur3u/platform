@@ -1323,6 +1323,29 @@ export async function updateWorkspaceExternalProjectAsset(
   return data;
 }
 
+export async function deleteWorkspaceExternalProjectAsset(
+  assetId: string,
+  payload: {
+    workspaceId: string;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const { workspaceId } = payload;
+
+  const { error } = await admin
+    .from('workspace_external_project_assets')
+    .delete()
+    .eq('ws_id', workspaceId)
+    .eq('id', assetId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return { id: assetId };
+}
+
 export async function publishWorkspaceExternalProjectEntry(
   {
     actorId,

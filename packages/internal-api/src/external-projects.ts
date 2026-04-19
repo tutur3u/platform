@@ -346,6 +346,21 @@ export async function updateWorkspaceExternalProjectAsset(
   );
 }
 
+export async function deleteWorkspaceExternalProjectAsset(
+  workspaceId: string,
+  assetId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ id: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/assets/${encodePathSegment(assetId)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
+    }
+  );
+}
+
 export async function createWorkspaceExternalProjectAssetUploadUrl(
   workspaceId: string,
   payload: {

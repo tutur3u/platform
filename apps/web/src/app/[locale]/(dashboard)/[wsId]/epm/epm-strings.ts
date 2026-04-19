@@ -9,7 +9,9 @@ export type EpmStrings = {
   attentionTitle: string;
   backToEpmAction: string;
   bulkActionsTitle: string;
+  bulkRemoveMediaAction: string;
   bulkSelectionHint: string;
+  bulkUploadMediaAction: string;
   cancelAction: string;
   collectionFallbackLabel: string;
   collectionHealthTitle: string;
@@ -24,7 +26,12 @@ export type EpmStrings = {
   createCollectionAction: string;
   createEntryAction: string;
   deleteCollectionAction: string;
+  deleteAssetAction: string;
+  deleteAssetConfirmDescription: string;
+  deleteAssetConfirmTitle: string;
   deleteEntryAction: string;
+  deleteEntryConfirmDescription: string;
+  deleteEntryConfirmTitle: string;
   descriptionLabel: string;
   dashboardModeLabel: string;
   dashboardPreferencesTitle: string;
@@ -97,6 +104,7 @@ export type EpmStrings = {
   scheduledForLabel: string;
   scheduledQueue: string;
   searchPlaceholder: string;
+  selectAllMediaAction: string;
   setAsCoverAction: string;
   settingsTab: string;
   showActivityLabel: string;
@@ -135,7 +143,9 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     attentionTitle: t('epm.attention_title'),
     backToEpmAction: t('epm.back_to_epm_action'),
     bulkActionsTitle: t('epm.bulk_actions_title'),
+    bulkRemoveMediaAction: t('epm.bulk_remove_media_action'),
     bulkSelectionHint: t('epm.bulk_selection_hint'),
+    bulkUploadMediaAction: t('epm.bulk_upload_media_action'),
     cancelAction: t('epm.cancel_action'),
     collectionFallbackLabel: t('epm.collection_fallback_label'),
     collectionHealthTitle: t('epm.collection_health_title'),
@@ -150,7 +160,12 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     createCollectionAction: t('epm.create_collection_action'),
     createEntryAction: t('epm.create_entry_action'),
     deleteCollectionAction: t('epm.delete_collection_action'),
+    deleteAssetAction: t('epm.delete_asset_action'),
+    deleteAssetConfirmDescription: t('epm.delete_asset_confirm_description'),
+    deleteAssetConfirmTitle: t('epm.delete_asset_confirm_title'),
     deleteEntryAction: t('epm.delete_entry_action'),
+    deleteEntryConfirmDescription: t('epm.delete_entry_confirm_description'),
+    deleteEntryConfirmTitle: t('epm.delete_entry_confirm_title'),
     descriptionLabel: t('epm.description_label'),
     dashboardModeLabel: t('epm.dashboard_mode_label'),
     dashboardPreferencesTitle: t('epm.dashboard_preferences_title'),
@@ -223,6 +238,7 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     scheduledForLabel: t('epm.scheduled_for_label'),
     scheduledQueue: t('epm.scheduled_queue'),
     searchPlaceholder: t('epm.search_placeholder'),
+    selectAllMediaAction: t('epm.select_all_media_action'),
     setAsCoverAction: t('epm.set_as_cover_action'),
     settingsTab: t('epm.settings_tab'),
     showActivityLabel: t('epm.show_activity_label'),
