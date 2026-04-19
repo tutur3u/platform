@@ -21,7 +21,6 @@ import {
   uploadWorkspaceExternalProjectAssetFile,
 } from '@tuturuuu/internal-api';
 import type {
-  ExternalProjectAsset,
   ExternalProjectEntry,
   ExternalProjectStudioAsset,
   ExternalProjectStudioData,
@@ -58,156 +57,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@tuturuuu/ui/sheet';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  type ChangeEvent,
-  type ComponentProps,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useExternalProjectLivePreview } from '../../../external-projects/use-external-project-live-preview';
 import type { EpmStrings } from '../../epm-strings';
 import { ResilientMediaImage } from '../../resilient-media-image';
 import { getEpmStudioQueryKey, useEpmStudio } from '../../use-epm-studio';
-
-type EntryFormState = {
-  scheduledFor: string;
-  slug: string;
-  status: ExternalProjectEntry['status'];
-  subtitle: string;
-  summary: string;
-  title: string;
-};
-
-function buildEntryFormState(entry: ExternalProjectEntry): EntryFormState {
-  return {
-    scheduledFor: toDateTimeLocalValue(entry.scheduled_for),
-    slug: entry.slug,
-    status: entry.status,
-    subtitle: entry.subtitle ?? '',
-    summary: entry.summary ?? '',
-    title: entry.title,
-  };
-}
-
-function toDateTimeLocalValue(value: string | null | undefined) {
-  if (!value) {
-    return '';
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return '';
-  }
-
-  const offset = parsed.getTimezoneOffset();
-  return new Date(parsed.getTime() - offset * 60_000)
-    .toISOString()
-    .slice(0, 16);
-}
-
-function fromDateTimeLocalValue(value: string) {
-  if (!value.trim()) {
-    return null;
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return null;
-  }
-
-  return parsed.toISOString();
-}
-
-function formatStatus(
-  status: ExternalProjectEntry['status'],
-  strings: EpmStrings
-) {
-  switch (status) {
-    case 'archived':
-      return strings.statusArchived;
-    case 'published':
-      return strings.statusPublished;
-    case 'scheduled':
-      return strings.statusScheduled;
-    default:
-      return strings.statusDraft;
-  }
-}
-
-function statusTone(status: ExternalProjectEntry['status']) {
-  switch (status) {
-    case 'published':
-      return 'bg-emerald-500/10 text-emerald-600';
-    case 'scheduled':
-      return 'bg-amber-500/10 text-amber-600';
-    case 'archived':
-      return 'bg-muted text-muted-foreground';
-    default:
-      return 'bg-sky-500/10 text-sky-600';
-  }
-}
-
-function ActionButton({
-  children,
-  tooltip,
-  ...props
-}: ComponentProps<typeof Button> & { tooltip: string }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button {...props}>{children}</Button>
-      </TooltipTrigger>
-      <TooltipContent>{tooltip}</TooltipContent>
-    </Tooltip>
-  );
-}
-
-function formatDateLabel(
-  value: string | null | undefined,
-  strings: EpmStrings
-) {
-  if (!value) {
-    return strings.notScheduledLabel;
-  }
-
-  return new Date(value).toLocaleString();
-}
-
-function sortImageAssets(
-  assets: ExternalProjectStudioAsset[],
-  entryId: string
-) {
-  return assets
-    .filter(
-      (asset) => asset.entry_id === entryId && asset.asset_type === 'image'
-    )
-    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-}
-
-function toStudioAsset(
-  asset: ExternalProjectAsset,
-  previous?: ExternalProjectStudioAsset | null
-): ExternalProjectStudioAsset {
-  return {
-    ...asset,
-    asset_url: previous?.asset_url ?? null,
-    preview_url: previous?.preview_url ?? null,
-  };
-}
+import { EntryDetailLoadingState } from './entry-detail-loading-state';
+import { EntryDetailPreviewSheet } from './entry-detail-preview-sheet';
+import {
+  ActionButton,
+  buildEntryFormState,
+  formatDateLabel,
+  formatStatus,
+  fromDateTimeLocalValue,
+  sortImageAssets,
+  statusTone,
+  toStudioAsset,
+} from './entry-detail-shared';
 
 export function EntryDetailClient({
   binding,
@@ -547,51 +416,15 @@ export function EntryDetailClient({
     uploadCoverMutation.mutate(file);
   };
 
-  const loadingState = (
-    <div className="min-h-[calc(100svh-5rem)] space-y-5 pb-8">
-      <section className="rounded-[2rem] border border-border/70 bg-card/95 p-5 shadow-none lg:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="space-y-3">
-            <Skeleton className="h-6 w-32 rounded-lg" />
-            <Skeleton className="h-10 w-80 rounded-xl" />
-            <Skeleton className="h-4 w-full max-w-2xl rounded-lg" />
-          </div>
-          <div className="flex gap-2">
-            <Skeleton className="h-10 w-28 rounded-xl" />
-            <Skeleton className="h-10 w-28 rounded-xl" />
-          </div>
-        </div>
-      </section>
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.14fr)_360px]">
-        <Card className="border-border/70 bg-card/95 shadow-none">
-          <CardContent className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1.08fr)_280px] lg:p-6">
-            <Skeleton className="min-h-[360px] w-full rounded-[1.6rem] lg:min-h-[520px]" />
-            <div className="space-y-3">
-              <Skeleton className="h-40 w-full rounded-[1.35rem]" />
-              <Skeleton className="h-28 w-full rounded-[1.35rem]" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/70 bg-card/95 shadow-none">
-          <CardContent className="space-y-4 p-6">
-            <Skeleton className="h-28 w-full rounded-[1.2rem]" />
-            <Skeleton className="h-28 w-full rounded-[1.2rem]" />
-            <Skeleton className="h-52 w-full rounded-[1.2rem]" />
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-
   if (studioQuery.isPending && !studio) {
     return variant === 'dialog' ? (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="inset-0 top-0 left-0 h-screen max-h-screen max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-none border-0 p-0 sm:max-w-none">
-          {loadingState}
+          <EntryDetailLoadingState />
         </DialogContent>
       </Dialog>
     ) : (
-      loadingState
+      <EntryDetailLoadingState />
     );
   }
 
@@ -1070,53 +903,14 @@ export function EntryDetailClient({
         </div>
       </div>
 
-      <Sheet open={previewOpen} onOpenChange={setPreviewOpen}>
-        <SheetContent className="w-full sm:max-w-3xl">
-          <SheetHeader>
-            <SheetTitle>{strings.previewTitle}</SheetTitle>
-            <SheetDescription>{strings.previewDescription}</SheetDescription>
-          </SheetHeader>
-          <div className="mt-6 space-y-4">
-            <div className="flex gap-2">
-              <Badge variant="outline">{strings.renderedLabel}</Badge>
-              <Badge variant="outline">{strings.payloadLabel}</Badge>
-            </div>
-            {previewQuery.isPending ? (
-              <div className="rounded-[1.2rem] border border-border/70 p-4 text-muted-foreground text-sm">
-                {strings.loadingPreviewLabel}
-              </div>
-            ) : previewEntry ? (
-              <>
-                <div className="relative min-h-[260px] overflow-hidden rounded-[1.4rem] border border-border/70 bg-background/80">
-                  <ResilientMediaImage
-                    alt={coverAsset?.alt_text ?? previewEntry.title}
-                    assetUrl={coverAsset?.asset_url}
-                    className="object-cover"
-                    fill
-                    previewUrl={coverAsset?.preview_url}
-                    sizes="(max-width: 1024px) 100vw, 64vw"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="font-semibold text-xl">
-                    {previewEntry.title}
-                  </div>
-                  <p className="text-muted-foreground text-sm leading-6">
-                    {previewEntry.summary || strings.emptyEntries}
-                  </p>
-                </div>
-                <pre className="overflow-x-auto rounded-[1.2rem] border border-border/70 bg-background/80 p-4 text-xs leading-6">
-                  {JSON.stringify(previewEntry, null, 2)}
-                </pre>
-              </>
-            ) : (
-              <div className="rounded-[1.2rem] border border-border/70 p-4 text-muted-foreground text-sm">
-                {strings.emptyEntries}
-              </div>
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
+      <EntryDetailPreviewSheet
+        coverAsset={coverAsset}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        previewEntry={previewEntry}
+        previewPending={previewQuery.isPending}
+        strings={strings}
+      />
     </div>
   );
 

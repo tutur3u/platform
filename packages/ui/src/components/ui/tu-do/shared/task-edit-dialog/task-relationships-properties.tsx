@@ -27,7 +27,6 @@ export function TaskRelationshipsProperties({
   taskId,
   boardId,
   listId,
-  isCreateMode,
   initialActiveTab,
   initialDependencySubTab,
   parentTask,
