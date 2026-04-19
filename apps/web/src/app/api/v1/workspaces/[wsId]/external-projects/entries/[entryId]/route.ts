@@ -2,7 +2,10 @@ import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
-import { updateWorkspaceExternalProjectEntry } from '@/lib/external-projects/store';
+import {
+  deleteWorkspaceExternalProjectEntry,
+  updateWorkspaceExternalProjectEntry,
+} from '@/lib/external-projects/store';
 
 const updateEntrySchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
@@ -58,6 +61,37 @@ export async function PATCH(
     console.error('Failed to update workspace external project entry', error);
     return NextResponse.json(
       { error: 'Failed to update workspace external project entry' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ entryId: string; wsId: string }> }
+) {
+  const { entryId, wsId } = await params;
+  const access = await requireWorkspaceExternalProjectAccess({
+    mode: 'manage',
+    request,
+    wsId,
+  });
+  if (!access.ok) return access.response;
+
+  try {
+    const result = await deleteWorkspaceExternalProjectEntry(
+      entryId,
+      {
+        workspaceId: access.normalizedWorkspaceId,
+      },
+      access.admin
+    );
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('Failed to delete workspace external project entry', error);
+    return NextResponse.json(
+      { error: 'Failed to delete workspace external project entry' },
       { status: 500 }
     );
   }

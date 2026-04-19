@@ -756,6 +756,73 @@ export async function updateWorkspaceExternalProjectCollection(
   return data;
 }
 
+export async function deleteWorkspaceExternalProjectCollection(
+  collectionId: string,
+  payload: {
+    workspaceId: string;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const { workspaceId } = payload;
+
+  const { data: relatedEntries, error: relatedEntriesError } = await admin
+    .from('workspace_external_project_entries')
+    .select('id')
+    .eq('ws_id', workspaceId)
+    .eq('collection_id', collectionId);
+
+  if (relatedEntriesError) {
+    throw new Error(relatedEntriesError.message);
+  }
+
+  const relatedEntryIds = (relatedEntries ?? []).map((entry) => entry.id);
+
+  if (relatedEntryIds.length > 0) {
+    const { error: deleteAssetsError } = await admin
+      .from('workspace_external_project_assets')
+      .delete()
+      .eq('ws_id', workspaceId)
+      .in('entry_id', relatedEntryIds);
+
+    if (deleteAssetsError) {
+      throw new Error(deleteAssetsError.message);
+    }
+
+    const { error: deleteBlocksError } = await admin
+      .from('workspace_external_project_blocks')
+      .delete()
+      .eq('ws_id', workspaceId)
+      .in('entry_id', relatedEntryIds);
+
+    if (deleteBlocksError) {
+      throw new Error(deleteBlocksError.message);
+    }
+
+    const { error: deleteEntriesError } = await admin
+      .from('workspace_external_project_entries')
+      .delete()
+      .eq('ws_id', workspaceId)
+      .eq('collection_id', collectionId);
+
+    if (deleteEntriesError) {
+      throw new Error(deleteEntriesError.message);
+    }
+  }
+
+  const { error } = await admin
+    .from('workspace_external_project_collections')
+    .delete()
+    .eq('ws_id', workspaceId)
+    .eq('id', collectionId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return { id: collectionId };
+}
+
 type UpsertBlockPayload = {
   block_type: string;
   content: Json;
@@ -892,6 +959,49 @@ export async function updateWorkspaceExternalProjectEntry(
   }
 
   return data;
+}
+
+export async function deleteWorkspaceExternalProjectEntry(
+  entryId: string,
+  payload: {
+    workspaceId: string;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const { workspaceId } = payload;
+
+  const { error: deleteAssetsError } = await admin
+    .from('workspace_external_project_assets')
+    .delete()
+    .eq('ws_id', workspaceId)
+    .eq('entry_id', entryId);
+
+  if (deleteAssetsError) {
+    throw new Error(deleteAssetsError.message);
+  }
+
+  const { error: deleteBlocksError } = await admin
+    .from('workspace_external_project_blocks')
+    .delete()
+    .eq('ws_id', workspaceId)
+    .eq('entry_id', entryId);
+
+  if (deleteBlocksError) {
+    throw new Error(deleteBlocksError.message);
+  }
+
+  const { error } = await admin
+    .from('workspace_external_project_entries')
+    .delete()
+    .eq('ws_id', workspaceId)
+    .eq('id', entryId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return { id: entryId };
 }
 
 async function buildDuplicateEntrySlug(

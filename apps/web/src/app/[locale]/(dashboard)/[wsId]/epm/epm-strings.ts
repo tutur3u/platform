@@ -21,7 +21,10 @@ export type EpmStrings = {
   coverImageTitle: string;
   coverSaveSuccessToast: string;
   coverUploadSuccessToast: string;
+  createCollectionAction: string;
   createEntryAction: string;
+  deleteCollectionAction: string;
+  deleteEntryAction: string;
   descriptionLabel: string;
   dashboardModeLabel: string;
   dashboardPreferencesTitle: string;
@@ -144,7 +147,10 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     coverImageTitle: t('epm.cover_image_title'),
     coverSaveSuccessToast: t('epm.cover_save_success_toast'),
     coverUploadSuccessToast: t('epm.cover_upload_success_toast'),
+    createCollectionAction: t('epm.create_collection_action'),
     createEntryAction: t('epm.create_entry_action'),
+    deleteCollectionAction: t('epm.delete_collection_action'),
+    deleteEntryAction: t('epm.delete_entry_action'),
     descriptionLabel: t('epm.description_label'),
     dashboardModeLabel: t('epm.dashboard_mode_label'),
     dashboardPreferencesTitle: t('epm.dashboard_preferences_title'),

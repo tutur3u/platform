@@ -6,16 +6,21 @@ import {
   CheckCircle2,
   Clock,
   Copy,
+  Ellipsis,
   FolderSync,
+  Layers2,
   Pencil,
   Plus,
   RefreshCw,
   Settings2,
-  Sparkles,
+  Trash2,
 } from '@tuturuuu/icons';
 import {
   bulkUpdateWorkspaceExternalProjectEntries,
+  createWorkspaceExternalProjectCollection,
   createWorkspaceExternalProjectEntry,
+  deleteWorkspaceExternalProjectCollection,
+  deleteWorkspaceExternalProjectEntry,
   duplicateWorkspaceExternalProjectEntry,
   importWorkspaceExternalProjectContent,
   publishWorkspaceExternalProjectEntry,
@@ -27,17 +32,37 @@ import type {
   ExternalProjectStudioData,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
@@ -47,16 +72,11 @@ import {
 } from '@tuturuuu/ui/select';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  type ComponentProps,
-  useDeferredValue,
-  useEffect,
-  useState,
-} from 'react';
+import { useDeferredValue, useEffect, useState } from 'react';
 import { useExternalProjectLivePreview } from '../external-projects/use-external-project-live-preview';
+import { EntryDetailClient } from './entries/[entryId]/entry-detail-client';
 import type { EpmStrings } from './epm-strings';
 import { ResilientMediaImage } from './resilient-media-image';
 import { getEpmStudioQueryKey, useEpmStudio } from './use-epm-studio';
@@ -164,19 +184,15 @@ function getProjectBrand(
   return brand ?? binding.canonical_project?.display_name ?? 'EPM';
 }
 
-function ActionButton({
-  children,
-  tooltip,
-  ...props
-}: ComponentProps<typeof Button> & { tooltip: string }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button {...props}>{children}</Button>
-      </TooltipTrigger>
-      <TooltipContent>{tooltip}</TooltipContent>
-    </Tooltip>
-  );
+function slugifyLabel(value: string, fallback: string) {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64);
+
+  return normalized || fallback;
 }
 
 function PreviewModeSkeleton() {
@@ -292,6 +308,16 @@ export function EpmClient({
   const [selectedBulkIds, setSelectedBulkIds] = useState<string[]>([]);
   const [scheduleValue, setScheduleValue] = useState('');
   const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
+  const [editorEntryId, setEditorEntryId] = useState<string | null>(null);
+  const [entryDeleteTarget, setEntryDeleteTarget] = useState<string | null>(
+    null
+  );
+  const [collectionDeleteTarget, setCollectionDeleteTarget] = useState<
+    string | null
+  >(null);
+  const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
+  const [newCollectionTitle, setNewCollectionTitle] = useState('');
+  const [newCollectionDescription, setNewCollectionDescription] = useState('');
   const deferredSearch = useDeferredValue(search);
   const entries = studio?.entries ?? initialStudio?.entries ?? [];
   const collections = studio?.collections ?? initialStudio?.collections ?? [];
@@ -343,10 +369,6 @@ export function EpmClient({
     visibleEntries.find((entry) => entry.id === selectedEntryId) ??
     visibleEntries[0] ??
     null;
-  const activeEditEntryVisual = getEntryVisual(assets, activeEditEntry?.id);
-  const activeEditEntryAssets = assets.filter(
-    (asset) => asset.entry_id === activeEditEntry?.id
-  );
 
   const deliveryCollections = previewQuery.data?.collections ?? [];
   const activePreviewCollection =
@@ -409,6 +431,14 @@ export function EpmClient({
     null;
   const currentManagedEntry =
     entries.find((entry) => entry.id === currentEntryId) ?? activeEditEntry;
+  const editorEntry =
+    entries.find((entry) => entry.id === editorEntryId) ?? null;
+  const collectionDeleteCandidate =
+    collections.find(
+      (collection) => collection.id === collectionDeleteTarget
+    ) ?? null;
+  const entryDeleteCandidate =
+    entries.find((entry) => entry.id === entryDeleteTarget) ?? null;
 
   const updateStudioCache = (
     updater: (current: NonNullable<typeof studio>) => NonNullable<typeof studio>
@@ -439,8 +469,9 @@ export function EpmClient({
     });
   };
 
-  const openEntryDetails = (entryId: string) => {
-    router.push(`${pathname.replace(/\/$/, '')}/entries/${entryId}`);
+  const openEntryEditor = (entryId: string) => {
+    setSelectedEntryId(entryId);
+    setEditorEntryId(entryId);
   };
 
   const openCollectionDetails = (collectionId: string) => {
@@ -473,20 +504,48 @@ export function EpmClient({
       setSelectedEntryId(entry.id);
       setPreviewRefreshToken((value) => value + 1);
       toast.success(strings.createEntryAction);
-      openEntryDetails(entry.id);
+      openEntryEditor(entry.id);
+    },
+  });
+
+  const createCollectionMutation = useMutation({
+    mutationFn: async () => {
+      const collectionType =
+        binding.canonical_project?.allowed_collections[0] ??
+        activeCollection?.collection_type ??
+        'collection';
+      const title = newCollectionTitle.trim() || 'Untitled collection';
+      const slug = slugifyLabel(title, `collection-${Date.now()}`);
+
+      return createWorkspaceExternalProjectCollection(workspaceId, {
+        collection_type: collectionType,
+        config: {},
+        description: newCollectionDescription.trim() || '',
+        slug,
+        title,
+      });
+    },
+    onSuccess: (collection) => {
+      updateStudioCache((current) => ({
+        ...current,
+        collections: [collection, ...current.collections],
+      }));
+      setSelectedCollectionId(collection.id);
+      setCreateCollectionOpen(false);
+      setNewCollectionTitle('');
+      setNewCollectionDescription('');
+      toast.success(strings.createCollectionAction);
     },
   });
 
   const duplicateEntryMutation = useMutation({
-    mutationFn: async () => {
-      if (!currentManagedEntry) {
+    mutationFn: async (entryId?: string) => {
+      const targetEntryId = entryId ?? currentManagedEntry?.id;
+      if (!targetEntryId) {
         throw new Error('Entry is required');
       }
 
-      return duplicateWorkspaceExternalProjectEntry(
-        workspaceId,
-        currentManagedEntry.id
-      );
+      return duplicateWorkspaceExternalProjectEntry(workspaceId, targetEntryId);
     },
     onSuccess: (entry) => {
       mergeEntry(entry);
@@ -494,20 +553,24 @@ export function EpmClient({
       setSelectedEntryId(entry.id);
       setPreviewRefreshToken((value) => value + 1);
       toast.success(strings.duplicateAction);
-      openEntryDetails(entry.id);
+      openEntryEditor(entry.id);
     },
   });
 
   const publishEntryMutation = useMutation({
-    mutationFn: async (eventKind: 'publish' | 'unpublish') => {
-      if (!currentManagedEntry) {
+    mutationFn: async (payload: {
+      entryId?: string;
+      eventKind: 'publish' | 'unpublish';
+    }) => {
+      const targetEntryId = payload.entryId ?? currentManagedEntry?.id;
+      if (!targetEntryId) {
         throw new Error('Entry is required');
       }
 
       return publishWorkspaceExternalProjectEntry(
         workspaceId,
-        currentManagedEntry.id,
-        eventKind
+        targetEntryId,
+        payload.eventKind
       );
     },
     onSuccess: (entry) => {
@@ -529,6 +592,54 @@ export function EpmClient({
       queryClient.invalidateQueries({
         queryKey: getEpmStudioQueryKey(workspaceId),
       });
+    },
+  });
+
+  const deleteEntryMutation = useMutation({
+    mutationFn: async (entryId: string) =>
+      deleteWorkspaceExternalProjectEntry(workspaceId, entryId),
+    onSuccess: (_, entryId) => {
+      updateStudioCache((current) => ({
+        ...current,
+        assets: current.assets.filter((asset) => asset.entry_id !== entryId),
+        entries: current.entries.filter((entry) => entry.id !== entryId),
+      }));
+      setEntryDeleteTarget(null);
+      if (selectedEntryId === entryId) {
+        setSelectedEntryId('');
+      }
+      if (editorEntryId === entryId) {
+        setEditorEntryId(null);
+      }
+      toast.success(strings.deleteEntryAction);
+    },
+  });
+
+  const deleteCollectionMutation = useMutation({
+    mutationFn: async (collectionId: string) =>
+      deleteWorkspaceExternalProjectCollection(workspaceId, collectionId),
+    onSuccess: (_, collectionId) => {
+      updateStudioCache((current) => ({
+        ...current,
+        assets: current.assets.filter((asset) => {
+          const assetEntry = current.entries.find(
+            (entry) => entry.id === asset.entry_id
+          );
+          return assetEntry?.collection_id !== collectionId;
+        }),
+        collections: current.collections.filter(
+          (collection) => collection.id !== collectionId
+        ),
+        entries: current.entries.filter(
+          (entry) => entry.collection_id !== collectionId
+        ),
+      }));
+      if (selectedCollectionId === collectionId) {
+        setSelectedCollectionId('');
+        setSelectedEntryId('');
+      }
+      setCollectionDeleteTarget(null);
+      toast.success(strings.deleteCollectionAction);
     },
   });
 
@@ -564,77 +675,65 @@ export function EpmClient({
   });
 
   return (
-    <div className="min-h-[calc(100svh-5rem)] space-y-5 pb-8">
-      <section className="rounded-[2rem] border border-border/70 bg-card/95 shadow-none">
-        <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:p-6">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-3 py-1 text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
-              <Sparkles className="h-3.5 w-3.5" />
-              EPM
-            </div>
-            <div className="space-y-2">
-              <h1 className="font-semibold text-3xl tracking-tight sm:text-4xl">
-                {strings.title}
-              </h1>
-              <p className="max-w-3xl text-muted-foreground text-sm leading-6">
-                {mode === 'preview'
-                  ? strings.previewModeDescription
-                  : strings.editModeDescription}
-              </p>
-            </div>
+    <div className="min-h-[calc(100svh-5rem)] space-y-4 pb-6">
+      <section className="flex flex-wrap items-start justify-between gap-4 rounded-[1.5rem] border border-border/70 bg-card/95 px-4 py-4 shadow-none sm:px-5">
+        <div className="space-y-1">
+          <h1 className="font-semibold text-2xl tracking-tight">
+            {strings.title}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {binding.canonical_project?.display_name ?? previewProjectLabel}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div
+            data-testid="epm-mode-switch"
+            className="inline-flex rounded-xl border border-border/70 bg-background/70 p-1"
+          >
+            <Button
+              size="sm"
+              variant={mode === 'preview' ? 'default' : 'ghost'}
+              onClick={() => setMode('preview')}
+            >
+              {strings.previewModeLabel}
+            </Button>
+            <Button
+              size="sm"
+              variant={mode === 'edit' ? 'default' : 'ghost'}
+              onClick={() => setMode('edit')}
+            >
+              {strings.editModeLabel}
+            </Button>
           </div>
 
-          <div className="flex flex-col gap-3 lg:items-end">
-            <div
-              data-testid="epm-mode-switch"
-              className="inline-flex rounded-2xl border border-border/70 bg-background/70 p-1"
-            >
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
               <Button
-                size="sm"
-                variant={mode === 'preview' ? 'default' : 'ghost'}
-                onClick={() => setMode('preview')}
+                size="icon"
+                variant="ghost"
+                aria-label={strings.manageCollectionAction}
               >
-                {strings.previewModeLabel}
+                <Ellipsis className="h-4 w-4" />
               </Button>
-              <Button
-                size="sm"
-                variant={mode === 'edit' ? 'default' : 'ghost'}
-                onClick={() => setMode('edit')}
-              >
-                {strings.editModeLabel}
-              </Button>
-            </div>
-
-            <div className="flex flex-wrap justify-end gap-2">
-              <ActionButton
-                tooltip={strings.quickCreateHint}
-                onClick={() => createEntryMutation.mutate()}
-              >
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem onClick={() => createEntryMutation.mutate()}>
                 <Plus className="mr-2 h-4 w-4" />
                 {strings.createEntryAction}
-              </ActionButton>
-              <ActionButton
-                tooltip={strings.importHint}
-                variant="outline"
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setCreateCollectionOpen(true)}>
+                <Layers2 className="mr-2 h-4 w-4" />
+                {strings.createCollectionAction}
+              </DropdownMenuItem>
+              <DropdownMenuItem
                 disabled={importMutation.isPending}
                 onClick={() => importMutation.mutate()}
               >
                 <FolderSync className="mr-2 h-4 w-4" />
                 {strings.importAction}
-              </ActionButton>
-              {currentEntryId ? (
-                <ActionButton
-                  tooltip={strings.editEntryDescription}
-                  variant="outline"
-                  onClick={() => openEntryDetails(currentEntryId)}
-                >
-                  <Pencil className="mr-2 h-4 w-4" />
-                  {strings.openDetailsAction}
-                </ActionButton>
-              ) : null}
-              <ActionButton
-                tooltip={strings.refreshAction}
-                variant="ghost"
+              </DropdownMenuItem>
+              <DropdownMenuItem
                 onClick={() => {
                   setPreviewRefreshToken((value) => value + 1);
                   queryClient.invalidateQueries({
@@ -642,583 +741,482 @@ export function EpmClient({
                   });
                 }}
               >
-                <RefreshCw className="h-4 w-4" />
-              </ActionButton>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {mode === 'preview' ? (
-        <div className="space-y-5">
-          <Card className="overflow-hidden border-border/70 bg-card/95 shadow-none">
-            <CardContent className="space-y-5 p-5 lg:p-6">
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px_160px]">
-                <div className="space-y-2">
-                  <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
-                    {strings.previewProjectLabel}
-                  </div>
-                  <div className="font-semibold text-2xl tracking-tight">
-                    {previewProjectLabel}
-                  </div>
-                  <p className="max-w-3xl text-muted-foreground text-sm leading-6">
-                    {activePreviewCollection?.description ??
-                      strings.previewModeDescription}
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                    {strings.collectionsLabel}
-                  </div>
-                  <Select
-                    value={activePreviewCollection?.id}
-                    onValueChange={(value) => {
-                      setSelectedCollectionId(value);
-                      setSelectedEntryId(
-                        deliveryCollections.find(
-                          (collection) => collection.id === value
-                        )?.entries[0]?.id ?? ''
-                      );
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={strings.emptyCollection} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {deliveryCollections.map((collection) => (
-                        <SelectItem key={collection.id} value={collection.id}>
-                          {collection.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-wrap items-end gap-2 xl:justify-end">
-                  <Badge variant="outline">
-                    {binding.adapter ?? strings.noAdapterLabel}
-                  </Badge>
-                  <Badge variant="outline">
-                    {previewEntries.length} {strings.entriesMetricLabel}
-                  </Badge>
-                </div>
-              </div>
-
-              {previewQuery.isPending ? (
-                <PreviewModeSkeleton />
-              ) : activePreviewCollection ? (
-                <div
-                  className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
-                  data-testid="epm-preview-gallery"
-                >
-                  {previewGalleryEntries.map((entry) => {
-                    const visualAsset = getDeliveryEntryVisual(entry);
-                    const managedPreviewEntry =
-                      entries.find((managed) => managed.id === entry.id) ??
-                      null;
-                    const previewCopy =
-                      entry.summary ||
-                      extractMarkdown(entry)[0]?.markdown ||
-                      strings.previewEmptyDescription;
-
-                    return (
-                      <button
-                        key={entry.id}
-                        type="button"
-                        className="group w-full overflow-hidden rounded-[1.5rem] border border-border/70 bg-background/70 text-left transition-all hover:-translate-y-1 hover:bg-background hover:shadow-xl"
-                        onClick={() => openEntryDetails(entry.id)}
-                      >
-                        <div className="relative aspect-[4/5] overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.12),transparent_26%),linear-gradient(160deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]">
-                          <ResilientMediaImage
-                            alt={visualAsset?.alt_text ?? entry.title}
-                            assetUrl={visualAsset?.assetUrl}
-                            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                            fill
-                            previewUrl={visualAsset?.assetUrl}
-                            sizes="(max-width: 1024px) 100vw, (max-width: 1536px) 33vw, 24vw"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/18 to-transparent" />
-                          <div className="absolute inset-x-0 top-0 flex flex-wrap items-center justify-between gap-2 p-4">
-                            <Badge
-                              variant="outline"
-                              className="bg-background/85"
-                            >
-                              {activePreviewCollection.title}
-                            </Badge>
-                            <Badge
-                              className={cn(
-                                'border-0 shadow-none',
-                                statusTone(
-                                  managedPreviewEntry?.status ?? 'draft'
-                                )
-                              )}
-                            >
-                              {formatStatus(
-                                managedPreviewEntry?.status ?? 'draft',
-                                strings
-                              )}
-                            </Badge>
-                          </div>
-                          <div className="absolute inset-x-0 bottom-0 space-y-2 p-4">
-                            <div className="line-clamp-2 font-semibold text-xl tracking-tight">
-                              {entry.title}
-                            </div>
-                            <div className="line-clamp-1 text-muted-foreground text-sm">
-                              {entry.subtitle || entry.slug}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="space-y-4 p-4">
-                          <p className="line-clamp-3 min-h-[4.5rem] text-muted-foreground text-sm leading-6">
-                            {previewCopy}
-                          </p>
-                          <div className="flex items-center justify-between gap-3 text-xs">
-                            <span className="text-muted-foreground">
-                              {entry.slug}
-                            </span>
-                            <span className="font-medium">
-                              {strings.openDetailsAction}
-                            </span>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="rounded-[1.5rem] border border-border/70 border-dashed bg-background/70 p-6">
-                  <div className="font-medium">{strings.previewEmptyTitle}</div>
-                  <p className="mt-2 text-muted-foreground text-sm leading-6">
-                    {strings.previewEmptyDescription}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      ) : studioQuery.isPending && !studio ? (
-        <EditModeSkeleton />
-      ) : (
-        <div className="space-y-5">
-          <section className="rounded-[1.6rem] border border-border/70 bg-card/95 p-4">
-            <div className="grid gap-3 xl:grid-cols-[180px_240px_240px_minmax(0,1fr)_auto]">
-              <div className="space-y-2">
-                <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                  {strings.editModeLabel}
-                </div>
-                <Select
-                  value={editSection}
-                  onValueChange={(value) =>
-                    setEditSection(value as EditSection)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={strings.contentTab} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="entries">
-                      {strings.contentTab}
-                    </SelectItem>
-                    <SelectItem value="workflow">
-                      {strings.workflowTab}
-                    </SelectItem>
-                    <SelectItem value="settings">
-                      {strings.settingsTab}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                  {strings.collectionsLabel}
-                </div>
-                <Select
-                  value={activeCollection?.id}
-                  onValueChange={(value) => {
-                    setSelectedCollectionId(value);
-                    setSelectedEntryId(
-                      entries.find((entry) => entry.collection_id === value)
-                        ?.id ?? ''
-                    );
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={strings.emptyCollection} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {collections.map((collection) => (
-                      <SelectItem key={collection.id} value={collection.id}>
-                        {collection.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                  {editSection === 'workflow'
-                    ? strings.workflowTab
-                    : strings.entrySummaryTitle}
-                </div>
-                {editSection === 'workflow' ? (
-                  <Select
-                    value={workflowFilter}
-                    onValueChange={(value) =>
-                      setWorkflowFilter(value as WorkflowFilter)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={strings.filterAll} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{strings.filterAll}</SelectItem>
-                      <SelectItem value="draft">
-                        {strings.draftQueue}
-                      </SelectItem>
-                      <SelectItem value="scheduled">
-                        {strings.scheduledQueue}
-                      </SelectItem>
-                      <SelectItem value="published">
-                        {strings.publishedQueue}
-                      </SelectItem>
-                      <SelectItem value="archived">
-                        {strings.archivedQueue}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Select
-                    value={activeEditEntry?.id}
-                    onValueChange={(value) => setSelectedEntryId(value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={strings.emptyEntries} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {visibleEntries.map((entry) => (
-                        <SelectItem key={entry.id} value={entry.id}>
-                          {entry.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                  {strings.searchPlaceholder}
-                </div>
-                <Input
-                  placeholder={strings.searchPlaceholder}
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-              </div>
-
-              <div className="flex flex-wrap items-end justify-end gap-2">
-                {activeCollection ? (
-                  <ActionButton
-                    tooltip={strings.manageCollectionAction}
-                    size="sm"
-                    variant="outline"
+                <RefreshCw className="mr-2 h-4 w-4" />
+                {strings.refreshAction}
+              </DropdownMenuItem>
+              {activeCollection ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
                     onClick={() => openCollectionDetails(activeCollection.id)}
                   >
                     <Settings2 className="mr-2 h-4 w-4" />
                     {strings.editCollectionAction}
-                  </ActionButton>
-                ) : null}
-                {activeEditEntry ? (
-                  <ActionButton
-                    tooltip={strings.editEntryDescription}
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openEntryDetails(activeEditEntry.id)}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() =>
+                      setCollectionDeleteTarget(activeCollection.id)
+                    }
                   >
-                    <Pencil className="mr-2 h-4 w-4" />
-                    {strings.openDetailsAction}
-                  </ActionButton>
-                ) : null}
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {strings.deleteCollectionAction}
+                  </DropdownMenuItem>
+                </>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </section>
+
+      <Dialog
+        open={createCollectionOpen}
+        onOpenChange={setCreateCollectionOpen}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{strings.createCollectionAction}</DialogTitle>
+            <DialogDescription>
+              {strings.manageCollectionDescription}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="epm-new-collection-title">
+                {strings.titleLabel}
+              </Label>
+              <Input
+                id="epm-new-collection-title"
+                value={newCollectionTitle}
+                onChange={(event) => setNewCollectionTitle(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="epm-new-collection-description">
+                {strings.descriptionLabel}
+              </Label>
+              <Input
+                id="epm-new-collection-description"
+                value={newCollectionDescription}
+                onChange={(event) =>
+                  setNewCollectionDescription(event.target.value)
+                }
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCreateCollectionOpen(false)}
+            >
+              {strings.cancelAction}
+            </Button>
+            <Button
+              disabled={createCollectionMutation.isPending}
+              onClick={() => createCollectionMutation.mutate()}
+            >
+              {strings.createCollectionAction}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={Boolean(entryDeleteCandidate)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEntryDeleteTarget(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{strings.deleteEntryAction}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {entryDeleteCandidate?.title ?? strings.emptyEntries}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{strings.cancelAction}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (entryDeleteCandidate) {
+                  deleteEntryMutation.mutate(entryDeleteCandidate.id);
+                }
+              }}
+            >
+              {strings.deleteEntryAction}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(collectionDeleteCandidate)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCollectionDeleteTarget(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {strings.deleteCollectionAction}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {collectionDeleteCandidate?.title ?? strings.emptyCollection}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{strings.cancelAction}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (collectionDeleteCandidate) {
+                  deleteCollectionMutation.mutate(collectionDeleteCandidate.id);
+                }
+              }}
+            >
+              {strings.deleteCollectionAction}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {mode === 'preview' ? (
+        <div className="space-y-4">
+          <section className="flex flex-wrap items-end justify-between gap-3 rounded-[1.35rem] border border-border/70 bg-card/95 p-3">
+            <div className="min-w-0 space-y-1">
+              <div className="truncate font-medium text-sm">
+                {previewProjectLabel}
               </div>
+              <div className="text-muted-foreground text-xs">
+                {previewEntries.length} {strings.entriesMetricLabel}
+              </div>
+            </div>
+            <div className="flex min-w-[220px] items-center gap-2">
+              <Select
+                value={activePreviewCollection?.id ?? ''}
+                onValueChange={(value) => {
+                  setSelectedCollectionId(value);
+                  setSelectedEntryId(
+                    deliveryCollections.find(
+                      (collection) => collection.id === value
+                    )?.entries[0]?.id ?? ''
+                  );
+                }}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder={strings.emptyCollection} />
+                </SelectTrigger>
+                <SelectContent>
+                  {deliveryCollections.map((collection) => (
+                    <SelectItem key={collection.id} value={collection.id}>
+                      {collection.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </section>
 
-          {editSection === 'entries' ? (
-            <div className="space-y-4">
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
-                <Card className="border-border/70 bg-card/95 shadow-none">
-                  <CardHeader>
-                    <CardTitle>{strings.entrySummaryTitle}</CardTitle>
-                    <CardDescription>
-                      {strings.editEntriesDescription}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {!activeEditEntry ? (
-                      <div className="rounded-[1.2rem] border border-border/70 border-dashed p-5 text-muted-foreground text-sm">
-                        {strings.emptyEntries}
-                      </div>
-                    ) : (
-                      <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
-                        <div className="relative min-h-[280px] overflow-hidden rounded-[1.4rem] border border-border/70 bg-background/80">
-                          <ResilientMediaImage
-                            alt={
-                              activeEditEntryVisual?.alt_text ??
-                              activeEditEntry.title
-                            }
-                            assetUrl={activeEditEntryVisual?.asset_url}
-                            className="object-cover"
-                            fill
-                            previewUrl={activeEditEntryVisual?.preview_url}
-                            sizes="220px"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/15 to-transparent" />
-                        </div>
-                        <div className="space-y-4">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge
-                              className={statusTone(activeEditEntry.status)}
-                            >
-                              {formatStatus(activeEditEntry.status, strings)}
-                            </Badge>
-                            <Badge variant="outline">
-                              {activeCollection?.title ??
-                                strings.collectionFallbackLabel}
-                            </Badge>
-                          </div>
-                          <div>
-                            <h2 className="font-semibold text-2xl tracking-tight">
-                              {activeEditEntry.title}
-                            </h2>
-                            <p className="mt-2 text-muted-foreground text-sm">
-                              {activeEditEntry.subtitle || activeEditEntry.slug}
-                            </p>
-                          </div>
-                          <p className="text-muted-foreground text-sm leading-7">
-                            {activeEditEntry.summary ||
-                              strings.previewEmptyDescription}
-                          </p>
-                          <div className="grid gap-3 sm:grid-cols-3">
-                            <div className="rounded-[1rem] border border-border/70 bg-background/75 p-3">
-                              <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                                {strings.scheduledForLabel}
-                              </div>
-                              <div className="mt-2 text-sm">
-                                {formatDateLabel(
-                                  activeEditEntry.scheduled_for,
-                                  strings.notScheduledLabel
-                                )}
-                              </div>
-                            </div>
-                            <div className="rounded-[1rem] border border-border/70 bg-background/75 p-3">
-                              <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                                {strings.assetsLabel}
-                              </div>
-                              <div className="mt-2 text-sm">
-                                {activeEditEntryAssets.length}
-                              </div>
-                            </div>
-                            <div className="rounded-[1rem] border border-border/70 bg-background/75 p-3">
-                              <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                                {strings.workspaceBindingLabel}
-                              </div>
-                              <div className="mt-2 text-sm">
-                                {binding.canonical_project?.display_name ??
-                                  strings.unboundLabel}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            <ActionButton
-                              tooltip={strings.editEntryDescription}
-                              onClick={() =>
-                                openEntryDetails(activeEditEntry.id)
-                              }
-                            >
-                              <Pencil className="mr-2 h-4 w-4" />
-                              {strings.openDetailsAction}
-                            </ActionButton>
-                            <ActionButton
-                              tooltip={strings.duplicateAction}
-                              variant="outline"
-                              disabled={duplicateEntryMutation.isPending}
-                              onClick={() => duplicateEntryMutation.mutate()}
-                            >
-                              <Copy className="mr-2 h-4 w-4" />
-                              {strings.duplicateAction}
-                            </ActionButton>
-                            <ActionButton
-                              tooltip={
-                                activeEditEntry.status === 'published'
-                                  ? strings.unpublishAction
-                                  : strings.publishAction
-                              }
-                              variant="outline"
-                              disabled={publishEntryMutation.isPending}
-                              onClick={() =>
-                                publishEntryMutation.mutate(
-                                  activeEditEntry.status === 'published'
-                                    ? 'unpublish'
-                                    : 'publish'
-                                )
-                              }
-                            >
-                              <CheckCircle2 className="mr-2 h-4 w-4" />
-                              {activeEditEntry.status === 'published'
-                                ? strings.unpublishAction
-                                : strings.publishAction}
-                            </ActionButton>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+          {previewQuery.isPending ? (
+            <PreviewModeSkeleton />
+          ) : activePreviewCollection ? (
+            <div
+              className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
+              data-testid="epm-preview-gallery"
+            >
+              {previewGalleryEntries.map((entry) => {
+                const visualAsset = getDeliveryEntryVisual(entry);
+                const managedPreviewEntry =
+                  entries.find((managed) => managed.id === entry.id) ?? null;
+                const previewCopy =
+                  entry.summary ||
+                  extractMarkdown(entry)[0]?.markdown ||
+                  strings.previewEmptyDescription;
 
-                <Card className="border-border/70 bg-card/95 shadow-none">
-                  <CardHeader>
-                    <CardTitle>{strings.editCollectionAction}</CardTitle>
-                    <CardDescription>
-                      {strings.manageCollectionDescription}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="rounded-[1.2rem] border border-border/70 bg-background/75 p-4">
-                      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                        {strings.collectionsLabel}
-                      </div>
-                      <div className="mt-2 font-medium">
-                        {activeCollection?.title ?? strings.emptyCollection}
-                      </div>
-                      <div className="mt-1 text-muted-foreground text-sm">
-                        {activeCollection?.description ??
-                          activeCollection?.slug}
+                return (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    className="group overflow-hidden rounded-[1.2rem] border border-border/70 bg-card/95 text-left transition-colors hover:border-foreground/15 hover:bg-background"
+                    onClick={() => openEntryEditor(entry.id)}
+                  >
+                    <div className="relative aspect-[5/6] overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.12),transparent_28%),linear-gradient(160deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]">
+                      <ResilientMediaImage
+                        alt={visualAsset?.alt_text ?? entry.title}
+                        assetUrl={visualAsset?.assetUrl}
+                        className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                        fill
+                        previewUrl={visualAsset?.assetUrl}
+                        sizes="(max-width: 1024px) 50vw, (max-width: 1536px) 33vw, 18vw"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/18 to-transparent" />
+                      <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 p-3">
+                        <Badge
+                          className={cn(
+                            'border-0 px-2 py-0.5 text-[11px] shadow-none',
+                            statusTone(managedPreviewEntry?.status ?? 'draft')
+                          )}
+                        >
+                          {formatStatus(
+                            managedPreviewEntry?.status ?? 'draft',
+                            strings
+                          )}
+                        </Badge>
                       </div>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-[1rem] border border-border/70 bg-background/75 p-3">
-                        <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                          {strings.entriesMetricLabel}
-                        </div>
-                        <div className="mt-2 font-semibold text-2xl">
-                          {visibleEntries.length}
-                        </div>
+                    <div className="space-y-2 p-3">
+                      <div className="line-clamp-1 font-medium text-sm">
+                        {entry.title}
                       </div>
-                      <div className="rounded-[1rem] border border-border/70 bg-background/75 p-3">
-                        <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                          {strings.collectionsMetricLabel}
-                        </div>
-                        <div className="mt-2 font-semibold text-2xl">
-                          {counts.collections}
-                        </div>
+                      <div className="line-clamp-1 text-muted-foreground text-xs">
+                        {entry.slug}
                       </div>
+                      <p className="line-clamp-2 text-muted-foreground text-xs leading-5">
+                        {previewCopy}
+                      </p>
                     </div>
-                    {activeCollection ? (
-                      <Button
-                        className="w-full"
-                        variant="outline"
-                        onClick={() =>
-                          openCollectionDetails(activeCollection.id)
-                        }
-                      >
-                        {strings.openCollectionAction}
-                      </Button>
-                    ) : null}
-                  </CardContent>
-                </Card>
-              </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-[1.35rem] border border-border/70 border-dashed bg-card/95 p-5 text-muted-foreground text-sm">
+              {strings.previewEmptyDescription}
+            </div>
+          )}
+        </div>
+      ) : studioQuery.isPending && !studio ? (
+        <EditModeSkeleton />
+      ) : (
+        <div className="space-y-4">
+          <section className="grid gap-3 rounded-[1.35rem] border border-border/70 bg-card/95 p-3 md:grid-cols-[160px_220px_minmax(0,1fr)_auto]">
+            <Select
+              value={editSection}
+              onValueChange={(value) => setEditSection(value as EditSection)}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder={strings.contentTab} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="entries">{strings.contentTab}</SelectItem>
+                <SelectItem value="workflow">{strings.workflowTab}</SelectItem>
+                <SelectItem value="settings">{strings.settingsTab}</SelectItem>
+              </SelectContent>
+            </Select>
 
-              {visibleEntries.length === 0 ? (
-                <Card className="border-border/70 bg-card/95 shadow-none">
-                  <CardContent className="p-6 text-muted-foreground text-sm">
-                    {strings.emptyEntries}
-                  </CardContent>
-                </Card>
-              ) : (
-                <div
-                  className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
-                  data-testid="epm-edit-gallery"
+            <Select
+              value={activeCollection?.id ?? ''}
+              onValueChange={(value) => {
+                setSelectedCollectionId(value);
+                setSelectedEntryId(
+                  entries.find((entry) => entry.collection_id === value)?.id ??
+                    ''
+                );
+              }}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder={strings.emptyCollection} />
+              </SelectTrigger>
+              <SelectContent>
+                {collections.map((collection) => (
+                  <SelectItem key={collection.id} value={collection.id}>
+                    {collection.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Input
+              className="h-9"
+              placeholder={strings.searchPlaceholder}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label={strings.manageCollectionAction}
                 >
-                  {visibleEntries.map((entry) => {
-                    const visual = getEntryVisual(assets, entry.id);
+                  <Ellipsis className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onClick={() => createEntryMutation.mutate()}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {strings.createEntryAction}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setCreateCollectionOpen(true)}>
+                  <Layers2 className="mr-2 h-4 w-4" />
+                  {strings.createCollectionAction}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setEditSection('workflow')}>
+                  <Archive className="mr-2 h-4 w-4" />
+                  {strings.workflowTab}
+                </DropdownMenuItem>
+                {activeCollection ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => openCollectionDetails(activeCollection.id)}
+                    >
+                      <Settings2 className="mr-2 h-4 w-4" />
+                      {strings.editCollectionAction}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() =>
+                        setCollectionDeleteTarget(activeCollection.id)
+                      }
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {strings.deleteCollectionAction}
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </section>
 
-                    return (
-                      <button
-                        key={entry.id}
-                        type="button"
-                        className={cn(
-                          'group w-full overflow-hidden rounded-[1.4rem] border text-left transition-all hover:-translate-y-1 hover:shadow-xl',
-                          entry.id === activeEditEntry?.id
-                            ? 'border-foreground/20 bg-background shadow-sm'
-                            : 'border-border/70 bg-background/70 hover:bg-background'
-                        )}
-                        onClick={() => setSelectedEntryId(entry.id)}
-                      >
-                        <div className="relative aspect-[4/5] overflow-hidden bg-background/80">
-                          <ResilientMediaImage
-                            alt={visual?.alt_text ?? entry.title}
-                            assetUrl={visual?.asset_url}
-                            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                            fill
-                            previewUrl={visual?.preview_url}
-                            sizes="(max-width: 1024px) 100vw, (max-width: 1536px) 33vw, 24vw"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/15 to-transparent" />
-                          <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 p-4">
-                            <Badge
-                              className={cn(
-                                'border-0 shadow-none',
-                                statusTone(entry.status)
-                              )}
-                            >
-                              {formatStatus(entry.status, strings)}
-                            </Badge>
-                            <Badge
-                              variant="outline"
-                              className="bg-background/85"
-                            >
-                              {entry.slug}
-                            </Badge>
-                          </div>
-                          <div className="absolute inset-x-0 bottom-0 space-y-2 p-4">
-                            <div className="line-clamp-2 font-semibold text-xl tracking-tight">
-                              {entry.title}
-                            </div>
-                            <div className="line-clamp-1 text-muted-foreground text-sm">
-                              {entry.subtitle || activeCollection?.title}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="space-y-3 p-4">
-                          <p className="line-clamp-3 min-h-[4.5rem] text-muted-foreground text-sm leading-6">
-                            {entry.summary || strings.previewEmptyDescription}
-                          </p>
-                          <div className="flex items-center justify-between gap-3 text-xs">
-                            <span className="text-muted-foreground">
-                              {formatDateLabel(
-                                entry.scheduled_for,
-                                strings.notScheduledLabel
-                              )}
-                            </span>
-                            <span className="font-medium">
-                              {entry.id === activeEditEntry?.id
-                                ? strings.openDetailsAction
-                                : strings.editEntryAction}
-                            </span>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
+          {editSection === 'entries' ? (
+            <div
+              className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5"
+              data-testid="epm-edit-gallery"
+            >
+              <button
+                type="button"
+                className="flex aspect-[5/6] flex-col items-center justify-center rounded-[1.2rem] border border-border/70 border-dashed bg-card/95 p-4 text-center transition-colors hover:bg-background"
+                onClick={() => createEntryMutation.mutate()}
+              >
+                <Plus className="mb-3 h-5 w-5" />
+                <div className="font-medium text-sm">
+                  {strings.createEntryAction}
                 </div>
-              )}
+                <div className="mt-1 text-muted-foreground text-xs">
+                  {activeCollection?.title ?? strings.emptyCollection}
+                </div>
+              </button>
+
+              {visibleEntries.map((entry) => {
+                const visual = getEntryVisual(assets, entry.id);
+
+                return (
+                  <article
+                    key={entry.id}
+                    className={cn(
+                      'group overflow-hidden rounded-[1.2rem] border bg-card/95 transition-colors',
+                      entry.id === selectedEntryId
+                        ? 'border-foreground/15'
+                        : 'border-border/70 hover:border-foreground/15'
+                    )}
+                  >
+                    <button
+                      type="button"
+                      className="block w-full text-left"
+                      onClick={() => openEntryEditor(entry.id)}
+                    >
+                      <div className="relative aspect-[5/6] overflow-hidden bg-background/80">
+                        <ResilientMediaImage
+                          alt={visual?.alt_text ?? entry.title}
+                          assetUrl={visual?.asset_url}
+                          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                          fill
+                          previewUrl={visual?.preview_url}
+                          sizes="(max-width: 1024px) 50vw, (max-width: 1536px) 25vw, 18vw"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/12 to-transparent" />
+                        <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 p-3">
+                          <Badge
+                            className={cn(
+                              'border-0 px-2 py-0.5 text-[11px] shadow-none',
+                              statusTone(entry.status)
+                            )}
+                          >
+                            {formatStatus(entry.status, strings)}
+                          </Badge>
+                          <DropdownMenu modal={false}>
+                            <DropdownMenuTrigger
+                              asChild
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <Button
+                                size="icon"
+                                variant="secondary"
+                                className="h-7 w-7 rounded-full bg-background/80"
+                                aria-label={`${entry.title} ${strings.manageCollectionAction}`}
+                              >
+                                <Ellipsis className="h-3.5 w-3.5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem
+                                onClick={() => openEntryEditor(entry.id)}
+                              >
+                                <Pencil className="mr-2 h-4 w-4" />
+                                {strings.editEntryAction}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  duplicateEntryMutation.mutate(entry.id);
+                                }}
+                              >
+                                <Copy className="mr-2 h-4 w-4" />
+                                {strings.duplicateAction}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  publishEntryMutation.mutate({
+                                    entryId: entry.id,
+                                    eventKind:
+                                      entry.status === 'published'
+                                        ? 'unpublish'
+                                        : 'publish',
+                                  });
+                                }}
+                              >
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                {entry.status === 'published'
+                                  ? strings.unpublishAction
+                                  : strings.publishAction}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => setEntryDeleteTarget(entry.id)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                {strings.deleteEntryAction}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                      <div className="space-y-2 p-3">
+                        <div className="line-clamp-1 font-medium text-sm">
+                          {entry.title}
+                        </div>
+                        <div className="line-clamp-1 text-muted-foreground text-xs">
+                          {entry.slug}
+                        </div>
+                        <p className="line-clamp-2 text-muted-foreground text-xs leading-5">
+                          {entry.summary || strings.previewEmptyDescription}
+                        </p>
+                      </div>
+                    </button>
+                  </article>
+                );
+              })}
             </div>
           ) : null}
 
           {editSection === 'workflow' ? (
-            <div className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="space-y-3">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 {workflowLanes.map((lane) => (
                   <Card
                     key={lane.status}
@@ -1226,9 +1224,7 @@ export function EpmClient({
                   >
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between gap-3">
-                        <CardTitle className="text-base">
-                          {lane.title}
-                        </CardTitle>
+                        <CardTitle className="text-sm">{lane.title}</CardTitle>
                         <Badge className={statusTone(lane.status)}>
                           {lane.entries.length}
                         </Badge>
@@ -1236,7 +1232,7 @@ export function EpmClient({
                     </CardHeader>
                     <CardContent className="space-y-2">
                       {lane.entries.length === 0 ? (
-                        <div className="rounded-[1rem] border border-border/70 border-dashed p-3 text-muted-foreground text-sm">
+                        <div className="rounded-[1rem] border border-border/70 border-dashed p-3 text-muted-foreground text-xs">
                           {strings.emptyEntries}
                         </div>
                       ) : (
@@ -1244,12 +1240,8 @@ export function EpmClient({
                           <button
                             key={entry.id}
                             type="button"
-                            className="w-full rounded-[1rem] border border-border/70 bg-background/75 px-3 py-3 text-left transition-colors hover:bg-background"
-                            onClick={() => {
-                              setSelectedCollectionId(entry.collection_id);
-                              setSelectedEntryId(entry.id);
-                              setEditSection('entries');
-                            }}
+                            className="w-full rounded-[1rem] border border-border/70 bg-background/75 px-3 py-2 text-left transition-colors hover:bg-background"
+                            onClick={() => openEntryEditor(entry.id)}
                           >
                             <div className="truncate font-medium text-sm">
                               {entry.title}
@@ -1266,14 +1258,35 @@ export function EpmClient({
               </div>
 
               <Card className="border-border/70 bg-card/95 shadow-none">
-                <CardHeader>
-                  <CardTitle>{strings.bulkActionsTitle}</CardTitle>
-                  <CardDescription>{strings.bulkSelectionHint}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex flex-wrap items-center gap-2 rounded-[1.2rem] border border-border/70 bg-background/70 p-3">
+                <CardContent className="space-y-4 p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Select
+                      value={workflowFilter}
+                      onValueChange={(value) =>
+                        setWorkflowFilter(value as WorkflowFilter)
+                      }
+                    >
+                      <SelectTrigger className="h-9 w-[180px]">
+                        <SelectValue placeholder={strings.filterAll} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{strings.filterAll}</SelectItem>
+                        <SelectItem value="draft">
+                          {strings.draftQueue}
+                        </SelectItem>
+                        <SelectItem value="scheduled">
+                          {strings.scheduledQueue}
+                        </SelectItem>
+                        <SelectItem value="published">
+                          {strings.publishedQueue}
+                        </SelectItem>
+                        <SelectItem value="archived">
+                          {strings.archivedQueue}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                     <Input
-                      className="w-[240px]"
+                      className="h-9 w-[220px]"
                       type="datetime-local"
                       value={scheduleValue}
                       onChange={(event) => setScheduleValue(event.target.value)}
@@ -1303,23 +1316,7 @@ export function EpmClient({
                       }
                       onClick={() => bulkMutation.mutate({ action: 'publish' })}
                     >
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
                       {strings.publishAction}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={
-                        selectedBulkIds.length === 0 || bulkMutation.isPending
-                      }
-                      onClick={() =>
-                        bulkMutation.mutate({
-                          action: 'set-status',
-                          status: 'draft',
-                        })
-                      }
-                    >
-                      {strings.statusDraft}
                     </Button>
                     <Button
                       size="sm"
@@ -1329,7 +1326,6 @@ export function EpmClient({
                       }
                       onClick={() => bulkMutation.mutate({ action: 'archive' })}
                     >
-                      <Archive className="mr-2 h-4 w-4" />
                       {strings.archiveAction}
                     </Button>
                   </div>
@@ -1338,7 +1334,7 @@ export function EpmClient({
                     {workflowEntries.map((entry) => (
                       <label
                         key={entry.id}
-                        className="flex items-center gap-3 rounded-[1.1rem] border border-border/70 bg-background/75 px-3 py-3"
+                        className="flex items-center gap-3 rounded-[1rem] border border-border/70 bg-background/75 px-3 py-2"
                       >
                         <Checkbox
                           checked={selectedBulkIds.includes(entry.id)}
@@ -1350,7 +1346,11 @@ export function EpmClient({
                             )
                           }
                         />
-                        <div className="min-w-0 flex-1">
+                        <button
+                          type="button"
+                          className="min-w-0 flex-1 text-left"
+                          onClick={() => openEntryEditor(entry.id)}
+                        >
                           <div className="flex items-center justify-between gap-3">
                             <div className="truncate font-medium text-sm">
                               {entry.title}
@@ -1366,7 +1366,7 @@ export function EpmClient({
                               strings.notScheduledLabel
                             )}
                           </div>
-                        </div>
+                        </button>
                       </label>
                     ))}
                   </div>
@@ -1376,138 +1376,164 @@ export function EpmClient({
           ) : null}
 
           {editSection === 'settings' ? (
-            <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+            <div className="grid gap-3 xl:grid-cols-[320px_minmax(0,1fr)]">
               <Card className="border-border/70 bg-card/95 shadow-none">
-                <CardHeader>
-                  <CardTitle>{strings.settingsTab}</CardTitle>
-                  <CardDescription>
-                    {strings.editSettingsDescription}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="rounded-[1.2rem] border border-border/70 bg-background/75 p-4">
-                    <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                      {strings.workspaceBindingLabel}
-                    </div>
-                    <div className="mt-2 font-medium">
+                <CardContent className="space-y-4 p-4">
+                  <div>
+                    <div className="font-medium text-sm">
                       {binding.canonical_project?.display_name ??
                         strings.unboundLabel}
                     </div>
-                    <div className="mt-1 text-muted-foreground text-sm">
+                    <div className="mt-1 text-muted-foreground text-xs">
                       {binding.canonical_id ?? strings.noCanonicalIdLabel}
                     </div>
                   </div>
-                  <div className="rounded-[1.2rem] border border-border/70 bg-background/75 p-4">
-                    <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                      {strings.importAction}
-                    </div>
-                    <p className="mt-2 text-muted-foreground text-sm leading-6">
-                      {strings.importHint}
-                    </p>
-                    <div className="mt-4">
-                      <Button
-                        disabled={importMutation.isPending}
-                        onClick={() => importMutation.mutate()}
-                      >
-                        <FolderSync className="mr-2 h-4 w-4" />
-                        {strings.importAction}
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[1.15rem] border border-border/70 bg-background/75 p-4">
-                      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-[1rem] border border-border/70 bg-background/75 p-3">
+                      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
                         {strings.entriesMetricLabel}
                       </div>
-                      <div className="mt-2 font-semibold text-2xl">
+                      <div className="mt-2 font-semibold text-xl">
                         {counts.entries}
                       </div>
                     </div>
-                    <div className="rounded-[1.15rem] border border-border/70 bg-background/75 p-4">
-                      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                    <div className="rounded-[1rem] border border-border/70 bg-background/75 p-3">
+                      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
                         {strings.collectionsMetricLabel}
                       </div>
-                      <div className="mt-2 font-semibold text-2xl">
+                      <div className="mt-2 font-semibold text-xl">
                         {counts.collections}
                       </div>
                     </div>
                   </div>
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    disabled={importMutation.isPending}
+                    onClick={() => importMutation.mutate()}
+                  >
+                    <FolderSync className="mr-2 h-4 w-4" />
+                    {strings.importAction}
+                  </Button>
                 </CardContent>
               </Card>
 
-              <Card className="border-border/70 bg-card/95 shadow-none">
-                <CardHeader>
-                  <CardTitle>{strings.editCollectionAction}</CardTitle>
-                  <CardDescription>
-                    {strings.manageCollectionDescription}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {collections.map((collection) => {
-                    const collectionEntries = entries.filter(
-                      (entry) => entry.collection_id === collection.id
-                    );
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-[1rem] border border-border/70 border-dashed bg-card/95 px-4 py-3 text-left transition-colors hover:bg-background"
+                  onClick={() => setCreateCollectionOpen(true)}
+                >
+                  <div>
+                    <div className="font-medium text-sm">
+                      {strings.createCollectionAction}
+                    </div>
+                    <div className="mt-1 text-muted-foreground text-xs">
+                      {strings.manageCollectionDescription}
+                    </div>
+                  </div>
+                  <Plus className="h-4 w-4" />
+                </button>
 
-                    return (
-                      <div
-                        key={collection.id}
-                        className="flex flex-wrap items-center justify-between gap-3 rounded-[1.2rem] border border-border/70 bg-background/75 p-4"
+                {collections.map((collection) => {
+                  const collectionEntries = entries.filter(
+                    (entry) => entry.collection_id === collection.id
+                  );
+
+                  return (
+                    <div
+                      key={collection.id}
+                      className="flex items-center justify-between gap-3 rounded-[1rem] border border-border/70 bg-card/95 px-4 py-3"
+                    >
+                      <button
+                        type="button"
+                        className="min-w-0 flex-1 text-left"
+                        onClick={() => {
+                          setSelectedCollectionId(collection.id);
+                          setEditSection('entries');
+                        }}
                       >
-                        <div className="min-w-0">
-                          <div className="font-medium">{collection.title}</div>
-                          <div className="text-muted-foreground text-sm">
-                            {collection.description || collection.slug}
-                          </div>
+                        <div className="truncate font-medium text-sm">
+                          {collection.title}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">
-                            {collectionEntries.length}
-                          </Badge>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openCollectionDetails(collection.id)}
-                          >
-                            {strings.openCollectionAction}
-                          </Button>
+                        <div className="mt-1 truncate text-muted-foreground text-xs">
+                          {collectionEntries.length}{' '}
+                          {strings.entriesMetricLabel}
                         </div>
-                      </div>
-                    );
-                  })}
-
-                  {publishEvents.length > 0 ? (
-                    <div className="rounded-[1.2rem] border border-border/70 bg-background/75 p-4">
-                      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                        {strings.activityFeedTitle}
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        {publishEvents.slice(0, 4).map((event) => (
-                          <div
-                            key={event.id}
-                            className="rounded-xl border border-border/70 bg-background px-3 py-3"
-                          >
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="font-medium text-sm">
-                                {event.event_kind}
-                              </div>
-                              <div className="text-muted-foreground text-xs">
-                                {formatDateLabel(
-                                  event.created_at,
-                                  strings.notScheduledLabel
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                      </button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label={strings.openCollectionAction}
+                          onClick={() => openCollectionDetails(collection.id)}
+                        >
+                          <Settings2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label={strings.deleteCollectionAction}
+                          onClick={() =>
+                            setCollectionDeleteTarget(collection.id)
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                  ) : null}
-                </CardContent>
-              </Card>
+                  );
+                })}
+
+                {publishEvents.length > 0 ? (
+                  <Card className="border-border/70 bg-card/95 shadow-none">
+                    <CardContent className="space-y-2 p-4">
+                      <div className="font-medium text-sm">
+                        {strings.activityFeedTitle}
+                      </div>
+                      {publishEvents.slice(0, 4).map((event) => (
+                        <div
+                          key={event.id}
+                          className="flex items-center justify-between gap-3 rounded-[0.9rem] border border-border/70 bg-background/75 px-3 py-2"
+                        >
+                          <div className="text-sm">{event.event_kind}</div>
+                          <div className="text-muted-foreground text-xs">
+                            {formatDateLabel(
+                              event.created_at,
+                              strings.notScheduledLabel
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </div>
       )}
+
+      {editorEntry ? (
+        <EntryDetailClient
+          binding={binding}
+          entryId={editorEntry.id}
+          onDeleted={() => setEditorEntryId(null)}
+          onEntryChange={(nextEntryId) => {
+            setSelectedEntryId(nextEntryId);
+            setEditorEntryId(nextEntryId);
+          }}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditorEntryId(null);
+            }
+          }}
+          open={Boolean(editorEntryId)}
+          strings={strings}
+          variant="dialog"
+          workspaceId={workspaceId}
+        />
+      ) : null}
     </div>
   );
 }

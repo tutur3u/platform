@@ -9,9 +9,11 @@ import {
   ImagePlus,
   Pencil,
   RefreshCw,
+  Trash2,
 } from '@tuturuuu/icons';
 import {
   createWorkspaceExternalProjectAsset,
+  deleteWorkspaceExternalProjectEntry,
   duplicateWorkspaceExternalProjectEntry,
   publishWorkspaceExternalProjectEntry,
   updateWorkspaceExternalProjectAsset,
@@ -40,6 +42,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -204,13 +213,23 @@ export function EntryDetailClient({
   binding,
   entryId,
   initialStudio,
+  onDeleted,
+  onEntryChange,
+  onOpenChange,
+  open,
   strings,
+  variant = 'page',
   workspaceId,
 }: {
   binding: WorkspaceExternalProjectBinding;
   entryId: string;
   initialStudio?: ExternalProjectStudioData;
+  onDeleted?: () => void;
+  onEntryChange?: (entryId: string) => void;
+  onOpenChange?: (open: boolean) => void;
+  open?: boolean;
   strings: EpmStrings;
+  variant?: 'dialog' | 'page';
   workspaceId: string;
 }) {
   const queryClient = useQueryClient();
@@ -393,7 +412,38 @@ export function EntryDetailClient({
         entries: [entry, ...current.entries],
       }));
       toast.success(strings.duplicateAction);
+      if (variant === 'dialog') {
+        onEntryChange?.(entry.id);
+        return;
+      }
+
       router.push(`${dashboardPath}/entries/${entry.id}`);
+    },
+  });
+
+  const deleteEntryMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEntry) {
+        throw new Error(strings.emptyEntries);
+      }
+
+      return deleteWorkspaceExternalProjectEntry(workspaceId, activeEntry.id);
+    },
+    onSuccess: () => {
+      updateStudioCache((current) => ({
+        ...current,
+        assets: current.assets.filter((asset) => asset.entry_id !== entryId),
+        entries: current.entries.filter((entry) => entry.id !== entryId),
+      }));
+      toast.success(strings.deleteEntryAction);
+      onDeleted?.();
+
+      if (variant === 'dialog') {
+        onOpenChange?.(false);
+        return;
+      }
+
+      router.push(dashboardPath);
     },
   });
 
@@ -497,41 +547,51 @@ export function EntryDetailClient({
     uploadCoverMutation.mutate(file);
   };
 
-  if (studioQuery.isPending && !studio) {
-    return (
-      <div className="min-h-[calc(100svh-5rem)] space-y-5 pb-8">
-        <section className="rounded-[2rem] border border-border/70 bg-card/95 p-5 shadow-none lg:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="space-y-3">
-              <Skeleton className="h-6 w-32 rounded-lg" />
-              <Skeleton className="h-10 w-80 rounded-xl" />
-              <Skeleton className="h-4 w-full max-w-2xl rounded-lg" />
-            </div>
-            <div className="flex gap-2">
-              <Skeleton className="h-10 w-28 rounded-xl" />
-              <Skeleton className="h-10 w-28 rounded-xl" />
-            </div>
+  const loadingState = (
+    <div className="min-h-[calc(100svh-5rem)] space-y-5 pb-8">
+      <section className="rounded-[2rem] border border-border/70 bg-card/95 p-5 shadow-none lg:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-3">
+            <Skeleton className="h-6 w-32 rounded-lg" />
+            <Skeleton className="h-10 w-80 rounded-xl" />
+            <Skeleton className="h-4 w-full max-w-2xl rounded-lg" />
           </div>
-        </section>
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.14fr)_360px]">
-          <Card className="border-border/70 bg-card/95 shadow-none">
-            <CardContent className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1.08fr)_280px] lg:p-6">
-              <Skeleton className="min-h-[360px] w-full rounded-[1.6rem] lg:min-h-[520px]" />
-              <div className="space-y-3">
-                <Skeleton className="h-40 w-full rounded-[1.35rem]" />
-                <Skeleton className="h-28 w-full rounded-[1.35rem]" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/70 bg-card/95 shadow-none">
-            <CardContent className="space-y-4 p-6">
-              <Skeleton className="h-28 w-full rounded-[1.2rem]" />
-              <Skeleton className="h-28 w-full rounded-[1.2rem]" />
-              <Skeleton className="h-52 w-full rounded-[1.2rem]" />
-            </CardContent>
-          </Card>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-28 rounded-xl" />
+            <Skeleton className="h-10 w-28 rounded-xl" />
+          </div>
         </div>
+      </section>
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.14fr)_360px]">
+        <Card className="border-border/70 bg-card/95 shadow-none">
+          <CardContent className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1.08fr)_280px] lg:p-6">
+            <Skeleton className="min-h-[360px] w-full rounded-[1.6rem] lg:min-h-[520px]" />
+            <div className="space-y-3">
+              <Skeleton className="h-40 w-full rounded-[1.35rem]" />
+              <Skeleton className="h-28 w-full rounded-[1.35rem]" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/70 bg-card/95 shadow-none">
+          <CardContent className="space-y-4 p-6">
+            <Skeleton className="h-28 w-full rounded-[1.2rem]" />
+            <Skeleton className="h-28 w-full rounded-[1.2rem]" />
+            <Skeleton className="h-52 w-full rounded-[1.2rem]" />
+          </CardContent>
+        </Card>
       </div>
+    </div>
+  );
+
+  if (studioQuery.isPending && !studio) {
+    return variant === 'dialog' ? (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="inset-0 top-0 left-0 h-screen max-h-screen max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-none border-0 p-0 sm:max-w-none">
+          {loadingState}
+        </DialogContent>
+      </Dialog>
+    ) : (
+      loadingState
     );
   }
 
@@ -539,7 +599,7 @@ export function EntryDetailClient({
     return null;
   }
 
-  return (
+  const content = (
     <div className="min-h-[calc(100svh-5rem)] space-y-5 pb-8">
       <input
         ref={coverInputRef}
@@ -552,10 +612,15 @@ export function EntryDetailClient({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="ghost" onClick={() => router.push(dashboardPath)}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {strings.backToEpmAction}
-            </Button>
+            {variant === 'page' ? (
+              <Button
+                variant="ghost"
+                onClick={() => router.push(dashboardPath)}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                {strings.backToEpmAction}
+              </Button>
+            ) : null}
             <Badge variant="outline">
               {activeCollection?.title ?? strings.collectionFallbackLabel}
             </Badge>
@@ -623,6 +688,14 @@ export function EntryDetailClient({
             {activeEntry.status === 'published'
               ? strings.unpublishAction
               : strings.publishAction}
+          </ActionButton>
+          <ActionButton
+            tooltip={strings.deleteEntryAction}
+            variant="outline"
+            disabled={deleteEntryMutation.isPending}
+            onClick={() => deleteEntryMutation.mutate()}
+          >
+            <Trash2 className="h-4 w-4" />
           </ActionButton>
         </div>
       </div>
@@ -1046,4 +1119,24 @@ export function EntryDetailClient({
       </Sheet>
     </div>
   );
+
+  if (variant === 'dialog') {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="inset-0 top-0 left-0 flex h-screen max-h-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 sm:max-w-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{activeEntry.title}</DialogTitle>
+            <DialogDescription>
+              {strings.editEntryDescription}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+            {content}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return content;
 }

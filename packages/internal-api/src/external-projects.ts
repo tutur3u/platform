@@ -253,6 +253,21 @@ export async function updateWorkspaceExternalProjectCollection(
   );
 }
 
+export async function deleteWorkspaceExternalProjectCollection(
+  workspaceId: string,
+  collectionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ id: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/collections/${encodePathSegment(collectionId)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
+    }
+  );
+}
+
 export async function createWorkspaceExternalProjectBlock(
   workspaceId: string,
   payload: WorkspaceExternalProjectBlockPayload,
@@ -471,6 +486,21 @@ export async function updateWorkspaceExternalProjectEntry(
         'Content-Type': 'application/json',
       },
       method: 'PATCH',
+    }
+  );
+}
+
+export async function deleteWorkspaceExternalProjectEntry(
+  workspaceId: string,
+  entryId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ id: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/entries/${encodePathSegment(entryId)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
     }
   );
 }

@@ -7,7 +7,10 @@ import { buildEpmStrings } from './epm-strings';
 
 const {
   bulkUpdateWorkspaceExternalProjectEntriesMock,
+  createWorkspaceExternalProjectCollectionMock,
   createWorkspaceExternalProjectEntryMock,
+  deleteWorkspaceExternalProjectCollectionMock,
+  deleteWorkspaceExternalProjectEntryMock,
   duplicateWorkspaceExternalProjectEntryMock,
   getWorkspaceExternalProjectDeliveryMock,
   importWorkspaceExternalProjectContentMock,
@@ -16,7 +19,10 @@ const {
   routerRefreshMock,
 } = vi.hoisted(() => ({
   bulkUpdateWorkspaceExternalProjectEntriesMock: vi.fn(),
+  createWorkspaceExternalProjectCollectionMock: vi.fn(),
   createWorkspaceExternalProjectEntryMock: vi.fn(),
+  deleteWorkspaceExternalProjectCollectionMock: vi.fn(),
+  deleteWorkspaceExternalProjectEntryMock: vi.fn(),
   duplicateWorkspaceExternalProjectEntryMock: vi.fn(),
   getWorkspaceExternalProjectDeliveryMock: vi.fn(),
   importWorkspaceExternalProjectContentMock: vi.fn(),
@@ -28,7 +34,12 @@ const {
 vi.mock('@tuturuuu/internal-api', () => ({
   bulkUpdateWorkspaceExternalProjectEntries:
     bulkUpdateWorkspaceExternalProjectEntriesMock,
+  createWorkspaceExternalProjectCollection:
+    createWorkspaceExternalProjectCollectionMock,
   createWorkspaceExternalProjectEntry: createWorkspaceExternalProjectEntryMock,
+  deleteWorkspaceExternalProjectCollection:
+    deleteWorkspaceExternalProjectCollectionMock,
+  deleteWorkspaceExternalProjectEntry: deleteWorkspaceExternalProjectEntryMock,
   duplicateWorkspaceExternalProjectEntry:
     duplicateWorkspaceExternalProjectEntryMock,
   getWorkspaceExternalProjectDelivery: getWorkspaceExternalProjectDeliveryMock,
@@ -36,6 +47,10 @@ vi.mock('@tuturuuu/internal-api', () => ({
     importWorkspaceExternalProjectContentMock,
   publishWorkspaceExternalProjectEntry:
     publishWorkspaceExternalProjectEntryMock,
+  updateWorkspaceExternalProjectAsset: vi.fn(),
+  updateWorkspaceExternalProjectEntry: vi.fn(),
+  uploadWorkspaceExternalProjectAssetFile: vi.fn(),
+  createWorkspaceExternalProjectAsset: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/ui/sonner', () => ({
@@ -238,7 +253,7 @@ describe('EpmClient', () => {
       );
     });
 
-    expect(await screen.findByText('Preview collection')).toBeInTheDocument();
+    expect(await screen.findByText('Preview summary')).toBeInTheDocument();
     expect(
       screen.queryByText('epm.bulk_actions_title')
     ).not.toBeInTheDocument();
@@ -247,20 +262,18 @@ describe('EpmClient', () => {
   it('shows workflow queues only in edit mode', async () => {
     renderClient({ initialEditSection: 'workflow', initialMode: 'edit' });
 
-    expect(screen.getByText('epm.bulk_actions_title')).toBeInTheDocument();
+    expect(screen.getByText('epm.schedule_action')).toBeInTheDocument();
     expect(
       screen.queryByText('Rendered from preview payload.')
     ).not.toBeInTheDocument();
   });
 
-  it('routes entry actions to the dedicated details page', async () => {
+  it('opens the fullscreen entry editor dialog from the gallery', async () => {
     renderClient({ initialMode: 'edit' });
 
-    fireEvent.click(
-      screen.getAllByRole('button', { name: 'epm.open_details_action' })[0]!
-    );
+    fireEvent.click(screen.getByText('Entry One'));
 
-    expect(routerPushMock).toHaveBeenCalledWith('/ws_123/epm/entries/entry-1');
+    expect(await screen.findByText('epm.details_title')).toBeInTheDocument();
   });
 
   it('routes collection actions to the dedicated collection page', async () => {

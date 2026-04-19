@@ -102,6 +102,8 @@ export {
   createWorkspaceExternalProjectBlock,
   createWorkspaceExternalProjectCollection,
   createWorkspaceExternalProjectEntry,
+  deleteWorkspaceExternalProjectCollection,
+  deleteWorkspaceExternalProjectEntry,
   duplicateWorkspaceExternalProjectEntry,
   getWorkspaceExternalProjectDelivery,
   getWorkspaceExternalProjectStudio,

@@ -7,6 +7,7 @@ import { EntryDetailClient } from './entry-detail-client';
 
 const {
   createWorkspaceExternalProjectAssetMock,
+  deleteWorkspaceExternalProjectEntryMock,
   duplicateWorkspaceExternalProjectEntryMock,
   publishWorkspaceExternalProjectEntryMock,
   routerPushMock,
@@ -16,6 +17,7 @@ const {
   uploadWorkspaceExternalProjectAssetFileMock,
 } = vi.hoisted(() => ({
   createWorkspaceExternalProjectAssetMock: vi.fn(),
+  deleteWorkspaceExternalProjectEntryMock: vi.fn(),
   duplicateWorkspaceExternalProjectEntryMock: vi.fn(),
   publishWorkspaceExternalProjectEntryMock: vi.fn(),
   routerPushMock: vi.fn(),
@@ -27,6 +29,7 @@ const {
 
 vi.mock('@tuturuuu/internal-api', () => ({
   createWorkspaceExternalProjectAsset: createWorkspaceExternalProjectAssetMock,
+  deleteWorkspaceExternalProjectEntry: deleteWorkspaceExternalProjectEntryMock,
   duplicateWorkspaceExternalProjectEntry:
     duplicateWorkspaceExternalProjectEntryMock,
   publishWorkspaceExternalProjectEntry:
@@ -113,6 +116,9 @@ describe('EntryDetailClient', () => {
       storage_path: 'covers/cover.png',
       updated_at: '2026-04-19T00:00:00.000Z',
       ws_id: 'ws_123',
+    });
+    deleteWorkspaceExternalProjectEntryMock.mockResolvedValue({
+      id: 'entry-1',
     });
   });
 
