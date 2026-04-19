@@ -206,10 +206,10 @@ Additional behavior:
 - Standby catch-up rebuilds reuse the current deployment stamp so the warm
   backup matches the latest deployment state instead of serving an older build
   if nginx needs to fail over.
-- The watcher dashboard keeps the latest 5 deployments, and direct manual
-  `bun serve:web:docker:bg` runs are written into that same history so the
-  recent deployments list stays complete even when a rollout did not come from
-  the watcher.
+- The watcher dashboard surfaces the top 3 most relevant deployments from the
+  recent history, prioritizing in-progress rollouts first, then the live
+  promoted color, then the warm standby. Direct manual
+  `bun serve:web:docker:bg` runs are written into that same history too.
 
 ## Build Resource Caps
 
@@ -331,9 +331,10 @@ Dashboard details:
 - Normal promotions keep the long-lived `web-proxy` container and bound port
   stable, which avoids transient listener drops for upstreams such as
   Cloudflare Tunnel that are connected to `:7803`.
-- Persists and renders the last 5 deployments, including manual
-  `bun serve:web:docker:bg` runs, as stacked terminal cards
-  that favor vertical scanability over very wide lines.
+- Persists recent deployment history, including manual
+  `bun serve:web:docker:bg` runs, and renders the top 3 most operationally
+  relevant entries as stacked terminal cards that favor vertical scanability
+  over very wide lines.
 - Each deployment card now uses a stronger header with status/color badges plus
   grouped metric bands, so active traffic state, rollout intent, and
   request-rate data are easier to scan while multiple cards are stacked.

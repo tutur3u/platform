@@ -41,6 +41,7 @@ const DEFAULT_STANDBY_REFRESH_AFTER_MS = 15 * 60_000;
 const DEFAULT_LOCK_CONFLICT_ACTION = 'fail';
 const DEFAULT_REPLACE_WATCHER_TIMEOUT_MS = 5_000;
 const MAX_EVENTS = 8;
+const DISPLAY_DEPLOYMENTS = 3;
 const BLUE_GREEN_COLORS = ['blue', 'green'];
 const PROD_COMPOSE_FILE = getComposeFile('prod');
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
@@ -681,6 +682,70 @@ function buildMetricBand(metrics, width) {
   return padCell(metrics.join('  '), width);
 }
 
+function getDeploymentSortTime(entry) {
+  return (
+    entry.finishedAt ??
+    entry.activatedAt ??
+    entry.startedAt ??
+    entry.endedAt ??
+    0
+  );
+}
+
+function getDeploymentDisplayPriority(entry) {
+  if (entry.status === 'building' || entry.status === 'deploying') {
+    return 0;
+  }
+
+  if (entry.runtimeState === 'active') {
+    return 1;
+  }
+
+  if (entry.runtimeState === 'standby') {
+    return 2;
+  }
+
+  if (entry.status === 'failed') {
+    return 3;
+  }
+
+  if (!entry.endedAt) {
+    return 4;
+  }
+
+  return 5;
+}
+
+function selectDeploymentsForDisplay(
+  deployments,
+  maxDeployments = DISPLAY_DEPLOYMENTS
+) {
+  if (!deployments?.length) {
+    return [];
+  }
+
+  return deployments
+    .map((entry, index) => ({
+      entry,
+      index,
+      priority: getDeploymentDisplayPriority(entry),
+      sortTime: getDeploymentSortTime(entry),
+    }))
+    .sort((left, right) => {
+      if (left.priority !== right.priority) {
+        return left.priority - right.priority;
+      }
+
+      if (left.sortTime !== right.sortTime) {
+        return right.sortTime - left.sortTime;
+      }
+
+      return left.index - right.index;
+    })
+    .slice(0, maxDeployments)
+    .map((item) => item.entry);
+}
+
 function buildDeploymentTable(
   deployments,
   { now = Date.now(), width = 100 } = {}
@@ -801,9 +866,10 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
         Math.max(24, contentWidth - 32)
       )}`
     : colorize('dim', 'unknown');
+  const deploymentCards = selectDeploymentsForDisplay(state.deployments);
   const deployments =
-    state.deployments?.length > 0
-      ? buildDeploymentTable(state.deployments, {
+    deploymentCards.length > 0
+      ? buildDeploymentTable(deploymentCards, {
           now,
           width: contentWidth,
         })
@@ -917,7 +983,11 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
     formatRow('Lock file', state.lockFile ?? colorize('dim', 'not acquired')),
     '',
     separator,
-    colorize('bold', `Last ${MAX_DEPLOYMENTS} Deployments`),
+    colorize('bold', `Top ${DISPLAY_DEPLOYMENTS} Deployments`),
+    colorize(
+      'dim',
+      'Showing the most relevant cards first: in-progress rollout, live traffic, then warm standby.'
+    ),
     ...deployments,
     '',
     separator,
@@ -3080,6 +3150,7 @@ module.exports = {
   BLUE_GREEN_PROXY_SERVICE,
   DEFAULT_DEPLOY_COMMAND,
   DEFAULT_INTERVAL_MS,
+  DISPLAY_DEPLOYMENTS,
   MAX_DEPLOYMENTS,
   MAX_EVENTS,
   SELF_WATCHED_FILES,

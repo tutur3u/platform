@@ -8,6 +8,7 @@ const {
   BLUE_GREEN_PROXY_SERVICE,
   DEFAULT_DEPLOY_COMMAND,
   DEFAULT_INTERVAL_MS,
+  DISPLAY_DEPLOYMENTS,
   MAX_DEPLOYMENTS,
   SELF_WATCHED_FILES,
   WATCH_PENDING_DEPLOY_ENV,
@@ -132,7 +133,7 @@ test('formatRelativeTime clamps tiny future drift so the dashboard does not flic
   assert.equal(formatRequestsPerMinute(2.5), '2.5 rpm');
 });
 
-test('buildDashboardView shows blue/green runtime and the last 5 deployments', () => {
+test('buildDashboardView shows blue/green runtime and the top 3 prioritized deployments', () => {
   const now = Date.parse('2026-04-18T11:30:00.000Z');
   const output = buildDashboardView(
     {
@@ -175,6 +176,13 @@ test('buildDashboardView shows blue/green runtime and the last 5 deployments', (
       },
       deployments: [
         {
+          activeColor: 'green',
+          commitShortHash: 'ddd444',
+          commitSubject: 'Current promotion in flight',
+          startedAt: Date.parse('2026-04-18T11:29:40.000Z'),
+          status: 'deploying',
+        },
+        {
           activatedAt: Date.parse('2026-04-18T11:10:00.000Z'),
           activeColor: 'green',
           averageRequestsPerMinute: 6.4,
@@ -206,6 +214,15 @@ test('buildDashboardView shows blue/green runtime and the last 5 deployments', (
           peakRequestsPerMinute: 40,
           requestCount: 512,
           startedAt: Date.parse('2026-04-18T10:39:25.000Z'),
+          status: 'successful',
+        },
+        {
+          activeColor: 'green',
+          commitShortHash: 'zzz999',
+          commitSubject: 'Older retired deployment',
+          endedAt: Date.parse('2026-04-18T09:20:00.000Z'),
+          finishedAt: Date.parse('2026-04-18T09:00:00.000Z'),
+          startedAt: Date.parse('2026-04-18T08:59:30.000Z'),
           status: 'successful',
         },
       ],
@@ -255,8 +272,13 @@ test('buildDashboardView shows blue/green runtime and the last 5 deployments', (
   assert.match(plainOutput, /day 54 req/);
   assert.match(plainOutput, /davg 88\.4\/day/);
   assert.match(plainOutput, /dpeak 120\/day/);
-  assert.match(plainOutput, /Last 5 Deployments/);
+  assert.match(plainOutput, /Top 3 Deployments/);
+  assert.match(
+    plainOutput,
+    /Showing the most relevant cards first: in-progress rollout, live traffic, then warm standby\./
+  );
   assert.match(plainOutput, /╭/);
+  assert.match(plainOutput, /Current promotion in flight/);
   assert.match(plainOutput, /\[18:10:00\]/);
   assert.match(plainOutput, /ACTIVE/);
   assert.match(plainOutput, /green/);
@@ -265,15 +287,28 @@ test('buildDashboardView shows blue/green runtime and the last 5 deployments', (
   assert.match(plainOutput, /42s/);
   assert.match(plainOutput, /20m/);
   assert.match(plainOutput, /Refresh watcher UX and restart logic/);
+  assert.doesNotMatch(plainOutput, /Older retired deployment/);
 
   const lines = plainOutput.split('\n');
   const firstCardTop = lines.find((line) => line.startsWith('╭'));
   const firstCardHeading = lines.find((line) =>
-    line.startsWith('│ [18:10:00]')
+    line.includes('Current promotion in flight')
   );
+  const deploymentsSection = plainOutput.split('Top 3 Deployments')[1] ?? '';
+  const promotionIndex = deploymentsSection.indexOf(
+    'Current promotion in flight'
+  );
+  const activeIndex = deploymentsSection.indexOf(
+    'Refresh watcher UX and restart logic'
+  );
+  const standbyIndex = deploymentsSection.indexOf('Previous rollout');
 
   assert.ok(firstCardTop);
   assert.ok(firstCardHeading);
+  assert.ok(promotionIndex >= 0);
+  assert.ok(activeIndex > promotionIndex);
+  assert.ok(standbyIndex > activeIndex);
+  assert.equal((plainOutput.match(/╭/g) ?? []).length, DISPLAY_DEPLOYMENTS);
   assert.equal(firstCardTop.length, firstCardHeading.length);
 });
 
