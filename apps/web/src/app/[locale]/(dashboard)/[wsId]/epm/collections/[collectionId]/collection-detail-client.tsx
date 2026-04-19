@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Pencil, Plus } from '@tuturuuu/icons';
 import {
   createWorkspaceExternalProjectEntry,
@@ -24,15 +24,17 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
-import { type ComponentProps, startTransition, useState } from 'react';
+import { type ComponentProps, useEffect, useState } from 'react';
 import type { EpmStrings } from '../../epm-strings';
 import { ResilientMediaImage } from '../../resilient-media-image';
+import { getEpmStudioQueryKey, useEpmStudio } from '../../use-epm-studio';
 
 function statusTone(status: ExternalProjectEntry['status']) {
   switch (status) {
@@ -102,15 +104,21 @@ export function CollectionDetailClient({
 }: {
   binding: WorkspaceExternalProjectBinding;
   collectionId: string;
-  initialStudio: ExternalProjectStudioData;
+  initialStudio?: ExternalProjectStudioData;
   strings: EpmStrings;
   workspaceId: string;
 }) {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
-  const [collections, setCollections] = useState(initialStudio.collections);
-  const [entries, setEntries] = useState(initialStudio.entries);
-  const [assets] = useState(initialStudio.assets);
+  const studioQuery = useEpmStudio({
+    initialData: initialStudio ? { ...initialStudio, binding } : undefined,
+    workspaceId,
+  });
+  const studio = studioQuery.data;
+  const collections = studio?.collections ?? initialStudio?.collections ?? [];
+  const entries = studio?.entries ?? initialStudio?.entries ?? [];
+  const assets = studio?.assets ?? initialStudio?.assets ?? [];
   const [search, setSearch] = useState('');
 
   const activeCollection =
@@ -138,10 +146,25 @@ export function CollectionDetailClient({
   );
 
   const epmPath = pathname.split('/collections/')[0] ?? pathname;
-
-  const refreshPage = () => {
-    startTransition(() => router.refresh());
+  const updateStudioCache = (
+    updater: (current: NonNullable<typeof studio>) => NonNullable<typeof studio>
+  ) => {
+    queryClient.setQueryData(
+      getEpmStudioQueryKey(workspaceId),
+      (current: typeof studio | undefined) =>
+        current ? updater(current) : current
+    );
   };
+
+  useEffect(() => {
+    if (!activeCollection) {
+      return;
+    }
+
+    setTitle(activeCollection.title);
+    setDescription(activeCollection.description ?? '');
+    setIsEnabled(activeCollection.is_enabled);
+  }, [activeCollection]);
 
   const saveCollectionMutation = useMutation({
     mutationFn: async () => {
@@ -161,16 +184,16 @@ export function CollectionDetailClient({
     },
     onError: () => toast.error(strings.editCollectionDescription),
     onSuccess: (nextCollection) => {
-      setCollections((current) =>
-        current.map((collection) =>
+      updateStudioCache((current) => ({
+        ...current,
+        collections: current.collections.map((collection) =>
           collection.id === nextCollection.id ? nextCollection : collection
-        )
-      );
+        ),
+      }));
       setTitle(nextCollection.title);
       setDescription(nextCollection.description ?? '');
       setIsEnabled(nextCollection.is_enabled);
       toast.success(strings.saveAction);
-      refreshPage();
     },
   });
 
@@ -194,12 +217,53 @@ export function CollectionDetailClient({
     },
     onError: () => toast.error(strings.editEntryDescription),
     onSuccess: (entry) => {
-      setEntries((current) => [entry, ...current]);
+      updateStudioCache((current) => ({
+        ...current,
+        entries: [entry, ...current.entries],
+      }));
       toast.success(strings.createEntryAction);
       router.push(`${epmPath}/entries/${entry.id}`);
-      refreshPage();
     },
   });
+
+  if (studioQuery.isPending && !studio) {
+    return (
+      <div className="min-h-[calc(100svh-5rem)] space-y-5 pb-8">
+        <section className="rounded-[2rem] border border-border/70 bg-card/95 p-5 shadow-none lg:p-6">
+          <div className="space-y-3">
+            <Skeleton className="h-6 w-32 rounded-lg" />
+            <Skeleton className="h-10 w-72 rounded-xl" />
+            <Skeleton className="h-4 w-full max-w-2xl rounded-lg" />
+          </div>
+        </section>
+        <div className="grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)]">
+          <Card className="border-border/70 bg-card/95 shadow-none">
+            <CardContent className="space-y-4 p-6">
+              <Skeleton className="h-12 w-full rounded-xl" />
+              <Skeleton className="h-12 w-full rounded-xl" />
+              <Skeleton className="h-36 w-full rounded-[1.2rem]" />
+              <Skeleton className="h-16 w-full rounded-[1.2rem]" />
+            </CardContent>
+          </Card>
+          <Card className="border-border/70 bg-card/95 shadow-none">
+            <CardContent className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div
+                  key={`collection-entry-skeleton-${index}`}
+                  className="space-y-3"
+                >
+                  <Skeleton className="aspect-[4/5] w-full rounded-[1.2rem]" />
+                  <Skeleton className="h-5 w-24 rounded-full" />
+                  <Skeleton className="h-5 w-3/4 rounded-lg" />
+                  <Skeleton className="h-4 w-full rounded-lg" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (!activeCollection) {
     return null;

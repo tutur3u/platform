@@ -11,7 +11,6 @@ import {
   hasRootExternalProjectsAdminPermission,
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
-import { getWorkspaceExternalProjectStudioData } from '@/lib/external-projects/store';
 import { buildEpmStrings } from '../../epm-strings';
 import { EntryDetailClient } from './entry-detail-client';
 
@@ -51,21 +50,12 @@ export default async function EpmEntryDetailPage({ params }: Props) {
     notFound();
   }
 
-  const [t, studio] = await Promise.all([
-    getTranslations('external-projects'),
-    getWorkspaceExternalProjectStudioData(wsId),
-  ]);
-  const entry = studio.entries.find((item) => item.id === entryId);
-
-  if (!entry) {
-    notFound();
-  }
+  const t = await getTranslations('external-projects');
 
   return (
     <EntryDetailClient
       binding={binding}
       entryId={entryId}
-      initialStudio={studio}
       strings={buildEpmStrings(t)}
       workspaceId={wsId}
     />

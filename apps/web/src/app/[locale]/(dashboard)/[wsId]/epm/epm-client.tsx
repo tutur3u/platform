@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Archive,
   CheckCircle2,
@@ -52,13 +52,14 @@ import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   type ComponentProps,
-  startTransition,
   useDeferredValue,
+  useEffect,
   useState,
 } from 'react';
 import { useExternalProjectLivePreview } from '../external-projects/use-external-project-live-preview';
 import type { EpmStrings } from './epm-strings';
 import { ResilientMediaImage } from './resilient-media-image';
+import { getEpmStudioQueryKey, useEpmStudio } from './use-epm-studio';
 
 type WorkflowFilter = 'all' | ExternalProjectEntry['status'];
 type EpmMode = 'edit' | 'preview';
@@ -211,6 +212,49 @@ function PreviewModeSkeleton() {
   );
 }
 
+function EditModeSkeleton() {
+  return (
+    <div className="space-y-5" data-testid="epm-edit-skeleton">
+      <section className="rounded-[1.6rem] border border-border/70 bg-card/95 p-4">
+        <div className="grid gap-3 xl:grid-cols-[180px_240px_240px_minmax(0,1fr)_auto]">
+          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="h-16 rounded-xl" />
+        </div>
+      </section>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
+        <Card className="border-border/70 bg-card/95 shadow-none">
+          <CardContent className="grid gap-4 p-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <Skeleton className="aspect-[4/5] w-full rounded-[1.4rem]" />
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-36 rounded-full" />
+              <Skeleton className="h-9 w-3/4 rounded-xl" />
+              <Skeleton className="h-4 w-full rounded-lg" />
+              <Skeleton className="h-4 w-[88%] rounded-lg" />
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Skeleton className="h-20 rounded-[1rem]" />
+                <Skeleton className="h-20 rounded-[1rem]" />
+                <Skeleton className="h-20 rounded-[1rem]" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 bg-card/95 shadow-none">
+          <CardContent className="space-y-4 p-6">
+            <Skeleton className="h-24 w-full rounded-[1.2rem]" />
+            <Skeleton className="h-24 w-full rounded-[1.2rem]" />
+            <Skeleton className="h-10 w-full rounded-xl" />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 export function EpmClient({
   binding,
   initialEditSection = 'entries',
@@ -222,24 +266,26 @@ export function EpmClient({
   binding: WorkspaceExternalProjectBinding;
   initialEditSection?: EditSection;
   initialMode?: EpmMode;
-  initialStudio: ExternalProjectStudioData;
+  initialStudio?: ExternalProjectStudioData;
   strings: EpmStrings;
   workspaceId: string;
 }) {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
+  const studioQuery = useEpmStudio({
+    initialData: initialStudio ? { ...initialStudio, binding } : undefined,
+    workspaceId,
+  });
+  const studio = studioQuery.data;
   const [mode, setMode] = useState<EpmMode>(initialMode);
   const [editSection, setEditSection] =
     useState<EditSection>(initialEditSection);
-  const [entries, setEntries] = useState(initialStudio.entries);
-  const [collections] = useState(initialStudio.collections);
-  const [assets] = useState(initialStudio.assets);
-  const [publishEvents] = useState(initialStudio.publishEvents);
   const [selectedCollectionId, setSelectedCollectionId] = useState(
-    initialStudio.collections[0]?.id ?? ''
+    initialStudio?.collections[0]?.id ?? ''
   );
   const [selectedEntryId, setSelectedEntryId] = useState(
-    initialStudio.entries[0]?.id ?? ''
+    initialStudio?.entries[0]?.id ?? ''
   );
   const [search, setSearch] = useState('');
   const [workflowFilter, setWorkflowFilter] = useState<WorkflowFilter>('all');
@@ -247,6 +293,25 @@ export function EpmClient({
   const [scheduleValue, setScheduleValue] = useState('');
   const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
   const deferredSearch = useDeferredValue(search);
+  const entries = studio?.entries ?? initialStudio?.entries ?? [];
+  const collections = studio?.collections ?? initialStudio?.collections ?? [];
+  const assets = studio?.assets ?? initialStudio?.assets ?? [];
+  const publishEvents =
+    studio?.publishEvents ?? initialStudio?.publishEvents ?? [];
+
+  useEffect(() => {
+    const firstCollectionId = collections[0]?.id;
+    if (!selectedCollectionId && firstCollectionId) {
+      setSelectedCollectionId(firstCollectionId);
+    }
+  }, [collections, selectedCollectionId]);
+
+  useEffect(() => {
+    const firstEntryId = entries[0]?.id;
+    if (!selectedEntryId && firstEntryId) {
+      setSelectedEntryId(firstEntryId);
+    }
+  }, [entries, selectedEntryId]);
 
   const previewQuery = useExternalProjectLivePreview({
     enabled: mode === 'preview',
@@ -345,21 +410,33 @@ export function EpmClient({
   const currentManagedEntry =
     entries.find((entry) => entry.id === currentEntryId) ?? activeEditEntry;
 
-  const mergeEntry = (nextEntry: ExternalProjectEntry) => {
-    setEntries((current) => {
-      const index = current.findIndex((entry) => entry.id === nextEntry.id);
-      if (index === -1) {
-        return [nextEntry, ...current];
-      }
-
-      const next = [...current];
-      next[index] = nextEntry;
-      return next;
-    });
+  const updateStudioCache = (
+    updater: (current: NonNullable<typeof studio>) => NonNullable<typeof studio>
+  ) => {
+    queryClient.setQueryData(
+      getEpmStudioQueryKey(workspaceId),
+      (current: typeof studio | undefined) =>
+        current ? updater(current) : current
+    );
   };
 
-  const refreshPage = () => {
-    startTransition(() => router.refresh());
+  const mergeEntry = (nextEntry: ExternalProjectEntry) => {
+    updateStudioCache((current) => {
+      const index = current.entries.findIndex(
+        (entry) => entry.id === nextEntry.id
+      );
+      const nextEntries =
+        index === -1
+          ? [nextEntry, ...current.entries]
+          : current.entries.map((entry) =>
+              entry.id === nextEntry.id ? nextEntry : entry
+            );
+
+      return {
+        ...current,
+        entries: nextEntries,
+      };
+    });
   };
 
   const openEntryDetails = (entryId: string) => {
@@ -397,7 +474,6 @@ export function EpmClient({
       setPreviewRefreshToken((value) => value + 1);
       toast.success(strings.createEntryAction);
       openEntryDetails(entry.id);
-      refreshPage();
     },
   });
 
@@ -419,7 +495,6 @@ export function EpmClient({
       setPreviewRefreshToken((value) => value + 1);
       toast.success(strings.duplicateAction);
       openEntryDetails(entry.id);
-      refreshPage();
     },
   });
 
@@ -443,7 +518,6 @@ export function EpmClient({
           ? strings.publishAction
           : strings.unpublishAction
       );
-      refreshPage();
     },
   });
 
@@ -452,7 +526,9 @@ export function EpmClient({
     onSuccess: () => {
       toast.success(strings.importAction);
       setPreviewRefreshToken((value) => value + 1);
-      refreshPage();
+      queryClient.invalidateQueries({
+        queryKey: getEpmStudioQueryKey(workspaceId),
+      });
     },
   });
 
@@ -475,15 +551,15 @@ export function EpmClient({
         status: payload.status,
       }),
     onSuccess: (updatedEntries) => {
-      setEntries((current) =>
-        current.map(
+      updateStudioCache((current) => ({
+        ...current,
+        entries: current.entries.map(
           (entry) =>
             updatedEntries.find((updated) => updated.id === entry.id) ?? entry
-        )
-      );
+        ),
+      }));
       setSelectedBulkIds([]);
       setPreviewRefreshToken((value) => value + 1);
-      refreshPage();
     },
   });
 
@@ -561,7 +637,9 @@ export function EpmClient({
                 variant="ghost"
                 onClick={() => {
                   setPreviewRefreshToken((value) => value + 1);
-                  refreshPage();
+                  queryClient.invalidateQueries({
+                    queryKey: getEpmStudioQueryKey(workspaceId),
+                  });
                 }}
               >
                 <RefreshCw className="h-4 w-4" />
@@ -717,6 +795,8 @@ export function EpmClient({
             </CardContent>
           </Card>
         </div>
+      ) : studioQuery.isPending && !studio ? (
+        <EditModeSkeleton />
       ) : (
         <div className="space-y-5">
           <section className="rounded-[1.6rem] border border-border/70 bg-card/95 p-4">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -56,6 +56,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@tuturuuu/ui/sheet';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -63,7 +64,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   type ChangeEvent,
   type ComponentProps,
-  startTransition,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -71,6 +72,7 @@ import {
 import { useExternalProjectLivePreview } from '../../../external-projects/use-external-project-live-preview';
 import type { EpmStrings } from '../../epm-strings';
 import { ResilientMediaImage } from '../../resilient-media-image';
+import { getEpmStudioQueryKey, useEpmStudio } from '../../use-epm-studio';
 
 type EntryFormState = {
   scheduledFor: string;
@@ -207,20 +209,27 @@ export function EntryDetailClient({
 }: {
   binding: WorkspaceExternalProjectBinding;
   entryId: string;
-  initialStudio: ExternalProjectStudioData;
+  initialStudio?: ExternalProjectStudioData;
   strings: EpmStrings;
   workspaceId: string;
 }) {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
   const coverInputRef = useRef<HTMLInputElement | null>(null);
-  const [entries, setEntries] = useState(initialStudio.entries);
-  const [assets, setAssets] = useState(initialStudio.assets);
+  const studioQuery = useEpmStudio({
+    initialData: initialStudio ? { ...initialStudio, binding } : undefined,
+    workspaceId,
+  });
+  const studio = studioQuery.data;
+  const entries = studio?.entries ?? initialStudio?.entries ?? [];
+  const assets = studio?.assets ?? initialStudio?.assets ?? [];
+  const collections = studio?.collections ?? initialStudio?.collections ?? [];
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
   const activeEntry = entries.find((entry) => entry.id === entryId) ?? null;
   const activeCollection =
-    initialStudio.collections.find(
+    collections.find(
       (collection) => collection.id === activeEntry?.collection_id
     ) ?? null;
   const imageAssets = useMemo(
@@ -265,29 +274,62 @@ export function EntryDetailClient({
     coverAltText !== (coverAsset?.alt_text ?? activeEntry.title);
   const activeEntryTitle = activeEntry?.title ?? strings.title;
 
-  const mergeEntry = (nextEntry: ExternalProjectEntry) => {
-    setEntries((current) =>
-      current.map((entry) => (entry.id === nextEntry.id ? nextEntry : entry))
+  const updateStudioCache = (
+    updater: (current: NonNullable<typeof studio>) => NonNullable<typeof studio>
+  ) => {
+    queryClient.setQueryData(
+      getEpmStudioQueryKey(workspaceId),
+      (current: typeof studio | undefined) =>
+        current ? updater(current) : current
     );
+  };
+
+  useEffect(() => {
+    if (!activeEntry) {
+      setEntryForm(null);
+      return;
+    }
+
+    setEntryForm(buildEntryFormState(activeEntry));
+  }, [activeEntry]);
+
+  useEffect(() => {
+    if (!activeEntry) {
+      setCoverAltText('');
+      return;
+    }
+
+    setCoverAltText(coverAsset?.alt_text ?? activeEntry.title);
+  }, [activeEntry, coverAsset?.alt_text]);
+
+  const mergeEntry = (nextEntry: ExternalProjectEntry) => {
+    updateStudioCache((current) => ({
+      ...current,
+      entries: current.entries.map((entry) =>
+        entry.id === nextEntry.id ? nextEntry : entry
+      ),
+    }));
     setEntryForm(buildEntryFormState(nextEntry));
   };
 
   const mergeAsset = (nextAsset: ExternalProjectStudioAsset) => {
-    setAssets((current) => {
-      const index = current.findIndex((asset) => asset.id === nextAsset.id);
-      if (index === -1) {
-        return [...current, nextAsset];
-      }
+    updateStudioCache((current) => {
+      const index = current.assets.findIndex(
+        (asset) => asset.id === nextAsset.id
+      );
+      const nextAssets =
+        index === -1
+          ? [...current.assets, nextAsset]
+          : current.assets.map((asset) =>
+              asset.id === nextAsset.id ? nextAsset : asset
+            );
 
-      const next = [...current];
-      next[index] = nextAsset;
-      return next;
+      return {
+        ...current,
+        assets: nextAssets,
+      };
     });
     setCoverAltText(nextAsset.alt_text ?? activeEntryTitle);
-  };
-
-  const refreshPage = () => {
-    startTransition(() => router.refresh());
   };
 
   const saveEntryMutation = useMutation({
@@ -308,7 +350,6 @@ export function EntryDetailClient({
     onSuccess: (entry) => {
       mergeEntry(entry);
       toast.success(strings.saveAction);
-      refreshPage();
     },
   });
 
@@ -332,7 +373,6 @@ export function EntryDetailClient({
           ? strings.publishAction
           : strings.unpublishAction
       );
-      refreshPage();
     },
   });
 
@@ -348,9 +388,12 @@ export function EntryDetailClient({
       );
     },
     onSuccess: (entry) => {
+      updateStudioCache((current) => ({
+        ...current,
+        entries: [entry, ...current.entries],
+      }));
       toast.success(strings.duplicateAction);
       router.push(`${dashboardPath}/entries/${entry.id}`);
-      refreshPage();
     },
   });
 
@@ -367,7 +410,6 @@ export function EntryDetailClient({
     onSuccess: (asset) => {
       mergeAsset(toStudioAsset(asset, coverAsset));
       toast.success(strings.coverSaveSuccessToast);
-      refreshPage();
     },
   });
 
@@ -411,7 +453,6 @@ export function EntryDetailClient({
       mergeAsset(toStudioAsset(asset, coverAsset));
       setPreviewRefreshToken((value) => value + 1);
       toast.success(strings.coverUploadSuccessToast);
-      refreshPage();
     },
   });
 
@@ -431,17 +472,17 @@ export function EntryDetailClient({
       );
     },
     onSuccess: (updatedAssets) => {
-      setAssets((current) =>
-        current.map((asset) =>
+      updateStudioCache((current) => ({
+        ...current,
+        assets: current.assets.map((asset) =>
           toStudioAsset(
             updatedAssets.find((updated) => updated.id === asset.id) ?? asset,
             asset
           )
-        )
-      );
+        ),
+      }));
       setCoverAltText(updatedAssets[0]?.alt_text ?? activeEntryTitle);
       toast.success(strings.coverSaveSuccessToast);
-      refreshPage();
     },
   });
 
@@ -455,6 +496,44 @@ export function EntryDetailClient({
 
     uploadCoverMutation.mutate(file);
   };
+
+  if (studioQuery.isPending && !studio) {
+    return (
+      <div className="min-h-[calc(100svh-5rem)] space-y-5 pb-8">
+        <section className="rounded-[2rem] border border-border/70 bg-card/95 p-5 shadow-none lg:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-3">
+              <Skeleton className="h-6 w-32 rounded-lg" />
+              <Skeleton className="h-10 w-80 rounded-xl" />
+              <Skeleton className="h-4 w-full max-w-2xl rounded-lg" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-28 rounded-xl" />
+              <Skeleton className="h-10 w-28 rounded-xl" />
+            </div>
+          </div>
+        </section>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.14fr)_360px]">
+          <Card className="border-border/70 bg-card/95 shadow-none">
+            <CardContent className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1.08fr)_280px] lg:p-6">
+              <Skeleton className="min-h-[360px] w-full rounded-[1.6rem] lg:min-h-[520px]" />
+              <div className="space-y-3">
+                <Skeleton className="h-40 w-full rounded-[1.35rem]" />
+                <Skeleton className="h-28 w-full rounded-[1.35rem]" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/70 bg-card/95 shadow-none">
+            <CardContent className="space-y-4 p-6">
+              <Skeleton className="h-28 w-full rounded-[1.2rem]" />
+              <Skeleton className="h-28 w-full rounded-[1.2rem]" />
+              <Skeleton className="h-52 w-full rounded-[1.2rem]" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (!activeEntry || !entryForm) {
     return null;
@@ -501,7 +580,12 @@ export function EntryDetailClient({
           <ActionButton
             tooltip={strings.refreshAction}
             variant="outline"
-            onClick={refreshPage}
+            onClick={() => {
+              setPreviewRefreshToken((value) => value + 1);
+              queryClient.invalidateQueries({
+                queryKey: getEpmStudioQueryKey(workspaceId),
+              });
+            }}
           >
             <RefreshCw className="h-4 w-4" />
           </ActionButton>

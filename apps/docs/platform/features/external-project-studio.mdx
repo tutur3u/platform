@@ -56,6 +56,8 @@ The EPM surfaces now follow two distinct workflows:
 
 - The preview source of truth is the existing preview delivery API, not a duplicate client-side payload builder.
 - The workspace studio still uses the existing internal API helpers for entry, block, asset, import, publish, and binding operations.
+- The `/epm`, entry-detail, and collection-detail routes should stay as thin server auth gates and fetch their working data from a shared `epm-studio` TanStack Query cache on the client.
+- Mutations on the dedicated detail pages should patch or invalidate that shared studio query instead of calling `router.refresh()`.
 - Cover uploads and replacements reuse the existing workspace asset signed-upload helper; no separate cover-specific backend endpoint is needed.
 - The workspace route is now `/{wsId}/epm`, with `/{wsId}/external-projects` redirecting to it for backward compatibility.
 - The main `/epm` page is now an index plus mode shell, not a hybrid inline editor.
@@ -65,5 +67,6 @@ The EPM surfaces now follow two distinct workflows:
 - When changing external-project authoring UX, keep the live preview wired to the preview delivery endpoint instead of inventing a second payload contract in the client.
 - When the tool needs to behave like both a front-end preview and an admin workspace, split it into explicit `Preview` and `Edit` modes rather than blending both into the same crowded surface.
 - For dense admin surfaces, move item-level authoring into dedicated entry or collection pages instead of rebuilding mini-editors inside the index view.
+- Keep the detail routes on the same shared studio query cache as the index so save/publish/cover changes stay client-fast without route refreshes.
 - For external-project entries that need strong visual identity, treat cover image upload/replacement/reordering as a first-class workflow instead of burying it under generic asset editing.
 - Add any new user-facing copy to both `apps/web/messages/en.json` and `apps/web/messages/vi.json`, then run `bun i18n:sort`.

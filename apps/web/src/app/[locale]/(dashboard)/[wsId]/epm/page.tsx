@@ -11,7 +11,6 @@ import {
   hasRootExternalProjectsAdminPermission,
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
-import { getWorkspaceExternalProjectStudioData } from '@/lib/external-projects/store';
 import { EpmClient } from './epm-client';
 import { buildEpmStrings } from './epm-strings';
 
@@ -50,15 +49,11 @@ export default async function EpmPage({ params }: Props) {
     notFound();
   }
 
-  const [t, studio] = await Promise.all([
-    getTranslations('external-projects'),
-    getWorkspaceExternalProjectStudioData(wsId),
-  ]);
+  const t = await getTranslations('external-projects');
 
   return (
     <EpmClient
       binding={binding}
-      initialStudio={studio}
       strings={buildEpmStrings(t)}
       workspaceId={wsId}
     />

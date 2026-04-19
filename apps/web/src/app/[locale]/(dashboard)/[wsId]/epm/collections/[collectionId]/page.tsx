@@ -11,7 +11,6 @@ import {
   hasRootExternalProjectsAdminPermission,
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
-import { getWorkspaceExternalProjectStudioData } from '@/lib/external-projects/store';
 import { buildEpmStrings } from '../../epm-strings';
 import { CollectionDetailClient } from './collection-detail-client';
 
@@ -51,23 +50,12 @@ export default async function EpmCollectionDetailPage({ params }: Props) {
     notFound();
   }
 
-  const [t, studio] = await Promise.all([
-    getTranslations('external-projects'),
-    getWorkspaceExternalProjectStudioData(wsId),
-  ]);
-  const collection = studio.collections.find(
-    (item) => item.id === collectionId
-  );
-
-  if (!collection) {
-    notFound();
-  }
+  const t = await getTranslations('external-projects');
 
   return (
     <CollectionDetailClient
       binding={binding}
       collectionId={collectionId}
-      initialStudio={studio}
       strings={buildEpmStrings(t)}
       workspaceId={wsId}
     />
