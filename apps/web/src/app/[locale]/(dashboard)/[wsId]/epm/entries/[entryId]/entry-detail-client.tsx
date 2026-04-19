@@ -26,6 +26,7 @@ import type {
   ExternalProjectEntry,
   ExternalProjectStudioAsset,
   ExternalProjectStudioData,
+  Json,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
 import {
@@ -92,6 +93,36 @@ import {
   toStudioAsset,
 } from './entry-detail-shared';
 
+function getAssetCaption(asset: ExternalProjectStudioAsset | null | undefined) {
+  const metadata = asset?.metadata;
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return '';
+  }
+
+  const caption = (metadata as Record<string, unknown>).caption;
+  return typeof caption === 'string' ? caption : '';
+}
+
+function mergeAssetCaptionMetadata(
+  asset: ExternalProjectStudioAsset,
+  caption: string
+): Json {
+  const nextMetadata =
+    asset.metadata &&
+    typeof asset.metadata === 'object' &&
+    !Array.isArray(asset.metadata)
+      ? { ...(asset.metadata as Record<string, unknown>) }
+      : {};
+
+  if (caption.trim()) {
+    nextMetadata.caption = caption.trim();
+  } else {
+    delete nextMetadata.caption;
+  }
+
+  return nextMetadata as Json;
+}
+
 export function EntryDetailClient({
   binding,
   entryId,
@@ -133,6 +164,9 @@ export function EntryDetailClient({
   const [deleteEntryDialogOpen, setDeleteEntryDialogOpen] = useState(false);
   const [deleteMediaDialogOpen, setDeleteMediaDialogOpen] = useState(false);
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
+  const [assetCaptions, setAssetCaptions] = useState<Record<string, string>>(
+    {}
+  );
   const activeEntry = entries.find((entry) => entry.id === entryId) ?? null;
   const activeCollection =
     collections.find(
@@ -223,6 +257,26 @@ export function EntryDetailClient({
         imageAssets.some((asset) => asset.id === assetId)
       )
     );
+  }, [imageAssets]);
+
+  useEffect(() => {
+    setAssetCaptions((current) => {
+      const next = Object.fromEntries(
+        Object.entries(current).filter(([assetId]) =>
+          imageAssets.some((asset) => asset.id === assetId)
+        )
+      );
+      const currentKeys = Object.keys(current);
+      const nextKeys = Object.keys(next);
+      if (
+        currentKeys.length === nextKeys.length &&
+        nextKeys.every((key) => current[key] === next[key])
+      ) {
+        return current;
+      }
+
+      return next;
+    });
   }, [imageAssets]);
 
   const mergeEntry = (nextEntry: ExternalProjectEntry) => {
@@ -481,6 +535,41 @@ export function EntryDetailClient({
     },
   });
 
+  const saveAssetCaptionMutation = useMutation({
+    mutationFn: async (assetId: string) => {
+      const asset = imageAssets.find((item) => item.id === assetId);
+      if (!asset) {
+        throw new Error(strings.emptyEntries);
+      }
+
+      return updateWorkspaceExternalProjectAsset(workspaceId, assetId, {
+        metadata: mergeAssetCaptionMetadata(
+          asset,
+          assetCaptions[assetId] ?? ''
+        ),
+      });
+    },
+    onSuccess: async (asset) => {
+      mergeAsset(
+        toStudioAsset(
+          asset,
+          imageAssets.find((item) => item.id === asset.id) ?? null
+        )
+      );
+      setAssetCaptions((current) => {
+        if (!(asset.id in current)) {
+          return current;
+        }
+
+        const next = { ...current };
+        delete next[asset.id];
+        return next;
+      });
+      await refreshStudioFromBackend();
+      toast.success(strings.saveMediaDetailsAction);
+    },
+  });
+
   const setAsCoverMutation = useMutation({
     mutationFn: async (assetId: string) => {
       const nextOrder = [
@@ -542,6 +631,11 @@ export function EntryDetailClient({
     );
   };
 
+  const deleteSingleAsset = (assetId: string) => {
+    setSelectedAssetIds([assetId]);
+    setDeleteMediaDialogOpen(true);
+  };
+
   if (studioQuery.isPending && !studio) {
     return variant === 'dialog' ? (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -563,6 +657,7 @@ export function EntryDetailClient({
     uploadCoverMutation.isPending ||
     uploadMediaMutation.isPending ||
     saveCoverMutation.isPending ||
+    saveAssetCaptionMutation.isPending ||
     deleteAssetsMutation.isPending ||
     setAsCoverMutation.isPending;
 
@@ -942,20 +1037,25 @@ export function EntryDetailClient({
               ) : (
                 imageAssets.map((asset, index) => {
                   const isSelected = selectedAssetIds.includes(asset.id);
+                  const caption =
+                    assetCaptions[asset.id] ?? getAssetCaption(asset);
+                  const captionDirty = caption !== getAssetCaption(asset);
 
                   return (
-                    <button
+                    <div
                       key={asset.id}
-                      type="button"
                       className={cn(
                         'overflow-hidden rounded-[1.2rem] border bg-background/75 text-left transition',
                         isSelected
                           ? 'border-primary ring-2 ring-primary/30'
                           : 'border-border/70 hover:border-border'
                       )}
-                      onClick={() => toggleAssetSelection(asset.id)}
                     >
-                      <div className="relative h-36 overflow-hidden border-border/70 border-b bg-background/80">
+                      <button
+                        type="button"
+                        className="relative block h-36 w-full overflow-hidden border-border/70 border-b bg-background/80"
+                        onClick={() => toggleAssetSelection(asset.id)}
+                      >
                         <ResilientMediaImage
                           alt={asset.alt_text ?? activeEntry.title}
                           assetUrl={asset.asset_url}
@@ -964,7 +1064,7 @@ export function EntryDetailClient({
                           previewUrl={asset.preview_url}
                           sizes="(max-width: 1024px) 100vw, 18vw"
                         />
-                      </div>
+                      </button>
                       <div className="space-y-3 p-3">
                         <div className="flex items-center justify-between gap-2">
                           <Badge variant="outline">
@@ -972,32 +1072,91 @@ export function EntryDetailClient({
                               ? strings.coverBadge
                               : strings.assetsLabel}
                           </Badge>
-                          {index !== 0 ? (
+                          <div className="flex items-center gap-2">
+                            {index !== 0 ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={
+                                  setAsCoverMutation.isPending ||
+                                  mediaProcessing
+                                }
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setAsCoverMutation.mutate(asset.id);
+                                }}
+                              >
+                                {setAsCoverMutation.isPending ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : null}
+                                {setAsCoverMutation.isPending
+                                  ? strings.mediaProcessingLabel
+                                  : strings.setAsCoverAction}
+                              </Button>
+                            ) : null}
                             <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={
-                                setAsCoverMutation.isPending || mediaProcessing
-                              }
+                              size="icon"
+                              variant="ghost"
+                              className="size-8"
+                              disabled={mediaProcessing}
                               onClick={(event) => {
                                 event.stopPropagation();
-                                setAsCoverMutation.mutate(asset.id);
+                                deleteSingleAsset(asset.id);
                               }}
                             >
-                              {setAsCoverMutation.isPending ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              ) : null}
-                              {setAsCoverMutation.isPending
-                                ? strings.mediaProcessingLabel
-                                : strings.setAsCoverAction}
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">
+                                {strings.removeMediaAction}
+                              </span>
                             </Button>
-                          ) : null}
+                          </div>
                         </div>
                         <div className="truncate text-sm">
                           {asset.alt_text ?? activeEntry.title}
                         </div>
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor={`entry-asset-caption-${asset.id}`}
+                            className="text-xs"
+                          >
+                            {strings.captionLabel}
+                          </Label>
+                          <Input
+                            id={`entry-asset-caption-${asset.id}`}
+                            value={caption}
+                            placeholder={strings.captionPlaceholder}
+                            onChange={(event) =>
+                              setAssetCaptions((current) => ({
+                                ...current,
+                                [asset.id]: event.target.value,
+                              }))
+                            }
+                          />
+                          {captionDirty ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={
+                                saveAssetCaptionMutation.isPending ||
+                                mediaProcessing
+                              }
+                              onClick={() =>
+                                saveAssetCaptionMutation.mutate(asset.id)
+                              }
+                            >
+                              {saveAssetCaptionMutation.isPending ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Pencil className="mr-2 h-4 w-4" />
+                              )}
+                              {saveAssetCaptionMutation.isPending
+                                ? strings.mediaProcessingLabel
+                                : strings.saveMediaDetailsAction}
+                            </Button>
+                          ) : null}
+                        </div>
                       </div>
-                    </button>
+                    </div>
                   );
                 })
               )}
@@ -1280,7 +1439,9 @@ export function EntryDetailClient({
               }
               onClick={() => deleteAssetsMutation.mutate(selectedAssetIds)}
             >
-              {strings.bulkRemoveMediaAction}
+              {selectedAssetCount === 1
+                ? strings.removeMediaAction
+                : strings.bulkRemoveMediaAction}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

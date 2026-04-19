@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { EpmClient } from './epm';
+import {
+  buildEpmNavigationItems,
+  EpmClient,
+  getEpmCollectionNavigationTitle,
+} from './epm';
 import { ValidationError } from './errors';
 
 const mockFetch = vi.fn();
@@ -94,6 +98,53 @@ describe('EpmClient', () => {
     );
   });
 
+  it('normalizes relative asset URLs when loading studio data', async () => {
+    mockFetch.mockResolvedValueOnce(
+      createMockResponse({
+        assets: [
+          {
+            asset_type: 'image',
+            asset_url:
+              '/api/v1/workspaces/ws_123/external-projects/assets/asset_1',
+            entry_id: 'entry_1',
+            id: 'asset_1',
+            metadata: {},
+            preview_url:
+              '/api/v1/workspaces/ws_123/external-projects/assets/asset_1?width=1600',
+            sort_order: 0,
+          },
+        ],
+        binding: {
+          adapter: 'yoola',
+          canonical_id: 'project-1',
+          canonical_project: null,
+          enabled: true,
+        },
+        blocks: [],
+        collections: [],
+        entries: [],
+        importJobs: [],
+        loadingData: null,
+        publishEvents: [],
+      })
+    );
+
+    const client = new EpmClient({
+      apiKey: 'ttr_test_key',
+      baseUrl: 'https://example.com/api/v1',
+      fetch: mockFetch,
+    });
+
+    const studio = await client.getStudio('ws_123');
+
+    expect(studio.assets[0]?.asset_url).toBe(
+      'https://example.com/api/v1/workspaces/ws_123/external-projects/assets/asset_1'
+    );
+    expect(studio.assets[0]?.preview_url).toBe(
+      'https://example.com/api/v1/workspaces/ws_123/external-projects/assets/asset_1?width=1600'
+    );
+  });
+
   it('posts bulk workflow payloads', async () => {
     mockFetch.mockResolvedValueOnce(createMockResponse([]));
 
@@ -121,6 +172,36 @@ describe('EpmClient', () => {
         scheduledFor: '2026-04-20T09:00:00.000Z',
       })
     );
+  });
+
+  it('supports delete management calls for collections, entries, and assets', async () => {
+    mockFetch
+      .mockResolvedValueOnce(createMockResponse({ ok: true }))
+      .mockResolvedValueOnce(createMockResponse({ ok: true }))
+      .mockResolvedValueOnce(createMockResponse({ ok: true }));
+
+    const client = new EpmClient({
+      apiKey: 'ttr_test_key',
+      baseUrl: 'https://example.com/api/v1',
+      fetch: mockFetch,
+    });
+
+    await client.deleteCollection('ws_123', 'collection_1');
+    await client.deleteEntry('ws_123', 'entry_1');
+    await client.deleteAsset('ws_123', 'asset_1');
+
+    expect(mockFetch.mock.calls[0]?.[0]).toBe(
+      'https://example.com/api/v1/workspaces/ws_123/external-projects/collections/collection_1'
+    );
+    expect(mockFetch.mock.calls[0]?.[1]?.method).toBe('DELETE');
+    expect(mockFetch.mock.calls[1]?.[0]).toBe(
+      'https://example.com/api/v1/workspaces/ws_123/external-projects/entries/entry_1'
+    );
+    expect(mockFetch.mock.calls[1]?.[1]?.method).toBe('DELETE');
+    expect(mockFetch.mock.calls[2]?.[0]).toBe(
+      'https://example.com/api/v1/workspaces/ws_123/external-projects/assets/asset_1'
+    );
+    expect(mockFetch.mock.calls[2]?.[1]?.method).toBe('DELETE');
   });
 
   it('uploads asset files through signed upload URLs', async () => {
@@ -154,5 +235,49 @@ describe('EpmClient', () => {
     expect(mockFetch.mock.calls[1]?.[0]).toBe(
       'https://upload.example.com/object'
     );
+  });
+
+  it('builds navigation items from collection config for external apps like yoola', () => {
+    const collections = [
+      {
+        config: {
+          navigation: {
+            href: '/gallery',
+            title: 'Archive',
+          },
+        },
+        id: 'collection_1',
+        is_enabled: true,
+        slug: 'artworks',
+        title: 'Artworks',
+      },
+      {
+        config: {
+          navigation: {
+            title: 'Lore',
+            visible: false,
+          },
+        },
+        id: 'collection_2',
+        is_enabled: true,
+        slug: 'writing',
+        title: 'Writing',
+      },
+    ] as any;
+
+    expect(getEpmCollectionNavigationTitle(collections[0])).toBe('Archive');
+    expect(buildEpmNavigationItems(collections)).toEqual([
+      {
+        collectionId: 'collection_1',
+        href: '/gallery',
+        navigation: {
+          href: '/gallery',
+          title: 'Archive',
+        },
+        slug: 'artworks',
+        title: 'Archive',
+        visible: true,
+      },
+    ]);
   });
 });

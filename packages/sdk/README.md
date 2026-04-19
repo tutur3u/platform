@@ -201,14 +201,27 @@ console.log(loadingData.artworkCategories);
 ### EPM Management
 
 ```typescript
-const summary = await client.epm.getSummary('workspace-id');
+import {
+  buildEpmNavigationItems,
+  getEpmCollectionNavigationTitle,
+} from 'tuturuuu';
+
+const workspaceId = 'workspace-id';
+const summary = await client.epm.getSummary(workspaceId);
 console.log(summary.counts.published);
 
-const entries = await client.epm.listEntries('workspace-id', {
+const studio = await client.epm.getStudio(workspaceId);
+const navItems = buildEpmNavigationItems(studio.collections);
+console.log(navItems.map((item) => item.title));
+if (studio.collections[0]) {
+  console.log(getEpmCollectionNavigationTitle(studio.collections[0]));
+}
+
+const entries = await client.epm.listEntries(workspaceId, {
   collectionId: 'collection-id'
 });
 
-const draft = await client.epm.createEntry('workspace-id', {
+const draft = await client.epm.createEntry(workspaceId, {
   collection_id: 'collection-id',
   metadata: {},
   profile_data: {},
@@ -217,12 +230,32 @@ const draft = await client.epm.createEntry('workspace-id', {
   title: 'Launch Asset'
 });
 
-await client.epm.bulkUpdateEntries('workspace-id', {
+await client.epm.bulkUpdateEntries(workspaceId, {
   action: 'schedule',
   entryIds: [draft.id],
   scheduledFor: '2026-04-20T09:00:00.000Z'
 });
+
+await client.epm.updateCollection(workspaceId, 'collection-id', {
+  config: {
+    navigation: {
+      href: '/gallery',
+      title: 'Archive'
+    }
+  }
+});
+
+await client.epm.updateAsset(workspaceId, 'asset-id', {
+  metadata: {
+    caption: 'Low-angle scene study built around pressure and steel.'
+  }
+});
+
+await client.epm.deleteAsset(workspaceId, 'asset-id');
+await client.epm.deleteEntry(workspaceId, draft.id);
 ```
+
+For Yoola-style integrations, set `collection.config.navigation.title` from EPM to drive external navigation labels while keeping the collection title available for operator-facing admin surfaces. `buildEpmNavigationItems(...)` returns enabled collections with the resolved navigation title plus any configured `href`/visibility hints.
 
 ### Document Operations
 
