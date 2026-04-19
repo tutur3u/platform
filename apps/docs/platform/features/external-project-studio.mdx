@@ -63,6 +63,8 @@ The EPM surfaces now follow two distinct workflows:
 - Mutations on the dedicated detail pages should patch or invalidate that shared studio query instead of calling `router.refresh()`.
 - When the main `/epm` shell opens the fullscreen entry editor dialog, keep it on the same shared studio query cache so open/close transitions feel instant and do not need route refreshes.
 - Cover uploads and replacements reuse the existing workspace asset signed-upload helper; no separate cover-specific backend endpoint is needed.
+- Optimize image uploads on the client before requesting the signed upload PUT so gallery and cover assets stay lighter without requiring a separate media-processing job.
+- For EPM image surfaces, keep `asset_url` as the original asset route and use `preview_url` for a transformed Supabase variant (for example constrained width/height plus quality). The gallery and editor should prefer `preview_url` first so the workspace ships smaller images by default.
 - When EPM surfaces render internal asset API URLs such as `/api/v1/workspaces/:wsId/external-projects/assets/:assetId`, bypass the Next.js image optimizer (`unoptimized`) instead of routing them through `/_next/image`. Protected or signed internal asset routes can return optimizer-side `400` responses even though the direct asset URL is valid.
 - The workspace route is now `/{wsId}/epm`, with `/{wsId}/external-projects` redirecting to it for backward compatibility.
 - The main `/epm` page is now an index plus mode shell, not a hybrid inline editor.

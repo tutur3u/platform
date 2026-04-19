@@ -14,11 +14,13 @@ const {
   routerRefreshMock,
   updateWorkspaceExternalProjectAssetMock,
   updateWorkspaceExternalProjectEntryMock,
+  optimizeEpmMediaUploadMock,
   uploadWorkspaceExternalProjectAssetFileMock,
 } = vi.hoisted(() => ({
   createWorkspaceExternalProjectAssetMock: vi.fn(),
   deleteWorkspaceExternalProjectEntryMock: vi.fn(),
   duplicateWorkspaceExternalProjectEntryMock: vi.fn(),
+  optimizeEpmMediaUploadMock: vi.fn(),
   publishWorkspaceExternalProjectEntryMock: vi.fn(),
   routerPushMock: vi.fn(),
   routerRefreshMock: vi.fn(),
@@ -59,6 +61,12 @@ vi.mock('next/image', () => ({
   default: ({ alt }: { alt?: string }) => <span>{alt}</span>,
 }));
 
+vi.mock('../../epm-media-upload', () => ({
+  optimizeEpmMediaUpload: (
+    ...args: Parameters<typeof optimizeEpmMediaUploadMock>
+  ) => optimizeEpmMediaUploadMock(...args),
+}));
+
 describe('EntryDetailClient', () => {
   let queryClient: QueryClient;
 
@@ -78,6 +86,7 @@ describe('EntryDetailClient', () => {
       },
     });
     vi.clearAllMocks();
+    optimizeEpmMediaUploadMock.mockImplementation(async (file: File) => file);
 
     updateWorkspaceExternalProjectEntryMock.mockResolvedValue({
       collection_id: 'collection-1',
@@ -226,6 +235,7 @@ describe('EntryDetailClient', () => {
     });
 
     await waitFor(() => {
+      expect(optimizeEpmMediaUploadMock).toHaveBeenCalledWith(expect.any(File));
       expect(uploadWorkspaceExternalProjectAssetFileMock).toHaveBeenCalledWith(
         'ws_123',
         expect.any(File),

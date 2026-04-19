@@ -1,6 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { Json } from '@tuturuuu/types';
+import { imageTransformOptionsSchema, type Json } from '@tuturuuu/types';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -32,6 +32,35 @@ const updateAssetSchema = z.object({
   storage_path: z.string().max(1024).nullable().optional(),
 });
 
+const assetTransformQuerySchema = z
+  .object({
+    width: z.coerce.number().int().min(1).max(2500).finite().optional(),
+    height: z.coerce.number().int().min(1).max(2500).finite().optional(),
+    resize: z.enum(['cover', 'contain', 'fill']).optional(),
+    quality: z.coerce.number().int().min(20).max(100).finite().optional(),
+    format: z.literal('origin').optional(),
+  })
+  .transform((value) => {
+    const hasTransform =
+      value.width !== undefined ||
+      value.height !== undefined ||
+      value.resize !== undefined ||
+      value.quality !== undefined ||
+      value.format !== undefined;
+
+    if (!hasTransform) {
+      return undefined;
+    }
+
+    return imageTransformOptionsSchema.parse({
+      format: value.format,
+      height: value.height,
+      quality: value.quality,
+      resize: value.resize,
+      width: value.width,
+    });
+  });
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ assetId: string; wsId: string }> }
@@ -41,6 +70,9 @@ export async function GET(
   const resolvedWsId = resolveWorkspaceId(wsId);
 
   try {
+    const transform = assetTransformQuerySchema.parse(
+      Object.fromEntries(new URL(request.url).searchParams.entries())
+    );
     const binding = await resolveWorkspaceExternalProjectBinding(
       resolvedWsId,
       admin
@@ -94,7 +126,9 @@ export async function GET(
 
     const { data: signed, error: signedError } = await admin.storage
       .from('workspaces')
-      .createSignedUrl(`${resolvedWsId}/${asset.storage_path}`, 60 * 60);
+      .createSignedUrl(`${resolvedWsId}/${asset.storage_path}`, 60 * 60, {
+        transform: transform as never,
+      });
 
     if (isStorageObjectMissing(signedError?.message)) {
       return NextResponse.json(
@@ -112,6 +146,13 @@ export async function GET(
 
     return NextResponse.redirect(signed.signedUrl, { status: 307 });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid transform query', details: error.flatten() },
+        { status: 400 }
+      );
+    }
+
     console.error('Failed to resolve external project asset', error);
     return NextResponse.json(
       { error: 'Failed to resolve external project asset' },

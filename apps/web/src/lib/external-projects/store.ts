@@ -13,6 +13,7 @@ import type {
   ExternalProjectLoadingData,
   ExternalProjectStudioData,
   ExternalProjectSummary,
+  ImageTransformOptions,
   Json,
   WorkspaceExternalProjectBinding,
   YoolaExternalProjectArtworkLoadingItem,
@@ -86,14 +87,48 @@ function buildDeliveryAssetUrl(
   asset: {
     id: string;
     source_url: string | null;
+  },
+  options?: {
+    transform?: ImageTransformOptions;
   }
 ) {
   if (asset.source_url) {
     return asset.source_url;
   }
 
-  return `/api/v1/workspaces/${workspaceId}/external-projects/assets/${asset.id}`;
+  const searchParams = new URLSearchParams();
+
+  if (options?.transform?.width !== undefined) {
+    searchParams.set('width', options.transform.width.toString());
+  }
+
+  if (options?.transform?.height !== undefined) {
+    searchParams.set('height', options.transform.height.toString());
+  }
+
+  if (options?.transform?.resize) {
+    searchParams.set('resize', options.transform.resize);
+  }
+
+  if (options?.transform?.quality !== undefined) {
+    searchParams.set('quality', options.transform.quality.toString());
+  }
+
+  if (options?.transform?.format) {
+    searchParams.set('format', options.transform.format);
+  }
+
+  const queryString = searchParams.toString();
+
+  return `/api/v1/workspaces/${workspaceId}/external-projects/assets/${asset.id}${queryString ? `?${queryString}` : ''}`;
 }
+
+const EPM_IMAGE_PREVIEW_TRANSFORM = {
+  width: 1600,
+  height: 1600,
+  quality: 82,
+  resize: 'cover',
+} satisfies ImageTransformOptions;
 
 function buildYoolaLoadingData(
   collections: ExternalProjectDeliveryCollection[]
@@ -390,11 +425,17 @@ export async function getWorkspaceExternalProjectStudioData(
   ]);
   const assets = rawAssets.map((asset) => {
     const assetUrl = buildDeliveryAssetUrl(workspaceId, asset);
+    const previewUrl =
+      asset.asset_type === 'image'
+        ? buildDeliveryAssetUrl(workspaceId, asset, {
+            transform: EPM_IMAGE_PREVIEW_TRANSFORM,
+          })
+        : assetUrl;
 
     return {
       ...asset,
       asset_url: assetUrl,
-      preview_url: assetUrl,
+      preview_url: previewUrl,
     };
   });
   const collectionsPayload: ExternalProjectDeliveryCollection[] =

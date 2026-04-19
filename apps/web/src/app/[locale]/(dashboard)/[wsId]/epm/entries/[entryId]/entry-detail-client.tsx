@@ -74,6 +74,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useExternalProjectLivePreview } from '../../../external-projects/use-external-project-live-preview';
+import { optimizeEpmMediaUpload } from '../../epm-media-upload';
 import type { EpmStrings } from '../../epm-strings';
 import { ResilientMediaImage } from '../../resilient-media-image';
 import { getEpmStudioQueryKey, useEpmStudio } from '../../use-epm-studio';
@@ -366,9 +367,11 @@ export function EntryDetailClient({
         throw new Error(strings.emptyCollection);
       }
 
+      const optimizedFile = await optimizeEpmMediaUpload(file);
+
       const upload = await uploadWorkspaceExternalProjectAssetFile(
         workspaceId,
-        file,
+        optimizedFile,
         {
           collectionType: activeCollection.collection_type,
           entrySlug: entryForm?.slug.trim() || activeEntry?.slug || 'entry',
@@ -411,9 +414,10 @@ export function EntryDetailClient({
 
       return Promise.all(
         files.map(async (file, index) => {
+          const optimizedFile = await optimizeEpmMediaUpload(file);
           const upload = await uploadWorkspaceExternalProjectAssetFile(
             workspaceId,
-            file,
+            optimizedFile,
             {
               collectionType: activeCollection.collection_type,
               entrySlug: entryForm?.slug.trim() || activeEntry?.slug || 'entry',
