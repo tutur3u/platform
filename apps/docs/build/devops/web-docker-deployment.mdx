@@ -332,6 +332,9 @@ Dashboard details:
   `docker compose ps` cannot inspect the prod stack because of env
   interpolation issues, so watcher metrics can still appear on an already-live
   deployment.
+- Docker stats are read with an explicit field format instead of Docker's
+  version-dependent JSON object shape, which avoids bogus `0` CPU/memory
+  readings when the watcher is running against a different Docker release.
 - Normal promotions keep the long-lived `web-proxy` container and bound port
   stable, which avoids transient listener drops for upstreams such as
   Cloudflare Tunnel that are connected to `:7803`.

@@ -1965,19 +1965,22 @@ function parseDockerIoPair(value) {
 }
 
 function parseDockerStatsLine(line) {
-  const parsed = JSON.parse(line);
-  const cpuPercent = Number.parseFloat(
-    String(parsed.CPUPerc ?? '').replace('%', '')
-  );
-  const memoryUsage = String(parsed.MemUsage ?? '');
-  const [memoryRaw = ''] = memoryUsage.split('/');
-  const { rxBytes, txBytes } = parseDockerIoPair(parsed.NetIO);
+  const [
+    containerId = '',
+    cpuRaw = '',
+    memoryUsage = '',
+    netIo = '',
+    name = '',
+  ] = String(line).split('\t');
+  const cpuPercent = Number.parseFloat(String(cpuRaw).replace('%', ''));
+  const [memoryRaw = ''] = String(memoryUsage).split('/');
+  const { rxBytes, txBytes } = parseDockerIoPair(netIo);
 
   return {
-    containerId: parsed.ID ?? '',
+    containerId: containerId.trim(),
     cpuPercent: Number.isFinite(cpuPercent) ? cpuPercent : null,
     memoryBytes: parseDockerBytes(memoryRaw),
-    name: parsed.Name ?? '',
+    name: name.trim(),
     rxBytes,
     txBytes,
   };
@@ -2029,7 +2032,7 @@ async function collectDockerResources(
         'stats',
         '--no-stream',
         '--format',
-        '{{json .}}',
+        '{{.ID}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.Name}}',
         ...containers.map((container) => container.containerId),
       ],
       {
@@ -2059,10 +2062,10 @@ async function collectDockerResources(
 
         return {
           ...container,
-          cpuPercent: stats.cpuPercent ?? 0,
-          memoryBytes: stats.memoryBytes ?? 0,
-          rxBytes: stats.rxBytes ?? 0,
-          txBytes: stats.txBytes ?? 0,
+          cpuPercent: stats.cpuPercent,
+          memoryBytes: stats.memoryBytes,
+          rxBytes: stats.rxBytes,
+          txBytes: stats.txBytes,
         };
       })
       .filter(Boolean);
@@ -2071,19 +2074,25 @@ async function collectDockerResources(
       containers: resourceContainers,
       state: 'live',
       totalCpuPercent: resourceContainers.reduce(
-        (sum, container) => sum + (container.cpuPercent ?? 0),
+        (sum, container) =>
+          sum +
+          (Number.isFinite(container.cpuPercent) ? container.cpuPercent : 0),
         0
       ),
       totalMemoryBytes: resourceContainers.reduce(
-        (sum, container) => sum + (container.memoryBytes ?? 0),
+        (sum, container) =>
+          sum +
+          (Number.isFinite(container.memoryBytes) ? container.memoryBytes : 0),
         0
       ),
       totalRxBytes: resourceContainers.reduce(
-        (sum, container) => sum + (container.rxBytes ?? 0),
+        (sum, container) =>
+          sum + (Number.isFinite(container.rxBytes) ? container.rxBytes : 0),
         0
       ),
       totalTxBytes: resourceContainers.reduce(
-        (sum, container) => sum + (container.txBytes ?? 0),
+        (sum, container) =>
+          sum + (Number.isFinite(container.txBytes) ? container.txBytes : 0),
         0
       ),
     };

@@ -1127,31 +1127,13 @@ test('resolveCurrentBlueGreenStatus reflects the active color and running servic
 
         if (
           key ===
-          'docker stats --no-stream --format {{json .}} proxy-123 blue-123 green-123'
+          'docker stats --no-stream --format {{.ID}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.Name}} proxy-123 blue-123 green-123'
         ) {
           return createResult(
             [
-              JSON.stringify({
-                CPUPerc: '0.10%',
-                ID: 'proxy-123',
-                MemUsage: '24.0MiB / 31.1GiB',
-                Name: 'platform-web-proxy-1',
-                NetIO: '2.00MB / 3.00MB',
-              }),
-              JSON.stringify({
-                CPUPerc: '1.20%',
-                ID: 'blue-123',
-                MemUsage: '150MiB / 31.1GiB',
-                Name: 'platform-web-blue-1',
-                NetIO: '6.00MB / 4.00MB',
-              }),
-              JSON.stringify({
-                CPUPerc: '3.40%',
-                ID: 'green-123',
-                MemUsage: '420MiB / 31.1GiB',
-                Name: 'platform-web-green-1',
-                NetIO: '10.0MB / 8.00MB',
-              }),
+              'proxy-123\t0.10%\t24.0MiB / 31.1GiB\t2.00MB / 3.00MB\tplatform-web-proxy-1',
+              'blue-123\t1.20%\t150MiB / 31.1GiB\t6.00MB / 4.00MB\tplatform-web-blue-1',
+              'green-123\t3.40%\t420MiB / 31.1GiB\t10.0MB / 8.00MB\tplatform-web-green-1',
             ].join('\n')
           );
         }
@@ -1341,30 +1323,12 @@ test('loadRuntimeSnapshot keeps both live colors marked active in deployment car
           [prodComposePsKey('web-green'), createResult('green-123\n')],
           [prodComposePsKey('web-blue'), createResult('blue-123\n')],
           [
-            'docker stats --no-stream --format {{json .}} proxy-123 blue-123 green-123',
+            'docker stats --no-stream --format {{.ID}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.Name}} proxy-123 blue-123 green-123',
             createResult(
               [
-                JSON.stringify({
-                  CPUPerc: '0.10%',
-                  ID: 'proxy-123',
-                  MemUsage: '24.0MiB / 31.1GiB',
-                  Name: 'platform-web-proxy-1',
-                  NetIO: '2.00MB / 3.00MB',
-                }),
-                JSON.stringify({
-                  CPUPerc: '1.20%',
-                  ID: 'blue-123',
-                  MemUsage: '150MiB / 31.1GiB',
-                  Name: 'platform-web-blue-1',
-                  NetIO: '6.00MB / 4.00MB',
-                }),
-                JSON.stringify({
-                  CPUPerc: '3.40%',
-                  ID: 'green-123',
-                  MemUsage: '420MiB / 31.1GiB',
-                  Name: 'platform-web-green-1',
-                  NetIO: '10.0MB / 8.00MB',
-                }),
+                'proxy-123\t0.10%\t24.0MiB / 31.1GiB\t2.00MB / 3.00MB\tplatform-web-proxy-1',
+                'blue-123\t1.20%\t150MiB / 31.1GiB\t6.00MB / 4.00MB\tplatform-web-blue-1',
+                'green-123\t3.40%\t420MiB / 31.1GiB\t10.0MB / 8.00MB\tplatform-web-green-1',
               ].join('\n')
             ),
           ],
