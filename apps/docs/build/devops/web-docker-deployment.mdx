@@ -45,7 +45,7 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 | `--build-builder-name platform-web-capped-builder` | Override the throttled Buildx builder name |
 | `--resume-if-running` | If another watcher PID already holds the lock, mirror its live dashboard instead of failing |
 | `--replace-existing` | If another watcher PID already holds the lock, stop it and take over |
-| `--if-locked <fail|resume|replace>` | Explicit lock-conflict policy for the watcher |
+| `--if-locked &lt;fail|resume|replace&gt;` | Explicit lock-conflict policy for the watcher |
 
 | Command | Implicit flags |
 | --- | --- |
@@ -271,7 +271,7 @@ The helper persists the generated token in:
 and injects these values into `apps/web` automatically:
 
 - `UPSTASH_REDIS_REST_URL=http://serverless-redis-http:80`
-- `UPSTASH_REDIS_REST_TOKEN=<generated local token>`
+- `UPSTASH_REDIS_REST_TOKEN=&lt;generated local token&gt;`
 
 If you intentionally want the memory-only fallback, opt out:
 
