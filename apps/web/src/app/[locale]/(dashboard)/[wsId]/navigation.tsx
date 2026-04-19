@@ -501,8 +501,12 @@ export async function WorkspaceNavigationLinks({
     externalProjectBinding.enabled
       ? {
           title: t('sidebar_tabs.external_projects'),
-          href: `/${personalOrWsId}/external-projects`,
+          href: `/${personalOrWsId}/epm`,
           icon: <BriefcaseBusiness className="h-5 w-5" />,
+          aliases: [
+            `/${personalOrWsId}/epm`,
+            `/${personalOrWsId}/external-projects`,
+          ],
           disabled: ENABLE_AI_ONLY || !canAccessExternalProjects,
         }
       : null,

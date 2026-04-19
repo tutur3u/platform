@@ -2,12 +2,17 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   CanonicalExternalProject,
+  ExternalProjectAttentionItem,
+  ExternalProjectBulkUpdatePayload,
+  ExternalProjectCollection,
   ExternalProjectDeliveryCollection,
   ExternalProjectDeliveryPayload,
   ExternalProjectEntry,
+  ExternalProjectEntryStatus,
   ExternalProjectImportReport,
   ExternalProjectLoadingData,
   ExternalProjectStudioData,
+  ExternalProjectSummary,
   Json,
   WorkspaceExternalProjectBinding,
   YoolaExternalProjectArtworkLoadingItem,
@@ -40,6 +45,25 @@ function asStringArray(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === 'string')
     : [];
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function formatAttentionDate(value: string | null) {
+  if (!value) {
+    return 'No schedule';
+  }
+
+  return new Date(value).toLocaleString('en-US', {
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    month: 'short',
+  });
 }
 
 function findMarkdownBlockMarkdown(entry: {
@@ -412,6 +436,192 @@ export async function getWorkspaceExternalProjectStudioData(
   };
 }
 
+function buildExternalProjectAttentionItem(
+  entry: ExternalProjectEntry,
+  collection: ExternalProjectCollection | null,
+  detail: string,
+  kind: ExternalProjectAttentionItem['kind']
+): ExternalProjectAttentionItem {
+  return {
+    collectionId: entry.collection_id,
+    collectionTitle: collection?.title ?? 'Unknown collection',
+    detail,
+    entryId: entry.id,
+    kind,
+    scheduledFor: entry.scheduled_for ?? null,
+    slug: entry.slug,
+    status: entry.status,
+    summary: entry.summary,
+    title: entry.title,
+  };
+}
+
+function buildExternalProjectSummary({
+  adapter,
+  canonicalProjectId,
+  studio,
+  workspaceId,
+}: {
+  adapter: WorkspaceExternalProjectBinding['adapter'];
+  canonicalProjectId: string | null;
+  studio: ExternalProjectStudioData;
+  workspaceId: string;
+}): ExternalProjectSummary {
+  const collectionById = new Map(
+    studio.collections.map((collection) => [collection.id, collection])
+  );
+  const now = new Date();
+  const scheduledCutoff = addDays(now, 7);
+  const latestImport = studio.importJobs[0]?.created_at ?? null;
+
+  const counts = {
+    archived: studio.entries.filter((entry) => entry.status === 'archived')
+      .length,
+    collections: studio.collections.length,
+    drafts: studio.entries.filter((entry) => entry.status === 'draft').length,
+    entries: studio.entries.length,
+    published: studio.entries.filter((entry) => entry.status === 'published')
+      .length,
+    scheduled: studio.entries.filter((entry) => entry.status === 'scheduled')
+      .length,
+  };
+
+  const collections = studio.collections.map((collection) => {
+    const collectionEntries = studio.entries.filter(
+      (entry) => entry.collection_id === collection.id
+    );
+
+    return {
+      archivedEntries: collectionEntries.filter(
+        (entry) => entry.status === 'archived'
+      ).length,
+      draftEntries: collectionEntries.filter(
+        (entry) => entry.status === 'draft'
+      ).length,
+      id: collection.id,
+      isEnabled: collection.is_enabled,
+      publishedEntries: collectionEntries.filter(
+        (entry) => entry.status === 'published'
+      ).length,
+      scheduledEntries: collectionEntries.filter(
+        (entry) => entry.status === 'scheduled'
+      ).length,
+      slug: collection.slug,
+      title: collection.title,
+      totalEntries: collectionEntries.length,
+    };
+  });
+
+  const scheduledSoon = studio.entries
+    .filter(
+      (entry) =>
+        entry.status === 'scheduled' &&
+        entry.scheduled_for &&
+        new Date(entry.scheduled_for) <= scheduledCutoff
+    )
+    .sort((a, b) =>
+      (a.scheduled_for ?? '').localeCompare(b.scheduled_for ?? '')
+    )
+    .slice(0, 6)
+    .map((entry) =>
+      buildExternalProjectAttentionItem(
+        entry,
+        collectionById.get(entry.collection_id) ?? null,
+        `Scheduled for ${formatAttentionDate(entry.scheduled_for ?? null)}`,
+        'scheduled_soon'
+      )
+    );
+
+  const draftsMissingMedia = studio.entries
+    .filter((entry) => entry.status !== 'archived')
+    .filter(
+      (entry) =>
+        !studio.assets.some(
+          (asset) => asset.entry_id === entry.id && asset.asset_type === 'image'
+        )
+    )
+    .slice(0, 6)
+    .map((entry) =>
+      buildExternalProjectAttentionItem(
+        entry,
+        collectionById.get(entry.collection_id) ?? null,
+        'Missing a primary image asset',
+        'missing_media'
+      )
+    );
+
+  const recentlyImportedUnpublished = studio.entries
+    .filter((entry) => entry.status !== 'published')
+    .filter((entry) => {
+      if (!latestImport) {
+        return false;
+      }
+
+      return new Date(entry.created_at) >= new Date(latestImport);
+    })
+    .slice(0, 6)
+    .map((entry) =>
+      buildExternalProjectAttentionItem(
+        entry,
+        collectionById.get(entry.collection_id) ?? null,
+        'Imported recently but still not published',
+        'recently_imported_unpublished'
+      )
+    );
+
+  const archivedBacklog = studio.entries
+    .filter((entry) => entry.status === 'archived')
+    .slice(0, 6)
+    .map((entry) =>
+      buildExternalProjectAttentionItem(
+        entry,
+        collectionById.get(entry.collection_id) ?? null,
+        'Archived and available for recovery or cleanup',
+        'archived_backlog'
+      )
+    );
+
+  return {
+    adapter,
+    canonicalProjectId,
+    collections,
+    counts,
+    queues: {
+      archivedBacklog,
+      draftsMissingMedia,
+      recentlyImportedUnpublished,
+      scheduledSoon,
+    },
+    recentActivity: {
+      importJobs: studio.importJobs.slice(0, 5),
+      publishEvents: studio.publishEvents.slice(0, 5),
+    },
+    workspaceId,
+  };
+}
+
+export async function getWorkspaceExternalProjectSummary(
+  {
+    adapter,
+    canonicalProjectId,
+    workspaceId,
+  }: {
+    adapter: WorkspaceExternalProjectBinding['adapter'];
+    canonicalProjectId: string | null;
+    workspaceId: string;
+  },
+  db?: AdminDb
+): Promise<ExternalProjectSummary> {
+  const studio = await getWorkspaceExternalProjectStudioData(workspaceId, db);
+
+  return buildExternalProjectSummary({
+    adapter,
+    canonicalProjectId,
+    studio,
+    workspaceId,
+  });
+}
+
 export async function createCanonicalExternalProject(
   payload: {
     adapter: CanonicalExternalProject['adapter'];
@@ -682,6 +892,251 @@ export async function updateWorkspaceExternalProjectEntry(
   }
 
   return data;
+}
+
+async function buildDuplicateEntrySlug(
+  admin: AdminDb,
+  workspaceId: string,
+  seed: string
+) {
+  const normalizedSeed = `${seed}-copy`
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 96);
+
+  const { data, error } = await admin
+    .from('workspace_external_project_entries')
+    .select('slug')
+    .eq('ws_id', workspaceId)
+    .ilike('slug', `${normalizedSeed}%`);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const existing = new Set((data ?? []).map((entry) => entry.slug));
+  if (!existing.has(normalizedSeed)) {
+    return normalizedSeed;
+  }
+
+  let suffix = 2;
+  while (existing.has(`${normalizedSeed}-${suffix}`)) {
+    suffix += 1;
+  }
+
+  return `${normalizedSeed}-${suffix}`;
+}
+
+export async function duplicateWorkspaceExternalProjectEntry(
+  {
+    actorId,
+    entryId,
+    workspaceId,
+  }: {
+    actorId: string;
+    entryId: string;
+    workspaceId: string;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const { data: sourceEntry, error: sourceEntryError } = await admin
+    .from('workspace_external_project_entries')
+    .select('*')
+    .eq('id', entryId)
+    .eq('ws_id', workspaceId)
+    .single();
+
+  if (sourceEntryError) {
+    throw new Error(sourceEntryError.message);
+  }
+
+  const nextSlug = await buildDuplicateEntrySlug(
+    admin,
+    workspaceId,
+    sourceEntry.slug
+  );
+
+  const { data: duplicatedEntry, error: duplicateError } = await admin
+    .from('workspace_external_project_entries')
+    .insert({
+      collection_id: sourceEntry.collection_id,
+      created_by: actorId,
+      metadata: sourceEntry.metadata,
+      profile_data: sourceEntry.profile_data,
+      published_at: null,
+      scheduled_for: null,
+      slug: nextSlug,
+      status: 'draft',
+      subtitle: sourceEntry.subtitle,
+      summary: sourceEntry.summary,
+      title: `${sourceEntry.title} Copy`,
+      updated_by: actorId,
+      ws_id: workspaceId,
+    })
+    .select('*')
+    .single();
+
+  if (duplicateError) {
+    throw new Error(duplicateError.message);
+  }
+
+  const [sourceBlocks, sourceAssets] = await Promise.all([
+    listWorkspaceExternalProjectBlocksByEntryIds(workspaceId, [entryId], admin),
+    listWorkspaceExternalProjectAssetsByEntryIds(workspaceId, [entryId], admin),
+  ]);
+
+  const blockIdMap = new Map<string, string>();
+  if (sourceBlocks.length > 0) {
+    const { data: duplicatedBlocks, error: blockError } = await admin
+      .from('workspace_external_project_blocks')
+      .insert(
+        sourceBlocks.map((block) => ({
+          block_type: block.block_type,
+          content: block.content,
+          created_by: actorId,
+          entry_id: duplicatedEntry.id,
+          sort_order: block.sort_order,
+          title: block.title,
+          updated_by: actorId,
+          ws_id: workspaceId,
+        }))
+      )
+      .select('*');
+
+    if (blockError) {
+      throw new Error(blockError.message);
+    }
+
+    for (const [index, block] of sourceBlocks.entries()) {
+      const duplicatedBlock = duplicatedBlocks?.[index];
+      if (duplicatedBlock) {
+        blockIdMap.set(block.id, duplicatedBlock.id);
+      }
+    }
+  }
+
+  if (sourceAssets.length > 0) {
+    const { error: assetError } = await admin
+      .from('workspace_external_project_assets')
+      .insert(
+        sourceAssets.map((asset) => ({
+          alt_text: asset.alt_text,
+          asset_type: asset.asset_type,
+          block_id: asset.block_id
+            ? (blockIdMap.get(asset.block_id) ?? null)
+            : null,
+          created_by: actorId,
+          entry_id: duplicatedEntry.id,
+          metadata: asset.metadata,
+          sort_order: asset.sort_order,
+          source_url: asset.source_url,
+          storage_path: asset.storage_path,
+          updated_by: actorId,
+          ws_id: workspaceId,
+        }))
+      );
+
+    if (assetError) {
+      throw new Error(assetError.message);
+    }
+  }
+
+  return duplicatedEntry;
+}
+
+export async function bulkUpdateWorkspaceExternalProjectEntries(
+  {
+    actorId,
+    binding,
+    payload,
+    workspaceId,
+  }: {
+    actorId: string;
+    binding: WorkspaceExternalProjectBinding;
+    payload: ExternalProjectBulkUpdatePayload;
+    workspaceId: string;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const entryIds = Array.from(new Set(payload.entryIds));
+
+  if (entryIds.length === 0) {
+    return [];
+  }
+
+  if (payload.action === 'publish' || payload.action === 'unpublish') {
+    return Promise.all(
+      entryIds.map((entryId) =>
+        publishWorkspaceExternalProjectEntry(
+          {
+            actorId,
+            binding,
+            entryId,
+            eventKind: payload.action === 'publish' ? 'publish' : 'unpublish',
+            visibilityScope:
+              payload.action === 'publish' ? 'public' : 'preview',
+            workspaceId,
+          },
+          admin
+        )
+      )
+    );
+  }
+
+  let nextStatus: ExternalProjectEntryStatus;
+  let scheduledFor: string | null | undefined;
+  let publishedAt: string | null | undefined;
+
+  switch (payload.action) {
+    case 'archive':
+      nextStatus = 'archived';
+      scheduledFor = null;
+      publishedAt = null;
+      break;
+    case 'restore-draft':
+      nextStatus = 'draft';
+      scheduledFor = null;
+      publishedAt = null;
+      break;
+    case 'schedule':
+      nextStatus = 'scheduled';
+      scheduledFor = payload.scheduledFor ?? null;
+      publishedAt = null;
+      break;
+    case 'set-status':
+      nextStatus = payload.status ?? 'draft';
+      scheduledFor =
+        nextStatus === 'scheduled' ? (payload.scheduledFor ?? null) : null;
+      publishedAt =
+        nextStatus === 'published' ? new Date().toISOString() : null;
+      break;
+    default:
+      nextStatus = 'draft';
+      scheduledFor = null;
+      publishedAt = null;
+  }
+
+  const { data, error } = await admin
+    .from('workspace_external_project_entries')
+    .update({
+      published_at: publishedAt,
+      scheduled_for: scheduledFor,
+      status: nextStatus,
+      updated_by: actorId,
+    })
+    .eq('ws_id', workspaceId)
+    .in('id', entryIds)
+    .select('*');
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data ?? [];
 }
 
 type UpsertAssetPayload = {

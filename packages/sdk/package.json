@@ -51,10 +51,18 @@
       "import": "./dist/external-projects.js",
       "require": "./dist/external-projects.js",
       "default": "./dist/external-projects.js"
+    },
+    "./epm": {
+      "types": "./src/epm.ts",
+      "bun": "./src/epm.ts",
+      "import": "./dist/epm.js",
+      "require": "./dist/epm.js",
+      "default": "./dist/epm.js"
     }
   },
   "files": [
     "dist",
+    "src/epm.ts",
     "src/external-projects.ts",
     "src/index.ts",
     "src/storage.ts",

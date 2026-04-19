@@ -44,7 +44,8 @@ const doc = await client.documents.create({
 - ✅ **Signed URLs** - Generate temporary shareable links for files
 - ✅ **Image Resizing** - Request Supabase-powered image transforms on share/download
 - ✅ **Storage Analytics** - Track usage, file counts, and limits
-- ✅ **External Project Delivery** - Load normalized external-project payloads and adapter-specific loading data
+- ✅ **EPM Delivery** - Load normalized external-project payloads and adapter-specific loading data
+- ✅ **EPM Management** - Manage collections, entries, workflow queues, imports, duplication, and preview with API keys
 - ✅ **Type-Safe** - Full TypeScript support with type inference
 - ✅ **Error Handling** - Comprehensive error classes for all scenarios
 - ✅ **Validation** - Built-in input validation with Zod schemas
@@ -183,7 +184,7 @@ console.log(`Files: ${analytics.data.fileCount}`);
 console.log(`Usage: ${analytics.data.usagePercentage}%`);
 ```
 
-### External Project Delivery
+### EPM Delivery
 
 ```typescript
 const delivery = await client.externalProjects.getDelivery('workspace-id');
@@ -195,6 +196,32 @@ if (delivery.loadingData?.adapter === 'yoola') {
 const loadingData =
   await client.externalProjects.getYoolaLoadingData('workspace-id');
 console.log(loadingData.artworkCategories);
+```
+
+### EPM Management
+
+```typescript
+const summary = await client.epm.getSummary('workspace-id');
+console.log(summary.counts.published);
+
+const entries = await client.epm.listEntries('workspace-id', {
+  collectionId: 'collection-id'
+});
+
+const draft = await client.epm.createEntry('workspace-id', {
+  collection_id: 'collection-id',
+  metadata: {},
+  profile_data: {},
+  slug: 'launch-asset',
+  status: 'draft',
+  title: 'Launch Asset'
+});
+
+await client.epm.bulkUpdateEntries('workspace-id', {
+  action: 'schedule',
+  entryIds: [draft.id],
+  scheduledFor: '2026-04-20T09:00:00.000Z'
+});
 ```
 
 ### Document Operations
@@ -247,7 +274,7 @@ await client.documents.delete('document-id-123');
 const results = await client.documents.search('meeting notes');
 ```
 
-### External Project Delivery
+### EPM Delivery
 
 Load a published external-project payload:
 
@@ -275,6 +302,20 @@ const client = new TuturuuuClient('ttr_your_api_key');
 const previewPayload = await client.externalProjects.getDelivery('workspace-id', {
   preview: true
 });
+```
+
+Manage the workspace-facing EPM surface with the authenticated client:
+
+```typescript
+import { TuturuuuClient } from 'tuturuuu';
+
+const client = new TuturuuuClient('ttr_your_api_key');
+
+const studio = await client.epm.getStudio('workspace-id');
+console.log(studio.collections.length);
+
+const duplicate = await client.epm.duplicateEntry('workspace-id', 'entry-id');
+await client.epm.publishEntry('workspace-id', duplicate.id, 'publish');
 ```
 
 ## Error Handling

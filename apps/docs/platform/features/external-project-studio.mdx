@@ -1,15 +1,15 @@
 ---
-title: 'External Project Studio'
-description: 'Control-tower and split-view authoring workflows for canonical external projects and workspace-bound content.'
-updatedAt: '2026-04-18'
+title: 'EPM'
+description: 'External Project Management workflows for canonical external projects and workspace-bound content.'
+updatedAt: '2026-04-19'
 ---
 
 ## TL;DR
 
-The external-projects surfaces now follow two distinct workflows:
+The EPM surfaces now follow two distinct workflows:
 
 - The **root workspace** owns the canonical registry and workspace bindings through a searchable control tower.
-- Each **bound workspace** edits content in a split-view studio with a content rail, focused editor, and live preview.
+- Each **bound workspace** uses **EPM (External Project Management)** as a view-first operator dashboard with tabs, compact queues, explicit edit dialogs, and on-demand preview.
 
 ## Root Control Tower
 
@@ -20,27 +20,28 @@ The external-projects surfaces now follow two distinct workflows:
   - bind or unbind a destination workspace
 - Recent binding audits stay below the registry so operational changes remain visible after edits.
 
-## Workspace Studio
+## Workspace EPM
 
-- The left rail is the primary navigation surface for collections, filters, and record selection.
-- The center column keeps collection settings inline and uses a compact active-item summary instead of forcing every edit into the page body.
-  Secondary explanations belong in tooltips on actions and controls, not as permanently visible helper text on every card.
-- Each selected item opens in a near-fullscreen editor dialog.
-  - Use the rail cards to jump directly into item editing.
-  - New draft items should open into the same editor immediately after creation so admins can stay in one flow.
-- Keep rail cards visually dense.
-  Use small thumbnails, tight metadata chips, and 2-3 line excerpts rather than large preview tiles that push the list below the fold.
-- Live preview is on demand instead of permanently visible.
+- Use tabs to separate `Overview`, `Content`, `Workflow`, `Activity`, and `Settings`.
+- Keep the default page view-first.
+  - Summary cards should be readable without opening an editor.
+  - Metadata and profile payloads should stay collapsed until requested.
+  - Editing should open through explicit icon or button affordances.
+- Treat the `Workflow` tab as the operator queue.
+  - Multi-select lives there, not across every content surface.
+  - Schedule, publish, draft, and archive actions should be available without reopening each record.
+- Live preview is still on demand.
   - Open it from the sticky action bar when you need a rendered or payload check.
-  - **Rendered** reflects the current draft immediately in the UI.
-  - **Payload** fetches the real preview delivery response from `GET /api/v1/workspaces/:wsId/external-projects/delivery?preview=true`.
-- Import, save, publish, and unpublish actions stay explicit in the sticky action bar. There is no autosave.
+  - **Rendered** should stay lightweight and selection-aware.
+  - **Payload** should keep reading from `GET /api/v1/workspaces/:wsId/external-projects/delivery?preview=true`.
+- Import, create, duplicate, save, publish, and unpublish actions stay explicit. There is no autosave.
 
 ## Implementation Notes
 
 - The preview source of truth is the existing preview delivery API, not a duplicate client-side payload builder.
 - The workspace studio still uses the existing internal API helpers for entry, block, asset, import, publish, and binding operations.
-- Preview now opens in a sheet so the default workspace stays focused on navigation and editing first.
+- The workspace route is now `/{wsId}/epm`, with `/{wsId}/external-projects` redirecting to it for backward compatibility.
+- Preview still opens in a sheet so the default workspace stays focused on navigation and workflow first.
 
 ## Team Guidance
 

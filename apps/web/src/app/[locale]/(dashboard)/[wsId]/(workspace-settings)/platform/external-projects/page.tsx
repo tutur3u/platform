@@ -18,9 +18,8 @@ import {
 import { RootExternalProjectsAdminClient } from './root-admin-client';
 
 export const metadata: Metadata = {
-  title: 'External Projects',
-  description:
-    'Manage canonical external project definitions and workspace bindings.',
+  title: 'EPM Registry',
+  description: 'Manage canonical EPM definitions and workspace bindings.',
 };
 
 interface Props {

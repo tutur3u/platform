@@ -95,14 +95,17 @@ export {
   updateWorkspaceQuizSet,
 } from './education';
 export {
+  bulkUpdateWorkspaceExternalProjectEntries,
   createCanonicalExternalProject,
   createWorkspaceExternalProjectAsset,
   createWorkspaceExternalProjectAssetUploadUrl,
   createWorkspaceExternalProjectBlock,
   createWorkspaceExternalProjectCollection,
   createWorkspaceExternalProjectEntry,
+  duplicateWorkspaceExternalProjectEntry,
   getWorkspaceExternalProjectDelivery,
   getWorkspaceExternalProjectStudio,
+  getWorkspaceExternalProjectSummary,
   importWorkspaceExternalProjectContent,
   listCanonicalExternalProjects,
   listWorkspaceExternalProjectCollections,
