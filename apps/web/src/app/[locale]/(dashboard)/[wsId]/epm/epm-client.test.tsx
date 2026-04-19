@@ -1,14 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EpmClient } from './epm-client';
+import { buildEpmStrings } from './epm-strings';
 
 const {
   bulkUpdateWorkspaceExternalProjectEntriesMock,
@@ -19,8 +14,6 @@ const {
   publishWorkspaceExternalProjectEntryMock,
   routerPushMock,
   routerRefreshMock,
-  updateWorkspaceExternalProjectCollectionMock,
-  updateWorkspaceExternalProjectEntryMock,
 } = vi.hoisted(() => ({
   bulkUpdateWorkspaceExternalProjectEntriesMock: vi.fn(),
   createWorkspaceExternalProjectEntryMock: vi.fn(),
@@ -30,8 +23,6 @@ const {
   publishWorkspaceExternalProjectEntryMock: vi.fn(),
   routerPushMock: vi.fn(),
   routerRefreshMock: vi.fn(),
-  updateWorkspaceExternalProjectCollectionMock: vi.fn(),
-  updateWorkspaceExternalProjectEntryMock: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/internal-api', () => ({
@@ -45,9 +36,6 @@ vi.mock('@tuturuuu/internal-api', () => ({
     importWorkspaceExternalProjectContentMock,
   publishWorkspaceExternalProjectEntry:
     publishWorkspaceExternalProjectEntryMock,
-  updateWorkspaceExternalProjectCollection:
-    updateWorkspaceExternalProjectCollectionMock,
-  updateWorkspaceExternalProjectEntry: updateWorkspaceExternalProjectEntryMock,
 }));
 
 vi.mock('@tuturuuu/ui/sonner', () => ({
@@ -76,112 +64,88 @@ describe('EpmClient', () => {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
-  const strings = {
-    activityTab: 'Activity',
-    activityFeedTitle: 'Activity feed',
-    archivedQueue: 'Archived backlog',
-    archiveAction: 'Archive',
-    archiveBacklogHint: 'hint',
-    assetGalleryTitle: 'Asset gallery',
-    assetsLabel: 'assets',
-    attentionTitle: 'Attention Queue',
-    backToEpmAction: 'Back to EPM',
-    bulkActionsTitle: 'Workflow Queues',
-    bulkSelectionHint: 'bulk hint',
-    cancelAction: 'Cancel',
-    collectionFallbackLabel: 'Collection',
-    collectionHealthTitle: 'Collection health',
-    collectionsLabel: 'Collections',
-    collectionsMetricLabel: 'Collections',
-    contentTab: 'Content',
-    coverBadge: 'Cover',
-    coverImageDescription: 'Cover description',
-    coverImageTitle: 'Cover image',
-    coverSaveSuccessToast: 'Cover saved',
-    coverUploadSuccessToast: 'Cover uploaded',
-    createEntryAction: 'Quick create',
-    dashboardModeLabel: 'Dashboard mode',
-    dashboardPreferencesTitle: 'Dashboard preferences',
-    densityCompact: 'Compact',
-    densityComfortable: 'Comfortable',
-    densityLabel: 'Density',
-    detailsDescription: 'Detailed editor',
-    detailsTitle: 'Details',
-    draftQueue: 'Draft queue',
-    entryDeckTitle: 'Entry deck',
-    duplicateAction: 'Duplicate',
-    editCollectionAction: 'Edit collection',
-    editCollectionDescription: 'Edit collection description',
-    editEntryAction: 'Edit details',
-    editEntryDescription: 'Edit description',
-    editEntryTitle: 'Entry editor',
-    emptyCollection: 'No collection',
-    emptyEntries: 'No entries',
-    enabledLabel: 'Enabled',
-    entriesMetricLabel: 'Entries',
-    entrySummaryTitle: 'Selected entry',
-    featuredEntryTitle: 'Featured entry',
-    filterAll: 'All',
-    focusOperator: 'Operator',
-    focusVisual: 'Visual',
-    focusWorkflow: 'Workflow',
-    importAction: 'Import',
-    importHint: 'Import hint',
-    loadingPreviewLabel: 'Loading preview payload...',
-    metadataLabel: 'Metadata JSON',
-    missingLeadImageLabel: 'Missing a lead image asset.',
-    noAdapterLabel: 'No adapter',
-    noCanonicalIdLabel: 'No canonical id',
-    noCoverDescription: 'No cover description',
-    noCoverTitle: 'No cover',
-    noneLabel: 'None',
-    notScheduledLabel: 'Not scheduled',
-    openDetailsAction: 'Open details',
-    openPreviewAction: 'Open preview',
-    overviewTab: 'Overview',
-    payloadLabel: 'Payload',
-    previewDescription: 'Preview description',
-    previewTitle: 'On-demand preview',
-    profileDataLabel: 'Profile data JSON',
-    publishedQueue: 'Recently imported, not published',
-    publishAction: 'Publish',
-    quickCreateHint: 'Quick create hint',
-    recentUnpublishedHint: 'Imported recently but still unpublished.',
-    recoveryHint: 'Ready for cleanup or recovery.',
-    refreshAction: 'Refresh workspace',
-    renderedLabel: 'Rendered',
-    saveAction: 'Save',
-    scheduleAction: 'Schedule',
-    scheduledForLabel: 'Scheduled for',
-    scheduledQueue: 'Scheduled soon',
-    searchPlaceholder: 'Search',
-    setAsCoverAction: 'Set as cover',
-    settingsTab: 'Settings',
-    showActivityLabel: 'Show activity',
-    showCollectionsLabel: 'Show collections',
-    showVisualsLabel: 'Show visuals',
-    slugLabel: 'Slug',
-    statusArchived: 'Archived',
-    statusDraft: 'Draft',
-    statusLabel: 'Status',
-    statusPublished: 'Published',
-    statusScheduled: 'Scheduled',
-    subtitleLabel: 'Subtitle',
-    summaryLabel: 'Summary',
-    tabsDescription: 'Description',
-    title: 'EPM',
-    titleLabel: 'Title',
-    unboundLabel: 'Unbound',
-    unknownCollectionLabel: 'Unknown collection',
-    unpublishAction: 'Unpublish',
-    uploadCoverAction: 'Upload cover',
-    visualBoardTitle: 'Visual board',
-    workflowTab: 'Workflow',
-    workspaceBindingLabel: 'Workspace binding',
-    workspaceStatusTitle: 'Workspace status',
-    replaceCoverAction: 'Replace cover',
-    saveCoverAction: 'Save cover',
-  } as const;
+  const strings = buildEpmStrings((key) => key);
+
+  const binding = {
+    adapter: 'yoola',
+    canonical_id: 'project-1',
+    canonical_project: {
+      adapter: 'yoola',
+      allowed_collections: ['artworks'],
+      allowed_features: [],
+      delivery_profile: {},
+      display_name: 'Yoola',
+      id: 'project-1',
+      is_active: true,
+      metadata: {},
+    },
+    enabled: true,
+  } as any;
+
+  const studio = {
+    assets: [
+      {
+        alt_text: 'Entry cover',
+        asset_type: 'image',
+        asset_url: 'https://cdn.example.com/cover.png',
+        block_id: null,
+        created_at: '2026-04-19T00:00:00.000Z',
+        entry_id: 'entry-1',
+        id: 'asset-1',
+        metadata: {},
+        preview_url: 'https://cdn.example.com/cover-preview.png',
+        sort_order: 0,
+        source_url: null,
+        storage_path: 'covers/cover.png',
+        updated_at: '2026-04-19T00:00:00.000Z',
+        ws_id: 'ws_123',
+      },
+    ],
+    blocks: [],
+    collections: [
+      {
+        collection_type: 'artworks',
+        config: {},
+        description: 'Artwork collection',
+        id: 'collection-1',
+        is_enabled: true,
+        slug: 'artworks',
+        title: 'Artworks',
+        ws_id: 'ws_123',
+      } as any,
+    ],
+    entries: [
+      {
+        collection_id: 'collection-1',
+        created_at: '2026-04-19T00:00:00.000Z',
+        created_by: null,
+        id: 'entry-1',
+        metadata: {},
+        profile_data: {},
+        published_at: null,
+        scheduled_for: null,
+        slug: 'entry-one',
+        status: 'draft',
+        subtitle: 'Subtitle',
+        summary: 'Summary',
+        title: 'Entry One',
+        updated_at: '2026-04-19T00:00:00.000Z',
+        updated_by: null,
+        ws_id: 'ws_123',
+      } as any,
+    ],
+    importJobs: [],
+    loadingData: null,
+    publishEvents: [
+      {
+        created_at: '2026-04-19T00:00:00.000Z',
+        entry_id: 'entry-1',
+        event_kind: 'publish',
+        id: 'event-1',
+        ws_id: 'ws_123',
+      },
+    ],
+  } as any;
 
   beforeEach(() => {
     queryClient = new QueryClient({
@@ -201,18 +165,33 @@ describe('EpmClient', () => {
         {
           collection_type: 'artworks',
           config: {},
-          description: null,
+          description: 'Preview collection',
           entries: [
             {
-              assets: [],
-              blocks: [],
+              assets: [
+                {
+                  alt_text: 'Preview cover',
+                  assetUrl: 'https://cdn.example.com/preview-cover.png',
+                  asset_type: 'image',
+                  id: 'delivery-asset-1',
+                  metadata: {},
+                },
+              ],
+              blocks: [
+                {
+                  block_type: 'markdown',
+                  content: { markdown: 'Rendered from preview payload.' },
+                  id: 'block-1',
+                  title: 'Overview',
+                },
+              ],
               id: 'entry-1',
               metadata: {},
               profile_data: {},
               published_at: null,
               slug: 'entry-one',
               status: 'draft',
-              subtitle: null,
+              subtitle: 'Preview subtitle',
               summary: 'Preview summary',
               title: 'Entry One',
             },
@@ -224,177 +203,32 @@ describe('EpmClient', () => {
       ],
       generatedAt: '2026-04-19T00:00:00.000Z',
       loadingData: null,
-      profileData: {},
+      profileData: { brand: 'Yoola' },
       workspaceId: 'ws_123',
     });
     bulkUpdateWorkspaceExternalProjectEntriesMock.mockResolvedValue([
       {
-        collection_id: 'collection-1',
-        created_at: '',
-        created_by: null,
-        id: 'entry-1',
-        metadata: {},
-        profile_data: {},
-        published_at: null,
-        scheduled_for: null,
-        slug: 'entry-one',
+        ...studio.entries[0],
         status: 'published',
-        subtitle: null,
-        summary: 'Summary',
-        title: 'Entry One',
-        updated_at: '',
-        updated_by: null,
-        ws_id: 'ws_123',
       },
     ]);
   });
 
-  it('routes entry actions to the dedicated details page', async () => {
+  function renderClient(props?: Partial<Parameters<typeof EpmClient>[0]>) {
     render(
       <EpmClient
-        binding={
-          {
-            adapter: 'yoola',
-            canonical_id: 'project-1',
-            canonical_project: {
-              adapter: 'yoola',
-              allowed_collections: ['artworks'],
-              allowed_features: [],
-              delivery_profile: {},
-              display_name: 'Yoola',
-              id: 'project-1',
-              is_active: true,
-              metadata: {},
-            },
-            enabled: true,
-          } as any
-        }
-        initialTab="content"
-        initialStudio={{
-          assets: [],
-          blocks: [],
-          collections: [
-            {
-              collection_type: 'artworks',
-              config: {},
-              description: 'Artwork collection',
-              id: 'collection-1',
-              is_enabled: true,
-              slug: 'artworks',
-              title: 'Artworks',
-              ws_id: 'ws_123',
-            } as any,
-          ],
-          entries: [
-            {
-              collection_id: 'collection-1',
-              created_at: '2026-04-19T00:00:00.000Z',
-              created_by: null,
-              id: 'entry-1',
-              metadata: {},
-              profile_data: {},
-              published_at: null,
-              scheduled_for: null,
-              slug: 'entry-one',
-              status: 'draft',
-              subtitle: 'Subtitle',
-              summary: 'Summary',
-              title: 'Entry One',
-              updated_at: '2026-04-19T00:00:00.000Z',
-              updated_by: null,
-              ws_id: 'ws_123',
-            } as any,
-          ],
-          importJobs: [],
-          loadingData: null,
-          publishEvents: [],
-        }}
+        binding={binding}
+        initialStudio={studio}
         strings={strings}
         workspaceId="ws_123"
+        {...props}
       />,
       { wrapper }
     );
+  }
 
-    expect(screen.getByText('Selected entry')).toBeInTheDocument();
-    fireEvent.click(
-      screen.getAllByRole('button', { name: /Open details/i })[0]!
-    );
-
-    expect(routerPushMock).toHaveBeenCalledWith('/ws_123/epm/entries/entry-1');
-  });
-
-  it('keeps preview on demand and loads it only when requested', async () => {
-    render(
-      <EpmClient
-        binding={
-          {
-            adapter: 'yoola',
-            canonical_id: 'project-1',
-            canonical_project: {
-              adapter: 'yoola',
-              allowed_collections: ['artworks'],
-              allowed_features: [],
-              delivery_profile: {},
-              display_name: 'Yoola',
-              id: 'project-1',
-              is_active: true,
-              metadata: {},
-            },
-            enabled: true,
-          } as any
-        }
-        initialStudio={{
-          assets: [],
-          blocks: [],
-          collections: [
-            {
-              collection_type: 'artworks',
-              config: {},
-              description: 'Artwork collection',
-              id: 'collection-1',
-              is_enabled: true,
-              slug: 'artworks',
-              title: 'Artworks',
-              ws_id: 'ws_123',
-            } as any,
-          ],
-          entries: [
-            {
-              collection_id: 'collection-1',
-              created_at: '2026-04-19T00:00:00.000Z',
-              created_by: null,
-              id: 'entry-1',
-              metadata: {},
-              profile_data: {},
-              published_at: null,
-              scheduled_for: null,
-              slug: 'entry-one',
-              status: 'draft',
-              subtitle: null,
-              summary: 'Summary',
-              title: 'Entry One',
-              updated_at: '2026-04-19T00:00:00.000Z',
-              updated_by: null,
-              ws_id: 'ws_123',
-            } as any,
-          ],
-          importJobs: [],
-          loadingData: null,
-          publishEvents: [],
-        }}
-        strings={strings}
-        workspaceId="ws_123"
-      />,
-      { wrapper }
-    );
-
-    expect(getWorkspaceExternalProjectDeliveryMock).not.toHaveBeenCalled();
-
-    fireEvent.click(
-      within(screen.getByTestId('epm-action-bar')).getByRole('button', {
-        name: /Open preview/i,
-      })
-    );
+  it('defaults to preview mode and renders delivery-backed content', async () => {
+    renderClient();
 
     await waitFor(() => {
       expect(getWorkspaceExternalProjectDeliveryMock).toHaveBeenCalledWith(
@@ -403,77 +237,58 @@ describe('EpmClient', () => {
         expect.any(Object)
       );
     });
+
+    expect(await screen.findByText('Preview collection')).toBeInTheDocument();
+    expect(
+      screen.queryByText('epm.bulk_actions_title')
+    ).not.toBeInTheDocument();
   });
 
-  it('sends bulk publish actions from the workflow tab', async () => {
-    render(
-      <EpmClient
-        binding={
-          {
-            adapter: 'yoola',
-            canonical_id: 'project-1',
-            canonical_project: {
-              adapter: 'yoola',
-              allowed_collections: ['artworks'],
-              allowed_features: [],
-              delivery_profile: {},
-              display_name: 'Yoola',
-              id: 'project-1',
-              is_active: true,
-              metadata: {},
-            },
-            enabled: true,
-          } as any
-        }
-        initialTab="workflow"
-        initialStudio={{
-          assets: [],
-          blocks: [],
-          collections: [
-            {
-              collection_type: 'artworks',
-              config: {},
-              description: 'Artwork collection',
-              id: 'collection-1',
-              is_enabled: true,
-              slug: 'artworks',
-              title: 'Artworks',
-              ws_id: 'ws_123',
-            } as any,
-          ],
-          entries: [
-            {
-              collection_id: 'collection-1',
-              created_at: '2026-04-19T00:00:00.000Z',
-              created_by: null,
-              id: 'entry-1',
-              metadata: {},
-              profile_data: {},
-              published_at: null,
-              scheduled_for: null,
-              slug: 'entry-one',
-              status: 'draft',
-              subtitle: null,
-              summary: 'Summary',
-              title: 'Entry One',
-              updated_at: '2026-04-19T00:00:00.000Z',
-              updated_by: null,
-              ws_id: 'ws_123',
-            } as any,
-          ],
-          importJobs: [],
-          loadingData: null,
-          publishEvents: [],
-        }}
-        strings={strings}
-        workspaceId="ws_123"
-      />,
-      { wrapper }
+  it('shows workflow queues only in edit mode', async () => {
+    renderClient();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'epm.edit_mode_label' })
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'epm.workflow_tab' }));
+
+    expect(screen.getByText('epm.bulk_actions_title')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Rendered from preview payload.')
+    ).not.toBeInTheDocument();
+  });
+
+  it('routes entry actions to the dedicated details page', async () => {
+    renderClient({ initialMode: 'edit' });
+
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'epm.open_details_action' })[0]!
     );
 
-    expect(screen.getByText('Workflow Queues')).toBeInTheDocument();
+    expect(routerPushMock).toHaveBeenCalledWith('/ws_123/epm/entries/entry-1');
+  });
+
+  it('routes collection actions to the dedicated collection page', async () => {
+    renderClient({ initialMode: 'edit' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'epm.settings_tab' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'epm.open_collection_action' })
+    );
+
+    expect(routerPushMock).toHaveBeenCalledWith(
+      '/ws_123/epm/collections/collection-1'
+    );
+  });
+
+  it('sends bulk publish actions from the workflow section', async () => {
+    renderClient({ initialMode: 'edit' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'epm.workflow_tab' }));
     fireEvent.click(screen.getByRole('checkbox'));
-    fireEvent.click(screen.getAllByRole('button', { name: 'Publish' })[0]!);
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'epm.publish_action' })[0]!
+    );
 
     await waitFor(() => {
       expect(

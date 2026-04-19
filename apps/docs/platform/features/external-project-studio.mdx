@@ -9,7 +9,9 @@ updatedAt: '2026-04-19'
 The EPM surfaces now follow two distinct workflows:
 
 - The **root workspace** owns the canonical registry and workspace bindings through a searchable control tower.
-- Each **bound workspace** uses **EPM (External Project Management)** as a view-first operator dashboard with tabs, compact queues, dedicated entry detail pages, first-class cover management, and on-demand preview.
+- Each **bound workspace** uses **EPM (External Project Management)** as a two-mode tool:
+  - `Preview` mode is the default and renders the bound project from the preview delivery payload.
+  - `Edit` mode is the operational control plane for entries, workflow, and settings.
 
 ## Root Control Tower
 
@@ -22,33 +24,29 @@ The EPM surfaces now follow two distinct workflows:
 
 ## Workspace EPM
 
-- Use tabs to separate `Overview`, `Content`, `Workflow`, `Activity`, and `Settings`.
-- The workspace shell now follows a flatter operator dashboard:
-  - the index page is a full-width control surface for summary, routing, and queue management
-  - the featured card uses the current entry cover when it exists, but the dashboard no longer tries to be the full editor
-  - collection and workflow health panels stay visible without overwhelming the viewport
-- Keep the default page view-first.
-  - Summary cards should be readable without opening an editor.
-  - Metadata and profile payloads should stay collapsed until requested.
-  - Editing should open through explicit icon or button affordances that route into a dedicated entry details page.
+- Use a top-level `Preview / Edit` mode switch instead of a tab-heavy admin shell.
+- Keep `Preview` as the default landing mode.
+  - Render collections and entries from `GET /api/v1/workspaces/:wsId/external-projects/delivery?preview=true`.
+  - Keep admin chrome light: mode switch, create/import/refresh actions, and route-outs into details.
+  - Do not show workflow queues, metadata accordions, or settings cards in Preview mode.
+- Keep `Edit` as the operational index.
+  - `Entries` is for collection-scoped browsing, search, and routing into dedicated entry editors.
+  - `Workflow` is for draft/scheduled/published/archived queues plus bulk actions.
+  - `Settings` is for binding context, import controls, and routing into dedicated collection pages.
+- Do not duplicate the same record across featured cards, selected-entry cards, and queue summaries on the index page.
 - Entry details now live at `/{wsId}/epm/entries/{entryId}`.
   - Use this page for focused title/slug/status edits, schedule changes, cover uploads, and asset ordering.
   - Keep the dashboard as the operator index; do not bring the heavy entry editor back inline.
+- Collection details now live at `/{wsId}/epm/collections/{collectionId}`.
+  - Use this page for collection title/description/enabled-state changes and quick routing into collection entries.
+  - Keep collection editing off the main `/epm` body.
 - Cover images are first-class.
-  - Use image assets with `sort_order = 0` as the lead cover for dashboard and preview surfaces.
+  - Use image assets with `sort_order = 0` as the lead cover for preview and admin surfaces.
   - If a lead image cannot resolve from Drive/storage, drop the broken media source and render the non-image fallback treatment instead of leaving broken alt text in the UI.
-  - Reordering image assets on the detail page should change which image leads the entry across the EPM surfaces.
-- Dashboard presentation is locally customizable per workspace.
-  - `Dashboard mode` switches between operator-first, visual-first, and workflow-first emphasis.
-  - `Density` toggles between compact and comfortable spacing.
-  - `Show visual cards`, `Show collection health`, and `Show activity feed` persist in local dashboard preferences.
-- Treat the `Workflow` tab as the operator queue.
-  - Multi-select lives there, not across every content surface.
+  - Reordering image assets on the entry detail page changes which image leads the entry across the EPM surfaces.
+- Treat the `Workflow` section in Edit mode as the operator queue.
+  - Multi-select lives there, not across Preview mode or entry summaries.
   - Schedule, publish, draft, and archive actions should be available without reopening each record.
-- Live preview is still on demand.
-  - Open it from the sticky action bar when you need a rendered or payload check.
-  - **Rendered** should stay lightweight and selection-aware.
-  - **Payload** should keep reading from `GET /api/v1/workspaces/:wsId/external-projects/delivery?preview=true`.
 - Import, create, duplicate, save, publish, and unpublish actions stay explicit. There is no autosave.
 
 ## Implementation Notes
@@ -57,13 +55,12 @@ The EPM surfaces now follow two distinct workflows:
 - The workspace studio still uses the existing internal API helpers for entry, block, asset, import, publish, and binding operations.
 - Cover uploads and replacements reuse the existing workspace asset signed-upload helper; no separate cover-specific backend endpoint is needed.
 - The workspace route is now `/{wsId}/epm`, with `/{wsId}/external-projects` redirecting to it for backward compatibility.
-- Preview still opens in a sheet so the default workspace stays focused on navigation and workflow first.
+- The main `/epm` page is now an index plus mode shell, not a hybrid inline editor.
 
 ## Team Guidance
 
 - When changing external-project authoring UX, keep the live preview wired to the preview delivery endpoint instead of inventing a second payload contract in the client.
-- For dense admin surfaces, keep collection-level controls inline but move item-level authoring into a dedicated editor page or near-fullscreen dialog. Do not render the same heavy editor twice in both the page body and an overlay.
-- In split-view admin pages, prefer one compact selected-item summary in the main column and keep preview as an explicit secondary action when it would otherwise crowd the default workspace.
+- When the tool needs to behave like both a front-end preview and an admin workspace, split it into explicit `Preview` and `Edit` modes rather than blending both into the same crowded surface.
+- For dense admin surfaces, move item-level authoring into dedicated entry or collection pages instead of rebuilding mini-editors inside the index view.
 - For external-project entries that need strong visual identity, treat cover image upload/replacement/reordering as a first-class workflow instead of burying it under generic asset editing.
-- Use tooltips for secondary control explanations so the default layout stays compact, especially in sticky action bars and collection controls.
 - Add any new user-facing copy to both `apps/web/messages/en.json` and `apps/web/messages/vi.json`, then run `bun i18n:sort`.

@@ -22,6 +22,7 @@ export type EpmStrings = {
   coverSaveSuccessToast: string;
   coverUploadSuccessToast: string;
   createEntryAction: string;
+  descriptionLabel: string;
   dashboardModeLabel: string;
   dashboardPreferencesTitle: string;
   densityCompact: string;
@@ -33,9 +34,13 @@ export type EpmStrings = {
   duplicateAction: string;
   editCollectionAction: string;
   editCollectionDescription: string;
+  editEntriesDescription: string;
   editEntryAction: string;
   editEntryDescription: string;
   editEntryTitle: string;
+  editModeDescription: string;
+  editModeLabel: string;
+  editSettingsDescription: string;
   emptyCollection: string;
   emptyEntries: string;
   enabledLabel: string;
@@ -59,12 +64,22 @@ export type EpmStrings = {
   noneLabel: string;
   notScheduledLabel: string;
   openDetailsAction: string;
+  openCollectionAction: string;
   openPreviewAction: string;
   overviewTab: string;
   payloadLabel: string;
+  previewCollectionTitle: string;
   previewDescription: string;
+  previewEmptyDescription: string;
+  previewEmptyTitle: string;
+  previewEntriesTitle: string;
+  previewModeDescription: string;
+  previewModeLabel: string;
+  previewProjectLabel: string;
   previewTitle: string;
   profileDataLabel: string;
+  manageCollectionAction: string;
+  manageCollectionDescription: string;
   publishAction: string;
   publishedQueue: string;
   quickCreateHint: string;
@@ -130,6 +145,7 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     coverSaveSuccessToast: t('epm.cover_save_success_toast'),
     coverUploadSuccessToast: t('epm.cover_upload_success_toast'),
     createEntryAction: t('epm.create_entry_action'),
+    descriptionLabel: t('epm.description_label'),
     dashboardModeLabel: t('epm.dashboard_mode_label'),
     dashboardPreferencesTitle: t('epm.dashboard_preferences_title'),
     densityCompact: t('epm.density_compact'),
@@ -141,9 +157,13 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     duplicateAction: t('epm.duplicate_action'),
     editCollectionAction: t('epm.edit_collection_action'),
     editCollectionDescription: t('epm.edit_collection_description'),
+    editEntriesDescription: t('epm.edit_entries_description'),
     editEntryAction: t('epm.edit_entry_action'),
     editEntryDescription: t('epm.edit_entry_description'),
     editEntryTitle: t('epm.edit_entry_title'),
+    editModeDescription: t('epm.edit_mode_description'),
+    editModeLabel: t('epm.edit_mode_label'),
+    editSettingsDescription: t('epm.edit_settings_description'),
     emptyCollection: t('epm.empty_collection'),
     emptyEntries: t('epm.empty_entries'),
     enabledLabel: t('epm.enabled_label'),
@@ -167,12 +187,22 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     noneLabel: t('epm.none_label'),
     notScheduledLabel: t('epm.not_scheduled_label'),
     openDetailsAction: t('epm.open_details_action'),
+    openCollectionAction: t('epm.open_collection_action'),
     openPreviewAction: t('epm.open_preview_action'),
     overviewTab: t('epm.overview_tab'),
     payloadLabel: t('epm.payload_label'),
+    previewCollectionTitle: t('epm.preview_collection_title'),
     previewDescription: t('epm.preview_description'),
+    previewEmptyDescription: t('epm.preview_empty_description'),
+    previewEmptyTitle: t('epm.preview_empty_title'),
+    previewEntriesTitle: t('epm.preview_entries_title'),
+    previewModeDescription: t('epm.preview_mode_description'),
+    previewModeLabel: t('epm.preview_mode_label'),
+    previewProjectLabel: t('epm.preview_project_label'),
     previewTitle: t('epm.preview_title'),
     profileDataLabel: t('epm.profile_data_label'),
+    manageCollectionAction: t('epm.manage_collection_action'),
+    manageCollectionDescription: t('epm.manage_collection_description'),
     publishAction: t('epm.publish_action'),
     publishedQueue: t('epm.published_queue'),
     quickCreateHint: t('epm.quick_create_hint'),
