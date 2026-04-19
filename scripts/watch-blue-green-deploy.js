@@ -2730,6 +2730,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
     createWatchUi(
       {
         currentBlueGreen: initialRuntimeSnapshot.currentBlueGreen,
+        dockerResources: initialRuntimeSnapshot.dockerResources,
         deployments: initialRuntimeSnapshot.deployments,
         intervalMs: parsed.intervalMs,
         lastDeployAt: initialDeploymentSummary.lastDeployAt,
@@ -2871,6 +2872,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
       const buildingSummary = getLatestDeploymentSummary(buildingDeployments);
 
       ui.update({
+        dockerResources: ui.state.dockerResources,
         deployments: buildingDeployments,
         lastDeployAt: buildingSummary.lastDeployAt,
         lastDeployStatus: buildingSummary.lastDeployStatus,
@@ -2906,6 +2908,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
 
         ui.update({
           currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+          dockerResources: runtimeSnapshot.dockerResources,
           deployments: runtimeSnapshot.deployments,
           lastDeployAt: latestDeploymentSummary.lastDeployAt,
           lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
@@ -2949,6 +2952,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
 
         ui.update({
           currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+          dockerResources: runtimeSnapshot.dockerResources,
           deployments: runtimeSnapshot.deployments,
           lastDeployAt: latestDeploymentSummary.lastDeployAt,
           lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
@@ -2993,6 +2997,8 @@ async function main(argv = process.argv.slice(2), options = {}) {
         ui.update({
           currentBlueGreen:
             iterationResult.currentBlueGreen ?? ui.state.currentBlueGreen,
+          dockerResources:
+            iterationResult.dockerResources ?? ui.state.dockerResources,
           deployments: iterationResult.deployments ?? ui.state.deployments,
           lastCheckAt: iterationResult.checkedAt ?? Date.now(),
           lastDeployAt:

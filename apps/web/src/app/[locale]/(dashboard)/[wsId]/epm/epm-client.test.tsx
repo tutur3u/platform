@@ -245,12 +245,7 @@ describe('EpmClient', () => {
   });
 
   it('shows workflow queues only in edit mode', async () => {
-    renderClient();
-
-    fireEvent.click(
-      screen.getByRole('button', { name: 'epm.edit_mode_label' })
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'epm.workflow_tab' }));
+    renderClient({ initialEditSection: 'workflow', initialMode: 'edit' });
 
     expect(screen.getByText('epm.bulk_actions_title')).toBeInTheDocument();
     expect(
@@ -269,9 +264,7 @@ describe('EpmClient', () => {
   });
 
   it('routes collection actions to the dedicated collection page', async () => {
-    renderClient({ initialMode: 'edit' });
-
-    fireEvent.click(screen.getByRole('button', { name: 'epm.settings_tab' }));
+    renderClient({ initialEditSection: 'settings', initialMode: 'edit' });
     fireEvent.click(
       screen.getByRole('button', { name: 'epm.open_collection_action' })
     );
@@ -282,9 +275,7 @@ describe('EpmClient', () => {
   });
 
   it('sends bulk publish actions from the workflow section', async () => {
-    renderClient({ initialMode: 'edit' });
-
-    fireEvent.click(screen.getByRole('button', { name: 'epm.workflow_tab' }));
+    renderClient({ initialEditSection: 'workflow', initialMode: 'edit' });
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(
       screen.getAllByRole('button', { name: 'epm.publish_action' })[0]!

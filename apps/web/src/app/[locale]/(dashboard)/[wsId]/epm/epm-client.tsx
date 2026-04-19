@@ -10,7 +10,6 @@ import {
   Pencil,
   Plus,
   RefreshCw,
-  Search,
   Settings2,
   Sparkles,
 } from '@tuturuuu/icons';
@@ -39,7 +38,13 @@ import {
 } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Input } from '@tuturuuu/ui/input';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -176,84 +181,31 @@ function ActionButton({
 function PreviewModeSkeleton() {
   return (
     <div className="space-y-5" data-testid="epm-preview-skeleton">
-      <div className="flex flex-wrap gap-2">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <Skeleton
-            key={`collection-pill-${index}`}
-            className="h-9 w-28 rounded-full"
-          />
-        ))}
+      <div className="grid gap-3 md:grid-cols-[260px_minmax(0,1fr)_auto]">
+        <Skeleton className="h-11 rounded-xl" />
+        <Skeleton className="h-11 rounded-xl" />
+        <Skeleton className="h-11 w-28 rounded-xl" />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <Card className="border-border/70 bg-background/75 shadow-none">
-          <CardHeader>
-            <Skeleton className="h-6 w-40" />
-            <Skeleton className="h-4 w-52" />
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <div
-                  key={`preview-card-skeleton-${index}`}
-                  className="overflow-hidden rounded-[1.25rem] border border-border/70 bg-background/80"
-                >
-                  <Skeleton className="aspect-[4/5] w-full rounded-none" />
-                  <div className="space-y-3 p-4">
-                    <Skeleton className="h-5 w-24 rounded-full" />
-                    <Skeleton className="h-5 w-4/5" />
-                    <Skeleton className="h-4 w-2/3" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-5">
-          <div className="relative min-h-[360px] overflow-hidden rounded-[1.7rem] border border-border/70 bg-background/75 lg:min-h-[520px]">
-            <Skeleton className="absolute inset-0 rounded-none" />
-            <div className="absolute inset-x-0 bottom-0 space-y-4 p-5 lg:p-6">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div
+            key={`preview-card-skeleton-${index}`}
+            className="overflow-hidden rounded-[1.5rem] border border-border/70 bg-background/80"
+          >
+            <Skeleton className="aspect-[4/5] w-full rounded-none" />
+            <div className="space-y-3 p-4">
               <div className="flex gap-2">
-                <Skeleton className="h-6 w-28 rounded-full" />
-                <Skeleton className="h-6 w-24 rounded-full" />
+                <Skeleton className="h-5 w-20 rounded-full" />
+                <Skeleton className="h-5 w-24 rounded-full" />
               </div>
-              <Skeleton className="h-10 w-3/4" />
-              <Skeleton className="h-5 w-1/2" />
+              <Skeleton className="h-6 w-4/5" />
+              <Skeleton className="h-4 w-2/3" />
               <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-[86%]" />
             </div>
           </div>
-
-          <Card className="border-border/70 bg-background/75 shadow-none">
-            <CardHeader>
-              <Skeleton className="h-6 w-44" />
-              <Skeleton className="h-4 w-32" />
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {Array.from({ length: 2 }).map((_, index) => (
-                <div
-                  key={`preview-copy-skeleton-${index}`}
-                  className="space-y-3"
-                >
-                  <Skeleton className="h-6 w-40" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-[92%]" />
-                  <Skeleton className="h-4 w-[86%]" />
-                </div>
-              ))}
-
-              <div className="grid gap-3 md:grid-cols-2">
-                {Array.from({ length: 2 }).map((_, index) => (
-                  <Skeleton
-                    key={`preview-image-skeleton-${index}`}
-                    className="min-h-[180px] rounded-[1.2rem]"
-                  />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        ))}
       </div>
     </div>
   );
@@ -261,12 +213,14 @@ function PreviewModeSkeleton() {
 
 export function EpmClient({
   binding,
+  initialEditSection = 'entries',
   initialMode = 'preview',
   initialStudio,
   strings,
   workspaceId,
 }: {
   binding: WorkspaceExternalProjectBinding;
+  initialEditSection?: EditSection;
   initialMode?: EpmMode;
   initialStudio: ExternalProjectStudioData;
   strings: EpmStrings;
@@ -275,7 +229,8 @@ export function EpmClient({
   const router = useRouter();
   const pathname = usePathname();
   const [mode, setMode] = useState<EpmMode>(initialMode);
-  const [editSection, setEditSection] = useState<EditSection>('entries');
+  const [editSection, setEditSection] =
+    useState<EditSection>(initialEditSection);
   const [entries, setEntries] = useState(initialStudio.entries);
   const [collections] = useState(initialStudio.collections);
   const [assets] = useState(initialStudio.assets);
@@ -336,13 +291,8 @@ export function EpmClient({
     deliveryCollections[0] ??
     null;
   const previewEntries = activePreviewCollection?.entries ?? [];
-  const activePreviewEntry =
-    previewEntries.find((entry) => entry.id === selectedEntryId) ??
-    previewEntries[0] ??
-    null;
-  const previewMarkdownBlocks = extractMarkdown(activePreviewEntry);
-  const activePreviewVisual = getDeliveryEntryVisual(activePreviewEntry);
-  const previewGalleryEntries = previewEntries.slice(0, 12);
+  const previewPrimaryEntry = previewEntries[0] ?? null;
+  const previewGalleryEntries = previewEntries.slice(0, 18);
   const previewProjectLabel = getProjectBrand(
     binding,
     previewQuery.data?.profileData
@@ -390,7 +340,8 @@ export function EpmClient({
   ];
 
   const currentEntryId =
-    (mode === 'preview' ? activePreviewEntry?.id : activeEditEntry?.id) ?? null;
+    (mode === 'preview' ? previewPrimaryEntry?.id : activeEditEntry?.id) ??
+    null;
   const currentManagedEntry =
     entries.find((entry) => entry.id === currentEntryId) ?? activeEditEntry;
 
@@ -624,21 +575,52 @@ export function EpmClient({
         <div className="space-y-5">
           <Card className="overflow-hidden border-border/70 bg-card/95 shadow-none">
             <CardContent className="space-y-5 p-5 lg:p-6">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px_160px]">
+                <div className="space-y-2">
                   <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
                     {strings.previewProjectLabel}
                   </div>
-                  <div className="mt-2 font-semibold text-2xl tracking-tight">
+                  <div className="font-semibold text-2xl tracking-tight">
                     {previewProjectLabel}
                   </div>
+                  <p className="max-w-3xl text-muted-foreground text-sm leading-6">
+                    {activePreviewCollection?.description ??
+                      strings.previewModeDescription}
+                  </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="space-y-2">
+                  <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                    {strings.collectionsLabel}
+                  </div>
+                  <Select
+                    value={activePreviewCollection?.id}
+                    onValueChange={(value) => {
+                      setSelectedCollectionId(value);
+                      setSelectedEntryId(
+                        deliveryCollections.find(
+                          (collection) => collection.id === value
+                        )?.entries[0]?.id ?? ''
+                      );
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={strings.emptyCollection} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {deliveryCollections.map((collection) => (
+                        <SelectItem key={collection.id} value={collection.id}>
+                          {collection.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-wrap items-end gap-2 xl:justify-end">
                   <Badge variant="outline">
                     {binding.adapter ?? strings.noAdapterLabel}
                   </Badge>
                   <Badge variant="outline">
-                    {binding.canonical_id ?? strings.noCanonicalIdLabel}
+                    {previewEntries.length} {strings.entriesMetricLabel}
                   </Badge>
                 </div>
               </div>
@@ -646,225 +628,84 @@ export function EpmClient({
               {previewQuery.isPending ? (
                 <PreviewModeSkeleton />
               ) : activePreviewCollection ? (
-                <>
-                  <div className="flex flex-wrap gap-2">
-                    {deliveryCollections.map((collection) => (
-                      <Button
-                        key={collection.id}
-                        size="sm"
-                        variant={
-                          collection.id === activePreviewCollection.id
-                            ? 'default'
-                            : 'outline'
-                        }
-                        onClick={() => {
-                          setSelectedCollectionId(collection.id);
-                          setSelectedEntryId(collection.entries[0]?.id ?? '');
-                        }}
+                <div
+                  className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+                  data-testid="epm-preview-gallery"
+                >
+                  {previewGalleryEntries.map((entry) => {
+                    const visualAsset = getDeliveryEntryVisual(entry);
+                    const managedPreviewEntry =
+                      entries.find((managed) => managed.id === entry.id) ??
+                      null;
+                    const previewCopy =
+                      entry.summary ||
+                      extractMarkdown(entry)[0]?.markdown ||
+                      strings.previewEmptyDescription;
+
+                    return (
+                      <button
+                        key={entry.id}
+                        type="button"
+                        className="group w-full overflow-hidden rounded-[1.5rem] border border-border/70 bg-background/70 text-left transition-all hover:-translate-y-1 hover:bg-background hover:shadow-xl"
+                        onClick={() => openEntryDetails(entry.id)}
                       >
-                        {collection.title}
-                      </Button>
-                    ))}
-                  </div>
-
-                  <div className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
-                    <Card className="border-border/70 bg-background/75 shadow-none">
-                      <CardHeader>
-                        <CardTitle>{strings.previewEntriesTitle}</CardTitle>
-                        <CardDescription>
-                          {activePreviewCollection.description ??
-                            activePreviewCollection.slug}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <ScrollArea className="h-[34rem] pr-3">
-                          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                            {previewGalleryEntries.map((entry) => {
-                              const visualAsset = getDeliveryEntryVisual(entry);
-                              const managedPreviewEntry =
-                                entries.find(
-                                  (managed) => managed.id === entry.id
-                                ) ?? null;
-
-                              return (
-                                <button
-                                  key={entry.id}
-                                  type="button"
-                                  className={cn(
-                                    'w-full overflow-hidden rounded-[1.25rem] border text-left transition-all',
-                                    entry.id === activePreviewEntry?.id
-                                      ? 'border-foreground/20 bg-background shadow-sm'
-                                      : 'border-border/70 bg-background/70 hover:bg-background'
-                                  )}
-                                  onClick={() => setSelectedEntryId(entry.id)}
-                                >
-                                  <div className="relative aspect-[4/5] overflow-hidden border-border/70 bg-background/80">
-                                    <ResilientMediaImage
-                                      alt={visualAsset?.alt_text ?? entry.title}
-                                      assetUrl={visualAsset?.assetUrl}
-                                      className="object-cover"
-                                      fill
-                                      previewUrl={visualAsset?.assetUrl}
-                                      sizes="(max-width: 1280px) 40vw, 22vw"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/15 to-transparent" />
-                                    <div className="absolute inset-x-0 bottom-0 p-4">
-                                      <div className="flex flex-wrap gap-2">
-                                        <Badge
-                                          className={cn(
-                                            'border-0 shadow-none',
-                                            entry.id === activePreviewEntry?.id
-                                              ? statusTone(
-                                                  managedPreviewEntry?.status ??
-                                                    'draft'
-                                                )
-                                              : 'bg-background/90 text-foreground'
-                                          )}
-                                        >
-                                          {formatStatus(
-                                            managedPreviewEntry?.status ??
-                                              'draft',
-                                            strings
-                                          )}
-                                        </Badge>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="space-y-2 p-4">
-                                    <div className="line-clamp-1 font-medium text-sm">
-                                      {entry.title}
-                                    </div>
-                                    <div className="line-clamp-1 text-muted-foreground text-xs">
-                                      {entry.subtitle || entry.slug}
-                                    </div>
-                                    <div className="line-clamp-2 text-muted-foreground text-xs leading-5">
-                                      {entry.summary ||
-                                        strings.previewEmptyDescription}
-                                    </div>
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </ScrollArea>
-                      </CardContent>
-                    </Card>
-
-                    <div className="space-y-5">
-                      <div className="relative min-h-[360px] overflow-hidden rounded-[1.7rem] border border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_22%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.12),transparent_24%),linear-gradient(150deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] lg:min-h-[520px]">
-                        {activePreviewVisual ? (
+                        <div className="relative aspect-[4/5] overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.12),transparent_26%),linear-gradient(160deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]">
                           <ResilientMediaImage
-                            alt={
-                              activePreviewVisual.alt_text ??
-                              activePreviewEntry?.title ??
-                              strings.previewEmptyTitle
-                            }
-                            assetUrl={activePreviewVisual.assetUrl}
-                            className="object-cover"
+                            alt={visualAsset?.alt_text ?? entry.title}
+                            assetUrl={visualAsset?.assetUrl}
+                            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                             fill
-                            previewUrl={activePreviewVisual.assetUrl}
-                            sizes="(max-width: 1280px) 100vw, 62vw"
+                            previewUrl={visualAsset?.assetUrl}
+                            sizes="(max-width: 1024px) 100vw, (max-width: 1536px) 33vw, 24vw"
                           />
-                        ) : null}
-                        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-                        <div className="absolute inset-x-0 bottom-0 p-5 lg:p-6">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant="outline">
+                          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/18 to-transparent" />
+                          <div className="absolute inset-x-0 top-0 flex flex-wrap items-center justify-between gap-2 p-4">
+                            <Badge
+                              variant="outline"
+                              className="bg-background/85"
+                            >
                               {activePreviewCollection.title}
                             </Badge>
-                            {currentManagedEntry ? (
-                              <Badge
-                                className={statusTone(
-                                  currentManagedEntry.status
-                                )}
-                              >
-                                {formatStatus(
-                                  currentManagedEntry.status,
-                                  strings
-                                )}
-                              </Badge>
-                            ) : null}
+                            <Badge
+                              className={cn(
+                                'border-0 shadow-none',
+                                statusTone(
+                                  managedPreviewEntry?.status ?? 'draft'
+                                )
+                              )}
+                            >
+                              {formatStatus(
+                                managedPreviewEntry?.status ?? 'draft',
+                                strings
+                              )}
+                            </Badge>
                           </div>
-                          <h2 className="mt-4 max-w-3xl font-semibold text-3xl tracking-tight">
-                            {activePreviewEntry?.title ??
-                              strings.previewEmptyTitle}
-                          </h2>
-                          {activePreviewEntry?.subtitle ? (
-                            <p className="mt-2 text-base text-muted-foreground">
-                              {activePreviewEntry.subtitle}
-                            </p>
-                          ) : null}
-                          <p className="mt-4 max-w-2xl text-muted-foreground text-sm leading-7">
-                            {activePreviewEntry?.summary ??
-                              strings.previewEmptyDescription}
-                          </p>
+                          <div className="absolute inset-x-0 bottom-0 space-y-2 p-4">
+                            <div className="line-clamp-2 font-semibold text-xl tracking-tight">
+                              {entry.title}
+                            </div>
+                            <div className="line-clamp-1 text-muted-foreground text-sm">
+                              {entry.subtitle || entry.slug}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-
-                      {activePreviewEntry ? (
-                        <Card className="border-border/70 bg-background/75 shadow-none">
-                          <CardHeader>
-                            <CardTitle>
-                              {strings.previewCollectionTitle}
-                            </CardTitle>
-                            <CardDescription>
-                              {activePreviewCollection.title}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-6">
-                            {previewMarkdownBlocks.length > 0 ? (
-                              previewMarkdownBlocks.map((block) => (
-                                <section key={block.id} className="space-y-3">
-                                  {block.title ? (
-                                    <h3 className="font-semibold text-lg tracking-tight">
-                                      {block.title}
-                                    </h3>
-                                  ) : null}
-                                  <div className="whitespace-pre-wrap text-foreground/90 text-sm leading-8">
-                                    {block.markdown}
-                                  </div>
-                                </section>
-                              ))
-                            ) : (
-                              <div className="rounded-[1.2rem] border border-border/70 border-dashed p-5 text-muted-foreground text-sm">
-                                {strings.previewEmptyDescription}
-                              </div>
-                            )}
-
-                            {activePreviewEntry.assets.length > 1 ? (
-                              <div className="grid gap-3 md:grid-cols-2">
-                                {activePreviewEntry.assets
-                                  .filter(
-                                    (asset) =>
-                                      asset.id !== activePreviewVisual?.id
-                                  )
-                                  .slice(0, 4)
-                                  .map((asset) => (
-                                    <div
-                                      key={asset.id}
-                                      className="relative min-h-[180px] overflow-hidden rounded-[1.2rem] border border-border/70 bg-background/80"
-                                    >
-                                      <ResilientMediaImage
-                                        alt={
-                                          asset.alt_text ??
-                                          activePreviewEntry.title
-                                        }
-                                        assetUrl={asset.assetUrl}
-                                        className="object-cover"
-                                        fill
-                                        previewUrl={asset.assetUrl}
-                                        sizes="(max-width: 1280px) 100vw, 30vw"
-                                      />
-                                    </div>
-                                  ))}
-                              </div>
-                            ) : null}
-                          </CardContent>
-                        </Card>
-                      ) : null}
-                    </div>
-                  </div>
-                </>
+                        <div className="space-y-4 p-4">
+                          <p className="line-clamp-3 min-h-[4.5rem] text-muted-foreground text-sm leading-6">
+                            {previewCopy}
+                          </p>
+                          <div className="flex items-center justify-between gap-3 text-xs">
+                            <span className="text-muted-foreground">
+                              {entry.slug}
+                            </span>
+                            <span className="font-medium">
+                              {strings.openDetailsAction}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               ) : (
                 <div className="rounded-[1.5rem] border border-border/70 border-dashed bg-background/70 p-6">
                   <div className="font-medium">{strings.previewEmptyTitle}</div>
@@ -878,193 +719,183 @@ export function EpmClient({
         </div>
       ) : (
         <div className="space-y-5">
-          <section className="flex flex-wrap items-center justify-between gap-3 rounded-[1.6rem] border border-border/70 bg-card/95 p-4">
-            <div>
-              <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                {strings.editModeLabel}
+          <section className="rounded-[1.6rem] border border-border/70 bg-card/95 p-4">
+            <div className="grid gap-3 xl:grid-cols-[180px_240px_240px_minmax(0,1fr)_auto]">
+              <div className="space-y-2">
+                <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                  {strings.editModeLabel}
+                </div>
+                <Select
+                  value={editSection}
+                  onValueChange={(value) =>
+                    setEditSection(value as EditSection)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={strings.contentTab} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="entries">
+                      {strings.contentTab}
+                    </SelectItem>
+                    <SelectItem value="workflow">
+                      {strings.workflowTab}
+                    </SelectItem>
+                    <SelectItem value="settings">
+                      {strings.settingsTab}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <p className="mt-1 text-muted-foreground text-sm">
-                {strings.editModeDescription}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant={editSection === 'entries' ? 'default' : 'outline'}
-                onClick={() => setEditSection('entries')}
-              >
-                {strings.contentTab}
-              </Button>
-              <Button
-                size="sm"
-                variant={editSection === 'workflow' ? 'default' : 'outline'}
-                onClick={() => setEditSection('workflow')}
-              >
-                {strings.workflowTab}
-              </Button>
-              <Button
-                size="sm"
-                variant={editSection === 'settings' ? 'default' : 'outline'}
-                onClick={() => setEditSection('settings')}
-              >
-                {strings.settingsTab}
-              </Button>
+
+              <div className="space-y-2">
+                <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                  {strings.collectionsLabel}
+                </div>
+                <Select
+                  value={activeCollection?.id}
+                  onValueChange={(value) => {
+                    setSelectedCollectionId(value);
+                    setSelectedEntryId(
+                      entries.find((entry) => entry.collection_id === value)
+                        ?.id ?? ''
+                    );
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={strings.emptyCollection} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {collections.map((collection) => (
+                      <SelectItem key={collection.id} value={collection.id}>
+                        {collection.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                  {editSection === 'workflow'
+                    ? strings.workflowTab
+                    : strings.entrySummaryTitle}
+                </div>
+                {editSection === 'workflow' ? (
+                  <Select
+                    value={workflowFilter}
+                    onValueChange={(value) =>
+                      setWorkflowFilter(value as WorkflowFilter)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={strings.filterAll} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{strings.filterAll}</SelectItem>
+                      <SelectItem value="draft">
+                        {strings.draftQueue}
+                      </SelectItem>
+                      <SelectItem value="scheduled">
+                        {strings.scheduledQueue}
+                      </SelectItem>
+                      <SelectItem value="published">
+                        {strings.publishedQueue}
+                      </SelectItem>
+                      <SelectItem value="archived">
+                        {strings.archivedQueue}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Select
+                    value={activeEditEntry?.id}
+                    onValueChange={(value) => setSelectedEntryId(value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={strings.emptyEntries} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {visibleEntries.map((entry) => (
+                        <SelectItem key={entry.id} value={entry.id}>
+                          {entry.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                  {strings.searchPlaceholder}
+                </div>
+                <Input
+                  placeholder={strings.searchPlaceholder}
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-wrap items-end justify-end gap-2">
+                {activeCollection ? (
+                  <ActionButton
+                    tooltip={strings.manageCollectionAction}
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openCollectionDetails(activeCollection.id)}
+                  >
+                    <Settings2 className="mr-2 h-4 w-4" />
+                    {strings.editCollectionAction}
+                  </ActionButton>
+                ) : null}
+                {activeEditEntry ? (
+                  <ActionButton
+                    tooltip={strings.editEntryDescription}
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openEntryDetails(activeEditEntry.id)}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    {strings.openDetailsAction}
+                  </ActionButton>
+                ) : null}
+              </div>
             </div>
           </section>
 
           {editSection === 'entries' ? (
-            <div className="grid gap-4 xl:grid-cols-[280px_360px_minmax(0,1fr)]">
-              <Card className="border-border/70 bg-card/95 shadow-none">
-                <CardHeader>
-                  <CardTitle>{strings.collectionsLabel}</CardTitle>
-                  <CardDescription>
-                    {strings.editEntriesDescription}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {collections.map((collection) => (
-                    <button
-                      key={collection.id}
-                      type="button"
-                      className={cn(
-                        'w-full rounded-[1.15rem] border px-4 py-3 text-left transition-colors',
-                        collection.id === selectedCollectionId
-                          ? 'border-foreground/20 bg-background'
-                          : 'border-border/70 bg-background/70 hover:bg-background'
-                      )}
-                      onClick={() => {
-                        setSelectedCollectionId(collection.id);
-                        setSelectedEntryId(
-                          entries.find(
-                            (entry) => entry.collection_id === collection.id
-                          )?.id ?? ''
-                        );
-                      }}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="truncate font-medium text-sm">
-                            {collection.title}
-                          </div>
-                          <div className="truncate text-muted-foreground text-xs">
-                            {collection.slug}
-                          </div>
-                        </div>
-                        <Badge variant="outline">
-                          {
-                            entries.filter(
-                              (entry) => entry.collection_id === collection.id
-                            ).length
-                          }
-                        </Badge>
+            <div className="space-y-4">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
+                <Card className="border-border/70 bg-card/95 shadow-none">
+                  <CardHeader>
+                    <CardTitle>{strings.entrySummaryTitle}</CardTitle>
+                    <CardDescription>
+                      {strings.editEntriesDescription}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {!activeEditEntry ? (
+                      <div className="rounded-[1.2rem] border border-border/70 border-dashed p-5 text-muted-foreground text-sm">
+                        {strings.emptyEntries}
                       </div>
-                    </button>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/70 bg-card/95 shadow-none">
-                <CardHeader className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <CardTitle>{strings.contentTab}</CardTitle>
-                      <CardDescription>
-                        {activeCollection?.title ?? strings.emptyCollection}
-                      </CardDescription>
-                    </div>
-                    {activeCollection ? (
-                      <ActionButton
-                        tooltip={strings.manageCollectionAction}
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          openCollectionDetails(activeCollection.id)
-                        }
-                      >
-                        <Settings2 className="mr-2 h-4 w-4" />
-                        {strings.editCollectionAction}
-                      </ActionButton>
-                    ) : null}
-                  </div>
-                  <div className="relative">
-                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      className="pl-9"
-                      placeholder={strings.searchPlaceholder}
-                      value={search}
-                      onChange={(event) => setSearch(event.target.value)}
-                    />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[30rem] pr-3">
-                    <div className="space-y-2">
-                      {visibleEntries.length === 0 ? (
-                        <div className="rounded-[1.2rem] border border-border/70 border-dashed p-4 text-muted-foreground text-sm">
-                          {strings.emptyEntries}
+                    ) : (
+                      <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+                        <div className="relative min-h-[280px] overflow-hidden rounded-[1.4rem] border border-border/70 bg-background/80">
+                          <ResilientMediaImage
+                            alt={
+                              activeEditEntryVisual?.alt_text ??
+                              activeEditEntry.title
+                            }
+                            assetUrl={activeEditEntryVisual?.asset_url}
+                            className="object-cover"
+                            fill
+                            previewUrl={activeEditEntryVisual?.preview_url}
+                            sizes="220px"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/15 to-transparent" />
                         </div>
-                      ) : (
-                        visibleEntries.map((entry) => (
-                          <button
-                            key={entry.id}
-                            type="button"
-                            className={cn(
-                              'w-full rounded-[1.15rem] border px-4 py-3 text-left transition-colors',
-                              entry.id === activeEditEntry?.id
-                                ? 'border-foreground/20 bg-background'
-                                : 'border-border/70 bg-background/70 hover:bg-background'
-                            )}
-                            onClick={() => setSelectedEntryId(entry.id)}
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="truncate font-medium text-sm">
-                                  {entry.title}
-                                </div>
-                                <div className="truncate text-muted-foreground text-xs">
-                                  {entry.slug}
-                                </div>
-                              </div>
-                              <Badge className={statusTone(entry.status)}>
-                                {formatStatus(entry.status, strings)}
-                              </Badge>
-                            </div>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/70 bg-card/95 shadow-none">
-                <CardHeader>
-                  <CardTitle>{strings.entrySummaryTitle}</CardTitle>
-                  <CardDescription>
-                    {strings.editEntriesDescription}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {!activeEditEntry ? (
-                    <div className="rounded-[1.2rem] border border-border/70 border-dashed p-5 text-muted-foreground text-sm">
-                      {strings.emptyCollection}
-                    </div>
-                  ) : (
-                    <div className="space-y-5">
-                      <div className="relative min-h-[260px] overflow-hidden rounded-[1.5rem] border border-border/70 bg-background/80">
-                        <ResilientMediaImage
-                          alt={
-                            activeEditEntryVisual?.alt_text ??
-                            activeEditEntry.title
-                          }
-                          assetUrl={activeEditEntryVisual?.asset_url}
-                          className="object-cover"
-                          fill
-                          previewUrl={activeEditEntryVisual?.preview_url}
-                          sizes="(max-width: 1280px) 100vw, 34vw"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/15 to-transparent" />
-                        <div className="absolute inset-x-0 bottom-0 p-5">
+                        <div className="space-y-4">
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge
                               className={statusTone(activeEditEntry.status)}
@@ -1076,97 +907,232 @@ export function EpmClient({
                                 strings.collectionFallbackLabel}
                             </Badge>
                           </div>
-                          <h2 className="mt-4 font-semibold text-2xl tracking-tight">
-                            {activeEditEntry.title}
-                          </h2>
-                          {activeEditEntry.subtitle ? (
+                          <div>
+                            <h2 className="font-semibold text-2xl tracking-tight">
+                              {activeEditEntry.title}
+                            </h2>
                             <p className="mt-2 text-muted-foreground text-sm">
-                              {activeEditEntry.subtitle}
+                              {activeEditEntry.subtitle || activeEditEntry.slug}
                             </p>
-                          ) : null}
+                          </div>
+                          <p className="text-muted-foreground text-sm leading-7">
+                            {activeEditEntry.summary ||
+                              strings.previewEmptyDescription}
+                          </p>
+                          <div className="grid gap-3 sm:grid-cols-3">
+                            <div className="rounded-[1rem] border border-border/70 bg-background/75 p-3">
+                              <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                                {strings.scheduledForLabel}
+                              </div>
+                              <div className="mt-2 text-sm">
+                                {formatDateLabel(
+                                  activeEditEntry.scheduled_for,
+                                  strings.notScheduledLabel
+                                )}
+                              </div>
+                            </div>
+                            <div className="rounded-[1rem] border border-border/70 bg-background/75 p-3">
+                              <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                                {strings.assetsLabel}
+                              </div>
+                              <div className="mt-2 text-sm">
+                                {activeEditEntryAssets.length}
+                              </div>
+                            </div>
+                            <div className="rounded-[1rem] border border-border/70 bg-background/75 p-3">
+                              <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                                {strings.workspaceBindingLabel}
+                              </div>
+                              <div className="mt-2 text-sm">
+                                {binding.canonical_project?.display_name ??
+                                  strings.unboundLabel}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <ActionButton
+                              tooltip={strings.editEntryDescription}
+                              onClick={() =>
+                                openEntryDetails(activeEditEntry.id)
+                              }
+                            >
+                              <Pencil className="mr-2 h-4 w-4" />
+                              {strings.openDetailsAction}
+                            </ActionButton>
+                            <ActionButton
+                              tooltip={strings.duplicateAction}
+                              variant="outline"
+                              disabled={duplicateEntryMutation.isPending}
+                              onClick={() => duplicateEntryMutation.mutate()}
+                            >
+                              <Copy className="mr-2 h-4 w-4" />
+                              {strings.duplicateAction}
+                            </ActionButton>
+                            <ActionButton
+                              tooltip={
+                                activeEditEntry.status === 'published'
+                                  ? strings.unpublishAction
+                                  : strings.publishAction
+                              }
+                              variant="outline"
+                              disabled={publishEntryMutation.isPending}
+                              onClick={() =>
+                                publishEntryMutation.mutate(
+                                  activeEditEntry.status === 'published'
+                                    ? 'unpublish'
+                                    : 'publish'
+                                )
+                              }
+                            >
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                              {activeEditEntry.status === 'published'
+                                ? strings.unpublishAction
+                                : strings.publishAction}
+                            </ActionButton>
+                          </div>
                         </div>
                       </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                      <div className="rounded-[1.2rem] border border-border/70 bg-background/75 p-4">
-                        <div className="text-sm leading-7">
-                          {activeEditEntry.summary || strings.emptyEntries}
-                        </div>
+                <Card className="border-border/70 bg-card/95 shadow-none">
+                  <CardHeader>
+                    <CardTitle>{strings.editCollectionAction}</CardTitle>
+                    <CardDescription>
+                      {strings.manageCollectionDescription}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="rounded-[1.2rem] border border-border/70 bg-background/75 p-4">
+                      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                        {strings.collectionsLabel}
                       </div>
-
-                      <div className="grid gap-3 sm:grid-cols-3">
-                        <div className="rounded-[1.15rem] border border-border/70 bg-background/75 p-4">
-                          <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                            {strings.scheduledForLabel}
-                          </div>
-                          <div className="mt-2 text-sm">
-                            {formatDateLabel(
-                              activeEditEntry.scheduled_for,
-                              strings.notScheduledLabel
-                            )}
-                          </div>
-                        </div>
-                        <div className="rounded-[1.15rem] border border-border/70 bg-background/75 p-4">
-                          <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                            {strings.assetsLabel}
-                          </div>
-                          <div className="mt-2 text-sm">
-                            {activeEditEntryAssets.length}
-                          </div>
-                        </div>
-                        <div className="rounded-[1.15rem] border border-border/70 bg-background/75 p-4">
-                          <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                            {strings.workspaceBindingLabel}
-                          </div>
-                          <div className="mt-2 text-sm">
-                            {binding.canonical_project?.display_name ??
-                              strings.unboundLabel}
-                          </div>
-                        </div>
+                      <div className="mt-2 font-medium">
+                        {activeCollection?.title ?? strings.emptyCollection}
                       </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        <ActionButton
-                          tooltip={strings.editEntryDescription}
-                          onClick={() => openEntryDetails(activeEditEntry.id)}
-                        >
-                          <Pencil className="mr-2 h-4 w-4" />
-                          {strings.openDetailsAction}
-                        </ActionButton>
-                        <ActionButton
-                          tooltip={strings.duplicateAction}
-                          variant="outline"
-                          disabled={duplicateEntryMutation.isPending}
-                          onClick={() => duplicateEntryMutation.mutate()}
-                        >
-                          <Copy className="mr-2 h-4 w-4" />
-                          {strings.duplicateAction}
-                        </ActionButton>
-                        <ActionButton
-                          tooltip={
-                            activeEditEntry.status === 'published'
-                              ? strings.unpublishAction
-                              : strings.publishAction
-                          }
-                          variant="outline"
-                          disabled={publishEntryMutation.isPending}
-                          onClick={() =>
-                            publishEntryMutation.mutate(
-                              activeEditEntry.status === 'published'
-                                ? 'unpublish'
-                                : 'publish'
-                            )
-                          }
-                        >
-                          <CheckCircle2 className="mr-2 h-4 w-4" />
-                          {activeEditEntry.status === 'published'
-                            ? strings.unpublishAction
-                            : strings.publishAction}
-                        </ActionButton>
+                      <div className="mt-1 text-muted-foreground text-sm">
+                        {activeCollection?.description ??
+                          activeCollection?.slug}
                       </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-[1rem] border border-border/70 bg-background/75 p-3">
+                        <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                          {strings.entriesMetricLabel}
+                        </div>
+                        <div className="mt-2 font-semibold text-2xl">
+                          {visibleEntries.length}
+                        </div>
+                      </div>
+                      <div className="rounded-[1rem] border border-border/70 bg-background/75 p-3">
+                        <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                          {strings.collectionsMetricLabel}
+                        </div>
+                        <div className="mt-2 font-semibold text-2xl">
+                          {counts.collections}
+                        </div>
+                      </div>
+                    </div>
+                    {activeCollection ? (
+                      <Button
+                        className="w-full"
+                        variant="outline"
+                        onClick={() =>
+                          openCollectionDetails(activeCollection.id)
+                        }
+                      >
+                        {strings.openCollectionAction}
+                      </Button>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {visibleEntries.length === 0 ? (
+                <Card className="border-border/70 bg-card/95 shadow-none">
+                  <CardContent className="p-6 text-muted-foreground text-sm">
+                    {strings.emptyEntries}
+                  </CardContent>
+                </Card>
+              ) : (
+                <div
+                  className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+                  data-testid="epm-edit-gallery"
+                >
+                  {visibleEntries.map((entry) => {
+                    const visual = getEntryVisual(assets, entry.id);
+
+                    return (
+                      <button
+                        key={entry.id}
+                        type="button"
+                        className={cn(
+                          'group w-full overflow-hidden rounded-[1.4rem] border text-left transition-all hover:-translate-y-1 hover:shadow-xl',
+                          entry.id === activeEditEntry?.id
+                            ? 'border-foreground/20 bg-background shadow-sm'
+                            : 'border-border/70 bg-background/70 hover:bg-background'
+                        )}
+                        onClick={() => setSelectedEntryId(entry.id)}
+                      >
+                        <div className="relative aspect-[4/5] overflow-hidden bg-background/80">
+                          <ResilientMediaImage
+                            alt={visual?.alt_text ?? entry.title}
+                            assetUrl={visual?.asset_url}
+                            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                            fill
+                            previewUrl={visual?.preview_url}
+                            sizes="(max-width: 1024px) 100vw, (max-width: 1536px) 33vw, 24vw"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/15 to-transparent" />
+                          <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 p-4">
+                            <Badge
+                              className={cn(
+                                'border-0 shadow-none',
+                                statusTone(entry.status)
+                              )}
+                            >
+                              {formatStatus(entry.status, strings)}
+                            </Badge>
+                            <Badge
+                              variant="outline"
+                              className="bg-background/85"
+                            >
+                              {entry.slug}
+                            </Badge>
+                          </div>
+                          <div className="absolute inset-x-0 bottom-0 space-y-2 p-4">
+                            <div className="line-clamp-2 font-semibold text-xl tracking-tight">
+                              {entry.title}
+                            </div>
+                            <div className="line-clamp-1 text-muted-foreground text-sm">
+                              {entry.subtitle || activeCollection?.title}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-3 p-4">
+                          <p className="line-clamp-3 min-h-[4.5rem] text-muted-foreground text-sm leading-6">
+                            {entry.summary || strings.previewEmptyDescription}
+                          </p>
+                          <div className="flex items-center justify-between gap-3 text-xs">
+                            <span className="text-muted-foreground">
+                              {formatDateLabel(
+                                entry.scheduled_for,
+                                strings.notScheduledLabel
+                              )}
+                            </span>
+                            <span className="font-medium">
+                              {entry.id === activeEditEntry?.id
+                                ? strings.openDetailsAction
+                                : strings.editEntryAction}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           ) : null}
 
@@ -1225,29 +1191,6 @@ export function EpmClient({
                   <CardDescription>{strings.bulkSelectionHint}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      ['all', strings.filterAll],
-                      ['draft', strings.draftQueue],
-                      ['scheduled', strings.scheduledQueue],
-                      ['published', strings.publishedQueue],
-                      ['archived', strings.archivedQueue],
-                    ].map(([value, label]) => (
-                      <Button
-                        key={value}
-                        size="sm"
-                        variant={
-                          workflowFilter === value ? 'default' : 'outline'
-                        }
-                        onClick={() =>
-                          setWorkflowFilter(value as WorkflowFilter)
-                        }
-                      >
-                        {label}
-                      </Button>
-                    ))}
-                  </div>
-
                   <div className="flex flex-wrap items-center gap-2 rounded-[1.2rem] border border-border/70 bg-background/70 p-3">
                     <Input
                       className="w-[240px]"

@@ -28,8 +28,11 @@ The EPM surfaces now follow two distinct workflows:
 - Keep `Preview` as the default landing mode.
   - Render collections and entries from `GET /api/v1/workspaces/:wsId/external-projects/delivery?preview=true`.
   - Keep admin chrome light: mode switch, create/import/refresh actions, and route-outs into details.
+  - Use the full available width for a gallery-style entry surface instead of splitting the page into a rail plus a second inline preview column.
+  - Clicking an entry should route into the dedicated entry detail page instead of opening another preview state on the index.
   - Do not show workflow queues, metadata accordions, or settings cards in Preview mode.
 - Keep `Edit` as the operational index.
+  - Use dropdowns for section, collection, and entry/workflow context so the index stays compact.
   - `Entries` is for collection-scoped browsing, search, and routing into dedicated entry editors.
   - `Workflow` is for draft/scheduled/published/archived queues plus bulk actions.
   - `Settings` is for binding context, import controls, and routing into dedicated collection pages.
