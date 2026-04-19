@@ -19,6 +19,12 @@ export type CurrentUserProfileResponse = {
   default_workspace_id: string | null;
 };
 
+export type CurrentUserDefaultWorkspaceResponse = {
+  id: string;
+  name: string;
+  personal?: boolean | null;
+} | null;
+
 export type UpdateCurrentUserDefaultWorkspaceResponse = {
   success: boolean;
 };
@@ -99,6 +105,18 @@ export async function getCurrentUserProfile(
   return client.json<CurrentUserProfileResponse>('/api/v1/users/me/profile', {
     cache: 'no-store',
   });
+}
+
+export async function getCurrentUserDefaultWorkspace(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CurrentUserDefaultWorkspaceResponse>(
+    '/api/v1/users/me/default-workspace',
+    {
+      cache: 'no-store',
+    }
+  );
 }
 
 export async function updateCurrentUserDefaultWorkspace(

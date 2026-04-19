@@ -27,7 +27,6 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { joinPath } from '@/utils/path-helper';
@@ -43,6 +42,7 @@ interface Props {
   contextMenu?: boolean;
   onRequestRename?: (obj: StorageObject) => void;
   onRequestDelete?: (obj: StorageObject) => void;
+  onMutationSuccess?: () => void | Promise<void>;
 }
 
 export function StorageObjectRowActions({
@@ -54,9 +54,9 @@ export function StorageObjectRowActions({
   contextMenu = false,
   onRequestRename,
   onRequestDelete,
+  onMutationSuccess,
 }: Props) {
   const t = useTranslations();
-  const router = useRouter();
   const storageObj = row.original;
   const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -299,7 +299,7 @@ export function StorageObjectRowActions({
           storageObject={showRenameDialog ? storageObj : null}
           open={showRenameDialog}
           onOpenChange={setShowRenameDialog}
-          onSuccess={() => router.refresh()}
+          onSuccess={onMutationSuccess}
         />
         {exportFolderPath ? (
           <WorkspaceStorageExportLinksDialog
@@ -339,7 +339,7 @@ export function StorageObjectRowActions({
         storageObject={showRenameDialog ? storageObj : null}
         open={showRenameDialog}
         onOpenChange={setShowRenameDialog}
-        onSuccess={() => router.refresh()}
+        onSuccess={onMutationSuccess}
       />
       {exportFolderPath ? (
         <WorkspaceStorageExportLinksDialog

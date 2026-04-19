@@ -207,12 +207,15 @@ export {
   deleteWorkspaceStorageObject,
   deleteWorkspaceStorageObjects,
   exportWorkspaceStorageLinks,
+  getWorkspaceStorageAnalytics,
   listWorkspaceStorageObjects,
   migrateWorkspaceStorage,
   renameWorkspaceStorageObject,
   uploadWorkspaceStorageFile,
   uploadWorkspaceTaskFile,
+  type WorkspaceStorageAnalyticsResponse,
   type WorkspaceStorageExportLinksResponse,
+  type WorkspaceStorageListResponse,
 } from './storage';
 export {
   addWorkspaceTaskLabel,
@@ -269,6 +272,7 @@ export {
 export {
   createCurrentUserAvatarUploadUrl,
   createSupportInquiry,
+  getCurrentUserDefaultWorkspace,
   getCurrentUserProfile,
   getUserCalendarSettings,
   getUserConfig,
