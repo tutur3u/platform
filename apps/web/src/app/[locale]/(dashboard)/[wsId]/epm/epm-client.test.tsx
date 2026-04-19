@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EpmClient } from './epm-client';
@@ -66,21 +72,31 @@ describe('EpmClient', () => {
 
   const strings = {
     activityTab: 'Activity',
+    activityFeedTitle: 'Activity feed',
     archivedQueue: 'Archived backlog',
     archiveAction: 'Archive',
     archiveBacklogHint: 'hint',
+    assetsLabel: 'assets',
     attentionTitle: 'Attention Queue',
     bulkActionsTitle: 'Workflow Queues',
     bulkSelectionHint: 'bulk hint',
     cancelAction: 'Cancel',
     collectionFallbackLabel: 'Collection',
+    collectionHealthTitle: 'Collection health',
     collectionsLabel: 'Collections',
     collectionsMetricLabel: 'Collections',
     contentTab: 'Content',
     createEntryAction: 'Quick create',
+    dashboardModeLabel: 'Dashboard mode',
+    dashboardPreferencesTitle: 'Dashboard preferences',
+    densityCompact: 'Compact',
+    densityComfortable: 'Comfortable',
+    densityLabel: 'Density',
     draftQueue: 'Draft queue',
+    entryDeckTitle: 'Entry deck',
     duplicateAction: 'Duplicate',
     editCollectionAction: 'Edit collection',
+    editCollectionDescription: 'Edit collection description',
     editEntryAction: 'Edit details',
     editEntryDescription: 'Edit description',
     editEntryTitle: 'Entry editor',
@@ -89,7 +105,11 @@ describe('EpmClient', () => {
     enabledLabel: 'Enabled',
     entriesMetricLabel: 'Entries',
     entrySummaryTitle: 'Selected entry',
+    featuredEntryTitle: 'Featured entry',
     filterAll: 'All',
+    focusOperator: 'Operator',
+    focusVisual: 'Visual',
+    focusWorkflow: 'Workflow',
     importAction: 'Import',
     importHint: 'Import hint',
     loadingPreviewLabel: 'Loading preview payload...',
@@ -118,8 +138,13 @@ describe('EpmClient', () => {
     scheduledQueue: 'Scheduled soon',
     searchPlaceholder: 'Search',
     settingsTab: 'Settings',
+    showActivityLabel: 'Show activity',
+    showCollectionsLabel: 'Show collections',
+    showVisualsLabel: 'Show visuals',
+    slugLabel: 'Slug',
     statusArchived: 'Archived',
     statusDraft: 'Draft',
+    statusLabel: 'Status',
     statusPublished: 'Published',
     statusScheduled: 'Scheduled',
     subtitleLabel: 'Subtitle',
@@ -130,8 +155,10 @@ describe('EpmClient', () => {
     unboundLabel: 'Unbound',
     unknownCollectionLabel: 'Unknown collection',
     unpublishAction: 'Unpublish',
+    visualBoardTitle: 'Visual board',
     workflowTab: 'Workflow',
     workspaceBindingLabel: 'Workspace binding',
+    workspaceStatusTitle: 'Workspace status',
   } as const;
 
   beforeEach(() => {
@@ -339,7 +366,11 @@ describe('EpmClient', () => {
 
     expect(getWorkspaceExternalProjectDeliveryMock).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: /Open preview/i }));
+    fireEvent.click(
+      within(screen.getByTestId('epm-action-bar')).getByRole('button', {
+        name: /Open preview/i,
+      })
+    );
 
     await waitFor(() => {
       expect(getWorkspaceExternalProjectDeliveryMock).toHaveBeenCalledWith(

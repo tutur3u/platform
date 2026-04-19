@@ -23,10 +23,18 @@ The EPM surfaces now follow two distinct workflows:
 ## Workspace EPM
 
 - Use tabs to separate `Overview`, `Content`, `Workflow`, `Activity`, and `Settings`.
+- The workspace shell now follows a more visual `case file` pattern inspired by Yoola:
+  - a featured spotlight card keeps the active entry, adapter context, and primary actions above the fold
+  - collection and workflow health panels sit beside it instead of duplicating a full editor
+  - visual entry cards are optional and can be hidden when operators want a denser queue-first view
 - Keep the default page view-first.
   - Summary cards should be readable without opening an editor.
   - Metadata and profile payloads should stay collapsed until requested.
   - Editing should open through explicit icon or button affordances.
+- Dashboard presentation is locally customizable per workspace.
+  - `Dashboard mode` switches between operator-first, visual-first, and workflow-first emphasis.
+  - `Density` toggles between compact and comfortable spacing.
+  - `Show visual cards`, `Show collection health`, and `Show activity feed` persist in local dashboard preferences.
 - Treat the `Workflow` tab as the operator queue.
   - Multi-select lives there, not across every content surface.
   - Schedule, publish, draft, and archive actions should be available without reopening each record.

@@ -74,6 +74,7 @@ import {
   SheetTitle,
 } from '@tuturuuu/ui/sheet';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -84,32 +85,47 @@ import {
   type ComponentProps,
   startTransition,
   useDeferredValue,
+  useEffect,
   useState,
 } from 'react';
 import { useExternalProjectLivePreview } from '../external-projects/use-external-project-live-preview';
 
 type Strings = {
   activityTab: string;
+  activityFeedTitle: string;
   archivedQueue: string;
   archiveAction: string;
   archiveBacklogHint: string;
+  assetsLabel: string;
   attentionTitle: string;
   bulkActionsTitle: string;
   bulkSelectionHint: string;
   cancelAction: string;
   collectionFallbackLabel: string;
+  collectionHealthTitle: string;
   collectionsLabel: string;
   collectionsMetricLabel: string;
   contentTab: string;
   createEntryAction: string;
+  dashboardModeLabel: string;
+  dashboardPreferencesTitle: string;
   draftQueue: string;
+  entryDeckTitle: string;
   duplicateAction: string;
+  editCollectionDescription: string;
   editCollectionAction: string;
   editEntryAction: string;
   editEntryDescription: string;
   editEntryTitle: string;
+  featuredEntryTitle: string;
+  focusOperator: string;
+  focusVisual: string;
+  focusWorkflow: string;
   emptyCollection: string;
   emptyEntries: string;
+  densityCompact: string;
+  densityComfortable: string;
+  densityLabel: string;
   enabledLabel: string;
   entrySummaryTitle: string;
   entriesMetricLabel: string;
@@ -142,8 +158,13 @@ type Strings = {
   scheduledQueue: string;
   searchPlaceholder: string;
   settingsTab: string;
+  showActivityLabel: string;
+  showCollectionsLabel: string;
+  showVisualsLabel: string;
+  slugLabel: string;
   statusArchived: string;
   statusDraft: string;
+  statusLabel: string;
   statusPublished: string;
   statusScheduled: string;
   subtitleLabel: string;
@@ -154,12 +175,27 @@ type Strings = {
   unboundLabel: string;
   unpublishAction: string;
   unknownCollectionLabel: string;
+  visualBoardTitle: string;
   workflowTab: string;
   workspaceBindingLabel: string;
+  workspaceStatusTitle: string;
 };
 
 type WorkflowFilter = 'all' | ExternalProjectEntry['status'];
 type EpmTab = 'activity' | 'content' | 'overview' | 'settings' | 'workflow';
+type DashboardFocus = 'operator' | 'visual' | 'workflow';
+type DashboardDensity = 'compact' | 'comfortable';
+type DashboardPreferences = {
+  density: DashboardDensity;
+  focus: DashboardFocus;
+  showActivity: boolean;
+  showCollections: boolean;
+  showVisuals: boolean;
+};
+type DashboardPreferenceToggleKey = keyof Pick<
+  DashboardPreferences,
+  'showActivity' | 'showCollections' | 'showVisuals'
+>;
 
 type EntryFormState = {
   scheduled_for: string;
@@ -174,6 +210,14 @@ type CollectionFormState = {
   description: string;
   is_enabled: boolean;
   title: string;
+};
+
+const DEFAULT_DASHBOARD_PREFERENCES: DashboardPreferences = {
+  density: 'comfortable',
+  focus: 'operator',
+  showActivity: true,
+  showCollections: true,
+  showVisuals: true,
 };
 
 function buildEntryFormState(
@@ -236,6 +280,21 @@ function formatDateLabel(value: string | null | undefined) {
   }
 
   return new Date(value).toLocaleString();
+}
+
+function getEntryVisual(
+  assets: ExternalProjectStudioAsset[],
+  entryId: string | null | undefined
+) {
+  if (!entryId) {
+    return null;
+  }
+
+  return (
+    assets.find(
+      (asset) => asset.entry_id === entryId && asset.asset_type === 'image'
+    ) ?? null
+  );
 }
 
 function buildAttentionQueues(
@@ -402,8 +461,35 @@ export function EpmClient({
   const [collectionForm, setCollectionForm] = useState<CollectionFormState>(
     buildCollectionFormState()
   );
+  const [dashboardPreferences, setDashboardPreferences] =
+    useState<DashboardPreferences>(DEFAULT_DASHBOARD_PREFERENCES);
   const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
   const deferredSearch = useDeferredValue(search);
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(
+        `epm-dashboard:${workspaceId}`
+      );
+      if (!stored) {
+        return;
+      }
+
+      setDashboardPreferences({
+        ...DEFAULT_DASHBOARD_PREFERENCES,
+        ...(JSON.parse(stored) as Partial<DashboardPreferences>),
+      });
+    } catch {
+      // Ignore malformed local dashboard preferences.
+    }
+  }, [workspaceId]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      `epm-dashboard:${workspaceId}`,
+      JSON.stringify(dashboardPreferences)
+    );
+  }, [dashboardPreferences, workspaceId]);
 
   const visibleEntries = entries.filter((entry) => {
     if (selectedCollectionId && entry.collection_id !== selectedCollectionId) {
@@ -431,9 +517,11 @@ export function EpmClient({
   const activeEntryAssets = assets.filter(
     (asset) => asset.entry_id === activeEntry?.id
   );
+  const activeEntryVisual = getEntryVisual(assets, activeEntry?.id);
   const workflowEntries = entries.filter(
     (entry) => workflowFilter === 'all' || entry.status === workflowFilter
   );
+  const visualEntries = visibleEntries.slice(0, 6);
   const queues = buildAttentionQueues(collections, entries, assets, importJobs);
   const counts = {
     archived: entries.filter((entry) => entry.status === 'archived').length,
@@ -448,6 +536,38 @@ export function EpmClient({
     [strings.entriesMetricLabel, counts.entries],
     [strings.statusDraft, counts.drafts],
     [strings.statusPublished, counts.published],
+  ];
+  const workflowLanes: Array<{
+    entries: ExternalProjectEntry[];
+    status: ExternalProjectEntry['status'];
+    title: string;
+  }> = [
+    {
+      entries: entries.filter((entry) => entry.status === 'draft').slice(0, 4),
+      status: 'draft',
+      title: strings.draftQueue,
+    },
+    {
+      entries: entries
+        .filter((entry) => entry.status === 'scheduled')
+        .slice(0, 4),
+      status: 'scheduled',
+      title: strings.scheduledQueue,
+    },
+    {
+      entries: entries
+        .filter((entry) => entry.status === 'published')
+        .slice(0, 4),
+      status: 'published',
+      title: strings.publishedQueue,
+    },
+    {
+      entries: entries
+        .filter((entry) => entry.status === 'archived')
+        .slice(0, 4),
+      status: 'archived',
+      title: strings.archivedQueue,
+    },
   ];
 
   const previewQuery = useExternalProjectLivePreview({
@@ -660,60 +780,286 @@ export function EpmClient({
 
   return (
     <div className="space-y-5 pb-8">
-      <section className="overflow-hidden rounded-[1.75rem] border border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.12),transparent_30%),linear-gradient(140deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))]">
-        <div className="grid gap-5 p-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-end">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-3 py-1 text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+      <section className="relative isolate overflow-hidden rounded-[2rem] border border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(217,119,6,0.12),transparent_24%),linear-gradient(160deg,rgba(17,24,39,0.98),rgba(9,12,18,0.94))] text-white">
+        <div className="pointer-events-none absolute inset-0 opacity-80 [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:42px_42px]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(244,114,182,0.24),transparent_24%),radial-gradient(circle_at_82%_22%,rgba(96,165,250,0.18),transparent_24%),linear-gradient(180deg,transparent,rgba(0,0,0,0.32))]" />
+        <div className="relative grid gap-6 p-5 xl:grid-cols-[minmax(0,1.2fr)_380px] xl:p-6">
+          <div className="space-y-5">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3 py-1 text-[11px] text-white/72 uppercase tracking-[0.28em]">
               <Sparkles className="h-3.5 w-3.5" />
               EPM
             </div>
-            <div className="space-y-2">
-              <h1 className="font-semibold text-3xl tracking-tight">
+            <div className="max-w-3xl space-y-3">
+              <h1 className="font-semibold text-3xl tracking-tight sm:text-4xl">
                 {strings.title}
               </h1>
-              <p className="max-w-3xl text-muted-foreground text-sm leading-6">
+              <p className="text-sm text-white/72 leading-6">
                 {strings.tabsDescription}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">
+              <Badge className="border-white/15 bg-white/8 text-white hover:bg-white/12">
                 {binding.canonical_project?.display_name ??
                   strings.unboundLabel}
               </Badge>
-              <Badge variant="outline">
+              <Badge className="border-white/15 bg-white/8 text-white hover:bg-white/12">
                 {binding.adapter ?? strings.noAdapterLabel}
               </Badge>
+              <Badge className="border-white/15 bg-white/8 text-white hover:bg-white/12">
+                {dashboardPreferences.focus === 'visual'
+                  ? strings.focusVisual
+                  : dashboardPreferences.focus === 'workflow'
+                    ? strings.focusWorkflow
+                    : strings.focusOperator}
+              </Badge>
             </div>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {metricCards.map(([label, value]) => (
-              <Card
-                key={label}
-                className="border-border/70 bg-background/75 shadow-none"
-              >
-                <CardContent className="space-y-1 p-4">
-                  <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                    {label}
+
+            <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_260px]">
+              <div className="overflow-hidden rounded-[1.6rem] border border-white/12 bg-black/35">
+                <div className="grid gap-4 p-4 lg:grid-cols-[0.92fr_1.08fr] lg:p-5">
+                  <div className="relative min-h-[220px] overflow-hidden rounded-[1.35rem] border border-white/10 bg-white/6">
+                    {dashboardPreferences.showVisuals &&
+                    activeEntryVisual?.preview_url ? (
+                      <Image
+                        src={activeEntryVisual.preview_url}
+                        alt={
+                          activeEntryVisual.alt_text ??
+                          activeEntry?.title ??
+                          strings.title
+                        }
+                        fill
+                        className="object-cover"
+                      />
+                    ) : dashboardPreferences.showVisuals &&
+                      activeEntryVisual?.asset_url ? (
+                      <Image
+                        src={activeEntryVisual.asset_url}
+                        alt={
+                          activeEntryVisual.alt_text ??
+                          activeEntry?.title ??
+                          strings.title
+                        }
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(244,114,182,0.34),transparent_28%),radial-gradient(circle_at_80%_70%,rgba(96,165,250,0.28),transparent_28%),linear-gradient(150deg,rgba(255,255,255,0.12),rgba(255,255,255,0.04))]" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 p-4">
+                      <p className="text-[11px] text-white/65 uppercase tracking-[0.32em]">
+                        {strings.featuredEntryTitle}
+                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <Badge
+                          className={cn(
+                            'border-0',
+                            statusTone(activeEntry?.status ?? 'draft')
+                          )}
+                        >
+                          {formatStatus(
+                            activeEntry?.status ?? 'draft',
+                            strings
+                          )}
+                        </Badge>
+                        <Badge className="border-white/15 bg-black/45 text-white/85">
+                          {activeCollection?.title ??
+                            strings.collectionFallbackLabel}
+                        </Badge>
+                      </div>
+                      <h2 className="mt-3 font-semibold text-2xl tracking-tight">
+                        {activeEntry?.title ?? strings.emptyCollection}
+                      </h2>
+                      {activeEntry?.summary ? (
+                        <p className="mt-2 max-w-xl text-sm text-white/68 leading-6">
+                          {activeEntry.summary}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="font-semibold text-2xl">{value}</div>
-                </CardContent>
-              </Card>
-            ))}
+
+                  <div className="space-y-3">
+                    <div className="rounded-[1.35rem] border border-white/10 bg-white/6 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[11px] text-white/55 uppercase tracking-[0.3em]">
+                            {strings.workspaceStatusTitle}
+                          </p>
+                          <h2 className="mt-2 font-medium text-lg text-white">
+                            {binding.canonical_project?.display_name ??
+                              strings.workspaceBindingLabel}
+                          </h2>
+                        </div>
+                        <ActionButton
+                          tooltip={strings.openPreviewAction}
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setPreviewOpen(true)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          {strings.openPreviewAction}
+                        </ActionButton>
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {metricCards.map(([label, value]) => (
+                          <div
+                            key={label}
+                            className="rounded-2xl border border-white/10 bg-black/28 p-3"
+                          >
+                            <div className="text-[11px] text-white/52 uppercase tracking-[0.24em]">
+                              {label}
+                            </div>
+                            <div className="mt-2 font-semibold text-2xl text-white">
+                              {value}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-[1.35rem] border border-white/10 bg-white/6 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[11px] text-white/55 uppercase tracking-[0.3em]">
+                            {strings.dashboardPreferencesTitle}
+                          </p>
+                          <p className="mt-2 text-sm text-white/64 leading-6">
+                            {strings.importHint}
+                          </p>
+                        </div>
+                        <Badge className="border-white/15 bg-black/40 text-white/85">
+                          {dashboardPreferences.density === 'compact'
+                            ? strings.densityCompact
+                            : strings.densityComfortable}
+                        </Badge>
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label className="text-white/72">
+                            {strings.dashboardModeLabel}
+                          </Label>
+                          <Select
+                            value={dashboardPreferences.focus}
+                            onValueChange={(value) =>
+                              setDashboardPreferences((current) => ({
+                                ...current,
+                                focus: value as DashboardFocus,
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="border-white/12 bg-black/28 text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="operator">
+                                {strings.focusOperator}
+                              </SelectItem>
+                              <SelectItem value="visual">
+                                {strings.focusVisual}
+                              </SelectItem>
+                              <SelectItem value="workflow">
+                                {strings.focusWorkflow}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-white/72">
+                            {strings.densityLabel}
+                          </Label>
+                          <Select
+                            value={dashboardPreferences.density}
+                            onValueChange={(value) =>
+                              setDashboardPreferences((current) => ({
+                                ...current,
+                                density: value as DashboardDensity,
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="border-white/12 bg-black/28 text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="compact">
+                                {strings.densityCompact}
+                              </SelectItem>
+                              <SelectItem value="comfortable">
+                                {strings.densityComfortable}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {workflowLanes.slice(0, 3).map((lane) => (
+                  <div
+                    key={lane.status}
+                    className="rounded-[1.35rem] border border-white/10 bg-black/32 p-4"
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div className="text-[11px] text-white/55 uppercase tracking-[0.28em]">
+                        {lane.title}
+                      </div>
+                      <Badge
+                        className={cn('border-0', statusTone(lane.status))}
+                      >
+                        {lane.entries.length}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      {lane.entries.length === 0 ? (
+                        <p className="text-sm text-white/45">
+                          {strings.emptyEntries}
+                        </p>
+                      ) : (
+                        lane.entries.map((entry) => (
+                          <button
+                            key={entry.id}
+                            type="button"
+                            className="w-full rounded-xl border border-white/10 bg-white/6 px-3 py-3 text-left transition-colors hover:bg-white/10"
+                            onClick={() => {
+                              setSelectedCollectionId(entry.collection_id);
+                              setSelectedEntryId(entry.id);
+                              setTab('content');
+                            }}
+                          >
+                            <div className="truncate font-medium text-sm text-white">
+                              {entry.title}
+                            </div>
+                            <div className="mt-1 truncate text-white/52 text-xs">
+                              {entry.slug}
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <div className="sticky top-20 z-20 rounded-[1.4rem] border border-border/70 bg-background/85 p-2 shadow-sm backdrop-blur">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.1rem] bg-background/55 px-4 py-3">
+      <div
+        data-testid="epm-action-bar"
+        className="sticky top-20 z-20 rounded-[1.5rem] border border-border/70 bg-background/88 p-2 shadow-sm backdrop-blur"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.15rem] bg-background/60 px-4 py-3">
           <div className="min-w-0">
-            <div className="text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
-              EPM
+            <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+              {strings.visualBoardTitle}
             </div>
             <p className="mt-1 text-muted-foreground text-sm">
-              {strings.importHint}
+              {strings.quickCreateHint}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <ActionButton
               tooltip={strings.quickCreateHint}
               variant="secondary"
@@ -751,7 +1097,7 @@ export function EpmClient({
       </div>
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as EpmTab)}>
-        <TabsList className="h-auto flex-wrap justify-start rounded-2xl border border-border/70 bg-background/60 p-1">
+        <TabsList className="h-auto flex-wrap justify-start rounded-2xl border border-border/70 bg-background/70 p-1">
           <TabsTrigger value="overview">{strings.overviewTab}</TabsTrigger>
           <TabsTrigger value="content">{strings.contentTab}</TabsTrigger>
           <TabsTrigger value="workflow">{strings.workflowTab}</TabsTrigger>
@@ -760,13 +1106,27 @@ export function EpmClient({
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-            <Card className="border-border/70 bg-card/85">
+          <div
+            className={cn(
+              'grid gap-4',
+              dashboardPreferences.showCollections
+                ? 'xl:grid-cols-[1.15fr_0.85fr]'
+                : 'xl:grid-cols-1'
+            )}
+          >
+            <Card className="border-border/70 bg-card/90 shadow-none">
               <CardHeader>
                 <CardTitle>{strings.attentionTitle}</CardTitle>
                 <CardDescription>{strings.archiveBacklogHint}</CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-3 md:grid-cols-2">
+              <CardContent
+                className={cn(
+                  'grid gap-3',
+                  dashboardPreferences.density === 'compact'
+                    ? 'md:grid-cols-4'
+                    : 'md:grid-cols-2'
+                )}
+              >
                 {[
                   queues.scheduledSoon,
                   queues.draftsMissingMedia,
@@ -783,7 +1143,7 @@ export function EpmClient({
                   return (
                     <div
                       key={title}
-                      className="rounded-2xl border border-border/70 bg-background/55 p-4"
+                      className="rounded-[1.35rem] border border-border/70 bg-background/65 p-4"
                     >
                       <div className="mb-2 flex items-center justify-between">
                         <div className="font-medium text-sm">{title}</div>
@@ -799,7 +1159,7 @@ export function EpmClient({
                             <button
                               key={item.entryId}
                               type="button"
-                              className="w-full rounded-xl border border-border/70 bg-background/70 p-3 text-left"
+                              className="w-full rounded-xl border border-border/70 bg-background/80 p-3 text-left transition-colors hover:bg-background"
                               onClick={() => {
                                 setSelectedCollectionId(item.collectionId);
                                 setSelectedEntryId(item.entryId);
@@ -832,46 +1192,148 @@ export function EpmClient({
               </CardContent>
             </Card>
 
-            <Card className="border-border/70 bg-card/85">
+            {dashboardPreferences.showCollections ? (
+              <Card className="border-border/70 bg-card/90 shadow-none">
+                <CardHeader>
+                  <CardTitle>{strings.collectionHealthTitle}</CardTitle>
+                  <CardDescription>
+                    {binding.canonical_project?.display_name ??
+                      strings.workspaceBindingLabel}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {collections.map((collection) => {
+                    const collectionEntries = entries.filter(
+                      (entry) => entry.collection_id === collection.id
+                    );
+                    const publishedEntries = collectionEntries.filter(
+                      (entry) => entry.status === 'published'
+                    );
+
+                    return (
+                      <button
+                        key={collection.id}
+                        type="button"
+                        className="w-full rounded-[1.35rem] border border-border/70 bg-background/70 p-4 text-left transition-colors hover:bg-background"
+                        onClick={() => {
+                          setSelectedCollectionId(collection.id);
+                          setTab('content');
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="font-medium">
+                              {collection.title}
+                            </div>
+                            <div className="text-muted-foreground text-sm">
+                              {collection.description || collection.slug}
+                            </div>
+                          </div>
+                          <Badge variant="outline">
+                            {collectionEntries.length}
+                          </Badge>
+                        </div>
+                        <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-[linear-gradient(90deg,#f472b6,#60a5fa)]"
+                            style={{
+                              width: `${collectionEntries.length === 0 ? 0 : (publishedEntries.length / collectionEntries.length) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <div className="mt-3 flex items-center justify-between text-muted-foreground text-xs">
+                          <span>
+                            {publishedEntries.length}{' '}
+                            {strings.statusPublished.toLowerCase()}
+                          </span>
+                          <span>
+                            {collection.is_enabled
+                              ? strings.enabledLabel
+                              : strings.statusArchived}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            ) : null}
+          </div>
+
+          {dashboardPreferences.showVisuals ? (
+            <Card className="border-border/70 bg-card/90 shadow-none">
               <CardHeader>
-                <CardTitle>{strings.collectionsLabel}</CardTitle>
-                <CardDescription>
-                  {binding.canonical_project?.display_name ??
-                    strings.workspaceBindingLabel}
-                </CardDescription>
+                <CardTitle>{strings.visualBoardTitle}</CardTitle>
+                <CardDescription>{strings.previewDescription}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {collections.map((collection) => {
-                  const collectionEntries = entries.filter(
-                    (entry) => entry.collection_id === collection.id
-                  );
-                  return (
-                    <div
-                      key={collection.id}
-                      className="rounded-2xl border border-border/70 bg-background/60 p-4"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <div className="font-medium">{collection.title}</div>
-                          <div className="text-muted-foreground text-sm">
-                            {collection.slug}
+              <CardContent className="grid gap-3 md:grid-cols-3">
+                {visualEntries.length === 0 ? (
+                  <div className="rounded-[1.35rem] border border-border/70 border-dashed p-4 text-muted-foreground text-sm md:col-span-3">
+                    {strings.emptyEntries}
+                  </div>
+                ) : (
+                  visualEntries.map((entry) => {
+                    const visualAsset = getEntryVisual(assets, entry.id);
+
+                    return (
+                      <button
+                        key={entry.id}
+                        type="button"
+                        className="group overflow-hidden rounded-[1.35rem] border border-border/70 bg-background/80 text-left transition-all hover:-translate-y-1 hover:bg-background"
+                        onClick={() => {
+                          setSelectedCollectionId(entry.collection_id);
+                          setSelectedEntryId(entry.id);
+                          setTab('content');
+                        }}
+                      >
+                        <div className="relative h-40 overflow-hidden border-border/70 border-b bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.18),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.16),transparent_30%),linear-gradient(160deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))]">
+                          {visualAsset?.preview_url ? (
+                            <Image
+                              src={visualAsset.preview_url}
+                              alt={visualAsset.alt_text ?? entry.title}
+                              fill
+                              className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                            />
+                          ) : visualAsset?.asset_url ? (
+                            <Image
+                              src={visualAsset.asset_url}
+                              alt={visualAsset.alt_text ?? entry.title}
+                              fill
+                              className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                            />
+                          ) : null}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+                          <div className="absolute right-3 bottom-3">
+                            <Badge className={statusTone(entry.status)}>
+                              {formatStatus(entry.status, strings)}
+                            </Badge>
                           </div>
                         </div>
-                        <Badge variant="outline">
-                          {collectionEntries.length}
-                        </Badge>
-                      </div>
-                    </div>
-                  );
-                })}
+                        <div className="space-y-3 p-4">
+                          <div>
+                            <div className="font-medium text-sm">
+                              {entry.title}
+                            </div>
+                            <div className="mt-1 truncate text-muted-foreground text-xs">
+                              {entry.slug}
+                            </div>
+                          </div>
+                          <p className="line-clamp-2 text-muted-foreground text-sm leading-6">
+                            {entry.summary || strings.emptyEntries}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
               </CardContent>
             </Card>
-          </div>
+          ) : null}
         </TabsContent>
 
         <TabsContent value="content" className="space-y-4">
           <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-            <Card className="border-border/70 bg-card/85">
+            <Card className="border-border/70 bg-card/90 shadow-none">
               <CardHeader className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle>{strings.collectionsLabel}</CardTitle>
@@ -902,10 +1364,10 @@ export function EpmClient({
                         key={collection.id}
                         type="button"
                         className={cn(
-                          'w-full rounded-xl border px-3 py-3 text-left',
+                          'w-full rounded-[1.1rem] border px-3 py-3 text-left transition-colors',
                           collection.id === selectedCollectionId
                             ? 'border-foreground/20 bg-background'
-                            : 'border-border/70 bg-background/50'
+                            : 'border-border/70 bg-background/60 hover:bg-background/90'
                         )}
                         onClick={() => setSelectedCollectionId(collection.id)}
                       >
@@ -940,10 +1402,10 @@ export function EpmClient({
                           key={entry.id}
                           type="button"
                           className={cn(
-                            'w-full rounded-xl border px-3 py-3 text-left',
+                            'w-full rounded-[1.1rem] border px-3 py-3 text-left transition-colors',
                             entry.id === activeEntry?.id
                               ? 'border-foreground/20 bg-background'
-                              : 'border-border/70 bg-background/45'
+                              : 'border-border/70 bg-background/55 hover:bg-background/90'
                           )}
                           onClick={() => setSelectedEntryId(entry.id)}
                         >
@@ -974,7 +1436,70 @@ export function EpmClient({
             </Card>
 
             <div className="space-y-4">
-              <Card className="border-border/70 bg-card/85">
+              {dashboardPreferences.showVisuals ? (
+                <Card className="border-border/70 bg-card/90 shadow-none">
+                  <CardHeader>
+                    <CardTitle>{strings.entryDeckTitle}</CardTitle>
+                    <CardDescription>
+                      {strings.openPreviewAction}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-3 md:grid-cols-3">
+                    {visualEntries.length === 0 ? (
+                      <div className="rounded-[1.2rem] border border-border/70 border-dashed p-4 text-muted-foreground text-sm md:col-span-3">
+                        {strings.emptyEntries}
+                      </div>
+                    ) : (
+                      visualEntries.map((entry) => {
+                        const visualAsset = getEntryVisual(assets, entry.id);
+
+                        return (
+                          <button
+                            key={entry.id}
+                            type="button"
+                            className={cn(
+                              'group overflow-hidden rounded-[1.2rem] border text-left transition-all hover:-translate-y-1',
+                              entry.id === activeEntry?.id
+                                ? 'border-foreground/20 bg-background'
+                                : 'border-border/70 bg-background/75 hover:bg-background'
+                            )}
+                            onClick={() => setSelectedEntryId(entry.id)}
+                          >
+                            <div className="relative h-32 overflow-hidden border-border/70 border-b bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.18),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.16),transparent_32%),linear-gradient(150deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))]">
+                              {visualAsset?.preview_url ? (
+                                <Image
+                                  src={visualAsset.preview_url}
+                                  alt={visualAsset.alt_text ?? entry.title}
+                                  fill
+                                  className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                                />
+                              ) : visualAsset?.asset_url ? (
+                                <Image
+                                  src={visualAsset.asset_url}
+                                  alt={visualAsset.alt_text ?? entry.title}
+                                  fill
+                                  className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                                />
+                              ) : null}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+                            </div>
+                            <div className="space-y-2 p-3">
+                              <div className="truncate font-medium text-sm">
+                                {entry.title}
+                              </div>
+                              <Badge className={statusTone(entry.status)}>
+                                {formatStatus(entry.status, strings)}
+                              </Badge>
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              <Card className="border-border/70 bg-card/90 shadow-none">
                 <CardHeader>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -1021,7 +1546,7 @@ export function EpmClient({
                 </CardHeader>
                 <CardContent>
                   {!activeEntry ? (
-                    <div className="rounded-xl border border-border/70 border-dashed p-5 text-muted-foreground text-sm">
+                    <div className="rounded-[1.2rem] border border-border/70 border-dashed p-5 text-muted-foreground text-sm">
                       {strings.emptyCollection}
                     </div>
                   ) : (
@@ -1035,11 +1560,11 @@ export function EpmClient({
                             strings.collectionFallbackLabel}
                         </Badge>
                         <Badge variant="outline">
-                          {activeEntryAssets.length} assets
+                          {activeEntryAssets.length} {strings.assetsLabel}
                         </Badge>
                       </div>
-                      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
-                        <div className="space-y-3">
+                      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_260px]">
+                        <div className="space-y-3 rounded-[1.35rem] border border-border/70 bg-background/75 p-4">
                           <div>
                             <h2 className="font-semibold text-2xl tracking-tight">
                               {activeEntry.title}
@@ -1054,13 +1579,24 @@ export function EpmClient({
                             {activeEntry.summary || strings.emptyEntries}
                           </p>
                         </div>
-                        <div className="rounded-2xl border border-border/70 bg-background/55 p-3">
-                          <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                            {strings.scheduledForLabel}
+                        <div className="space-y-3">
+                          <div className="rounded-[1.35rem] border border-border/70 bg-background/75 p-3">
+                            <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                              {strings.scheduledForLabel}
+                            </div>
+                            <div className="mt-2 font-medium text-sm">
+                              {formatDateLabel(activeEntry.scheduled_for) ??
+                                strings.notScheduledLabel}
+                            </div>
                           </div>
-                          <div className="mt-2 font-medium text-sm">
-                            {formatDateLabel(activeEntry.scheduled_for) ??
-                              strings.notScheduledLabel}
+                          <div className="rounded-[1.35rem] border border-border/70 bg-background/75 p-3">
+                            <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                              {strings.workspaceBindingLabel}
+                            </div>
+                            <div className="mt-2 font-medium text-sm">
+                              {binding.canonical_project?.display_name ??
+                                strings.unboundLabel}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1144,7 +1680,83 @@ export function EpmClient({
         </TabsContent>
 
         <TabsContent value="workflow" className="space-y-4">
-          <Card className="border-border/70 bg-card/85">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_0.8fr]">
+            <Card className="border-border/70 bg-card/90 shadow-none">
+              <CardHeader>
+                <CardTitle>{strings.visualBoardTitle}</CardTitle>
+                <CardDescription>{strings.bulkSelectionHint}</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                {workflowLanes.map((lane) => (
+                  <div
+                    key={lane.status}
+                    className="rounded-[1.35rem] border border-border/70 bg-background/75 p-4"
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div className="font-medium text-sm">{lane.title}</div>
+                      <Badge className={statusTone(lane.status)}>
+                        {lane.entries.length}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      {lane.entries.length === 0 ? (
+                        <p className="text-muted-foreground text-sm">
+                          {strings.emptyEntries}
+                        </p>
+                      ) : (
+                        lane.entries.map((entry) => (
+                          <button
+                            key={entry.id}
+                            type="button"
+                            className="w-full rounded-xl border border-border/70 bg-background px-3 py-3 text-left transition-colors hover:bg-background/80"
+                            onClick={() => {
+                              setSelectedCollectionId(entry.collection_id);
+                              setSelectedEntryId(entry.id);
+                              setTab('content');
+                            }}
+                          >
+                            <div className="truncate font-medium text-sm">
+                              {entry.title}
+                            </div>
+                            <div className="mt-1 truncate text-muted-foreground text-xs">
+                              {entry.slug}
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/70 bg-card/90 shadow-none">
+              <CardHeader>
+                <CardTitle>{strings.workspaceStatusTitle}</CardTitle>
+                <CardDescription>{strings.importHint}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="rounded-[1.35rem] border border-border/70 bg-background/75 p-4">
+                  <div className="text-muted-foreground text-xs uppercase tracking-[0.2em]">
+                    {strings.scheduledQueue}
+                  </div>
+                  <div className="mt-2 font-semibold text-3xl">
+                    {counts.scheduled}
+                  </div>
+                </div>
+                <div className="rounded-[1.35rem] border border-border/70 bg-background/75 p-4">
+                  <div className="text-muted-foreground text-xs uppercase tracking-[0.2em]">
+                    {strings.publishedQueue}
+                  </div>
+                  <div className="mt-2 font-semibold text-3xl">
+                    {counts.published}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="border-border/70 bg-card/90 shadow-none">
             <CardHeader>
               <CardTitle>{strings.bulkActionsTitle}</CardTitle>
               <CardDescription>{strings.bulkSelectionHint}</CardDescription>
@@ -1234,7 +1846,7 @@ export function EpmClient({
                 {workflowEntries.map((entry) => (
                   <label
                     key={entry.id}
-                    className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/55 px-3 py-3"
+                    className="flex items-center gap-3 rounded-[1.1rem] border border-border/70 bg-background/70 px-3 py-3"
                   >
                     <Checkbox
                       checked={selectedBulkIds.includes(entry.id)}
@@ -1269,8 +1881,15 @@ export function EpmClient({
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-4">
-          <div className="grid gap-4 xl:grid-cols-2">
-            <Card className="border-border/70 bg-card/85">
+          <div
+            className={cn(
+              'grid gap-4',
+              dashboardPreferences.showActivity
+                ? 'xl:grid-cols-2'
+                : 'xl:grid-cols-1'
+            )}
+          >
+            <Card className="border-border/70 bg-card/90 shadow-none">
               <CardHeader>
                 <CardTitle>{strings.importAction}</CardTitle>
               </CardHeader>
@@ -1294,103 +1913,196 @@ export function EpmClient({
               </CardContent>
             </Card>
 
-            <Card className="border-border/70 bg-card/85">
-              <CardHeader>
-                <CardTitle>{strings.activityTab}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {publishEvents.map((event) => (
-                  <div
-                    key={event.id}
-                    className="rounded-xl border border-border/70 bg-background/55 p-3"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="font-medium text-sm">
-                        {event.event_kind}
+            {dashboardPreferences.showActivity ? (
+              <Card className="border-border/70 bg-card/90 shadow-none">
+                <CardHeader>
+                  <CardTitle>{strings.activityFeedTitle}</CardTitle>
+                  <CardDescription>{strings.activityTab}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {publishEvents.map((event) => (
+                    <div
+                      key={event.id}
+                      className="rounded-[1.2rem] border border-border/70 bg-background/70 p-4"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="font-medium text-sm">
+                          {event.event_kind}
+                        </div>
+                        <div className="text-muted-foreground text-xs">
+                          {formatDateLabel(event.created_at)}
+                        </div>
                       </div>
-                      <div className="text-muted-foreground text-xs">
-                        {formatDateLabel(event.created_at)}
+                      <div className="mt-1 text-muted-foreground text-sm">
+                        {event.visibility_scope}
                       </div>
                     </div>
-                    <div className="mt-1 text-muted-foreground text-sm">
-                      {event.visibility_scope}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+                  ))}
+                </CardContent>
+              </Card>
+            ) : null}
           </div>
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-4">
-          <Card className="border-border/70 bg-card/85">
-            <CardHeader>
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <CardTitle>{strings.settingsTab}</CardTitle>
-                  <CardDescription>
-                    {binding.adapter ?? strings.noAdapterLabel}
-                  </CardDescription>
+          <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+            <Card className="border-border/70 bg-card/90 shadow-none">
+              <CardHeader>
+                <CardTitle>{strings.dashboardPreferencesTitle}</CardTitle>
+                <CardDescription>{strings.settingsTab}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>{strings.dashboardModeLabel}</Label>
+                  <Select
+                    value={dashboardPreferences.focus}
+                    onValueChange={(value) =>
+                      setDashboardPreferences((current) => ({
+                        ...current,
+                        focus: value as DashboardFocus,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="operator">
+                        {strings.focusOperator}
+                      </SelectItem>
+                      <SelectItem value="visual">
+                        {strings.focusVisual}
+                      </SelectItem>
+                      <SelectItem value="workflow">
+                        {strings.focusWorkflow}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <ActionButton
-                  tooltip={strings.editCollectionAction}
-                  variant="outline"
-                  onClick={() => {
-                    setCollectionForm(
-                      buildCollectionFormState(activeCollection)
-                    );
-                    setCollectionDialogOpen(true);
-                  }}
+                <div className="space-y-2">
+                  <Label>{strings.densityLabel}</Label>
+                  <Select
+                    value={dashboardPreferences.density}
+                    onValueChange={(value) =>
+                      setDashboardPreferences((current) => ({
+                        ...current,
+                        density: value as DashboardDensity,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="compact">
+                        {strings.densityCompact}
+                      </SelectItem>
+                      <SelectItem value="comfortable">
+                        {strings.densityComfortable}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-3 rounded-[1.35rem] border border-border/70 bg-background/75 p-4">
+                  {(
+                    [
+                      ['showVisuals', strings.showVisualsLabel],
+                      ['showCollections', strings.showCollectionsLabel],
+                      ['showActivity', strings.showActivityLabel],
+                    ] as const satisfies ReadonlyArray<
+                      readonly [DashboardPreferenceToggleKey, string]
+                    >
+                  ).map(([key, label]) => (
+                    <label
+                      key={key}
+                      className="flex items-center justify-between gap-3"
+                    >
+                      <span className="text-sm">{label}</span>
+                      <Switch
+                        checked={dashboardPreferences[key]}
+                        onCheckedChange={(checked) =>
+                          setDashboardPreferences((current) => ({
+                            ...current,
+                            [key]: checked,
+                          }))
+                        }
+                      />
+                    </label>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-border/70 bg-card/90 shadow-none">
+              <CardHeader>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <CardTitle>{strings.settingsTab}</CardTitle>
+                    <CardDescription>
+                      {binding.adapter ?? strings.noAdapterLabel}
+                    </CardDescription>
+                  </div>
+                  <ActionButton
+                    tooltip={strings.editCollectionAction}
+                    variant="outline"
+                    onClick={() => {
+                      setCollectionForm(
+                        buildCollectionFormState(activeCollection)
+                      );
+                      setCollectionDialogOpen(true);
+                    }}
+                  >
+                    <Settings2 className="mr-2 h-4 w-4" />
+                    {strings.editCollectionAction}
+                  </ActionButton>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Accordion
+                  type="multiple"
+                  className="rounded-2xl border border-border/70 px-4"
                 >
-                  <Settings2 className="mr-2 h-4 w-4" />
-                  {strings.editCollectionAction}
-                </ActionButton>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Accordion
-                type="multiple"
-                className="rounded-2xl border border-border/70 px-4"
-              >
-                <AccordionItem value="binding">
-                  <AccordionTrigger>
-                    {strings.workspaceBindingLabel}
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        {binding.canonical_project?.display_name ??
-                          strings.unboundLabel}
-                      </div>
-                      <div className="text-muted-foreground">
-                        {binding.canonical_id ?? strings.noCanonicalIdLabel}
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="collections">
-                  <AccordionTrigger>
-                    {strings.collectionsLabel}
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-2">
-                      {collections.map((collection) => (
-                        <div
-                          key={collection.id}
-                          className="rounded-xl border border-border/70 bg-background/55 p-3 text-sm"
-                        >
-                          <div className="font-medium">{collection.title}</div>
-                          <div className="text-muted-foreground">
-                            {collection.description || collection.slug}
-                          </div>
+                  <AccordionItem value="binding">
+                    <AccordionTrigger>
+                      {strings.workspaceBindingLabel}
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          {binding.canonical_project?.display_name ??
+                            strings.unboundLabel}
                         </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </CardContent>
-          </Card>
+                        <div className="text-muted-foreground">
+                          {binding.canonical_id ?? strings.noCanonicalIdLabel}
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="collections">
+                    <AccordionTrigger>
+                      {strings.collectionsLabel}
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-2">
+                        {collections.map((collection) => (
+                          <div
+                            key={collection.id}
+                            className="rounded-xl border border-border/70 bg-background/55 p-3 text-sm"
+                          >
+                            <div className="font-medium">
+                              {collection.title}
+                            </div>
+                            <div className="text-muted-foreground">
+                              {collection.description || collection.slug}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 
@@ -1416,7 +2128,7 @@ export function EpmClient({
               />
             </div>
             <div className="space-y-2">
-              <Label>Slug</Label>
+              <Label>{strings.slugLabel}</Label>
               <Input
                 value={entryForm.slug}
                 onChange={(event) =>
@@ -1440,7 +2152,7 @@ export function EpmClient({
               />
             </div>
             <div className="space-y-2">
-              <Label>Status</Label>
+              <Label>{strings.statusLabel}</Label>
               <Select
                 value={entryForm.status}
                 onValueChange={(value) =>
