@@ -17,6 +17,8 @@ const {
   getWorkspaceExternalProjectDeliveryMock,
   importWorkspaceExternalProjectContentMock,
   publishWorkspaceExternalProjectEntryMock,
+  routerPushMock,
+  routerRefreshMock,
   updateWorkspaceExternalProjectCollectionMock,
   updateWorkspaceExternalProjectEntryMock,
 } = vi.hoisted(() => ({
@@ -26,6 +28,8 @@ const {
   getWorkspaceExternalProjectDeliveryMock: vi.fn(),
   importWorkspaceExternalProjectContentMock: vi.fn(),
   publishWorkspaceExternalProjectEntryMock: vi.fn(),
+  routerPushMock: vi.fn(),
+  routerRefreshMock: vi.fn(),
   updateWorkspaceExternalProjectCollectionMock: vi.fn(),
   updateWorkspaceExternalProjectEntryMock: vi.fn(),
 }));
@@ -55,8 +59,10 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
-    refresh: vi.fn(),
+    push: routerPushMock,
+    refresh: routerRefreshMock,
   }),
+  usePathname: () => '/ws_123/epm',
 }));
 
 vi.mock('next/image', () => ({
@@ -76,8 +82,10 @@ describe('EpmClient', () => {
     archivedQueue: 'Archived backlog',
     archiveAction: 'Archive',
     archiveBacklogHint: 'hint',
+    assetGalleryTitle: 'Asset gallery',
     assetsLabel: 'assets',
     attentionTitle: 'Attention Queue',
+    backToEpmAction: 'Back to EPM',
     bulkActionsTitle: 'Workflow Queues',
     bulkSelectionHint: 'bulk hint',
     cancelAction: 'Cancel',
@@ -86,12 +94,19 @@ describe('EpmClient', () => {
     collectionsLabel: 'Collections',
     collectionsMetricLabel: 'Collections',
     contentTab: 'Content',
+    coverBadge: 'Cover',
+    coverImageDescription: 'Cover description',
+    coverImageTitle: 'Cover image',
+    coverSaveSuccessToast: 'Cover saved',
+    coverUploadSuccessToast: 'Cover uploaded',
     createEntryAction: 'Quick create',
     dashboardModeLabel: 'Dashboard mode',
     dashboardPreferencesTitle: 'Dashboard preferences',
     densityCompact: 'Compact',
     densityComfortable: 'Comfortable',
     densityLabel: 'Density',
+    detailsDescription: 'Detailed editor',
+    detailsTitle: 'Details',
     draftQueue: 'Draft queue',
     entryDeckTitle: 'Entry deck',
     duplicateAction: 'Duplicate',
@@ -117,8 +132,11 @@ describe('EpmClient', () => {
     missingLeadImageLabel: 'Missing a lead image asset.',
     noAdapterLabel: 'No adapter',
     noCanonicalIdLabel: 'No canonical id',
+    noCoverDescription: 'No cover description',
+    noCoverTitle: 'No cover',
     noneLabel: 'None',
     notScheduledLabel: 'Not scheduled',
+    openDetailsAction: 'Open details',
     openPreviewAction: 'Open preview',
     overviewTab: 'Overview',
     payloadLabel: 'Payload',
@@ -137,6 +155,7 @@ describe('EpmClient', () => {
     scheduledForLabel: 'Scheduled for',
     scheduledQueue: 'Scheduled soon',
     searchPlaceholder: 'Search',
+    setAsCoverAction: 'Set as cover',
     settingsTab: 'Settings',
     showActivityLabel: 'Show activity',
     showCollectionsLabel: 'Show collections',
@@ -155,10 +174,13 @@ describe('EpmClient', () => {
     unboundLabel: 'Unbound',
     unknownCollectionLabel: 'Unknown collection',
     unpublishAction: 'Unpublish',
+    uploadCoverAction: 'Upload cover',
     visualBoardTitle: 'Visual board',
     workflowTab: 'Workflow',
     workspaceBindingLabel: 'Workspace binding',
     workspaceStatusTitle: 'Workspace status',
+    replaceCoverAction: 'Replace cover',
+    saveCoverAction: 'Save cover',
   } as const;
 
   beforeEach(() => {
@@ -227,7 +249,7 @@ describe('EpmClient', () => {
     ]);
   });
 
-  it('switches tabs and opens the explicit editor dialog', async () => {
+  it('routes entry actions to the dedicated details page', async () => {
     render(
       <EpmClient
         binding={
@@ -294,9 +316,11 @@ describe('EpmClient', () => {
     );
 
     expect(screen.getByText('Selected entry')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Edit details/i }));
+    fireEvent.click(
+      screen.getAllByRole('button', { name: /Open details/i })[0]!
+    );
 
-    expect(screen.getByText('Entry editor')).toBeInTheDocument();
+    expect(routerPushMock).toHaveBeenCalledWith('/ws_123/epm/entries/entry-1');
   });
 
   it('keeps preview on demand and loads it only when requested', async () => {

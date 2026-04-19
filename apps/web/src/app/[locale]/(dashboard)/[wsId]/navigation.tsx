@@ -505,6 +505,7 @@ export async function WorkspaceNavigationLinks({
           icon: <BriefcaseBusiness className="h-5 w-5" />,
           aliases: [
             `/${personalOrWsId}/epm`,
+            `/${personalOrWsId}/epm/entries`,
             `/${personalOrWsId}/external-projects`,
           ],
           disabled: ENABLE_AI_ONLY || !canAccessExternalProjects,

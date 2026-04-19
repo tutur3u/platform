@@ -410,3 +410,4 @@ At the **END** of every session, you MUST:
 5. Propose future improvements to the human partner.
 
 - **Proxy Abuse Test Hygiene**: When hardening API proxy abuse controls, tests must explicitly model anonymous vs authenticated callers (headers/cookies/user-agent) and freeze time with fake timers for block-window assertions. Otherwise CI can miss false positives or time-window regressions.
+- **External-Project Admin Indexes Should Route Into Dedicated Entry Pages**: For EPM-style content dashboards, keep the main `/epm` surface focused on overview, queues, and navigation. Heavy entry editing, cover uploads, and asset reordering belong on a dedicated entry route (for example `/{wsId}/epm/entries/{entryId}`), not in an inline dashboard dialog.

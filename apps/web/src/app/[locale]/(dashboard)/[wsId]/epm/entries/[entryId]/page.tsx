@@ -12,23 +12,24 @@ import {
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
 import { getWorkspaceExternalProjectStudioData } from '@/lib/external-projects/store';
-import { EpmClient } from './epm-client';
-import { buildEpmStrings } from './epm-strings';
+import { buildEpmStrings } from '../../epm-strings';
+import { EntryDetailClient } from './entry-detail-client';
 
 export const metadata: Metadata = {
-  title: 'EPM',
+  title: 'EPM Entry',
   description:
-    'External Project Management for workspace-bound canonical content, workflow, and delivery.',
+    'Detailed entry management for workspace-bound external project content.',
 };
 
 interface Props {
   params: Promise<{
+    entryId: string;
     wsId: string;
   }>;
 }
 
-export default async function EpmPage({ params }: Props) {
-  const { wsId: rawWsId } = await params;
+export default async function EpmEntryDetailPage({ params }: Props) {
+  const { entryId, wsId: rawWsId } = await params;
   const supabase = await createClient();
   const wsId = await normalizeWorkspaceId(rawWsId, supabase);
   const [workspacePermissions, rootPermissions, binding] = await Promise.all([
@@ -54,10 +55,16 @@ export default async function EpmPage({ params }: Props) {
     getTranslations('external-projects'),
     getWorkspaceExternalProjectStudioData(wsId),
   ]);
+  const entry = studio.entries.find((item) => item.id === entryId);
+
+  if (!entry) {
+    notFound();
+  }
 
   return (
-    <EpmClient
+    <EntryDetailClient
       binding={binding}
+      entryId={entryId}
       initialStudio={studio}
       strings={buildEpmStrings(t)}
       workspaceId={wsId}

@@ -8,6 +8,7 @@ import {
   Copy,
   Eye,
   FolderSync,
+  ImagePlus,
   Pencil,
   Plus,
   RefreshCw,
@@ -22,7 +23,6 @@ import {
   importWorkspaceExternalProjectContent,
   publishWorkspaceExternalProjectEntry,
   updateWorkspaceExternalProjectCollection,
-  updateWorkspaceExternalProjectEntry,
 } from '@tuturuuu/internal-api';
 import type {
   ExternalProjectAttentionItem,
@@ -79,8 +79,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   type ComponentProps,
   startTransition,
@@ -89,97 +88,8 @@ import {
   useState,
 } from 'react';
 import { useExternalProjectLivePreview } from '../external-projects/use-external-project-live-preview';
-
-type Strings = {
-  activityTab: string;
-  activityFeedTitle: string;
-  archivedQueue: string;
-  archiveAction: string;
-  archiveBacklogHint: string;
-  assetsLabel: string;
-  attentionTitle: string;
-  bulkActionsTitle: string;
-  bulkSelectionHint: string;
-  cancelAction: string;
-  collectionFallbackLabel: string;
-  collectionHealthTitle: string;
-  collectionsLabel: string;
-  collectionsMetricLabel: string;
-  contentTab: string;
-  createEntryAction: string;
-  dashboardModeLabel: string;
-  dashboardPreferencesTitle: string;
-  draftQueue: string;
-  entryDeckTitle: string;
-  duplicateAction: string;
-  editCollectionDescription: string;
-  editCollectionAction: string;
-  editEntryAction: string;
-  editEntryDescription: string;
-  editEntryTitle: string;
-  featuredEntryTitle: string;
-  focusOperator: string;
-  focusVisual: string;
-  focusWorkflow: string;
-  emptyCollection: string;
-  emptyEntries: string;
-  densityCompact: string;
-  densityComfortable: string;
-  densityLabel: string;
-  enabledLabel: string;
-  entrySummaryTitle: string;
-  entriesMetricLabel: string;
-  filterAll: string;
-  importAction: string;
-  importHint: string;
-  loadingPreviewLabel: string;
-  metadataLabel: string;
-  missingLeadImageLabel: string;
-  noAdapterLabel: string;
-  noCanonicalIdLabel: string;
-  noneLabel: string;
-  notScheduledLabel: string;
-  openPreviewAction: string;
-  overviewTab: string;
-  payloadLabel: string;
-  previewDescription: string;
-  previewTitle: string;
-  profileDataLabel: string;
-  publishedQueue: string;
-  publishAction: string;
-  quickCreateHint: string;
-  recentUnpublishedHint: string;
-  recoveryHint: string;
-  refreshAction: string;
-  renderedLabel: string;
-  saveAction: string;
-  scheduleAction: string;
-  scheduledForLabel: string;
-  scheduledQueue: string;
-  searchPlaceholder: string;
-  settingsTab: string;
-  showActivityLabel: string;
-  showCollectionsLabel: string;
-  showVisualsLabel: string;
-  slugLabel: string;
-  statusArchived: string;
-  statusDraft: string;
-  statusLabel: string;
-  statusPublished: string;
-  statusScheduled: string;
-  subtitleLabel: string;
-  summaryLabel: string;
-  tabsDescription: string;
-  title: string;
-  titleLabel: string;
-  unboundLabel: string;
-  unpublishAction: string;
-  unknownCollectionLabel: string;
-  visualBoardTitle: string;
-  workflowTab: string;
-  workspaceBindingLabel: string;
-  workspaceStatusTitle: string;
-};
+import type { EpmStrings } from './epm-strings';
+import { ResilientMediaImage } from './resilient-media-image';
 
 type WorkflowFilter = 'all' | ExternalProjectEntry['status'];
 type EpmTab = 'activity' | 'content' | 'overview' | 'settings' | 'workflow';
@@ -197,15 +107,6 @@ type DashboardPreferenceToggleKey = keyof Pick<
   'showActivity' | 'showCollections' | 'showVisuals'
 >;
 
-type EntryFormState = {
-  scheduled_for: string;
-  slug: string;
-  status: ExternalProjectEntry['status'];
-  subtitle: string;
-  summary: string;
-  title: string;
-};
-
 type CollectionFormState = {
   description: string;
   is_enabled: boolean;
@@ -220,21 +121,6 @@ const DEFAULT_DASHBOARD_PREFERENCES: DashboardPreferences = {
   showVisuals: true,
 };
 
-function buildEntryFormState(
-  entry?: ExternalProjectEntry | null
-): EntryFormState {
-  return {
-    scheduled_for: entry?.scheduled_for
-      ? new Date(entry.scheduled_for).toISOString().slice(0, 16)
-      : '',
-    slug: entry?.slug ?? '',
-    status: entry?.status ?? 'draft',
-    subtitle: entry?.subtitle ?? '',
-    summary: entry?.summary ?? '',
-    title: entry?.title ?? '',
-  };
-}
-
 function buildCollectionFormState(
   collection?: ExternalProjectCollection | null
 ): CollectionFormState {
@@ -247,7 +133,7 @@ function buildCollectionFormState(
 
 function formatStatus(
   status: ExternalProjectEntry['status'],
-  strings: Strings
+  strings: EpmStrings
 ) {
   switch (status) {
     case 'archived':
@@ -421,68 +307,6 @@ function ActionButton({
   );
 }
 
-function ResilientMediaImage({
-  alt,
-  assetUrl,
-  className,
-  fill = false,
-  height,
-  previewUrl,
-  sizes,
-  width,
-}: {
-  alt: string;
-  assetUrl?: string | null;
-  className?: string;
-  fill?: boolean;
-  height?: number;
-  previewUrl?: string | null;
-  sizes?: string;
-  width?: number;
-}) {
-  const sources = [previewUrl, assetUrl].filter((value): value is string =>
-    Boolean(value)
-  );
-  const [failedSources, setFailedSources] = useState<string[]>([]);
-  const currentSource = sources.find(
-    (source) => !failedSources.includes(source)
-  );
-
-  if (!currentSource) {
-    return null;
-  }
-
-  if (fill) {
-    return (
-      <Image
-        alt={alt}
-        className={className}
-        fill
-        sizes={sizes}
-        src={currentSource}
-        onError={() =>
-          setFailedSources((current) => [...current, currentSource])
-        }
-      />
-    );
-  }
-
-  if (!width || !height) {
-    return null;
-  }
-
-  return (
-    <Image
-      alt={alt}
-      className={className}
-      height={height}
-      src={currentSource}
-      width={width}
-      onError={() => setFailedSources((current) => [...current, currentSource])}
-    />
-  );
-}
-
 export function EpmClient({
   binding,
   initialTab = 'overview',
@@ -493,10 +317,11 @@ export function EpmClient({
   binding: WorkspaceExternalProjectBinding;
   initialTab?: EpmTab;
   initialStudio: ExternalProjectStudioData;
-  strings: Strings;
+  strings: EpmStrings;
   workspaceId: string;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [collections, setCollections] = useState(initialStudio.collections);
   const [entries, setEntries] = useState(initialStudio.entries);
   const [assets] = useState(initialStudio.assets);
@@ -514,12 +339,7 @@ export function EpmClient({
   const [selectedBulkIds, setSelectedBulkIds] = useState<string[]>([]);
   const [scheduleValue, setScheduleValue] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [editorOpen, setEditorOpen] = useState(false);
   const [collectionDialogOpen, setCollectionDialogOpen] = useState(false);
-  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
-  const [entryForm, setEntryForm] = useState<EntryFormState>(
-    buildEntryFormState()
-  );
   const [collectionForm, setCollectionForm] = useState<CollectionFormState>(
     buildCollectionFormState()
   );
@@ -599,6 +419,12 @@ export function EpmClient({
     [strings.statusDraft, counts.drafts],
     [strings.statusPublished, counts.published],
   ];
+  const priorityAttentionItems = [
+    ...queues.draftsMissingMedia,
+    ...queues.scheduledSoon,
+    ...queues.recentlyImportedUnpublished,
+    ...queues.archivedBacklog,
+  ].slice(0, 5);
   const workflowLanes: Array<{
     entries: ExternalProjectEntry[];
     status: ExternalProjectEntry['status'];
@@ -656,44 +482,37 @@ export function EpmClient({
     startTransition(() => router.refresh());
   };
 
-  const saveEntryMutation = useMutation({
-    mutationFn: async () => {
-      const payload = {
-        collection_id: activeCollection?.id ?? selectedCollectionId,
-        metadata: {},
-        profile_data: {},
-        scheduled_for: entryForm.scheduled_for
-          ? new Date(entryForm.scheduled_for).toISOString()
-          : null,
-        slug: entryForm.slug,
-        status: entryForm.status,
-        subtitle: entryForm.subtitle || null,
-        summary: entryForm.summary || null,
-        title: entryForm.title,
-      };
+  const openEntryDetails = (entryId: string) => {
+    router.push(`${pathname.replace(/\/$/, '')}/entries/${entryId}`);
+  };
 
-      if (!payload.collection_id) {
+  const createEntryMutation = useMutation({
+    mutationFn: async () => {
+      const collectionId = activeCollection?.id ?? selectedCollectionId;
+      if (!collectionId) {
         throw new Error('Collection is required');
       }
 
-      if (editingEntryId) {
-        return updateWorkspaceExternalProjectEntry(
-          workspaceId,
-          editingEntryId,
-          payload
-        );
-      }
-
-      return createWorkspaceExternalProjectEntry(workspaceId, payload);
+      return createWorkspaceExternalProjectEntry(workspaceId, {
+        collection_id: collectionId,
+        metadata: {},
+        profile_data: {},
+        scheduled_for: null,
+        slug: `draft-${Date.now()}`,
+        status: 'draft',
+        subtitle: null,
+        summary: null,
+        title: 'Untitled entry',
+      });
     },
     onError: () => toast.error(strings.editEntryDescription),
     onSuccess: (entry) => {
       mergeEntry(entry);
       setSelectedCollectionId(entry.collection_id);
       setSelectedEntryId(entry.id);
-      setEditorOpen(false);
       setPreviewRefreshToken((value) => value + 1);
-      toast.success(strings.saveAction);
+      toast.success(strings.createEntryAction);
+      openEntryDetails(entry.id);
       refreshPage();
     },
   });
@@ -740,6 +559,7 @@ export function EpmClient({
       setSelectedCollectionId(entry.collection_id);
       setSelectedEntryId(entry.id);
       toast.success(strings.duplicateAction);
+      openEntryDetails(entry.id);
       refreshPage();
     },
   });
@@ -808,33 +628,6 @@ export function EpmClient({
     },
   });
 
-  const openEditor = (entry?: ExternalProjectEntry | null) => {
-    setEditingEntryId(entry?.id ?? null);
-    setEntryForm(
-      entry
-        ? buildEntryFormState(entry)
-        : buildEntryFormState({
-            collection_id: activeCollection?.id ?? selectedCollectionId,
-            created_at: '',
-            created_by: null,
-            id: '',
-            metadata: {},
-            profile_data: {},
-            published_at: null,
-            scheduled_for: null,
-            slug: `draft-${Date.now()}`,
-            status: 'draft',
-            subtitle: null,
-            summary: null,
-            title: '',
-            updated_at: '',
-            updated_by: null,
-            ws_id: workspaceId,
-          } as ExternalProjectEntry)
-    );
-    setEditorOpen(true);
-  };
-
   const renderedPreviewEntry =
     previewQuery.data?.collections
       .flatMap((collection) => collection.entries)
@@ -842,44 +635,96 @@ export function EpmClient({
 
   return (
     <div className="min-h-[calc(100svh-5rem)] space-y-5 pb-8">
-      <section className="relative isolate min-h-[calc(100svh-8.75rem)] overflow-hidden rounded-[2rem] border border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(217,119,6,0.12),transparent_24%),linear-gradient(160deg,rgba(17,24,39,0.98),rgba(9,12,18,0.94))] text-white">
-        <div className="pointer-events-none absolute inset-0 opacity-80 [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:42px_42px]" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(244,114,182,0.24),transparent_24%),radial-gradient(circle_at_82%_22%,rgba(96,165,250,0.18),transparent_24%),linear-gradient(180deg,transparent,rgba(0,0,0,0.32))]" />
-        <div className="relative grid min-h-[inherit] gap-6 p-5 xl:grid-cols-[minmax(0,1.2fr)_380px] xl:p-6">
-          <div className="flex min-h-full flex-col gap-5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3 py-1 text-[11px] text-white/72 uppercase tracking-[0.28em]">
-              <Sparkles className="h-3.5 w-3.5" />
-              EPM
-            </div>
-            <div className="max-w-3xl space-y-3">
-              <h1 className="font-semibold text-3xl tracking-tight sm:text-4xl">
-                {strings.title}
-              </h1>
-              <p className="text-sm text-white/72 leading-6">
-                {strings.tabsDescription}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge className="border-white/15 bg-white/8 text-white hover:bg-white/12">
-                {binding.canonical_project?.display_name ??
-                  strings.unboundLabel}
-              </Badge>
-              <Badge className="border-white/15 bg-white/8 text-white hover:bg-white/12">
-                {binding.adapter ?? strings.noAdapterLabel}
-              </Badge>
-              <Badge className="border-white/15 bg-white/8 text-white hover:bg-white/12">
-                {dashboardPreferences.focus === 'visual'
-                  ? strings.focusVisual
-                  : dashboardPreferences.focus === 'workflow'
-                    ? strings.focusWorkflow
-                    : strings.focusOperator}
-              </Badge>
-            </div>
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.18fr)_360px]">
+        <Card className="relative overflow-hidden border-border/70 bg-card/95 shadow-none">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.10),transparent_26%),radial-gradient(circle_at_top_right,rgba(96,165,250,0.10),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_42%)]" />
+          <CardContent className="relative p-5 lg:p-6">
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-3 py-1 text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    EPM
+                  </div>
+                  <div className="max-w-3xl space-y-2">
+                    <h1 className="font-semibold text-3xl tracking-tight sm:text-4xl">
+                      {strings.title}
+                    </h1>
+                    <p className="max-w-2xl text-muted-foreground text-sm leading-6">
+                      {strings.tabsDescription}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline">
+                      {binding.canonical_project?.display_name ??
+                        strings.unboundLabel}
+                    </Badge>
+                    <Badge variant="outline">
+                      {binding.adapter ?? strings.noAdapterLabel}
+                    </Badge>
+                    <Badge variant="outline">
+                      {dashboardPreferences.focus === 'visual'
+                        ? strings.focusVisual
+                        : dashboardPreferences.focus === 'workflow'
+                          ? strings.focusWorkflow
+                          : strings.focusOperator}
+                    </Badge>
+                  </div>
+                </div>
 
-            <div className="grid flex-1 gap-3 xl:grid-cols-[minmax(0,1fr)_280px]">
-              <div className="overflow-hidden rounded-[1.6rem] border border-white/12 bg-black/35">
-                <div className="grid h-full gap-4 p-4 lg:grid-cols-[0.96fr_1.04fr] lg:p-5">
-                  <div className="relative min-h-[380px] overflow-hidden rounded-[1.35rem] border border-white/10 bg-white/6 lg:min-h-[480px]">
+                <div className="flex flex-wrap gap-2">
+                  <ActionButton
+                    tooltip={strings.quickCreateHint}
+                    onClick={() => createEntryMutation.mutate()}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    {strings.createEntryAction}
+                  </ActionButton>
+                  <ActionButton
+                    tooltip={strings.importHint}
+                    variant="outline"
+                    disabled={importMutation.isPending}
+                    onClick={() => importMutation.mutate()}
+                  >
+                    <FolderSync className="mr-2 h-4 w-4" />
+                    {strings.importAction}
+                  </ActionButton>
+                  <ActionButton
+                    tooltip={strings.openPreviewAction}
+                    variant="outline"
+                    onClick={() => setPreviewOpen(true)}
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    {strings.openPreviewAction}
+                  </ActionButton>
+                  {activeEntry ? (
+                    <ActionButton
+                      tooltip={strings.editEntryDescription}
+                      variant="outline"
+                      onClick={() => openEntryDetails(activeEntry.id)}
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      {strings.openDetailsAction}
+                    </ActionButton>
+                  ) : null}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {metricCards.map(([label, value]) => (
+                    <div
+                      key={label}
+                      className="rounded-[1.1rem] border border-border/70 bg-background/80 p-4"
+                    >
+                      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                        {label}
+                      </div>
+                      <div className="mt-2 font-semibold text-2xl">{value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_280px]">
+                  <div className="relative min-h-[320px] overflow-hidden rounded-[1.5rem] border border-border/70 bg-background/85 lg:min-h-[420px]">
                     {dashboardPreferences.showVisuals &&
                     (activeEntryVisual?.preview_url ||
                       activeEntryVisual?.asset_url) ? (
@@ -893,210 +738,279 @@ export function EpmClient({
                         className="object-cover"
                         fill
                         previewUrl={activeEntryVisual.preview_url}
-                        sizes="(max-width: 1280px) 100vw, 52vw"
+                        sizes="(max-width: 1280px) 100vw, 54vw"
                       />
                     ) : (
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(244,114,182,0.34),transparent_28%),radial-gradient(circle_at_80%_70%,rgba(96,165,250,0.28),transparent_28%),linear-gradient(150deg,rgba(255,255,255,0.12),rgba(255,255,255,0.04))]" />
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.14),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.14),transparent_24%),linear-gradient(140deg,rgba(255,255,255,0.05),rgba(255,255,255,0.01))]" />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 p-4">
-                      <p className="text-[11px] text-white/65 uppercase tracking-[0.32em]">
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/28 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 p-5">
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-[0.32em]">
                         {strings.featuredEntryTitle}
                       </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
                         <Badge
-                          className={cn(
-                            'border-0',
-                            statusTone(activeEntry?.status ?? 'draft')
-                          )}
+                          className={statusTone(activeEntry?.status ?? 'draft')}
                         >
                           {formatStatus(
                             activeEntry?.status ?? 'draft',
                             strings
                           )}
                         </Badge>
-                        <Badge className="border-white/15 bg-black/45 text-white/85">
+                        <Badge variant="outline">
                           {activeCollection?.title ??
                             strings.collectionFallbackLabel}
                         </Badge>
+                        {activeEntryVisual ? (
+                          <Badge variant="outline">{strings.coverBadge}</Badge>
+                        ) : null}
                       </div>
-                      <h2 className="mt-3 font-semibold text-2xl tracking-tight">
+                      <h2 className="mt-4 font-semibold text-2xl tracking-tight">
                         {activeEntry?.title ?? strings.emptyCollection}
                       </h2>
-                      {activeEntry?.summary ? (
-                        <p className="mt-2 max-w-xl text-sm text-white/68 leading-6">
-                          {activeEntry.summary}
-                        </p>
-                      ) : null}
+                      <p className="mt-2 max-w-2xl text-muted-foreground text-sm leading-6">
+                        {activeEntry?.summary ||
+                          (activeEntry
+                            ? strings.noCoverDescription
+                            : strings.emptyCollection)}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="flex h-full flex-col gap-3">
-                    <div className="rounded-[1.35rem] border border-white/10 bg-white/6 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-[11px] text-white/55 uppercase tracking-[0.3em]">
-                            {strings.workspaceStatusTitle}
-                          </p>
-                          <h2 className="mt-2 font-medium text-lg text-white">
-                            {binding.canonical_project?.display_name ??
-                              strings.workspaceBindingLabel}
-                          </h2>
-                        </div>
-                        <ActionButton
-                          tooltip={strings.openPreviewAction}
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setPreviewOpen(true)}
-                        >
-                          <Eye className="mr-2 h-4 w-4" />
-                          {strings.openPreviewAction}
-                        </ActionButton>
+                  <div className="space-y-3">
+                    <div className="rounded-[1.35rem] border border-border/70 bg-background/80 p-4">
+                      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
+                        {strings.workspaceStatusTitle}
                       </div>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        {metricCards.map(([label, value]) => (
-                          <div
-                            key={label}
-                            className="rounded-2xl border border-white/10 bg-black/28 p-3"
-                          >
-                            <div className="text-[11px] text-white/52 uppercase tracking-[0.24em]">
-                              {label}
-                            </div>
-                            <div className="mt-2 font-semibold text-2xl text-white">
-                              {value}
-                            </div>
-                          </div>
-                        ))}
+                      <div className="mt-3 font-medium text-lg">
+                        {binding.canonical_project?.display_name ??
+                          strings.workspaceBindingLabel}
+                      </div>
+                      <div className="mt-4 space-y-2 text-sm">
+                        <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-2">
+                          <span className="text-muted-foreground">
+                            {strings.workspaceBindingLabel}
+                          </span>
+                          <span>
+                            {binding.canonical_id ?? strings.noCanonicalIdLabel}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-2">
+                          <span className="text-muted-foreground">
+                            {strings.dashboardModeLabel}
+                          </span>
+                          <span>
+                            {dashboardPreferences.focus === 'visual'
+                              ? strings.focusVisual
+                              : dashboardPreferences.focus === 'workflow'
+                                ? strings.focusWorkflow
+                                : strings.focusOperator}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-2">
+                          <span className="text-muted-foreground">
+                            {strings.densityLabel}
+                          </span>
+                          <span>
+                            {dashboardPreferences.density === 'compact'
+                              ? strings.densityCompact
+                              : strings.densityComfortable}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex-1 rounded-[1.35rem] border border-white/10 bg-white/6 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-[11px] text-white/55 uppercase tracking-[0.3em]">
-                            {strings.dashboardPreferencesTitle}
-                          </p>
-                          <p className="mt-2 text-sm text-white/64 leading-6">
-                            {strings.importHint}
+                    {activeEntry ? (
+                      <div className="rounded-[1.35rem] border border-border/70 bg-background/80 p-4">
+                        <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
+                          {strings.detailsTitle}
+                        </div>
+                        <div className="mt-3 space-y-2">
+                          <div className="font-medium">{activeEntry.title}</div>
+                          <p className="text-muted-foreground text-sm leading-6">
+                            {strings.detailsDescription}
                           </p>
                         </div>
-                        <Badge className="border-white/15 bg-black/40 text-white/85">
-                          {dashboardPreferences.density === 'compact'
-                            ? strings.densityCompact
-                            : strings.densityComfortable}
-                        </Badge>
-                      </div>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label className="text-white/72">
-                            {strings.dashboardModeLabel}
-                          </Label>
-                          <Select
-                            value={dashboardPreferences.focus}
-                            onValueChange={(value) =>
-                              setDashboardPreferences((current) => ({
-                                ...current,
-                                focus: value as DashboardFocus,
-                              }))
-                            }
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <ActionButton
+                            tooltip={strings.editEntryDescription}
+                            size="sm"
+                            onClick={() => openEntryDetails(activeEntry.id)}
                           >
-                            <SelectTrigger className="border-white/12 bg-black/28 text-white">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="operator">
-                                {strings.focusOperator}
-                              </SelectItem>
-                              <SelectItem value="visual">
-                                {strings.focusVisual}
-                              </SelectItem>
-                              <SelectItem value="workflow">
-                                {strings.focusWorkflow}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-white/72">
-                            {strings.densityLabel}
-                          </Label>
-                          <Select
-                            value={dashboardPreferences.density}
-                            onValueChange={(value) =>
-                              setDashboardPreferences((current) => ({
-                                ...current,
-                                density: value as DashboardDensity,
-                              }))
-                            }
+                            <Pencil className="mr-2 h-4 w-4" />
+                            {strings.openDetailsAction}
+                          </ActionButton>
+                          <ActionButton
+                            tooltip={strings.duplicateAction}
+                            size="sm"
+                            variant="outline"
+                            disabled={duplicateEntryMutation.isPending}
+                            onClick={() => duplicateEntryMutation.mutate()}
                           >
-                            <SelectTrigger className="border-white/12 bg-black/28 text-white">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="compact">
-                                {strings.densityCompact}
-                              </SelectItem>
-                              <SelectItem value="comfortable">
-                                {strings.densityComfortable}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                            <Copy className="mr-2 h-4 w-4" />
+                            {strings.duplicateAction}
+                          </ActionButton>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="rounded-[1.35rem] border border-border/70 border-dashed bg-background/70 p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="rounded-xl border border-border/70 bg-background p-2">
+                            <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <div className="font-medium">
+                              {strings.noCoverTitle}
+                            </div>
+                            <p className="mt-1 text-muted-foreground text-sm leading-6">
+                              {strings.noCoverDescription}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="grid auto-rows-fr gap-3">
-                {workflowLanes.slice(0, 3).map((lane) => (
-                  <div
-                    key={lane.status}
-                    className="rounded-[1.35rem] border border-white/10 bg-black/32 p-4"
-                  >
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <div className="text-[11px] text-white/55 uppercase tracking-[0.28em]">
-                        {lane.title}
-                      </div>
-                      <Badge
-                        className={cn('border-0', statusTone(lane.status))}
-                      >
-                        {lane.entries.length}
-                      </Badge>
+              <div className="space-y-3">
+                <div className="rounded-[1.35rem] border border-border/70 bg-background/80 p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
+                      {strings.attentionTitle}
                     </div>
-                    <div className="space-y-2">
-                      {lane.entries.length === 0 ? (
-                        <p className="text-sm text-white/45">
-                          {strings.emptyEntries}
-                        </p>
-                      ) : (
-                        lane.entries.map((entry) => (
-                          <button
-                            key={entry.id}
-                            type="button"
-                            className="w-full rounded-xl border border-white/10 bg-white/6 px-3 py-3 text-left transition-colors hover:bg-white/10"
-                            onClick={() => {
-                              setSelectedCollectionId(entry.collection_id);
-                              setSelectedEntryId(entry.id);
-                              setTab('content');
-                            }}
-                          >
-                            <div className="truncate font-medium text-sm text-white">
-                              {entry.title}
-                            </div>
-                            <div className="mt-1 truncate text-white/52 text-xs">
-                              {entry.slug}
-                            </div>
-                          </button>
-                        ))
-                      )}
-                    </div>
+                    <Badge variant="outline">
+                      {priorityAttentionItems.length}
+                    </Badge>
                   </div>
-                ))}
+                  <div className="space-y-2">
+                    {priorityAttentionItems.length === 0 ? (
+                      <p className="text-muted-foreground text-sm">
+                        {strings.emptyEntries}
+                      </p>
+                    ) : (
+                      priorityAttentionItems.map((item) => (
+                        <button
+                          key={`${item.kind}-${item.entryId}`}
+                          type="button"
+                          className="w-full rounded-xl border border-border/70 bg-background/70 px-3 py-3 text-left transition-colors hover:bg-background"
+                          onClick={() => {
+                            setSelectedCollectionId(item.collectionId);
+                            setSelectedEntryId(item.entryId);
+                            setTab('content');
+                          }}
+                        >
+                          <div className="truncate font-medium text-sm">
+                            {item.title}
+                          </div>
+                          <div className="mt-1 truncate text-muted-foreground text-xs">
+                            {item.slug}
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid gap-3">
+                  {workflowLanes.slice(0, 3).map((lane) => (
+                    <div
+                      key={lane.status}
+                      className="rounded-[1.35rem] border border-border/70 bg-background/80 p-4"
+                    >
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
+                          {lane.title}
+                        </div>
+                        <Badge
+                          className={cn('border-0', statusTone(lane.status))}
+                        >
+                          {lane.entries.length}
+                        </Badge>
+                      </div>
+                      <div className="space-y-2">
+                        {lane.entries.length === 0 ? (
+                          <p className="text-muted-foreground text-sm">
+                            {strings.emptyEntries}
+                          </p>
+                        ) : (
+                          lane.entries.map((entry) => (
+                            <button
+                              key={entry.id}
+                              type="button"
+                              className="w-full rounded-xl border border-border/70 bg-background/70 px-3 py-3 text-left transition-colors hover:bg-background"
+                              onClick={() => {
+                                setSelectedCollectionId(entry.collection_id);
+                                setSelectedEntryId(entry.id);
+                                setTab('content');
+                              }}
+                            >
+                              <div className="truncate font-medium text-sm">
+                                {entry.title}
+                              </div>
+                              <div className="mt-1 truncate text-muted-foreground text-xs">
+                                {entry.slug}
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 bg-card/95 shadow-none">
+          <CardHeader>
+            <CardTitle>{strings.collectionHealthTitle}</CardTitle>
+            <CardDescription>{strings.archiveBacklogHint}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {collections.length === 0 ? (
+              <div className="rounded-[1.2rem] border border-border/70 border-dashed p-4 text-muted-foreground text-sm">
+                {strings.emptyCollection}
+              </div>
+            ) : (
+              collections.slice(0, 5).map((collection) => (
+                <button
+                  key={collection.id}
+                  type="button"
+                  className={cn(
+                    'w-full rounded-[1.2rem] border px-4 py-3 text-left transition-colors',
+                    collection.id === selectedCollectionId
+                      ? 'border-foreground/20 bg-background'
+                      : 'border-border/70 bg-background/70 hover:bg-background'
+                  )}
+                  onClick={() => {
+                    setSelectedCollectionId(collection.id);
+                    setTab('content');
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate font-medium text-sm">
+                        {collection.title}
+                      </div>
+                      <div className="truncate text-muted-foreground text-xs">
+                        {collection.slug}
+                      </div>
+                    </div>
+                    <Badge variant="outline">
+                      {
+                        entries.filter(
+                          (entry) => entry.collection_id === collection.id
+                        ).length
+                      }
+                    </Badge>
+                  </div>
+                </button>
+              ))
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       <div
@@ -1116,7 +1030,7 @@ export function EpmClient({
             <ActionButton
               tooltip={strings.quickCreateHint}
               variant="secondary"
-              onClick={() => openEditor()}
+              onClick={() => createEntryMutation.mutate()}
             >
               <Plus className="mr-2 h-4 w-4" />
               {strings.createEntryAction}
@@ -1387,7 +1301,7 @@ export function EpmClient({
                     tooltip={strings.quickCreateHint}
                     size="sm"
                     variant="ghost"
-                    onClick={() => openEditor()}
+                    onClick={() => createEntryMutation.mutate()}
                   >
                     <Plus className="h-4 w-4" />
                   </ActionButton>
@@ -1555,10 +1469,10 @@ export function EpmClient({
                           tooltip={strings.editEntryDescription}
                           size="sm"
                           variant="outline"
-                          onClick={() => openEditor(activeEntry)}
+                          onClick={() => openEntryDetails(activeEntry.id)}
                         >
                           <Pencil className="mr-2 h-4 w-4" />
-                          {strings.editEntryAction}
+                          {strings.openDetailsAction}
                         </ActionButton>
                         <ActionButton
                           tooltip={strings.duplicateAction}
@@ -2144,120 +2058,6 @@ export function EpmClient({
           </div>
         </TabsContent>
       </Tabs>
-
-      <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{strings.editEntryTitle}</DialogTitle>
-            <DialogDescription>
-              {strings.editEntryDescription}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-2 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>{strings.titleLabel}</Label>
-              <Input
-                value={entryForm.title}
-                onChange={(event) =>
-                  setEntryForm((current) => ({
-                    ...current,
-                    title: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>{strings.slugLabel}</Label>
-              <Input
-                value={entryForm.slug}
-                onChange={(event) =>
-                  setEntryForm((current) => ({
-                    ...current,
-                    slug: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>{strings.subtitleLabel}</Label>
-              <Input
-                value={entryForm.subtitle}
-                onChange={(event) =>
-                  setEntryForm((current) => ({
-                    ...current,
-                    subtitle: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>{strings.statusLabel}</Label>
-              <Select
-                value={entryForm.status}
-                onValueChange={(value) =>
-                  setEntryForm((current) => ({
-                    ...current,
-                    status: value as ExternalProjectEntry['status'],
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">{strings.statusDraft}</SelectItem>
-                  <SelectItem value="scheduled">
-                    {strings.statusScheduled}
-                  </SelectItem>
-                  <SelectItem value="published">
-                    {strings.statusPublished}
-                  </SelectItem>
-                  <SelectItem value="archived">
-                    {strings.statusArchived}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label>{strings.summaryLabel}</Label>
-              <Textarea
-                rows={5}
-                value={entryForm.summary}
-                onChange={(event) =>
-                  setEntryForm((current) => ({
-                    ...current,
-                    summary: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>{strings.scheduledForLabel}</Label>
-              <Input
-                type="datetime-local"
-                value={entryForm.scheduled_for}
-                onChange={(event) =>
-                  setEntryForm((current) => ({
-                    ...current,
-                    scheduled_for: event.target.value,
-                  }))
-                }
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setEditorOpen(false)}>
-              {strings.cancelAction}
-            </Button>
-            <Button
-              disabled={saveEntryMutation.isPending}
-              onClick={() => saveEntryMutation.mutate()}
-            >
-              {strings.saveAction}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog
         open={collectionDialogOpen}
