@@ -259,21 +259,10 @@ export async function POST(req: NextRequest, { params }: Params) {
     let totalTasksCreated = 0;
 
     if (content.lists && content.lists.length > 0) {
-      // Handle database constraint: only one closed list is allowed per board
-      let hasClosedList = false;
       const listsToCreate = content.lists.map((list, index) => {
-        let status: ListStatus = isValidListStatus(list.status)
+        const status: ListStatus = isValidListStatus(list.status)
           ? list.status
           : 'active';
-
-        // If this is a closed list but we already have one, convert it to 'done' status
-        if (status === 'closed') {
-          if (hasClosedList) {
-            status = 'done';
-          } else {
-            hasClosedList = true;
-          }
-        }
 
         return {
           name: list.name,
