@@ -7,6 +7,7 @@ import {
   Copy,
   Eye,
   ImagePlus,
+  Loader2,
   Pencil,
   RefreshCw,
   Trash2,
@@ -558,6 +559,12 @@ export function EntryDetailClient({
   }
 
   const selectedAssetCount = selectedAssetIds.length;
+  const mediaProcessing =
+    uploadCoverMutation.isPending ||
+    uploadMediaMutation.isPending ||
+    saveCoverMutation.isPending ||
+    deleteAssetsMutation.isPending ||
+    setAsCoverMutation.isPending;
 
   const content = (
     <div className="mx-auto min-h-[calc(100svh-5rem)] max-w-[1580px] space-y-6 pb-10">
@@ -601,6 +608,15 @@ export function EntryDetailClient({
               ) : null}
               {entryDirty || coverDirty ? (
                 <Badge variant="outline">{strings.saveAction}</Badge>
+              ) : null}
+              {mediaProcessing ? (
+                <Badge
+                  variant="outline"
+                  className="border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue"
+                >
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  {strings.mediaProcessingLabel}
+                </Badge>
               ) : null}
             </div>
             <div>
@@ -751,10 +767,17 @@ export function EntryDetailClient({
                     <div className="flex flex-wrap gap-2">
                       <Button
                         size="sm"
+                        disabled={mediaProcessing}
                         onClick={() => coverInputRef.current?.click()}
                       >
-                        <ImagePlus className="mr-2 h-4 w-4" />
-                        {strings.uploadCoverAction}
+                        {uploadCoverMutation.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <ImagePlus className="mr-2 h-4 w-4" />
+                        )}
+                        {uploadCoverMutation.isPending
+                          ? strings.mediaProcessingLabel
+                          : strings.uploadCoverAction}
                       </Button>
                       <Button
                         size="sm"
@@ -782,10 +805,17 @@ export function EntryDetailClient({
                     <ActionButton
                       size="sm"
                       tooltip={strings.coverImageDescription}
+                      disabled={mediaProcessing}
                       onClick={() => coverInputRef.current?.click()}
                     >
-                      <ImagePlus className="mr-2 h-4 w-4" />
-                      {strings.replaceCoverAction}
+                      {uploadCoverMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <ImagePlus className="mr-2 h-4 w-4" />
+                      )}
+                      {uploadCoverMutation.isPending
+                        ? strings.mediaProcessingLabel
+                        : strings.replaceCoverAction}
                     </ActionButton>
                   </div>
                   <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-end">
@@ -805,11 +835,21 @@ export function EntryDetailClient({
                       size="sm"
                       tooltip={strings.saveCoverAction}
                       variant="outline"
-                      disabled={!coverDirty || saveCoverMutation.isPending}
+                      disabled={
+                        !coverDirty ||
+                        saveCoverMutation.isPending ||
+                        mediaProcessing
+                      }
                       onClick={() => saveCoverMutation.mutate()}
                     >
-                      <Pencil className="mr-2 h-4 w-4" />
-                      {strings.saveCoverAction}
+                      {saveCoverMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Pencil className="mr-2 h-4 w-4" />
+                      )}
+                      {saveCoverMutation.isPending
+                        ? strings.mediaProcessingLabel
+                        : strings.saveCoverAction}
                     </ActionButton>
                   </div>
                 </div>
@@ -829,15 +869,23 @@ export function EntryDetailClient({
                 <Button
                   size="sm"
                   variant="outline"
+                  disabled={mediaProcessing}
                   onClick={() => mediaInputRef.current?.click()}
                 >
-                  <ImagePlus className="mr-2 h-4 w-4" />
-                  {strings.bulkUploadMediaAction}
+                  {uploadMediaMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <ImagePlus className="mr-2 h-4 w-4" />
+                  )}
+                  {uploadMediaMutation.isPending
+                    ? strings.mediaProcessingLabel
+                    : strings.bulkUploadMediaAction}
                 </Button>
                 {imageAssets.length > 0 ? (
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={mediaProcessing}
                     onClick={() =>
                       setSelectedAssetIds((current) =>
                         current.length === imageAssets.length
@@ -855,19 +903,33 @@ export function EntryDetailClient({
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={mediaProcessing}
                     onClick={() => setDeleteMediaDialogOpen(true)}
                   >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    {strings.bulkRemoveMediaAction}
+                    {deleteAssetsMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="mr-2 h-4 w-4" />
+                    )}
+                    {deleteAssetsMutation.isPending
+                      ? strings.mediaProcessingLabel
+                      : strings.bulkRemoveMediaAction}
                   </Button>
                 ) : null}
               </div>
             </CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-3">
+              {mediaProcessing ? (
+                <div className="flex items-center gap-3 rounded-[1.1rem] border border-dynamic-blue/20 bg-dynamic-blue/5 px-4 py-3 text-dynamic-blue text-sm md:col-span-3">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>{strings.mediaProcessingLabel}</span>
+                </div>
+              ) : null}
               {imageAssets.length === 0 ? (
                 <button
                   type="button"
                   className="rounded-[1.2rem] border border-border/70 border-dashed bg-background/50 p-6 text-left transition hover:border-border hover:bg-background/70 md:col-span-3"
+                  disabled={mediaProcessing}
                   onClick={() => mediaInputRef.current?.click()}
                 >
                   <div className="font-medium">
@@ -914,13 +976,20 @@ export function EntryDetailClient({
                             <Button
                               size="sm"
                               variant="outline"
-                              disabled={setAsCoverMutation.isPending}
+                              disabled={
+                                setAsCoverMutation.isPending || mediaProcessing
+                              }
                               onClick={(event) => {
                                 event.stopPropagation();
                                 setAsCoverMutation.mutate(asset.id);
                               }}
                             >
-                              {strings.setAsCoverAction}
+                              {setAsCoverMutation.isPending ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : null}
+                              {setAsCoverMutation.isPending
+                                ? strings.mediaProcessingLabel
+                                : strings.setAsCoverAction}
                             </Button>
                           ) : null}
                         </div>

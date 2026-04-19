@@ -90,6 +90,7 @@ export type EpmStrings = {
   profileDataLabel: string;
   manageCollectionAction: string;
   manageCollectionDescription: string;
+  mediaProcessingLabel: string;
   publishAction: string;
   publishedQueue: string;
   quickCreateHint: string;
@@ -200,6 +201,7 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     importHint: t('epm.import_hint'),
     loadingPreviewLabel: t('epm.loading_preview_label'),
     metadataLabel: t('epm.metadata_label'),
+    mediaProcessingLabel: t('epm.media_processing_label'),
     missingLeadImageLabel: t('epm.missing_lead_image_label'),
     noAdapterLabel: t('epm.no_adapter_label'),
     noCanonicalIdLabel: t('epm.no_canonical_id_label'),

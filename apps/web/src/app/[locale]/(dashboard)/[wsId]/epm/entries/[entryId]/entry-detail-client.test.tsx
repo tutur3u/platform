@@ -264,4 +264,62 @@ describe('EntryDetailClient', () => {
       });
     });
   });
+
+  it('shows a processing indicator while media uploads are still running', async () => {
+    let resolveAsset:
+      | ((
+          value: Awaited<
+            ReturnType<typeof createWorkspaceExternalProjectAssetMock>
+          >
+        ) => void)
+      | undefined;
+    const pendingAsset = new Promise<
+      Awaited<ReturnType<typeof createWorkspaceExternalProjectAssetMock>>
+    >((resolve) => {
+      resolveAsset = resolve;
+    });
+
+    createWorkspaceExternalProjectAssetMock.mockImplementationOnce(
+      () => pendingAsset
+    );
+
+    renderClient();
+
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
+
+    fireEvent.change(fileInput, {
+      target: {
+        files: [new File(['cover'], 'cover.png', { type: 'image/png' })],
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('epm.media_processing_label').length).toBe(3);
+    });
+
+    resolveAsset?.({
+      alt_text: 'Entry One',
+      asset_type: 'image',
+      asset_url: 'https://cdn.example.com/cover.png',
+      block_id: null,
+      created_at: '2026-04-19T00:00:00.000Z',
+      entry_id: 'entry-1',
+      id: 'asset-1',
+      metadata: {},
+      preview_url: 'https://cdn.example.com/cover-preview.png',
+      sort_order: 0,
+      source_url: null,
+      storage_path: 'covers/cover.png',
+      updated_at: '2026-04-19T00:00:00.000Z',
+      ws_id: 'ws_123',
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText('epm.media_processing_label')
+      ).not.toBeInTheDocument();
+    });
+  });
 });

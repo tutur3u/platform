@@ -3900,6 +3900,7 @@
       "loading_preview_label": "Loading preview payload...",
       "manage_collection_action": "Open collection details",
       "manage_collection_description": "Collection-level configuration lives on dedicated detail pages so the main EPM shell stays focused on navigation and operations.",
+      "media_processing_label": "Processing media...",
       "metadata_label": "Metadata JSON",
       "missing_lead_image_label": "Missing a lead image asset.",
       "no_adapter_label": "No adapter",

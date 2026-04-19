@@ -3900,6 +3900,7 @@
       "loading_preview_label": "Đang tải payload preview...",
       "manage_collection_action": "Mở chi tiết bộ sưu tập",
       "manage_collection_description": "Cấu hình ở cấp bộ sưu tập nằm trên các trang chi tiết riêng để shell EPM chính vẫn tập trung vào điều hướng và thao tác vận hành.",
+      "media_processing_label": "Đang xử lý media...",
       "metadata_label": "Metadata JSON",
       "missing_lead_image_label": "Thiếu ảnh chính.",
       "no_adapter_label": "Chưa có adapter",
