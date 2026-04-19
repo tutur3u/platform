@@ -77,6 +77,23 @@ export interface WorkspaceStorageListResponse {
   };
 }
 
+export interface WorkspaceStorageMetricFile {
+  name: string;
+  size: number;
+  createdAt?: string | null;
+}
+
+export interface WorkspaceStorageAnalyticsResponse {
+  data: {
+    totalSize: number;
+    fileCount: number;
+    storageLimit: number;
+    usagePercentage: number;
+    largestFile: WorkspaceStorageMetricFile | null;
+    smallestFile: WorkspaceStorageMetricFile | null;
+  };
+}
+
 export interface WorkspaceStorageExportFile {
   path: string;
   relativePath: string;
@@ -432,6 +449,19 @@ export async function listWorkspaceStorageObjects(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/storage/list`,
     {
       query,
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceStorageAnalytics(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceStorageAnalyticsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/storage/analytics`,
+    {
       cache: 'no-store',
     }
   );

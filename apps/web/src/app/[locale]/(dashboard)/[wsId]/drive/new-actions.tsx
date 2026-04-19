@@ -19,9 +19,10 @@ import { useState } from 'react';
 interface Props {
   wsId: string;
   path?: string;
+  onComplete?: () => void | Promise<void>;
 }
 
-export default function NewActions({ wsId, path }: Props) {
+export default function NewActions({ wsId, path, onComplete }: Props) {
   const t = useTranslations();
 
   const [showFileUploadDialog, setFileUploadDialog] = useState(false);
@@ -57,6 +58,8 @@ export default function NewActions({ wsId, path }: Props) {
             wsId={wsId}
             uploadPath={path}
             submitLabel={t('common.upload')}
+            refreshOnComplete={false}
+            onComplete={onComplete}
           />
         }
       />
@@ -65,7 +68,14 @@ export default function NewActions({ wsId, path }: Props) {
         open={showFolderCreateDialog}
         title={t('ws-storage-objects.folder_create')}
         setOpen={setFolderCreateDialog}
-        form={<StorageFolderForm wsId={wsId} uploadPath={path} />}
+        form={
+          <StorageFolderForm
+            wsId={wsId}
+            uploadPath={path}
+            refreshOnComplete={false}
+            onComplete={onComplete}
+          />
+        }
       />
     </>
   );

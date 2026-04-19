@@ -33,6 +33,7 @@ interface FolderProps {
     name: string;
   };
   onComplete?: () => unknown;
+  refreshOnComplete?: boolean;
 }
 
 interface Props {
@@ -41,6 +42,7 @@ interface Props {
   uploadPath?: string;
   accept?: string;
   onComplete?: () => void;
+  refreshOnComplete?: boolean;
   submitLabel?: string;
 }
 
@@ -77,6 +79,7 @@ export function StorageFolderForm({
   uploadPath = '',
   data,
   onComplete,
+  refreshOnComplete = true,
 }: FolderProps) {
   const t = useTranslations();
 
@@ -109,7 +112,9 @@ export function StorageFolderForm({
       await createFolderMutation.mutateAsync(data);
       onComplete?.();
       setLoading(false);
-      router.refresh();
+      if (refreshOnComplete) {
+        router.refresh();
+      }
     } catch (error) {
       setLoading(false);
       toast.error(
@@ -161,6 +166,7 @@ export function StorageObjectForm({
   uploadPath = '',
   accept,
   onComplete,
+  refreshOnComplete = true,
   submitLabel,
 }: Props) {
   const t = useTranslations();
@@ -287,7 +293,9 @@ export function StorageObjectForm({
       }
 
       onComplete?.();
-      router.refresh();
+      if (refreshOnComplete) {
+        router.refresh();
+      }
     } else {
       toast.error(t('common.error'));
     }
