@@ -1919,7 +1919,7 @@ function parseDockerBytes(value) {
     return null;
   }
 
-  const normalized = value.trim();
+  const normalized = value.trim().replace(/,/g, '.').replace(/\s+/g, ' ');
   const match = normalized.match(/^([0-9]*\.?[0-9]+)\s*([KMGT]?i?B)$/iu);
 
   if (!match) {
@@ -1972,7 +1972,9 @@ function parseDockerStatsLine(line) {
     netIo = '',
     name = '',
   ] = String(line).split('\t');
-  const cpuPercent = Number.parseFloat(String(cpuRaw).replace('%', ''));
+  const cpuPercent = Number.parseFloat(
+    String(cpuRaw).replace('%', '').replace(/,/g, '.').trim()
+  );
   const [memoryRaw = ''] = String(memoryUsage).split('/');
   const { rxBytes, txBytes } = parseDockerIoPair(netIo);
 

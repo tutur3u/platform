@@ -1381,6 +1381,64 @@ test('loadRuntimeSnapshot keeps both live colors marked active in deployment car
   }
 });
 
+test('loadRuntimeSnapshot parses docker stats that use comma decimals', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-runtime-locale-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
+
+    const now = Date.parse('2026-04-18T11:30:00.000Z');
+    const snapshot = await loadRuntimeSnapshot({
+      envFilePath,
+      fsImpl: fs,
+      history: [],
+      now,
+      paths,
+      rootDir: tempDir,
+      runCommand: createRunCommandMock(
+        new Map([
+          [
+            prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
+            createResult('proxy-123\n'),
+          ],
+          [prodComposePsKey('web-green'), createResult('green-123\n')],
+          [prodComposePsKey('web-blue'), createResult('blue-123\n')],
+          [
+            'docker stats --no-stream --format {{.ID}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.Name}} proxy-123 blue-123 green-123',
+            createResult(
+              [
+                'proxy-123\t0,10%\t24,0MiB / 31,1GiB\t2,00MB / 3,00MB\tplatform-web-proxy-1',
+                'blue-123\t1,20%\t150,5MiB / 31,1GiB\t6,00MB / 4,00MB\tplatform-web-blue-1',
+                'green-123\t3,40%\t420,25MiB / 31,1GiB\t10,0MB / 8,00MB\tplatform-web-green-1',
+              ].join('\n')
+            ),
+          ],
+        ])
+      ),
+    });
+
+    assert.equal(snapshot.dockerResources.state, 'live');
+    assert.equal(snapshot.dockerResources.containers.length, 3);
+    assert.equal(snapshot.dockerResources.totalCpuPercent, 4.7);
+    assert.ok(snapshot.dockerResources.totalMemoryBytes > 0);
+    assert.ok(snapshot.dockerResources.totalRxBytes > 0);
+    assert.ok(snapshot.dockerResources.totalTxBytes > 0);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('runDeployWatchIteration skips dirty worktrees before fetch and still reports runtime state', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-dirty-'));
   const paths = getWatchPaths(tempDir);

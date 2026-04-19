@@ -335,6 +335,9 @@ Dashboard details:
 - Docker stats are read with an explicit field format instead of Docker's
   version-dependent JSON object shape, which avoids bogus `0` CPU/memory
   readings when the watcher is running against a different Docker release.
+- The watcher parser also normalizes locale-style decimal commas from
+  `docker stats`, so hosts that emit values like `0,10%` or `24,0MiB` no
+  longer collapse into zeroed metrics.
 - Normal promotions keep the long-lived `web-proxy` container and bound port
   stable, which avoids transient listener drops for upstreams such as
   Cloudflare Tunnel that are connected to `:7803`.
