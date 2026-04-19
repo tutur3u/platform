@@ -9,6 +9,7 @@ const {
   createWorkspaceExternalProjectAssetMock,
   deleteWorkspaceExternalProjectEntryMock,
   duplicateWorkspaceExternalProjectEntryMock,
+  invalidateQueriesMock,
   publishWorkspaceExternalProjectEntryMock,
   routerPushMock,
   routerRefreshMock,
@@ -20,6 +21,7 @@ const {
   createWorkspaceExternalProjectAssetMock: vi.fn(),
   deleteWorkspaceExternalProjectEntryMock: vi.fn(),
   duplicateWorkspaceExternalProjectEntryMock: vi.fn(),
+  invalidateQueriesMock: vi.fn(),
   optimizeEpmMediaUploadMock: vi.fn(),
   publishWorkspaceExternalProjectEntryMock: vi.fn(),
   routerPushMock: vi.fn(),
@@ -85,6 +87,8 @@ describe('EntryDetailClient', () => {
         },
       },
     });
+    queryClient.invalidateQueries =
+      invalidateQueriesMock.mockResolvedValue(undefined);
     vi.clearAllMocks();
     optimizeEpmMediaUploadMock.mockImplementation(async (file: File) => file);
 
@@ -255,6 +259,9 @@ describe('EntryDetailClient', () => {
           storage_path: 'covers/cover.png',
         })
       );
+      expect(invalidateQueriesMock).toHaveBeenCalledWith({
+        queryKey: ['epm-studio', 'ws_123'],
+      });
     });
   });
 });

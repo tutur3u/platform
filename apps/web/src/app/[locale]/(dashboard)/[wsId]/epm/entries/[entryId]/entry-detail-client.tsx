@@ -192,6 +192,12 @@ export function EntryDetailClient({
     );
   };
 
+  const refreshStudioFromBackend = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: getEpmStudioQueryKey(workspaceId),
+    });
+  };
+
   useEffect(() => {
     if (!activeEntry) {
       setEntryForm(null);
@@ -399,9 +405,10 @@ export function EntryDetailClient({
         storage_path: upload.path,
       });
     },
-    onSuccess: (asset) => {
+    onSuccess: async (asset) => {
       mergeAsset(toStudioAsset(asset, coverAsset));
       setPreviewRefreshToken((value) => value + 1);
+      await refreshStudioFromBackend();
       toast.success(strings.coverUploadSuccessToast);
     },
   });
@@ -441,7 +448,7 @@ export function EntryDetailClient({
         })
       );
     },
-    onSuccess: (createdAssets) => {
+    onSuccess: async (createdAssets) => {
       updateStudioCache((current) => ({
         ...current,
         assets: [
@@ -449,6 +456,7 @@ export function EntryDetailClient({
           ...createdAssets.map((asset) => toStudioAsset(asset, null)),
         ],
       }));
+      await refreshStudioFromBackend();
       toast.success(strings.coverUploadSuccessToast);
     },
   });
@@ -460,13 +468,14 @@ export function EntryDetailClient({
           deleteWorkspaceExternalProjectAsset(workspaceId, assetId)
         )
       ),
-    onSuccess: (_, assetIds) => {
+    onSuccess: async (_, assetIds) => {
       updateStudioCache((current) => ({
         ...current,
         assets: current.assets.filter((asset) => !assetIds.includes(asset.id)),
       }));
       setSelectedAssetIds([]);
       setDeleteMediaDialogOpen(false);
+      await refreshStudioFromBackend();
       toast.success(strings.deleteAssetAction);
     },
   });
@@ -486,7 +495,7 @@ export function EntryDetailClient({
         )
       );
     },
-    onSuccess: (updatedAssets) => {
+    onSuccess: async (updatedAssets) => {
       updateStudioCache((current) => ({
         ...current,
         assets: current.assets.map((asset) =>
@@ -497,6 +506,7 @@ export function EntryDetailClient({
         ),
       }));
       setCoverAltText(updatedAssets[0]?.alt_text ?? activeEntryTitle);
+      await refreshStudioFromBackend();
       toast.success(strings.coverSaveSuccessToast);
     },
   });
