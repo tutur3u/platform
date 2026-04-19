@@ -6,7 +6,7 @@ import type { TablesUpdate } from '@tuturuuu/types';
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
-  MAX_NAME_LENGTH,
+  MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -21,7 +21,7 @@ const uuidString = z
   );
 
 const updateDraftSchema = z.object({
-  name: z.string().max(MAX_NAME_LENGTH).min(1).optional(),
+  name: z.string().max(MAX_TASK_NAME_LENGTH).min(1).optional(),
   description: z.string().max(MAX_LONG_TEXT_LENGTH).nullish(),
   priority: z.enum(['critical', 'high', 'normal', 'low']).nullish(),
   board_id: uuidString.nullish(),

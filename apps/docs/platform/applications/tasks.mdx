@@ -282,6 +282,8 @@ export async function reorderLists(
 
 Individual work items.
 
+Task titles support up to `1024` characters. Keep task-only validation on the dedicated task-title limit rather than the generic `name` limit so task routes, drafts, and database checks stay aligned.
+
 ```sql
 CREATE TABLE workspace_tasks (
   id text PRIMARY KEY,

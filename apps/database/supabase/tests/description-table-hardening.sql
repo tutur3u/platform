@@ -325,6 +325,12 @@ select is(
 );
 
 select is(
+  strict_text_field_char_limit('tasks', 'name'),
+  1024,
+  'task titles allow up to 1,024 characters'
+);
+
+select is(
   strict_text_field_char_limit('tasks', 'description'),
   100000,
   'task descriptions preserve the 100,000 character allowance'

@@ -5,7 +5,7 @@ import {
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
-  MAX_NAME_LENGTH,
+  MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -20,7 +20,7 @@ const uuidString = z
   );
 
 const createDraftSchema = z.object({
-  name: z.string().max(MAX_NAME_LENGTH).min(1, 'Name is required'),
+  name: z.string().max(MAX_TASK_NAME_LENGTH).min(1, 'Name is required'),
   description: z.string().max(MAX_LONG_TEXT_LENGTH).nullish(),
   priority: z.enum(['critical', 'high', 'normal', 'low']).nullish(),
   board_id: uuidString.nullish(),

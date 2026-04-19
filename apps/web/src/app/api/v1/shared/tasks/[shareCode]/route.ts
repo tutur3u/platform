@@ -5,7 +5,7 @@ import {
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
-  MAX_NAME_LENGTH,
+  MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -475,7 +475,7 @@ export async function PATCH(
     }
 
     const taskUpdateSchema = z.object({
-      name: z.string().max(MAX_NAME_LENGTH).optional(),
+      name: z.string().max(MAX_TASK_NAME_LENGTH).optional(),
       description: z.string().max(MAX_LONG_TEXT_LENGTH).nullable().optional(),
       priority: z
         .enum(['critical', 'high', 'normal', 'low'])

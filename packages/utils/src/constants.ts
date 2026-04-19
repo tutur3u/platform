@@ -75,7 +75,7 @@ export const MAX_REQUEST_BODY_BYTES = 512 * 1024; // 512KB — global limit for 
 export const MAX_TEXT_FIELD_BYTES = 64000;
 // 40KB — covers 10K emoji chars (4 bytes each)
 export const MAX_WORKSPACE_NAME_LENGTH = 100;
-export const MAX_TASK_NAME_LENGTH = 255;
+export const MAX_TASK_NAME_LENGTH = 1024;
 export const MAX_TASK_DESCRIPTION_LENGTH = 100000;
 export const MAX_CHAT_MESSAGE_LENGTH = 10000;
 export const MAX_SUPPORT_INQUIRY_LENGTH = 5000;

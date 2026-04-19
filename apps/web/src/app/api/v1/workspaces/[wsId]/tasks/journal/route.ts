@@ -25,6 +25,7 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
+  MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { generateObject, NoObjectGeneratedError } from 'ai';
 import dayjs from 'dayjs';
@@ -37,7 +38,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const providedTaskSchema = z.object({
-  title: z.string().max(MAX_NAME_LENGTH).min(1),
+  title: z.string().max(MAX_TASK_NAME_LENGTH).min(1),
   description: z.string().max(MAX_LONG_TEXT_LENGTH).nullable().optional(),
   priority: z.enum(['critical', 'high', 'normal', 'low']).nullable().optional(),
   dueDate: z.string().max(MAX_COLOR_LENGTH).nullable().optional(),
