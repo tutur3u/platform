@@ -893,6 +893,7 @@ type UpsertEntryPayload = {
   collection_id: string;
   metadata: Json;
   profile_data: Json;
+  scheduled_for?: string | null;
   slug: string;
   status: ExternalProjectEntry['status'];
   subtitle?: string | null;
