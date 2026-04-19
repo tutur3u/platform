@@ -110,20 +110,6 @@ export function EpmClient({
   const publishEvents =
     studio?.publishEvents ?? initialStudio?.publishEvents ?? [];
 
-  useEffect(() => {
-    const firstCollectionId = collections[0]?.id;
-    if (!selectedCollectionId && firstCollectionId) {
-      setSelectedCollectionId(firstCollectionId);
-    }
-  }, [collections, selectedCollectionId]);
-
-  useEffect(() => {
-    const firstEntryId = entries[0]?.id;
-    if (!selectedEntryId && firstEntryId) {
-      setSelectedEntryId(firstEntryId);
-    }
-  }, [entries, selectedEntryId]);
-
   const previewQuery = useExternalProjectLivePreview({
     enabled: mode === 'preview',
     refreshToken: previewRefreshToken,
@@ -131,8 +117,37 @@ export function EpmClient({
     workspaceId,
   });
 
+  const deliveryCollections = previewQuery.data?.collections ?? [];
+  const selectedPreviewCollection = deliveryCollections.find(
+    (collection) => collection.id === selectedCollectionId
+  );
+  const matchedStudioCollection =
+    collections.find((collection) => collection.id === selectedCollectionId) ??
+    (selectedPreviewCollection
+      ? collections.find(
+          (collection) =>
+            collection.slug === selectedPreviewCollection.slug ||
+            collection.title === selectedPreviewCollection.title
+        )
+      : undefined);
+  const activeCollection = matchedStudioCollection ?? collections[0] ?? null;
+  const effectiveCollectionId = activeCollection?.id ?? '';
+  const activePreviewCollection =
+    selectedPreviewCollection ||
+    (activeCollection
+      ? deliveryCollections.find(
+          (collection) =>
+            collection.slug === activeCollection.slug ||
+            collection.title === activeCollection.title
+        )
+      : undefined) ||
+    deliveryCollections[0] ||
+    null;
   const visibleEntries = entries.filter((entry) => {
-    if (selectedCollectionId && entry.collection_id !== selectedCollectionId) {
+    if (
+      effectiveCollectionId &&
+      entry.collection_id !== effectiveCollectionId
+    ) {
       return false;
     }
 
@@ -145,22 +160,9 @@ export function EpmClient({
       .filter(Boolean)
       .some((value) => value?.toLowerCase().includes(query));
   });
-
-  const activeCollection =
-    collections.find((collection) => collection.id === selectedCollectionId) ??
-    collections[0] ??
-    null;
   const activeEditEntry =
     visibleEntries.find((entry) => entry.id === selectedEntryId) ??
     visibleEntries[0] ??
-    null;
-
-  const deliveryCollections = previewQuery.data?.collections ?? [];
-  const activePreviewCollection =
-    deliveryCollections.find(
-      (collection) => collection.id === selectedCollectionId
-    ) ??
-    deliveryCollections[0] ??
     null;
   const previewEntries = activePreviewCollection?.entries ?? [];
   const previewPrimaryEntry = previewEntries[0] ?? null;
@@ -169,6 +171,55 @@ export function EpmClient({
     binding,
     previewQuery.data?.profileData
   );
+
+  useEffect(() => {
+    const firstCollectionId = collections[0]?.id;
+    const nextCollectionId = matchedStudioCollection?.id ?? firstCollectionId;
+
+    if (nextCollectionId && selectedCollectionId !== nextCollectionId) {
+      if (
+        !selectedCollectionId ||
+        !collections.some(
+          (collection) => collection.id === selectedCollectionId
+        )
+      ) {
+        setSelectedCollectionId(nextCollectionId);
+      }
+    }
+  }, [collections, matchedStudioCollection?.id, selectedCollectionId]);
+
+  useEffect(() => {
+    const firstEntryId =
+      entries.find((entry) =>
+        effectiveCollectionId
+          ? entry.collection_id === effectiveCollectionId
+          : true
+      )?.id ?? '';
+    const selectedEntryStillVisible = entries.some(
+      (entry) =>
+        entry.id === selectedEntryId &&
+        (!effectiveCollectionId ||
+          entry.collection_id === effectiveCollectionId)
+    );
+
+    if (!selectedEntryStillVisible && firstEntryId) {
+      setSelectedEntryId(firstEntryId);
+    } else if (!firstEntryId && selectedEntryId) {
+      setSelectedEntryId('');
+    }
+  }, [effectiveCollectionId, entries, selectedEntryId]);
+
+  useEffect(() => {
+    if (
+      mode === 'preview' &&
+      !previewQuery.isPending &&
+      activeCollection &&
+      (!activePreviewCollection || activePreviewCollection.entries.length === 0)
+    ) {
+      setMode('edit');
+      setEditSection('entries');
+    }
+  }, [activeCollection, activePreviewCollection, mode, previewQuery.isPending]);
 
   const counts = {
     archived: entries.filter((entry) => entry.status === 'archived').length,
@@ -259,13 +310,40 @@ export function EpmClient({
     setEditorEntryId(entryId);
   };
 
+  const selectCollection = (value: string) => {
+    const previewCollection = deliveryCollections.find(
+      (collection) => collection.id === value
+    );
+    const studioCollection =
+      collections.find((collection) => collection.id === value) ??
+      (previewCollection
+        ? collections.find(
+            (collection) =>
+              collection.slug === previewCollection.slug ||
+              collection.title === previewCollection.title
+          )
+        : undefined) ??
+      collections[0] ??
+      null;
+
+    if (!studioCollection) {
+      return;
+    }
+
+    setSelectedCollectionId(studioCollection.id);
+    setSelectedEntryId(
+      entries.find((entry) => entry.collection_id === studioCollection.id)
+        ?.id ?? ''
+    );
+  };
+
   const openCollectionDetails = (collectionId: string) => {
     router.push(`${pathname.replace(/\/$/, '')}/collections/${collectionId}`);
   };
 
   const createEntryMutation = useMutation({
     mutationFn: async () => {
-      const collectionId = activeCollection?.id ?? selectedCollectionId;
+      const collectionId = activeCollection?.id ?? collections[0]?.id ?? null;
       if (!collectionId) {
         throw new Error('Collection is required');
       }
@@ -282,11 +360,16 @@ export function EpmClient({
         title: 'Untitled entry',
       });
     },
-    onError: () => toast.error(strings.editEntryDescription),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : strings.createEntryAction
+      ),
     onSuccess: (entry) => {
       mergeEntry(entry);
       setSelectedCollectionId(entry.collection_id);
       setSelectedEntryId(entry.id);
+      setMode('edit');
+      setEditSection('entries');
       setPreviewRefreshToken((value) => value + 1);
       toast.success(strings.createEntryAction);
       openEntryEditor(entry.id);
@@ -604,13 +687,7 @@ export function EpmClient({
           deliveryCollections={deliveryCollections}
           entries={entries}
           onOpenEntry={openEntryEditor}
-          onSelectCollection={(value) => {
-            setSelectedCollectionId(value);
-            setSelectedEntryId(
-              deliveryCollections.find((collection) => collection.id === value)
-                ?.entries[0]?.id ?? ''
-            );
-          }}
+          onSelectCollection={selectCollection}
           previewGalleryEntries={previewGalleryEntries}
           previewProjectLabel={previewProjectLabel}
           previewQueryPending={previewQuery.isPending}
@@ -644,12 +721,7 @@ export function EpmClient({
                 : current.filter((value) => value !== entryId)
             )
           }
-          onSelectCollection={(value) => {
-            setSelectedCollectionId(value);
-            setSelectedEntryId(
-              entries.find((entry) => entry.collection_id === value)?.id ?? ''
-            );
-          }}
+          onSelectCollection={selectCollection}
           onSetWorkflowFilter={setWorkflowFilter}
           onSetWorkflowScheduleValue={setScheduleValue}
           onWorkflowAction={(payload) => bulkMutation.mutate(payload)}
@@ -692,12 +764,7 @@ export function EpmClient({
                 : current.filter((value) => value !== entryId)
             )
           }
-          onSelectCollection={(value) => {
-            setSelectedCollectionId(value);
-            setSelectedEntryId(
-              entries.find((entry) => entry.collection_id === value)?.id ?? ''
-            );
-          }}
+          onSelectCollection={selectCollection}
           onSetWorkflowFilter={setWorkflowFilter}
           onSetWorkflowScheduleValue={setScheduleValue}
           onWorkflowAction={(payload) => bulkMutation.mutate(payload)}

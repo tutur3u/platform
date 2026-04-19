@@ -227,6 +227,12 @@ describe('EpmClient', () => {
         status: 'published',
       },
     ]);
+    createWorkspaceExternalProjectEntryMock.mockResolvedValue({
+      ...studio.entries[0],
+      id: 'entry-2',
+      slug: 'draft-entry',
+      title: 'Untitled entry',
+    });
   });
 
   function renderClient(props?: Partial<Parameters<typeof EpmClient>[0]>) {
@@ -276,6 +282,24 @@ describe('EpmClient', () => {
     expect(await screen.findByText('epm.details_title')).toBeInTheDocument();
   });
 
+  it('creates a new entry in the active collection from edit mode', async () => {
+    renderClient({ initialMode: 'edit' });
+
+    fireEvent.click(screen.getByText('epm.create_entry_action'));
+
+    await waitFor(() => {
+      expect(createWorkspaceExternalProjectEntryMock).toHaveBeenCalledWith(
+        'ws_123',
+        expect.objectContaining({
+          collection_id: 'collection-1',
+          slug: expect.stringMatching(/^draft-/),
+          status: 'draft',
+          title: 'Untitled entry',
+        })
+      );
+    });
+  });
+
   it('routes collection actions to the dedicated collection page', async () => {
     renderClient({ initialEditSection: 'settings', initialMode: 'edit' });
     fireEvent.click(
@@ -303,6 +327,34 @@ describe('EpmClient', () => {
         scheduledFor: undefined,
         status: undefined,
       });
+    });
+  });
+
+  it('falls back to edit mode when the selected preview collection is empty', async () => {
+    getWorkspaceExternalProjectDeliveryMock.mockResolvedValue({
+      adapter: 'yoola',
+      canonicalProjectId: 'project-1',
+      collections: [
+        {
+          collection_type: 'artworks',
+          config: {},
+          description: 'Preview collection',
+          entries: [],
+          id: 'collection-1',
+          slug: 'artworks',
+          title: 'Artworks',
+        },
+      ],
+      generatedAt: '2026-04-19T00:00:00.000Z',
+      loadingData: null,
+      profileData: { brand: 'Yoola' },
+      workspaceId: 'ws_123',
+    });
+
+    renderClient({ initialMode: 'preview' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('epm-edit-gallery')).toBeInTheDocument();
     });
   });
 });
