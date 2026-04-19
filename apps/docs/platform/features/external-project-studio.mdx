@@ -63,6 +63,7 @@ The EPM surfaces now follow two distinct workflows:
 - Mutations on the dedicated detail pages should patch or invalidate that shared studio query instead of calling `router.refresh()`.
 - When the main `/epm` shell opens the fullscreen entry editor dialog, keep it on the same shared studio query cache so open/close transitions feel instant and do not need route refreshes.
 - Cover uploads and replacements reuse the existing workspace asset signed-upload helper; no separate cover-specific backend endpoint is needed.
+- When EPM surfaces render internal asset API URLs such as `/api/v1/workspaces/:wsId/external-projects/assets/:assetId`, bypass the Next.js image optimizer (`unoptimized`) instead of routing them through `/_next/image`. Protected or signed internal asset routes can return optimizer-side `400` responses even though the direct asset URL is valid.
 - The workspace route is now `/{wsId}/epm`, with `/{wsId}/external-projects` redirecting to it for backward compatibility.
 - The main `/epm` page is now an index plus mode shell, not a hybrid inline editor.
 
@@ -73,4 +74,5 @@ The EPM surfaces now follow two distinct workflows:
 - For dense admin surfaces, prefer one compact index plus a near-fullscreen dialog or dedicated page for item-level authoring instead of rebuilding mini-editors inside the index view.
 - Keep the detail routes on the same shared studio query cache as the index so save/publish/cover changes stay client-fast without route refreshes.
 - For external-project entries that need strong visual identity, treat cover image upload/replacement/reordering as a first-class workflow instead of burying it under generic asset editing.
+- Mount Vercel Analytics and Speed Insights only on actual Vercel deployments. Self-hosted environments should not emit `/_vercel/*` requests that immediately `404`.
 - Add any new user-facing copy to both `apps/web/messages/en.json` and `apps/web/messages/vi.json`, then run `bun i18n:sort`.

@@ -53,6 +53,8 @@ export default async function RootLayout({ children, params }: Props) {
   const deploymentStamp =
     process.env.PLATFORM_DEPLOYMENT_STAMP?.trim() || 'local';
   const serviceWorkerUrl = `/serwist/sw.js?v=${encodeURIComponent(deploymentStamp)}`;
+  const isVercelDeployment =
+    process.env.VERCEL === '1' || Boolean(process.env.VERCEL_URL);
 
   // Ensure that the incoming `locale` is valid
   if (!routing.locales.includes(locale as Locale)) {
@@ -74,8 +76,12 @@ export default async function RootLayout({ children, params }: Props) {
           options={{ updateViaCache: 'none' }}
           swUrl={serviceWorkerUrl}
         >
-          <VercelAnalytics />
-          <VercelInsights />
+          {isVercelDeployment ? (
+            <>
+              <VercelAnalytics />
+              <VercelInsights />
+            </>
+          ) : null}
           <Suspense>
             <NuqsAdapter>
               <Providers>{children}</Providers>

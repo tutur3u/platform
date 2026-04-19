@@ -29,6 +29,7 @@ export function ResilientMediaImage({
   const currentSource = sources.find(
     (source) => !failedSources.includes(source)
   );
+  const shouldBypassOptimizer = currentSource?.startsWith('/api/') ?? false;
 
   if (!currentSource) {
     return null;
@@ -46,6 +47,7 @@ export function ResilientMediaImage({
         fill
         sizes={sizes}
         src={currentSource}
+        unoptimized={shouldBypassOptimizer}
         onError={handleError}
       />
     );
@@ -61,6 +63,7 @@ export function ResilientMediaImage({
       className={className}
       height={height}
       src={currentSource}
+      unoptimized={shouldBypassOptimizer}
       width={width}
       onError={handleError}
     />
