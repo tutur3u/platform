@@ -437,7 +437,7 @@ export function EntryDetailClient({
   }
 
   const content = (
-    <div className="min-h-[calc(100svh-5rem)] space-y-5 pb-8">
+    <div className="mx-auto min-h-[calc(100svh-5rem)] max-w-[1580px] space-y-6 pb-10">
       <input
         ref={coverInputRef}
         accept="image/*"
@@ -446,119 +446,144 @@ export function EntryDetailClient({
         onChange={handleCoverInputChange}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            {variant === 'page' ? (
-              <Button
-                variant="ghost"
-                onClick={() => router.push(dashboardPath)}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                {strings.backToEpmAction}
-              </Button>
-            ) : null}
-            <Badge variant="outline">
-              {activeCollection?.title ?? strings.collectionFallbackLabel}
-            </Badge>
-            <Badge className={statusTone(activeEntry.status)}>
-              {formatStatus(activeEntry.status, strings)}
-            </Badge>
-            {coverAsset ? (
-              <Badge variant="outline">{strings.coverBadge}</Badge>
-            ) : null}
+      <div className="sticky top-0 z-20 -mx-2 rounded-[1.7rem] border border-border/70 bg-background/95 px-4 py-4 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:mx-0 sm:px-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-4xl space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {variant === 'page' ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => router.push(dashboardPath)}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  {strings.backToEpmAction}
+                </Button>
+              ) : null}
+              <Badge variant="outline">
+                {activeCollection?.title ?? strings.collectionFallbackLabel}
+              </Badge>
+              <Badge className={statusTone(activeEntry.status)}>
+                {formatStatus(activeEntry.status, strings)}
+              </Badge>
+              {coverAsset ? (
+                <Badge variant="outline">{strings.coverBadge}</Badge>
+              ) : null}
+              {entryDirty || coverDirty ? (
+                <Badge variant="outline">{strings.saveAction}</Badge>
+              ) : null}
+            </div>
+            <div>
+              <h1 className="font-semibold text-3xl tracking-tight">
+                {activeEntry.title}
+              </h1>
+              <p className="mt-2 max-w-2xl text-muted-foreground text-sm leading-6">
+                {activeEntry.slug}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-semibold text-3xl tracking-tight">
-              {activeEntry.title}
-            </h1>
-            <p className="mt-2 max-w-3xl text-muted-foreground text-sm leading-6">
-              {strings.detailsDescription}
-            </p>
-          </div>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <ActionButton
-            tooltip={strings.refreshAction}
-            variant="outline"
-            onClick={() => {
-              setPreviewRefreshToken((value) => value + 1);
-              queryClient.invalidateQueries({
-                queryKey: getEpmStudioQueryKey(workspaceId),
-              });
-            }}
-          >
-            <RefreshCw className="h-4 w-4" />
-          </ActionButton>
-          <ActionButton
-            tooltip={strings.openPreviewAction}
-            variant="outline"
-            onClick={() => setPreviewOpen(true)}
-          >
-            <Eye className="mr-2 h-4 w-4" />
-            {strings.openPreviewAction}
-          </ActionButton>
-          <ActionButton
-            tooltip={strings.duplicateAction}
-            variant="outline"
-            disabled={duplicateEntryMutation.isPending}
-            onClick={() => duplicateEntryMutation.mutate()}
-          >
-            <Copy className="mr-2 h-4 w-4" />
-            {strings.duplicateAction}
-          </ActionButton>
-          <ActionButton
-            tooltip={
-              activeEntry.status === 'published'
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/70 bg-card/90 p-2">
+            <ActionButton
+              tooltip={strings.refreshAction}
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setPreviewRefreshToken((value) => value + 1);
+                queryClient.invalidateQueries({
+                  queryKey: getEpmStudioQueryKey(workspaceId),
+                });
+              }}
+            >
+              <RefreshCw className="h-4 w-4" />
+            </ActionButton>
+            <ActionButton
+              tooltip={strings.openPreviewAction}
+              size="sm"
+              variant="outline"
+              onClick={() => setPreviewOpen(true)}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              {strings.openPreviewAction}
+            </ActionButton>
+            <ActionButton
+              tooltip={strings.duplicateAction}
+              size="sm"
+              variant="outline"
+              disabled={duplicateEntryMutation.isPending}
+              onClick={() => duplicateEntryMutation.mutate()}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              {strings.duplicateAction}
+            </ActionButton>
+            <Button
+              size="sm"
+              disabled={
+                (!entryDirty && !coverDirty) ||
+                saveEntryMutation.isPending ||
+                saveCoverMutation.isPending
+              }
+              onClick={() => {
+                if (entryDirty) {
+                  saveEntryMutation.mutate();
+                }
+
+                if (coverDirty && coverAsset) {
+                  saveCoverMutation.mutate();
+                }
+              }}
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              {strings.saveAction}
+            </Button>
+            <ActionButton
+              size="sm"
+              tooltip={
+                activeEntry.status === 'published'
+                  ? strings.unpublishAction
+                  : strings.publishAction
+              }
+              disabled={publishEntryMutation.isPending}
+              onClick={() =>
+                publishEntryMutation.mutate(
+                  activeEntry.status === 'published' ? 'unpublish' : 'publish'
+                )
+              }
+            >
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              {activeEntry.status === 'published'
                 ? strings.unpublishAction
-                : strings.publishAction
-            }
-            disabled={publishEntryMutation.isPending}
-            onClick={() =>
-              publishEntryMutation.mutate(
-                activeEntry.status === 'published' ? 'unpublish' : 'publish'
-              )
-            }
-          >
-            <CheckCircle2 className="mr-2 h-4 w-4" />
-            {activeEntry.status === 'published'
-              ? strings.unpublishAction
-              : strings.publishAction}
-          </ActionButton>
-          <ActionButton
-            tooltip={strings.deleteEntryAction}
-            variant="outline"
-            disabled={deleteEntryMutation.isPending}
-            onClick={() => deleteEntryMutation.mutate()}
-          >
-            <Trash2 className="h-4 w-4" />
-          </ActionButton>
+                : strings.publishAction}
+            </ActionButton>
+            <ActionButton
+              tooltip={strings.deleteEntryAction}
+              size="sm"
+              variant="outline"
+              disabled={deleteEntryMutation.isPending}
+              onClick={() => deleteEntryMutation.mutate()}
+            >
+              <Trash2 className="h-4 w-4" />
+            </ActionButton>
+          </div>
         </div>
       </div>
 
-      <div
-        className={cn(
-          'grid gap-5',
-          hasCoverMedia
-            ? 'xl:grid-cols-[minmax(0,1.14fr)_360px]'
-            : 'xl:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)]'
-        )}
-      >
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.34fr)_360px]">
         <div className="space-y-5">
           <Card className="overflow-hidden border-border/70 bg-card/95 shadow-none">
             <CardContent
               className={cn(
                 'grid gap-5 p-5 lg:p-6',
                 hasCoverMedia
-                  ? 'lg:grid-cols-[minmax(0,1.08fr)_280px]'
-                  : 'lg:grid-cols-[320px_minmax(0,1fr)]'
+                  ? 'lg:grid-cols-[minmax(0,1.08fr)_320px]'
+                  : 'lg:grid-cols-[minmax(0,0.94fr)_340px]'
               )}
             >
               <div
                 className={cn(
                   'relative overflow-hidden rounded-[1.6rem] border border-border/70 bg-background/80',
-                  hasCoverMedia ? 'min-h-[360px] lg:min-h-[520px]' : 'p-6'
+                  hasCoverMedia
+                    ? 'min-h-[320px] lg:min-h-[420px]'
+                    : 'flex min-h-[280px] flex-col justify-between p-6'
                 )}
               >
                 {coverAsset && hasCoverMedia ? (
@@ -600,11 +625,15 @@ export function EntryDetailClient({
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Button onClick={() => coverInputRef.current?.click()}>
+                      <Button
+                        size="sm"
+                        onClick={() => coverInputRef.current?.click()}
+                      >
                         <ImagePlus className="mr-2 h-4 w-4" />
                         {strings.uploadCoverAction}
                       </Button>
                       <Button
+                        size="sm"
                         variant="outline"
                         onClick={() => setPreviewOpen(true)}
                       >
@@ -612,20 +641,31 @@ export function EntryDetailClient({
                         {strings.openPreviewAction}
                       </Button>
                     </div>
-                    <div className="rounded-[1.15rem] border border-border/70 bg-background/70 p-4">
-                      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                        {strings.detailsTitle}
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-[1rem] border border-border/70 bg-background/70 p-4">
+                        <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                          {strings.statusLabel}
+                        </div>
+                        <div className="mt-2 font-medium text-base">
+                          {formatStatus(activeEntry.status, strings)}
+                        </div>
                       </div>
-                      <div className="mt-3 space-y-2">
-                        <div className="font-medium text-base">
-                          {activeEntry.title}
+                      <div className="rounded-[1rem] border border-border/70 bg-background/70 p-4">
+                        <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                          {strings.collectionsLabel}
                         </div>
-                        <div className="text-muted-foreground text-sm">
-                          {entryForm.slug}
+                        <div className="mt-2 font-medium text-base">
+                          {activeCollection?.title ??
+                            strings.collectionFallbackLabel}
                         </div>
-                        <p className="text-muted-foreground text-sm leading-6">
-                          {entryForm.summary || strings.previewEmptyDescription}
-                        </p>
+                      </div>
+                      <div className="rounded-[1rem] border border-border/70 bg-background/70 p-4">
+                        <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                          {strings.scheduledForLabel}
+                        </div>
+                        <div className="mt-2 font-medium text-base">
+                          {formatDateLabel(activeEntry.scheduled_for, strings)}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -634,8 +674,17 @@ export function EntryDetailClient({
 
               <div className="space-y-3">
                 <div className="rounded-[1.35rem] border border-border/70 bg-background/80 p-4">
-                  <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
-                    {strings.coverImageTitle}
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
+                        {strings.coverImageTitle}
+                      </div>
+                      <div className="mt-1 text-muted-foreground text-sm">
+                        {hasCoverMedia
+                          ? strings.coverImageDescription
+                          : strings.noCoverDescription}
+                      </div>
+                    </div>
                   </div>
                   <div className="mt-4 space-y-3">
                     <div className="space-y-2">
@@ -649,6 +698,7 @@ export function EntryDetailClient({
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <ActionButton
+                        size="sm"
                         tooltip={strings.coverImageDescription}
                         onClick={() => coverInputRef.current?.click()}
                       >
@@ -658,6 +708,7 @@ export function EntryDetailClient({
                           : strings.uploadCoverAction}
                       </ActionButton>
                       <ActionButton
+                        size="sm"
                         tooltip={strings.saveCoverAction}
                         variant="outline"
                         disabled={
@@ -673,37 +724,6 @@ export function EntryDetailClient({
                     </div>
                   </div>
                 </div>
-
-                <div className="rounded-[1.35rem] border border-border/70 bg-background/80 p-4">
-                  <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
-                    {strings.workspaceStatusTitle}
-                  </div>
-                  <div className="mt-4 space-y-2 text-sm">
-                    <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-2">
-                      <span className="text-muted-foreground">
-                        {strings.workspaceBindingLabel}
-                      </span>
-                      <span>
-                        {binding.canonical_project?.display_name ??
-                          strings.unboundLabel}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-2">
-                      <span className="text-muted-foreground">
-                        {strings.statusLabel}
-                      </span>
-                      <span>{formatStatus(activeEntry.status, strings)}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-2">
-                      <span className="text-muted-foreground">
-                        {strings.scheduledForLabel}
-                      </span>
-                      <span>
-                        {formatDateLabel(activeEntry.scheduled_for, strings)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -713,113 +733,136 @@ export function EntryDetailClient({
               <CardTitle>{strings.detailsTitle}</CardTitle>
               <CardDescription>{strings.editEntryDescription}</CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label>{strings.titleLabel}</Label>
-                <Input
-                  value={entryForm.title}
-                  onChange={(event) =>
-                    setEntryForm((current) =>
-                      current
-                        ? { ...current, title: event.target.value }
-                        : current
-                    )
-                  }
-                />
+            <CardContent className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <Label>{strings.titleLabel}</Label>
+                  <Input
+                    className="h-12 text-base"
+                    value={entryForm.title}
+                    onChange={(event) =>
+                      setEntryForm((current) =>
+                        current
+                          ? { ...current, title: event.target.value }
+                          : current
+                      )
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{strings.subtitleLabel}</Label>
+                  <Input
+                    className="h-11"
+                    value={entryForm.subtitle}
+                    onChange={(event) =>
+                      setEntryForm((current) =>
+                        current
+                          ? { ...current, subtitle: event.target.value }
+                          : current
+                      )
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{strings.summaryLabel}</Label>
+                  <Textarea
+                    rows={8}
+                    className="min-h-[220px] resize-y"
+                    value={entryForm.summary}
+                    onChange={(event) =>
+                      setEntryForm((current) =>
+                        current
+                          ? { ...current, summary: event.target.value }
+                          : current
+                      )
+                    }
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>{strings.slugLabel}</Label>
-                <Input
-                  value={entryForm.slug}
-                  onChange={(event) =>
-                    setEntryForm((current) =>
-                      current
-                        ? { ...current, slug: event.target.value }
-                        : current
-                    )
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{strings.subtitleLabel}</Label>
-                <Input
-                  value={entryForm.subtitle}
-                  onChange={(event) =>
-                    setEntryForm((current) =>
-                      current
-                        ? { ...current, subtitle: event.target.value }
-                        : current
-                    )
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{strings.statusLabel}</Label>
-                <Select
-                  value={entryForm.status}
-                  onValueChange={(value) =>
-                    setEntryForm((current) =>
-                      current
-                        ? {
-                            ...current,
-                            status: value as ExternalProjectEntry['status'],
-                          }
-                        : current
-                    )
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">{strings.statusDraft}</SelectItem>
-                    <SelectItem value="scheduled">
-                      {strings.statusScheduled}
-                    </SelectItem>
-                    <SelectItem value="published">
-                      {strings.statusPublished}
-                    </SelectItem>
-                    <SelectItem value="archived">
-                      {strings.statusArchived}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label>{strings.summaryLabel}</Label>
-                <Textarea
-                  rows={5}
-                  value={entryForm.summary}
-                  onChange={(event) =>
-                    setEntryForm((current) =>
-                      current
-                        ? { ...current, summary: event.target.value }
-                        : current
-                    )
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{strings.scheduledForLabel}</Label>
-                <Input
-                  type="datetime-local"
-                  value={entryForm.scheduledFor}
-                  onChange={(event) =>
-                    setEntryForm((current) =>
-                      current
-                        ? { ...current, scheduledFor: event.target.value }
-                        : current
-                    )
-                  }
-                />
-              </div>
-              <div className="flex items-end justify-end md:col-span-2">
-                <Button
-                  disabled={!entryDirty || saveEntryMutation.isPending}
-                  onClick={() => saveEntryMutation.mutate()}
-                >
-                  {strings.saveAction}
-                </Button>
+
+              <div className="space-y-4">
+                <div className="rounded-[1.35rem] border border-border/70 bg-background/80 p-4">
+                  <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
+                    {strings.editEntryTitle}
+                  </div>
+                  <div className="mt-4 space-y-4">
+                    <div className="space-y-2">
+                      <Label>{strings.slugLabel}</Label>
+                      <Input
+                        value={entryForm.slug}
+                        onChange={(event) =>
+                          setEntryForm((current) =>
+                            current
+                              ? { ...current, slug: event.target.value }
+                              : current
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{strings.statusLabel}</Label>
+                      <Select
+                        value={entryForm.status}
+                        onValueChange={(value) =>
+                          setEntryForm((current) =>
+                            current
+                              ? {
+                                  ...current,
+                                  status:
+                                    value as ExternalProjectEntry['status'],
+                                }
+                              : current
+                          )
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">
+                            {strings.statusDraft}
+                          </SelectItem>
+                          <SelectItem value="scheduled">
+                            {strings.statusScheduled}
+                          </SelectItem>
+                          <SelectItem value="published">
+                            {strings.statusPublished}
+                          </SelectItem>
+                          <SelectItem value="archived">
+                            {strings.statusArchived}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{strings.scheduledForLabel}</Label>
+                      <Input
+                        type="datetime-local"
+                        value={entryForm.scheduledFor}
+                        onChange={(event) =>
+                          setEntryForm((current) =>
+                            current
+                              ? { ...current, scheduledFor: event.target.value }
+                              : current
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="rounded-[1rem] border border-border/70 bg-card/70 p-4">
+                      <div className="text-muted-foreground text-xs">
+                        {strings.workspaceBindingLabel}
+                      </div>
+                      <div className="mt-2 font-medium">
+                        {binding.canonical_project?.display_name ??
+                          strings.unboundLabel}
+                      </div>
+                      <div className="mt-3 text-muted-foreground text-xs">
+                        {activeCollection?.title ??
+                          strings.collectionFallbackLabel}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -879,41 +922,58 @@ export function EntryDetailClient({
           </Card>
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-5 xl:sticky xl:top-28 xl:self-start">
           <Card className="border-border/70 bg-card/95 shadow-none">
             <CardHeader>
               <CardTitle>{strings.workspaceStatusTitle}</CardTitle>
-              <CardDescription>{strings.quickCreateHint}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="rounded-[1.2rem] border border-border/70 bg-background/75 p-4">
-                <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                  {strings.collectionsLabel}
+              <div className="grid gap-3">
+                <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
+                  <div className="text-muted-foreground text-xs">
+                    {strings.collectionsLabel}
+                  </div>
+                  <div className="mt-2 font-medium text-lg">
+                    {activeCollection?.title ?? strings.collectionFallbackLabel}
+                  </div>
+                  <div className="mt-2 text-muted-foreground text-sm">
+                    {activeCollection?.description || activeCollection?.slug}
+                  </div>
                 </div>
-                <div className="mt-2 font-semibold text-xl">
-                  {activeCollection?.title ?? strings.collectionFallbackLabel}
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                  <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
+                    <div className="text-muted-foreground text-xs">
+                      {strings.statusLabel}
+                    </div>
+                    <div className="mt-2 font-medium">
+                      {formatStatus(activeEntry.status, strings)}
+                    </div>
+                  </div>
+                  <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
+                    <div className="text-muted-foreground text-xs">
+                      {strings.scheduledForLabel}
+                    </div>
+                    <div className="mt-2 font-medium">
+                      {formatDateLabel(activeEntry.scheduled_for, strings)}
+                    </div>
+                  </div>
                 </div>
-                <p className="mt-2 text-muted-foreground text-sm leading-6">
-                  {activeCollection?.description || activeCollection?.slug}
-                </p>
-              </div>
-              <div className="rounded-[1.2rem] border border-border/70 bg-background/75 p-4">
-                <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                  {strings.visualBoardTitle}
+                <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
+                  <div className="text-muted-foreground text-xs">
+                    {strings.workspaceBindingLabel}
+                  </div>
+                  <div className="mt-2 font-medium">
+                    {binding.canonical_project?.display_name ??
+                      strings.unboundLabel}
+                  </div>
                 </div>
-                <p className="mt-2 text-muted-foreground text-sm leading-6">
-                  {coverAsset
-                    ? strings.coverImageDescription
-                    : strings.noCoverDescription}
-                </p>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-border/70 bg-card/95 shadow-none">
             <CardHeader>
-              <CardTitle>{strings.editEntryTitle}</CardTitle>
-              <CardDescription>{strings.previewDescription}</CardDescription>
+              <CardTitle>{strings.metadataLabel}</CardTitle>
             </CardHeader>
             <CardContent>
               <Accordion
@@ -990,7 +1050,7 @@ export function EntryDetailClient({
               {strings.editEntryDescription}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+          <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6 lg:px-8">
             {content}
           </div>
         </DialogContent>
