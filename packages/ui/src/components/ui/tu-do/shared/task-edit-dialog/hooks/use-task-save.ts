@@ -9,7 +9,10 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
 import type { RelatedTaskInfo } from '@tuturuuu/types/primitives/TaskRelationship';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
+import {
+  MAX_TASK_DESCRIPTION_LENGTH,
+  MAX_TASK_NAME_LENGTH,
+} from '@tuturuuu/utils/constants';
 import { createTask } from '@tuturuuu/utils/task-helper';
 import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import { useTranslations } from 'next-intl';
@@ -380,6 +383,7 @@ export function useTaskSave({
     setIsSaving(true);
     setIsLoading(true);
 
+    const trimmedName = name.trim();
     const descriptionString =
       serializeTaskDescriptionContent(currentDescription);
     const descriptionYjsState =
@@ -391,6 +395,19 @@ export function useTaskSave({
             )
           )
         : null;
+
+    if (trimmedName.length > MAX_TASK_NAME_LENGTH) {
+      toast({
+        title: t('title_too_long_title'),
+        description: t('title_too_long_description', {
+          max: MAX_TASK_NAME_LENGTH,
+        }),
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+      setIsSaving(false);
+      return;
+    }
 
     if (
       descriptionString &&
@@ -415,7 +432,7 @@ export function useTaskSave({
         wsId,
         boardId,
         draftId,
-        name,
+        name: trimmedName,
         descriptionString,
         priority,
         startDate,
@@ -475,7 +492,7 @@ export function useTaskSave({
     if (isCreateMode) {
       await handleCreateTask({
         wsId,
-        name,
+        name: trimmedName,
         descriptionString,
         descriptionYjsState,
         priority,
@@ -525,7 +542,7 @@ export function useTaskSave({
       taskId,
       wsId,
       boardId,
-      name,
+      name: trimmedName,
       descriptionString,
       descriptionYjsState,
       priority,
