@@ -272,7 +272,6 @@ export function EpmEditSection({
 
       {editSection === 'settings' ? (
         <EpmSettingsSection
-          activeCollection={activeCollection}
           binding={binding}
           collections={collections}
           counts={counts}
@@ -334,6 +333,7 @@ function EpmEntriesGallery({
 
       {entries.map((entry) => {
         const visual = getEntryVisual(assets, entry.id);
+        const hasVisual = Boolean(visual?.preview_url || visual?.asset_url);
 
         return (
           <article
@@ -350,17 +350,33 @@ function EpmEntriesGallery({
               className="block w-full text-left"
               onClick={() => onOpenEntry(entry.id)}
             >
-              <div className="relative aspect-[5/6] overflow-hidden bg-background/80">
-                <ResilientMediaImage
-                  alt={visual?.alt_text ?? entry.title}
-                  assetUrl={visual?.asset_url}
-                  className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                  fill
-                  previewUrl={visual?.preview_url}
-                  sizes="(max-width: 1024px) 50vw, (max-width: 1536px) 25vw, 18vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/12 to-transparent" />
-                <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 p-3">
+              <div
+                className={cn(
+                  'relative overflow-hidden bg-background/80',
+                  hasVisual
+                    ? 'aspect-[5/6]'
+                    : 'border-border/60 border-b bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.10),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.10),transparent_32%),linear-gradient(160deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-3'
+                )}
+              >
+                {hasVisual ? (
+                  <>
+                    <ResilientMediaImage
+                      alt={visual?.alt_text ?? entry.title}
+                      assetUrl={visual?.asset_url}
+                      className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                      fill
+                      previewUrl={visual?.preview_url}
+                      sizes="(max-width: 1024px) 50vw, (max-width: 1536px) 25vw, 18vw"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/12 to-transparent" />
+                  </>
+                ) : null}
+                <div
+                  className={cn(
+                    'flex items-center justify-between gap-2',
+                    hasVisual ? 'absolute inset-x-0 top-0 p-3' : ''
+                  )}
+                >
                   <Badge
                     className={cn(
                       'border-0 px-2 py-0.5 text-[11px] shadow-none',
@@ -422,7 +438,9 @@ function EpmEntriesGallery({
                   </DropdownMenu>
                 </div>
               </div>
-              <div className="space-y-2 p-3">
+              <div
+                className={cn('space-y-2 p-3', !hasVisual && 'min-h-[152px]')}
+              >
                 <div className="line-clamp-1 font-medium text-sm">
                   {entry.title}
                 </div>
@@ -629,7 +647,6 @@ function EpmWorkflowSection({
 }
 
 function EpmSettingsSection({
-  activeCollection,
   binding,
   collections,
   counts,
@@ -644,7 +661,6 @@ function EpmSettingsSection({
   publishEvents,
   strings,
 }: {
-  activeCollection: ExternalProjectCollection | null;
   binding: WorkspaceExternalProjectBinding;
   collections: ExternalProjectCollection[];
   counts: {

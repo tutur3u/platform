@@ -28,7 +28,6 @@ import { Label } from '@tuturuuu/ui/label';
 import type { EpmStrings } from './epm-strings';
 
 export function EpmCreateCollectionDialog({
-  createLabel,
   description,
   onConfirm,
   onDescriptionChange,
@@ -39,7 +38,6 @@ export function EpmCreateCollectionDialog({
   title,
   strings,
 }: {
-  createLabel: string;
   description: string;
   onConfirm: () => void;
   onDescriptionChange: (value: string) => void;

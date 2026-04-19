@@ -59,6 +59,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useExternalProjectLivePreview } from '../../../external-projects/use-external-project-live-preview';
@@ -161,6 +162,9 @@ export function EntryDetailClient({
     !!activeEntry &&
     coverAltText !== (coverAsset?.alt_text ?? activeEntry.title);
   const activeEntryTitle = activeEntry?.title ?? strings.title;
+  const hasCoverMedia = Boolean(
+    coverAsset?.preview_url || coverAsset?.asset_url
+  );
 
   const updateStudioCache = (
     updater: (current: NonNullable<typeof studio>) => NonNullable<typeof studio>
@@ -533,12 +537,31 @@ export function EntryDetailClient({
         </div>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.14fr)_360px]">
+      <div
+        className={cn(
+          'grid gap-5',
+          hasCoverMedia
+            ? 'xl:grid-cols-[minmax(0,1.14fr)_360px]'
+            : 'xl:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)]'
+        )}
+      >
         <div className="space-y-5">
           <Card className="overflow-hidden border-border/70 bg-card/95 shadow-none">
-            <CardContent className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1.08fr)_280px] lg:p-6">
-              <div className="relative min-h-[360px] overflow-hidden rounded-[1.6rem] border border-border/70 bg-background/80 lg:min-h-[520px]">
-                {coverAsset?.preview_url || coverAsset?.asset_url ? (
+            <CardContent
+              className={cn(
+                'grid gap-5 p-5 lg:p-6',
+                hasCoverMedia
+                  ? 'lg:grid-cols-[minmax(0,1.08fr)_280px]'
+                  : 'lg:grid-cols-[320px_minmax(0,1fr)]'
+              )}
+            >
+              <div
+                className={cn(
+                  'relative overflow-hidden rounded-[1.6rem] border border-border/70 bg-background/80',
+                  hasCoverMedia ? 'min-h-[360px] lg:min-h-[520px]' : 'p-6'
+                )}
+              >
+                {coverAsset && hasCoverMedia ? (
                   <ResilientMediaImage
                     alt={coverAsset.alt_text ?? activeEntry.title}
                     assetUrl={coverAsset.asset_url}
@@ -547,23 +570,66 @@ export function EntryDetailClient({
                     previewUrl={coverAsset.preview_url}
                     sizes="(max-width: 1280px) 100vw, 62vw"
                   />
+                ) : null}
+                {coverAsset && hasCoverMedia ? (
+                  <>
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/24 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 p-5">
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
+                        {strings.coverImageTitle}
+                      </p>
+                      <h2 className="mt-3 font-semibold text-2xl tracking-tight">
+                        {activeEntry.title}
+                      </h2>
+                      <p className="mt-2 max-w-xl text-muted-foreground text-sm leading-6">
+                        {strings.coverImageDescription}
+                      </p>
+                    </div>
+                  </>
                 ) : (
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.12),transparent_24%),linear-gradient(150deg,rgba(255,255,255,0.05),rgba(255,255,255,0.01))]" />
+                  <div className="space-y-5">
+                    <div className="space-y-2">
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
+                        {strings.coverImageTitle}
+                      </p>
+                      <h2 className="font-semibold text-2xl tracking-tight">
+                        {strings.noCoverTitle}
+                      </h2>
+                      <p className="max-w-md text-muted-foreground text-sm leading-6">
+                        {strings.noCoverDescription}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button onClick={() => coverInputRef.current?.click()}>
+                        <ImagePlus className="mr-2 h-4 w-4" />
+                        {strings.uploadCoverAction}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setPreviewOpen(true)}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        {strings.openPreviewAction}
+                      </Button>
+                    </div>
+                    <div className="rounded-[1.15rem] border border-border/70 bg-background/70 p-4">
+                      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                        {strings.detailsTitle}
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        <div className="font-medium text-base">
+                          {activeEntry.title}
+                        </div>
+                        <div className="text-muted-foreground text-sm">
+                          {entryForm.slug}
+                        </div>
+                        <p className="text-muted-foreground text-sm leading-6">
+                          {entryForm.summary || strings.previewEmptyDescription}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/24 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-5">
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
-                    {strings.coverImageTitle}
-                  </p>
-                  <h2 className="mt-3 font-semibold text-2xl tracking-tight">
-                    {coverAsset ? activeEntry.title : strings.noCoverTitle}
-                  </h2>
-                  <p className="mt-2 max-w-xl text-muted-foreground text-sm leading-6">
-                    {coverAsset
-                      ? strings.coverImageDescription
-                      : strings.noCoverDescription}
-                  </p>
-                </div>
               </div>
 
               <div className="space-y-3">

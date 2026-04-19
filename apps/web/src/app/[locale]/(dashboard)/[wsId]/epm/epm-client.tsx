@@ -555,7 +555,6 @@ export function EpmClient({
       </section>
 
       <EpmCreateCollectionDialog
-        createLabel={strings.createCollectionAction}
         description={newCollectionDescription}
         onConfirm={() => createCollectionMutation.mutate()}
         onDescriptionChange={setNewCollectionDescription}
