@@ -192,7 +192,7 @@ describe('EntryDetailClient', () => {
   it('saves entry edits from the dedicated details page', async () => {
     renderClient();
 
-    fireEvent.change(screen.getAllByDisplayValue('Entry One')[1]!, {
+    fireEvent.change(screen.getByLabelText('epm.title_label'), {
       target: { value: 'Updated title' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'epm.save_action' }));

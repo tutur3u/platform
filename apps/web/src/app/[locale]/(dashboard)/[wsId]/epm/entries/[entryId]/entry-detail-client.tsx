@@ -570,14 +570,7 @@ export function EntryDetailClient({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-5">
           <Card className="overflow-hidden border-border/70 bg-card/95 shadow-none">
-            <CardContent
-              className={cn(
-                'grid gap-5 p-5 lg:p-6',
-                hasCoverMedia
-                  ? 'lg:grid-cols-[minmax(0,1.08fr)_320px]'
-                  : 'lg:grid-cols-[minmax(0,0.94fr)_340px]'
-              )}
-            >
+            <CardContent className="space-y-4 p-5 lg:p-6">
               <div
                 className={cn(
                   'relative overflow-hidden rounded-[1.6rem] border border-border/70 bg-background/80',
@@ -644,75 +637,65 @@ export function EntryDetailClient({
                   </div>
                 )}
               </div>
-
-              <div className="space-y-3">
+              {coverAsset ? (
                 <div className="rounded-[1.35rem] border border-border/70 bg-background/80 p-4">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
                         {strings.coverImageTitle}
                       </div>
                       <div className="mt-1 text-muted-foreground text-sm">
-                        {coverAsset
-                          ? strings.coverImageDescription
-                          : strings.uploadCoverAction}
+                        {strings.coverImageDescription}
                       </div>
                     </div>
+                    <ActionButton
+                      size="sm"
+                      tooltip={strings.coverImageDescription}
+                      onClick={() => coverInputRef.current?.click()}
+                    >
+                      <ImagePlus className="mr-2 h-4 w-4" />
+                      {strings.replaceCoverAction}
+                    </ActionButton>
                   </div>
-                  <div className="mt-4 space-y-3">
-                    <div className="space-y-2">
-                      <Label>{strings.titleLabel}</Label>
+                  <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-end">
+                    <div className="flex-1 space-y-2">
+                      <Label htmlFor="entry-cover-alt">
+                        {strings.titleLabel}
+                      </Label>
                       <Input
+                        id="entry-cover-alt"
                         value={coverAltText}
                         onChange={(event) =>
                           setCoverAltText(event.target.value)
                         }
                       />
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <ActionButton
-                        size="sm"
-                        tooltip={strings.coverImageDescription}
-                        onClick={() => coverInputRef.current?.click()}
-                      >
-                        <ImagePlus className="mr-2 h-4 w-4" />
-                        {coverAsset
-                          ? strings.replaceCoverAction
-                          : strings.uploadCoverAction}
-                      </ActionButton>
-                      <ActionButton
-                        size="sm"
-                        tooltip={strings.saveCoverAction}
-                        variant="outline"
-                        disabled={
-                          !coverAsset ||
-                          !coverDirty ||
-                          saveCoverMutation.isPending
-                        }
-                        onClick={() => saveCoverMutation.mutate()}
-                      >
-                        <Pencil className="mr-2 h-4 w-4" />
-                        {strings.saveCoverAction}
-                      </ActionButton>
-                    </div>
+                    <ActionButton
+                      size="sm"
+                      tooltip={strings.saveCoverAction}
+                      variant="outline"
+                      disabled={!coverDirty || saveCoverMutation.isPending}
+                      onClick={() => saveCoverMutation.mutate()}
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      {strings.saveCoverAction}
+                    </ActionButton>
                   </div>
                 </div>
-              </div>
+              ) : null}
             </CardContent>
           </Card>
 
-          <Card className="border-border/70 bg-card/95 shadow-none">
-            <CardHeader>
-              <CardTitle>{strings.assetGalleryTitle}</CardTitle>
-              <CardDescription>{strings.coverImageDescription}</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3 md:grid-cols-3">
-              {imageAssets.length === 0 ? (
-                <div className="rounded-[1.2rem] border border-border/70 border-dashed p-4 text-muted-foreground text-sm md:col-span-3">
-                  {strings.noCoverDescription}
-                </div>
-              ) : (
-                imageAssets.map((asset, index) => (
+          {imageAssets.length > 0 ? (
+            <Card className="border-border/70 bg-card/95 shadow-none">
+              <CardHeader>
+                <CardTitle>{strings.assetGalleryTitle}</CardTitle>
+                <CardDescription>
+                  {strings.coverImageDescription}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3 md:grid-cols-3">
+                {imageAssets.map((asset, index) => (
                   <div
                     key={asset.id}
                     className="overflow-hidden rounded-[1.2rem] border border-border/70 bg-background/75"
@@ -750,10 +733,10 @@ export function EntryDetailClient({
                       </div>
                     </div>
                   </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
+                ))}
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
 
         <div className="space-y-5 xl:sticky xl:top-28 xl:self-start">
@@ -764,8 +747,9 @@ export function EntryDetailClient({
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>{strings.titleLabel}</Label>
+                <Label htmlFor="entry-title">{strings.titleLabel}</Label>
                 <Input
+                  id="entry-title"
                   className="h-11"
                   value={entryForm.title}
                   onChange={(event) =>
@@ -778,8 +762,9 @@ export function EntryDetailClient({
                 />
               </div>
               <div className="space-y-2">
-                <Label>{strings.subtitleLabel}</Label>
+                <Label htmlFor="entry-subtitle">{strings.subtitleLabel}</Label>
                 <Input
+                  id="entry-subtitle"
                   className="h-11"
                   value={entryForm.subtitle}
                   onChange={(event) =>
@@ -792,8 +777,9 @@ export function EntryDetailClient({
                 />
               </div>
               <div className="space-y-2">
-                <Label>{strings.summaryLabel}</Label>
+                <Label htmlFor="entry-summary">{strings.summaryLabel}</Label>
                 <Textarea
+                  id="entry-summary"
                   rows={6}
                   className="min-h-[180px] resize-y"
                   value={entryForm.summary}
@@ -808,8 +794,9 @@ export function EntryDetailClient({
               </div>
               <div className="grid gap-4">
                 <div className="space-y-2">
-                  <Label>{strings.slugLabel}</Label>
+                  <Label htmlFor="entry-slug">{strings.slugLabel}</Label>
                   <Input
+                    id="entry-slug"
                     value={entryForm.slug}
                     onChange={(event) =>
                       setEntryForm((current) =>
@@ -821,7 +808,7 @@ export function EntryDetailClient({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{strings.statusLabel}</Label>
+                  <Label htmlFor="entry-status">{strings.statusLabel}</Label>
                   <Select
                     value={entryForm.status}
                     onValueChange={(value) =>
@@ -835,7 +822,7 @@ export function EntryDetailClient({
                       )
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="entry-status">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -855,8 +842,11 @@ export function EntryDetailClient({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>{strings.scheduledForLabel}</Label>
+                  <Label htmlFor="entry-scheduled-for">
+                    {strings.scheduledForLabel}
+                  </Label>
                   <Input
+                    id="entry-scheduled-for"
                     type="datetime-local"
                     value={entryForm.scheduledFor}
                     onChange={(event) =>
