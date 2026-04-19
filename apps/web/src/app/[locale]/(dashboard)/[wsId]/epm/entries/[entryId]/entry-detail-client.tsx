@@ -567,7 +567,7 @@ export function EntryDetailClient({
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.34fr)_360px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-5">
           <Card className="overflow-hidden border-border/70 bg-card/95 shadow-none">
             <CardContent
@@ -641,33 +641,6 @@ export function EntryDetailClient({
                         {strings.openPreviewAction}
                       </Button>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      <div className="rounded-[1rem] border border-border/70 bg-background/70 p-4">
-                        <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                          {strings.statusLabel}
-                        </div>
-                        <div className="mt-2 font-medium text-base">
-                          {formatStatus(activeEntry.status, strings)}
-                        </div>
-                      </div>
-                      <div className="rounded-[1rem] border border-border/70 bg-background/70 p-4">
-                        <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                          {strings.collectionsLabel}
-                        </div>
-                        <div className="mt-2 font-medium text-base">
-                          {activeCollection?.title ??
-                            strings.collectionFallbackLabel}
-                        </div>
-                      </div>
-                      <div className="rounded-[1rem] border border-border/70 bg-background/70 p-4">
-                        <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                          {strings.scheduledForLabel}
-                        </div>
-                        <div className="mt-2 font-medium text-base">
-                          {formatDateLabel(activeEntry.scheduled_for, strings)}
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 )}
               </div>
@@ -680,9 +653,9 @@ export function EntryDetailClient({
                         {strings.coverImageTitle}
                       </div>
                       <div className="mt-1 text-muted-foreground text-sm">
-                        {hasCoverMedia
+                        {coverAsset
                           ? strings.coverImageDescription
-                          : strings.noCoverDescription}
+                          : strings.uploadCoverAction}
                       </div>
                     </div>
                   </div>
@@ -721,145 +694,6 @@ export function EntryDetailClient({
                         <Pencil className="mr-2 h-4 w-4" />
                         {strings.saveCoverAction}
                       </ActionButton>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/70 bg-card/95 shadow-none">
-            <CardHeader>
-              <CardTitle>{strings.detailsTitle}</CardTitle>
-              <CardDescription>{strings.editEntryDescription}</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <Label>{strings.titleLabel}</Label>
-                  <Input
-                    className="h-12 text-base"
-                    value={entryForm.title}
-                    onChange={(event) =>
-                      setEntryForm((current) =>
-                        current
-                          ? { ...current, title: event.target.value }
-                          : current
-                      )
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{strings.subtitleLabel}</Label>
-                  <Input
-                    className="h-11"
-                    value={entryForm.subtitle}
-                    onChange={(event) =>
-                      setEntryForm((current) =>
-                        current
-                          ? { ...current, subtitle: event.target.value }
-                          : current
-                      )
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{strings.summaryLabel}</Label>
-                  <Textarea
-                    rows={8}
-                    className="min-h-[220px] resize-y"
-                    value={entryForm.summary}
-                    onChange={(event) =>
-                      setEntryForm((current) =>
-                        current
-                          ? { ...current, summary: event.target.value }
-                          : current
-                      )
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="rounded-[1.35rem] border border-border/70 bg-background/80 p-4">
-                  <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
-                    {strings.editEntryTitle}
-                  </div>
-                  <div className="mt-4 space-y-4">
-                    <div className="space-y-2">
-                      <Label>{strings.slugLabel}</Label>
-                      <Input
-                        value={entryForm.slug}
-                        onChange={(event) =>
-                          setEntryForm((current) =>
-                            current
-                              ? { ...current, slug: event.target.value }
-                              : current
-                          )
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>{strings.statusLabel}</Label>
-                      <Select
-                        value={entryForm.status}
-                        onValueChange={(value) =>
-                          setEntryForm((current) =>
-                            current
-                              ? {
-                                  ...current,
-                                  status:
-                                    value as ExternalProjectEntry['status'],
-                                }
-                              : current
-                          )
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="draft">
-                            {strings.statusDraft}
-                          </SelectItem>
-                          <SelectItem value="scheduled">
-                            {strings.statusScheduled}
-                          </SelectItem>
-                          <SelectItem value="published">
-                            {strings.statusPublished}
-                          </SelectItem>
-                          <SelectItem value="archived">
-                            {strings.statusArchived}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>{strings.scheduledForLabel}</Label>
-                      <Input
-                        type="datetime-local"
-                        value={entryForm.scheduledFor}
-                        onChange={(event) =>
-                          setEntryForm((current) =>
-                            current
-                              ? { ...current, scheduledFor: event.target.value }
-                              : current
-                          )
-                        }
-                      />
-                    </div>
-                    <div className="rounded-[1rem] border border-border/70 bg-card/70 p-4">
-                      <div className="text-muted-foreground text-xs">
-                        {strings.workspaceBindingLabel}
-                      </div>
-                      <div className="mt-2 font-medium">
-                        {binding.canonical_project?.display_name ??
-                          strings.unboundLabel}
-                      </div>
-                      <div className="mt-3 text-muted-foreground text-xs">
-                        {activeCollection?.title ??
-                          strings.collectionFallbackLabel}
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -923,6 +757,121 @@ export function EntryDetailClient({
         </div>
 
         <div className="space-y-5 xl:sticky xl:top-28 xl:self-start">
+          <Card className="border-border/70 bg-card/95 shadow-none">
+            <CardHeader>
+              <CardTitle>{strings.detailsTitle}</CardTitle>
+              <CardDescription>{strings.editEntryDescription}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>{strings.titleLabel}</Label>
+                <Input
+                  className="h-11"
+                  value={entryForm.title}
+                  onChange={(event) =>
+                    setEntryForm((current) =>
+                      current
+                        ? { ...current, title: event.target.value }
+                        : current
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{strings.subtitleLabel}</Label>
+                <Input
+                  className="h-11"
+                  value={entryForm.subtitle}
+                  onChange={(event) =>
+                    setEntryForm((current) =>
+                      current
+                        ? { ...current, subtitle: event.target.value }
+                        : current
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{strings.summaryLabel}</Label>
+                <Textarea
+                  rows={6}
+                  className="min-h-[180px] resize-y"
+                  value={entryForm.summary}
+                  onChange={(event) =>
+                    setEntryForm((current) =>
+                      current
+                        ? { ...current, summary: event.target.value }
+                        : current
+                    )
+                  }
+                />
+              </div>
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label>{strings.slugLabel}</Label>
+                  <Input
+                    value={entryForm.slug}
+                    onChange={(event) =>
+                      setEntryForm((current) =>
+                        current
+                          ? { ...current, slug: event.target.value }
+                          : current
+                      )
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{strings.statusLabel}</Label>
+                  <Select
+                    value={entryForm.status}
+                    onValueChange={(value) =>
+                      setEntryForm((current) =>
+                        current
+                          ? {
+                              ...current,
+                              status: value as ExternalProjectEntry['status'],
+                            }
+                          : current
+                      )
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">
+                        {strings.statusDraft}
+                      </SelectItem>
+                      <SelectItem value="scheduled">
+                        {strings.statusScheduled}
+                      </SelectItem>
+                      <SelectItem value="published">
+                        {strings.statusPublished}
+                      </SelectItem>
+                      <SelectItem value="archived">
+                        {strings.statusArchived}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>{strings.scheduledForLabel}</Label>
+                  <Input
+                    type="datetime-local"
+                    value={entryForm.scheduledFor}
+                    onChange={(event) =>
+                      setEntryForm((current) =>
+                        current
+                          ? { ...current, scheduledFor: event.target.value }
+                          : current
+                      )
+                    }
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="border-border/70 bg-card/95 shadow-none">
             <CardHeader>
               <CardTitle>{strings.workspaceStatusTitle}</CardTitle>
