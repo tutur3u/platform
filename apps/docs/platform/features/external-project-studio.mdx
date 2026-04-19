@@ -50,6 +50,7 @@ The EPM surfaces now follow two distinct workflows:
   - Use image assets with `sort_order = 0` as the lead cover for preview and admin surfaces.
   - If a lead image cannot resolve from Drive/storage, drop the broken media source and render the non-image fallback treatment instead of leaving broken alt text in the UI.
   - Reordering image assets on the entry detail page changes which image leads the entry across the EPM surfaces.
+  - Deleting an entry or an entire collection should also delete any linked workspace Drive objects referenced by those assets' `storage_path` values so EPM does not leave orphaned media behind.
 - Treat the `Workflow` section in Edit mode as the operator queue.
   - Multi-select lives there, not across Preview mode or entry summaries.
   - Schedule, publish, draft, and archive actions should be available without reopening each record.
@@ -66,6 +67,7 @@ The EPM surfaces now follow two distinct workflows:
 - Optimize image uploads on the client before requesting the signed upload PUT so gallery and cover assets stay lighter without requiring a separate media-processing job.
 - For EPM image surfaces, keep `asset_url` as the original asset route and use `preview_url` for a transformed Supabase variant (for example constrained width/height plus quality). The gallery and editor should prefer `preview_url` first so the workspace ships smaller images by default.
 - When EPM surfaces render internal asset API URLs such as `/api/v1/workspaces/:wsId/external-projects/assets/:assetId`, bypass the Next.js image optimizer (`unoptimized`) instead of routing them through `/_next/image`. Protected or signed internal asset routes can return optimizer-side `400` responses even though the direct asset URL is valid.
+- When bulk-managing files in the workspace Drive explorer, keep selection state stable across search/view changes and expose destructive bulk actions behind explicit confirmation dialogs.
 - The workspace route is now `/{wsId}/epm`, with `/{wsId}/external-projects` redirecting to it for backward compatibility.
 - The main `/epm` page is now an index plus mode shell, not a hybrid inline editor.
 

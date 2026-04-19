@@ -19,6 +19,7 @@ import type {
   YoolaExternalProjectArtworkLoadingItem,
   YoolaExternalProjectLoreCapsuleLoadingItem,
 } from '@tuturuuu/types';
+import { deleteWorkspaceStorageObjectByPath } from '../workspace-storage-provider';
 import { externalProjectAdapterFixtures } from './fixtures';
 
 type AdminDb = TypedSupabaseClient;
@@ -797,6 +798,40 @@ export async function updateWorkspaceExternalProjectCollection(
   return data;
 }
 
+async function deleteWorkspaceExternalProjectAssetStoragePaths(
+  admin: AdminDb,
+  workspaceId: string,
+  entryIds: string[]
+) {
+  if (entryIds.length === 0) {
+    return;
+  }
+
+  const { data: relatedAssets, error: relatedAssetsError } = await admin
+    .from('workspace_external_project_assets')
+    .select('storage_path')
+    .eq('ws_id', workspaceId)
+    .in('entry_id', entryIds);
+
+  if (relatedAssetsError) {
+    throw new Error(relatedAssetsError.message);
+  }
+
+  const storagePaths = Array.from(
+    new Set(
+      (relatedAssets ?? [])
+        .map((asset) => asset.storage_path)
+        .filter((value): value is string => typeof value === 'string')
+    )
+  );
+
+  await Promise.all(
+    storagePaths.map((storagePath) =>
+      deleteWorkspaceStorageObjectByPath(workspaceId, storagePath)
+    )
+  );
+}
+
 export async function deleteWorkspaceExternalProjectCollection(
   collectionId: string,
   payload: {
@@ -820,6 +855,12 @@ export async function deleteWorkspaceExternalProjectCollection(
   const relatedEntryIds = (relatedEntries ?? []).map((entry) => entry.id);
 
   if (relatedEntryIds.length > 0) {
+    await deleteWorkspaceExternalProjectAssetStoragePaths(
+      admin,
+      workspaceId,
+      relatedEntryIds
+    );
+
     const { error: deleteAssetsError } = await admin
       .from('workspace_external_project_assets')
       .delete()
@@ -1012,6 +1053,10 @@ export async function deleteWorkspaceExternalProjectEntry(
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
   const { workspaceId } = payload;
+
+  await deleteWorkspaceExternalProjectAssetStoragePaths(admin, workspaceId, [
+    entryId,
+  ]);
 
   const { error: deleteAssetsError } = await admin
     .from('workspace_external_project_assets')

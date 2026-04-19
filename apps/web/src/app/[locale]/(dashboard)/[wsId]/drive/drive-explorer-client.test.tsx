@@ -6,7 +6,7 @@ import DriveExplorerClient from './drive-explorer-client';
 
 const {
   deleteWorkspaceStorageFolderMock,
-  deleteWorkspaceStorageObjectMock,
+  deleteWorkspaceStorageObjectsMock,
   invalidateDriveQueriesMock,
   queryState,
   setQueryStateMock,
@@ -14,7 +14,7 @@ const {
   useWorkspaceStorageDirectoryQueryMock,
 } = vi.hoisted(() => ({
   deleteWorkspaceStorageFolderMock: vi.fn(),
-  deleteWorkspaceStorageObjectMock: vi.fn(),
+  deleteWorkspaceStorageObjectsMock: vi.fn(),
   invalidateDriveQueriesMock: vi.fn(),
   queryState: {
     path: '',
@@ -65,9 +65,9 @@ vi.mock('@tuturuuu/internal-api', () => ({
   deleteWorkspaceStorageFolder: (
     ...args: Parameters<typeof deleteWorkspaceStorageFolderMock>
   ) => deleteWorkspaceStorageFolderMock(...args),
-  deleteWorkspaceStorageObject: (
-    ...args: Parameters<typeof deleteWorkspaceStorageObjectMock>
-  ) => deleteWorkspaceStorageObjectMock(...args),
+  deleteWorkspaceStorageObjects: (
+    ...args: Parameters<typeof deleteWorkspaceStorageObjectsMock>
+  ) => deleteWorkspaceStorageObjectsMock(...args),
 }));
 
 vi.mock('./use-drive-queries', () => ({
@@ -147,12 +147,35 @@ vi.mock('./drive-explorer-views', () => ({
     items,
     onNavigate,
     onRequestDelete,
+    onSelectAll,
+    onToggleSelection,
+    selectedKeys,
   }: {
     items: Array<{ name?: string }>;
     onNavigate: (name: string) => void;
     onRequestDelete: (item: { name?: string }) => void;
+    onSelectAll?: (checked: boolean) => void;
+    onToggleSelection?: (
+      item: { id?: string; name?: string },
+      checked: boolean
+    ) => void;
+    selectedKeys?: string[];
   }) => (
     <div data-testid="drive-grid">
+      <button onClick={() => onSelectAll?.(true)} type="button">
+        select-all-grid
+      </button>
+      <button
+        onClick={() =>
+          onToggleSelection?.(
+            items[0] as { id?: string; name?: string },
+            !selectedKeys?.length
+          )
+        }
+        type="button"
+      >
+        toggle-grid
+      </button>
       <button onClick={() => onNavigate(items[0]?.name || '')} type="button">
         navigate-grid
       </button>
@@ -167,11 +190,34 @@ vi.mock('./drive-explorer-views', () => ({
   DriveListView: ({
     items,
     onNavigate,
+    onSelectAll,
+    onToggleSelection,
+    selectedKeys,
   }: {
     items: Array<{ name?: string }>;
     onNavigate: (name: string) => void;
+    onSelectAll?: (checked: boolean) => void;
+    onToggleSelection?: (
+      item: { id?: string; name?: string },
+      checked: boolean
+    ) => void;
+    selectedKeys?: string[];
   }) => (
     <div data-testid="drive-list">
+      <button onClick={() => onSelectAll?.(true)} type="button">
+        select-all-list
+      </button>
+      <button
+        onClick={() =>
+          onToggleSelection?.(
+            items[0] as { id?: string; name?: string },
+            !selectedKeys?.length
+          )
+        }
+        type="button"
+      >
+        toggle-list
+      </button>
       <button onClick={() => onNavigate(items[0]?.name || '')} type="button">
         navigate-list
       </button>
@@ -229,11 +275,11 @@ describe('DriveExplorerClient', () => {
     });
 
     invalidateDriveQueriesMock.mockResolvedValue(undefined);
-    deleteWorkspaceStorageObjectMock.mockResolvedValue(undefined);
+    deleteWorkspaceStorageObjectsMock.mockResolvedValue(undefined);
   });
 
   it('renders loading and error states from Drive queries', async () => {
-    useWorkspaceStorageDirectoryQueryMock.mockReturnValueOnce({
+    useWorkspaceStorageDirectoryQueryMock.mockReturnValue({
       data: undefined,
       isPending: true,
       isFetching: false,
@@ -251,7 +297,7 @@ describe('DriveExplorerClient', () => {
     expect(screen.getByTestId('drive-loading')).toBeInTheDocument();
 
     const refetchMock = vi.fn();
-    useWorkspaceStorageDirectoryQueryMock.mockReturnValueOnce({
+    useWorkspaceStorageDirectoryQueryMock.mockReturnValue({
       data: undefined,
       isPending: false,
       isFetching: false,
@@ -409,15 +455,44 @@ describe('DriveExplorerClient', () => {
     });
 
     await waitFor(() => {
-      expect(deleteWorkspaceStorageObjectMock).toHaveBeenCalledWith(
+      expect(deleteWorkspaceStorageObjectsMock).toHaveBeenCalledWith(
         'ws-1',
-        'demo.txt',
+        ['demo.txt'],
         { fetch }
       );
     });
 
     await waitFor(() => {
       expect(invalidateDriveQueriesMock).toHaveBeenCalled();
+    });
+  });
+
+  it('supports bulk selecting visible items and deleting them together', async () => {
+    renderWithQueryClient(<DriveExplorerClient wsId="ws-1" />);
+
+    fireEvent.click(screen.getByText('toggle-list'));
+
+    expect(
+      screen.getByText('bulk_selection_count:{"count":1}')
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('bulk_delete_action'));
+
+    await waitFor(() => {
+      const deleteButton = screen
+        .getAllByRole('button')
+        .find((button) => button.textContent?.includes('delete'));
+
+      expect(deleteButton).toBeTruthy();
+      fireEvent.click(deleteButton as HTMLElement);
+    });
+
+    await waitFor(() => {
+      expect(deleteWorkspaceStorageObjectsMock).toHaveBeenCalledWith(
+        'ws-1',
+        ['demo.txt'],
+        { fetch }
+      );
     });
   });
 });

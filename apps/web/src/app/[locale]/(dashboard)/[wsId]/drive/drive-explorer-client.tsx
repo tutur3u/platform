@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import {
   ArrowDown,
   ArrowUp,
+  CheckSquare,
   HardDrive,
   LayoutGrid,
   LayoutList,
@@ -13,7 +14,7 @@ import {
 } from '@tuturuuu/icons';
 import {
   deleteWorkspaceStorageFolder,
-  deleteWorkspaceStorageObject,
+  deleteWorkspaceStorageObjects,
 } from '@tuturuuu/internal-api';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import {
@@ -45,10 +46,12 @@ import {
   startTransition,
   useCallback,
   useDeferredValue,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
 import { formatBytes } from '@/utils/file-helper';
+import { joinPath } from '@/utils/path-helper';
 import DriveBreadcrumbs from './breadcrumbs';
 import {
   DriveEmptyState,
@@ -121,6 +124,10 @@ function getPathSegments(path: string) {
   return path.split('/').filter(Boolean);
 }
 
+function getSelectionKey(path: string, item: StorageObject) {
+  return joinPath(path || '/', item.id || item.name || '');
+}
+
 export default function DriveExplorerClient({
   wsId,
 }: DriveExplorerClientProps) {
@@ -130,7 +137,9 @@ export default function DriveExplorerClient({
   const [selectedItem, setSelectedItem] = useState<StorageObject | null>(null);
   const [renameTarget, setRenameTarget] = useState<StorageObject | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<StorageObject | null>(null);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const deferredQuery = useDeferredValue(searchState.q);
   const invalidateDriveQueries = useInvalidateDriveQueries(wsId);
 
@@ -158,6 +167,20 @@ export default function DriveExplorerClient({
   const usageTone = getUsageTone(usagePercentage);
   const showingCount = items.length;
   const hasMoreResults = directoryQuery.hasNextPage ?? false;
+  const selectedItems = useMemo(() => {
+    const itemMap = new Map(
+      items.map((item) => [getSelectionKey(currentPath, item), item])
+    );
+
+    return selectedKeys
+      .map((key) => itemMap.get(key))
+      .filter((item): item is StorageObject => Boolean(item));
+  }, [currentPath, items, selectedKeys]);
+  const allVisibleSelected =
+    items.length > 0 &&
+    items.every((item) =>
+      selectedKeys.includes(getSelectionKey(currentPath, item))
+    );
 
   const updateSearchState = useCallback(
     (
@@ -197,6 +220,34 @@ export default function DriveExplorerClient({
     await invalidateDriveQueries();
   }, [invalidateDriveQueries]);
 
+  const toggleSelectedItem = useCallback(
+    (item: StorageObject, checked: boolean) => {
+      const selectionKey = getSelectionKey(currentPath, item);
+
+      setSelectedKeys((current) =>
+        checked
+          ? Array.from(new Set([...current, selectionKey]))
+          : current.filter((key) => key !== selectionKey)
+      );
+    },
+    [currentPath]
+  );
+
+  const handleSelectAllVisible = useCallback(
+    (checked: boolean) => {
+      const visibleKeys = items.map((item) =>
+        getSelectionKey(currentPath, item)
+      );
+
+      setSelectedKeys((current) =>
+        checked
+          ? Array.from(new Set([...current, ...visibleKeys]))
+          : current.filter((key) => !visibleKeys.includes(key))
+      );
+    },
+    [currentPath, items]
+  );
+
   const handleNavigateUp = useCallback(() => {
     if (!currentPath) {
       return;
@@ -206,36 +257,84 @@ export default function DriveExplorerClient({
     handleNavigateToPath(parentSegments.join('/'));
   }, [currentPath, handleNavigateToPath, pathSegments]);
 
+  useEffect(() => {
+    const visibleKeys = new Set(
+      items.map((item) => getSelectionKey(currentPath, item))
+    );
+
+    setSelectedKeys((current) => {
+      const next = current.filter((key) => visibleKeys.has(key));
+
+      if (
+        next.length === current.length &&
+        next.every((key, index) => key === current[index])
+      ) {
+        return current;
+      }
+
+      return next;
+    });
+  }, [currentPath, items]);
+
   const deleteMutation = useMutation({
-    mutationFn: async (target: StorageObject) => {
-      if (!target.name) {
-        throw new Error('Missing storage object name');
-      }
-
-      if (target.id) {
-        await deleteWorkspaceStorageObject(
-          wsId,
-          currentPath ? `${currentPath}/${target.name}` : target.name,
-          { fetch }
-        );
-        return 'file';
-      }
-
-      await deleteWorkspaceStorageFolder(
-        wsId,
-        {
-          path: currentPath || undefined,
-          name: target.name,
-        },
-        { fetch }
+    mutationFn: async (targets: StorageObject[]) => {
+      const files = targets.filter(
+        (target): target is StorageObject & { name: string; id: string } =>
+          Boolean(target.id && target.name)
+      );
+      const folders = targets.filter(
+        (target): target is StorageObject & { name: string } =>
+          Boolean(!target.id && target.name)
       );
 
-      return 'folder';
+      if (files.length > 0) {
+        await deleteWorkspaceStorageObjects(
+          wsId,
+          files.map((target) =>
+            currentPath ? `${currentPath}/${target.name}` : target.name
+          ),
+          { fetch }
+        );
+      }
+
+      if (folders.length > 0) {
+        await Promise.all(
+          folders.map((target) =>
+            deleteWorkspaceStorageFolder(
+              wsId,
+              {
+                path: currentPath || undefined,
+                name: target.name,
+              },
+              { fetch }
+            )
+          )
+        );
+      }
+
+      return {
+        count: targets.length,
+        hasFiles: files.length > 0,
+        hasFolders: folders.length > 0,
+      };
     },
-    onSuccess: async (kind) => {
+    onSuccess: async (result) => {
       await invalidateDriveQueries();
+      setSelectedKeys([]);
+      if (result.count === 1 && result.hasFolders && !result.hasFiles) {
+        toast.success(t('folder_deleted'));
+        return;
+      }
+
+      if (result.count === 1 && result.hasFiles && !result.hasFolders) {
+        toast.success(t('file_deleted'));
+        return;
+      }
+
       toast.success(
-        kind === 'folder' ? t('folder_deleted') : t('file_deleted')
+        t('bulk_delete_success', {
+          count: result.count,
+        })
       );
     },
     onError: () => {
@@ -243,6 +342,7 @@ export default function DriveExplorerClient({
     },
     onSettled: () => {
       setDeleteTarget(null);
+      setBulkDeleteDialogOpen(false);
     },
   });
 
@@ -529,6 +629,44 @@ export default function DriveExplorerClient({
               </span>
             </div>
           ) : null}
+
+          {selectedItems.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-dynamic-border/80 bg-muted/20 px-3 py-3">
+              <div className="flex items-center gap-2 font-medium text-foreground text-sm">
+                <CheckSquare className="h-4 w-4 text-dynamic-blue" />
+                {t('bulk_selection_count', {
+                  count: selectedItems.length,
+                })}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+                onClick={() => handleSelectAllVisible(true)}
+              >
+                {t('select_all_visible')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+                onClick={() => setSelectedKeys([])}
+              >
+                {t('deselect_all')}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="rounded-xl"
+                onClick={() => setBulkDeleteDialogOpen(true)}
+              >
+                {t('bulk_delete_action')}
+              </Button>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -552,6 +690,7 @@ export default function DriveExplorerClient({
         <div className="space-y-5">
           {searchState.view === 'list' ? (
             <DriveListView
+              allSelected={allVisibleSelected}
               wsId={wsId}
               items={items}
               path={currentPath}
@@ -559,10 +698,14 @@ export default function DriveExplorerClient({
               onPreview={(item) => setSelectedItem(item ?? null)}
               onRequestRename={setRenameTarget}
               onRequestDelete={setDeleteTarget}
+              onSelectAll={handleSelectAllVisible}
+              onToggleSelection={toggleSelectedItem}
               onMutationSuccess={handleRefresh}
+              selectedKeys={selectedKeys}
             />
           ) : (
             <DriveGridView
+              allSelected={allVisibleSelected}
               wsId={wsId}
               items={items}
               path={currentPath}
@@ -570,7 +713,10 @@ export default function DriveExplorerClient({
               onPreview={(item) => setSelectedItem(item ?? null)}
               onRequestRename={setRenameTarget}
               onRequestDelete={setDeleteTarget}
+              onSelectAll={handleSelectAllVisible}
+              onToggleSelection={toggleSelectedItem}
               onMutationSuccess={handleRefresh}
+              selectedKeys={selectedKeys}
             />
           )}
 
@@ -663,7 +809,46 @@ export default function DriveExplorerClient({
                   return;
                 }
 
-                void deleteMutation.mutateAsync(deleteTarget);
+                void deleteMutation.mutateAsync([deleteTarget]);
+              }}
+            >
+              {deleteMutation.isPending ? t('deleting') : commonT('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={bulkDeleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && !deleteMutation.isPending) {
+            setBulkDeleteDialogOpen(false);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('bulk_delete_title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('bulk_delete_confirm_description', {
+                count: selectedItems.length,
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {commonT('cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMutation.isPending || selectedItems.length === 0}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(event) => {
+                event.preventDefault();
+                if (selectedItems.length === 0) {
+                  return;
+                }
+
+                void deleteMutation.mutateAsync(selectedItems);
               }}
             >
               {deleteMutation.isPending ? t('deleting') : commonT('delete')}
