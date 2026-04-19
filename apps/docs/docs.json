@@ -53,6 +53,7 @@
                   "platform/architecture/trpc",
                   "platform/architecture/authentication",
                   "platform/architecture/authorization",
+                  "platform/architecture/workspaces-permissions",
                   {
                     "group": "System Design",
                     "pages": [
