@@ -356,6 +356,11 @@ Dashboard details:
 - The live blue/green summary uses the same traffic metrics as the deployment
   history cards, with consistent color coding for build/lifetime/traffic/age
   metrics so the dashboard is easier to scan quickly.
+- A dedicated Docker resources row summarizes aggregate CPU, memory, and
+  network usage across the live blue/green containers, followed by a
+  per-container row for `proxy`, `green`, and `blue` when those services are
+  running. This is sampled from `docker stats --no-stream`, so it stays local
+  to the host and is appropriate for self-hosted operator monitoring.
 - Request counters are derived from the local `web-proxy` container logs, so
   they stay self-hosted and do not require any external analytics service.
 - Internal proxy health checks for `/api/health` and

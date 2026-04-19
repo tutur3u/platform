@@ -280,6 +280,36 @@ function formatDailyRequestCount(count) {
   return `${new Intl.NumberFormat('en-US').format(count)} req`;
 }
 
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes < 0) {
+    return 'n/a';
+  }
+
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let value = bytes;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+
+  return `${new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: value >= 100 ? 0 : value >= 10 ? 1 : 2,
+  }).format(value)} ${units[unitIndex]}`;
+}
+
+function formatCpuPercent(value) {
+  if (!Number.isFinite(value) || value < 0) {
+    return 'n/a';
+  }
+
+  return `${new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: value >= 100 ? 0 : 1,
+    minimumFractionDigits: value > 0 && value < 10 ? 1 : 0,
+  }).format(value)}%`;
+}
+
 function formatMetric(label, value, color) {
   return `${colorize(color, label)} ${emphasize(color, value)}`;
 }
@@ -471,6 +501,54 @@ function summarizeBlueGreenRuntime(
   return `${base} ${colorize('dim', `(${details.join(' · ')})`)}`;
 }
 
+function summarizeDockerResources(resources) {
+  if (!resources || resources.state === 'idle') {
+    return colorize('dim', 'idle');
+  }
+
+  if (resources.state === 'unavailable') {
+    return colorize('yellow', resources.message ?? 'unavailable');
+  }
+
+  const details = [
+    formatMetric('cpu', formatCpuPercent(resources.totalCpuPercent), 'yellow'),
+    formatMetric('mem', formatBytes(resources.totalMemoryBytes), 'magenta'),
+    formatMetric('rx', formatBytes(resources.totalRxBytes), 'cyan'),
+    formatMetric('tx', formatBytes(resources.totalTxBytes), 'blue'),
+    formatMetric(
+      'ctr',
+      new Intl.NumberFormat('en-US').format(resources.containers.length),
+      'green'
+    ),
+  ];
+
+  return (
+    colorize('green', 'live') + colorize('dim', ` (${details.join(' · ')})`)
+  );
+}
+
+function summarizeDockerContainers(resources, maxContainers = 4) {
+  if (!resources?.containers?.length) {
+    return colorize('dim', 'none');
+  }
+
+  return resources.containers
+    .slice(0, maxContainers)
+    .map((container) =>
+      [
+        formatBadge(container.label.toUpperCase(), container.color),
+        formatMetric('cpu', formatCpuPercent(container.cpuPercent), 'yellow'),
+        formatMetric('mem', formatBytes(container.memoryBytes), 'magenta'),
+        formatMetric(
+          'net',
+          `${formatBytes(container.rxBytes)} / ${formatBytes(container.txBytes)}`,
+          'cyan'
+        ),
+      ].join(' ')
+    )
+    .join(colorize('dim', '  ·  '));
+}
+
 function padCell(value, width, align = 'left') {
   const rawValue = String(value);
   const visibleValue = stripAnsi(rawValue);
@@ -544,6 +622,50 @@ function getDeploymentBorderColor(entry) {
   return getDeploymentStatusMeta(entry).color;
 }
 
+function getDeploymentPhaseBadges(entry) {
+  if (entry.deploymentKind === 'standby-refresh') {
+    if (entry.status === 'building' || entry.status === 'deploying') {
+      return [formatBadge('REFRESHING', 'blue')];
+    }
+
+    if (entry.status === 'failed') {
+      return [formatBadge('REFRESH FAILED', 'red')];
+    }
+
+    if (entry.runtimeState === 'standby') {
+      return [formatBadge('STANDBY SYNCED', 'blue')];
+    }
+
+    return [formatBadge('SYNCED', 'blue')];
+  }
+
+  if (entry.status === 'building') {
+    return [formatBadge('PENDING', 'magenta')];
+  }
+
+  if (entry.status === 'deploying') {
+    return [formatBadge('PROMOTING', 'cyan')];
+  }
+
+  if (entry.status === 'failed') {
+    return [formatBadge('FAILED ROLLOUT', 'red')];
+  }
+
+  if (entry.runtimeState === 'active') {
+    return [formatBadge('PROMOTED', 'green')];
+  }
+
+  if (entry.runtimeState === 'standby') {
+    return [formatBadge('STANDBY READY', 'blue')];
+  }
+
+  if (entry.endedAt) {
+    return [formatBadge('RETIRED', 'dim')];
+  }
+
+  return [formatBadge('DEPLOYED', 'green')];
+}
+
 function formatHeaderLine(left, right, width) {
   const leftText = stripAnsi(left);
   const rightText = stripAnsi(right);
@@ -587,9 +709,7 @@ function buildDeploymentTable(
     );
     const commitLine = `${entry.commitSubject ?? 'Unknown deployment'}`.trim();
     const metaLine = [
-      entry.deploymentKind === 'standby-refresh'
-        ? formatBadge('STANDBY REFRESH', 'blue')
-        : formatBadge('PROMOTION', 'magenta'),
+      ...getDeploymentPhaseBadges(entry),
       entry.runtimeState
         ? formatBadge(
             entry.runtimeState === 'standby' ? 'WARM BACKUP' : 'LIVE TRAFFIC',
@@ -748,6 +868,8 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
       'Blue/green',
       summarizeBlueGreenRuntime(state.currentBlueGreen, { now })
     ),
+    formatRow('Docker', summarizeDockerResources(state.dockerResources)),
+    formatRow('Containers', summarizeDockerContainers(state.dockerResources)),
     formatRow('Interval', `${(state.intervalMs / 1_000).toFixed(1)}s`),
     formatRow('Started', formatClockTime(state.startedAt)),
     formatRow(
@@ -1665,6 +1787,11 @@ async function resolveCurrentBlueGreenStatus({
       activeServiceRunning: Boolean(activeContainerId),
       liveColors,
       proxyRunning: Boolean(proxyContainerId),
+      serviceContainers: {
+        proxy: proxyContainerId,
+        'web-blue': serviceStates.blue,
+        'web-green': serviceStates.green,
+      },
       standbyColor,
       state:
         activeColor && proxyContainerId && activeContainerId
@@ -1680,7 +1807,197 @@ async function resolveCurrentBlueGreenStatus({
       message:
         error instanceof Error ? error.message : 'Unable to inspect blue/green',
       state: 'unknown',
+      serviceContainers: {},
       standbyColor: null,
+    };
+  }
+}
+
+function parseDockerBytes(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim();
+  const match = normalized.match(/^([0-9]*\.?[0-9]+)\s*([KMGT]?i?B)$/iu);
+
+  if (!match) {
+    return null;
+  }
+
+  const amount = Number.parseFloat(match[1]);
+  if (!Number.isFinite(amount)) {
+    return null;
+  }
+
+  const unit = match[2].toUpperCase();
+  const base = unit.includes('IB') ? 1024 : 1000;
+  const exponent = {
+    B: 0,
+    KB: 1,
+    MB: 2,
+    GB: 3,
+    TB: 4,
+    KIB: 1,
+    MIB: 2,
+    GIB: 3,
+    TIB: 4,
+  }[unit];
+
+  if (exponent == null) {
+    return null;
+  }
+
+  return amount * base ** exponent;
+}
+
+function parseDockerIoPair(value) {
+  if (typeof value !== 'string') {
+    return { rxBytes: null, txBytes: null };
+  }
+
+  const [rxRaw = '', txRaw = ''] = value.split('/');
+  return {
+    rxBytes: parseDockerBytes(rxRaw),
+    txBytes: parseDockerBytes(txRaw),
+  };
+}
+
+function parseDockerStatsLine(line) {
+  const parsed = JSON.parse(line);
+  const cpuPercent = Number.parseFloat(
+    String(parsed.CPUPerc ?? '').replace('%', '')
+  );
+  const memoryUsage = String(parsed.MemUsage ?? '');
+  const [memoryRaw = ''] = memoryUsage.split('/');
+  const { rxBytes, txBytes } = parseDockerIoPair(parsed.NetIO);
+
+  return {
+    containerId: parsed.ID ?? '',
+    cpuPercent: Number.isFinite(cpuPercent) ? cpuPercent : null,
+    memoryBytes: parseDockerBytes(memoryRaw),
+    name: parsed.Name ?? '',
+    rxBytes,
+    txBytes,
+  };
+}
+
+async function collectDockerResources(
+  currentBlueGreen,
+  { env, runCommand: run = runCommand } = {}
+) {
+  const containers = Object.entries(currentBlueGreen?.serviceContainers ?? {})
+    .filter(
+      ([, containerId]) =>
+        typeof containerId === 'string' && containerId.length > 0
+    )
+    .map(([serviceName, containerId]) => ({
+      containerId,
+      label:
+        serviceName === 'web-green'
+          ? 'green'
+          : serviceName === 'web-blue'
+            ? 'blue'
+            : serviceName === 'proxy'
+              ? 'proxy'
+              : serviceName,
+      color:
+        serviceName === 'web-green'
+          ? 'green'
+          : serviceName === 'web-blue'
+            ? 'blue'
+            : 'cyan',
+      serviceName,
+    }));
+
+  if (containers.length === 0) {
+    return {
+      containers: [],
+      state: 'idle',
+      totalCpuPercent: 0,
+      totalMemoryBytes: 0,
+      totalRxBytes: 0,
+      totalTxBytes: 0,
+    };
+  }
+
+  try {
+    const result = await runChecked(
+      'docker',
+      [
+        'stats',
+        '--no-stream',
+        '--format',
+        '{{json .}}',
+        ...containers.map((container) => container.containerId),
+      ],
+      {
+        env,
+        runCommand: run,
+        stdio: 'pipe',
+      }
+    );
+
+    const statsById = new Map(
+      result.stdout
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const parsed = parseDockerStatsLine(line);
+          return [parsed.containerId, parsed];
+        })
+    );
+
+    const resourceContainers = containers
+      .map((container) => {
+        const stats = statsById.get(container.containerId);
+        if (!stats) {
+          return null;
+        }
+
+        return {
+          ...container,
+          cpuPercent: stats.cpuPercent ?? 0,
+          memoryBytes: stats.memoryBytes ?? 0,
+          rxBytes: stats.rxBytes ?? 0,
+          txBytes: stats.txBytes ?? 0,
+        };
+      })
+      .filter(Boolean);
+
+    return {
+      containers: resourceContainers,
+      state: 'live',
+      totalCpuPercent: resourceContainers.reduce(
+        (sum, container) => sum + (container.cpuPercent ?? 0),
+        0
+      ),
+      totalMemoryBytes: resourceContainers.reduce(
+        (sum, container) => sum + (container.memoryBytes ?? 0),
+        0
+      ),
+      totalRxBytes: resourceContainers.reduce(
+        (sum, container) => sum + (container.rxBytes ?? 0),
+        0
+      ),
+      totalTxBytes: resourceContainers.reduce(
+        (sum, container) => sum + (container.txBytes ?? 0),
+        0
+      ),
+    };
+  } catch (error) {
+    return {
+      containers: [],
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Unable to inspect docker stats',
+      state: 'unavailable',
+      totalCpuPercent: 0,
+      totalMemoryBytes: 0,
+      totalRxBytes: 0,
+      totalTxBytes: 0,
     };
   }
 }
@@ -1921,6 +2238,10 @@ async function loadRuntimeSnapshot({
     rootDir,
     runCommand: run,
   });
+  const dockerResources = await collectDockerResources(currentBlueGreen, {
+    env,
+    runCommand: run,
+  });
   const deployments = await collectDeploymentTraffic(
     history ?? readDeploymentHistory(paths, fsImpl),
     {
@@ -1992,6 +2313,7 @@ async function loadRuntimeSnapshot({
           requestCount: activeDeployment.requestCount,
         }
       : currentBlueGreen,
+    dockerResources,
     deployments: runtimeAwareDeployments,
   };
 }

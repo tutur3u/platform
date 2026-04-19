@@ -148,6 +148,31 @@ test('buildDashboardView shows blue/green runtime and the last 5 deployments', (
         requestCount: 128,
         state: 'serving',
       },
+      dockerResources: {
+        containers: [
+          {
+            color: 'green',
+            cpuPercent: 3.2,
+            label: 'green',
+            memoryBytes: 450 * 1024 * 1024,
+            rxBytes: 12 * 1024 * 1024,
+            txBytes: 8 * 1024 * 1024,
+          },
+          {
+            color: 'cyan',
+            cpuPercent: 0.1,
+            label: 'proxy',
+            memoryBytes: 24 * 1024 * 1024,
+            rxBytes: 2 * 1024 * 1024,
+            txBytes: 3 * 1024 * 1024,
+          },
+        ],
+        state: 'live',
+        totalCpuPercent: 3.3,
+        totalMemoryBytes: 474 * 1024 * 1024,
+        totalRxBytes: 14 * 1024 * 1024,
+        totalTxBytes: 11 * 1024 * 1024,
+      },
       deployments: [
         {
           activatedAt: Date.parse('2026-04-18T11:10:00.000Z'),
@@ -220,6 +245,10 @@ test('buildDashboardView shows blue/green runtime and the last 5 deployments', (
 
   assert.match(plainOutput, /Blue\/green/);
   assert.match(plainOutput, /serving green/);
+  assert.match(plainOutput, /Docker:\s+live/);
+  assert.match(plainOutput, /cpu 3\.3%/);
+  assert.match(plainOutput, /Containers:\s+\[GREEN\]/);
+  assert.match(plainOutput, /\[PROXY\]/);
   assert.match(plainOutput, /req 128 req/);
   assert.match(plainOutput, /avg 6\.4 rpm/);
   assert.match(plainOutput, /peak 12 rpm/);
@@ -231,7 +260,8 @@ test('buildDashboardView shows blue/green runtime and the last 5 deployments', (
   assert.match(plainOutput, /\[18:10:00\]/);
   assert.match(plainOutput, /ACTIVE/);
   assert.match(plainOutput, /green/);
-  assert.match(plainOutput, /PROMOTION/);
+  assert.match(plainOutput, /DEPLOYED/);
+  assert.match(plainOutput, /RETIRED/);
   assert.match(plainOutput, /42s/);
   assert.match(plainOutput, /20m/);
   assert.match(plainOutput, /Refresh watcher UX and restart logic/);
@@ -325,6 +355,7 @@ test('buildDashboardView shows pending deployments in recent deployment cards', 
   );
 
   assert.match(output, /DEPLOYING/);
+  assert.match(output, /PROMOTING/);
   assert.match(output, /Ship hotfix through blue green/);
   assert.match(output, /Last deploy:\s+deploying/);
   assert.match(output, /elapsed 20s/);
@@ -1058,6 +1089,37 @@ test('resolveCurrentBlueGreenStatus reflects the active color and running servic
           return createResult('blue-123\n');
         }
 
+        if (
+          key ===
+          'docker stats --no-stream --format {{json .}} proxy-123 blue-123 green-123'
+        ) {
+          return createResult(
+            [
+              JSON.stringify({
+                CPUPerc: '0.10%',
+                ID: 'proxy-123',
+                MemUsage: '24.0MiB / 31.1GiB',
+                Name: 'platform-web-proxy-1',
+                NetIO: '2.00MB / 3.00MB',
+              }),
+              JSON.stringify({
+                CPUPerc: '1.20%',
+                ID: 'blue-123',
+                MemUsage: '150MiB / 31.1GiB',
+                Name: 'platform-web-blue-1',
+                NetIO: '6.00MB / 4.00MB',
+              }),
+              JSON.stringify({
+                CPUPerc: '3.40%',
+                ID: 'green-123',
+                MemUsage: '420MiB / 31.1GiB',
+                Name: 'platform-web-green-1',
+                NetIO: '10.0MB / 8.00MB',
+              }),
+            ].join('\n')
+          );
+        }
+
         throw new Error(`Unexpected command: ${key}`);
       },
     });
@@ -1067,6 +1129,11 @@ test('resolveCurrentBlueGreenStatus reflects the active color and running servic
       activeServiceRunning: true,
       liveColors: ['blue', 'green'],
       proxyRunning: true,
+      serviceContainers: {
+        proxy: 'proxy-123',
+        'web-blue': 'blue-123',
+        'web-green': 'green-123',
+      },
       state: 'serving',
       standbyColor: 'blue',
     });
@@ -1146,6 +1213,34 @@ test('loadRuntimeSnapshot keeps both live colors marked active in deployment car
           [prodComposePsKey('web-green'), createResult('green-123\n')],
           [prodComposePsKey('web-blue'), createResult('blue-123\n')],
           [
+            'docker stats --no-stream --format {{json .}} proxy-123 blue-123 green-123',
+            createResult(
+              [
+                JSON.stringify({
+                  CPUPerc: '0.10%',
+                  ID: 'proxy-123',
+                  MemUsage: '24.0MiB / 31.1GiB',
+                  Name: 'platform-web-proxy-1',
+                  NetIO: '2.00MB / 3.00MB',
+                }),
+                JSON.stringify({
+                  CPUPerc: '1.20%',
+                  ID: 'blue-123',
+                  MemUsage: '150MiB / 31.1GiB',
+                  Name: 'platform-web-blue-1',
+                  NetIO: '6.00MB / 4.00MB',
+                }),
+                JSON.stringify({
+                  CPUPerc: '3.40%',
+                  ID: 'green-123',
+                  MemUsage: '420MiB / 31.1GiB',
+                  Name: 'platform-web-green-1',
+                  NetIO: '10.0MB / 8.00MB',
+                }),
+              ].join('\n')
+            ),
+          ],
+          [
             'docker logs --timestamps --since 2026-04-18T10:30:00.000Z proxy-123',
             createResult(''),
           ],
@@ -1156,11 +1251,15 @@ test('loadRuntimeSnapshot keeps both live colors marked active in deployment car
     assert.equal(snapshot.deployments[0].runtimeState, 'active');
     assert.equal(snapshot.deployments[1].runtimeState, 'standby');
     assert.equal(snapshot.deployments[2].runtimeState, null);
+    assert.equal(snapshot.dockerResources.state, 'live');
+    assert.equal(snapshot.dockerResources.containers.length, 3);
+    assert.equal(snapshot.dockerResources.totalCpuPercent, 4.7);
     assert.match(
       stripAnsi(
         buildDashboardView(
           {
             currentBlueGreen: snapshot.currentBlueGreen,
+            dockerResources: snapshot.dockerResources,
             deployments: snapshot.deployments,
             events: [],
             intervalMs: DEFAULT_INTERVAL_MS,
