@@ -266,6 +266,7 @@ test('buildDashboardView shows blue/green runtime and the top 3 prioritized depl
   assert.match(plainOutput, /cpu 3\.3%/);
   assert.match(plainOutput, /Containers:\s+\[GREEN\]/);
   assert.match(plainOutput, /\[PROXY\]/);
+  assert.doesNotMatch(plainOutput, /Next poll:/);
   assert.match(plainOutput, /req 128 req/);
   assert.match(plainOutput, /avg 6\.4 rpm/);
   assert.match(plainOutput, /peak 12 rpm/);
@@ -1182,6 +1183,98 @@ test('resolveCurrentBlueGreenStatus reflects the active color and running servic
   }
 });
 
+test('resolveCurrentBlueGreenStatus falls back to docker ps when compose inspection fails', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-runtime-compose-fallback-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
+
+    const status = await resolveCurrentBlueGreenStatus({
+      envFilePath,
+      fsImpl: fs,
+      paths,
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+
+        if (
+          key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} ps -q ${BLUE_GREEN_PROXY_SERVICE}`
+        ) {
+          return createResult('', {
+            code: 1,
+            stderr: 'missing UPSTASH_REDIS_REST_TOKEN',
+          });
+        }
+
+        if (key === `docker compose -f ${PROD_COMPOSE_FILE} ps -q web-green`) {
+          return createResult('', {
+            code: 1,
+            stderr: 'missing UPSTASH_REDIS_REST_TOKEN',
+          });
+        }
+
+        if (key === `docker compose -f ${PROD_COMPOSE_FILE} ps -q web-blue`) {
+          return createResult('', {
+            code: 1,
+            stderr: 'missing UPSTASH_REDIS_REST_TOKEN',
+          });
+        }
+
+        if (
+          key ===
+          `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=web-proxy --format {{.ID}}`
+        ) {
+          return createResult('proxy-fallback\n');
+        }
+
+        if (
+          key ===
+          `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=web-green --format {{.ID}}`
+        ) {
+          return createResult('green-fallback\n');
+        }
+
+        if (
+          key ===
+          `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=web-blue --format {{.ID}}`
+        ) {
+          return createResult('blue-fallback\n');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+    });
+
+    assert.deepEqual(status, {
+      activeColor: 'green',
+      activeServiceRunning: true,
+      liveColors: ['blue', 'green'],
+      proxyRunning: true,
+      serviceContainers: {
+        proxy: 'proxy-fallback',
+        'web-blue': 'blue-fallback',
+        'web-green': 'green-fallback',
+      },
+      state: 'serving',
+      standbyColor: 'blue',
+    });
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('loadRuntimeSnapshot keeps both live colors marked active in deployment cards', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-runtime-live-'));
   const paths = getWatchPaths(tempDir);
@@ -1380,6 +1473,7 @@ test('runDeployWatchIteration skips dirty worktrees before fetch and still repor
       'git rev-parse --abbrev-ref HEAD',
       'git status --porcelain',
       prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
+      `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`,
     ]);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });

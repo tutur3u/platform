@@ -529,6 +529,14 @@ function summarizeDockerResources(resources) {
 }
 
 function summarizeDockerContainers(resources, maxContainers = 4) {
+  if (!resources || resources.state === 'idle') {
+    return colorize('dim', 'idle');
+  }
+
+  if (resources.state === 'unavailable') {
+    return colorize('yellow', resources.message ?? 'unavailable');
+  }
+
   if (!resources?.containers?.length) {
     return colorize('dim', 'none');
   }
@@ -950,13 +958,6 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
       `${formatClockTime(state.lastCheckAt)} ${colorize(
         'dim',
         `(${formatRelativeTime(state.lastCheckAt, { now })})`
-      )}`
-    ),
-    formatRow(
-      'Next poll',
-      `${formatCountdown(state.nextCheckAt, { now })} ${colorize(
-        'dim',
-        `(at ${formatClockTime(state.nextCheckAt)})`
       )}`
     ),
     formatRow(
@@ -1788,17 +1789,47 @@ async function getProdComposeServiceContainerId(
     fsImpl,
     rootDir,
   });
-  const result = await runChecked(
-    'docker',
-    getComposeCommandArgs(PROD_COMPOSE_FILE, [], 'ps', '-q', serviceName),
-    {
-      env: composeEnv,
-      runCommand: run,
-      stdio: 'pipe',
-    }
-  );
 
-  return result.stdout.trim();
+  try {
+    const result = await runChecked(
+      'docker',
+      getComposeCommandArgs(PROD_COMPOSE_FILE, [], 'ps', '-q', serviceName),
+      {
+        env: composeEnv,
+        runCommand: run,
+        stdio: 'pipe',
+      }
+    );
+    const containerId = result.stdout.trim();
+
+    if (containerId) {
+      return containerId;
+    }
+  } catch {}
+
+  try {
+    const fallbackResult = await runChecked(
+      'docker',
+      [
+        'ps',
+        '--filter',
+        `label=com.docker.compose.project=${path.basename(rootDir)}`,
+        '--filter',
+        `label=com.docker.compose.service=${serviceName}`,
+        '--format',
+        '{{.ID}}',
+      ],
+      {
+        env,
+        runCommand: run,
+        stdio: 'pipe',
+      }
+    );
+
+    return fallbackResult.stdout.trim().split('\n')[0]?.trim() ?? '';
+  } catch {
+    return '';
+  }
 }
 
 async function resolveCurrentBlueGreenStatus({
