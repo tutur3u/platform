@@ -421,6 +421,68 @@ function ActionButton({
   );
 }
 
+function ResilientMediaImage({
+  alt,
+  assetUrl,
+  className,
+  fill = false,
+  height,
+  previewUrl,
+  sizes,
+  width,
+}: {
+  alt: string;
+  assetUrl?: string | null;
+  className?: string;
+  fill?: boolean;
+  height?: number;
+  previewUrl?: string | null;
+  sizes?: string;
+  width?: number;
+}) {
+  const sources = [previewUrl, assetUrl].filter((value): value is string =>
+    Boolean(value)
+  );
+  const [failedSources, setFailedSources] = useState<string[]>([]);
+  const currentSource = sources.find(
+    (source) => !failedSources.includes(source)
+  );
+
+  if (!currentSource) {
+    return null;
+  }
+
+  if (fill) {
+    return (
+      <Image
+        alt={alt}
+        className={className}
+        fill
+        sizes={sizes}
+        src={currentSource}
+        onError={() =>
+          setFailedSources((current) => [...current, currentSource])
+        }
+      />
+    );
+  }
+
+  if (!width || !height) {
+    return null;
+  }
+
+  return (
+    <Image
+      alt={alt}
+      className={className}
+      height={height}
+      src={currentSource}
+      width={width}
+      onError={() => setFailedSources((current) => [...current, currentSource])}
+    />
+  );
+}
+
 export function EpmClient({
   binding,
   initialTab = 'overview',
@@ -779,12 +841,12 @@ export function EpmClient({
       .find((entry) => entry.id === activeEntry?.id) ?? null;
 
   return (
-    <div className="space-y-5 pb-8">
-      <section className="relative isolate overflow-hidden rounded-[2rem] border border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(217,119,6,0.12),transparent_24%),linear-gradient(160deg,rgba(17,24,39,0.98),rgba(9,12,18,0.94))] text-white">
+    <div className="min-h-[calc(100svh-5rem)] space-y-5 pb-8">
+      <section className="relative isolate min-h-[calc(100svh-8.75rem)] overflow-hidden rounded-[2rem] border border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(217,119,6,0.12),transparent_24%),linear-gradient(160deg,rgba(17,24,39,0.98),rgba(9,12,18,0.94))] text-white">
         <div className="pointer-events-none absolute inset-0 opacity-80 [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:42px_42px]" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(244,114,182,0.24),transparent_24%),radial-gradient(circle_at_82%_22%,rgba(96,165,250,0.18),transparent_24%),linear-gradient(180deg,transparent,rgba(0,0,0,0.32))]" />
-        <div className="relative grid gap-6 p-5 xl:grid-cols-[minmax(0,1.2fr)_380px] xl:p-6">
-          <div className="space-y-5">
+        <div className="relative grid min-h-[inherit] gap-6 p-5 xl:grid-cols-[minmax(0,1.2fr)_380px] xl:p-6">
+          <div className="flex min-h-full flex-col gap-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3 py-1 text-[11px] text-white/72 uppercase tracking-[0.28em]">
               <Sparkles className="h-3.5 w-3.5" />
               EPM
@@ -814,33 +876,24 @@ export function EpmClient({
               </Badge>
             </div>
 
-            <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_260px]">
+            <div className="grid flex-1 gap-3 xl:grid-cols-[minmax(0,1fr)_280px]">
               <div className="overflow-hidden rounded-[1.6rem] border border-white/12 bg-black/35">
-                <div className="grid gap-4 p-4 lg:grid-cols-[0.92fr_1.08fr] lg:p-5">
-                  <div className="relative min-h-[220px] overflow-hidden rounded-[1.35rem] border border-white/10 bg-white/6">
+                <div className="grid h-full gap-4 p-4 lg:grid-cols-[0.96fr_1.04fr] lg:p-5">
+                  <div className="relative min-h-[380px] overflow-hidden rounded-[1.35rem] border border-white/10 bg-white/6 lg:min-h-[480px]">
                     {dashboardPreferences.showVisuals &&
-                    activeEntryVisual?.preview_url ? (
-                      <Image
-                        src={activeEntryVisual.preview_url}
+                    (activeEntryVisual?.preview_url ||
+                      activeEntryVisual?.asset_url) ? (
+                      <ResilientMediaImage
                         alt={
                           activeEntryVisual.alt_text ??
                           activeEntry?.title ??
                           strings.title
                         }
-                        fill
+                        assetUrl={activeEntryVisual.asset_url}
                         className="object-cover"
-                      />
-                    ) : dashboardPreferences.showVisuals &&
-                      activeEntryVisual?.asset_url ? (
-                      <Image
-                        src={activeEntryVisual.asset_url}
-                        alt={
-                          activeEntryVisual.alt_text ??
-                          activeEntry?.title ??
-                          strings.title
-                        }
                         fill
-                        className="object-cover"
+                        previewUrl={activeEntryVisual.preview_url}
+                        sizes="(max-width: 1280px) 100vw, 52vw"
                       />
                     ) : (
                       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(244,114,182,0.34),transparent_28%),radial-gradient(circle_at_80%_70%,rgba(96,165,250,0.28),transparent_28%),linear-gradient(150deg,rgba(255,255,255,0.12),rgba(255,255,255,0.04))]" />
@@ -878,7 +931,7 @@ export function EpmClient({
                     </div>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="flex h-full flex-col gap-3">
                     <div className="rounded-[1.35rem] border border-white/10 bg-white/6 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div>
@@ -917,7 +970,7 @@ export function EpmClient({
                       </div>
                     </div>
 
-                    <div className="rounded-[1.35rem] border border-white/10 bg-white/6 p-4">
+                    <div className="flex-1 rounded-[1.35rem] border border-white/10 bg-white/6 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-[11px] text-white/55 uppercase tracking-[0.3em]">
@@ -995,7 +1048,7 @@ export function EpmClient({
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="grid auto-rows-fr gap-3">
                 {workflowLanes.slice(0, 3).map((lane) => (
                   <div
                     key={lane.status}
@@ -1287,21 +1340,14 @@ export function EpmClient({
                         }}
                       >
                         <div className="relative h-40 overflow-hidden border-border/70 border-b bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.18),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.16),transparent_30%),linear-gradient(160deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))]">
-                          {visualAsset?.preview_url ? (
-                            <Image
-                              src={visualAsset.preview_url}
-                              alt={visualAsset.alt_text ?? entry.title}
-                              fill
-                              className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                            />
-                          ) : visualAsset?.asset_url ? (
-                            <Image
-                              src={visualAsset.asset_url}
-                              alt={visualAsset.alt_text ?? entry.title}
-                              fill
-                              className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                            />
-                          ) : null}
+                          <ResilientMediaImage
+                            alt={visualAsset?.alt_text ?? entry.title}
+                            assetUrl={visualAsset?.asset_url}
+                            className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                            fill
+                            previewUrl={visualAsset?.preview_url}
+                            sizes="(max-width: 1280px) 100vw, 33vw"
+                          />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
                           <div className="absolute right-3 bottom-3">
                             <Badge className={statusTone(entry.status)}>
@@ -1466,21 +1512,14 @@ export function EpmClient({
                             onClick={() => setSelectedEntryId(entry.id)}
                           >
                             <div className="relative h-32 overflow-hidden border-border/70 border-b bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.18),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.16),transparent_32%),linear-gradient(150deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))]">
-                              {visualAsset?.preview_url ? (
-                                <Image
-                                  src={visualAsset.preview_url}
-                                  alt={visualAsset.alt_text ?? entry.title}
-                                  fill
-                                  className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                                />
-                              ) : visualAsset?.asset_url ? (
-                                <Image
-                                  src={visualAsset.asset_url}
-                                  alt={visualAsset.alt_text ?? entry.title}
-                                  fill
-                                  className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                                />
-                              ) : null}
+                              <ResilientMediaImage
+                                alt={visualAsset?.alt_text ?? entry.title}
+                                assetUrl={visualAsset?.asset_url}
+                                className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                                fill
+                                previewUrl={visualAsset?.preview_url}
+                                sizes="(max-width: 1280px) 100vw, 24vw"
+                              />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
                             </div>
                             <div className="space-y-2 p-3">
@@ -2310,15 +2349,15 @@ export function EpmClient({
                     <CardContent className="space-y-4 p-4">
                       {renderedPreviewEntry.assets[0]?.assetUrl ? (
                         <div className="overflow-hidden rounded-2xl border border-border/70 bg-background/70">
-                          <Image
-                            src={renderedPreviewEntry.assets[0].assetUrl}
+                          <ResilientMediaImage
                             alt={
                               renderedPreviewEntry.assets[0].alt_text ??
                               renderedPreviewEntry.title
                             }
-                            width={1200}
-                            height={900}
+                            assetUrl={renderedPreviewEntry.assets[0].assetUrl}
                             className="h-auto w-full object-cover"
+                            height={900}
+                            width={1200}
                           />
                         </div>
                       ) : null}
