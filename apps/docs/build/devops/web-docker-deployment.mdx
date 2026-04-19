@@ -435,6 +435,13 @@ Operational notes:
 
 That means Docker CI now covers both the dev image and the real production path.
 
+When `scripts/check-docker-web.js` or similar root validators need to assert a
+literal Dockerfile template placeholder like `${process.env.PORT || 7803}`,
+prefer a regex or another explicitly escaped matcher instead of a plain string
+literal. Biome treats raw `${...}` text inside normal strings as
+`lint/suspicious/noTemplateCurlyInString`, which can break CI even when the
+runtime behavior is unchanged.
+
 ## Operator Notes
 
 - Do not paste `docker compose config` output into chat or tickets; it expands env values.

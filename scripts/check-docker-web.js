@@ -16,6 +16,8 @@ const PACKAGE_JSON_DEPENDENCY_FIELDS = [
   'devDependencies',
   'optionalDependencies',
 ];
+const DRAIN_STATUS_HEALTHCHECK_PATTERN =
+  /fetch\(`http:\/\/127\.0\.0\.1:\$\{process\.env\.PORT \|\| 7803\}\/__platform\/drain-status`\)/;
 
 function listWorkspacePackageJsonPaths(rootDir = ROOT_DIR, fsImpl = fs) {
   return WORKSPACE_DIRS.flatMap((workspaceDir) => {
@@ -261,11 +263,7 @@ function validateDockerfile({
     }
   }
 
-  if (
-    !runnerStage?.includes(
-      'fetch(`http://127.0.0.1:${process.env.PORT || 7803}/__platform/drain-status`)'
-    )
-  ) {
+  if (!DRAIN_STATUS_HEALTHCHECK_PATTERN.test(runnerStage ?? '')) {
     errors.push(
       'apps/web/Dockerfile runner stage must health-check the internal /__platform/drain-status endpoint.'
     );

@@ -40,6 +40,7 @@ import {
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Input } from '@tuturuuu/ui/input';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
@@ -172,6 +173,92 @@ function ActionButton({
   );
 }
 
+function PreviewModeSkeleton() {
+  return (
+    <div className="space-y-5" data-testid="epm-preview-skeleton">
+      <div className="flex flex-wrap gap-2">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <Skeleton
+            key={`collection-pill-${index}`}
+            className="h-9 w-28 rounded-full"
+          />
+        ))}
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <Card className="border-border/70 bg-background/75 shadow-none">
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-4 w-52" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div
+                  key={`preview-card-skeleton-${index}`}
+                  className="overflow-hidden rounded-[1.25rem] border border-border/70 bg-background/80"
+                >
+                  <Skeleton className="aspect-[4/5] w-full rounded-none" />
+                  <div className="space-y-3 p-4">
+                    <Skeleton className="h-5 w-24 rounded-full" />
+                    <Skeleton className="h-5 w-4/5" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-5">
+          <div className="relative min-h-[360px] overflow-hidden rounded-[1.7rem] border border-border/70 bg-background/75 lg:min-h-[520px]">
+            <Skeleton className="absolute inset-0 rounded-none" />
+            <div className="absolute inset-x-0 bottom-0 space-y-4 p-5 lg:p-6">
+              <div className="flex gap-2">
+                <Skeleton className="h-6 w-28 rounded-full" />
+                <Skeleton className="h-6 w-24 rounded-full" />
+              </div>
+              <Skeleton className="h-10 w-3/4" />
+              <Skeleton className="h-5 w-1/2" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+            </div>
+          </div>
+
+          <Card className="border-border/70 bg-background/75 shadow-none">
+            <CardHeader>
+              <Skeleton className="h-6 w-44" />
+              <Skeleton className="h-4 w-32" />
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div
+                  key={`preview-copy-skeleton-${index}`}
+                  className="space-y-3"
+                >
+                  <Skeleton className="h-6 w-40" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-[92%]" />
+                  <Skeleton className="h-4 w-[86%]" />
+                </div>
+              ))}
+
+              <div className="grid gap-3 md:grid-cols-2">
+                {Array.from({ length: 2 }).map((_, index) => (
+                  <Skeleton
+                    key={`preview-image-skeleton-${index}`}
+                    className="min-h-[180px] rounded-[1.2rem]"
+                  />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function EpmClient({
   binding,
   initialMode = 'preview',
@@ -255,6 +342,7 @@ export function EpmClient({
     null;
   const previewMarkdownBlocks = extractMarkdown(activePreviewEntry);
   const activePreviewVisual = getDeliveryEntryVisual(activePreviewEntry);
+  const previewGalleryEntries = previewEntries.slice(0, 12);
   const previewProjectLabel = getProjectBrand(
     binding,
     previewQuery.data?.profileData
@@ -556,9 +644,7 @@ export function EpmClient({
               </div>
 
               {previewQuery.isPending ? (
-                <div className="rounded-[1.5rem] border border-border/70 bg-background/70 p-6 text-muted-foreground text-sm">
-                  {strings.loadingPreviewLabel}
-                </div>
+                <PreviewModeSkeleton />
               ) : activePreviewCollection ? (
                 <>
                   <div className="flex flex-wrap gap-2">
@@ -581,7 +667,7 @@ export function EpmClient({
                     ))}
                   </div>
 
-                  <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
+                  <div className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
                     <Card className="border-border/70 bg-background/75 shadow-none">
                       <CardHeader>
                         <CardTitle>{strings.previewEntriesTitle}</CardTitle>
@@ -592,38 +678,68 @@ export function EpmClient({
                       </CardHeader>
                       <CardContent>
                         <ScrollArea className="h-[34rem] pr-3">
-                          <div className="space-y-2">
-                            {previewEntries.map((entry) => {
+                          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                            {previewGalleryEntries.map((entry) => {
                               const visualAsset = getDeliveryEntryVisual(entry);
+                              const managedPreviewEntry =
+                                entries.find(
+                                  (managed) => managed.id === entry.id
+                                ) ?? null;
 
                               return (
                                 <button
                                   key={entry.id}
                                   type="button"
                                   className={cn(
-                                    'flex w-full items-center gap-3 rounded-[1.2rem] border px-3 py-3 text-left transition-colors',
+                                    'w-full overflow-hidden rounded-[1.25rem] border text-left transition-all',
                                     entry.id === activePreviewEntry?.id
-                                      ? 'border-foreground/20 bg-background'
+                                      ? 'border-foreground/20 bg-background shadow-sm'
                                       : 'border-border/70 bg-background/70 hover:bg-background'
                                   )}
                                   onClick={() => setSelectedEntryId(entry.id)}
                                 >
-                                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-border/70 bg-background/80">
+                                  <div className="relative aspect-[4/5] overflow-hidden border-border/70 bg-background/80">
                                     <ResilientMediaImage
                                       alt={visualAsset?.alt_text ?? entry.title}
                                       assetUrl={visualAsset?.assetUrl}
                                       className="object-cover"
                                       fill
                                       previewUrl={visualAsset?.assetUrl}
-                                      sizes="56px"
+                                      sizes="(max-width: 1280px) 40vw, 22vw"
                                     />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/15 to-transparent" />
+                                    <div className="absolute inset-x-0 bottom-0 p-4">
+                                      <div className="flex flex-wrap gap-2">
+                                        <Badge
+                                          className={cn(
+                                            'border-0 shadow-none',
+                                            entry.id === activePreviewEntry?.id
+                                              ? statusTone(
+                                                  managedPreviewEntry?.status ??
+                                                    'draft'
+                                                )
+                                              : 'bg-background/90 text-foreground'
+                                          )}
+                                        >
+                                          {formatStatus(
+                                            managedPreviewEntry?.status ??
+                                              'draft',
+                                            strings
+                                          )}
+                                        </Badge>
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div className="min-w-0 flex-1">
-                                    <div className="truncate font-medium text-sm">
+                                  <div className="space-y-2 p-4">
+                                    <div className="line-clamp-1 font-medium text-sm">
                                       {entry.title}
                                     </div>
-                                    <div className="truncate text-muted-foreground text-xs">
+                                    <div className="line-clamp-1 text-muted-foreground text-xs">
                                       {entry.subtitle || entry.slug}
+                                    </div>
+                                    <div className="line-clamp-2 text-muted-foreground text-xs leading-5">
+                                      {entry.summary ||
+                                        strings.previewEmptyDescription}
                                     </div>
                                   </div>
                                 </button>
