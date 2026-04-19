@@ -42,7 +42,6 @@ interface CreateListDialogProps {
   wsId?: string;
   initialName?: string;
   initialStatus?: TaskBoardStatus;
-  hasClosedList?: boolean;
   onSuccess?: (listId: string) => void;
   translations?: {
     createNewList?: string;
@@ -139,7 +138,6 @@ export function CreateListDialog({
   wsId,
   initialName = '',
   initialStatus = 'active',
-  hasClosedList = false,
   onSuccess,
   translations,
 }: CreateListDialogProps) {
@@ -177,8 +175,7 @@ export function CreateListDialog({
     documents: t.documents,
   };
   const queryClient = useQueryClient();
-  const resolvedInitialStatus =
-    hasClosedList && initialStatus === 'closed' ? 'active' : initialStatus;
+  const resolvedInitialStatus = initialStatus;
 
   const [newListName, setNewListName] = useState('');
   const [newListStatus, setNewListStatus] = useState<TaskBoardStatus>(
@@ -272,7 +269,6 @@ export function CreateListDialog({
 
   const handleCreateList = () => {
     if (!newListName.trim()) return;
-    if (hasClosedList && newListStatus === 'closed') return;
     createListMutation.mutate({
       name: newListName.trim(),
       status: newListStatus,
@@ -325,11 +321,7 @@ export function CreateListDialog({
                 {statuses.map((status) => {
                   const Icon = statusConfig[status].icon;
                   return (
-                    <SelectItem
-                      key={status}
-                      value={status}
-                      disabled={hasClosedList && status === 'closed'}
-                    >
+                    <SelectItem key={status} value={status}>
                       <div className="flex items-center gap-2">
                         <Icon
                           className={cn('h-4 w-4', statusConfig[status].color)}
@@ -375,11 +367,7 @@ export function CreateListDialog({
           </Button>
           <Button
             onClick={handleCreateList}
-            disabled={
-              !newListName.trim() ||
-              createListMutation.isPending ||
-              (hasClosedList && newListStatus === 'closed')
-            }
+            disabled={!newListName.trim() || createListMutation.isPending}
           >
             {createListMutation.isPending ? (
               <>

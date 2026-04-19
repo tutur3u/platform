@@ -239,6 +239,8 @@ export async function createBoard(wsId: string, name: string) {
 
 Columns within boards (e.g., "To Do", "In Progress", "Done").
 
+Task boards may contain multiple `closed` lists when teams need distinct terminal buckets such as `Abandoned`, `Not Planned`, or `Duplicate`. Treat `closed` as a status group for sorting/reporting, not a singleton board column.
+
 ```sql
 CREATE TABLE task_lists (
   id text PRIMARY KEY,

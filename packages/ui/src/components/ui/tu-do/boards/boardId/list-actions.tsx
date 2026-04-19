@@ -76,21 +76,9 @@ export function ListActions({
   const queryClient = useQueryClient();
   const broadcast = useBoardBroadcast();
 
-  const cachedLists = queryClient.getQueryData<TaskList[]>([
-    'task_lists',
-    boardId,
-  ]);
-  const hasAnotherClosedList =
-    cachedLists?.some(
-      (list) => list.id !== listId && list.status === 'closed' && !list.deleted
-    ) ?? false;
   const allowedStatuses = useMemo<TaskBoardStatus[]>(() => {
-    if (listStatus === 'closed' || !hasAnotherClosedList) {
-      return ['documents', 'not_started', 'active', 'done', 'closed'];
-    }
-
-    return ['documents', 'not_started', 'active', 'done'];
-  }, [hasAnotherClosedList, listStatus]);
+    return ['documents', 'not_started', 'active', 'done', 'closed'];
+  }, []);
 
   const moveAllTasksFromListMutation = useMoveAllTasksFromList(
     boardId,

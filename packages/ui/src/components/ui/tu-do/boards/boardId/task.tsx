@@ -562,10 +562,6 @@ function TaskCardInner({
 
   const targetCompletionList = getTargetCompletionList();
   const targetClosedList = getTargetClosedList();
-  const hasClosedList = useMemo(
-    () => availableLists.some((list) => list.status === 'closed'),
-    [availableLists]
-  );
   const canMoveToCompletion =
     targetCompletionList && targetCompletionList.id !== task.list_id;
   const canMoveToClose =
@@ -2048,7 +2044,6 @@ function TaskCardInner({
           boardId={boardId}
           wsId={effectiveWorkspaceId}
           initialStatus="active"
-          hasClosedList={hasClosedList}
           onSuccess={(listId) => {
             handleMoveToList(listId);
           }}

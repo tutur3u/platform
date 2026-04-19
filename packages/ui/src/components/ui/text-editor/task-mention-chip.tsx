@@ -1247,9 +1247,6 @@ export function TaskMentionChip({
               boardId={task.board_id}
               wsId={boardConfig.ws_id}
               initialStatus="active"
-              hasClosedList={availableLists.some(
-                (list) => list.status === 'closed'
-              )}
               onSuccess={(listId) => {
                 handleMoveToList(listId);
               }}
