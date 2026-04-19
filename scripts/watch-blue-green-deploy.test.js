@@ -227,16 +227,17 @@ test('buildDashboardView shows blue/green runtime and the last 5 deployments', (
   assert.match(plainOutput, /davg 88\.4\/day/);
   assert.match(plainOutput, /dpeak 120\/day/);
   assert.match(plainOutput, /Last 5 Deployments/);
-  assert.match(plainOutput, /┌/);
+  assert.match(plainOutput, /╭/);
   assert.match(plainOutput, /\[18:10:00\]/);
   assert.match(plainOutput, /ACTIVE/);
   assert.match(plainOutput, /green/);
+  assert.match(plainOutput, /PROMOTION/);
   assert.match(plainOutput, /42s/);
   assert.match(plainOutput, /20m/);
   assert.match(plainOutput, /Refresh watcher UX and restart logic/);
 
   const lines = plainOutput.split('\n');
-  const firstCardTop = lines.find((line) => line.startsWith('┌'));
+  const firstCardTop = lines.find((line) => line.startsWith('╭'));
   const firstCardHeading = lines.find((line) =>
     line.startsWith('│ [18:10:00]')
   );
@@ -359,6 +360,60 @@ test('createWatchUi records events and renders cleanly in non-TTY mode', () => {
     writes.map((entry) => entry[0]),
     ['stdout', 'stdout', 'stderr']
   );
+});
+
+test('createWatchUi refreshes TTY dashboards every second so elapsed metrics keep ticking', () => {
+  const writes = [];
+  const intervals = [];
+  const cleared = [];
+  const stdout = {
+    columns: 100,
+    isTTY: true,
+    write(value) {
+      writes.push(value);
+    },
+  };
+
+  const ui = createWatchUi(
+    {
+      deployments: [
+        {
+          activeColor: 'green',
+          commitShortHash: 'bbb222',
+          commitSubject: 'Deploy in progress',
+          startedAt: Date.parse('2026-04-19T10:00:00.000Z'),
+          status: 'building',
+        },
+      ],
+      intervalMs: 1000,
+      lastDeployAt: Date.parse('2026-04-19T10:00:00.000Z'),
+      lastDeployStatus: 'building',
+    },
+    {
+      clearIntervalImpl(id) {
+        cleared.push(id);
+      },
+      isTTY: true,
+      now: () => Date.parse('2026-04-19T10:00:05.000Z'),
+      refreshIntervalMs: 1000,
+      setIntervalImpl(callback, delay) {
+        intervals.push({ callback, delay });
+        return 'timer-1';
+      },
+      stdout,
+    }
+  );
+
+  ui.start();
+  assert.equal(intervals.length, 1);
+  assert.equal(intervals[0].delay, 1000);
+
+  const writesBeforeTick = writes.length;
+  intervals[0].callback();
+  assert.ok(writes.length > writesBeforeTick);
+
+  ui.close();
+  assert.deepEqual(cleared, ['timer-1']);
 });
 
 test('createQuietRunCommand pipes subprocess output unless a caller overrides stdio', async () => {
@@ -1128,7 +1183,7 @@ test('loadRuntimeSnapshot keeps both live colors marked active in deployment car
           { now, width: 100 }
         )
       ),
-      /ACTIVE green[\s\S]*ACTIVE blue/
+      /\[ACTIVE\] \[green\][\s\S]*\[STANDBY\] \[blue\]/
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });

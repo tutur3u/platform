@@ -334,6 +334,9 @@ Dashboard details:
 - Persists and renders the last 5 deployments, including manual
   `bun serve:web:docker:bg` runs, as stacked terminal cards
   that favor vertical scanability over very wide lines.
+- Each deployment card now uses a stronger header with status/color badges plus
+  grouped metric bands, so active traffic state, rollout intent, and
+  request-rate data are easier to scan while multiple cards are stacked.
 - As soon as a new commit starts rolling out, the recent deployment section
   shows it immediately as `DEPLOYING` instead of waiting for the rollout to
   finish.

@@ -486,6 +486,79 @@ function padCell(value, width, align = 'left') {
   return `${normalized}${' '.repeat(padding)}`;
 }
 
+function formatBadge(label, color) {
+  return emphasize(color, `[${label}]`);
+}
+
+function getDeploymentStatusMeta(entry) {
+  if (entry.runtimeState) {
+    return {
+      color: entry.runtimeState === 'standby' ? 'blue' : 'green',
+      label: entry.runtimeState === 'standby' ? 'STANDBY' : 'ACTIVE',
+    };
+  }
+
+  if (entry.status === 'failed') {
+    return {
+      color: 'red',
+      label: 'FAILED',
+    };
+  }
+
+  if (entry.status === 'building') {
+    return {
+      color: 'magenta',
+      label: 'BUILDING',
+    };
+  }
+
+  if (entry.status === 'deploying') {
+    return {
+      color: 'cyan',
+      label: 'DEPLOYING',
+    };
+  }
+
+  if (entry.endedAt) {
+    return {
+      color: 'cyan',
+      label: 'ENDED',
+    };
+  }
+
+  return {
+    color: 'green',
+    label: 'ACTIVE',
+  };
+}
+
+function getDeploymentBorderColor(entry) {
+  if (entry.runtimeState === 'active') {
+    return 'green';
+  }
+
+  if (entry.runtimeState === 'standby') {
+    return 'blue';
+  }
+
+  return getDeploymentStatusMeta(entry).color;
+}
+
+function formatHeaderLine(left, right, width) {
+  const leftText = stripAnsi(left);
+  const rightText = stripAnsi(right);
+
+  if (leftText.length + rightText.length + 3 > width) {
+    return truncateText(`${leftText} ${rightText}`, width);
+  }
+
+  return `${left}${' '.repeat(width - leftText.length - rightText.length)}${right}`;
+}
+
+function buildMetricBand(metrics, width) {
+  return padCell(metrics.join('  '), width);
+}
+
 function buildDeploymentTable(
   deployments,
   { now = Date.now(), width = 100 } = {}
@@ -495,25 +568,37 @@ function buildDeploymentTable(
   }
 
   const innerWidth = Math.max(66, Math.min(width, 118));
-  const topBorder = colorize('dim', `┌${'─'.repeat(innerWidth + 2)}┐`);
-  const middleBorder = colorize('dim', `├${'─'.repeat(innerWidth + 2)}┤`);
-  const bottomBorder = colorize('dim', `└${'─'.repeat(innerWidth + 2)}┘`);
   const rows = deployments.map((entry) => {
-    const status = entry.runtimeState
-      ? colorize('green', 'ACTIVE')
-      : entry.status === 'failed'
-        ? colorize('red', 'FAILED')
-        : entry.status === 'building'
-          ? colorize('magenta', 'BUILDING')
-          : entry.status === 'deploying'
-            ? colorize('cyan', 'DEPLOYING')
-            : entry.endedAt
-              ? colorize('cyan', 'ENDED')
-              : colorize('green', 'ACTIVE');
+    const statusMeta = getDeploymentStatusMeta(entry);
+    const borderColor = getDeploymentBorderColor(entry);
     const timestamp = entry.finishedAt ?? entry.startedAt;
-    const heading = `[${formatClockTime(timestamp)}] ${status} ${entry.activeColor ?? '-'}`;
-    const commitLine =
-      `${entry.commitShortHash ?? 'unknown'} ${entry.commitSubject ?? ''}`.trim();
+    const heading = formatHeaderLine(
+      `${colorize('dim', `[${formatClockTime(timestamp)}]`)} ${emphasize(
+        'cyan',
+        entry.commitShortHash ?? 'unknown'
+      )}`,
+      [
+        formatBadge(statusMeta.label, statusMeta.color),
+        entry.activeColor ? formatBadge(entry.activeColor, 'cyan') : null,
+      ]
+        .filter(Boolean)
+        .join(' '),
+      innerWidth
+    );
+    const commitLine = `${entry.commitSubject ?? 'Unknown deployment'}`.trim();
+    const metaLine = [
+      entry.deploymentKind === 'standby-refresh'
+        ? formatBadge('STANDBY REFRESH', 'blue')
+        : formatBadge('PROMOTION', 'magenta'),
+      entry.runtimeState
+        ? formatBadge(
+            entry.runtimeState === 'standby' ? 'WARM BACKUP' : 'LIVE TRAFFIC',
+            entry.runtimeState === 'standby' ? 'blue' : 'green'
+          )
+        : null,
+    ]
+      .filter(Boolean)
+      .join(' ');
     const lifecycle = entry.activatedAt
       ? `${colorize('dim', 'since')} ${emphasize(
           'cyan',
@@ -532,7 +617,7 @@ function buildDeploymentTable(
         : formatMetric('build', formatDuration(entry.buildDurationMs), 'cyan'),
       formatMetric('life', formatDuration(entry.lifetimeMs), 'magenta'),
       formatMetric('age', formatRelativeTime(timestamp, { now }), 'dim'),
-    ].join('  ');
+    ];
     const metricsTwo = [
       formatMetric('req', formatRequestCount(entry.requestCount), 'green'),
       formatMetric(
@@ -545,7 +630,7 @@ function buildDeploymentTable(
         formatRequestsPerMinute(entry.peakRequestsPerMinute),
         'yellow'
       ),
-    ].join('  ');
+    ];
     const metricsThree = [
       formatMetric(
         'day',
@@ -562,17 +647,24 @@ function buildDeploymentTable(
         formatRequestsPerDay(entry.dailyPeakRequests),
         'red'
       ),
-    ].join('  ');
+    ];
+    const topBorder = colorize(borderColor, `╭${'─'.repeat(innerWidth + 2)}╮`);
+    const middleBorder = colorize('dim', `├${'─'.repeat(innerWidth + 2)}┤`);
+    const bottomBorder = colorize(
+      borderColor,
+      `╰${'─'.repeat(innerWidth + 2)}╯`
+    );
 
     return [
       topBorder,
-      `│ ${padCell(heading, innerWidth)} │`,
-      `│ ${padCell(commitLine, innerWidth)} │`,
+      `${colorize(borderColor, '│')} ${padCell(heading, innerWidth)} ${colorize(borderColor, '│')}`,
+      `${colorize(borderColor, '│')} ${padCell(commitLine, innerWidth)} ${colorize(borderColor, '│')}`,
+      `${colorize(borderColor, '│')} ${padCell(metaLine, innerWidth)} ${colorize(borderColor, '│')}`,
       middleBorder,
-      `│ ${padCell(metricsOne, innerWidth)} │`,
-      `│ ${padCell(metricsTwo, innerWidth)} │`,
-      `│ ${padCell(metricsThree, innerWidth)} │`,
-      `│ ${padCell(lifecycle, innerWidth)} │`,
+      `${colorize(borderColor, '│')} ${buildMetricBand(metricsOne, innerWidth)} ${colorize(borderColor, '│')}`,
+      `${colorize(borderColor, '│')} ${buildMetricBand(metricsTwo, innerWidth)} ${colorize(borderColor, '│')}`,
+      `${colorize(borderColor, '│')} ${buildMetricBand(metricsThree, innerWidth)} ${colorize(borderColor, '│')}`,
+      `${colorize(borderColor, '│')} ${padCell(lifecycle, innerWidth)} ${colorize(borderColor, '│')}`,
       bottomBorder,
     ];
   });
@@ -726,6 +818,9 @@ function createWatchUi(initialState = {}, options = {}) {
   const stderr = options.stderr ?? process.stderr;
   const now = options.now ?? (() => Date.now());
   const onStateChange = options.onStateChange ?? null;
+  const refreshIntervalMs = options.refreshIntervalMs ?? 1_000;
+  const setIntervalImpl = options.setIntervalImpl ?? setInterval;
+  const clearIntervalImpl = options.clearIntervalImpl ?? clearInterval;
   const isTTY = options.isTTY ?? Boolean(stdout.isTTY);
   const maxEvents = options.maxEvents ?? MAX_EVENTS;
   const state = {
@@ -737,6 +832,7 @@ function createWatchUi(initialState = {}, options = {}) {
   };
   let cursorHidden = false;
   let closed = false;
+  let refreshTimer = null;
 
   function render() {
     if (!isTTY || closed) {
@@ -762,6 +858,12 @@ function createWatchUi(initialState = {}, options = {}) {
       stdout.write('\x1b[?25l');
       cursorHidden = true;
       render();
+    }
+
+    if (isTTY && refreshIntervalMs > 0 && !refreshTimer) {
+      refreshTimer = setIntervalImpl(() => {
+        render();
+      }, refreshIntervalMs);
     }
 
     emitStateChange();
@@ -798,6 +900,11 @@ function createWatchUi(initialState = {}, options = {}) {
     }
 
     closed = true;
+
+    if (refreshTimer) {
+      clearIntervalImpl(refreshTimer);
+      refreshTimer = null;
+    }
 
     if (isTTY) {
       render();
