@@ -67,6 +67,49 @@ bool shouldRedirectDisabledHabitsRoutes(
           !habitsAccessState.enabled);
 }
 
+String? resolveUnauthenticatedRedirect({
+  required String matchedLocation,
+  required bool isAuthRoute,
+  required bool isAddAccountFlow,
+  required bool hasStoredAccounts,
+}) {
+  if (isAddAccountFlow && matchedLocation != Routes.addAccount) {
+    return Routes.addAccount;
+  }
+  if (matchedLocation == Routes.addAccount &&
+      (isAddAccountFlow || hasStoredAccounts)) {
+    return null;
+  }
+  if (!isAddAccountFlow && matchedLocation == Routes.addAccount) {
+    return Routes.login;
+  }
+  if (!isAuthRoute) {
+    return Routes.login;
+  }
+  return null;
+}
+
+String? resolveAuthenticatedRedirect({
+  required String matchedLocation,
+  required bool isAuthRoute,
+  required bool isAddAccountFlow,
+  required WorkspaceState workspaceState,
+}) {
+  if (!isAuthRoute) {
+    return null;
+  }
+  if (matchedLocation == Routes.addAccount && isAddAccountFlow) {
+    return null;
+  }
+  if (workspaceState.hasWorkspace) {
+    return Routes.home;
+  }
+  if (workspaceState.status == WorkspaceStatus.loaded) {
+    return Routes.workspaceSelect;
+  }
+  return Routes.home;
+}
+
 HistoryViewMode? _parseHistoryViewMode(String? value) {
   switch (value) {
     case 'day':
@@ -125,6 +168,7 @@ GoRouter createAppRouter(
 
       final isAuthRoute =
           state.matchedLocation == Routes.login ||
+          state.matchedLocation == Routes.addAccount ||
           state.matchedLocation == Routes.signUp ||
           state.matchedLocation == Routes.forgotPassword ||
           state.matchedLocation == Routes.mfaVerify;
@@ -138,12 +182,16 @@ GoRouter createAppRouter(
         return isAuthRoute ? null : Routes.login;
       }
 
-      // Not authenticated → redirect to login
-      if (authState.status == AuthStatus.unauthenticated && !isAuthRoute) {
-        if (state.matchedLocation != Routes.login) {
-          return Routes.login;
-        }
-        return null;
+      // Not authenticated → enforce auth entry points.
+      if (authState.status == AuthStatus.unauthenticated) {
+        return resolveUnauthenticatedRedirect(
+          matchedLocation: state.matchedLocation,
+          isAuthRoute: isAuthRoute,
+          isAddAccountFlow: authState.isAddAccountFlow,
+          hasStoredAccounts:
+              authState.accounts.isNotEmpty ||
+              authState.activeAccountId != null,
+        );
       }
 
       // MFA required → redirect to MFA verify page
@@ -159,12 +207,12 @@ GoRouter createAppRouter(
 
       // Authenticated but on auth route → go to appropriate destination
       if (authState.status == AuthStatus.authenticated && isAuthRoute) {
-        if (wsState.hasWorkspace) return Routes.home;
-        if (wsState.status == WorkspaceStatus.loaded) {
-          return Routes.workspaceSelect;
-        }
-        // Workspaces still loading → go home (will re-redirect once loaded)
-        return Routes.home;
+        return resolveAuthenticatedRedirect(
+          matchedLocation: state.matchedLocation,
+          isAuthRoute: isAuthRoute,
+          isAddAccountFlow: authState.isAddAccountFlow,
+          workspaceState: wsState,
+        );
       }
 
       // From here on, user is authenticated and NOT on an auth route.
@@ -212,6 +260,10 @@ GoRouter createAppRouter(
       GoRoute(
         path: Routes.login,
         builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: Routes.addAccount,
+        builder: (context, state) => const LoginPage(addAccountMode: true),
       ),
       GoRoute(
         path: Routes.signUp,

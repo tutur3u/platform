@@ -9,6 +9,8 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
@@ -19,17 +21,21 @@ import 'package:mobile/widgets/staggered_entry.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+  const ProfilePage({super.key, this.profileRepository});
+
+  final ProfileRepository? profileRepository;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) {
         final cubit = ProfileCubit(
-          profileRepository: ProfileRepository(
-            ownsApiClient: true,
-            ownsHttpClient: true,
-          ),
+          profileRepository:
+              profileRepository ??
+              ProfileRepository(
+                ownsApiClient: true,
+                ownsHttpClient: true,
+              ),
         );
         unawaited(cubit.loadProfile());
         return cubit;
@@ -46,23 +52,37 @@ class _ProfileView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return BlocListener<ProfileCubit, ProfileState>(
-      listenWhen: (previous, current) =>
-          previous.profile != current.profile ||
-          previous.lastUpdatedAt != current.lastUpdatedAt,
-      listener: (context, state) {
-        final profile = state.profile;
-        if (profile == null) {
-          return;
-        }
-        unawaited(
-          context.read<ShellProfileCubit>().applyExternalProfile(
-            profile,
-            lastUpdatedAt: state.lastUpdatedAt,
-            isFromCache: state.isFromCache,
-          ),
-        );
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<AuthCubit, AuthState>(
+          listenWhen: (previous, current) =>
+              previous.user?.id != current.user?.id,
+          listener: (context, _) {
+            ProfileCubit.clearMemoryCache();
+            unawaited(
+              context.read<ProfileCubit>().loadProfile(forceRefresh: true),
+            );
+          },
+        ),
+        BlocListener<ProfileCubit, ProfileState>(
+          listenWhen: (previous, current) =>
+              previous.profile != current.profile ||
+              previous.lastUpdatedAt != current.lastUpdatedAt,
+          listener: (context, state) {
+            final profile = state.profile;
+            if (profile == null) {
+              return;
+            }
+            unawaited(
+              context.read<ShellProfileCubit>().applyExternalProfile(
+                profile,
+                lastUpdatedAt: state.lastUpdatedAt,
+                isFromCache: state.isFromCache,
+              ),
+            );
+          },
+        ),
+      ],
       child: shad.Scaffold(
         child: BlocBuilder<ProfileCubit, ProfileState>(
           builder: (context, state) {

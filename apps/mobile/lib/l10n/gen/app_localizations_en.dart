@@ -99,7 +99,72 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authMicrosoftBrowserLaunchFailed => 'Unable to open Microsoft sign-in right now.';
 
   @override
+  String get authAddAccount => 'Add account';
+
+  @override
+  String get authAddAccountDescription => 'Sign in with another account on this device.';
+
+  @override
+  String get authAddAccountFailed => 'Couldn\'t start adding another account.';
+
+  @override
+  String get authAddAccountHint => 'You\'re adding another account to this device.';
+
+  @override
+  String get authAddAccountTitle => 'Add account';
+
+  @override
   String get authLogOut => 'Log out';
+
+  @override
+  String get authLogOutCurrent => 'Log out current account';
+
+  @override
+  String get authLogOutConfirmDialogTitle => 'Log out from this device?';
+
+  @override
+  String get authLogOutConfirmDialogBody => 'We\'ll switch to another saved account if one is available.';
+
+  @override
+  String get authLogOutCurrentConfirm => 'Log out this account from this device? If another account exists, we will switch to it automatically.';
+
+  @override
+  String get authLogOutCurrentDescription => 'Sign out this account and switch to another saved account if available.';
+
+  @override
+  String get authLogOutCurrentFailed => 'Couldn\'t log out this account.';
+
+  @override
+  String get authLogOutCurrentSuccess => 'Logged out current account.';
+
+  @override
+  String get authNoStoredAccounts => 'No saved accounts yet.';
+
+  @override
+  String get authSwitchAccount => 'Manage accounts';
+
+  @override
+  String get authSwitchAccountDescription => 'Switch accounts or add another.';
+
+  @override
+  String get authSwitchAccountFailed => 'Couldn\'t switch account.';
+
+  @override
+  String get authSwitchAccountSuccess => 'Switched account.';
+
+  @override
+  String get authRemoveAccount => 'Remove account';
+
+  @override
+  String authRemoveAccountConfirm(Object name) {
+    return 'Remove $name from this device? You\'ll need to sign in again.';
+  }
+
+  @override
+  String get authRemoveAccountFailed => 'Couldn\'t remove this account.';
+
+  @override
+  String get authRemoveAccountSuccess => 'Account removed successfully.';
 
   @override
   String get loginForgotPassword => 'Forgot password?';

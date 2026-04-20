@@ -119,6 +119,65 @@ void main() {
         );
       },
     );
+
+    test(
+      'fetches profile from API when the signed-in user id changes',
+      () async {
+        final userA = _userWithAvatar(
+          'https://cdn.example.com/avatar.png?token=one',
+        );
+        final userB = supa.User.fromJson({
+          'id': 'user-2',
+          'aud': 'authenticated',
+          'role': 'authenticated',
+          'email': 'bob@example.com',
+          'app_metadata': const <String, dynamic>{},
+          'user_metadata': const <String, dynamic>{},
+          'created_at': '2024-01-01T00:00:00.000000Z',
+        })!;
+
+        var getProfileCalls = 0;
+        when(
+          () => profileRepository.getCachedProfile(),
+        ).thenAnswer((_) async => (profile: null, fetchedAt: null));
+        when(
+          () => profileRepository.getProfile(),
+        ).thenAnswer((_) async {
+          getProfileCalls++;
+          if (getProfileCalls == 1) {
+            return (
+              profile: const UserProfile(
+                id: 'user-1',
+                displayName: 'Casey',
+                avatarUrl: 'https://cdn.example.com/avatar.png',
+              ),
+              error: null,
+            );
+          }
+          return (
+            profile: const UserProfile(
+              id: 'user-2',
+              displayName: 'Bob',
+              avatarUrl: 'https://cdn.example.com/bob.png',
+            ),
+            error: null,
+          );
+        });
+
+        await cubit.loadFromAuthenticatedUser(userA, forceRefresh: true);
+        expect(getProfileCalls, 1);
+
+        await cubit.loadFromAuthenticatedUser(userB);
+
+        expect(getProfileCalls, 2);
+        expect(cubit.state.userId, 'user-2');
+        expect(cubit.state.profile?.displayName, 'Bob');
+        expect(
+          cubit.state.profile?.avatarUrl,
+          'https://cdn.example.com/bob.png',
+        );
+      },
+    );
   });
 
   group('avatarIdentityKeyForUrl', () {

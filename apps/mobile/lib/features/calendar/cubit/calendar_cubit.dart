@@ -43,8 +43,10 @@ class CalendarCubit extends Cubit<CalendarState> {
     );
   }
 
+  static String _memoryCacheKey(String wsId) => userScopedCacheKey(wsId);
+
   static CalendarState? cachedStateForWorkspace(String wsId) {
-    return _cache[wsId]?.state;
+    return _cache[_memoryCacheKey(wsId)]?.state;
   }
 
   static CalendarState? seedStateForWorkspace(String wsId) {
@@ -66,7 +68,7 @@ class CalendarCubit extends Cubit<CalendarState> {
     CalendarState state, {
     DateTime? fetchedAt,
   }) {
-    _cache[wsId] = _CalendarCacheEntry(
+    _cache[_memoryCacheKey(wsId)] = _CalendarCacheEntry(
       state: state,
       fetchedAt: fetchedAt ?? DateTime.now(),
     );
@@ -118,8 +120,9 @@ class CalendarCubit extends Cubit<CalendarState> {
 
   /// Loads events within a 3-month window around the selected date.
   Future<void> loadEvents(String wsId, {bool forceRefresh = false}) async {
+    final memoryCacheKey = _memoryCacheKey(wsId);
     final cached =
-        _cache[wsId] ??
+        _cache[memoryCacheKey] ??
         (state.hasLoadedOnce && state.events.isNotEmpty
             ? _CalendarCacheEntry(
                 state: state,

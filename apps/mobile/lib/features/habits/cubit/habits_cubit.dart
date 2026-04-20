@@ -38,7 +38,7 @@ class HabitsCubit extends Cubit<HabitsState> {
   }
 
   static HabitsState? cachedStateForWorkspace(String wsId) {
-    final key = _latestCacheKeyByWorkspace[wsId];
+    final key = _latestCacheKeyByWorkspace[userScopedCacheKey(wsId)];
     if (key == null) {
       return null;
     }
@@ -80,7 +80,7 @@ class HabitsCubit extends Cubit<HabitsState> {
       state: cached.data!,
       fetchedAt: cached.fetchedAt ?? DateTime.now(),
     );
-    _latestCacheKeyByWorkspace[wsId] = cacheKey;
+    _latestCacheKeyByWorkspace[userScopedCacheKey(wsId)] = cacheKey;
     return cached.data;
   }
 
@@ -209,7 +209,7 @@ class HabitsCubit extends Cubit<HabitsState> {
         state: cachedState,
         fetchedAt: diskCached.fetchedAt ?? DateTime.now(),
       );
-      _latestCacheKeyByWorkspace[wsId] = cacheKey;
+      _latestCacheKeyByWorkspace[userScopedCacheKey(wsId)] = cacheKey;
       hasVisibleData = true;
       if (!refresh && diskCached.isFresh) {
         return;
@@ -837,7 +837,7 @@ class HabitsCubit extends Cubit<HabitsState> {
     HabitTrackerScope scope,
     String? userId,
   ) {
-    return '$wsId::${scope.apiValue}::${userId ?? ''}';
+    return userScopedCacheKey('$wsId::${scope.apiValue}::${userId ?? ''}');
   }
 
   HabitsState _applyCreatedEntryLocally(
@@ -1102,7 +1102,7 @@ class HabitsCubit extends Cubit<HabitsState> {
       state: nextState,
       fetchedAt: DateTime.now(),
     );
-    _latestCacheKeyByWorkspace[wsId] = cacheKey;
+    _latestCacheKeyByWorkspace[userScopedCacheKey(wsId)] = cacheKey;
     unawaited(
       CacheStore.instance
           .write(

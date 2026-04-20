@@ -259,11 +259,137 @@ abstract class AppLocalizations {
   /// **'Unable to open Microsoft sign-in right now.'**
   String get authMicrosoftBrowserLaunchFailed;
 
+  /// No description provided for @authAddAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add account'**
+  String get authAddAccount;
+
+  /// No description provided for @authAddAccountDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with another account on this device.'**
+  String get authAddAccountDescription;
+
+  /// No description provided for @authAddAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start adding another account.'**
+  String get authAddAccountFailed;
+
+  /// No description provided for @authAddAccountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re adding another account to this device.'**
+  String get authAddAccountHint;
+
+  /// No description provided for @authAddAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add account'**
+  String get authAddAccountTitle;
+
   /// No description provided for @authLogOut.
   ///
   /// In en, this message translates to:
   /// **'Log out'**
   String get authLogOut;
+
+  /// No description provided for @authLogOutCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out current account'**
+  String get authLogOutCurrent;
+
+  /// No description provided for @authLogOutConfirmDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out from this device?'**
+  String get authLogOutConfirmDialogTitle;
+
+  /// No description provided for @authLogOutConfirmDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll switch to another saved account if one is available.'**
+  String get authLogOutConfirmDialogBody;
+
+  /// No description provided for @authLogOutCurrentConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out this account from this device? If another account exists, we will switch to it automatically.'**
+  String get authLogOutCurrentConfirm;
+
+  /// No description provided for @authLogOutCurrentDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out this account and switch to another saved account if available.'**
+  String get authLogOutCurrentDescription;
+
+  /// No description provided for @authLogOutCurrentFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t log out this account.'**
+  String get authLogOutCurrentFailed;
+
+  /// No description provided for @authLogOutCurrentSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged out current account.'**
+  String get authLogOutCurrentSuccess;
+
+  /// No description provided for @authNoStoredAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved accounts yet.'**
+  String get authNoStoredAccounts;
+
+  /// No description provided for @authSwitchAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage accounts'**
+  String get authSwitchAccount;
+
+  /// No description provided for @authSwitchAccountDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch accounts or add another.'**
+  String get authSwitchAccountDescription;
+
+  /// No description provided for @authSwitchAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t switch account.'**
+  String get authSwitchAccountFailed;
+
+  /// No description provided for @authSwitchAccountSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched account.'**
+  String get authSwitchAccountSuccess;
+
+  /// No description provided for @authRemoveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove account'**
+  String get authRemoveAccount;
+
+  /// No description provided for @authRemoveAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from this device? You\'ll need to sign in again.'**
+  String authRemoveAccountConfirm(Object name);
+
+  /// No description provided for @authRemoveAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t remove this account.'**
+  String get authRemoveAccountFailed;
+
+  /// No description provided for @authRemoveAccountSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Account removed successfully.'**
+  String get authRemoveAccountSuccess;
 
   /// No description provided for @loginForgotPassword.
   ///
