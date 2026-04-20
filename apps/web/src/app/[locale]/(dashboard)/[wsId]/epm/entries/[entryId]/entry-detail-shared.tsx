@@ -23,6 +23,25 @@ export type EntryFormState = {
   title: string;
 };
 
+export type FeaturedEntryEditorConfig = {
+  cleanupKeys: string[];
+  description: string;
+  key: string;
+  options: ExternalProjectEntry[];
+  title: string;
+};
+
+export type FeaturedPlacementConfig = {
+  cleanupKeys: string[];
+  description: string;
+  emptyState: string;
+  featuredKey: string;
+  featuredLabel: string;
+  sectionEntry: ExternalProjectEntry | null;
+  sectionSlug: string;
+  sectionTitle: string;
+};
+
 function asProfileDataRecord(
   value: ExternalProjectEntry['profile_data'] | null | undefined
 ) {

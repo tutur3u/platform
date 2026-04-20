@@ -66,6 +66,7 @@ The EPM surfaces now follow two distinct workflows:
 - The `/epm`, entry-detail, and collection-detail routes should stay as thin server auth gates and fetch their working data from a shared `epm-studio` TanStack Query cache on the client.
 - Mutations on the dedicated detail pages should patch or invalidate that shared studio query instead of calling `router.refresh()`.
 - When the main `/epm` shell opens the fullscreen entry editor dialog, keep it on the same shared studio query cache so open/close transitions feel instant and do not need route refreshes.
+- Keep the entry detail client focused on query state, mutations, and derived view-model logic. Extract sticky header actions, taxonomy controls, featured-order cards, and sidebar/status panels into adjacent components instead of letting one TSX file own every render branch.
 - After entry asset uploads, deletes, or cover reordering, keep the optimistic cache update for responsiveness but also invalidate the shared `epm-studio` query so the page re-fetches the canonical backend asset rows right away.
 - When uploads or media mutations are running in the entry dialog, surface a visible processing indicator near the command bar and media controls instead of leaving the user with silent disabled buttons.
 - Cover uploads and replacements reuse the existing workspace asset signed-upload helper; no separate cover-specific backend endpoint is needed.

@@ -3,25 +3,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/react';
 import {
-  ArrowLeft,
-  Check,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Copy,
-  Eye,
-  ImagePlus,
-  ListOrdered,
-  Loader2,
-  Pencil,
-  Plus,
-  RefreshCw,
-  Sparkles,
-  Tags,
-  Trash2,
-  X,
-} from '@tuturuuu/icons';
-import {
   createWorkspaceExternalProjectAsset,
   createWorkspaceExternalProjectBlock,
   createWorkspaceExternalProjectEntry,
@@ -42,84 +23,37 @@ import type {
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@tuturuuu/ui/accordion';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@tuturuuu/ui/alert-dialog';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
-import { Combobox } from '@tuturuuu/ui/custom/combobox';
-import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
-import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useExternalProjectLivePreview } from '../../../external-projects/use-external-project-live-preview';
 import { optimizeEpmMediaUpload } from '../../epm-media-upload';
 import type { EpmStrings } from '../../epm-strings';
-import { ResilientMediaImage } from '../../resilient-media-image';
 import { getEpmStudioQueryKey, useEpmStudio } from '../../use-epm-studio';
+import { EntryDetailConfirmDialogs } from './entry-detail-confirm-dialogs';
+import { EntryDetailHeader } from './entry-detail-header';
 import { EntryDetailLoadingState } from './entry-detail-loading-state';
-import { EntryDetailMarkdownEditor } from './entry-detail-markdown-editor';
+import { EntryDetailMainColumn } from './entry-detail-main-column';
 import { EntryDetailPreviewSheet } from './entry-detail-preview-sheet';
 import {
-  ActionButton,
   buildEntryFormState,
-  formatDateLabel,
-  formatStatus,
+  type FeaturedEntryEditorConfig,
+  type FeaturedPlacementConfig,
   fromDateTimeLocalValue,
   getEntryDescriptionEditorContent,
   getMarkdownBlockContent,
   parseEntryDescriptionContent,
   serializeEntryDescriptionContent,
   sortImageAssets,
-  statusTone,
   toStudioAsset,
 } from './entry-detail-shared';
-
-function getAssetCaption(asset: ExternalProjectStudioAsset | null | undefined) {
-  const metadata = asset?.metadata;
-  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
-    return '';
-  }
-
-  const caption = (metadata as Record<string, unknown>).caption;
-  return typeof caption === 'string' ? caption : '';
-}
+import { EntryDetailSidebar } from './entry-detail-sidebar';
 
 function mergeAssetCaptionMetadata(
   asset: ExternalProjectStudioAsset,
@@ -459,7 +393,7 @@ export function EntryDetailClient({
   const [configuredTagOptions, setConfiguredTagOptions] = useState<string[]>(
     []
   );
-  const featuredEntryConfig = useMemo(() => {
+  const featuredEntryConfig = useMemo<FeaturedEntryEditorConfig | null>(() => {
     if (!isSingletonSectionEntry || !activeEntry) {
       return null;
     }
@@ -520,61 +454,62 @@ export function EntryDetailClient({
     ).filter((slug) => optionSlugs.has(slug));
   }, [activeEntry?.profile_data, featuredEntryConfig]);
   const [featuredEntrySlugs, setFeaturedEntrySlugs] = useState<string[]>([]);
-  const featuredPlacementConfig = useMemo(() => {
-    if (!activeEntry || !activeCollection || !singletonSectionCollection) {
+  const featuredPlacementConfig =
+    useMemo<FeaturedPlacementConfig | null>(() => {
+      if (!activeEntry || !activeCollection || !singletonSectionCollection) {
+        return null;
+      }
+
+      if (activeCollection.id === artworkCollection?.id) {
+        return {
+          cleanupKeys: [
+            'featuredArtworkSlugs',
+            'carouselArtworkSlugs',
+            'featuredSlugs',
+          ],
+          description: strings.featuredPlacementArtworkDescription,
+          emptyState: strings.featuredPlacementSectionMissing,
+          featuredKey: 'featuredArtworkSlugs',
+          featuredLabel: strings.featuredPlacementGalleryLabel,
+          sectionSlug: 'gallery',
+          sectionTitle: 'Gallery',
+          sectionEntry: singletonSectionEntryBySlug.get('gallery') ?? null,
+        };
+      }
+
+      if (activeCollection.id === loreCollection?.id) {
+        return {
+          cleanupKeys: [
+            'featuredEntrySlugs',
+            'featuredLoreSlugs',
+            'carouselEntrySlugs',
+            'carouselLoreSlugs',
+            'featuredSlugs',
+          ],
+          description: strings.featuredPlacementWritingDescription,
+          emptyState: strings.featuredPlacementSectionMissing,
+          featuredKey: 'featuredEntrySlugs',
+          featuredLabel: strings.featuredPlacementWritingLabel,
+          sectionSlug: 'writing',
+          sectionTitle: 'Writing',
+          sectionEntry: singletonSectionEntryBySlug.get('writing') ?? null,
+        };
+      }
+
       return null;
-    }
-
-    if (activeCollection.id === artworkCollection?.id) {
-      return {
-        cleanupKeys: [
-          'featuredArtworkSlugs',
-          'carouselArtworkSlugs',
-          'featuredSlugs',
-        ],
-        description: strings.featuredPlacementArtworkDescription,
-        emptyState: strings.featuredPlacementSectionMissing,
-        featuredKey: 'featuredArtworkSlugs',
-        featuredLabel: strings.featuredPlacementGalleryLabel,
-        sectionSlug: 'gallery',
-        sectionTitle: 'Gallery',
-        sectionEntry: singletonSectionEntryBySlug.get('gallery') ?? null,
-      };
-    }
-
-    if (activeCollection.id === loreCollection?.id) {
-      return {
-        cleanupKeys: [
-          'featuredEntrySlugs',
-          'featuredLoreSlugs',
-          'carouselEntrySlugs',
-          'carouselLoreSlugs',
-          'featuredSlugs',
-        ],
-        description: strings.featuredPlacementWritingDescription,
-        emptyState: strings.featuredPlacementSectionMissing,
-        featuredKey: 'featuredEntrySlugs',
-        featuredLabel: strings.featuredPlacementWritingLabel,
-        sectionSlug: 'writing',
-        sectionTitle: 'Writing',
-        sectionEntry: singletonSectionEntryBySlug.get('writing') ?? null,
-      };
-    }
-
-    return null;
-  }, [
-    activeCollection,
-    activeEntry,
-    artworkCollection?.id,
-    loreCollection?.id,
-    singletonSectionCollection,
-    singletonSectionEntryBySlug,
-    strings.featuredPlacementArtworkDescription,
-    strings.featuredPlacementGalleryLabel,
-    strings.featuredPlacementSectionMissing,
-    strings.featuredPlacementWritingDescription,
-    strings.featuredPlacementWritingLabel,
-  ]);
+    }, [
+      activeCollection,
+      activeEntry,
+      artworkCollection?.id,
+      loreCollection?.id,
+      singletonSectionCollection,
+      singletonSectionEntryBySlug,
+      strings.featuredPlacementArtworkDescription,
+      strings.featuredPlacementGalleryLabel,
+      strings.featuredPlacementSectionMissing,
+      strings.featuredPlacementWritingDescription,
+      strings.featuredPlacementWritingLabel,
+    ]);
   const featuredPlacementSlugs = useMemo(() => {
     if (!featuredPlacementConfig?.sectionEntry) {
       return [];
@@ -702,9 +637,6 @@ export function EntryDetailClient({
     !!activeEntry &&
     coverAltText !== (coverAsset?.alt_text ?? activeEntry.title);
   const activeEntryTitle = activeEntry?.title ?? strings.title;
-  const hasCoverMedia = Boolean(
-    coverAsset?.preview_url || coverAsset?.asset_url
-  );
   const bodyMarkdownDirty =
     bodyMarkdown.trim() !== getMarkdownBlockContent(markdownBlock).trim();
 
@@ -1596,6 +1528,33 @@ export function EntryDetailClient({
   const featuredPlacementProcessing =
     updateFeaturedPlacementMutation.isPending ||
     createFeaturedPlacementConfigMutation.isPending;
+  const dirty = entryDirty || coverDirty || bodyMarkdownDirty;
+  const collectionTitle =
+    activeCollection?.title ?? strings.collectionFallbackLabel;
+  const featuredPlacementLabel = featuredPlacementConfig?.sectionEntry
+    ? featuredPlacementConfig.featuredLabel
+    : null;
+
+  const refreshWorkspace = () => {
+    setPreviewRefreshToken((value) => value + 1);
+    queryClient.invalidateQueries({
+      queryKey: getEpmStudioQueryKey(workspaceId),
+    });
+  };
+
+  const saveCurrentEntry = () => {
+    if (entryDirty) {
+      saveEntryMutation.mutate();
+    }
+
+    if (bodyMarkdownDirty) {
+      saveMarkdownMutation.mutate();
+    }
+
+    if (coverDirty && coverAsset) {
+      saveCoverMutation.mutate();
+    }
+  };
 
   const content = (
     <div className="mx-auto min-h-[calc(100svh-5rem)] max-w-[1580px] space-y-6 pb-10">
@@ -1615,1441 +1574,213 @@ export function EntryDetailClient({
         onChange={handleMediaInputChange}
       />
 
-      <div className="sticky top-0 z-[60] -mx-2 rounded-[1.45rem] border border-border/70 bg-background/92 px-4 py-3 shadow-sm backdrop-blur-xl supports-[backdrop-filter]:bg-background/78 sm:mx-0 sm:px-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="max-w-4xl space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              {variant === 'page' ? (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => router.push(dashboardPath)}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  {strings.backToEpmAction}
-                </Button>
-              ) : null}
-              <Badge variant="outline">
-                {activeCollection?.title ?? strings.collectionFallbackLabel}
-              </Badge>
-              <Badge className={statusTone(activeEntry.status)}>
-                {formatStatus(activeEntry.status, strings)}
-              </Badge>
-              {coverAsset ? (
-                <Badge variant="outline">{strings.coverBadge}</Badge>
-              ) : null}
-              {featuredPlacementConfig?.sectionEntry ? (
-                <Badge
-                  variant={isFeaturedPlacementActive ? 'default' : 'outline'}
-                >
-                  {isFeaturedPlacementActive
-                    ? `${featuredPlacementConfig.featuredLabel} · ${featuredPlacementIndex + 1}`
-                    : featuredPlacementConfig.featuredLabel}
-                </Badge>
-              ) : null}
-              {entryDirty || coverDirty ? (
-                <Badge variant="outline">{strings.saveAction}</Badge>
-              ) : null}
-              {mediaProcessing ? (
-                <Badge
-                  variant="outline"
-                  className="border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue"
-                >
-                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                  {strings.mediaProcessingLabel}
-                </Badge>
-              ) : null}
-            </div>
-            <div className="space-y-1">
-              <h1 className="font-semibold text-[2rem] leading-none tracking-tight">
-                {activeEntry.title}
-              </h1>
-              <p className="max-w-2xl text-muted-foreground text-sm leading-5">
-                {activeEntry.slug}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/70 bg-card/88 p-1.5">
-            <ActionButton
-              tooltip={strings.refreshAction}
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setPreviewRefreshToken((value) => value + 1);
-                queryClient.invalidateQueries({
-                  queryKey: getEpmStudioQueryKey(workspaceId),
-                });
-              }}
-            >
-              <RefreshCw className="h-4 w-4" />
-            </ActionButton>
-            <ActionButton
-              tooltip={strings.openPreviewAction}
-              size="sm"
-              variant="outline"
-              onClick={() => setPreviewOpen(true)}
-            >
-              <Eye className="mr-2 h-4 w-4" />
-              {strings.openPreviewAction}
-            </ActionButton>
-            <ActionButton
-              tooltip={strings.duplicateAction}
-              size="sm"
-              variant="outline"
-              disabled={duplicateEntryMutation.isPending}
-              onClick={() => duplicateEntryMutation.mutate()}
-            >
-              <Copy className="mr-2 h-4 w-4" />
-              {strings.duplicateAction}
-            </ActionButton>
-            {featuredPlacementConfig?.sectionEntry ? (
-              <Button
-                size="sm"
-                variant={isFeaturedPlacementActive ? 'default' : 'outline'}
-                disabled={featuredPlacementProcessing}
-                onClick={toggleFeaturedPlacement}
-              >
-                {featuredPlacementProcessing ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                )}
-                {isFeaturedPlacementActive
-                  ? strings.featuredPlacementRemoveAction
-                  : strings.featuredPlacementAddAction}
-              </Button>
-            ) : null}
-            <Button
-              size="sm"
-              disabled={
-                (!entryDirty && !coverDirty && !bodyMarkdownDirty) ||
-                saveProcessing
-              }
-              onClick={() => {
-                if (entryDirty) {
-                  saveEntryMutation.mutate();
-                }
-
-                if (bodyMarkdownDirty) {
-                  saveMarkdownMutation.mutate();
-                }
-
-                if (coverDirty && coverAsset) {
-                  saveCoverMutation.mutate();
-                }
-              }}
-            >
-              {saveProcessing ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Pencil className="mr-2 h-4 w-4" />
-              )}
-              {strings.saveAction}
-            </Button>
-            <ActionButton
-              size="sm"
-              tooltip={
-                activeEntry.status === 'published'
-                  ? strings.unpublishAction
-                  : strings.publishAction
-              }
-              disabled={publishEntryMutation.isPending}
-              onClick={() =>
-                publishEntryMutation.mutate(
-                  activeEntry.status === 'published' ? 'unpublish' : 'publish'
-                )
-              }
-            >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              {activeEntry.status === 'published'
-                ? strings.unpublishAction
-                : strings.publishAction}
-            </ActionButton>
-            <ActionButton
-              tooltip={strings.deleteEntryAction}
-              size="sm"
-              variant="outline"
-              disabled={deleteEntryMutation.isPending}
-              onClick={() => setDeleteEntryDialogOpen(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </ActionButton>
-          </div>
-        </div>
-      </div>
+      <EntryDetailHeader
+        activeEntry={activeEntry}
+        activeEntryTitle={activeEntryTitle}
+        collectionTitle={collectionTitle}
+        coverVisible={Boolean(coverAsset)}
+        dashboardPath={dashboardPath}
+        dirty={dirty}
+        featuredPlacementActive={isFeaturedPlacementActive}
+        featuredPlacementIndex={featuredPlacementIndex}
+        featuredPlacementLabel={featuredPlacementLabel}
+        featuredPlacementProcessing={featuredPlacementProcessing}
+        mediaProcessing={mediaProcessing}
+        onBack={(path) => router.push(path)}
+        onDelete={() => setDeleteEntryDialogOpen(true)}
+        onDuplicate={() => duplicateEntryMutation.mutate()}
+        onOpenPreview={() => setPreviewOpen(true)}
+        onPublishToggle={() =>
+          publishEntryMutation.mutate(
+            activeEntry.status === 'published' ? 'unpublish' : 'publish'
+          )
+        }
+        onRefresh={refreshWorkspace}
+        onSave={saveCurrentEntry}
+        onToggleFeaturedPlacement={toggleFeaturedPlacement}
+        publishPending={publishEntryMutation.isPending}
+        saveDisabled={!dirty || saveProcessing}
+        saveProcessing={saveProcessing}
+        strings={strings}
+        variant={variant}
+      />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="space-y-5">
-          <Card className="overflow-hidden border-border/70 bg-card/95 shadow-none">
-            <CardContent className="space-y-4 p-5 lg:p-6">
-              <div
-                className={cn(
-                  'relative overflow-hidden rounded-[1.6rem] border border-border/70 bg-background/80',
-                  hasCoverMedia
-                    ? 'min-h-[320px] lg:min-h-[420px]'
-                    : 'flex min-h-[280px] flex-col justify-between p-6'
-                )}
-              >
-                {coverAsset && hasCoverMedia ? (
-                  <ResilientMediaImage
-                    alt={coverAsset.alt_text ?? activeEntry.title}
-                    assetUrl={coverAsset.asset_url}
-                    className="object-cover"
-                    fill
-                    previewUrl={coverAsset.preview_url}
-                    sizes="(max-width: 1280px) 100vw, 62vw"
-                  />
-                ) : null}
-                {coverAsset && hasCoverMedia ? (
-                  <>
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/24 to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 p-5">
-                      <p className="text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
-                        {strings.coverImageTitle}
-                      </p>
-                      <h2 className="mt-3 font-semibold text-2xl tracking-tight">
-                        {activeEntry.title}
-                      </h2>
-                      <p className="mt-2 max-w-xl text-muted-foreground text-sm leading-6">
-                        {strings.coverImageDescription}
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <div className="space-y-5">
-                    <div className="space-y-2">
-                      <p className="text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
-                        {strings.coverImageTitle}
-                      </p>
-                      <h2 className="font-semibold text-2xl tracking-tight">
-                        {strings.noCoverTitle}
-                      </h2>
-                      <p className="max-w-md text-muted-foreground text-sm leading-6">
-                        {strings.noCoverDescription}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        disabled={mediaProcessing}
-                        onClick={() => coverInputRef.current?.click()}
-                      >
-                        {uploadCoverMutation.isPending ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <ImagePlus className="mr-2 h-4 w-4" />
-                        )}
-                        {uploadCoverMutation.isPending
-                          ? strings.mediaProcessingLabel
-                          : strings.uploadCoverAction}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setPreviewOpen(true)}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        {strings.openPreviewAction}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-              {coverAsset ? (
-                <div className="rounded-[1.35rem] border border-border/70 bg-background/80 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
-                        {strings.coverImageTitle}
-                      </div>
-                      <div className="mt-1 text-muted-foreground text-sm">
-                        {strings.coverImageDescription}
-                      </div>
-                    </div>
-                    <ActionButton
-                      size="sm"
-                      tooltip={strings.coverImageDescription}
-                      disabled={mediaProcessing}
-                      onClick={() => coverInputRef.current?.click()}
-                    >
-                      {uploadCoverMutation.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <ImagePlus className="mr-2 h-4 w-4" />
-                      )}
-                      {uploadCoverMutation.isPending
-                        ? strings.mediaProcessingLabel
-                        : strings.replaceCoverAction}
-                    </ActionButton>
-                  </div>
-                  <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-end">
-                    <div className="flex-1 space-y-2">
-                      <Label htmlFor="entry-cover-alt">
-                        {strings.titleLabel}
-                      </Label>
-                      <Input
-                        id="entry-cover-alt"
-                        value={coverAltText}
-                        onChange={(event) =>
-                          setCoverAltText(event.target.value)
-                        }
-                      />
-                    </div>
-                    <ActionButton
-                      size="sm"
-                      tooltip={strings.saveCoverAction}
-                      variant="outline"
-                      disabled={
-                        !coverDirty ||
-                        saveCoverMutation.isPending ||
-                        mediaProcessing
-                      }
-                      onClick={() => saveCoverMutation.mutate()}
-                    >
-                      {saveCoverMutation.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Pencil className="mr-2 h-4 w-4" />
-                      )}
-                      {saveCoverMutation.isPending
-                        ? strings.mediaProcessingLabel
-                        : strings.saveCoverAction}
-                    </ActionButton>
-                  </div>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
+        <EntryDetailMainColumn
+          activeEntry={activeEntry}
+          assetCaptions={assetCaptions}
+          bodyMarkdown={bodyMarkdown}
+          bodyMarkdownLabel={strings.bodyMarkdownLabel}
+          bodyMarkdownPlaceholder={strings.previewEmptyDescription}
+          bodyMarkdownWriteLabel={strings.markdownWriteLabel}
+          coverAltText={coverAltText}
+          coverAsset={coverAsset}
+          coverDirty={coverDirty}
+          deleteAssetsPending={deleteAssetsMutation.isPending}
+          descriptionContent={descriptionContent}
+          imageAssets={imageAssets}
+          mediaProcessing={mediaProcessing}
+          onBodyMarkdownChange={setBodyMarkdown}
+          onCaptionChange={(assetId, value) =>
+            setAssetCaptions((current) => ({
+              ...current,
+              [assetId]: value,
+            }))
+          }
+          onCoverAltTextChange={setCoverAltText}
+          onCoverInputClick={() => coverInputRef.current?.click()}
+          onDeleteSelectedMedia={() => setDeleteMediaDialogOpen(true)}
+          onDeleteSingleAsset={deleteSingleAsset}
+          onDescriptionChange={setDescriptionContent}
+          onOpenPreview={() => setPreviewOpen(true)}
+          onSaveAssetCaption={(assetId) =>
+            saveAssetCaptionMutation.mutate(assetId)
+          }
+          onSaveCover={() => saveCoverMutation.mutate()}
+          onSelectAllMedia={() =>
+            setSelectedAssetIds((current) =>
+              current.length === imageAssets.length
+                ? []
+                : imageAssets.map((asset) => asset.id)
+            )
+          }
+          onSetAsCover={(assetId) => setAsCoverMutation.mutate(assetId)}
+          onSubtitleChange={(value) =>
+            setEntryForm((current) =>
+              current ? { ...current, subtitle: value } : current
+            )
+          }
+          onToggleAssetSelection={toggleAssetSelection}
+          onUploadMediaClick={() => mediaInputRef.current?.click()}
+          saveAssetCaptionPending={saveAssetCaptionMutation.isPending}
+          saveCoverPending={saveCoverMutation.isPending}
+          selectedAssetCount={selectedAssetCount}
+          selectedAssetIds={selectedAssetIds}
+          setAsCoverPending={setAsCoverMutation.isPending}
+          strings={strings}
+          subtitle={entryForm.subtitle}
+          supportsMarkdownBody={supportsMarkdownBody}
+          uploadCoverPending={uploadCoverMutation.isPending}
+          uploadMediaPending={uploadMediaMutation.isPending}
+        />
 
-          <Card className="border-border/70 bg-card/95 shadow-none">
-            <CardHeader>
-              <CardTitle>{strings.summaryLabel}</CardTitle>
-              <CardDescription>
-                {strings.descriptionEditorDescription}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="entry-subtitle">{strings.subtitleLabel}</Label>
-                <Input
-                  id="entry-subtitle"
-                  className="h-11"
-                  value={entryForm.subtitle}
-                  onChange={(event) =>
-                    setEntryForm((current) =>
-                      current
-                        ? { ...current, subtitle: event.target.value }
-                        : current
-                    )
-                  }
-                />
-              </div>
-              <RichTextEditor
-                content={descriptionContent}
-                onChange={(content) => setDescriptionContent(content)}
-                saveButtonLabel={strings.saveAction}
-                savedButtonLabel={strings.saveAction}
-                writePlaceholder={strings.previewEmptyDescription}
-                className="min-h-[280px] bg-background/70 px-4 pb-4 sm:px-5 sm:pb-5"
-              />
-            </CardContent>
-          </Card>
+        <EntryDetailSidebar
+          activeCollectionDescription={activeCollection?.description}
+          activeCollectionSlug={activeCollection?.slug}
+          activeCollectionTitle={collectionTitle}
+          activeEntry={activeEntry}
+          artworkOptions={artworkOptions}
+          binding={binding}
+          categoryCreateOpen={categoryCreateOpen}
+          categoryDraft={categoryDraft}
+          categoryOptions={categoryOptions}
+          configuredCategoryOptions={configuredCategoryOptions}
+          configuredTagOptions={configuredTagOptions}
+          createFeaturedPlacementConfigPending={
+            createFeaturedPlacementConfigMutation.isPending
+          }
+          entryForm={entryForm}
+          featuredEntryConfig={featuredEntryConfig}
+          featuredEntrySlugs={featuredEntrySlugs}
+          featuredPlacementActive={isFeaturedPlacementActive}
+          featuredPlacementConfig={featuredPlacementConfig}
+          featuredPlacementIndex={featuredPlacementIndex}
+          featuredPlacementProcessing={featuredPlacementProcessing}
+          featuredPlacementSlugsLength={featuredPlacementSlugs.length}
+          isTaxonomyConfigEditor={isTaxonomyConfigEditor}
+          onAddTags={addEntryTags}
+          onApplyCategory={applyEntryCategory}
+          onCategoryCreateOpenChange={setCategoryCreateOpen}
+          onCategoryDraftChange={setCategoryDraft}
+          onCategorySelectionChange={(value) => {
+            if (isTaxonomyConfigEditor) {
+              if (Array.isArray(value)) {
+                setConfiguredCategoryOptions(normalizeTaxonomyOptions(value));
+              }
+              return;
+            }
 
-          {supportsMarkdownBody ? (
-            <Card className="border-border/70 bg-card/95 shadow-none">
-              <CardHeader>
-                <CardTitle>{strings.bodyMarkdownLabel}</CardTitle>
-                <CardDescription>
-                  {strings.bodyMarkdownDescription}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <EntryDetailMarkdownEditor
-                  id="entry-body-markdown"
-                  label={strings.bodyMarkdownLabel}
-                  placeholder={strings.previewEmptyDescription}
-                  previewLabel={strings.markdownPreviewLabel}
-                  previewPlaceholder={strings.previewEmptyDescription}
-                  rows={14}
-                  value={bodyMarkdown}
-                  writeLabel={strings.markdownWriteLabel}
-                  onChange={setBodyMarkdown}
-                />
-              </CardContent>
-            </Card>
-          ) : null}
-
-          <Card className="border-border/70 bg-card/95 shadow-none">
-            <CardHeader className="gap-4">
-              <div>
-                <CardTitle>{strings.assetGalleryTitle}</CardTitle>
-                <CardDescription>
-                  {strings.coverImageDescription}
-                </CardDescription>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={mediaProcessing}
-                  onClick={() => mediaInputRef.current?.click()}
-                >
-                  {uploadMediaMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <ImagePlus className="mr-2 h-4 w-4" />
-                  )}
-                  {uploadMediaMutation.isPending
-                    ? strings.mediaProcessingLabel
-                    : strings.bulkUploadMediaAction}
-                </Button>
-                {imageAssets.length > 0 ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={mediaProcessing}
-                    onClick={() =>
-                      setSelectedAssetIds((current) =>
-                        current.length === imageAssets.length
-                          ? []
-                          : imageAssets.map((asset) => asset.id)
-                      )
-                    }
-                  >
-                    {selectedAssetCount === imageAssets.length
-                      ? strings.cancelAction
-                      : strings.selectAllMediaAction}
-                  </Button>
-                ) : null}
-                {selectedAssetCount > 0 ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={mediaProcessing}
-                    onClick={() => setDeleteMediaDialogOpen(true)}
-                  >
-                    {deleteAssetsMutation.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="mr-2 h-4 w-4" />
-                    )}
-                    {deleteAssetsMutation.isPending
-                      ? strings.mediaProcessingLabel
-                      : strings.bulkRemoveMediaAction}
-                  </Button>
-                ) : null}
-              </div>
-            </CardHeader>
-            <CardContent className="grid gap-3 md:grid-cols-3">
-              {mediaProcessing ? (
-                <div className="flex items-center gap-3 rounded-[1.1rem] border border-dynamic-blue/20 bg-dynamic-blue/5 px-4 py-3 text-dynamic-blue text-sm md:col-span-3">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>{strings.mediaProcessingLabel}</span>
-                </div>
-              ) : null}
-              {imageAssets.length === 0 ? (
-                <button
-                  type="button"
-                  className="rounded-[1.2rem] border border-border/70 border-dashed bg-background/50 p-6 text-left transition hover:border-border hover:bg-background/70 md:col-span-3"
-                  disabled={mediaProcessing}
-                  onClick={() => mediaInputRef.current?.click()}
-                >
-                  <div className="font-medium">
-                    {strings.bulkUploadMediaAction}
-                  </div>
-                  <div className="mt-2 text-muted-foreground text-sm">
-                    {strings.coverImageDescription}
-                  </div>
-                </button>
-              ) : (
-                imageAssets.map((asset, index) => {
-                  const isSelected = selectedAssetIds.includes(asset.id);
-                  const caption =
-                    assetCaptions[asset.id] ?? getAssetCaption(asset);
-                  const captionDirty = caption !== getAssetCaption(asset);
-
-                  return (
-                    <div
-                      key={asset.id}
-                      className={cn(
-                        'overflow-hidden rounded-[1.2rem] border bg-background/75 text-left transition',
-                        isSelected
-                          ? 'border-primary ring-2 ring-primary/30'
-                          : 'border-border/70 hover:border-border'
-                      )}
-                    >
-                      <button
-                        type="button"
-                        className="relative block h-36 w-full overflow-hidden border-border/70 border-b bg-background/80"
-                        onClick={() => toggleAssetSelection(asset.id)}
-                      >
-                        <ResilientMediaImage
-                          alt={asset.alt_text ?? activeEntry.title}
-                          assetUrl={asset.asset_url}
-                          className="object-cover"
-                          fill
-                          previewUrl={asset.preview_url}
-                          sizes="(max-width: 1024px) 100vw, 18vw"
-                        />
-                      </button>
-                      <div className="space-y-3 p-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <Badge variant="outline">
-                            {index === 0
-                              ? strings.coverBadge
-                              : strings.assetsLabel}
-                          </Badge>
-                          <div className="flex items-center gap-2">
-                            {index !== 0 ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={
-                                  setAsCoverMutation.isPending ||
-                                  mediaProcessing
-                                }
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setAsCoverMutation.mutate(asset.id);
-                                }}
-                              >
-                                {setAsCoverMutation.isPending ? (
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : null}
-                                {setAsCoverMutation.isPending
-                                  ? strings.mediaProcessingLabel
-                                  : strings.setAsCoverAction}
-                              </Button>
-                            ) : null}
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="size-8"
-                              disabled={mediaProcessing}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                deleteSingleAsset(asset.id);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">
-                                {strings.removeMediaAction}
-                              </span>
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="truncate text-sm">
-                          {asset.alt_text ?? activeEntry.title}
-                        </div>
-                        <div className="space-y-2">
-                          <Label
-                            htmlFor={`entry-asset-caption-${asset.id}`}
-                            className="text-xs"
-                          >
-                            {strings.captionLabel}
-                          </Label>
-                          <Input
-                            id={`entry-asset-caption-${asset.id}`}
-                            value={caption}
-                            placeholder={strings.captionPlaceholder}
-                            onChange={(event) =>
-                              setAssetCaptions((current) => ({
-                                ...current,
-                                [asset.id]: event.target.value,
-                              }))
-                            }
-                          />
-                          {captionDirty ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={
-                                saveAssetCaptionMutation.isPending ||
-                                mediaProcessing
-                              }
-                              onClick={() =>
-                                saveAssetCaptionMutation.mutate(asset.id)
-                              }
-                            >
-                              {saveAssetCaptionMutation.isPending ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              ) : (
-                                <Pencil className="mr-2 h-4 w-4" />
-                              )}
-                              {saveAssetCaptionMutation.isPending
-                                ? strings.mediaProcessingLabel
-                                : strings.saveMediaDetailsAction}
-                            </Button>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-5 xl:sticky xl:top-28 xl:self-start">
-          <Card className="border-border/70 bg-card/95 shadow-none">
-            <CardHeader>
-              <CardTitle>{strings.detailsTitle}</CardTitle>
-              <CardDescription>{strings.editEntryDescription}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="entry-title">{strings.titleLabel}</Label>
-                <Input
-                  id="entry-title"
-                  className="h-11"
-                  value={entryForm.title}
-                  onChange={(event) =>
-                    setEntryForm((current) =>
-                      current
-                        ? { ...current, title: event.target.value }
-                        : current
-                    )
-                  }
-                />
-              </div>
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="entry-slug">{strings.slugLabel}</Label>
-                  <Input
-                    id="entry-slug"
-                    value={entryForm.slug}
-                    onChange={(event) =>
-                      setEntryForm((current) =>
-                        current
-                          ? { ...current, slug: event.target.value }
-                          : current
-                      )
-                    }
-                  />
-                </div>
-                {supportsPairedVisual ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="entry-paired-artwork">Paired visual</Label>
-                    <Select
-                      value={pairedArtworkSlug}
-                      onValueChange={setPairedArtworkSlug}
-                    >
-                      <SelectTrigger id="entry-paired-artwork">
-                        <SelectValue placeholder="No paired visual" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">
-                          No paired visual
-                        </SelectItem>
-                        {artworkOptions.map((artworkEntry) => (
-                          <SelectItem
-                            key={artworkEntry.id}
-                            value={artworkEntry.slug}
-                          >
-                            {artworkEntry.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ) : null}
-                <div className="space-y-3 rounded-[1.1rem] border border-border/70 bg-background/60 p-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="space-y-0.5">
-                      <Label className="flex items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className="size-6 rounded-md p-0"
-                        >
-                          <ListOrdered className="m-auto h-3.5 w-3.5" />
-                        </Badge>
-                        {isTaxonomyConfigEditor
-                          ? strings.categoryLibraryLabel
-                          : strings.categoryLabel}
-                      </Label>
-                      <p className="text-muted-foreground text-xs leading-5">
-                        {isTaxonomyConfigEditor
-                          ? strings.categoryLibraryDescription
-                          : strings.categoryDescription}
-                      </p>
-                    </div>
-                    {(
-                      isTaxonomyConfigEditor
-                        ? configuredCategoryOptions.length > 0
-                        : Boolean(entryForm.category)
-                    ) ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={
-                          isTaxonomyConfigEditor
-                            ? clearConfiguredCategories
-                            : () =>
-                                setEntryForm((current) =>
-                                  current
-                                    ? { ...current, category: '' }
-                                    : current
-                                )
-                        }
-                      >
-                        <X className="mr-2 h-4 w-4" />
-                        {isTaxonomyConfigEditor
-                          ? strings.categoryClearAction
-                          : strings.categoryClearAction}
-                      </Button>
-                    ) : null}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Combobox
-                      className="min-w-0 flex-1"
-                      mode={isTaxonomyConfigEditor ? 'multiple' : 'single'}
-                      options={categoryOptions}
-                      selected={
-                        isTaxonomyConfigEditor
-                          ? configuredCategoryOptions
-                          : entryForm.category
-                      }
-                      placeholder={strings.categoryPickerPlaceholder}
-                      searchPlaceholder={strings.categorySearchPlaceholder}
-                      createText={strings.categoryCreateAction}
-                      emptyText={strings.emptyEntries}
-                      label={
-                        isTaxonomyConfigEditor &&
-                        configuredCategoryOptions.length > 0 ? (
-                          <span className="truncate">
-                            {configuredCategoryOptions.join(', ')}
-                          </span>
-                        ) : undefined
-                      }
-                      onChange={(value) =>
-                        isTaxonomyConfigEditor
-                          ? Array.isArray(value) &&
-                            setConfiguredCategoryOptions(
-                              normalizeTaxonomyOptions(value)
-                            )
-                          : setEntryForm((current) =>
-                              current && typeof value === 'string'
-                                ? { ...current, category: value }
-                                : current
-                            )
-                      }
-                      onCreate={applyEntryCategory}
-                    />
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant={categoryCreateOpen ? 'default' : 'outline'}
-                      className="size-9 shrink-0"
-                      onClick={() =>
-                        setCategoryCreateOpen((current) => !current)
-                      }
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span className="sr-only">
-                        {strings.categoryCreateAction}
-                      </span>
-                    </Button>
-                  </div>
-                  {categoryCreateOpen ? (
-                    <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/50 p-2">
-                      <Input
-                        id="entry-category-create"
-                        value={categoryDraft}
-                        placeholder={strings.categoryCreatePlaceholder}
-                        onChange={(event) =>
-                          setCategoryDraft(event.target.value)
-                        }
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            event.preventDefault();
-                            applyEntryCategory(categoryDraft);
-                          }
-                        }}
-                      />
-                      <Button
-                        type="button"
-                        size="icon"
-                        disabled={!categoryDraft.trim()}
-                        onClick={() => applyEntryCategory(categoryDraft)}
-                      >
-                        <Check className="h-4 w-4" />
-                        <span className="sr-only">
-                          {strings.categoryCreateAction}
-                        </span>
-                      </Button>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          setCategoryCreateOpen(false);
-                          setCategoryDraft('');
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                        <span className="sr-only">{strings.cancelAction}</span>
-                      </Button>
-                    </div>
-                  ) : null}
-                  {isTaxonomyConfigEditor ? (
-                    configuredCategoryOptions.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {configuredCategoryOptions.map((category) => (
-                          <button
-                            key={category}
-                            type="button"
-                            className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card px-3 py-1.5 text-sm transition-colors hover:bg-accent/40"
-                            onClick={() => removeConfiguredCategory(category)}
-                          >
-                            <span>{category}</span>
-                            <X className="h-3.5 w-3.5" />
-                            <span className="sr-only">
-                              {strings.categoryClearAction} {category}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="rounded-xl border border-border/70 border-dashed bg-card/50 px-3 py-3 text-muted-foreground text-sm">
-                        {strings.categoryLibraryEmpty}
-                      </div>
-                    )
-                  ) : null}
-                  {!isTaxonomyConfigEditor && entryForm.category ? (
-                    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-card/50 px-3 py-2">
-                      <Badge variant="secondary">{entryForm.category}</Badge>
-                      <span className="text-muted-foreground text-xs">
-                        {strings.categoryActiveHint}
-                      </span>
-                    </div>
-                  ) : null}
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="space-y-0.5">
-                        <Label className="flex items-center gap-2">
-                          <Badge
-                            variant="outline"
-                            className="size-6 rounded-md p-0"
-                          >
-                            <Tags className="m-auto h-3.5 w-3.5" />
-                          </Badge>
-                          {isTaxonomyConfigEditor
-                            ? strings.tagLibraryLabel
-                            : strings.tagsLabel}
-                        </Label>
-                        <p className="text-muted-foreground text-xs leading-5">
-                          {isTaxonomyConfigEditor
-                            ? strings.tagLibraryDescription
-                            : strings.tagsDescription}
-                        </p>
-                      </div>
-                      {(
-                        isTaxonomyConfigEditor
-                          ? configuredTagOptions.length > 0
-                          : entryForm.tags.length > 0
-                      ) ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={
-                            isTaxonomyConfigEditor
-                              ? clearConfiguredTags
-                              : clearEntryTags
-                          }
-                        >
-                          <X className="mr-2 h-4 w-4" />
-                          {strings.tagsClearAction}
-                        </Button>
-                      ) : null}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Combobox
-                        className="min-w-0 flex-1"
-                        mode="multiple"
-                        options={tagOptions}
-                        selected={
-                          isTaxonomyConfigEditor
-                            ? configuredTagOptions
-                            : entryForm.tags
-                        }
-                        placeholder={strings.tagsPickerPlaceholder}
-                        searchPlaceholder={strings.tagsSearchPlaceholder}
-                        createText={strings.tagsCreateAction}
-                        emptyText={strings.emptyEntries}
-                        label={
-                          (
-                            isTaxonomyConfigEditor
-                              ? configuredTagOptions.length > 0
-                              : entryForm.tags.length > 0
-                          ) ? (
-                            <span className="truncate">
-                              {(isTaxonomyConfigEditor
-                                ? configuredTagOptions
-                                : entryForm.tags
-                              ).join(', ')}
-                            </span>
-                          ) : undefined
-                        }
-                        onChange={(value) =>
-                          isTaxonomyConfigEditor
-                            ? Array.isArray(value) &&
-                              setConfiguredTagOptions(
-                                normalizeTaxonomyOptions(value)
-                              )
-                            : setEntryForm((current) =>
-                                current && Array.isArray(value)
-                                  ? { ...current, tags: value }
-                                  : current
-                              )
-                        }
-                        onCreate={addEntryTags}
-                      />
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant={tagCreateOpen ? 'default' : 'outline'}
-                        className="size-9 shrink-0"
-                        onClick={() => setTagCreateOpen((current) => !current)}
-                      >
-                        <Plus className="h-4 w-4" />
-                        <span className="sr-only">
-                          {strings.tagsCreateAction}
-                        </span>
-                      </Button>
-                    </div>
-                    {tagCreateOpen ? (
-                      <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/50 p-2">
-                        <Input
-                          id="entry-tag-create"
-                          value={tagDraft}
-                          placeholder={strings.tagsCreatePlaceholder}
-                          onChange={(event) => setTagDraft(event.target.value)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
-                              event.preventDefault();
-                              addEntryTags(tagDraft);
-                            }
-                          }}
-                        />
-                        <Button
-                          type="button"
-                          size="icon"
-                          disabled={!tagDraft.trim()}
-                          onClick={() => addEntryTags(tagDraft)}
-                        >
-                          <Check className="h-4 w-4" />
-                          <span className="sr-only">
-                            {strings.tagsCreateAction}
-                          </span>
-                        </Button>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setTagCreateOpen(false);
-                            setTagDraft('');
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                          <span className="sr-only">
-                            {strings.cancelAction}
-                          </span>
-                        </Button>
-                      </div>
-                    ) : null}
-                    {(
-                      isTaxonomyConfigEditor
-                        ? configuredTagOptions.length > 0
-                        : entryForm.tags.length > 0
-                    ) ? (
-                      <div className="flex flex-wrap gap-2">
-                        {(isTaxonomyConfigEditor
-                          ? configuredTagOptions
-                          : entryForm.tags
-                        ).map((tag) => (
-                          <button
-                            key={tag}
-                            type="button"
-                            className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card px-3 py-1.5 text-sm transition-colors hover:bg-accent/40"
-                            onClick={() =>
-                              isTaxonomyConfigEditor
-                                ? removeConfiguredTag(tag)
-                                : removeEntryTag(tag)
-                            }
-                          >
-                            <span>#{tag}</span>
-                            <X className="h-3.5 w-3.5" />
-                            <span className="sr-only">
-                              {strings.tagsRemoveAction} {tag}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="rounded-xl border border-border/70 border-dashed bg-card/50 px-3 py-3 text-muted-foreground text-sm">
-                        {isTaxonomyConfigEditor
-                          ? strings.tagLibraryEmpty
-                          : strings.tagsEmpty}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {featuredEntryConfig ? (
-                  <div className="space-y-3 rounded-[1.1rem] border border-border/70 bg-background/60 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <Label className="flex items-center gap-2">
-                          <Badge
-                            variant="outline"
-                            className="size-6 rounded-md p-0"
-                          >
-                            <Sparkles className="m-auto h-3.5 w-3.5" />
-                          </Badge>
-                          {featuredEntryConfig.title}
-                        </Label>
-                        <p className="text-muted-foreground text-sm">
-                          {featuredEntryConfig.description}
-                        </p>
-                      </div>
-                      <Badge variant="secondary">
-                        {featuredEntrySlugs.length}
-                      </Badge>
-                    </div>
-                    {featuredEntryConfig.options.length === 0 ? (
-                      <div className="rounded-xl border border-border/70 border-dashed bg-card/50 px-3 py-3 text-muted-foreground text-sm">
-                        {strings.featuredEntriesEmpty}
-                      </div>
-                    ) : (
-                      <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-                        {featuredEntryConfig.options.map((option) => {
-                          const selectedIndex = featuredEntrySlugs.indexOf(
-                            option.slug
-                          );
-                          const isSelected = selectedIndex >= 0;
-
-                          return (
-                            <div
-                              key={option.id}
-                              className={cn(
-                                'flex items-center gap-2 rounded-xl border px-2.5 py-2 transition-colors',
-                                isSelected
-                                  ? 'border-primary/40 bg-primary/5'
-                                  : 'border-border/70 bg-card/60'
-                              )}
-                            >
-                              <button
-                                type="button"
-                                className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                                onClick={() =>
-                                  toggleFeaturedEntrySelection(option.slug)
-                                }
-                              >
-                                <span
-                                  className={cn(
-                                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border font-semibold text-xs',
-                                    isSelected
-                                      ? 'border-primary/40 bg-primary text-primary-foreground'
-                                      : 'border-border/70 bg-background/70 text-muted-foreground'
-                                  )}
-                                >
-                                  {isSelected ? (
-                                    <Check className="h-4 w-4" />
-                                  ) : (
-                                    <Plus className="h-4 w-4" />
-                                  )}
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <span className="truncate font-medium text-sm">
-                                      {option.title}
-                                    </span>
-                                    {isSelected ? (
-                                      <Badge variant="outline">
-                                        {selectedIndex + 1}
-                                      </Badge>
-                                    ) : null}
-                                  </div>
-                                  <div className="truncate text-muted-foreground text-xs">
-                                    {option.subtitle?.trim() || option.slug}
-                                  </div>
-                                </div>
-                              </button>
-                              {isSelected ? (
-                                <div className="flex shrink-0 items-center gap-1">
-                                  <Button
-                                    type="button"
-                                    size="icon"
-                                    variant="ghost"
-                                    className="size-8"
-                                    disabled={selectedIndex === 0}
-                                    onClick={() =>
-                                      moveFeaturedEntry(option.slug, -1)
-                                    }
-                                  >
-                                    <ChevronUp className="h-4 w-4" />
-                                    <span className="sr-only">
-                                      {strings.previousAction}
-                                    </span>
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    size="icon"
-                                    variant="ghost"
-                                    className="size-8"
-                                    disabled={
-                                      selectedIndex ===
-                                      featuredEntrySlugs.length - 1
-                                    }
-                                    onClick={() =>
-                                      moveFeaturedEntry(option.slug, 1)
-                                    }
-                                  >
-                                    <ChevronDown className="h-4 w-4" />
-                                    <span className="sr-only">
-                                      {strings.nextAction}
-                                    </span>
-                                  </Button>
-                                </div>
-                              ) : null}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                    {featuredEntryConfig.options.length > 0 &&
-                    featuredEntrySlugs.length === 0 ? (
-                      <div className="rounded-xl border border-border/70 border-dashed bg-card/50 px-3 py-3 text-muted-foreground text-sm">
-                        {strings.featuredEntriesEmpty}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-                <div className="space-y-2">
-                  <Label htmlFor="entry-status">{strings.statusLabel}</Label>
-                  <Select
-                    value={entryForm.status}
-                    onValueChange={(value) =>
-                      setEntryForm((current) =>
-                        current
-                          ? {
-                              ...current,
-                              status: value as ExternalProjectEntry['status'],
-                            }
-                          : current
-                      )
-                    }
-                  >
-                    <SelectTrigger id="entry-status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">
-                        {strings.statusDraft}
-                      </SelectItem>
-                      <SelectItem value="scheduled">
-                        {strings.statusScheduled}
-                      </SelectItem>
-                      <SelectItem value="published">
-                        {strings.statusPublished}
-                      </SelectItem>
-                      <SelectItem value="archived">
-                        {strings.statusArchived}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="entry-scheduled-for">
-                    {strings.scheduledForLabel}
-                  </Label>
-                  <Input
-                    id="entry-scheduled-for"
-                    type="datetime-local"
-                    value={entryForm.scheduledFor}
-                    onChange={(event) =>
-                      setEntryForm((current) =>
-                        current
-                          ? { ...current, scheduledFor: event.target.value }
-                          : current
-                      )
-                    }
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/70 bg-card/95 shadow-none">
-            <CardHeader>
-              <CardTitle>{strings.workspaceStatusTitle}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid gap-3">
-                <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
-                  <div className="text-muted-foreground text-xs">
-                    {strings.collectionsLabel}
-                  </div>
-                  <div className="mt-2 font-medium text-lg">
-                    {activeCollection?.title ?? strings.collectionFallbackLabel}
-                  </div>
-                  <div className="mt-2 text-muted-foreground text-sm">
-                    {activeCollection?.description || activeCollection?.slug}
-                  </div>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
-                    <div className="text-muted-foreground text-xs">
-                      {strings.statusLabel}
-                    </div>
-                    <div className="mt-2 font-medium">
-                      {formatStatus(activeEntry.status, strings)}
-                    </div>
-                  </div>
-                  <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
-                    <div className="text-muted-foreground text-xs">
-                      {strings.scheduledForLabel}
-                    </div>
-                    <div className="mt-2 font-medium">
-                      {formatDateLabel(activeEntry.scheduled_for, strings)}
-                    </div>
-                  </div>
-                </div>
-                <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
-                  <div className="text-muted-foreground text-xs">
-                    {strings.workspaceBindingLabel}
-                  </div>
-                  <div className="mt-2 font-medium">
-                    {binding.canonical_project?.display_name ??
-                      strings.unboundLabel}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {featuredPlacementConfig ? (
-            <Card className="overflow-hidden border-border/70 bg-card/95 shadow-none">
-              <CardHeader className="border-border/60 border-b bg-[linear-gradient(135deg,rgba(245,158,11,0.1),rgba(251,191,36,0.03))]">
-                <CardTitle>{strings.featuredPlacementTitle}</CardTitle>
-                <CardDescription>
-                  {featuredPlacementConfig.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-6">
-                {featuredPlacementConfig.sectionEntry ? (
-                  <>
-                    <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="space-y-1">
-                          <div className="text-muted-foreground text-xs uppercase tracking-[0.24em]">
-                            {featuredPlacementConfig.featuredLabel}
-                          </div>
-                          <div className="font-medium">
-                            {isFeaturedPlacementActive
-                              ? strings.featuredPlacementActiveLabel
-                              : strings.featuredPlacementInactiveLabel}
-                          </div>
-                        </div>
-                        <Badge
-                          variant={
-                            isFeaturedPlacementActive ? 'default' : 'outline'
-                          }
-                        >
-                          {isFeaturedPlacementActive
-                            ? `${strings.featuredPlacementPositionLabel} ${featuredPlacementIndex + 1}`
-                            : strings.noneLabel}
-                        </Badge>
-                      </div>
-                      <p className="mt-3 text-muted-foreground text-sm leading-6">
-                        {isFeaturedPlacementActive
-                          ? strings.featuredPlacementActiveDescription
-                          : strings.featuredPlacementInactiveDescription}
-                      </p>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
-                      <Button
-                        type="button"
-                        disabled={featuredPlacementProcessing}
-                        onClick={toggleFeaturedPlacement}
-                      >
-                        {featuredPlacementProcessing ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <CheckCircle2 className="mr-2 h-4 w-4" />
-                        )}
-                        {isFeaturedPlacementActive
-                          ? strings.featuredPlacementRemoveAction
-                          : strings.featuredPlacementAddAction}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={
-                          featuredPlacementProcessing ||
-                          !isFeaturedPlacementActive ||
-                          featuredPlacementIndex === 0
-                        }
-                        onClick={() => moveFeaturedPlacement(-1)}
-                      >
-                        {strings.previousAction}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={
-                          featuredPlacementProcessing ||
-                          !isFeaturedPlacementActive ||
-                          featuredPlacementIndex ===
-                            featuredPlacementSlugs.length - 1
-                        }
-                        onClick={() => moveFeaturedPlacement(1)}
-                      >
-                        {strings.nextAction}
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="space-y-4 rounded-[1.1rem] border border-border/70 border-dashed bg-background/60 p-4">
-                    <div className="text-muted-foreground text-sm leading-6">
-                      {featuredPlacementConfig.emptyState}
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={featuredPlacementProcessing}
-                      onClick={() =>
-                        createFeaturedPlacementConfigMutation.mutate()
-                      }
-                    >
-                      {featuredPlacementProcessing ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                      )}
-                      {strings.featuredPlacementCreateAction}
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : null}
-
-          <Card className="border-border/70 bg-card/95 shadow-none">
-            <CardHeader>
-              <CardTitle>{strings.metadataLabel}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Accordion
-                type="multiple"
-                defaultValue={['metadata']}
-                className="space-y-3"
-              >
-                <AccordionItem
-                  value="metadata"
-                  className="rounded-[1.1rem] border border-border/70 px-4"
-                >
-                  <AccordionTrigger>{strings.metadataLabel}</AccordionTrigger>
-                  <AccordionContent>
-                    <pre className="overflow-x-auto rounded-xl border border-border/70 bg-background/80 p-3 text-xs leading-6">
-                      {JSON.stringify(activeEntry.metadata ?? {}, null, 2)}
-                    </pre>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem
-                  value="profile-data"
-                  className="rounded-[1.1rem] border border-border/70 px-4"
-                >
-                  <AccordionTrigger>
-                    {strings.profileDataLabel}
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <pre className="overflow-x-auto rounded-xl border border-border/70 bg-background/80 p-3 text-xs leading-6">
-                      {JSON.stringify(activeEntry.profile_data ?? {}, null, 2)}
-                    </pre>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem
-                  value="binding"
-                  className="rounded-[1.1rem] border border-border/70 px-4"
-                >
-                  <AccordionTrigger>
-                    {strings.workspaceBindingLabel}
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-2 text-sm">
-                      <div className="rounded-xl border border-border/70 bg-background/75 px-3 py-2">
-                        {binding.canonical_id ?? strings.noCanonicalIdLabel}
-                      </div>
-                      <div className="rounded-xl border border-border/70 bg-background/75 px-3 py-2">
-                        {binding.adapter ?? strings.noAdapterLabel}
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </CardContent>
-          </Card>
-        </div>
+            setEntryForm((current) =>
+              current && typeof value === 'string'
+                ? { ...current, category: value }
+                : current
+            );
+          }}
+          onClearCategories={
+            isTaxonomyConfigEditor
+              ? clearConfiguredCategories
+              : () =>
+                  setEntryForm((current) =>
+                    current ? { ...current, category: '' } : current
+                  )
+          }
+          onClearTags={
+            isTaxonomyConfigEditor ? clearConfiguredTags : clearEntryTags
+          }
+          onCreateFeaturedPlacementConfig={() =>
+            createFeaturedPlacementConfigMutation.mutate()
+          }
+          onFeaturedEntryMove={moveFeaturedEntry}
+          onFeaturedEntryToggle={toggleFeaturedEntrySelection}
+          onFeaturedPlacementMove={moveFeaturedPlacement}
+          onFeaturedPlacementToggle={toggleFeaturedPlacement}
+          onPairedArtworkChange={setPairedArtworkSlug}
+          onRemoveCategory={removeConfiguredCategory}
+          onRemoveTag={(tag) =>
+            isTaxonomyConfigEditor
+              ? removeConfiguredTag(tag)
+              : removeEntryTag(tag)
+          }
+          onScheduledForChange={(value) =>
+            setEntryForm((current) =>
+              current ? { ...current, scheduledFor: value } : current
+            )
+          }
+          onSlugChange={(value) =>
+            setEntryForm((current) =>
+              current ? { ...current, slug: value } : current
+            )
+          }
+          onStatusChange={(status) =>
+            setEntryForm((current) =>
+              current ? { ...current, status } : current
+            )
+          }
+          onTagCreateOpenChange={setTagCreateOpen}
+          onTagDraftChange={setTagDraft}
+          onTagSelectionChange={(value) =>
+            isTaxonomyConfigEditor
+              ? setConfiguredTagOptions(normalizeTaxonomyOptions(value))
+              : setEntryForm((current) =>
+                  current ? { ...current, tags: value } : current
+                )
+          }
+          onTitleChange={(value) =>
+            setEntryForm((current) =>
+              current ? { ...current, title: value } : current
+            )
+          }
+          pairedArtworkSlug={pairedArtworkSlug}
+          strings={strings}
+          supportsPairedVisual={supportsPairedVisual}
+          tagCreateOpen={tagCreateOpen}
+          tagDraft={tagDraft}
+          tagOptions={tagOptions}
+        />
       </div>
 
-      <AlertDialog
-        open={deleteEntryDialogOpen}
-        onOpenChange={setDeleteEntryDialogOpen}
-      >
-        <AlertDialogContent className="rounded-[1.5rem] border-border/70">
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {strings.deleteEntryConfirmTitle}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {strings.deleteEntryConfirmDescription}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{strings.cancelAction}</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={deleteEntryMutation.isPending}
-              onClick={() => deleteEntryMutation.mutate()}
-            >
-              {strings.deleteEntryAction}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        open={deleteMediaDialogOpen}
-        onOpenChange={setDeleteMediaDialogOpen}
-      >
-        <AlertDialogContent className="rounded-[1.5rem] border-border/70">
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {strings.deleteAssetConfirmTitle}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {strings.deleteAssetConfirmDescription}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{strings.cancelAction}</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={
-                selectedAssetCount === 0 || deleteAssetsMutation.isPending
-              }
-              onClick={() => deleteAssetsMutation.mutate(selectedAssetIds)}
-            >
-              {selectedAssetCount === 1
-                ? strings.removeMediaAction
-                : strings.bulkRemoveMediaAction}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <EntryDetailConfirmDialogs
+        deleteEntryOpen={deleteEntryDialogOpen}
+        deleteEntryPending={deleteEntryMutation.isPending}
+        deleteMediaOpen={deleteMediaDialogOpen}
+        deleteMediaPending={deleteAssetsMutation.isPending}
+        onDeleteEntry={() => deleteEntryMutation.mutate()}
+        onDeleteEntryOpenChange={setDeleteEntryDialogOpen}
+        onDeleteMedia={() => deleteAssetsMutation.mutate(selectedAssetIds)}
+        onDeleteMediaOpenChange={setDeleteMediaDialogOpen}
+        selectedAssetCount={selectedAssetCount}
+        strings={strings}
+      />
 
       <EntryDetailPreviewSheet
         coverAsset={coverAsset}
