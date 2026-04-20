@@ -42,5 +42,8 @@ alter table "public"."course_certificates" add constraint "course_certificates_g
 CREATE UNIQUE INDEX uq_user_certificate ON public.course_certificates USING btree (user_id, group_id);
 alter table "public"."course_certificates" add constraint "uq_user_certificate" UNIQUE using index "uq_user_certificate";
 
--- 10. Finally drop the now-redundant workspace_courses table
+-- 10. Add missing course-related columns to workspace_user_groups
+alter table "public"."workspace_user_groups" add column if not exists "description" text;
+
+-- 11. Finally drop the now-redundant workspace_courses table
 drop table if exists "public"."workspace_courses";
