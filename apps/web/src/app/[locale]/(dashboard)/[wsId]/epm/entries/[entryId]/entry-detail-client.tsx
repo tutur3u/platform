@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { JSONContent } from '@tiptap/react';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -73,6 +74,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
@@ -90,7 +92,10 @@ import {
   formatDateLabel,
   formatStatus,
   fromDateTimeLocalValue,
+  getEntryDescriptionEditorContent,
   getMarkdownBlockContent,
+  parseEntryDescriptionContent,
+  serializeEntryDescriptionContent,
   sortImageAssets,
   statusTone,
   toStudioAsset,
@@ -191,15 +196,42 @@ export function EntryDetailClient({
     [blocks, entryId]
   );
   const coverAsset = imageAssets[0] ?? null;
+  const artworkCollection =
+    collections.find((collection) => collection.slug === 'artworks') ?? null;
+  const artworkOptions = useMemo(
+    () =>
+      artworkCollection
+        ? entries.filter(
+            (entry) => entry.collection_id === artworkCollection.id
+          )
+        : [],
+    [artworkCollection, entries]
+  );
   const [entryForm, setEntryForm] = useState(() =>
     activeEntry ? buildEntryFormState(activeEntry) : null
   );
+  const [descriptionContent, setDescriptionContent] =
+    useState<JSONContent | null>(() =>
+      getEntryDescriptionEditorContent(activeEntry?.summary)
+    );
   const [coverAltText, setCoverAltText] = useState(
     coverAsset?.alt_text ?? activeEntry?.title ?? ''
   );
   const [bodyMarkdown, setBodyMarkdown] = useState(() =>
     getMarkdownBlockContent(markdownBlock)
   );
+  const [pairedArtworkSlug, setPairedArtworkSlug] = useState(() => {
+    const profileData =
+      activeEntry?.profile_data &&
+      typeof activeEntry.profile_data === 'object' &&
+      !Array.isArray(activeEntry.profile_data)
+        ? (activeEntry.profile_data as Record<string, unknown>)
+        : {};
+
+    return typeof profileData.artworkSlug === 'string'
+      ? profileData.artworkSlug
+      : '__none__';
+  });
 
   const previewQuery = useExternalProjectLivePreview({
     enabled: previewOpen,
@@ -215,6 +247,17 @@ export function EntryDetailClient({
 
   const detailPath = pathname.replace(/\/$/, '');
   const dashboardPath = detailPath.replace(/\/entries\/[^/]+$/, '');
+  const normalizedDescription =
+    serializeEntryDescriptionContent(descriptionContent);
+  const supportsMarkdownBody =
+    !!markdownBlock ||
+    [activeCollection?.slug, activeCollection?.collection_type]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .match(/lore|writing|singleton|section/);
+  const supportsPairedVisual =
+    Boolean(supportsMarkdownBody) && artworkOptions.length > 0;
 
   const entryDirty =
     !!activeEntry &&
@@ -222,7 +265,19 @@ export function EntryDetailClient({
     (entryForm.title !== activeEntry.title ||
       entryForm.slug !== activeEntry.slug ||
       entryForm.subtitle !== (activeEntry.subtitle ?? '') ||
-      entryForm.description !== (activeEntry.summary ?? '') ||
+      normalizedDescription !==
+        serializeEntryDescriptionContent(
+          parseEntryDescriptionContent(activeEntry.summary)
+        ) ||
+      (supportsPairedVisual
+        ? pairedArtworkSlug !==
+          (((activeEntry.profile_data &&
+          typeof activeEntry.profile_data === 'object' &&
+          !Array.isArray(activeEntry.profile_data)
+            ? (activeEntry.profile_data as Record<string, unknown>)
+            : {}
+          )?.artworkSlug as string | undefined) ?? '__none__')
+        : false) ||
       entryForm.status !== activeEntry.status ||
       fromDateTimeLocalValue(entryForm.scheduledFor) !==
         (activeEntry.scheduled_for ?? null));
@@ -233,13 +288,6 @@ export function EntryDetailClient({
   const hasCoverMedia = Boolean(
     coverAsset?.preview_url || coverAsset?.asset_url
   );
-  const supportsMarkdownBody =
-    !!markdownBlock ||
-    [activeCollection?.slug, activeCollection?.collection_type]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase()
-      .match(/lore|writing|singleton|section/);
   const bodyMarkdownDirty =
     bodyMarkdown.trim() !== getMarkdownBlockContent(markdownBlock).trim();
 
@@ -269,6 +317,12 @@ export function EntryDetailClient({
   }, [activeEntry]);
 
   useEffect(() => {
+    setDescriptionContent(
+      getEntryDescriptionEditorContent(activeEntry?.summary)
+    );
+  }, [activeEntry?.summary]);
+
+  useEffect(() => {
     if (!activeEntry) {
       setCoverAltText('');
       return;
@@ -280,6 +334,21 @@ export function EntryDetailClient({
   useEffect(() => {
     setBodyMarkdown(getMarkdownBlockContent(markdownBlock));
   }, [markdownBlock]);
+
+  useEffect(() => {
+    const profileData =
+      activeEntry?.profile_data &&
+      typeof activeEntry.profile_data === 'object' &&
+      !Array.isArray(activeEntry.profile_data)
+        ? (activeEntry.profile_data as Record<string, unknown>)
+        : {};
+
+    setPairedArtworkSlug(
+      typeof profileData.artworkSlug === 'string'
+        ? profileData.artworkSlug
+        : '__none__'
+    );
+  }, [activeEntry?.profile_data]);
 
   useEffect(() => {
     setSelectedAssetIds((current) =>
@@ -364,12 +433,26 @@ export function EntryDetailClient({
         throw new Error(strings.emptyEntries);
       }
 
+      const currentProfileData =
+        activeEntry.profile_data &&
+        typeof activeEntry.profile_data === 'object' &&
+        !Array.isArray(activeEntry.profile_data)
+          ? { ...(activeEntry.profile_data as Record<string, unknown>) }
+          : {};
+
+      if (supportsPairedVisual && pairedArtworkSlug !== '__none__') {
+        currentProfileData.artworkSlug = pairedArtworkSlug;
+      } else {
+        delete currentProfileData.artworkSlug;
+      }
+
       return updateWorkspaceExternalProjectEntry(workspaceId, activeEntry.id, {
+        profile_data: currentProfileData as Json,
         scheduled_for: fromDateTimeLocalValue(entryForm.scheduledFor),
         slug: entryForm.slug.trim(),
         status: entryForm.status,
         subtitle: entryForm.subtitle.trim() || null,
-        summary: entryForm.description.trim() || null,
+        summary: normalizedDescription,
         title: entryForm.title.trim(),
       });
     },
@@ -1047,6 +1130,64 @@ export function EntryDetailClient({
           </Card>
 
           <Card className="border-border/70 bg-card/95 shadow-none">
+            <CardHeader>
+              <CardTitle>{strings.summaryLabel}</CardTitle>
+              <CardDescription>
+                {strings.descriptionEditorDescription}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="entry-subtitle">{strings.subtitleLabel}</Label>
+                <Input
+                  id="entry-subtitle"
+                  className="h-11"
+                  value={entryForm.subtitle}
+                  onChange={(event) =>
+                    setEntryForm((current) =>
+                      current
+                        ? { ...current, subtitle: event.target.value }
+                        : current
+                    )
+                  }
+                />
+              </div>
+              <RichTextEditor
+                content={descriptionContent}
+                onChange={(content) => setDescriptionContent(content)}
+                saveButtonLabel={strings.saveAction}
+                savedButtonLabel={strings.saveAction}
+                writePlaceholder={strings.previewEmptyDescription}
+                className="min-h-[280px] bg-background/70"
+              />
+            </CardContent>
+          </Card>
+
+          {supportsMarkdownBody ? (
+            <Card className="border-border/70 bg-card/95 shadow-none">
+              <CardHeader>
+                <CardTitle>{strings.bodyMarkdownLabel}</CardTitle>
+                <CardDescription>
+                  {strings.bodyMarkdownDescription}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <EntryDetailMarkdownEditor
+                  id="entry-body-markdown"
+                  label={strings.bodyMarkdownLabel}
+                  placeholder={strings.previewEmptyDescription}
+                  previewLabel={strings.markdownPreviewLabel}
+                  previewPlaceholder={strings.previewEmptyDescription}
+                  rows={14}
+                  value={bodyMarkdown}
+                  writeLabel={strings.markdownWriteLabel}
+                  onChange={setBodyMarkdown}
+                />
+              </CardContent>
+            </Card>
+          ) : null}
+
+          <Card className="border-border/70 bg-card/95 shadow-none">
             <CardHeader className="gap-4">
               <div>
                 <CardTitle>{strings.assetGalleryTitle}</CardTitle>
@@ -1280,51 +1421,6 @@ export function EntryDetailClient({
                   }
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="entry-subtitle">{strings.subtitleLabel}</Label>
-                <Input
-                  id="entry-subtitle"
-                  className="h-11"
-                  value={entryForm.subtitle}
-                  onChange={(event) =>
-                    setEntryForm((current) =>
-                      current
-                        ? { ...current, subtitle: event.target.value }
-                        : current
-                    )
-                  }
-                />
-              </div>
-              <EntryDetailMarkdownEditor
-                description={strings.descriptionEditorDescription}
-                id="entry-summary"
-                label={strings.summaryLabel}
-                placeholder={strings.previewEmptyDescription}
-                previewLabel={strings.markdownPreviewLabel}
-                previewPlaceholder={strings.previewEmptyDescription}
-                rows={8}
-                value={entryForm.description}
-                writeLabel={strings.markdownWriteLabel}
-                onChange={(value) =>
-                  setEntryForm((current) =>
-                    current ? { ...current, description: value } : current
-                  )
-                }
-              />
-              {supportsMarkdownBody ? (
-                <EntryDetailMarkdownEditor
-                  description={strings.bodyMarkdownDescription}
-                  id="entry-body-markdown"
-                  label={strings.bodyMarkdownLabel}
-                  placeholder={strings.previewEmptyDescription}
-                  previewLabel={strings.markdownPreviewLabel}
-                  previewPlaceholder={strings.previewEmptyDescription}
-                  rows={14}
-                  value={bodyMarkdown}
-                  writeLabel={strings.markdownWriteLabel}
-                  onChange={setBodyMarkdown}
-                />
-              ) : null}
               <div className="grid gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="entry-slug">{strings.slugLabel}</Label>
@@ -1340,6 +1436,32 @@ export function EntryDetailClient({
                     }
                   />
                 </div>
+                {supportsPairedVisual ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="entry-paired-artwork">Paired visual</Label>
+                    <Select
+                      value={pairedArtworkSlug}
+                      onValueChange={setPairedArtworkSlug}
+                    >
+                      <SelectTrigger id="entry-paired-artwork">
+                        <SelectValue placeholder="No paired visual" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">
+                          No paired visual
+                        </SelectItem>
+                        {artworkOptions.map((artworkEntry) => (
+                          <SelectItem
+                            key={artworkEntry.id}
+                            value={artworkEntry.slug}
+                          >
+                            {artworkEntry.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : null}
                 <div className="space-y-2">
                   <Label htmlFor="entry-status">{strings.statusLabel}</Label>
                   <Select

@@ -15,6 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import type { EpmStrings } from '../../epm-strings';
 import { ResilientMediaImage } from '../../resilient-media-image';
+import { getEntryDescriptionMarkdown } from './entry-detail-shared';
 
 export function EntryDetailPreviewSheet({
   coverAsset,
@@ -106,7 +107,10 @@ export function EntryDetailPreviewSheet({
                             {previewEntry.title}
                           </div>
                           <p className="mt-3 text-muted-foreground text-sm leading-7">
-                            {previewEntry.summary ||
+                            {getEntryDescriptionMarkdown(
+                              previewEntry.summary,
+                              ''
+                            ) ||
                               previewEntry.subtitle ||
                               strings.previewEmptyDescription}
                           </p>
@@ -137,7 +141,10 @@ export function EntryDetailPreviewSheet({
                         {strings.summaryLabel}
                       </div>
                       <div className="mt-2 text-muted-foreground text-sm leading-6">
-                        {previewEntry.summary ||
+                        {getEntryDescriptionMarkdown(
+                          previewEntry.summary,
+                          ''
+                        ) ||
                           previewEntry.subtitle ||
                           strings.previewEmptyDescription}
                       </div>
