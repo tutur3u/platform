@@ -1158,7 +1158,7 @@ export function EntryDetailClient({
                 saveButtonLabel={strings.saveAction}
                 savedButtonLabel={strings.saveAction}
                 writePlaceholder={strings.previewEmptyDescription}
-                className="min-h-[280px] bg-background/70"
+                className="min-h-[280px] bg-background/70 px-4 pb-4 sm:px-5 sm:pb-5"
               />
             </CardContent>
           </Card>

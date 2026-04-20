@@ -52,7 +52,7 @@ export function EntryDetailMarkdownEditor({
           <Textarea
             id={id}
             rows={rows}
-            className="min-h-[220px] resize-y"
+            className="min-h-[220px] resize-y px-4 py-3"
             placeholder={placeholder}
             value={value}
             onChange={(event) => onChange(event.target.value)}
@@ -60,7 +60,7 @@ export function EntryDetailMarkdownEditor({
         </TabsContent>
 
         <TabsContent value="preview">
-          <div className="min-h-[220px] rounded-xl border border-border/70 bg-background/70 p-4">
+          <div className="min-h-[220px] rounded-xl border border-border/70 bg-background/70 p-5">
             {trimmedValue ? (
               <div className="prose prose-sm dark:prose-invert max-w-none">
                 <MemoizedReactMarkdown remarkPlugins={[remarkGfm]}>
