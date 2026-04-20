@@ -191,11 +191,26 @@ const delivery = await client.externalProjects.getDelivery('workspace-id');
 
 if (delivery.loadingData?.adapter === 'yoola') {
   console.log(delivery.loadingData.featuredArtwork?.title);
+  console.log(delivery.loadingData.singletonSections.about?.bodyMarkdown);
 }
 
 const loadingData =
   await client.externalProjects.getYoolaLoadingData('workspace-id');
 console.log(loadingData.artworkCategories);
+```
+
+Yoola-style consumers can also use the helper accessors exported from the SDK:
+
+```typescript
+import {
+  getYoolaSectionMarkdown,
+  getYoolaSingletonSection,
+} from 'tuturuuu';
+
+const aboutSection = getYoolaSingletonSection(delivery.loadingData, 'about');
+const aboutMarkdown = getYoolaSectionMarkdown(aboutSection);
+console.log(aboutSection?.profileData.socialLinks);
+console.log(aboutMarkdown);
 ```
 
 ### EPM Management

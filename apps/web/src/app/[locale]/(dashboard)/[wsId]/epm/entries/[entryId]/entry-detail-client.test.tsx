@@ -7,6 +7,7 @@ import { EntryDetailClient } from './entry-detail-client';
 
 const {
   createWorkspaceExternalProjectAssetMock,
+  createWorkspaceExternalProjectBlockMock,
   deleteWorkspaceExternalProjectAssetMock,
   deleteWorkspaceExternalProjectEntryMock,
   duplicateWorkspaceExternalProjectEntryMock,
@@ -15,11 +16,13 @@ const {
   routerPushMock,
   routerRefreshMock,
   updateWorkspaceExternalProjectAssetMock,
+  updateWorkspaceExternalProjectBlockMock,
   updateWorkspaceExternalProjectEntryMock,
   optimizeEpmMediaUploadMock,
   uploadWorkspaceExternalProjectAssetFileMock,
 } = vi.hoisted(() => ({
   createWorkspaceExternalProjectAssetMock: vi.fn(),
+  createWorkspaceExternalProjectBlockMock: vi.fn(),
   deleteWorkspaceExternalProjectAssetMock: vi.fn(),
   deleteWorkspaceExternalProjectEntryMock: vi.fn(),
   duplicateWorkspaceExternalProjectEntryMock: vi.fn(),
@@ -29,12 +32,14 @@ const {
   routerPushMock: vi.fn(),
   routerRefreshMock: vi.fn(),
   updateWorkspaceExternalProjectAssetMock: vi.fn(),
+  updateWorkspaceExternalProjectBlockMock: vi.fn(),
   updateWorkspaceExternalProjectEntryMock: vi.fn(),
   uploadWorkspaceExternalProjectAssetFileMock: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/internal-api', () => ({
   createWorkspaceExternalProjectAsset: createWorkspaceExternalProjectAssetMock,
+  createWorkspaceExternalProjectBlock: createWorkspaceExternalProjectBlockMock,
   deleteWorkspaceExternalProjectAsset: deleteWorkspaceExternalProjectAssetMock,
   deleteWorkspaceExternalProjectEntry: deleteWorkspaceExternalProjectEntryMock,
   duplicateWorkspaceExternalProjectEntry:
@@ -42,6 +47,7 @@ vi.mock('@tuturuuu/internal-api', () => ({
   publishWorkspaceExternalProjectEntry:
     publishWorkspaceExternalProjectEntryMock,
   updateWorkspaceExternalProjectAsset: updateWorkspaceExternalProjectAssetMock,
+  updateWorkspaceExternalProjectBlock: updateWorkspaceExternalProjectBlockMock,
   updateWorkspaceExternalProjectEntry: updateWorkspaceExternalProjectEntryMock,
   uploadWorkspaceExternalProjectAssetFile:
     uploadWorkspaceExternalProjectAssetFileMock,
@@ -135,6 +141,28 @@ describe('EntryDetailClient', () => {
     });
     deleteWorkspaceExternalProjectAssetMock.mockResolvedValue({
       id: 'asset-2',
+    });
+    createWorkspaceExternalProjectBlockMock.mockResolvedValue({
+      block_type: 'markdown',
+      content: { markdown: 'Body markdown' },
+      created_at: '2026-04-19T00:00:00.000Z',
+      entry_id: 'entry-1',
+      id: 'block-1',
+      sort_order: 0,
+      title: 'Body markdown',
+      updated_at: '2026-04-19T00:00:00.000Z',
+      ws_id: 'ws_123',
+    });
+    updateWorkspaceExternalProjectBlockMock.mockResolvedValue({
+      block_type: 'markdown',
+      content: { markdown: 'Updated body markdown' },
+      created_at: '2026-04-19T00:00:00.000Z',
+      entry_id: 'entry-1',
+      id: 'block-1',
+      sort_order: 0,
+      title: 'Body markdown',
+      updated_at: '2026-04-19T00:00:00.000Z',
+      ws_id: 'ws_123',
     });
     deleteWorkspaceExternalProjectEntryMock.mockResolvedValue({
       id: 'entry-1',

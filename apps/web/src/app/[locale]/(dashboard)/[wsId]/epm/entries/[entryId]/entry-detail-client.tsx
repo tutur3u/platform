@@ -14,11 +14,13 @@ import {
 } from '@tuturuuu/icons';
 import {
   createWorkspaceExternalProjectAsset,
+  createWorkspaceExternalProjectBlock,
   deleteWorkspaceExternalProjectAsset,
   deleteWorkspaceExternalProjectEntry,
   duplicateWorkspaceExternalProjectEntry,
   publishWorkspaceExternalProjectEntry,
   updateWorkspaceExternalProjectAsset,
+  updateWorkspaceExternalProjectBlock,
   updateWorkspaceExternalProjectEntry,
   uploadWorkspaceExternalProjectAssetFile,
 } from '@tuturuuu/internal-api';
@@ -71,7 +73,6 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
@@ -81,6 +82,7 @@ import type { EpmStrings } from '../../epm-strings';
 import { ResilientMediaImage } from '../../resilient-media-image';
 import { getEpmStudioQueryKey, useEpmStudio } from '../../use-epm-studio';
 import { EntryDetailLoadingState } from './entry-detail-loading-state';
+import { EntryDetailMarkdownEditor } from './entry-detail-markdown-editor';
 import { EntryDetailPreviewSheet } from './entry-detail-preview-sheet';
 import {
   ActionButton,
@@ -88,6 +90,7 @@ import {
   formatDateLabel,
   formatStatus,
   fromDateTimeLocalValue,
+  getMarkdownBlockContent,
   sortImageAssets,
   statusTone,
   toStudioAsset,
@@ -158,6 +161,7 @@ export function EntryDetailClient({
   const studio = studioQuery.data;
   const entries = studio?.entries ?? initialStudio?.entries ?? [];
   const assets = studio?.assets ?? initialStudio?.assets ?? [];
+  const blocks = studio?.blocks ?? initialStudio?.blocks ?? [];
   const collections = studio?.collections ?? initialStudio?.collections ?? [];
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
@@ -176,12 +180,25 @@ export function EntryDetailClient({
     () => sortImageAssets(assets, entryId),
     [assets, entryId]
   );
+  const markdownBlock = useMemo(
+    () =>
+      blocks
+        .filter(
+          (block) =>
+            block.entry_id === entryId && block.block_type === 'markdown'
+        )
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0] ?? null,
+    [blocks, entryId]
+  );
   const coverAsset = imageAssets[0] ?? null;
   const [entryForm, setEntryForm] = useState(() =>
     activeEntry ? buildEntryFormState(activeEntry) : null
   );
   const [coverAltText, setCoverAltText] = useState(
     coverAsset?.alt_text ?? activeEntry?.title ?? ''
+  );
+  const [bodyMarkdown, setBodyMarkdown] = useState(() =>
+    getMarkdownBlockContent(markdownBlock)
   );
 
   const previewQuery = useExternalProjectLivePreview({
@@ -205,7 +222,7 @@ export function EntryDetailClient({
     (entryForm.title !== activeEntry.title ||
       entryForm.slug !== activeEntry.slug ||
       entryForm.subtitle !== (activeEntry.subtitle ?? '') ||
-      entryForm.summary !== (activeEntry.summary ?? '') ||
+      entryForm.description !== (activeEntry.summary ?? '') ||
       entryForm.status !== activeEntry.status ||
       fromDateTimeLocalValue(entryForm.scheduledFor) !==
         (activeEntry.scheduled_for ?? null));
@@ -216,6 +233,15 @@ export function EntryDetailClient({
   const hasCoverMedia = Boolean(
     coverAsset?.preview_url || coverAsset?.asset_url
   );
+  const supportsMarkdownBody =
+    !!markdownBlock ||
+    [activeCollection?.slug, activeCollection?.collection_type]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .match(/lore|writing|singleton|section/);
+  const bodyMarkdownDirty =
+    bodyMarkdown.trim() !== getMarkdownBlockContent(markdownBlock).trim();
 
   const updateStudioCache = (
     updater: (current: NonNullable<typeof studio>) => NonNullable<typeof studio>
@@ -250,6 +276,10 @@ export function EntryDetailClient({
 
     setCoverAltText(coverAsset?.alt_text ?? activeEntry.title);
   }, [activeEntry, coverAsset?.alt_text]);
+
+  useEffect(() => {
+    setBodyMarkdown(getMarkdownBlockContent(markdownBlock));
+  }, [markdownBlock]);
 
   useEffect(() => {
     setSelectedAssetIds((current) =>
@@ -309,6 +339,25 @@ export function EntryDetailClient({
     setCoverAltText(nextAsset.alt_text ?? activeEntryTitle);
   };
 
+  const mergeBlock = (nextBlock: (typeof blocks)[number]) => {
+    updateStudioCache((current) => {
+      const blockIndex = current.blocks.findIndex(
+        (block) => block.id === nextBlock.id
+      );
+      const nextBlocks =
+        blockIndex === -1
+          ? [...current.blocks, nextBlock]
+          : current.blocks.map((block) =>
+              block.id === nextBlock.id ? nextBlock : block
+            );
+
+      return {
+        ...current,
+        blocks: nextBlocks,
+      };
+    });
+  };
+
   const saveEntryMutation = useMutation({
     mutationFn: async () => {
       if (!activeEntry || !entryForm) {
@@ -320,12 +369,46 @@ export function EntryDetailClient({
         slug: entryForm.slug.trim(),
         status: entryForm.status,
         subtitle: entryForm.subtitle.trim() || null,
-        summary: entryForm.summary.trim() || null,
+        summary: entryForm.description.trim() || null,
         title: entryForm.title.trim(),
       });
     },
     onSuccess: (entry) => {
       mergeEntry(entry);
+      toast.success(strings.saveAction);
+    },
+  });
+
+  const saveMarkdownMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEntry) {
+        throw new Error(strings.emptyEntries);
+      }
+
+      const normalizedMarkdown = bodyMarkdown.trim();
+
+      if (markdownBlock) {
+        return updateWorkspaceExternalProjectBlock(
+          workspaceId,
+          markdownBlock.id,
+          {
+            content: { markdown: normalizedMarkdown },
+            title: markdownBlock.title,
+          }
+        );
+      }
+
+      return createWorkspaceExternalProjectBlock(workspaceId, {
+        block_type: 'markdown',
+        content: { markdown: normalizedMarkdown },
+        entry_id: activeEntry.id,
+        sort_order: 0,
+        title: strings.bodyMarkdownLabel,
+      });
+    },
+    onSuccess: (block) => {
+      mergeBlock(block);
+      setBodyMarkdown(getMarkdownBlockContent(block));
       toast.success(strings.saveAction);
     },
   });
@@ -660,6 +743,10 @@ export function EntryDetailClient({
     saveAssetCaptionMutation.isPending ||
     deleteAssetsMutation.isPending ||
     setAsCoverMutation.isPending;
+  const saveProcessing =
+    saveEntryMutation.isPending ||
+    saveMarkdownMutation.isPending ||
+    saveCoverMutation.isPending;
 
   const content = (
     <div className="mx-auto min-h-[calc(100svh-5rem)] max-w-[1580px] space-y-6 pb-10">
@@ -760,13 +847,16 @@ export function EntryDetailClient({
             <Button
               size="sm"
               disabled={
-                (!entryDirty && !coverDirty) ||
-                saveEntryMutation.isPending ||
-                saveCoverMutation.isPending
+                (!entryDirty && !coverDirty && !bodyMarkdownDirty) ||
+                saveProcessing
               }
               onClick={() => {
                 if (entryDirty) {
                   saveEntryMutation.mutate();
+                }
+
+                if (bodyMarkdownDirty) {
+                  saveMarkdownMutation.mutate();
                 }
 
                 if (coverDirty && coverAsset) {
@@ -774,7 +864,11 @@ export function EntryDetailClient({
                 }
               }}
             >
-              <Pencil className="mr-2 h-4 w-4" />
+              {saveProcessing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Pencil className="mr-2 h-4 w-4" />
+              )}
               {strings.saveAction}
             </Button>
             <ActionButton
@@ -1201,22 +1295,36 @@ export function EntryDetailClient({
                   }
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="entry-summary">{strings.summaryLabel}</Label>
-                <Textarea
-                  id="entry-summary"
-                  rows={6}
-                  className="min-h-[180px] resize-y"
-                  value={entryForm.summary}
-                  onChange={(event) =>
-                    setEntryForm((current) =>
-                      current
-                        ? { ...current, summary: event.target.value }
-                        : current
-                    )
-                  }
+              <EntryDetailMarkdownEditor
+                description={strings.descriptionEditorDescription}
+                id="entry-summary"
+                label={strings.summaryLabel}
+                placeholder={strings.previewEmptyDescription}
+                previewLabel={strings.markdownPreviewLabel}
+                previewPlaceholder={strings.previewEmptyDescription}
+                rows={8}
+                value={entryForm.description}
+                writeLabel={strings.markdownWriteLabel}
+                onChange={(value) =>
+                  setEntryForm((current) =>
+                    current ? { ...current, description: value } : current
+                  )
+                }
+              />
+              {supportsMarkdownBody ? (
+                <EntryDetailMarkdownEditor
+                  description={strings.bodyMarkdownDescription}
+                  id="entry-body-markdown"
+                  label={strings.bodyMarkdownLabel}
+                  placeholder={strings.previewEmptyDescription}
+                  previewLabel={strings.markdownPreviewLabel}
+                  previewPlaceholder={strings.previewEmptyDescription}
+                  rows={14}
+                  value={bodyMarkdown}
+                  writeLabel={strings.markdownWriteLabel}
+                  onChange={setBodyMarkdown}
                 />
-              </div>
+              ) : null}
               <div className="grid gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="entry-slug">{strings.slugLabel}</Label>

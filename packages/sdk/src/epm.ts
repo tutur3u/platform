@@ -27,6 +27,7 @@ import type {
   ExternalProjectSummary,
   WorkspaceExternalProjectBinding,
   YoolaExternalProjectLoadingData,
+  YoolaExternalProjectSectionLoadingItem,
 } from './types';
 import { externalProjectDeliveryOptionsSchema } from './types';
 
@@ -171,6 +172,27 @@ export function isYoolaExternalProjectLoadingData(
   value: ExternalProjectLoadingData | null | undefined
 ): value is YoolaExternalProjectLoadingData {
   return value?.adapter === 'yoola';
+}
+
+export function getYoolaSingletonSection(
+  loadingData: ExternalProjectLoadingData | null | undefined,
+  slug: string
+) {
+  if (!isYoolaExternalProjectLoadingData(loadingData)) {
+    return null;
+  }
+
+  return loadingData.singletonSections[slug] ?? null;
+}
+
+export function getYoolaSectionMarkdown(
+  section: YoolaExternalProjectSectionLoadingItem | null | undefined
+) {
+  if (!section) {
+    return null;
+  }
+
+  return section.bodyMarkdown?.trim() || section.summary?.trim() || null;
 }
 
 export interface EpmClientConfig {

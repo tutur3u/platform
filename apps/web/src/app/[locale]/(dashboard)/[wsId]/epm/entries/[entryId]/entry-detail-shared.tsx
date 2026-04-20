@@ -2,6 +2,7 @@
 
 import type {
   ExternalProjectAsset,
+  ExternalProjectBlock,
   ExternalProjectEntry,
   ExternalProjectStudioAsset,
 } from '@tuturuuu/types';
@@ -11,11 +12,11 @@ import type { ComponentProps } from 'react';
 import type { EpmStrings } from '../../epm-strings';
 
 export type EntryFormState = {
+  description: string;
   scheduledFor: string;
   slug: string;
   status: ExternalProjectEntry['status'];
   subtitle: string;
-  summary: string;
   title: string;
 };
 
@@ -23,13 +24,24 @@ export function buildEntryFormState(
   entry: ExternalProjectEntry
 ): EntryFormState {
   return {
+    description: entry.summary ?? '',
     scheduledFor: toDateTimeLocalValue(entry.scheduled_for),
     slug: entry.slug,
     status: entry.status,
     subtitle: entry.subtitle ?? '',
-    summary: entry.summary ?? '',
     title: entry.title,
   };
+}
+
+export function getMarkdownBlockContent(
+  block: ExternalProjectBlock | null | undefined
+) {
+  if (!block?.content || typeof block.content !== 'object') {
+    return '';
+  }
+
+  const markdown = (block.content as Record<string, unknown>).markdown;
+  return typeof markdown === 'string' ? markdown : '';
 }
 
 export function toDateTimeLocalValue(value: string | null | undefined) {

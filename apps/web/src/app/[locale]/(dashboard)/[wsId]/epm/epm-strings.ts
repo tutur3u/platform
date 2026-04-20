@@ -8,6 +8,8 @@ export type EpmStrings = {
   assetsLabel: string;
   attentionTitle: string;
   backToEpmAction: string;
+  bodyMarkdownDescription: string;
+  bodyMarkdownLabel: string;
   bulkActionsTitle: string;
   bulkRemoveMediaAction: string;
   bulkSelectionHint: string;
@@ -34,6 +36,7 @@ export type EpmStrings = {
   deleteEntryAction: string;
   deleteEntryConfirmDescription: string;
   deleteEntryConfirmTitle: string;
+  descriptionEditorDescription: string;
   descriptionLabel: string;
   dashboardModeLabel: string;
   dashboardPreferencesTitle: string;
@@ -92,6 +95,8 @@ export type EpmStrings = {
   profileDataLabel: string;
   manageCollectionAction: string;
   manageCollectionDescription: string;
+  markdownPreviewLabel: string;
+  markdownWriteLabel: string;
   mediaProcessingLabel: string;
   navigationTitleDescription: string;
   navigationTitleLabel: string;
@@ -149,6 +154,8 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     assetsLabel: t('epm.assets_label'),
     attentionTitle: t('epm.attention_title'),
     backToEpmAction: t('epm.back_to_epm_action'),
+    bodyMarkdownDescription: t('epm.body_markdown_description'),
+    bodyMarkdownLabel: t('epm.body_markdown_label'),
     bulkActionsTitle: t('epm.bulk_actions_title'),
     bulkRemoveMediaAction: t('epm.bulk_remove_media_action'),
     bulkSelectionHint: t('epm.bulk_selection_hint'),
@@ -175,6 +182,7 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     deleteEntryAction: t('epm.delete_entry_action'),
     deleteEntryConfirmDescription: t('epm.delete_entry_confirm_description'),
     deleteEntryConfirmTitle: t('epm.delete_entry_confirm_title'),
+    descriptionEditorDescription: t('epm.description_editor_description'),
     descriptionLabel: t('epm.description_label'),
     dashboardModeLabel: t('epm.dashboard_mode_label'),
     dashboardPreferencesTitle: t('epm.dashboard_preferences_title'),
@@ -236,6 +244,8 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     profileDataLabel: t('epm.profile_data_label'),
     manageCollectionAction: t('epm.manage_collection_action'),
     manageCollectionDescription: t('epm.manage_collection_description'),
+    markdownPreviewLabel: t('epm.markdown_preview_label'),
+    markdownWriteLabel: t('epm.markdown_write_label'),
     publishAction: t('epm.publish_action'),
     publishedQueue: t('epm.published_queue'),
     quickCreateHint: t('epm.quick_create_hint'),
