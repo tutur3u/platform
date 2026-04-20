@@ -105,13 +105,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authAddAccountDescription => 'Sign in with another account on this device.';
 
   @override
-  String get authAddAccountFailed => 'Couldn\'t start add-account flow.';
+  String get authAddAccountFailed => 'Couldn\'t start adding another account.';
 
   @override
   String get authAddAccountHint => 'You\'re adding another account to this device.';
 
   @override
-  String get authAddAccountTitle => 'Add another account';
+  String get authAddAccountTitle => 'Add account';
 
   @override
   String get authLogOut => 'Log out';
@@ -162,6 +162,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authRemoveAccountFailed => 'Couldn\'t remove this account.';
+
+  @override
+  String get authRemoveAccountSuccess => 'Account removed successfully.';
 
   @override
   String get loginForgotPassword => 'Forgot password?';

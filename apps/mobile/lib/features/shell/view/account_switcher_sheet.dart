@@ -43,6 +43,10 @@ class _AccountSwitcherSheet extends StatefulWidget {
 
 class _AccountSwitcherSheetState extends State<_AccountSwitcherSheet> {
   String? _removingAccountId;
+  String? _loggingOutAccountId;
+
+  bool get _isMutating =>
+      _removingAccountId != null || _loggingOutAccountId != null;
 
   Future<void> _removeAccount(StoredAuthAccount account) async {
     final dialogContext = context;
@@ -90,10 +94,71 @@ class _AccountSwitcherSheetState extends State<_AccountSwitcherSheet> {
       return;
     }
 
-    final remaining = authCubit.state.accounts.length;
-    if (remaining <= 1) {
-      Navigator.of(context).pop();
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    if (!toastContext.mounted) {
+      return;
     }
+    shad.showToast(
+      context: toastContext,
+      builder: (ctx, _) => shad.Alert(
+        title: Text(ctx.l10n.authRemoveAccountSuccess),
+      ),
+    );
+  }
+
+  Future<void> _logOutAccount(StoredAuthAccount account) async {
+    final dialogContext = context;
+
+    final confirmed = await showSettingsConfirmationDialog(
+      context: dialogContext,
+      title: dialogContext.l10n.authLogOutConfirmDialogTitle,
+      description: dialogContext.l10n.authLogOutConfirmDialogBody,
+      confirmLabel: dialogContext.l10n.authLogOut,
+      icon: Icons.logout_rounded,
+      isDestructive: true,
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    setState(() => _loggingOutAccountId = account.id);
+
+    final authCubit = context.read<AuthCubit>();
+    final success = await authCubit.signOutCurrentAccount();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() => _loggingOutAccountId = null);
+
+    if (!success) {
+      final toastContext = Navigator.of(context, rootNavigator: true).context;
+      if (!toastContext.mounted) {
+        return;
+      }
+      shad.showToast(
+        context: toastContext,
+        builder: (ctx, _) => shad.Alert.destructive(
+          title: Text(
+            authCubit.state.error ?? ctx.l10n.authLogOutCurrentFailed,
+          ),
+        ),
+      );
+      return;
+    }
+
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    if (!toastContext.mounted) {
+      return;
+    }
+    shad.showToast(
+      context: toastContext,
+      builder: (ctx, _) => shad.Alert(
+        title: Text(ctx.l10n.authLogOutCurrentSuccess),
+      ),
+    );
   }
 
   @override
@@ -104,54 +169,85 @@ class _AccountSwitcherSheetState extends State<_AccountSwitcherSheet> {
           ..sort((a, b) => b.lastActiveAt.compareTo(a.lastActiveAt));
         final activeId = state.activeAccountId;
 
-        return AppDialogScaffold(
-          title: context.l10n.authSwitchAccount,
-          description: context.l10n.authSwitchAccountDescription,
-          icon: Icons.tune_rounded,
-          headerTrailing: shad.PrimaryButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              final add = widget.onAddAccount;
-              if (add != null) {
-                await add();
-              }
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.add_rounded, size: 16),
-                const shad.Gap(6),
-                Text(context.l10n.authAddAccount),
-              ],
+        return PopScope(
+          canPop: !_isMutating,
+          child: AppDialogScaffold(
+            title: context.l10n.authSwitchAccount,
+            description: context.l10n.authSwitchAccountDescription,
+            icon: Icons.tune_rounded,
+            headerTrailing: shad.PrimaryButton(
+              onPressed: _isMutating
+                  ? null
+                  : () async {
+                      Navigator.of(context).pop();
+                      final add = widget.onAddAccount;
+                      if (add != null) {
+                        await add();
+                      }
+                    },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.add_rounded, size: 16),
+                  const shad.Gap(6),
+                  Text(context.l10n.authAddAccount),
+                ],
+              ),
             ),
-          ),
-          maxWidth: 420,
-          maxHeightFactor: 0.72,
-          actions: [
-            shad.OutlineButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(context.l10n.commonCancel),
-            ),
-          ],
-          child: accounts.isEmpty
-              ? const SizedBox.shrink()
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final account in accounts)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _AccountSwitcherTile(
-                          account: account,
-                          isSelected: account.id == activeId,
-                          isRemoving: _removingAccountId == account.id,
-                          onSelect: () =>
-                              Navigator.of(context).pop<String?>(account.id),
-                          onRemove: () => _removeAccount(account),
+            maxWidth: 420,
+            maxHeightFactor: 0.72,
+            actions: [
+              shad.OutlineButton(
+                onPressed: _isMutating
+                    ? null
+                    : () => Navigator.of(context).pop(),
+                child: Text(context.l10n.commonCancel),
+              ),
+            ],
+            child: accounts.isEmpty
+                ? const SizedBox.shrink()
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final account in accounts)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _AccountSwitcherTile(
+                            account: account,
+                            isSelected: account.id == activeId,
+                            isRemoving: _removingAccountId == account.id,
+                            isLoggingOut: _loggingOutAccountId == account.id,
+                            isDisabled: _isMutating,
+                            onSelect: _isMutating
+                                ? null
+                                : () => Navigator.of(
+                                    context,
+                                  ).pop<String?>(account.id),
+                            onRemove: _isMutating
+                                ? null
+                                : () async {
+                                    final authCubit = context.read<AuthCubit>();
+                                    final navigator = Navigator.of(context);
+                                    await _removeAccount(account);
+                                    if (!mounted) {
+                                      return;
+                                    }
+                                    final remaining =
+                                        authCubit.state.accounts.length;
+                                    if (remaining <= 1) {
+                                      navigator.pop();
+                                    }
+                                  },
+                            onLogOut: _isMutating
+                                ? null
+                                : () async {
+                                    await _logOutAccount(account);
+                                  },
+                          ),
                         ),
-                      ),
-                  ],
-                ),
+                    ],
+                  ),
+          ),
         );
       },
     );
@@ -247,9 +343,28 @@ class _AccountSwitcherAvatar extends StatelessWidget {
               fit: BoxFit.cover,
               gaplessPlayback: true,
               errorBuilder: (context, error, stackTrace) =>
-                  _AccountSwitcherInitials(initials: initials),
+                  const _AccountSwitcherPlaceholder(),
             )
           : _AccountSwitcherInitials(initials: initials),
+    );
+  }
+}
+
+class _AccountSwitcherPlaceholder extends StatelessWidget {
+  const _AccountSwitcherPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ColoredBox(
+      color: colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: Icon(
+          Icons.person_outline_rounded,
+          size: 18,
+          color: colorScheme.onSurfaceVariant,
+        ),
+      ),
     );
   }
 }
@@ -283,15 +398,21 @@ class _AccountSwitcherTile extends StatelessWidget {
     required this.account,
     required this.isSelected,
     required this.isRemoving,
+    required this.isLoggingOut,
+    required this.isDisabled,
     required this.onSelect,
     required this.onRemove,
+    required this.onLogOut,
   });
 
   final StoredAuthAccount account;
   final bool isSelected;
   final bool isRemoving;
-  final VoidCallback onSelect;
-  final VoidCallback onRemove;
+  final bool isLoggingOut;
+  final bool isDisabled;
+  final VoidCallback? onSelect;
+  final VoidCallback? onRemove;
+  final VoidCallback? onLogOut;
 
   @override
   Widget build(BuildContext context) {
@@ -320,7 +441,7 @@ class _AccountSwitcherTile extends StatelessWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(18),
-                  onTap: onSelect,
+                  onTap: isDisabled ? null : onSelect,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(14, 14, 8, 14),
                     child: Row(
@@ -371,7 +492,7 @@ class _AccountSwitcherTile extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.only(right: 6),
-              child: isRemoving
+              child: isRemoving || isLoggingOut
                   ? const Padding(
                       padding: EdgeInsets.all(12),
                       child: SizedBox(
@@ -381,11 +502,19 @@ class _AccountSwitcherTile extends StatelessWidget {
                       ),
                     )
                   : IconButton(
-                      tooltip: context.l10n.authRemoveAccount,
-                      onPressed: onRemove,
+                      tooltip: isSelected
+                          ? context.l10n.authLogOut
+                          : context.l10n.authRemoveAccount,
+                      onPressed: isDisabled
+                          ? null
+                          : isSelected
+                          ? onLogOut
+                          : onRemove,
                       icon: Icon(
-                        Icons.delete_outline_rounded,
-                        color: theme.colorScheme.mutedForeground,
+                        isSelected
+                            ? Icons.logout_rounded
+                            : Icons.delete_outline_rounded,
+                        color: theme.colorScheme.destructive,
                       ),
                     ),
             ),

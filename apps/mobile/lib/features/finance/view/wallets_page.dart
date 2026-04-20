@@ -31,6 +31,10 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 class WalletsPage extends StatelessWidget {
   const WalletsPage({super.key});
 
+  static void clearCache() {
+    _WalletsViewState.clearMemoryCache();
+  }
+
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
@@ -52,6 +56,10 @@ class _WalletsViewState extends State<_WalletsView> {
   static const CachePolicy _cachePolicy = CachePolicies.moduleData;
   static const _cacheTag = 'finance:wallets';
   static final Map<String, _WalletsCacheEntry> _cache = {};
+
+  static void clearMemoryCache() {
+    _cache.clear();
+  }
 
   List<Wallet> _wallets = const [];
   String? _workspaceCurrency;

@@ -51,24 +51,18 @@ class TimeTrackerRequestsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    final currentUserId = context.read<AuthCubit>().state.user?.id;
+    final currentUserId = context.watch<AuthCubit>().state.user?.id;
     return RepositoryProvider<ITimeTrackerRepository>(
       create: (_) => repository ?? TimeTrackerRepository(),
       child: BlocProvider(
+        key: ValueKey<String?>(currentUserId),
         create: (context) {
           return TimeTrackerRequestsCubit(
             repository: context.read<ITimeTrackerRepository>(),
-            initialState: wsId != null
-                ? TimeTrackerRequestsCubit.seedStateFor(
-                    wsId,
-                    selectedUserId: currentUserId,
-                    statusFilter: 'pending',
-                  )
-                : null,
           );
         },
         child: _RequestsView(
+          key: ValueKey<String?>(currentUserId),
           workspacePermissionsRepository: workspacePermissionsRepository,
         ),
       ),
@@ -77,7 +71,7 @@ class TimeTrackerRequestsPage extends StatelessWidget {
 }
 
 class _RequestsView extends StatefulWidget {
-  const _RequestsView({this.workspacePermissionsRepository});
+  const _RequestsView({super.key, this.workspacePermissionsRepository});
 
   final WorkspacePermissionsRepository? workspacePermissionsRepository;
 
@@ -277,6 +271,7 @@ class _RequestsViewState extends State<_RequestsView> {
               previous.user?.id != current.user?.id,
           listener: (context, state) {
             _requestLoadToken++;
+            context.read<TimeTrackerRequestsCubit>().reset();
             final wsId = context
                 .read<WorkspaceCubit>()
                 .state
@@ -285,7 +280,12 @@ class _RequestsViewState extends State<_RequestsView> {
             if (wsId == null || wsId.isEmpty) {
               return;
             }
-            unawaited(_loadRequests(wsIdOverride: wsId, forceRefresh: true));
+            unawaited(
+              _loadPermissionsAndThreshold(
+                wsId,
+                forceRefreshRequests: true,
+              ),
+            );
           },
         ),
       ],

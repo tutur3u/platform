@@ -82,13 +82,18 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void didUpdateWidget(covariant LoginPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!oldWidget.addAccountMode && widget.addAccountMode) {
+    if (oldWidget.addAccountMode != widget.addAccountMode) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
           return;
         }
-        context.read<AuthCubit>().setAddAccountFlow(enabled: true);
+        context.read<AuthCubit>().setAddAccountFlow(
+          enabled: widget.addAccountMode,
+        );
       });
+      if (oldWidget.addAccountMode && !widget.addAccountMode) {
+        _clearAndroidBackState();
+      }
     }
     _syncAndroidBackState();
   }
@@ -101,6 +106,9 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    if (widget.addAccountMode) {
+      _clearAndroidBackState();
+    }
     _retryAfterTimer?.cancel();
     _otpAvailabilityGraceTimer?.cancel();
     _emailController.dispose();
@@ -308,6 +316,19 @@ class _LoginPageState extends State<LoginPage> {
         'route': '/add-account',
         'exitMessage': l10n.commonPressBackAgainToExit,
         'exitHintMessage': l10n.commonPressBackAgainToExitHint,
+      }),
+    );
+  }
+
+  void _clearAndroidBackState() {
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+    unawaited(
+      _androidBackChannel.invokeMethod<void>('updateState', {
+        'route': '/',
+        'exitMessage': '',
+        'exitHintMessage': '',
       }),
     );
   }

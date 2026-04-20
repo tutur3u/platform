@@ -16,5 +16,14 @@ void main() {
         contains('workspace:personal'),
       );
     });
+
+    test('uses deterministic anonymous namespace without user id', () {
+      final keyA = userScopedCacheKey('workspace:personal');
+      final keyB = userScopedCacheKey('workspace:personal');
+
+      expect(keyA, contains('workspace:personal'));
+      expect(keyA, contains('anonymous'));
+      expect(keyA, keyB);
+    });
   });
 }

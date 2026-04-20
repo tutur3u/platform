@@ -83,7 +83,7 @@ String? resolveUnauthenticatedRedirect({
   if (!isAddAccountFlow && matchedLocation == Routes.addAccount) {
     return Routes.login;
   }
-  if (!isAuthRoute && matchedLocation != Routes.login) {
+  if (!isAuthRoute) {
     return Routes.login;
   }
   return null;

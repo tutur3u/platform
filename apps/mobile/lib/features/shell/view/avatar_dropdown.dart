@@ -89,9 +89,12 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
       onAddAccount: _startAddAccountFlow,
     );
 
-    if (!mounted ||
-        selected == null ||
-        selected == currentState.activeAccountId) {
+    if (!mounted || selected == null) {
+      return;
+    }
+
+    final latestState = authCubit.state;
+    if (selected == latestState.activeAccountId) {
       return;
     }
 

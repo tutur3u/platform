@@ -259,11 +259,16 @@ void main() {
       ],
     );
 
-    late StreamController<supa.AuthState> addAccountFlowErrorController;
+    final addAccountFlowErrorControllerCompleter =
+        Completer<StreamController<supa.AuthState>>();
     blocTest<AuthCubit, AuthState>(
       'preserves add-account flow when auth stream emits an error',
       build: () {
-        addAccountFlowErrorController = StreamController<supa.AuthState>();
+        final addAccountFlowErrorController =
+            StreamController<supa.AuthState>();
+        addAccountFlowErrorControllerCompleter.complete(
+          addAccountFlowErrorController,
+        );
         addTearDown(addAccountFlowErrorController.close);
         when(
           () => authRepository.onAuthStateChange(),
@@ -273,6 +278,8 @@ void main() {
       act: (cubit) async {
         cubit.setAddAccountFlow(enabled: true);
         await Future<void>.delayed(Duration.zero);
+        final addAccountFlowErrorController =
+            await addAccountFlowErrorControllerCompleter.future;
         addAccountFlowErrorController.addError(
           const supa.AuthException('OAuth callback failed'),
         );

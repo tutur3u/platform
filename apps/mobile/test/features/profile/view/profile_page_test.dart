@@ -141,6 +141,7 @@ void main() {
 
       expect(find.text('User 2'), findsWidgets);
       expect(find.text('user2@example.com'), findsWidgets);
+      expect(find.text('User 1'), findsNothing);
       expect(find.text('user1@example.com'), findsNothing);
     });
   });

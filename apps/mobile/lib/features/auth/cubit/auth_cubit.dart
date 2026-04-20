@@ -6,6 +6,11 @@ import 'package:mobile/data/models/auth_action_result.dart';
 import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/finance/cubit/finance_cubit.dart';
+import 'package:mobile/features/finance/view/transaction_categories_page.dart';
+import 'package:mobile/features/finance/view/wallets_page.dart';
+import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 /// Manages authentication state across the app.
@@ -37,6 +42,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> _hydrateMultiAccountStore() async {
     final accounts = await _repo.getStoredAccounts();
     final activeAccountId = await _repo.getActiveStoredAccountId();
+    if (isClosed) return;
     emit(
       state.copyWith(
         accounts: accounts,
@@ -46,6 +52,7 @@ class AuthCubit extends Cubit<AuthState> {
 
     if (state.status == AuthStatus.authenticated) {
       await _repo.syncCurrentSessionToMultiAccountStore();
+      if (isClosed) return;
       await _reloadStoredAccounts();
     }
   }
@@ -53,6 +60,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> _reloadStoredAccounts() async {
     final accounts = await _repo.getStoredAccounts();
     final activeAccountId = await _repo.getActiveStoredAccountId();
+    if (isClosed) return;
     emit(
       state.copyWith(
         accounts: accounts,
@@ -89,12 +97,16 @@ class AuthCubit extends Cubit<AuthState> {
             emit(
               AuthState.mfaRequired(session!.user).copyWith(
                 isAddAccountFlow: keepAddFlow,
+                accounts: state.accounts,
+                activeAccountId: state.activeAccountId,
               ),
             );
           } else {
             emit(
               AuthState.authenticated(session!.user).copyWith(
                 isAddAccountFlow: keepAddFlow,
+                accounts: state.accounts,
+                activeAccountId: state.activeAccountId,
               ),
             );
           }
@@ -152,6 +164,9 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final result = await _repo.sendOtp(email, captchaToken: captchaToken);
+    if (isClosed) {
+      return (success: result.success, retryAfter: result.retryAfter);
+    }
     emit(
       state.copyWith(
         isLoading: false,
@@ -165,9 +180,11 @@ class AuthCubit extends Cubit<AuthState> {
   Future<bool> verifyOtp(String email, String otp) async {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final result = await _repo.verifyOtp(email, otp);
+    if (isClosed) return false;
     if (result.success) {
       if (state.isAddAccountFlow) {
         final addResult = await _repo.completeAddAccountFlow();
+        if (isClosed) return false;
         if (!addResult.success) {
           emit(
             state.copyWith(
@@ -181,6 +198,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
 
       final user = await _repo.getCurrentUser();
+      if (isClosed) return false;
       if (user != null) {
         if (_repo.checkMfaRequired()) {
           emit(AuthState.mfaRequired(user));
@@ -214,9 +232,11 @@ class AuthCubit extends Cubit<AuthState> {
       password,
       captchaToken: captchaToken,
     );
+    if (isClosed) return false;
     if (result.success) {
       if (state.isAddAccountFlow) {
         final addResult = await _repo.completeAddAccountFlow();
+        if (isClosed) return false;
         if (!addResult.success) {
           emit(
             state.copyWith(
@@ -230,6 +250,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
 
       final user = await _repo.getCurrentUser();
+      if (isClosed) return false;
       if (user != null) {
         if (_repo.checkMfaRequired()) {
           emit(AuthState.mfaRequired(user));
@@ -284,6 +305,7 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final result = await action();
+    if (isClosed) return;
     await _handleAuthActionResult(
       result,
       fallbackErrorCode: fallbackErrorCode,
@@ -298,6 +320,7 @@ class AuthCubit extends Cubit<AuthState> {
       case AuthActionStatus.success:
         if (state.isAddAccountFlow) {
           final addResult = await _repo.completeAddAccountFlow();
+          if (isClosed) return;
           if (!addResult.success) {
             emit(
               state.copyWith(
@@ -311,6 +334,7 @@ class AuthCubit extends Cubit<AuthState> {
         }
 
         final user = await _repo.getCurrentUser();
+        if (isClosed) return;
         if (user != null) {
           if (_repo.checkMfaRequired()) {
             emit(AuthState.mfaRequired(user));
@@ -346,8 +370,10 @@ class AuthCubit extends Cubit<AuthState> {
   Future<bool> verifyMfa(String code) async {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final result = await _repo.verifyMfaCode(code);
+    if (isClosed) return false;
     if (result.success) {
       final user = await _repo.getCurrentUser();
+      if (isClosed) return false;
       if (user != null) {
         emit(AuthState.authenticated(user));
         return true;
@@ -366,6 +392,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<bool> signUp(String email, String password) async {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final result = await _repo.signUp(email, password);
+    if (isClosed) return result.success;
     emit(
       state.copyWith(
         isLoading: false,
@@ -381,6 +408,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<bool> resetPassword(String email) async {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final result = await _repo.resetPassword(email);
+    if (isClosed) return result.success;
     emit(
       state.copyWith(
         isLoading: false,
@@ -397,8 +425,11 @@ class AuthCubit extends Cubit<AuthState> {
     _isInAddAccountFlow = false;
     emit(state.copyWith(isLoading: true));
     await CacheStore.instance.clearScope(userId: state.user?.id);
+    await _clearInMemoryFeatureCaches(userId: state.user?.id);
     await _onBeforeSignOut?.call();
+    if (isClosed) return;
     await _repo.signOut();
+    if (isClosed) return;
     emit(
       const AuthState.unauthenticated().copyWith(
         accounts: const <StoredAuthAccount>[],
@@ -429,7 +460,9 @@ class AuthCubit extends Cubit<AuthState> {
         // Ignore – we'll sync whatever session is currently available.
       }
       await _repo.syncCurrentSessionToMultiAccountStore();
+      if (isClosed) return false;
       await _reloadStoredAccounts();
+      if (isClosed) return false;
       emit(
         state.copyWith(
           accounts: state.accounts,
@@ -441,7 +474,8 @@ class AuthCubit extends Cubit<AuthState> {
         ),
       );
       return true;
-    } on Exception catch (e) {
+    } on Object catch (e) {
+      if (isClosed) return false;
       _isInAddAccountFlow = false;
       emit(
         state.copyWith(
@@ -500,6 +534,7 @@ class AuthCubit extends Cubit<AuthState> {
       if (accountId == null) {
         // Truly no account to restore – leave add-account flow entirely.
         _isInAddAccountFlow = false;
+        if (isClosed) return false;
         emit(
           state.copyWith(
             isLoading: false,
@@ -510,6 +545,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
 
       final result = await _repo.switchToStoredAccount(accountId);
+      if (isClosed) return false;
       if (!result.success) {
         // Restore failed (e.g. expired token, network error).  Keep the
         // user on the add-account screen so they can see the error and
@@ -526,6 +562,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
 
       final user = await _repo.getCurrentUser();
+      if (isClosed) return false;
       if (user == null) {
         emit(
           state.copyWith(
@@ -538,6 +575,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
 
       _isInAddAccountFlow = false;
+      if (isClosed) return false;
       if (_repo.checkMfaRequired()) {
         emit(
           AuthState.mfaRequired(user).copyWith(
@@ -555,9 +593,10 @@ class AuthCubit extends Cubit<AuthState> {
       }
       await _reloadStoredAccounts();
       return true;
-    } on Exception catch (e) {
+    } on Object catch (e) {
       // Keep user on add-account screen on unexpected errors so they are
       // not silently redirected to /login without a recovery path.
+      if (isClosed) return false;
       emit(
         state.copyWith(
           isLoading: false,
@@ -572,13 +611,18 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> syncCurrentSessionToStore() async {
     await _repo.syncCurrentSessionToMultiAccountStore();
+    if (isClosed) return;
     await _reloadStoredAccounts();
   }
 
   Future<bool> switchAccount(String accountId) async {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final previousUserId = state.user?.id;
+    await _clearInMemoryFeatureCaches(userId: previousUserId);
+    await _onBeforeSignOut?.call();
+    if (isClosed) return false;
     final result = await _repo.switchToStoredAccount(accountId);
+    if (isClosed) return false;
     if (!result.success) {
       emit(
         state.copyWith(
@@ -594,7 +638,41 @@ class AuthCubit extends Cubit<AuthState> {
       await CacheStore.instance.clearScope(userId: previousUserId);
     }
 
+    final newUser = await _repo.getCurrentUser();
+    if (isClosed) return false;
+    if (newUser == null) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          error: 'Failed to restore session',
+          errorCode: null,
+        ),
+      );
+      return false;
+    }
+
+    if (_repo.checkMfaRequired()) {
+      emit(
+        AuthState.mfaRequired(newUser).copyWith(
+          isLoading: true,
+          isAddAccountFlow: state.isAddAccountFlow,
+          accounts: state.accounts,
+          activeAccountId: state.activeAccountId,
+        ),
+      );
+    } else {
+      emit(
+        AuthState.authenticated(newUser).copyWith(
+          isLoading: true,
+          isAddAccountFlow: state.isAddAccountFlow,
+          accounts: state.accounts,
+          activeAccountId: state.activeAccountId,
+        ),
+      );
+    }
+
     await _reloadStoredAccounts();
+    if (isClosed) return false;
     emit(state.copyWith(isLoading: false, error: null, errorCode: null));
     return true;
   }
@@ -602,7 +680,11 @@ class AuthCubit extends Cubit<AuthState> {
   Future<bool> removeAccount(String accountId) async {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final previousUserId = state.user?.id;
+    await _clearInMemoryFeatureCaches(userId: previousUserId);
+    await _onBeforeSignOut?.call();
+    if (isClosed) return false;
     final result = await _repo.removeStoredAccount(accountId);
+    if (isClosed) return false;
     if (!result.success) {
       emit(
         state.copyWith(
@@ -618,7 +700,32 @@ class AuthCubit extends Cubit<AuthState> {
       await CacheStore.instance.clearScope(userId: accountId);
     }
 
+    final newUser = await _repo.getCurrentUser();
+    if (isClosed) return false;
+    if (newUser != null) {
+      if (_repo.checkMfaRequired()) {
+        emit(
+          AuthState.mfaRequired(newUser).copyWith(
+            isLoading: true,
+            isAddAccountFlow: state.isAddAccountFlow,
+            accounts: state.accounts,
+            activeAccountId: state.activeAccountId,
+          ),
+        );
+      } else {
+        emit(
+          AuthState.authenticated(newUser).copyWith(
+            isLoading: true,
+            isAddAccountFlow: state.isAddAccountFlow,
+            accounts: state.accounts,
+            activeAccountId: state.activeAccountId,
+          ),
+        );
+      }
+    }
+
     await _reloadStoredAccounts();
+    if (isClosed) return false;
     emit(state.copyWith(isLoading: false, error: null, errorCode: null));
     return true;
   }
@@ -626,7 +733,11 @@ class AuthCubit extends Cubit<AuthState> {
   Future<bool> signOutCurrentAccount() async {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final previousUserId = state.user?.id;
+    await _clearInMemoryFeatureCaches(userId: previousUserId);
+    await _onBeforeSignOut?.call();
+    if (isClosed) return false;
     final result = await _repo.signOutCurrentAccount();
+    if (isClosed) return false;
     if (result.error != null) {
       emit(
         state.copyWith(
@@ -643,6 +754,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
 
     await _reloadStoredAccounts();
+    if (isClosed) return false;
     emit(state.copyWith(isLoading: false, error: null, errorCode: null));
     return true;
   }
@@ -651,8 +763,11 @@ class AuthCubit extends Cubit<AuthState> {
     _isInAddAccountFlow = false;
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     await CacheStore.instance.clearScope(userId: state.user?.id);
+    await _clearInMemoryFeatureCaches(userId: state.user?.id);
     await _onBeforeSignOut?.call();
+    if (isClosed) return;
     await _repo.signOutAllAccounts();
+    if (isClosed) return;
     emit(
       const AuthState.unauthenticated().copyWith(
         accounts: const <StoredAuthAccount>[],
@@ -663,7 +778,19 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> updateActiveAccountWorkspaceContext(String workspaceId) async {
     await _repo.updateActiveAccountWorkspaceContext(workspaceId);
+    if (isClosed) return;
     await _reloadStoredAccounts();
+  }
+
+  Future<void> _clearInMemoryFeatureCaches({String? userId}) async {
+    FinanceCubit.clearUserCache(userId);
+    if (userId == null || userId.isEmpty) {
+      FinanceCubit.clearUserCache(null);
+    }
+    WalletsPage.clearCache();
+    TransactionCategoriesPage.clearCaches();
+    HabitsCubit.clearCache();
+    CalendarCubit.clearCache();
   }
 
   void clearError() => emit(state.copyWith(error: null, errorCode: null));

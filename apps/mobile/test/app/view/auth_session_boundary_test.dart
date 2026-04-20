@@ -4,6 +4,8 @@ import 'package:mobile/app/view/auth_session_boundary.dart';
 
 void main() {
   group('AuthSessionBoundary', () {
+    setUp(_TestStatefulChildState.resetCounter);
+
     testWidgets('recreates child state when the auth identity changes', (
       tester,
     ) async {
@@ -53,6 +55,10 @@ class _TestStatefulChild extends StatefulWidget {
 class _TestStatefulChildState extends State<_TestStatefulChild> {
   static int _initCount = 0;
   late final int _instanceInitCount;
+
+  static void resetCounter() {
+    _initCount = 0;
+  }
 
   @override
   void initState() {

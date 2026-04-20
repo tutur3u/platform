@@ -67,5 +67,53 @@ void main() {
             .having((state) => state.isFromCache, 'is from cache', false),
       ],
     );
+
+    blocTest<ProfileCubit, ProfileState>(
+      'reuses cached profile data when it matches current user',
+      build: () {
+        const cachedProfile = UserProfile(
+          id: 'user-1',
+          displayName: 'User 1',
+          email: 'user1@example.com',
+        );
+        when(
+          () => profileRepository.getCurrentUserIdSync(),
+        ).thenReturn('user-1');
+        when(() => profileRepository.getCachedProfile()).thenAnswer(
+          (_) async => (
+            profile: cachedProfile,
+            fetchedAt: DateTime(2026, 4, 17, 12),
+          ),
+        );
+        when(() => profileRepository.getProfile()).thenAnswer(
+          (_) async => (
+            profile: cachedProfile,
+            error: null,
+          ),
+        );
+        when(
+          () => profileRepository.saveCachedProfile(any()),
+        ).thenAnswer((_) async {});
+        return ProfileCubit(profileRepository: profileRepository);
+      },
+      act: (cubit) => cubit.loadProfile(),
+      expect: () => [
+        isA<ProfileState>()
+            .having((state) => state.status, 'status', ProfileStatus.loaded)
+            .having((state) => state.profile?.id, 'profile id', 'user-1')
+            .having((state) => state.isFromCache, 'is from cache', true)
+            .having((state) => state.isRefreshing, 'is refreshing', false),
+        isA<ProfileState>()
+            .having((state) => state.status, 'status', ProfileStatus.loaded)
+            .having((state) => state.profile?.id, 'profile id', 'user-1')
+            .having((state) => state.isFromCache, 'is from cache', true)
+            .having((state) => state.isRefreshing, 'is refreshing', true),
+        isA<ProfileState>()
+            .having((state) => state.status, 'status', ProfileStatus.loaded)
+            .having((state) => state.profile?.id, 'profile id', 'user-1')
+            .having((state) => state.isFromCache, 'is from cache', false)
+            .having((state) => state.isRefreshing, 'is refreshing', false),
+      ],
+    );
   });
 }

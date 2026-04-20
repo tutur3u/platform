@@ -46,6 +46,16 @@ class FinanceCubit extends Cubit<FinanceState> {
 
   static String _memoryCacheKey(String wsId) => userScopedCacheKey(wsId);
 
+  static void clearUserCache(String? userId) {
+    if (userId == null || userId.isEmpty) {
+      _cache.clear();
+      return;
+    }
+
+    final prefix = '$userId::';
+    _cache.removeWhere((key, value) => key.startsWith(prefix));
+  }
+
   static Future<void> prewarm({
     required FinanceRepository financeRepository,
     required String wsId,

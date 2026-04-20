@@ -212,7 +212,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
               prev.currentWorkspace?.id != curr.currentWorkspace?.id,
           listener: (context, wsState) async {
             final wsId = wsState.currentWorkspace?.id;
-            final userId = supabase.auth.currentUser?.id;
+            final userId = context.read<AuthCubit>().state.user?.id;
             if (wsId != null && userId != null) {
               if (TimeTrackerCubit.seedStateFor(wsId: wsId, userId: userId) ==
                   null) {

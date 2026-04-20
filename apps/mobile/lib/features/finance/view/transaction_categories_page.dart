@@ -35,6 +35,10 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 class TransactionCategoriesPage extends StatelessWidget {
   const TransactionCategoriesPage({super.key});
 
+  static void clearCaches() {
+    _TransactionCategoriesViewState.clearMemoryCaches();
+  }
+
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
@@ -62,6 +66,11 @@ class _TransactionCategoriesViewState
   static const _tagsCacheTag = 'finance:tags';
   static final Map<String, _CategoryCacheEntry> _categoriesCache = {};
   static final Map<String, _TagCacheEntry> _tagsCache = {};
+
+  static void clearMemoryCaches() {
+    _categoriesCache.clear();
+    _tagsCache.clear();
+  }
 
   List<TransactionCategory> _categories = const [];
   List<FinanceTag> _tags = const [];

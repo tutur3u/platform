@@ -105,13 +105,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authAddAccountDescription => 'Đăng nhập bằng tài khoản khác trên thiết bị này.';
 
   @override
-  String get authAddAccountFailed => 'Không thể bắt đầu quy trình thêm tài khoản.';
+  String get authAddAccountFailed => 'Không thể bắt đầu thêm một tài khoản khác.';
 
   @override
   String get authAddAccountHint => 'Bạn đang thêm một tài khoản khác vào thiết bị này.';
 
   @override
-  String get authAddAccountTitle => 'Thêm tài khoản khác';
+  String get authAddAccountTitle => 'Thêm tài khoản';
 
   @override
   String get authLogOut => 'Đăng xuất';
@@ -162,6 +162,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get authRemoveAccountFailed => 'Không thể xóa tài khoản này.';
+
+  @override
+  String get authRemoveAccountSuccess => 'Đã xóa tài khoản thành công.';
 
   @override
   String get loginForgotPassword => 'Quên mật khẩu?';

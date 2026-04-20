@@ -250,6 +250,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     final capturedWsId = wsId;
     final currentUserId = context.read<AuthCubit>().state.user?.id;
+    final capturedUserId = currentUserId;
 
     if (!mounted) {
       return;
@@ -257,7 +258,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
     setState(() => _isCheckingPermissions = true);
 
     if (wsId == null || currentUserId == null) {
-      if (!_canUpdatePermissionsState(capturedWsId)) {
+      if (!_canUpdatePermissionsState(capturedWsId, capturedUserId)) {
         return;
       }
       setState(() {
@@ -274,7 +275,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
         userId: currentUserId,
       );
 
-      if (!_canUpdatePermissionsState(capturedWsId)) {
+      if (!_canUpdatePermissionsState(capturedWsId, capturedUserId)) {
         return;
       }
       setState(() {
@@ -283,7 +284,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
         _hasResolvedPermissions = true;
       });
     } on Exception {
-      if (!_canUpdatePermissionsState(capturedWsId)) {
+      if (!_canUpdatePermissionsState(capturedWsId, capturedUserId)) {
         return;
       }
       setState(() {
@@ -294,7 +295,10 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
     }
   }
 
-  bool _canUpdatePermissionsState(String? capturedWsId) {
+  bool _canUpdatePermissionsState(
+    String? capturedWsId,
+    String? capturedUserId,
+  ) {
     if (!mounted) {
       return false;
     }
@@ -304,7 +308,8 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
         .state
         .currentWorkspace
         ?.id;
-    return currentWsId == capturedWsId;
+    final latestUserId = context.read<AuthCubit>().state.user?.id;
+    return currentWsId == capturedWsId && latestUserId == capturedUserId;
   }
 
   Future<void> _reload(BuildContext context) async {

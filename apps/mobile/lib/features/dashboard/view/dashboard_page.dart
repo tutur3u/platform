@@ -124,6 +124,10 @@ class _DashboardView extends StatelessWidget {
           listenWhen: (previous, current) =>
               previous.user?.id != current.user?.id,
           listener: (context, state) {
+            if (state.status != AuthStatus.authenticated ||
+                state.user == null) {
+              return;
+            }
             final workspace = context
                 .read<WorkspaceCubit>()
                 .state

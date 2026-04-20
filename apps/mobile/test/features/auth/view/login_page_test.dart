@@ -126,7 +126,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Add another account'), findsOneWidget);
+      expect(find.text('Add account'), findsOneWidget);
       expect(
         find.text("You're adding another account to this device."),
         findsOneWidget,

@@ -471,7 +471,6 @@ class _AppState extends State<App> {
                 );
                 unawaited(context.read<WorkspaceCubit>().loadWorkspaces());
               } else if (state.status == AuthStatus.unauthenticated) {
-                ProfileCubit.clearMemoryCache();
                 unawaited(context.read<ShellProfileCubit>().clear());
                 unawaited(context.read<WorkspaceCubit>().clearWorkspaces());
               }

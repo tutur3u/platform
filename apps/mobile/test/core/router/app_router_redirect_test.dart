@@ -165,5 +165,24 @@ void main() {
 
       expect(redirect, Routes.home);
     });
+
+    test(
+      'redirects /add-account to home when authenticated add-account flow is off',
+      () {
+        const state = WorkspaceState(
+          status: WorkspaceStatus.loaded,
+          currentWorkspace: Workspace(id: 'team-1'),
+        );
+
+        final redirect = resolveAuthenticatedRedirect(
+          matchedLocation: Routes.addAccount,
+          isAuthRoute: true,
+          isAddAccountFlow: false,
+          workspaceState: state,
+        );
+
+        expect(redirect, Routes.home);
+      },
+    );
   });
 }

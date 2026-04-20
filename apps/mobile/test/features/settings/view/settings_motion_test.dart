@@ -10,6 +10,8 @@ import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/finance/view/transaction_categories_page.dart';
+import 'package:mobile/features/finance/view/wallets_page.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
@@ -35,8 +37,8 @@ class _MockAuthCubit extends MockCubit<AuthState> implements AuthCubit {}
 
 class _MockProfileRepository extends Mock implements ProfileRepository {}
 
-const _cachedProfileKey = 'cached-user-profile';
-const _cachedProfileFetchedAtKey = 'cached-user-profile-fetched-at';
+const _cachedProfileKey = 'cached-user-profile:user-1';
+const _cachedProfileFetchedAtKey = 'cached-user-profile-fetched-at:user-1';
 
 const _cachedProfile = UserProfile(
   id: 'user-1',
@@ -62,6 +64,8 @@ void main() {
       _cachedProfileFetchedAtKey: DateTime.now().toIso8601String(),
     });
     ProfileCubit.clearMemoryCache();
+    TransactionCategoriesPage.clearCaches();
+    WalletsPage.clearCache();
     PackageInfo.setMockInitialValues(
       appName: 'Tuturuuu',
       packageName: 'com.tuturuuu.mobile',

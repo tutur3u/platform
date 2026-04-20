@@ -274,7 +274,7 @@ abstract class AppLocalizations {
   /// No description provided for @authAddAccountFailed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t start add-account flow.'**
+  /// **'Couldn\'t start adding another account.'**
   String get authAddAccountFailed;
 
   /// No description provided for @authAddAccountHint.
@@ -286,7 +286,7 @@ abstract class AppLocalizations {
   /// No description provided for @authAddAccountTitle.
   ///
   /// In en, this message translates to:
-  /// **'Add another account'**
+  /// **'Add account'**
   String get authAddAccountTitle;
 
   /// No description provided for @authLogOut.
@@ -384,6 +384,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t remove this account.'**
   String get authRemoveAccountFailed;
+
+  /// No description provided for @authRemoveAccountSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Account removed successfully.'**
+  String get authRemoveAccountSuccess;
 
   /// No description provided for @loginForgotPassword.
   ///
