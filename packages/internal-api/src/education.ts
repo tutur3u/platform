@@ -120,7 +120,7 @@ export async function createWorkspaceCourseModule(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ message: string }>(
+  return client.json<WorkspaceCourseModule>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/modules`,
     {
       method: 'POST',

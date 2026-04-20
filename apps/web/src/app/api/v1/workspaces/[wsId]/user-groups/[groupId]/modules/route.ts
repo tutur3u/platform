@@ -35,10 +35,14 @@ export async function POST(req: Request, { params }: Params) {
 
   const data = await req.json();
 
-  const { error } = await supabase.from('workspace_course_modules').insert({
-    ...data,
-    group_id: id,
-  });
+  const { data: module, error } = await supabase
+    .from('workspace_course_modules')
+    .insert({
+      ...data,
+      group_id: id,
+    })
+    .select('*')
+    .single();
 
   if (error) {
     console.log(error);
@@ -48,5 +52,5 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ message: 'success' });
+  return NextResponse.json(module);
 }

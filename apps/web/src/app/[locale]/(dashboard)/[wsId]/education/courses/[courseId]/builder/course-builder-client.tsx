@@ -120,14 +120,24 @@ export function CourseBuilderClient({
 
   const duplicateMutation = useMutation({
     mutationFn: async (payload: UpsertWorkspaceCourseModulePayload) => {
-      await createWorkspaceCourseModule(resolvedWsId, courseId, payload);
+      return createWorkspaceCourseModule(resolvedWsId, courseId, payload);
     },
-    onSuccess: () => {
+    onSuccess: (newModule) => {
+      if (newModule) {
+        const builderModule: BuilderModule = {
+          ...newModule,
+          course_id: courseId,
+          flashcard_count: 0,
+          quiz_count: 0,
+          quiz_set_count: 0,
+        };
+        setModules((prev) => [...prev, builderModule]);
+        setActiveModuleId(newModule.id);
+      }
       toast({
         title: t('common.success'),
         description: t('ws-course-modules.create_description'),
       });
-      router.refresh();
     },
     onError: (error) => {
       toast({
@@ -244,7 +254,21 @@ export function CourseBuilderClient({
                 title={t('ws-course-modules.singular')}
                 createDescription={t('ws-course-modules.create_description')}
                 form={
-                  <CourseModuleForm wsId={resolvedWsId} courseId={courseId} />
+                  <CourseModuleForm
+                    wsId={resolvedWsId}
+                    courseId={courseId}
+                    onCreated={(newModule) => {
+                      const builderModule: BuilderModule = {
+                        ...newModule,
+                        course_id: courseId,
+                        flashcard_count: 0,
+                        quiz_count: 0,
+                        quiz_set_count: 0,
+                      };
+                      setModules((prev) => [...prev, builderModule]);
+                      setActiveModuleId(newModule.id);
+                    }}
+                  />
                 }
                 trigger={
                   <Button size="sm" variant="outline" className="rounded-xl">

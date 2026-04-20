@@ -28,7 +28,8 @@ interface Props {
   courseId: string;
   data?: WorkspaceCourseModule;
 
-  onFinish?: (data: z.infer<typeof FormSchema>) => void;
+  onCreated?: (data: WorkspaceCourseModule) => void;
+  onFinish?: () => void;
 }
 
 const FormSchema = z.object({
@@ -36,7 +37,13 @@ const FormSchema = z.object({
   name: z.string().min(1),
 });
 
-export function CourseModuleForm({ wsId, courseId, data, onFinish }: Props) {
+export function CourseModuleForm({
+  wsId,
+  courseId,
+  data,
+  onCreated,
+  onFinish,
+}: Props) {
   const t = useTranslations('ws-course-modules');
   const router = useRouter();
 
@@ -56,9 +63,9 @@ export function CourseModuleForm({ wsId, courseId, data, onFinish }: Props) {
     mutationFn: async (payload: z.infer<typeof FormSchema>) => {
       if (payload.id) {
         await updateWorkspaceCourseModule(wsId, payload.id, payload);
-        return;
+        return undefined;
       }
-      await createWorkspaceCourseModule(wsId, courseId, payload);
+      return createWorkspaceCourseModule(wsId, courseId, payload);
     },
   });
 
@@ -67,9 +74,13 @@ export function CourseModuleForm({ wsId, courseId, data, onFinish }: Props) {
 
   const onSubmit = async (payload: z.infer<typeof FormSchema>) => {
     try {
-      await saveMutation.mutateAsync(payload);
-      onFinish?.(payload);
-      router.refresh();
+      const result = await saveMutation.mutateAsync(payload);
+      if (onCreated) {
+        if (result) onCreated(result);
+      } else {
+        router.refresh();
+      }
+      onFinish?.();
     } catch (error) {
       toast({
         title: `Failed to ${payload.id ? 'edit' : 'create'} course module`,
