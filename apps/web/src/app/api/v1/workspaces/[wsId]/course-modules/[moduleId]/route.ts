@@ -18,6 +18,7 @@ const UpdateModuleSchema = z
   .object({
     content: z.custom<Json>().optional(),
     extra_content: z.custom<Json>().optional(),
+    group_id: z.string().uuid().optional(),
     is_public: z.boolean().optional(),
     is_published: z.boolean().optional(),
     name: z.string().trim().min(1).max(255).optional(),
