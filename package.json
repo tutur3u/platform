@@ -37,6 +37,7 @@
     "serve:web": "cd apps/web && bun serve:web",
     "dev": "turbo run dev --parallel",
     "check": "node scripts/check.js",
+    "check:now": "node scripts/check.js --force-now",
     "check:docker": "node scripts/check-docker-web.js",
     "check:mobile": "node scripts/check-mobile.js",
     "dev:mobile": "cd apps/mobile && flutter run --dart-define-from-file=.env --flavor development --target lib/main_development.dart",
