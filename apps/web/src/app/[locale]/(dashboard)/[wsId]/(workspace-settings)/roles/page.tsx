@@ -9,6 +9,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { normalizeRoleMembers } from '@/lib/workspace-role-members';
 import { roleColumns } from './columns';
 import { RoleForm } from './form';
 
@@ -132,7 +133,7 @@ async function getRoles(
   const rolesQuery = supabase
     .from('workspace_roles')
     .select(
-      'id, name, permissions:workspace_role_permissions(id:permission, enabled), workspace_role_members(user_id, users(id, display_name, avatar_url, user_private_details(email))), created_at',
+      'id, name, permissions:workspace_role_permissions(id:permission, enabled), workspace_role_members(user_id, users:user_id(id, display_name, avatar_url, user_private_details(email))), created_at',
       {
         count: 'exact',
       }
@@ -179,18 +180,7 @@ async function getRoles(
 
   const data = roleData.map(
     ({ id, name, permissions, workspace_role_members, created_at }) => {
-      const members =
-        workspace_role_members
-          ?.map((member: any) => {
-            if (!member.users) return null;
-            return {
-              id: member.users.id,
-              display_name: member.users.display_name,
-              avatar_url: member.users.avatar_url,
-              email: member.users.user_private_details?.[0]?.email,
-            };
-          })
-          .filter(Boolean) || [];
+      const members = normalizeRoleMembers(workspace_role_members as any[]);
 
       return {
         id,

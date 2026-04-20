@@ -3,18 +3,13 @@
 import { ChevronDown, ChevronRight, Edit, User, Users } from '@tuturuuu/icons';
 import type { WorkspaceRole } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import { useTranslations } from 'next-intl';
@@ -36,8 +31,8 @@ export function ExpandableRoleRow({
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
   const members = role.members || [];
-  const visibleMembers = members.slice(0, 12);
-  const remainingCount = Math.max(0, members.length - 12);
+  const visibleMembers = members.slice(0, 6);
+  const remainingCount = Math.max(0, members.length - visibleMembers.length);
   const enabledPermissions = role.permissions.filter((p) => p.enabled).length;
 
   if (members.length === 0) {
@@ -65,7 +60,7 @@ export function ExpandableRoleRow({
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="mt-2 space-y-4 rounded-lg border bg-background/50 p-4">
+        <div className="mt-2 space-y-4 rounded-2xl border border-border bg-linear-to-br from-background via-background to-foreground/[0.02] p-4 shadow-sm">
           {/* Header with Quick Stats */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
@@ -113,59 +108,46 @@ export function ExpandableRoleRow({
             </div>
           </div>
 
-          {/* Avatar Grid */}
+          {/* Member Preview */}
           {members.length > 0 ? (
             <div className="space-y-2">
-              <TooltipProvider delayDuration={300}>
-                <div className="flex flex-wrap gap-2">
-                  {visibleMembers.map((member) => (
-                    <Tooltip key={member.id}>
-                      <TooltipTrigger asChild>
-                        <div className="cursor-pointer transition-transform hover:scale-110">
-                          <Avatar className="h-9 w-9 ring-2 ring-background">
-                            <AvatarImage src={member.avatar_url ?? undefined} />
-                            <AvatarFallback className="text-xs">
-                              {member.display_name ? (
-                                getInitials(member.display_name)
-                              ) : (
-                                <User className="h-4 w-4" />
-                              )}
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <div className="space-y-1">
-                          <p className="font-semibold text-sm">
-                            {member.display_name || t('common.unnamed')}
-                          </p>
-                          {member.email && (
-                            <p className="text-muted-foreground text-xs">
-                              {member.email}
-                            </p>
-                          )}
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
-                  {remainingCount > 0 && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted ring-2 ring-background">
-                          <span className="font-semibold text-muted-foreground text-xs">
-                            +{remainingCount}
-                          </span>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">
-                        <p className="text-xs">
-                          {remainingCount} {t('ws-roles.more_members')}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
-              </TooltipProvider>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {visibleMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-background/80 p-3 transition-colors hover:border-foreground/15 hover:bg-background"
+                  >
+                    <Avatar className="h-11 w-11 ring-2 ring-background">
+                      <AvatarImage src={member.avatar_url ?? undefined} />
+                      <AvatarFallback className="text-xs">
+                        {member.display_name ? (
+                          getInitials(member.display_name)
+                        ) : (
+                          <User className="h-4 w-4" />
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <p className="truncate font-medium text-sm">
+                        {member.display_name || t('common.unnamed')}
+                      </p>
+                      <p className="truncate text-muted-foreground text-xs">
+                        {member.email || member.id}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {remainingCount > 0 ? (
+                <Badge
+                  variant="secondary"
+                  className="rounded-full px-3 py-1 font-medium text-xs"
+                >
+                  +{remainingCount} {t('ws-roles.more_members')}
+                </Badge>
+              ) : null}
             </div>
           ) : (
             <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-center">

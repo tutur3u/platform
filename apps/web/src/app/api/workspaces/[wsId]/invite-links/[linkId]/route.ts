@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import * as z from 'zod';
+import { normalizeInviteLinkDetails } from '@/lib/workspace-invite-links';
 
 interface Params {
   params: Promise<{
@@ -29,12 +30,20 @@ export async function GET(req: Request, { params }: Params) {
     }
 
     // Verify user is a member of the workspace
-    const { data: member } = await supabase
+    const { data: member, error: membershipError } = await supabase
       .from('workspace_members')
       .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
       .single();
+
+    if (membershipError) {
+      console.error('Failed to verify workspace membership:', membershipError);
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!member) {
       return NextResponse.json(
@@ -82,10 +91,10 @@ export async function GET(req: Request, { params }: Params) {
     }
 
     return NextResponse.json(
-      {
+      normalizeInviteLinkDetails({
         ...inviteLink,
         uses: uses || [],
-      },
+      }),
       { status: 200 }
     );
   } catch (error) {
