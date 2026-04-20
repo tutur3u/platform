@@ -1,11 +1,11 @@
-FROM oven/bun:1.3.12-alpine AS deps
+FROM oven/bun:1.3.13-alpine AS deps
 
 WORKDIR /app
 
 COPY package.json package.json
 RUN bun install --production
 
-FROM oven/bun:1.3.12-alpine AS runner
+FROM oven/bun:1.3.13-alpine AS runner
 
 WORKDIR /app
 
