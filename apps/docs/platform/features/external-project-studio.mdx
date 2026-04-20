@@ -72,12 +72,18 @@ The EPM surfaces now follow two distinct workflows:
 - Optimize image uploads on the client before requesting the signed upload PUT so gallery and cover assets stay lighter without requiring a separate media-processing job.
 - For EPM image surfaces, keep `asset_url` as the original asset route and use `preview_url` for a transformed Supabase variant (for example constrained width/height plus quality). The gallery and editor should prefer `preview_url` first so the workspace ships smaller images by default.
 - The SDK should expose the same navigation/media contract external projects need: absolute studio asset URLs, collection navigation-title helpers, asset delete methods, and media metadata fields such as captions.
+- For external delivery apps that need client-side navigation or infinite lists, prefetch and hydrate one delivery query near the root layout, then derive route-level view models from that shared cache instead of repeating route-level SDK fetches.
+- For featured rails or hero carousels in external delivery apps, derive the ordered items from existing delivery content plus section/profile configuration (for example featured slugs in `profile_data`) rather than inventing a second featured payload contract just for the frontend.
+- If no featured slug config is present for a given surface, hide the special featured carousel/rail entirely instead of falling back to the first published entry or image. Keep the normal gallery/list visible as the default experience.
 - For Yoola-style external sites, keep sitewide public copy in the `singleton-sections` collection and treat those entries as page configuration:
   - use slugs like `gallery`, `writing`, and `about`
   - use the entry title/subtitle/description for hero framing
   - use the first markdown block for longform page copy
   - keep page-specific structured options such as `socialLinks`, `markers`, `stats`, `navLabel`, or callout panels in `profile_data`
+  - manage featured ordering from the section entry detail form and persist canonical slug arrays in `profile_data` (`featuredArtworkSlugs` for `gallery`, `featuredEntrySlugs` for `writing`) instead of hand-editing raw JSON
+  - surface direct add/remove featured controls on candidate artwork and writing entry dialogs too, but keep those controls mutating the same singleton section entry so there is still one ordering source of truth
 - External apps like Yoola should consume EPM through one server-side adapter module that fetches delivery once, maps it into the app's view model, and passes typed props down to client components. Do not scatter SDK calls or hardcoded mirror content arrays across multiple pages.
+- If an external app adopts TanStack Query for delivery, keep that adapter as the normalization layer and hydrate it once at the app shell boundary. Route components should read from the shared query cache and only own incremental rendering state such as infinite scroll windows.
 - For Yoola-style writing routes, use the delivery entry's markdown blocks as the canonical longform body and render them directly on the external site instead of maintaining a second static prose source.
 - In the EPM entry editor, present the persisted `summary` field as a markdown-capable description/excerpt surface instead of a plain textarea label. Keep longform writing and singleton-page bodies on markdown blocks so external apps can render both short and long copy directly from delivery.
 - When publishing `packages/sdk` for external apps, keep the package `types` and `bun` export targets on built `dist/*` declarations/runtime files rather than raw `src/*` source entrypoints. External Next/Bun apps can otherwise resolve internal source files and inherit monorepo-only type assumptions.

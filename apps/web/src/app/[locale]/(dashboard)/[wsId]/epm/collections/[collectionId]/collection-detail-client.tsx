@@ -14,7 +14,7 @@ import type {
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
+import { Button, buttonVariants } from '@tuturuuu/ui/button';
 import {
   Card,
   CardContent,
@@ -489,7 +489,7 @@ export function CollectionDetailClient({
                         key={entry.id}
                         type="button"
                         className={cn(
-                          'grid w-full gap-4 rounded-[1.35rem] border border-border/70 bg-background/75 p-4 text-left transition-colors hover:bg-background',
+                          'grid w-full gap-4 rounded-[1.35rem] border border-border/70 bg-background/75 p-4 text-left transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
                           'sm:grid-cols-[120px_minmax(0,1fr)_auto]'
                         )}
                         onClick={() =>
@@ -521,9 +521,14 @@ export function CollectionDetailClient({
                           </div>
                         </div>
                         <div className="flex items-start justify-end">
-                          <Button size="sm" variant="outline">
+                          <span
+                            className={buttonVariants({
+                              size: 'sm',
+                              variant: 'outline',
+                            })}
+                          >
                             {strings.openDetailsAction}
-                          </Button>
+                          </span>
                         </div>
                       </button>
                     );

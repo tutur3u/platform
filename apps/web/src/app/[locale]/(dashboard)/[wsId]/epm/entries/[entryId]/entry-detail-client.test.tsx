@@ -6,6 +6,7 @@ import { buildEpmStrings } from '../../epm-strings';
 import { EntryDetailClient } from './entry-detail-client';
 
 const {
+  createWorkspaceExternalProjectEntryMock,
   createWorkspaceExternalProjectAssetMock,
   createWorkspaceExternalProjectBlockMock,
   deleteWorkspaceExternalProjectAssetMock,
@@ -21,6 +22,7 @@ const {
   optimizeEpmMediaUploadMock,
   uploadWorkspaceExternalProjectAssetFileMock,
 } = vi.hoisted(() => ({
+  createWorkspaceExternalProjectEntryMock: vi.fn(),
   createWorkspaceExternalProjectAssetMock: vi.fn(),
   createWorkspaceExternalProjectBlockMock: vi.fn(),
   deleteWorkspaceExternalProjectAssetMock: vi.fn(),
@@ -38,6 +40,7 @@ const {
 }));
 
 vi.mock('@tuturuuu/internal-api', () => ({
+  createWorkspaceExternalProjectEntry: createWorkspaceExternalProjectEntryMock,
   createWorkspaceExternalProjectAsset: createWorkspaceExternalProjectAssetMock,
   createWorkspaceExternalProjectBlock: createWorkspaceExternalProjectBlockMock,
   deleteWorkspaceExternalProjectAsset: deleteWorkspaceExternalProjectAssetMock,
@@ -101,6 +104,24 @@ describe('EntryDetailClient', () => {
     vi.clearAllMocks();
     optimizeEpmMediaUploadMock.mockImplementation(async (file: File) => file);
 
+    createWorkspaceExternalProjectEntryMock.mockResolvedValue({
+      collection_id: 'collection-sections',
+      created_at: '2026-04-19T00:00:00.000Z',
+      created_by: null,
+      id: 'entry-gallery',
+      metadata: {},
+      profile_data: {},
+      published_at: null,
+      scheduled_for: null,
+      slug: 'gallery',
+      status: 'draft',
+      subtitle: null,
+      summary: null,
+      title: 'Gallery',
+      updated_at: '2026-04-19T00:00:00.000Z',
+      updated_by: null,
+      ws_id: 'ws_123',
+    });
     updateWorkspaceExternalProjectEntryMock.mockResolvedValue({
       collection_id: 'collection-1',
       created_at: '2026-04-19T00:00:00.000Z',
@@ -326,6 +347,244 @@ describe('EntryDetailClient', () => {
     );
   }
 
+  function renderClientWithWritingSection() {
+    render(
+      <EntryDetailClient
+        binding={
+          {
+            adapter: 'yoola',
+            canonical_id: 'project-1',
+            canonical_project: {
+              adapter: 'yoola',
+              allowed_collections: ['singleton-sections', 'lore-capsules'],
+              allowed_features: [],
+              delivery_profile: {},
+              display_name: 'Yoola',
+              id: 'project-1',
+              is_active: true,
+              metadata: {},
+            },
+            enabled: true,
+          } as any
+        }
+        entryId="entry-writing"
+        initialStudio={{
+          assets: [],
+          blocks: [],
+          collections: [
+            {
+              collection_type: 'singleton-sections',
+              config: {},
+              description: 'Singleton sections',
+              id: 'collection-sections',
+              is_enabled: true,
+              slug: 'singleton-sections',
+              title: 'Singleton sections',
+              ws_id: 'ws_123',
+            } as any,
+            {
+              collection_type: 'writing',
+              config: {},
+              description: 'Lore collection',
+              id: 'collection-lore',
+              is_enabled: true,
+              slug: 'lore-capsules',
+              title: 'Lore Capsules',
+              ws_id: 'ws_123',
+            } as any,
+          ],
+          entries: [
+            {
+              collection_id: 'collection-sections',
+              created_at: '2026-04-19T00:00:00.000Z',
+              created_by: null,
+              id: 'entry-writing',
+              metadata: {},
+              profile_data: {
+                featuredLoreSlugs: ['first-lore'],
+              },
+              published_at: null,
+              scheduled_for: null,
+              slug: 'writing',
+              status: 'draft',
+              subtitle: 'Section subtitle',
+              summary: 'Summary',
+              title: 'Writing',
+              updated_at: '2026-04-19T00:00:00.000Z',
+              updated_by: null,
+              ws_id: 'ws_123',
+            } as any,
+            {
+              collection_id: 'collection-lore',
+              created_at: '2026-04-19T00:00:00.000Z',
+              created_by: null,
+              id: 'lore-1',
+              metadata: {},
+              profile_data: {},
+              published_at: null,
+              scheduled_for: null,
+              slug: 'first-lore',
+              status: 'published',
+              subtitle: 'First lore subtitle',
+              summary: 'First lore summary',
+              title: 'First Lore',
+              updated_at: '2026-04-19T00:00:00.000Z',
+              updated_by: null,
+              ws_id: 'ws_123',
+            } as any,
+            {
+              collection_id: 'collection-lore',
+              created_at: '2026-04-19T00:00:00.000Z',
+              created_by: null,
+              id: 'lore-2',
+              metadata: {},
+              profile_data: {},
+              published_at: null,
+              scheduled_for: null,
+              slug: 'second-lore',
+              status: 'published',
+              subtitle: 'Second lore subtitle',
+              summary: 'Second lore summary',
+              title: 'Second Lore',
+              updated_at: '2026-04-19T00:00:00.000Z',
+              updated_by: null,
+              ws_id: 'ws_123',
+            } as any,
+          ],
+          importJobs: [],
+          loadingData: null,
+          publishEvents: [],
+        }}
+        strings={strings}
+        workspaceId="ws_123"
+      />,
+      { wrapper }
+    );
+  }
+
+  function renderClientWithArtworkPlacement({
+    includeSectionEntry = true,
+  }: {
+    includeSectionEntry?: boolean;
+  } = {}) {
+    render(
+      <EntryDetailClient
+        binding={
+          {
+            adapter: 'yoola',
+            canonical_id: 'project-1',
+            canonical_project: {
+              adapter: 'yoola',
+              allowed_collections: ['singleton-sections', 'artworks'],
+              allowed_features: [],
+              delivery_profile: {},
+              display_name: 'Yoola',
+              id: 'project-1',
+              is_active: true,
+              metadata: {},
+            },
+            enabled: true,
+          } as any
+        }
+        entryId="artwork-2"
+        initialStudio={{
+          assets: [],
+          blocks: [],
+          collections: [
+            {
+              collection_type: 'singleton-sections',
+              config: {},
+              description: 'Singleton sections',
+              id: 'collection-sections',
+              is_enabled: true,
+              slug: 'singleton-sections',
+              title: 'Singleton sections',
+              ws_id: 'ws_123',
+            } as any,
+            {
+              collection_type: 'artworks',
+              config: {},
+              description: 'Artwork collection',
+              id: 'collection-artworks',
+              is_enabled: true,
+              slug: 'artworks',
+              title: 'Artworks',
+              ws_id: 'ws_123',
+            } as any,
+          ],
+          entries: [
+            ...(includeSectionEntry
+              ? [
+                  {
+                    collection_id: 'collection-sections',
+                    created_at: '2026-04-19T00:00:00.000Z',
+                    created_by: null,
+                    id: 'entry-gallery',
+                    metadata: {},
+                    profile_data: {
+                      featuredArtworkSlugs: ['featured-one'],
+                    },
+                    published_at: null,
+                    scheduled_for: null,
+                    slug: 'gallery',
+                    status: 'draft',
+                    subtitle: 'Section subtitle',
+                    summary: 'Summary',
+                    title: 'Gallery',
+                    updated_at: '2026-04-19T00:00:00.000Z',
+                    updated_by: null,
+                    ws_id: 'ws_123',
+                  } as any,
+                ]
+              : []),
+            {
+              collection_id: 'collection-artworks',
+              created_at: '2026-04-19T00:00:00.000Z',
+              created_by: null,
+              id: 'artwork-1',
+              metadata: {},
+              profile_data: {},
+              published_at: null,
+              scheduled_for: null,
+              slug: 'featured-one',
+              status: 'published',
+              subtitle: 'First artwork subtitle',
+              summary: 'First artwork summary',
+              title: 'Featured One',
+              updated_at: '2026-04-19T00:00:00.000Z',
+              updated_by: null,
+              ws_id: 'ws_123',
+            } as any,
+            {
+              collection_id: 'collection-artworks',
+              created_at: '2026-04-19T00:00:00.000Z',
+              created_by: null,
+              id: 'artwork-2',
+              metadata: {},
+              profile_data: {},
+              published_at: null,
+              scheduled_for: null,
+              slug: 'fenomeno-1',
+              status: 'published',
+              subtitle: 'Second artwork subtitle',
+              summary: 'Second artwork summary',
+              title: 'Fenomeno 1',
+              updated_at: '2026-04-19T00:00:00.000Z',
+              updated_by: null,
+              ws_id: 'ws_123',
+            } as any,
+          ],
+          importJobs: [],
+          loadingData: null,
+          publishEvents: [],
+        }}
+        strings={strings}
+        workspaceId="ws_123"
+      />,
+      { wrapper }
+    );
+  }
+
   it('saves entry edits from the dedicated details page', async () => {
     renderClient();
 
@@ -345,6 +604,150 @@ describe('EntryDetailClient', () => {
           summary: 'Summary',
           title: 'Updated title',
         })
+      );
+    });
+  });
+
+  it('persists ordered featured writing entries from the section editor', async () => {
+    updateWorkspaceExternalProjectEntryMock.mockResolvedValueOnce({
+      collection_id: 'collection-sections',
+      created_at: '2026-04-19T00:00:00.000Z',
+      created_by: null,
+      id: 'entry-writing',
+      metadata: {},
+      profile_data: {
+        featuredEntrySlugs: ['second-lore', 'first-lore'],
+      },
+      published_at: null,
+      scheduled_for: null,
+      slug: 'writing',
+      status: 'draft',
+      subtitle: 'Section subtitle',
+      summary: 'Summary',
+      title: 'Writing',
+      updated_at: '2026-04-19T00:00:00.000Z',
+      updated_by: null,
+      ws_id: 'ws_123',
+    });
+
+    renderClientWithWritingSection();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /Second Lore/i }));
+    fireEvent.click(
+      screen
+        .getAllByRole('button', { name: 'epm.previous_action' })
+        .find((button) => !button.hasAttribute('disabled'))!
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'epm.save_action' }));
+
+    await waitFor(() => {
+      expect(updateWorkspaceExternalProjectEntryMock).toHaveBeenCalledWith(
+        'ws_123',
+        'entry-writing',
+        expect.objectContaining({
+          profile_data: {
+            featuredEntrySlugs: ['second-lore', 'first-lore'],
+          },
+        })
+      );
+    });
+  });
+
+  it('toggles featured placement directly from an artwork entry page', async () => {
+    updateWorkspaceExternalProjectEntryMock.mockResolvedValueOnce({
+      collection_id: 'collection-sections',
+      created_at: '2026-04-19T00:00:00.000Z',
+      created_by: null,
+      id: 'entry-gallery',
+      metadata: {},
+      profile_data: {
+        featuredArtworkSlugs: ['featured-one', 'fenomeno-1'],
+      },
+      published_at: null,
+      scheduled_for: null,
+      slug: 'gallery',
+      status: 'draft',
+      subtitle: 'Section subtitle',
+      summary: 'Summary',
+      title: 'Gallery',
+      updated_at: '2026-04-19T00:00:00.000Z',
+      updated_by: null,
+      ws_id: 'ws_123',
+    });
+
+    renderClientWithArtworkPlacement();
+
+    const featuredPlacementActions = screen.getAllByText(
+      'epm.featured_placement_add_action'
+    );
+    const featuredPlacementAction = featuredPlacementActions[0];
+    expect(featuredPlacementActions.length).toBeGreaterThan(0);
+    if (!featuredPlacementAction) {
+      throw new Error('Missing featured placement action');
+    }
+
+    const featuredPlacementButton = featuredPlacementAction.closest('button');
+    expect(featuredPlacementButton).not.toBeNull();
+    fireEvent.click(featuredPlacementButton as HTMLButtonElement);
+
+    await waitFor(() => {
+      expect(updateWorkspaceExternalProjectEntryMock).toHaveBeenCalledWith(
+        'ws_123',
+        'entry-gallery',
+        {
+          profile_data: {
+            featuredArtworkSlugs: ['featured-one', 'fenomeno-1'],
+          },
+        }
+      );
+    });
+  });
+
+  it('creates the missing config entry directly from the featured placement card', async () => {
+    createWorkspaceExternalProjectEntryMock.mockResolvedValueOnce({
+      collection_id: 'collection-sections',
+      created_at: '2026-04-19T00:00:00.000Z',
+      created_by: null,
+      id: 'entry-gallery',
+      metadata: {},
+      profile_data: {
+        featuredArtworkSlugs: ['fenomeno-1'],
+      },
+      published_at: null,
+      scheduled_for: null,
+      slug: 'gallery',
+      status: 'draft',
+      subtitle: null,
+      summary: null,
+      title: 'Gallery',
+      updated_at: '2026-04-19T00:00:00.000Z',
+      updated_by: null,
+      ws_id: 'ws_123',
+    });
+
+    renderClientWithArtworkPlacement({ includeSectionEntry: false });
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'epm.featured_placement_create_action',
+      })
+    );
+
+    await waitFor(() => {
+      expect(createWorkspaceExternalProjectEntryMock).toHaveBeenCalledWith(
+        'ws_123',
+        {
+          collection_id: 'collection-sections',
+          metadata: {},
+          profile_data: {
+            featuredArtworkSlugs: ['fenomeno-1'],
+          },
+          slug: 'gallery',
+          status: 'draft',
+          subtitle: null,
+          summary: null,
+          title: 'Gallery',
+        }
       );
     });
   });

@@ -259,7 +259,9 @@ describe('EpmClient', () => {
       );
     });
 
-    expect(await screen.findByText('Preview summary')).toBeInTheDocument();
+    expect(
+      (await screen.findAllByText('Preview summary')).length
+    ).toBeGreaterThan(0);
     expect(
       screen.queryByText('epm.bulk_actions_title')
     ).not.toBeInTheDocument();

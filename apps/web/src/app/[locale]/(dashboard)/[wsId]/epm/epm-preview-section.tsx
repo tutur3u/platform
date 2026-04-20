@@ -20,9 +20,26 @@ import {
   formatStatus,
   getDeliveryEntryVisual,
   statusTone,
+  useInfiniteVisibleCount,
 } from './epm-client-utils';
+import { EpmFeaturedCarousel } from './epm-featured-carousel';
 import type { EpmStrings } from './epm-strings';
 import { ResilientMediaImage } from './resilient-media-image';
+
+function asProfileDataRecord(value: unknown) {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function asStringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value
+        .filter((item): item is string => typeof item === 'string')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0)
+    : [];
+}
 
 export function EpmPreviewSection({
   activePreviewCollection,
@@ -30,7 +47,7 @@ export function EpmPreviewSection({
   entries,
   onOpenEntry,
   onSelectCollection,
-  previewGalleryEntries,
+  previewEntries,
   previewProjectLabel,
   previewQueryPending,
   strings,
@@ -40,15 +57,85 @@ export function EpmPreviewSection({
   entries: ExternalProjectEntry[];
   onOpenEntry: (entryId: string) => void;
   onSelectCollection: (collectionId: string) => void;
-  previewGalleryEntries: ExternalProjectDeliveryCollection['entries'];
+  previewEntries: ExternalProjectDeliveryCollection['entries'];
   previewProjectLabel: string;
   previewQueryPending: boolean;
   strings: EpmStrings;
 }) {
-  const previewEntries = activePreviewCollection?.entries ?? [];
+  const previewEntryCount = activePreviewCollection?.entries.length ?? 0;
+  const { hasMore, sentinelRef, visibleCount } = useInfiniteVisibleCount({
+    pageSize: 18,
+    resetKey: activePreviewCollection?.id ?? '',
+    totalCount: previewEntryCount,
+  });
+  const visiblePreviewEntries = previewEntries.slice(0, visibleCount);
+  const featuredPreviewEntries = (() => {
+    if (!activePreviewCollection) {
+      return [];
+    }
+
+    const collectionSlug = [
+      activePreviewCollection.slug,
+      activePreviewCollection.title,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    const sectionEntry =
+      collectionSlug.includes('artwork') || collectionSlug.includes('archive')
+        ? entries.find((entry) => entry.slug === 'gallery')
+        : collectionSlug.includes('lore') || collectionSlug.includes('writing')
+          ? entries.find((entry) => entry.slug === 'writing')
+          : null;
+
+    if (!sectionEntry) {
+      return [];
+    }
+
+    const profileData = asProfileDataRecord(sectionEntry.profile_data);
+    const configuredSlugs =
+      sectionEntry.slug === 'gallery'
+        ? [
+            ...asStringArray(profileData.featuredArtworkSlugs),
+            ...asStringArray(profileData.carouselArtworkSlugs),
+            ...asStringArray(profileData.featuredSlugs),
+          ]
+        : [
+            ...asStringArray(profileData.featuredEntrySlugs),
+            ...asStringArray(profileData.featuredLoreSlugs),
+            ...asStringArray(profileData.carouselEntrySlugs),
+            ...asStringArray(profileData.carouselLoreSlugs),
+            ...asStringArray(profileData.featuredSlugs),
+          ];
+
+    if (configuredSlugs.length === 0) {
+      return [];
+    }
+
+    return configuredSlugs
+      .map(
+        (slug) => previewEntries.find((entry) => entry.slug === slug) ?? null
+      )
+      .filter(
+        (
+          entry
+        ): entry is ExternalProjectDeliveryCollection['entries'][number] =>
+          Boolean(entry)
+      );
+  })();
 
   return (
     <div className="space-y-4">
+      {featuredPreviewEntries.length > 0 ? (
+        <EpmFeaturedCarousel
+          entries={featuredPreviewEntries}
+          managedEntries={entries}
+          onOpenEntry={onOpenEntry}
+          strings={strings}
+        />
+      ) : null}
+
       <section className="flex flex-wrap items-end justify-between gap-3 rounded-[1.35rem] border border-border/70 bg-card/95 p-3">
         <div className="min-w-0 space-y-1">
           <div className="truncate font-medium text-sm">
@@ -84,7 +171,7 @@ export function EpmPreviewSection({
           className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
           data-testid="epm-preview-gallery"
         >
-          {previewGalleryEntries.map((entry) => {
+          {visiblePreviewEntries.map((entry) => {
             const visualAsset = getDeliveryEntryVisual(entry);
             const hasVisual = Boolean(visualAsset?.assetUrl);
             const managedPreviewEntry =
@@ -160,6 +247,13 @@ export function EpmPreviewSection({
               </button>
             );
           })}
+          {hasMore ? (
+            <div
+              ref={sentinelRef}
+              aria-hidden="true"
+              className="min-h-24 rounded-[1.2rem] border border-border/70 border-dashed bg-card/60"
+            />
+          ) : null}
         </div>
       ) : (
         <div className="rounded-[1.35rem] border border-border/70 border-dashed bg-card/95 p-5 text-muted-foreground text-sm">

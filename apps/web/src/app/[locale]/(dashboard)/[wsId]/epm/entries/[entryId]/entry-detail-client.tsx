@@ -16,6 +16,7 @@ import {
 import {
   createWorkspaceExternalProjectAsset,
   createWorkspaceExternalProjectBlock,
+  createWorkspaceExternalProjectEntry,
   deleteWorkspaceExternalProjectAsset,
   deleteWorkspaceExternalProjectEntry,
   duplicateWorkspaceExternalProjectEntry,
@@ -57,6 +58,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -131,6 +133,65 @@ function mergeAssetCaptionMetadata(
   return nextMetadata as Json;
 }
 
+function asProfileDataRecord(
+  value: ExternalProjectEntry['profile_data'] | null | undefined
+) {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function asStringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value
+        .filter((item): item is string => typeof item === 'string')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0)
+    : [];
+}
+
+function dedupeStrings(values: string[]) {
+  return [...new Set(values)];
+}
+
+function areStringArraysEqual(left: string[], right: string[]) {
+  return (
+    left.length === right.length &&
+    left.every((value, index) => value === right[index])
+  );
+}
+
+function getFeaturedProfileSlugs(
+  profileData: Record<string, unknown>,
+  keys: string[]
+) {
+  return dedupeStrings(keys.flatMap((key) => asStringArray(profileData[key])));
+}
+
+function mergeFeaturedProfileData({
+  featuredKey,
+  nextSlugs,
+  profileData,
+  resetKeys,
+}: {
+  featuredKey: string;
+  nextSlugs: string[];
+  profileData: Record<string, unknown>;
+  resetKeys: string[];
+}) {
+  const nextProfileData = { ...profileData };
+
+  for (const key of resetKeys) {
+    delete nextProfileData[key];
+  }
+
+  if (nextSlugs.length > 0) {
+    nextProfileData[featuredKey] = nextSlugs;
+  }
+
+  return nextProfileData;
+}
+
 export function EntryDetailClient({
   binding,
   entryId,
@@ -198,6 +259,15 @@ export function EntryDetailClient({
   const coverAsset = imageAssets[0] ?? null;
   const artworkCollection =
     collections.find((collection) => collection.slug === 'artworks') ?? null;
+  const loreCollection =
+    collections.find((collection) =>
+      /lore|writing/.test(
+        [collection.slug, collection.collection_type, collection.title]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+      )
+    ) ?? null;
   const artworkOptions = useMemo(
     () =>
       artworkCollection
@@ -207,6 +277,22 @@ export function EntryDetailClient({
         : [],
     [artworkCollection, entries]
   );
+  const loreOptions = useMemo(
+    () =>
+      loreCollection
+        ? entries.filter((entry) => entry.collection_id === loreCollection.id)
+        : [],
+    [entries, loreCollection]
+  );
+  const singletonSectionCollection =
+    collections.find((collection) =>
+      /singleton|section/.test(
+        [collection.slug, collection.collection_type, collection.title]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+      )
+    ) ?? null;
   const [entryForm, setEntryForm] = useState(() =>
     activeEntry ? buildEntryFormState(activeEntry) : null
   );
@@ -221,17 +307,167 @@ export function EntryDetailClient({
     getMarkdownBlockContent(markdownBlock)
   );
   const [pairedArtworkSlug, setPairedArtworkSlug] = useState(() => {
-    const profileData =
-      activeEntry?.profile_data &&
-      typeof activeEntry.profile_data === 'object' &&
-      !Array.isArray(activeEntry.profile_data)
-        ? (activeEntry.profile_data as Record<string, unknown>)
-        : {};
+    const profileData = asProfileDataRecord(activeEntry?.profile_data);
 
     return typeof profileData.artworkSlug === 'string'
       ? profileData.artworkSlug
       : '__none__';
   });
+  const isSingletonSectionEntry = /singleton|section/.test(
+    [activeCollection?.slug, activeCollection?.collection_type]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+  );
+  const featuredEntryConfig = useMemo(() => {
+    if (!isSingletonSectionEntry || !activeEntry) {
+      return null;
+    }
+
+    if (activeEntry.slug === 'gallery' && artworkOptions.length > 0) {
+      return {
+        cleanupKeys: [
+          'featuredArtworkSlugs',
+          'carouselArtworkSlugs',
+          'featuredSlugs',
+        ],
+        description: strings.featuredGalleryEntriesDescription,
+        key: 'featuredArtworkSlugs',
+        options: artworkOptions,
+        title: strings.featuredGalleryEntriesLabel,
+      };
+    }
+
+    if (activeEntry.slug === 'writing' && loreOptions.length > 0) {
+      return {
+        cleanupKeys: [
+          'featuredEntrySlugs',
+          'featuredLoreSlugs',
+          'carouselEntrySlugs',
+          'carouselLoreSlugs',
+          'featuredSlugs',
+        ],
+        description: strings.featuredWritingEntriesDescription,
+        key: 'featuredEntrySlugs',
+        options: loreOptions,
+        title: strings.featuredWritingEntriesLabel,
+      };
+    }
+
+    return null;
+  }, [
+    activeEntry,
+    artworkOptions,
+    isSingletonSectionEntry,
+    loreOptions,
+    strings.featuredGalleryEntriesDescription,
+    strings.featuredGalleryEntriesLabel,
+    strings.featuredWritingEntriesDescription,
+    strings.featuredWritingEntriesLabel,
+  ]);
+  const featuredEntryOptionsBySlug = useMemo(
+    () =>
+      new Map(
+        (featuredEntryConfig?.options ?? []).map((entry) => [entry.slug, entry])
+      ),
+    [featuredEntryConfig]
+  );
+  const initialFeaturedEntrySlugs = useMemo(() => {
+    if (!featuredEntryConfig) {
+      return [];
+    }
+
+    const optionSlugs = new Set(
+      featuredEntryConfig.options.map((entry) => entry.slug)
+    );
+
+    return getFeaturedProfileSlugs(
+      asProfileDataRecord(activeEntry?.profile_data),
+      featuredEntryConfig.cleanupKeys
+    ).filter((slug) => optionSlugs.has(slug));
+  }, [activeEntry?.profile_data, featuredEntryConfig]);
+  const [featuredEntrySlugs, setFeaturedEntrySlugs] = useState<string[]>([]);
+  const featuredPlacementConfig = useMemo(() => {
+    if (!activeEntry || !activeCollection || !singletonSectionCollection) {
+      return null;
+    }
+
+    const sectionEntryBySlug = new Map(
+      entries
+        .filter(
+          (entry) => entry.collection_id === singletonSectionCollection.id
+        )
+        .map((entry) => [entry.slug, entry] as const)
+    );
+
+    if (activeCollection.id === artworkCollection?.id) {
+      return {
+        cleanupKeys: [
+          'featuredArtworkSlugs',
+          'carouselArtworkSlugs',
+          'featuredSlugs',
+        ],
+        description: strings.featuredPlacementArtworkDescription,
+        emptyState: strings.featuredPlacementSectionMissing,
+        featuredKey: 'featuredArtworkSlugs',
+        featuredLabel: strings.featuredPlacementGalleryLabel,
+        sectionSlug: 'gallery',
+        sectionTitle: 'Gallery',
+        sectionEntry: sectionEntryBySlug.get('gallery') ?? null,
+      };
+    }
+
+    if (activeCollection.id === loreCollection?.id) {
+      return {
+        cleanupKeys: [
+          'featuredEntrySlugs',
+          'featuredLoreSlugs',
+          'carouselEntrySlugs',
+          'carouselLoreSlugs',
+          'featuredSlugs',
+        ],
+        description: strings.featuredPlacementWritingDescription,
+        emptyState: strings.featuredPlacementSectionMissing,
+        featuredKey: 'featuredEntrySlugs',
+        featuredLabel: strings.featuredPlacementWritingLabel,
+        sectionSlug: 'writing',
+        sectionTitle: 'Writing',
+        sectionEntry: sectionEntryBySlug.get('writing') ?? null,
+      };
+    }
+
+    return null;
+  }, [
+    activeCollection,
+    activeEntry,
+    artworkCollection?.id,
+    entries,
+    loreCollection?.id,
+    singletonSectionCollection,
+    strings.featuredPlacementArtworkDescription,
+    strings.featuredPlacementGalleryLabel,
+    strings.featuredPlacementSectionMissing,
+    strings.featuredPlacementWritingDescription,
+    strings.featuredPlacementWritingLabel,
+  ]);
+  const featuredPlacementSlugs = useMemo(() => {
+    if (!featuredPlacementConfig?.sectionEntry) {
+      return [];
+    }
+
+    const profileData = asProfileDataRecord(
+      featuredPlacementConfig.sectionEntry.profile_data
+    );
+
+    return getFeaturedProfileSlugs(
+      profileData,
+      featuredPlacementConfig.cleanupKeys
+    );
+  }, [featuredPlacementConfig]);
+  const featuredPlacementIndex = activeEntry
+    ? featuredPlacementSlugs.indexOf(activeEntry.slug)
+    : -1;
+  const isFeaturedPlacementActive = featuredPlacementIndex >= 0;
 
   const previewQuery = useExternalProjectLivePreview({
     enabled: previewOpen,
@@ -251,11 +487,12 @@ export function EntryDetailClient({
     serializeEntryDescriptionContent(descriptionContent);
   const supportsMarkdownBody =
     !!markdownBlock ||
-    [activeCollection?.slug, activeCollection?.collection_type]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase()
-      .match(/lore|writing|singleton|section/);
+    /lore|writing|singleton|section/.test(
+      [activeCollection?.slug, activeCollection?.collection_type]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+    );
   const supportsPairedVisual =
     Boolean(supportsMarkdownBody) && artworkOptions.length > 0;
 
@@ -271,12 +508,12 @@ export function EntryDetailClient({
         ) ||
       (supportsPairedVisual
         ? pairedArtworkSlug !==
-          (((activeEntry.profile_data &&
-          typeof activeEntry.profile_data === 'object' &&
-          !Array.isArray(activeEntry.profile_data)
-            ? (activeEntry.profile_data as Record<string, unknown>)
-            : {}
-          )?.artworkSlug as string | undefined) ?? '__none__')
+          ((asProfileDataRecord(activeEntry.profile_data).artworkSlug as
+            | string
+            | undefined) ?? '__none__')
+        : false) ||
+      (featuredEntryConfig
+        ? !areStringArraysEqual(featuredEntrySlugs, initialFeaturedEntrySlugs)
         : false) ||
       entryForm.status !== activeEntry.status ||
       fromDateTimeLocalValue(entryForm.scheduledFor) !==
@@ -336,12 +573,7 @@ export function EntryDetailClient({
   }, [markdownBlock]);
 
   useEffect(() => {
-    const profileData =
-      activeEntry?.profile_data &&
-      typeof activeEntry.profile_data === 'object' &&
-      !Array.isArray(activeEntry.profile_data)
-        ? (activeEntry.profile_data as Record<string, unknown>)
-        : {};
+    const profileData = asProfileDataRecord(activeEntry?.profile_data);
 
     setPairedArtworkSlug(
       typeof profileData.artworkSlug === 'string'
@@ -349,6 +581,10 @@ export function EntryDetailClient({
         : '__none__'
     );
   }, [activeEntry?.profile_data]);
+
+  useEffect(() => {
+    setFeaturedEntrySlugs(initialFeaturedEntrySlugs);
+  }, [initialFeaturedEntrySlugs]);
 
   useEffect(() => {
     setSelectedAssetIds((current) =>
@@ -381,11 +617,15 @@ export function EntryDetailClient({
   const mergeEntry = (nextEntry: ExternalProjectEntry) => {
     updateStudioCache((current) => ({
       ...current,
-      entries: current.entries.map((entry) =>
-        entry.id === nextEntry.id ? nextEntry : entry
-      ),
+      entries: current.entries.some((entry) => entry.id === nextEntry.id)
+        ? current.entries.map((entry) =>
+            entry.id === nextEntry.id ? nextEntry : entry
+          )
+        : [nextEntry, ...current.entries],
     }));
-    setEntryForm(buildEntryFormState(nextEntry));
+    if (nextEntry.id === activeEntry?.id) {
+      setEntryForm(buildEntryFormState(nextEntry));
+    }
   };
 
   const mergeAsset = (nextAsset: ExternalProjectStudioAsset) => {
@@ -433,17 +673,29 @@ export function EntryDetailClient({
         throw new Error(strings.emptyEntries);
       }
 
-      const currentProfileData =
-        activeEntry.profile_data &&
-        typeof activeEntry.profile_data === 'object' &&
-        !Array.isArray(activeEntry.profile_data)
-          ? { ...(activeEntry.profile_data as Record<string, unknown>) }
-          : {};
+      let currentProfileData = {
+        ...asProfileDataRecord(activeEntry.profile_data),
+      };
 
       if (supportsPairedVisual && pairedArtworkSlug !== '__none__') {
         currentProfileData.artworkSlug = pairedArtworkSlug;
       } else {
         delete currentProfileData.artworkSlug;
+      }
+
+      if (featuredEntryConfig) {
+        const validSlugs = new Set(
+          featuredEntryConfig.options.map((entry) => entry.slug)
+        );
+        const nextFeaturedSlugs = dedupeStrings(
+          featuredEntrySlugs.filter((slug) => validSlugs.has(slug))
+        );
+        currentProfileData = mergeFeaturedProfileData({
+          featuredKey: featuredEntryConfig.key,
+          nextSlugs: nextFeaturedSlugs,
+          profileData: currentProfileData,
+          resetKeys: featuredEntryConfig.cleanupKeys,
+        });
       }
 
       return updateWorkspaceExternalProjectEntry(workspaceId, activeEntry.id, {
@@ -493,6 +745,68 @@ export function EntryDetailClient({
       mergeBlock(block);
       setBodyMarkdown(getMarkdownBlockContent(block));
       toast.success(strings.saveAction);
+    },
+  });
+
+  const updateFeaturedPlacementMutation = useMutation({
+    mutationFn: async (updater: (current: string[]) => string[]) => {
+      const sectionEntry = featuredPlacementConfig?.sectionEntry;
+      if (!sectionEntry || !activeEntry || !featuredPlacementConfig) {
+        throw new Error(strings.featuredPlacementSectionMissing);
+      }
+
+      const validSlugs = new Set(
+        (featuredPlacementConfig.featuredKey === 'featuredArtworkSlugs'
+          ? artworkOptions
+          : loreOptions
+        ).map((entry) => entry.slug)
+      );
+      const nextSlugs = dedupeStrings(
+        updater(featuredPlacementSlugs).filter((slug) => validSlugs.has(slug))
+      );
+      const nextProfileData = mergeFeaturedProfileData({
+        featuredKey: featuredPlacementConfig.featuredKey,
+        nextSlugs,
+        profileData: asProfileDataRecord(sectionEntry.profile_data),
+        resetKeys: featuredPlacementConfig.cleanupKeys,
+      });
+
+      return updateWorkspaceExternalProjectEntry(workspaceId, sectionEntry.id, {
+        profile_data: nextProfileData as Json,
+      });
+    },
+    onSuccess: (entry) => {
+      mergeEntry(entry);
+      toast.success(strings.saveAction);
+    },
+  });
+
+  const createFeaturedPlacementConfigMutation = useMutation({
+    mutationFn: async () => {
+      if (
+        !activeEntry ||
+        !featuredPlacementConfig ||
+        !singletonSectionCollection
+      ) {
+        throw new Error(strings.featuredPlacementSectionMissing);
+      }
+
+      return createWorkspaceExternalProjectEntry(workspaceId, {
+        collection_id: singletonSectionCollection.id,
+        metadata: {},
+        profile_data: {
+          [featuredPlacementConfig.featuredKey]: [activeEntry.slug],
+        } as Json,
+        slug: featuredPlacementConfig.sectionSlug,
+        status: 'draft',
+        subtitle: null,
+        summary: null,
+        title: featuredPlacementConfig.sectionTitle,
+      });
+    },
+    onSuccess: (entry) => {
+      mergeEntry(entry);
+      toast.success(strings.featuredPlacementCreateSuccessToast);
     },
   });
 
@@ -797,6 +1111,60 @@ export function EntryDetailClient({
     );
   };
 
+  const toggleFeaturedEntrySelection = (slug: string) => {
+    setFeaturedEntrySlugs((current) =>
+      current.includes(slug)
+        ? current.filter((value) => value !== slug)
+        : [...current, slug]
+    );
+  };
+
+  const moveFeaturedEntry = (slug: string, direction: -1 | 1) => {
+    setFeaturedEntrySlugs((current) => {
+      const index = current.indexOf(slug);
+      const nextIndex = index + direction;
+
+      if (index === -1 || nextIndex < 0 || nextIndex >= current.length) {
+        return current;
+      }
+
+      const next = [...current];
+      [next[index], next[nextIndex]] = [next[nextIndex]!, next[index]!];
+      return next;
+    });
+  };
+
+  const toggleFeaturedPlacement = () => {
+    if (!activeEntry) {
+      return;
+    }
+
+    updateFeaturedPlacementMutation.mutate((current) =>
+      current.includes(activeEntry.slug)
+        ? current.filter((slug) => slug !== activeEntry.slug)
+        : [...current, activeEntry.slug]
+    );
+  };
+
+  const moveFeaturedPlacement = (direction: -1 | 1) => {
+    if (!activeEntry) {
+      return;
+    }
+
+    updateFeaturedPlacementMutation.mutate((current) => {
+      const index = current.indexOf(activeEntry.slug);
+      const nextIndex = index + direction;
+
+      if (index === -1 || nextIndex < 0 || nextIndex >= current.length) {
+        return current;
+      }
+
+      const next = [...current];
+      [next[index], next[nextIndex]] = [next[nextIndex]!, next[index]!];
+      return next;
+    });
+  };
+
   const deleteSingleAsset = (assetId: string) => {
     setSelectedAssetIds([assetId]);
     setDeleteMediaDialogOpen(true);
@@ -830,6 +1198,9 @@ export function EntryDetailClient({
     saveEntryMutation.isPending ||
     saveMarkdownMutation.isPending ||
     saveCoverMutation.isPending;
+  const featuredPlacementProcessing =
+    updateFeaturedPlacementMutation.isPending ||
+    createFeaturedPlacementConfigMutation.isPending;
 
   const content = (
     <div className="mx-auto min-h-[calc(100svh-5rem)] max-w-[1580px] space-y-6 pb-10">
@@ -870,6 +1241,15 @@ export function EntryDetailClient({
               </Badge>
               {coverAsset ? (
                 <Badge variant="outline">{strings.coverBadge}</Badge>
+              ) : null}
+              {featuredPlacementConfig?.sectionEntry ? (
+                <Badge
+                  variant={isFeaturedPlacementActive ? 'default' : 'outline'}
+                >
+                  {isFeaturedPlacementActive
+                    ? `${featuredPlacementConfig.featuredLabel} · ${featuredPlacementIndex + 1}`
+                    : featuredPlacementConfig.featuredLabel}
+                </Badge>
               ) : null}
               {entryDirty || coverDirty ? (
                 <Badge variant="outline">{strings.saveAction}</Badge>
@@ -927,6 +1307,23 @@ export function EntryDetailClient({
               <Copy className="mr-2 h-4 w-4" />
               {strings.duplicateAction}
             </ActionButton>
+            {featuredPlacementConfig?.sectionEntry ? (
+              <Button
+                size="sm"
+                variant={isFeaturedPlacementActive ? 'default' : 'outline'}
+                disabled={featuredPlacementProcessing}
+                onClick={toggleFeaturedPlacement}
+              >
+                {featuredPlacementProcessing ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                )}
+                {isFeaturedPlacementActive
+                  ? strings.featuredPlacementRemoveAction
+                  : strings.featuredPlacementAddAction}
+              </Button>
+            ) : null}
             <Button
               size="sm"
               disabled={
@@ -1462,6 +1859,115 @@ export function EntryDetailClient({
                     </Select>
                   </div>
                 ) : null}
+                {featuredEntryConfig ? (
+                  <div className="space-y-3 rounded-[1.1rem] border border-border/70 bg-background/60 p-4">
+                    <div className="space-y-1">
+                      <Label>{featuredEntryConfig.title}</Label>
+                      <p className="text-muted-foreground text-sm">
+                        {featuredEntryConfig.description}
+                      </p>
+                    </div>
+                    {featuredEntrySlugs.length > 0 ? (
+                      <div className="space-y-2">
+                        {featuredEntrySlugs.map((slug, index) => {
+                          const featuredEntry =
+                            featuredEntryOptionsBySlug.get(slug);
+
+                          if (!featuredEntry) {
+                            return null;
+                          }
+
+                          return (
+                            <div
+                              key={slug}
+                              className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/80 px-3 py-2"
+                            >
+                              <div className="min-w-0 space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary">{index + 1}</Badge>
+                                  <span className="truncate font-medium text-sm">
+                                    {featuredEntry.title}
+                                  </span>
+                                </div>
+                                <div className="truncate text-muted-foreground text-xs">
+                                  {featuredEntry.slug}
+                                </div>
+                              </div>
+                              <div className="flex shrink-0 items-center gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={index === 0}
+                                  onClick={() => moveFeaturedEntry(slug, -1)}
+                                >
+                                  {strings.previousAction}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={
+                                    index === featuredEntrySlugs.length - 1
+                                  }
+                                  onClick={() => moveFeaturedEntry(slug, 1)}
+                                >
+                                  {strings.nextAction}
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-border/70 border-dashed bg-card/50 px-3 py-3 text-muted-foreground text-sm">
+                        {strings.featuredEntriesEmpty}
+                      </div>
+                    )}
+                    <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                      {featuredEntryConfig.options.map((option) => {
+                        const selectedIndex = featuredEntrySlugs.indexOf(
+                          option.slug
+                        );
+
+                        return (
+                          <label
+                            key={option.id}
+                            className={cn(
+                              'flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors',
+                              selectedIndex >= 0
+                                ? 'border-primary/40 bg-primary/5'
+                                : 'border-border/70 bg-card/60 hover:bg-accent/40'
+                            )}
+                          >
+                            <Checkbox
+                              checked={selectedIndex >= 0}
+                              className="mt-0.5"
+                              onCheckedChange={() =>
+                                toggleFeaturedEntrySelection(option.slug)
+                              }
+                            />
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="truncate font-medium text-sm">
+                                  {option.title}
+                                </span>
+                                {selectedIndex >= 0 ? (
+                                  <Badge variant="outline">
+                                    {selectedIndex + 1}
+                                  </Badge>
+                                ) : null}
+                              </div>
+                              <div className="truncate text-muted-foreground text-xs">
+                                {option.subtitle?.trim() || option.slug}
+                              </div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
                 <div className="space-y-2">
                   <Label htmlFor="entry-status">{strings.statusLabel}</Label>
                   <Select
@@ -1564,6 +2070,113 @@ export function EntryDetailClient({
               </div>
             </CardContent>
           </Card>
+
+          {featuredPlacementConfig ? (
+            <Card className="overflow-hidden border-border/70 bg-card/95 shadow-none">
+              <CardHeader className="border-border/60 border-b bg-[linear-gradient(135deg,rgba(245,158,11,0.1),rgba(251,191,36,0.03))]">
+                <CardTitle>{strings.featuredPlacementTitle}</CardTitle>
+                <CardDescription>
+                  {featuredPlacementConfig.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-6">
+                {featuredPlacementConfig.sectionEntry ? (
+                  <>
+                    <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="text-muted-foreground text-xs uppercase tracking-[0.24em]">
+                            {featuredPlacementConfig.featuredLabel}
+                          </div>
+                          <div className="font-medium">
+                            {isFeaturedPlacementActive
+                              ? strings.featuredPlacementActiveLabel
+                              : strings.featuredPlacementInactiveLabel}
+                          </div>
+                        </div>
+                        <Badge
+                          variant={
+                            isFeaturedPlacementActive ? 'default' : 'outline'
+                          }
+                        >
+                          {isFeaturedPlacementActive
+                            ? `${strings.featuredPlacementPositionLabel} ${featuredPlacementIndex + 1}`
+                            : strings.noneLabel}
+                        </Badge>
+                      </div>
+                      <p className="mt-3 text-muted-foreground text-sm leading-6">
+                        {isFeaturedPlacementActive
+                          ? strings.featuredPlacementActiveDescription
+                          : strings.featuredPlacementInactiveDescription}
+                      </p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+                      <Button
+                        type="button"
+                        disabled={featuredPlacementProcessing}
+                        onClick={toggleFeaturedPlacement}
+                      >
+                        {featuredPlacementProcessing ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                        )}
+                        {isFeaturedPlacementActive
+                          ? strings.featuredPlacementRemoveAction
+                          : strings.featuredPlacementAddAction}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={
+                          featuredPlacementProcessing ||
+                          !isFeaturedPlacementActive ||
+                          featuredPlacementIndex === 0
+                        }
+                        onClick={() => moveFeaturedPlacement(-1)}
+                      >
+                        {strings.previousAction}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={
+                          featuredPlacementProcessing ||
+                          !isFeaturedPlacementActive ||
+                          featuredPlacementIndex ===
+                            featuredPlacementSlugs.length - 1
+                        }
+                        onClick={() => moveFeaturedPlacement(1)}
+                      >
+                        {strings.nextAction}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-4 rounded-[1.1rem] border border-border/70 border-dashed bg-background/60 p-4">
+                    <div className="text-muted-foreground text-sm leading-6">
+                      {featuredPlacementConfig.emptyState}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={featuredPlacementProcessing}
+                      onClick={() =>
+                        createFeaturedPlacementConfigMutation.mutate()
+                      }
+                    >
+                      {featuredPlacementProcessing ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                      )}
+                      {strings.featuredPlacementCreateAction}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Card className="border-border/70 bg-card/95 shadow-none">
             <CardHeader>

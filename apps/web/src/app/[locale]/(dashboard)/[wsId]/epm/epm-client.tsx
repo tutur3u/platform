@@ -166,7 +166,6 @@ export function EpmClient({
     null;
   const previewEntries = activePreviewCollection?.entries ?? [];
   const previewPrimaryEntry = previewEntries[0] ?? null;
-  const previewGalleryEntries = previewEntries.slice(0, 18);
   const previewProjectLabel = getProjectBrand(
     binding,
     previewQuery.data?.profileData
@@ -235,28 +234,22 @@ export function EpmClient({
   );
   const workflowLanes = [
     {
-      entries: entries.filter((entry) => entry.status === 'draft').slice(0, 4),
+      entries: entries.filter((entry) => entry.status === 'draft'),
       status: 'draft' as const,
       title: strings.draftQueue,
     },
     {
-      entries: entries
-        .filter((entry) => entry.status === 'scheduled')
-        .slice(0, 4),
+      entries: entries.filter((entry) => entry.status === 'scheduled'),
       status: 'scheduled' as const,
       title: strings.scheduledQueue,
     },
     {
-      entries: entries
-        .filter((entry) => entry.status === 'published')
-        .slice(0, 4),
+      entries: entries.filter((entry) => entry.status === 'published'),
       status: 'published' as const,
       title: strings.publishedQueue,
     },
     {
-      entries: entries
-        .filter((entry) => entry.status === 'archived')
-        .slice(0, 4),
+      entries: entries.filter((entry) => entry.status === 'archived'),
       status: 'archived' as const,
       title: strings.archivedQueue,
     },
@@ -688,7 +681,7 @@ export function EpmClient({
           entries={entries}
           onOpenEntry={openEntryEditor}
           onSelectCollection={selectCollection}
-          previewGalleryEntries={previewGalleryEntries}
+          previewEntries={previewEntries}
           previewProjectLabel={previewProjectLabel}
           previewQueryPending={previewQuery.isPending}
           strings={strings}

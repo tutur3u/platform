@@ -48,6 +48,7 @@ import {
   formatStatus,
   getEntryVisual,
   statusTone,
+  useInfiniteVisibleCount,
 } from './epm-client-utils';
 import type { EpmStrings } from './epm-strings';
 import { ResilientMediaImage } from './resilient-media-image';
@@ -259,6 +260,7 @@ export function EpmEditSection({
           onDuplicateEntry={onDuplicateEntry}
           onOpenEntry={onOpenEntry}
           onPublishEntry={onPublishEntry}
+          search={search}
           selectedEntryId={selectedEntryId}
           strings={strings}
         />
@@ -310,6 +312,7 @@ function EpmEntriesGallery({
   onDuplicateEntry,
   onOpenEntry,
   onPublishEntry,
+  search,
   selectedEntryId,
   strings,
 }: {
@@ -321,9 +324,17 @@ function EpmEntriesGallery({
   onDuplicateEntry: (entryId: string) => void;
   onOpenEntry: (entryId: string) => void;
   onPublishEntry: (payload: PublishMutationPayload) => void;
+  search: string;
   selectedEntryId: string;
   strings: EpmStrings;
 }) {
+  const { hasMore, sentinelRef, visibleCount } = useInfiniteVisibleCount({
+    pageSize: 15,
+    resetKey: `${activeCollection?.id ?? ''}:${search}`,
+    totalCount: entries.length,
+  });
+  const visibleEntries = entries.slice(0, visibleCount);
+
   return (
     <div
       className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5"
@@ -341,7 +352,7 @@ function EpmEntriesGallery({
         </div>
       </button>
 
-      {entries.map((entry) => {
+      {visibleEntries.map((entry) => {
         const visual = getEntryVisual(assets, entry.id);
         const hasVisual = Boolean(visual?.preview_url || visual?.asset_url);
 
@@ -469,7 +480,78 @@ function EpmEntriesGallery({
           </article>
         );
       })}
+      {hasMore ? (
+        <div
+          ref={sentinelRef}
+          aria-hidden="true"
+          className="min-h-[19rem] rounded-[1.2rem] border border-border/70 border-dashed bg-card/60"
+        />
+      ) : null}
     </div>
+  );
+}
+
+function EpmWorkflowLane({
+  entries,
+  onOpenEntry,
+  strings,
+  title,
+}: {
+  entries: ExternalProjectEntry[];
+  onOpenEntry: (entryId: string) => void;
+  strings: EpmStrings;
+  title: string;
+}) {
+  const { hasMore, sentinelRef, visibleCount } = useInfiniteVisibleCount({
+    pageSize: 4,
+    resetKey: title,
+    totalCount: entries.length,
+  });
+  const visibleEntries = entries.slice(0, visibleCount);
+
+  return (
+    <Card className="border-border/70 bg-card/95 shadow-none">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="text-sm">{title}</CardTitle>
+          <Badge className={statusTone(entries[0]?.status ?? 'draft')}>
+            {entries.length}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {entries.length === 0 ? (
+          <div className="rounded-[1rem] border border-border/70 border-dashed p-3 text-muted-foreground text-xs">
+            {strings.emptyEntries}
+          </div>
+        ) : (
+          <>
+            {visibleEntries.map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                className="w-full rounded-[1rem] border border-border/70 bg-background/75 px-3 py-2 text-left transition-colors hover:bg-background"
+                onClick={() => onOpenEntry(entry.id)}
+              >
+                <div className="truncate font-medium text-sm">
+                  {entry.title}
+                </div>
+                <div className="mt-1 truncate text-muted-foreground text-xs">
+                  {entry.slug}
+                </div>
+              </button>
+            ))}
+            {hasMore ? (
+              <div
+                ref={sentinelRef}
+                aria-hidden="true"
+                className="h-16 rounded-[1rem] border border-border/70 border-dashed bg-background/40"
+              />
+            ) : null}
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -508,46 +590,24 @@ function EpmWorkflowSection({
   workflowFilter: WorkflowFilter;
   workflowLanes: WorkflowLane[];
 }) {
+  const { hasMore, sentinelRef, visibleCount } = useInfiniteVisibleCount({
+    pageSize: 20,
+    resetKey: workflowFilter,
+    totalCount: workflowEntries.length,
+  });
+  const visibleWorkflowEntries = workflowEntries.slice(0, visibleCount);
+
   return (
     <div className="space-y-3">
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {workflowLanes.map((lane) => (
-          <Card
+          <EpmWorkflowLane
             key={lane.status}
-            className="border-border/70 bg-card/95 shadow-none"
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between gap-3">
-                <CardTitle className="text-sm">{lane.title}</CardTitle>
-                <Badge className={statusTone(lane.status)}>
-                  {lane.entries.length}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {lane.entries.length === 0 ? (
-                <div className="rounded-[1rem] border border-border/70 border-dashed p-3 text-muted-foreground text-xs">
-                  {strings.emptyEntries}
-                </div>
-              ) : (
-                lane.entries.map((entry) => (
-                  <button
-                    key={entry.id}
-                    type="button"
-                    className="w-full rounded-[1rem] border border-border/70 bg-background/75 px-3 py-2 text-left transition-colors hover:bg-background"
-                    onClick={() => onOpenEntry(entry.id)}
-                  >
-                    <div className="truncate font-medium text-sm">
-                      {entry.title}
-                    </div>
-                    <div className="mt-1 truncate text-muted-foreground text-xs">
-                      {entry.slug}
-                    </div>
-                  </button>
-                ))
-              )}
-            </CardContent>
-          </Card>
+            entries={lane.entries}
+            onOpenEntry={onOpenEntry}
+            strings={strings}
+            title={lane.title}
+          />
         ))}
       </div>
 
@@ -619,7 +679,7 @@ function EpmWorkflowSection({
           </div>
 
           <div className="space-y-2">
-            {workflowEntries.map((entry) => (
+            {visibleWorkflowEntries.map((entry) => (
               <label
                 key={entry.id}
                 className="flex items-center gap-3 rounded-[1rem] border border-border/70 bg-background/75 px-3 py-2"
@@ -653,6 +713,13 @@ function EpmWorkflowSection({
                 </button>
               </label>
             ))}
+            {hasMore ? (
+              <div
+                ref={sentinelRef}
+                aria-hidden="true"
+                className="h-16 rounded-[1rem] border border-border/70 border-dashed bg-background/40"
+              />
+            ) : null}
           </div>
         </CardContent>
       </Card>
@@ -696,6 +763,13 @@ function EpmSettingsSection({
   publishEvents: ExternalProjectPublishEvent[];
   strings: EpmStrings;
 }) {
+  const { hasMore, sentinelRef, visibleCount } = useInfiniteVisibleCount({
+    pageSize: 10,
+    resetKey: `${collections.length}:${entries.length}`,
+    totalCount: collections.length,
+  });
+  const visibleCollections = collections.slice(0, visibleCount);
+
   return (
     <div className="grid gap-3 xl:grid-cols-[320px_minmax(0,1fr)]">
       <Card className="border-border/70 bg-card/95 shadow-none">
@@ -753,7 +827,7 @@ function EpmSettingsSection({
           <Plus className="h-4 w-4" />
         </button>
 
-        {collections.map((collection) => {
+        {visibleCollections.map((collection) => {
           const collectionEntries = entries.filter(
             (entry) => entry.collection_id === collection.id
           );
@@ -799,6 +873,13 @@ function EpmSettingsSection({
             </div>
           );
         })}
+        {hasMore ? (
+          <div
+            ref={sentinelRef}
+            aria-hidden="true"
+            className="h-16 rounded-[1rem] border border-border/70 border-dashed bg-card/60"
+          />
+        ) : null}
 
         {publishEvents.length > 0 ? (
           <Card className="border-border/70 bg-card/95 shadow-none">
