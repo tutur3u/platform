@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -155,47 +157,54 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
         listenWhen: (previous, current) =>
             previous.currentWorkspace?.id != current.currentWorkspace?.id,
         listener: (context, state) => _syncWorkspace(state.currentWorkspace),
-        child: BlocBuilder<NotificationsCubit, NotificationsState>(
-          builder: (context, state) {
-            final unreadCount = state.unreadCount;
+        child: BlocListener<AuthCubit, AuthState>(
+          listenWhen: (previous, current) =>
+              previous.user?.id != current.user?.id,
+          listener: (context, state) {
+            unawaited(_notificationsCubit.refreshUnreadCount());
+          },
+          child: BlocBuilder<NotificationsCubit, NotificationsState>(
+            builder: (context, state) {
+              final unreadCount = state.unreadCount;
 
-            return Semantics(
-              button: true,
-              label: context.l10n.notificationsTitle,
-              child: SizedBox(
-                key: const ValueKey('notifications-action-button'),
-                width: 40,
-                height: 40,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Positioned.fill(
-                      child: shad.IconButton.ghost(
-                        icon: Icon(
-                          unreadCount > 0
-                              ? Icons.notifications_active_outlined
-                              : Icons.notifications_none_rounded,
-                          size: 21,
+              return Semantics(
+                button: true,
+                label: context.l10n.notificationsTitle,
+                child: SizedBox(
+                  key: const ValueKey('notifications-action-button'),
+                  width: 40,
+                  height: 40,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned.fill(
+                        child: shad.IconButton.ghost(
+                          icon: Icon(
+                            unreadCount > 0
+                                ? Icons.notifications_active_outlined
+                                : Icons.notifications_none_rounded,
+                            size: 21,
+                          ),
+                          onPressed: _openPage,
                         ),
-                        onPressed: _openPage,
                       ),
-                    ),
-                    if (unreadCount > 0)
-                      Positioned(
-                        top: 3,
-                        right: 4,
-                        child: IgnorePointer(
-                          child: _UnreadBadge(
-                            key: const ValueKey('notifications-unread-badge'),
-                            count: unreadCount,
+                      if (unreadCount > 0)
+                        Positioned(
+                          top: 3,
+                          right: 4,
+                          child: IgnorePointer(
+                            child: _UnreadBadge(
+                              key: const ValueKey('notifications-unread-badge'),
+                              count: unreadCount,
+                            ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
