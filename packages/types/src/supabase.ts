@@ -2207,31 +2207,73 @@ export type Database = {
       course_certificates: {
         Row: {
           completed_date: string;
-          course_id: string;
           created_at: string;
+          group_id: string | null;
           id: string;
           user_id: string;
         };
         Insert: {
           completed_date: string;
-          course_id: string;
           created_at?: string;
+          group_id?: string | null;
           id?: string;
           user_id?: string;
         };
         Update: {
           completed_date?: string;
-          course_id?: string;
           created_at?: string;
+          group_id?: string | null;
           id?: string;
           user_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'course_certificates_course_id_fkey';
-            columns: ['course_id'];
+            foreignKeyName: 'course_certificates_group_id_fkey';
+            columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'workspace_courses';
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'course_certificates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'course_certificates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'course_certificates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_certificates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_certificates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_certificates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
             referencedColumns: ['id'];
           },
           {
@@ -16572,9 +16614,9 @@ export type Database = {
       workspace_course_modules: {
         Row: {
           content: Json | null;
-          course_id: string;
           created_at: string;
           extra_content: Json | null;
+          group_id: string | null;
           id: string;
           is_public: boolean;
           is_published: boolean;
@@ -16584,9 +16626,9 @@ export type Database = {
         };
         Insert: {
           content?: Json | null;
-          course_id: string;
           created_at?: string;
           extra_content?: Json | null;
+          group_id?: string | null;
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
@@ -16596,9 +16638,9 @@ export type Database = {
         };
         Update: {
           content?: Json | null;
-          course_id?: string;
           created_at?: string;
           extra_content?: Json | null;
+          group_id?: string | null;
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
@@ -16608,72 +16650,52 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'workspace_course_modules_course_id_fkey';
-            columns: ['course_id'];
+            foreignKeyName: 'workspace_course_modules_group_id_fkey';
+            columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'workspace_courses';
-            referencedColumns: ['id'];
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
           },
-        ];
-      };
-      workspace_courses: {
-        Row: {
-          cert_template: Database['public']['Enums']['certificate_templates'];
-          created_at: string;
-          description: string | null;
-          id: string;
-          is_public: boolean;
-          is_published: boolean;
-          name: string;
-          ws_id: string;
-        };
-        Insert: {
-          cert_template?: Database['public']['Enums']['certificate_templates'];
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          is_public?: boolean;
-          is_published?: boolean;
-          name?: string;
-          ws_id: string;
-        };
-        Update: {
-          cert_template?: Database['public']['Enums']['certificate_templates'];
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          is_public?: boolean;
-          is_published?: boolean;
-          name?: string;
-          ws_id?: string;
-        };
-        Relationships: [
           {
-            foreignKeyName: 'workspace_courses_ws_id_fkey';
-            columns: ['ws_id'];
+            foreignKeyName: 'workspace_course_modules_group_id_fkey';
+            columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'workspace_course_modules_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'workspace_course_modules_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'workspace_courses_ws_id_fkey';
-            columns: ['ws_id'];
+            foreignKeyName: 'workspace_course_modules_group_id_fkey';
+            columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'workspace_courses_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
+            referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'workspace_courses_ws_id_fkey';
-            columns: ['ws_id'];
+            foreignKeyName: 'workspace_course_modules_group_id_fkey';
+            columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'workspaces';
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_course_modules_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
             referencedColumns: ['id'];
           },
         ];
