@@ -13756,6 +13756,7 @@
     "export_users_data_description": "Allows members to export users data in the workspace.",
     "failed_to_add_member": "Failed to add member",
     "failed_to_add_wallet": "Failed to add wallet",
+    "failed_to_load_members": "Failed to load current members",
     "failed_to_remove_member": "Failed to remove member",
     "failed_to_remove_wallet": "Failed to remove wallet",
     "failed_to_update_wallet": "Failed to update wallet",

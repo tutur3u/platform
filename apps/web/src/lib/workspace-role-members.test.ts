@@ -9,6 +9,7 @@ describe('workspace role members normalization', () => {
         users: {
           id: 'user-1',
           display_name: 'Ada Lovelace',
+          full_name: 'Augusta Ada King',
           avatar_url: '/avatar.png',
           user_private_details: [{ email: 'ada@example.com' }],
         },
@@ -19,6 +20,7 @@ describe('workspace role members normalization', () => {
       {
         id: 'user-1',
         display_name: 'Ada Lovelace',
+        full_name: 'Augusta Ada King',
         avatar_url: '/avatar.png',
         email: 'ada@example.com',
       },
@@ -33,6 +35,7 @@ describe('workspace role members normalization', () => {
           {
             id: 'user-2',
             display_name: null,
+            full_name: 'Grace Hopper',
             avatar_url: null,
             user_private_details: {
               email: 'grace@example.com',
@@ -50,12 +53,14 @@ describe('workspace role members normalization', () => {
       {
         id: 'user-2',
         display_name: null,
+        full_name: 'Grace Hopper',
         avatar_url: null,
         email: 'grace@example.com',
       },
       {
         id: 'user-3',
         display_name: null,
+        full_name: null,
         avatar_url: null,
         email: null,
       },

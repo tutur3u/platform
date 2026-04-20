@@ -1,6 +1,7 @@
 export interface NormalizedRoleMember {
   id: string;
   display_name: string | null;
+  full_name?: string | null;
   avatar_url: string | null;
   email: string | null;
 }
@@ -12,6 +13,7 @@ interface RawUserPrivateDetails {
 interface RawRoleMemberUser {
   id: string | null;
   display_name: string | null;
+  full_name?: string | null;
   avatar_url: string | null;
   user_private_details?: RawUserPrivateDetails | RawUserPrivateDetails[] | null;
 }
@@ -33,6 +35,7 @@ function normalizeRoleMemberUser(
   return {
     id: user?.id ?? fallbackUserId,
     display_name: user?.display_name ?? null,
+    full_name: user?.full_name ?? null,
     avatar_url: user?.avatar_url ?? null,
     email: privateDetails?.email ?? null,
   };
