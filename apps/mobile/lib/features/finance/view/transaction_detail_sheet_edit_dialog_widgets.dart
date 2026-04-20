@@ -926,6 +926,7 @@ class _WalletPickerDialogState extends State<_WalletPickerDialog> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           shad.TextField(
+            contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _searchController,
             onChanged: (_) => setState(() {}),
             placeholder: Text(context.l10n.financeSearchWallets),
@@ -1075,6 +1076,7 @@ class _CategoryPickerDialogState extends State<_CategoryPickerDialog> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           shad.TextField(
+            contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _searchController,
             onChanged: (_) => setState(() {}),
             placeholder: Text(context.l10n.financeSearchCategories),

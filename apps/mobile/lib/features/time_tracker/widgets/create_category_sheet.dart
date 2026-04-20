@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart' hide TextField;
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -213,6 +214,7 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
                 ),
                 const shad.Gap(6),
                 shad.TextField(
+                  contextMenuBuilder: platformTextContextMenuBuilder(),
                   controller: _nameController,
                   hintText: l10n.timerCategoryName,
                   autofocus: true,
@@ -247,6 +249,7 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
                 ),
                 const shad.Gap(6),
                 shad.TextField(
+                  contextMenuBuilder: platformTextContextMenuBuilder(),
                   controller: _descriptionController,
                   hintText: l10n.timerCategoryDescription,
                   maxLines: 3,

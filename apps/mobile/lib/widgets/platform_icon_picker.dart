@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:mobile/core/icons/platform_icon.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -138,6 +139,7 @@ class _PlatformIconPickerSheetState extends State<_PlatformIconPickerSheet> {
         child: Column(
           children: [
             shad.TextField(
+              contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _searchController,
               hintText: widget.searchPlaceholder ?? 'Search icons',
               onChanged: (value) => setState(() => _query = value),

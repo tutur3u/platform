@@ -116,6 +116,7 @@ class _TaskRelationshipPickerDialogState
           mainAxisSize: MainAxisSize.min,
           children: [
             shad.TextField(
+              contextMenuBuilder: platformTextContextMenuBuilder(),
               hintText: context.l10n.taskBoardDetailSearchTasks,
               onChanged: (value) => setState(() => _query = value),
             ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, TextButton, TextField;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -133,6 +134,7 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                   key: const shad.FormKey<String>(#missedEntryTitle),
                   label: Text(l10n.timerSessionTitle),
                   child: shad.TextField(
+                    contextMenuBuilder: platformTextContextMenuBuilder(),
                     controller: _titleCtrl,
                   ),
                 ),
@@ -141,6 +143,7 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                   key: const shad.FormKey<String>(#missedEntryDesc),
                   label: Text(l10n.timerDescription),
                   child: shad.TextField(
+                    contextMenuBuilder: platformTextContextMenuBuilder(),
                     controller: _descCtrl,
                     maxLines: 3,
                   ),

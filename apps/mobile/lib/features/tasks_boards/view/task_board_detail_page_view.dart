@@ -936,6 +936,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                     ),
                     const shad.Gap(12),
                     shad.TextField(
+                      contextMenuBuilder: platformTextContextMenuBuilder(),
                       controller: _searchController,
                       hintText: context.l10n.taskBoardDetailSearchPlaceholder,
                       onChanged: (value) {

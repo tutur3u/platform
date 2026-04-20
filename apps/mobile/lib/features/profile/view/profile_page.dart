@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
@@ -530,6 +531,7 @@ class _EditProfileFieldSheetState extends State<_EditProfileFieldSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           shad.TextField(
+            contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _controller,
             placeholder: Text(widget.placeholder),
             keyboardType: widget.keyboardType,

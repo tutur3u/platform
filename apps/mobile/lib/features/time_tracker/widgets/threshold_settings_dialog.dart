@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, OutlinedButton, TextField;
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -95,6 +96,7 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
             ),
             const shad.Gap(4),
             shad.TextField(
+              contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _thresholdController,
               keyboardType: TextInputType.number,
               placeholder: const Text('1'),
@@ -113,6 +115,7 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
           ),
           const shad.Gap(4),
           shad.TextField(
+            contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _statusChangeGracePeriodController,
             keyboardType: TextInputType.number,
             hintText: '0',

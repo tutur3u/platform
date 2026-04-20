@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, OutlinedButton, TextField;
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -91,6 +92,7 @@ class _EditRequestDialogState extends State<EditRequestDialog> {
             Text(l10n.timerSessionTitle, style: theme.typography.small),
             const shad.Gap(4),
             shad.TextField(
+              contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _titleController,
               hintText: l10n.timerSessionTitle,
             ),
@@ -98,6 +100,7 @@ class _EditRequestDialogState extends State<EditRequestDialog> {
             Text(l10n.timerRequestDescription, style: theme.typography.small),
             const shad.Gap(4),
             shad.TextField(
+              contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _descriptionController,
               maxLines: 3,
               hintText: l10n.timerRequestDescriptionOptional,

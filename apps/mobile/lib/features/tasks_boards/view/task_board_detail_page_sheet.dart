@@ -346,6 +346,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               shad.TextField(
+                contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _nameController,
                 hintText: context.l10n.taskBoardDetailTaskTitleHint,
                 autofocus: _isCreate,

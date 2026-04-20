@@ -810,6 +810,7 @@ class _SecretsListPanel extends StatelessWidget {
             description: context.l10n.settingsWorkspaceSecretsListDescription,
             children: [
               shad.TextField(
+                contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: controller,
                 hintText:
                     context.l10n.settingsWorkspaceSecretsSearchPlaceholder,
@@ -1184,6 +1185,7 @@ class _EditorFieldBlock extends StatelessWidget {
         Text(label, style: theme.typography.small),
         const shad.Gap(6),
         shad.TextField(
+          contextMenuBuilder: platformTextContextMenuBuilder(),
           controller: controller,
           enabled: enabled,
           hintText: hintText,

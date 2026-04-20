@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, OutlinedButton, TextField;
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/data/models/time_tracking/request_comment.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -64,6 +65,7 @@ class CommentsSection extends StatelessWidget {
         if (canAddComments) ...[
           const shad.Gap(16),
           shad.TextField(
+            contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: commentController,
             placeholder: Text(l10n.timerRequestAddComment),
             maxLines: 3,
@@ -177,6 +179,7 @@ class _CommentTileState extends State<_CommentTile> {
             const shad.Gap(4),
             if (_isEditing) ...[
               shad.TextField(
+                contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _editController,
                 maxLines: 3,
                 enabled: !_isSubmitting,

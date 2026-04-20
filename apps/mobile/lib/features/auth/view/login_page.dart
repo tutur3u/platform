@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/config/env.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -523,6 +524,7 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               shad.TextField(
+                contextMenuBuilder: platformTextContextMenuBuilder(),
                 key: const shad.FormKey<String>(#loginEmail),
                 controller: _emailController,
                 focusNode: _emailFocusNode,
@@ -700,6 +702,7 @@ class _LoginPageState extends State<LoginPage> {
                 key: const shad.FormKey<String>(#loginPassword),
                 label: Text(context.l10n.passwordLabel),
                 child: shad.TextField(
+                  contextMenuBuilder: platformTextContextMenuBuilder(),
                   controller: _passwordController,
                   focusNode: _passwordFocusNode,
                   placeholder: Text(context.l10n.passwordLabel),

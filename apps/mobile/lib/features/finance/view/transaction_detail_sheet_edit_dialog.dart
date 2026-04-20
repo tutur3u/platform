@@ -325,6 +325,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       shad.TextField(
+                        contextMenuBuilder: platformTextContextMenuBuilder(),
                         controller: _descriptionController,
                         maxLines: 4,
                         placeholder: Text(l10n.financeDescription),

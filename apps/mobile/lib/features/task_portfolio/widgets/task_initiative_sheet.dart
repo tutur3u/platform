@@ -94,6 +94,7 @@ class _TaskInitiativeSheetState extends State<TaskInitiativeSheet> {
                       ),
                       const shad.Gap(8),
                       shad.TextField(
+                        contextMenuBuilder: platformTextContextMenuBuilder(),
                         controller: _nameController,
                         hintText: context.l10n.taskPortfolioInitiativeName,
                         autofocus: true,
@@ -119,6 +120,7 @@ class _TaskInitiativeSheetState extends State<TaskInitiativeSheet> {
                       ),
                       const shad.Gap(8),
                       shad.TextArea(
+                        contextMenuBuilder: platformTextContextMenuBuilder(),
                         controller: _descriptionController,
                         hintText:
                             context.l10n.taskPortfolioInitiativeDescriptionHint,
