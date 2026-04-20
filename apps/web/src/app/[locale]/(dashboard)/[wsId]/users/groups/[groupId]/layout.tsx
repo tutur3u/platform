@@ -18,6 +18,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { getUserGroupMemberships, verifyGroupAccess } from '../utils';
+import GroupShareButton from './group-share-button';
 import SelectGroupGateway from './select-group-gateway';
 
 interface LayoutProps {
@@ -123,6 +124,7 @@ export default async function Layout({ children, params }: LayoutProps) {
                 className="border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20"
               />
             )}
+            <GroupShareButton groupId={groupId} />
           </div>
         }
       />

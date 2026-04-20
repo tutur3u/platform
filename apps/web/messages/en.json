@@ -15109,6 +15109,8 @@
     "attendance": "Group Attendance",
     "confirm_remove_last_manager": "Are you sure you want to remove the last manager?",
     "confirm_remove_member": "Are you sure you want to remove this member?",
+    "copy_link": "Copy Link",
+    "link_copied": "Link copied to clipboard",
     "manager": "Manager",
     "managers": "Managers",
     "managers_added": "Managers added",
@@ -15124,7 +15126,9 @@
     "requests": "Requests",
     "schedule": "Group Schedule",
     "search_users_placeholder": "Search users...",
-    "select_and_submit": "{groupActionLabel} to the group "
+    "select_and_submit": "{groupActionLabel} to the group ",
+    "share": "Share",
+    "share_description": "Generate a link to share this group."
   },
   "ws-user-group-feedback": {
     "add_feedback": "Add Feedback",
