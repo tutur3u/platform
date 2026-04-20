@@ -132,7 +132,10 @@ extension _RequestsViewActions on _RequestsViewState {
     );
   }
 
-  Future<void> _loadPermissionsAndThreshold(String? wsId) async {
+  Future<void> _loadPermissionsAndThreshold(
+    String? wsId, {
+    bool forceRefreshRequests = false,
+  }) async {
     final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     final localWsId = wsId;
     final localToken = ++_permissionLoadToken;
@@ -164,7 +167,10 @@ extension _RequestsViewActions on _RequestsViewState {
         _statusChangeGracePeriodMinutes = 0;
         _isThresholdLoading = false;
       });
-      unawaited(_loadRequests(wsIdOverride: wsId));
+      await _loadRequests(
+        wsIdOverride: wsId,
+        forceRefresh: forceRefreshRequests,
+      );
       return;
     }
 
@@ -268,7 +274,10 @@ extension _RequestsViewActions on _RequestsViewState {
         _statusChangeGracePeriodMinutes = 0;
         _isThresholdLoading = false;
       });
-      unawaited(_loadRequests(wsIdOverride: wsId));
+      await _loadRequests(
+        wsIdOverride: wsId,
+        forceRefresh: forceRefreshRequests,
+      );
       return;
     }
 
@@ -290,7 +299,10 @@ extension _RequestsViewActions on _RequestsViewState {
       _statusChangeGracePeriodMinutes = statusChangeGracePeriodMinutes;
       _isThresholdLoading = false;
     });
-    unawaited(_loadRequests(wsIdOverride: wsId));
+    await _loadRequests(
+      wsIdOverride: wsId,
+      forceRefresh: forceRefreshRequests,
+    );
   }
 
   Future<void> _showThresholdSettingsDialog() async {

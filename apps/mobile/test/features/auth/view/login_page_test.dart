@@ -1,4 +1,6 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,8 +23,10 @@ class _MockAppVersionCubit extends MockCubit<AppVersionState>
 
 void main() {
   group('LoginPage', () {
+    const androidBackChannel = MethodChannel('mobile/shell_back');
     late AuthCubit authCubit;
     late AppVersionCubit appVersionCubit;
+    late List<MethodCall> androidBackCalls;
 
     Widget buildSubject() {
       return MultiBlocProvider(
@@ -37,8 +41,21 @@ void main() {
     setUp(() {
       authCubit = _MockAuthCubit();
       appVersionCubit = _MockAppVersionCubit();
+      androidBackCalls = <MethodCall>[];
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(androidBackChannel, (call) async {
+            androidBackCalls.add(call);
+            return null;
+          });
 
       when(() => authCubit.clearError()).thenReturn(null);
+      when(
+        () => authCubit.setAddAccountFlow(enabled: any(named: 'enabled')),
+      ).thenReturn(null);
+      when(
+        () => authCubit.cancelAddAccountFlow(),
+      ).thenAnswer((_) async => true);
       when(() => authCubit.signInWithApple()).thenAnswer((_) async {});
       when(() => authCubit.signInWithGoogle()).thenAnswer((_) async {});
       when(() => authCubit.signInWithMicrosoft()).thenAnswer((_) async {});
@@ -50,6 +67,11 @@ void main() {
         const Stream<AppVersionState>.empty(),
         initialState: const AppVersionState(),
       );
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(androidBackChannel, null);
     });
 
     testWidgets('renders all web-parity social buttons', (tester) async {
@@ -83,6 +105,77 @@ void main() {
         find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('shows add-account copy in add-account mode', (tester) async {
+      const state = AuthState.unauthenticated();
+      when(() => authCubit.state).thenReturn(state);
+      whenListen(
+        authCubit,
+        const Stream<AuthState>.empty(),
+        initialState: state,
+      );
+
+      await tester.pumpApp(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: authCubit),
+            BlocProvider.value(value: appVersionCubit),
+          ],
+          child: const LoginPage(addAccountMode: true),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Add account'), findsOneWidget);
+      expect(
+        find.text("You're adding another account to this device."),
+        findsOneWidget,
+      );
+      verify(() => authCubit.setAddAccountFlow(enabled: true)).called(1);
+    });
+
+    testWidgets('reports add-account route to Android back channel', (
+      tester,
+    ) async {
+      final previousPlatformOverride = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      try {
+        final binding = TestWidgetsFlutterBinding.ensureInitialized();
+
+        const state = AuthState.unauthenticated();
+        when(() => authCubit.state).thenReturn(state);
+        whenListen(
+          authCubit,
+          const Stream<AuthState>.empty(),
+          initialState: state,
+        );
+
+        await tester.pumpApp(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: authCubit),
+              BlocProvider.value(value: appVersionCubit),
+            ],
+            child: const LoginPage(addAccountMode: true),
+          ),
+        );
+        await tester.pump();
+        await binding.runAsync(() async {
+          await Future<void>.delayed(Duration.zero);
+        });
+
+        final updateCalls = androidBackCalls.where(
+          (call) => call.method == 'updateState',
+        );
+        expect(updateCalls, isNotEmpty);
+        expect(
+          updateCalls.last.arguments,
+          containsPair('route', '/add-account'),
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = previousPlatformOverride;
+      }
     });
 
     testWidgets('disables social buttons while auth is busy', (tester) async {

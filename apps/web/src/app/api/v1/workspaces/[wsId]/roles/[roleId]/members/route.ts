@@ -1,15 +1,29 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { normalizeRoleMembers } from '@/lib/workspace-role-members';
 
 interface Params {
   params: Promise<{
+    wsId: string;
     roleId: string;
   }>;
 }
 
 export async function GET(req: Request, { params }: Params) {
   const supabase = await createClient(req);
-  const { roleId } = await params;
+  const { roleId, wsId } = await params;
+
+  const { data: role, error: roleError } = await supabase
+    .from('workspace_roles')
+    .select('id')
+    .eq('id', roleId)
+    .eq('ws_id', wsId)
+    .single();
+
+  if (roleError || !role) {
+    console.log(roleError);
+    return NextResponse.json({ message: 'Role not found' }, { status: 404 });
+  }
 
   const { data, error, count } = await supabase
     .from('workspace_role_members')
@@ -29,7 +43,15 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ data: data ?? [], count: count ?? 0 });
+  const members = normalizeRoleMembers(data as any[]).map((member) => ({
+    id: member.id,
+    display_name: member.display_name,
+    full_name: member.full_name ?? null,
+    avatar_url: member.avatar_url,
+    email: member.email,
+  }));
+
+  return NextResponse.json({ data: members, count: count ?? members.length });
 }
 
 export async function POST(req: Request, { params }: Params) {

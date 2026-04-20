@@ -2,6 +2,7 @@
 abstract final class Routes {
   // Auth
   static const login = '/login';
+  static const addAccount = '/add-account';
   static const signUp = '/signup';
   static const forgotPassword = '/forgot-password';
   static const mfaVerify = '/mfa-verify';

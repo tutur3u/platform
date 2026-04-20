@@ -10,6 +10,7 @@ import type {
   ExternalProjectEntry,
   ExternalProjectStudioAsset,
   ExternalProjectStudioData,
+  Json,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -35,6 +36,53 @@ import { type ComponentProps, useEffect, useState } from 'react';
 import type { EpmStrings } from '../../epm-strings';
 import { ResilientMediaImage } from '../../resilient-media-image';
 import { getEpmStudioQueryKey, useEpmStudio } from '../../use-epm-studio';
+
+function getNavigationTitle(config: unknown) {
+  if (!config || typeof config !== 'object' || Array.isArray(config)) {
+    return '';
+  }
+
+  const navigation = (config as Record<string, unknown>).navigation;
+  if (
+    !navigation ||
+    typeof navigation !== 'object' ||
+    Array.isArray(navigation)
+  ) {
+    return '';
+  }
+
+  const title = (navigation as Record<string, unknown>).title;
+  return typeof title === 'string' ? title : '';
+}
+
+function mergeNavigationTitle(config: unknown, title: string) {
+  const baseConfig =
+    config && typeof config === 'object' && !Array.isArray(config)
+      ? { ...(config as Record<string, unknown>) }
+      : {};
+  const baseNavigation =
+    baseConfig.navigation &&
+    typeof baseConfig.navigation === 'object' &&
+    !Array.isArray(baseConfig.navigation)
+      ? { ...(baseConfig.navigation as Record<string, unknown>) }
+      : {};
+
+  if (title.trim()) {
+    baseNavigation.title = title.trim();
+    baseConfig.navigation = baseNavigation;
+  } else if (Object.keys(baseNavigation).length === 0) {
+    delete baseConfig.navigation;
+  } else {
+    delete baseNavigation.title;
+    if (Object.keys(baseNavigation).length > 0) {
+      baseConfig.navigation = baseNavigation;
+    } else {
+      delete baseConfig.navigation;
+    }
+  }
+
+  return baseConfig;
+}
 
 function statusTone(status: ExternalProjectEntry['status']) {
   switch (status) {
@@ -144,6 +192,9 @@ export function CollectionDetailClient({
   const [isEnabled, setIsEnabled] = useState(
     activeCollection?.is_enabled ?? true
   );
+  const [navigationTitle, setNavigationTitle] = useState(
+    getNavigationTitle(activeCollection?.config)
+  );
 
   const epmPath = pathname.split('/collections/')[0] ?? pathname;
   const updateStudioCache = (
@@ -164,6 +215,7 @@ export function CollectionDetailClient({
     setTitle(activeCollection.title);
     setDescription(activeCollection.description ?? '');
     setIsEnabled(activeCollection.is_enabled);
+    setNavigationTitle(getNavigationTitle(activeCollection.config));
   }, [activeCollection]);
 
   const saveCollectionMutation = useMutation({
@@ -176,6 +228,10 @@ export function CollectionDetailClient({
         workspaceId,
         activeCollection.id,
         {
+          config: mergeNavigationTitle(
+            activeCollection.config,
+            navigationTitle
+          ) as Json,
           description: description || null,
           is_enabled: isEnabled,
           title: title.trim() || activeCollection.title,
@@ -193,6 +249,7 @@ export function CollectionDetailClient({
       setTitle(nextCollection.title);
       setDescription(nextCollection.description ?? '');
       setIsEnabled(nextCollection.is_enabled);
+      setNavigationTitle(getNavigationTitle(nextCollection.config));
       toast.success(strings.saveAction);
     },
   });
@@ -353,6 +410,21 @@ export function CollectionDetailClient({
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="collection-navigation-title">
+                {strings.navigationTitleLabel}
+              </Label>
+              <Input
+                id="collection-navigation-title"
+                placeholder={activeCollection.title}
+                value={navigationTitle}
+                onChange={(event) => setNavigationTitle(event.target.value)}
+              />
+              <p className="text-muted-foreground text-xs leading-5">
+                {strings.navigationTitleDescription}
+              </p>
             </div>
 
             <div className="flex items-center justify-between rounded-[1.15rem] border border-border/70 bg-background/70 px-4 py-3">

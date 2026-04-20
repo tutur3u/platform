@@ -44,6 +44,18 @@ class FinanceCubit extends Cubit<FinanceState> {
     );
   }
 
+  static String _memoryCacheKey(String wsId) => userScopedCacheKey(wsId);
+
+  static void clearUserCache(String? userId) {
+    if (userId == null || userId.isEmpty) {
+      _cache.clear();
+      return;
+    }
+
+    final prefix = '$userId::';
+    _cache.removeWhere((key, value) => key.startsWith(prefix));
+  }
+
   static Future<void> prewarm({
     required FinanceRepository financeRepository,
     required String wsId,
@@ -93,11 +105,12 @@ class FinanceCubit extends Cubit<FinanceState> {
   /// Loads wallets and recent transactions for the workspace.
   Future<void> loadFinanceData(String wsId, {bool forceRefresh = false}) async {
     final cacheKey = _cacheKey(wsId);
+    final memoryCacheKey = _memoryCacheKey(wsId);
     final diskCached = await CacheStore.instance.read<FinanceState>(
       key: cacheKey,
       decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
     );
-    final cached = _cache[wsId];
+    final cached = _cache[memoryCacheKey];
     final hasVisibleData = _loadedWorkspaceId == wsId;
 
     if (!forceRefresh && diskCached.hasValue && diskCached.data != null) {
@@ -171,7 +184,7 @@ class FinanceCubit extends Cubit<FinanceState> {
         clearError: true,
       );
 
-      _cache[wsId] = _FinanceCacheEntry(
+      _cache[memoryCacheKey] = _FinanceCacheEntry(
         state: nextState,
         fetchedAt: DateTime.now(),
       );

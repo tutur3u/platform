@@ -1,12 +1,15 @@
 'use client';
 
+import type { JSONContent } from '@tiptap/react';
 import type {
   ExternalProjectAsset,
+  ExternalProjectBlock,
   ExternalProjectEntry,
   ExternalProjectStudioAsset,
 } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import type { ComponentProps } from 'react';
 import type { EpmStrings } from '../../epm-strings';
 
@@ -15,7 +18,6 @@ export type EntryFormState = {
   slug: string;
   status: ExternalProjectEntry['status'];
   subtitle: string;
-  summary: string;
   title: string;
 };
 
@@ -27,9 +29,19 @@ export function buildEntryFormState(
     slug: entry.slug,
     status: entry.status,
     subtitle: entry.subtitle ?? '',
-    summary: entry.summary ?? '',
     title: entry.title,
   };
+}
+
+export function getMarkdownBlockContent(
+  block: ExternalProjectBlock | null | undefined
+) {
+  if (!block?.content || typeof block.content !== 'object') {
+    return '';
+  }
+
+  const markdown = (block.content as Record<string, unknown>).markdown;
+  return typeof markdown === 'string' ? markdown : '';
 }
 
 export function toDateTimeLocalValue(value: string | null | undefined) {
@@ -136,4 +148,100 @@ export function toStudioAsset(
     asset_url: previous?.asset_url ?? null,
     preview_url: previous?.preview_url ?? null,
   };
+}
+
+const EMPTY_EDITOR_CONTENT: JSONContent = {
+  type: 'doc',
+  content: [
+    {
+      type: 'paragraph',
+    },
+  ],
+};
+
+export function parseEntryDescriptionContent(
+  value: string | null | undefined
+): JSONContent | null {
+  if (!value?.trim()) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as JSONContent;
+    if (parsed && typeof parsed === 'object') {
+      return parsed;
+    }
+  } catch {
+    return {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            {
+              type: 'text',
+              text: value,
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  return null;
+}
+
+export function serializeEntryDescriptionContent(
+  content: JSONContent | null | undefined
+) {
+  if (!content) {
+    return null;
+  }
+
+  const normalizedText = getDescriptionText(content).trim();
+  if (!normalizedText) {
+    return null;
+  }
+
+  const isPlainTextContent = (node: JSONContent | undefined): boolean => {
+    if (!node) {
+      return true;
+    }
+
+    if (node.marks && node.marks.length > 0) {
+      return false;
+    }
+
+    switch (node.type) {
+      case undefined:
+      case 'doc':
+      case 'paragraph':
+        return (node.content ?? []).every((child) => isPlainTextContent(child));
+      case 'text':
+      case 'hardBreak':
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  if (isPlainTextContent(content)) {
+    return normalizedText;
+  }
+
+  return JSON.stringify(content);
+}
+
+export function getEntryDescriptionEditorContent(
+  value: string | null | undefined
+) {
+  return parseEntryDescriptionContent(value) ?? EMPTY_EDITOR_CONTENT;
+}
+
+export function getEntryDescriptionMarkdown(
+  value: string | null | undefined,
+  fallback: string
+) {
+  const normalized = getDescriptionText(value ?? '').trim();
+  return normalized || fallback;
 }

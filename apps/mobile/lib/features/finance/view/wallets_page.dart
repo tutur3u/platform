@@ -31,6 +31,10 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 class WalletsPage extends StatelessWidget {
   const WalletsPage({super.key});
 
+  static void clearCache() {
+    _WalletsViewState.clearMemoryCache();
+  }
+
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
@@ -52,6 +56,10 @@ class _WalletsViewState extends State<_WalletsView> {
   static const CachePolicy _cachePolicy = CachePolicies.moduleData;
   static const _cacheTag = 'finance:wallets';
   static final Map<String, _WalletsCacheEntry> _cache = {};
+
+  static void clearMemoryCache() {
+    _cache.clear();
+  }
 
   List<Wallet> _wallets = const [];
   String? _workspaceCurrency;
@@ -81,6 +89,8 @@ class _WalletsViewState extends State<_WalletsView> {
       locale: currentCacheLocaleTag(),
     );
   }
+
+  String _memoryCacheKey(String wsId) => userScopedCacheKey(wsId);
 
   void _seedWalletsFromCacheIfNeeded({String? wsId}) {
     final resolvedWsId =
@@ -346,7 +356,7 @@ class _WalletsViewState extends State<_WalletsView> {
       return;
     }
     final requestToken = ++_currentWalletsRequestToken;
-    final cached = _cache[wsId];
+    final cached = _cache[_memoryCacheKey(wsId)];
     final diskCached = await CacheStore.instance.read<List<Wallet>>(
       key: _cacheKey(wsId),
       decode: _decodeWallets,
@@ -409,7 +419,7 @@ class _WalletsViewState extends State<_WalletsView> {
       if (!mounted || requestToken != _currentWalletsRequestToken) {
         return;
       }
-      _cache[wsId] = _WalletsCacheEntry(
+      _cache[_memoryCacheKey(wsId)] = _WalletsCacheEntry(
         wallets: sortedWallets,
         fetchedAt: DateTime.now(),
       );

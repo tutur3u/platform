@@ -5,11 +5,10 @@ class TaskPortfolioPermissionsController {
     required WorkspacePermissionsRepository permissionsRepository,
   }) : _permissionsRepository = permissionsRepository;
 
-  static final Map<String, bool> _permissionCache = {};
-
   final WorkspacePermissionsRepository _permissionsRepository;
 
   String? _workspaceId;
+  String? _userId;
   bool _canManageProjects = false;
   bool _isCheckingPermissions = false;
   bool _hasResolvedPermissions = false;
@@ -19,32 +18,23 @@ class TaskPortfolioPermissionsController {
   bool get isCheckingPermissions => _isCheckingPermissions;
   bool get hasResolvedPermissions => _hasResolvedPermissions;
 
-  bool shouldReloadForWorkspace(String? wsId) => wsId != _workspaceId;
-
-  void primeCachedPermission(String? wsId) {
-    _workspaceId = wsId;
-    if (wsId == null) {
-      _canManageProjects = false;
-      _hasResolvedPermissions = true;
-      return;
-    }
-
-    final cachedPermission = _permissionCache[wsId];
-    if (cachedPermission == null) {
-      _canManageProjects = false;
-      _hasResolvedPermissions = false;
-      return;
-    }
-
-    _canManageProjects = cachedPermission;
-    _hasResolvedPermissions = true;
+  bool shouldReloadForWorkspace(String? wsId, {String? userId}) {
+    return wsId != _workspaceId || userId != _userId;
   }
 
-  Future<void> loadPermissions({required String? wsId}) async {
+  void primeCachedPermission(String? wsId, {String? userId}) {
     _workspaceId = wsId;
+    _userId = userId;
+    _canManageProjects = false;
+    _hasResolvedPermissions = wsId == null;
+  }
+
+  Future<void> loadPermissions({required String? wsId, String? userId}) async {
+    _workspaceId = wsId;
+    _userId = userId;
     _isCheckingPermissions = true;
 
-    if (wsId == null) {
+    if (wsId == null || userId == null) {
       _canManageProjects = false;
       _isCheckingPermissions = false;
       _hasResolvedPermissions = true;
@@ -52,23 +42,24 @@ class TaskPortfolioPermissionsController {
     }
 
     final requestWorkspaceId = wsId;
+    final requestUserId = userId;
 
     try {
       final permissions = await _permissionsRepository.getPermissions(
         wsId: requestWorkspaceId,
+        userId: requestUserId,
       );
 
       // Ignore stale responses after workspace changes.
-      if (_workspaceId != requestWorkspaceId) {
+      if (_workspaceId != requestWorkspaceId || _userId != requestUserId) {
         return;
       }
 
       _canManageProjects = permissions.containsPermission('manage_projects');
-      _permissionCache[requestWorkspaceId] = _canManageProjects;
       _isCheckingPermissions = false;
       _hasResolvedPermissions = true;
     } on Exception {
-      if (_workspaceId != requestWorkspaceId) {
+      if (_workspaceId != requestWorkspaceId || _userId != requestUserId) {
         return;
       }
       _canManageProjects = false;

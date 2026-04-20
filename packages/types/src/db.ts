@@ -434,6 +434,7 @@ export type YoolaExternalProjectArtworkLoadingItem = {
   slug: string;
   title: string;
   summary: string | null;
+  caption: string | null;
   label: string | null;
   category: string | null;
   rarity: string | null;
@@ -451,6 +452,7 @@ export type YoolaExternalProjectLoreCapsuleLoadingItem = {
   entryId: string;
   slug: string;
   title: string;
+  subtitle: string | null;
   summary: string | null;
   teaser: string | null;
   channel: string | null;
@@ -458,16 +460,22 @@ export type YoolaExternalProjectLoreCapsuleLoadingItem = {
   date: string | null;
   tags: string[];
   excerptMarkdown: string | null;
+  bodyMarkdown: string | null;
   artworkEntryId: string | null;
   artworkAssetUrl: string | null;
+  profileData: Record<string, unknown>;
+  metadata: Record<string, unknown>;
 };
 
 export type YoolaExternalProjectSectionLoadingItem = {
   entryId: string;
   slug: string;
   title: string;
+  subtitle: string | null;
   summary: string | null;
   bodyMarkdown: string | null;
+  profileData: Record<string, unknown>;
+  metadata: Record<string, unknown>;
 };
 
 export type YoolaExternalProjectLoadingData = {

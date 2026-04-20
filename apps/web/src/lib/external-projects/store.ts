@@ -18,6 +18,7 @@ import type {
   WorkspaceExternalProjectBinding,
   YoolaExternalProjectArtworkLoadingItem,
   YoolaExternalProjectLoreCapsuleLoadingItem,
+  YoolaExternalProjectSectionLoadingItem,
 } from '@tuturuuu/types';
 import { deleteWorkspaceStorageObjectByPath } from '../workspace-storage-provider';
 import { externalProjectAdapterFixtures } from './fixtures';
@@ -81,6 +82,17 @@ function findMarkdownBlockMarkdown(entry: {
   );
 
   return asString(asJsonObject(markdownBlock?.content).markdown);
+}
+
+function findAssetCaption(
+  asset:
+    | {
+        metadata: Json;
+      }
+    | null
+    | undefined
+) {
+  return asString(asJsonObject(asset?.metadata).caption);
 }
 
 function buildDeliveryAssetUrl(
@@ -154,6 +166,7 @@ function buildYoolaLoadingData(
       altText: leadAsset?.alt_text ?? null,
       assetId: leadAsset?.id ?? null,
       assetUrl: leadAsset?.assetUrl ?? null,
+      caption: findAssetCaption(leadAsset),
       category: asString(profile.category),
       entryId: entry.id,
       height: asNullableNumber(profile.height),
@@ -186,12 +199,16 @@ function buildYoolaLoadingData(
     return {
       artworkAssetUrl: artworkEntry?.assetUrl ?? null,
       artworkEntryId: artworkEntry?.entryId ?? null,
+      bodyMarkdown: findMarkdownBlockMarkdown(entry),
       channel: asString(profile.channel),
       date: asString(profile.date),
       entryId: entry.id,
       excerptMarkdown: findMarkdownBlockMarkdown(entry),
+      metadata: asJsonObject(entry.metadata),
+      profileData: profile,
       slug: entry.slug,
       status: asString(profile.status),
+      subtitle: entry.subtitle,
       summary: entry.summary,
       tags: asStringArray(profile.tags),
       teaser: asString(profile.teaser),
@@ -214,10 +231,13 @@ function buildYoolaLoadingData(
       {
         bodyMarkdown: findMarkdownBlockMarkdown(entry),
         entryId: entry.id,
+        metadata: asJsonObject(entry.metadata),
+        profileData: asJsonObject(entry.profile_data),
         slug: entry.slug,
+        subtitle: entry.subtitle,
         summary: entry.summary,
         title: entry.title,
-      },
+      } satisfies YoolaExternalProjectSectionLoadingItem,
     ])
   );
 

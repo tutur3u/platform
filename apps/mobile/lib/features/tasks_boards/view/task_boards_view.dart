@@ -43,7 +43,6 @@ class TaskBoardsView extends StatefulWidget {
 
 class _TaskBoardsViewState extends State<TaskBoardsView> {
   static const double _fabContentBottomPadding = 96;
-  static final Map<String, bool> _permissionCache = {};
 
   late final WorkspacePermissionsRepository _permissionsRepository;
   final ScrollController _scrollController = ScrollController();
@@ -79,14 +78,8 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     }
 
     _permissionsWorkspaceId = wsId;
-    final cachedPermission = wsId == null ? null : _permissionCache[wsId];
-    if (cachedPermission != null) {
-      _canManageProjects = cachedPermission;
-      _hasResolvedPermissions = true;
-    } else {
-      _canManageProjects = false;
-      _hasResolvedPermissions = wsId == null;
-    }
+    _canManageProjects = false;
+    _hasResolvedPermissions = wsId == null;
     unawaited(_loadPermissions());
   }
 
@@ -97,6 +90,10 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
       listenWhen: (prev, curr) =>
           prev.currentWorkspace?.id != curr.currentWorkspace?.id,
       listener: (context, state) {
+        final nextWsId = state.currentWorkspace?.id;
+        _permissionsWorkspaceId = nextWsId;
+        _canManageProjects = false;
+        _hasResolvedPermissions = false;
         unawaited(_loadPermissions());
       },
       child: Stack(
@@ -289,7 +286,6 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
         _permissionsLoadFailed = false;
         _hasResolvedPermissions = true;
       });
-      _permissionCache[wsId] = canManageProjects;
 
       if (canManageProjects && mounted) {
         unawaited(

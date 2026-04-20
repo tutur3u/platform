@@ -18,7 +18,7 @@ void main() {
     setUp(() {
       authCubit = _MockAuthCubit();
       when(() => authCubit.verifyMfa(any())).thenAnswer((_) async => true);
-      when(() => authCubit.signOut()).thenAnswer((_) async {});
+      when(() => authCubit.signOutAllAccounts()).thenAnswer((_) async {});
     });
 
     testWidgets('submits a pasted code through the custom OTP field', (

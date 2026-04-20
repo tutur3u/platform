@@ -62,7 +62,7 @@ Future<bool?> showSettingsConfirmationDialog({
   required String title,
   required String description,
   required String confirmLabel,
-  IconData icon = Icons.warning_amber_rounded,
+  IconData? icon,
   bool isDestructive = false,
 }) {
   return showAdaptiveSheet<bool>(
@@ -74,7 +74,7 @@ Future<bool?> showSettingsConfirmationDialog({
         description: description,
         icon: icon,
         maxWidth: 420,
-        maxHeightFactor: 0.55,
+        maxHeightFactor: 0.42,
         actions: [
           shad.OutlineButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),

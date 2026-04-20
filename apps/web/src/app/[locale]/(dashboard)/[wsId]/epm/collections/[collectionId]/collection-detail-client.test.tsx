@@ -64,7 +64,11 @@ describe('CollectionDetailClient', () => {
 
     updateWorkspaceExternalProjectCollectionMock.mockResolvedValue({
       collection_type: 'artworks',
-      config: {},
+      config: {
+        navigation: {
+          title: 'Archive',
+        },
+      },
       description: 'Updated description',
       id: 'collection-1',
       is_enabled: false,
@@ -168,6 +172,9 @@ describe('CollectionDetailClient', () => {
     fireEvent.change(screen.getByLabelText('epm.description_label'), {
       target: { value: 'Updated description' },
     });
+    fireEvent.change(screen.getByLabelText('epm.navigation_title_label'), {
+      target: { value: 'Archive' },
+    });
     fireEvent.click(screen.getByRole('switch'));
     fireEvent.click(screen.getByRole('button', { name: 'epm.save_action' }));
 
@@ -176,6 +183,11 @@ describe('CollectionDetailClient', () => {
         'ws_123',
         'collection-1',
         {
+          config: {
+            navigation: {
+              title: 'Archive',
+            },
+          },
           description: 'Updated description',
           is_enabled: false,
           title: 'Updated artworks',

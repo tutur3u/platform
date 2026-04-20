@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { JSONContent } from '@tiptap/react';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -14,11 +15,13 @@ import {
 } from '@tuturuuu/icons';
 import {
   createWorkspaceExternalProjectAsset,
+  createWorkspaceExternalProjectBlock,
   deleteWorkspaceExternalProjectAsset,
   deleteWorkspaceExternalProjectEntry,
   duplicateWorkspaceExternalProjectEntry,
   publishWorkspaceExternalProjectEntry,
   updateWorkspaceExternalProjectAsset,
+  updateWorkspaceExternalProjectBlock,
   updateWorkspaceExternalProjectEntry,
   uploadWorkspaceExternalProjectAssetFile,
 } from '@tuturuuu/internal-api';
@@ -26,6 +29,7 @@ import type {
   ExternalProjectEntry,
   ExternalProjectStudioAsset,
   ExternalProjectStudioData,
+  Json,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
 import {
@@ -70,7 +74,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Textarea } from '@tuturuuu/ui/textarea';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
@@ -80,6 +84,7 @@ import type { EpmStrings } from '../../epm-strings';
 import { ResilientMediaImage } from '../../resilient-media-image';
 import { getEpmStudioQueryKey, useEpmStudio } from '../../use-epm-studio';
 import { EntryDetailLoadingState } from './entry-detail-loading-state';
+import { EntryDetailMarkdownEditor } from './entry-detail-markdown-editor';
 import { EntryDetailPreviewSheet } from './entry-detail-preview-sheet';
 import {
   ActionButton,
@@ -87,10 +92,44 @@ import {
   formatDateLabel,
   formatStatus,
   fromDateTimeLocalValue,
+  getEntryDescriptionEditorContent,
+  getMarkdownBlockContent,
+  parseEntryDescriptionContent,
+  serializeEntryDescriptionContent,
   sortImageAssets,
   statusTone,
   toStudioAsset,
 } from './entry-detail-shared';
+
+function getAssetCaption(asset: ExternalProjectStudioAsset | null | undefined) {
+  const metadata = asset?.metadata;
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return '';
+  }
+
+  const caption = (metadata as Record<string, unknown>).caption;
+  return typeof caption === 'string' ? caption : '';
+}
+
+function mergeAssetCaptionMetadata(
+  asset: ExternalProjectStudioAsset,
+  caption: string
+): Json {
+  const nextMetadata =
+    asset.metadata &&
+    typeof asset.metadata === 'object' &&
+    !Array.isArray(asset.metadata)
+      ? { ...(asset.metadata as Record<string, unknown>) }
+      : {};
+
+  if (caption.trim()) {
+    nextMetadata.caption = caption.trim();
+  } else {
+    delete nextMetadata.caption;
+  }
+
+  return nextMetadata as Json;
+}
 
 export function EntryDetailClient({
   binding,
@@ -127,12 +166,16 @@ export function EntryDetailClient({
   const studio = studioQuery.data;
   const entries = studio?.entries ?? initialStudio?.entries ?? [];
   const assets = studio?.assets ?? initialStudio?.assets ?? [];
+  const blocks = studio?.blocks ?? initialStudio?.blocks ?? [];
   const collections = studio?.collections ?? initialStudio?.collections ?? [];
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
   const [deleteEntryDialogOpen, setDeleteEntryDialogOpen] = useState(false);
   const [deleteMediaDialogOpen, setDeleteMediaDialogOpen] = useState(false);
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
+  const [assetCaptions, setAssetCaptions] = useState<Record<string, string>>(
+    {}
+  );
   const activeEntry = entries.find((entry) => entry.id === entryId) ?? null;
   const activeCollection =
     collections.find(
@@ -142,13 +185,53 @@ export function EntryDetailClient({
     () => sortImageAssets(assets, entryId),
     [assets, entryId]
   );
+  const markdownBlock = useMemo(
+    () =>
+      blocks
+        .filter(
+          (block) =>
+            block.entry_id === entryId && block.block_type === 'markdown'
+        )
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0] ?? null,
+    [blocks, entryId]
+  );
   const coverAsset = imageAssets[0] ?? null;
+  const artworkCollection =
+    collections.find((collection) => collection.slug === 'artworks') ?? null;
+  const artworkOptions = useMemo(
+    () =>
+      artworkCollection
+        ? entries.filter(
+            (entry) => entry.collection_id === artworkCollection.id
+          )
+        : [],
+    [artworkCollection, entries]
+  );
   const [entryForm, setEntryForm] = useState(() =>
     activeEntry ? buildEntryFormState(activeEntry) : null
   );
+  const [descriptionContent, setDescriptionContent] =
+    useState<JSONContent | null>(() =>
+      getEntryDescriptionEditorContent(activeEntry?.summary)
+    );
   const [coverAltText, setCoverAltText] = useState(
     coverAsset?.alt_text ?? activeEntry?.title ?? ''
   );
+  const [bodyMarkdown, setBodyMarkdown] = useState(() =>
+    getMarkdownBlockContent(markdownBlock)
+  );
+  const [pairedArtworkSlug, setPairedArtworkSlug] = useState(() => {
+    const profileData =
+      activeEntry?.profile_data &&
+      typeof activeEntry.profile_data === 'object' &&
+      !Array.isArray(activeEntry.profile_data)
+        ? (activeEntry.profile_data as Record<string, unknown>)
+        : {};
+
+    return typeof profileData.artworkSlug === 'string'
+      ? profileData.artworkSlug
+      : '__none__';
+  });
 
   const previewQuery = useExternalProjectLivePreview({
     enabled: previewOpen,
@@ -164,6 +247,17 @@ export function EntryDetailClient({
 
   const detailPath = pathname.replace(/\/$/, '');
   const dashboardPath = detailPath.replace(/\/entries\/[^/]+$/, '');
+  const normalizedDescription =
+    serializeEntryDescriptionContent(descriptionContent);
+  const supportsMarkdownBody =
+    !!markdownBlock ||
+    [activeCollection?.slug, activeCollection?.collection_type]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .match(/lore|writing|singleton|section/);
+  const supportsPairedVisual =
+    Boolean(supportsMarkdownBody) && artworkOptions.length > 0;
 
   const entryDirty =
     !!activeEntry &&
@@ -171,7 +265,19 @@ export function EntryDetailClient({
     (entryForm.title !== activeEntry.title ||
       entryForm.slug !== activeEntry.slug ||
       entryForm.subtitle !== (activeEntry.subtitle ?? '') ||
-      entryForm.summary !== (activeEntry.summary ?? '') ||
+      normalizedDescription !==
+        serializeEntryDescriptionContent(
+          parseEntryDescriptionContent(activeEntry.summary)
+        ) ||
+      (supportsPairedVisual
+        ? pairedArtworkSlug !==
+          (((activeEntry.profile_data &&
+          typeof activeEntry.profile_data === 'object' &&
+          !Array.isArray(activeEntry.profile_data)
+            ? (activeEntry.profile_data as Record<string, unknown>)
+            : {}
+          )?.artworkSlug as string | undefined) ?? '__none__')
+        : false) ||
       entryForm.status !== activeEntry.status ||
       fromDateTimeLocalValue(entryForm.scheduledFor) !==
         (activeEntry.scheduled_for ?? null));
@@ -182,6 +288,8 @@ export function EntryDetailClient({
   const hasCoverMedia = Boolean(
     coverAsset?.preview_url || coverAsset?.asset_url
   );
+  const bodyMarkdownDirty =
+    bodyMarkdown.trim() !== getMarkdownBlockContent(markdownBlock).trim();
 
   const updateStudioCache = (
     updater: (current: NonNullable<typeof studio>) => NonNullable<typeof studio>
@@ -209,6 +317,12 @@ export function EntryDetailClient({
   }, [activeEntry]);
 
   useEffect(() => {
+    setDescriptionContent(
+      getEntryDescriptionEditorContent(activeEntry?.summary)
+    );
+  }, [activeEntry?.summary]);
+
+  useEffect(() => {
     if (!activeEntry) {
       setCoverAltText('');
       return;
@@ -218,11 +332,50 @@ export function EntryDetailClient({
   }, [activeEntry, coverAsset?.alt_text]);
 
   useEffect(() => {
+    setBodyMarkdown(getMarkdownBlockContent(markdownBlock));
+  }, [markdownBlock]);
+
+  useEffect(() => {
+    const profileData =
+      activeEntry?.profile_data &&
+      typeof activeEntry.profile_data === 'object' &&
+      !Array.isArray(activeEntry.profile_data)
+        ? (activeEntry.profile_data as Record<string, unknown>)
+        : {};
+
+    setPairedArtworkSlug(
+      typeof profileData.artworkSlug === 'string'
+        ? profileData.artworkSlug
+        : '__none__'
+    );
+  }, [activeEntry?.profile_data]);
+
+  useEffect(() => {
     setSelectedAssetIds((current) =>
       current.filter((assetId) =>
         imageAssets.some((asset) => asset.id === assetId)
       )
     );
+  }, [imageAssets]);
+
+  useEffect(() => {
+    setAssetCaptions((current) => {
+      const next = Object.fromEntries(
+        Object.entries(current).filter(([assetId]) =>
+          imageAssets.some((asset) => asset.id === assetId)
+        )
+      );
+      const currentKeys = Object.keys(current);
+      const nextKeys = Object.keys(next);
+      if (
+        currentKeys.length === nextKeys.length &&
+        nextKeys.every((key) => current[key] === next[key])
+      ) {
+        return current;
+      }
+
+      return next;
+    });
   }, [imageAssets]);
 
   const mergeEntry = (nextEntry: ExternalProjectEntry) => {
@@ -255,23 +408,90 @@ export function EntryDetailClient({
     setCoverAltText(nextAsset.alt_text ?? activeEntryTitle);
   };
 
+  const mergeBlock = (nextBlock: (typeof blocks)[number]) => {
+    updateStudioCache((current) => {
+      const blockIndex = current.blocks.findIndex(
+        (block) => block.id === nextBlock.id
+      );
+      const nextBlocks =
+        blockIndex === -1
+          ? [...current.blocks, nextBlock]
+          : current.blocks.map((block) =>
+              block.id === nextBlock.id ? nextBlock : block
+            );
+
+      return {
+        ...current,
+        blocks: nextBlocks,
+      };
+    });
+  };
+
   const saveEntryMutation = useMutation({
     mutationFn: async () => {
       if (!activeEntry || !entryForm) {
         throw new Error(strings.emptyEntries);
       }
 
+      const currentProfileData =
+        activeEntry.profile_data &&
+        typeof activeEntry.profile_data === 'object' &&
+        !Array.isArray(activeEntry.profile_data)
+          ? { ...(activeEntry.profile_data as Record<string, unknown>) }
+          : {};
+
+      if (supportsPairedVisual && pairedArtworkSlug !== '__none__') {
+        currentProfileData.artworkSlug = pairedArtworkSlug;
+      } else {
+        delete currentProfileData.artworkSlug;
+      }
+
       return updateWorkspaceExternalProjectEntry(workspaceId, activeEntry.id, {
+        profile_data: currentProfileData as Json,
         scheduled_for: fromDateTimeLocalValue(entryForm.scheduledFor),
         slug: entryForm.slug.trim(),
         status: entryForm.status,
         subtitle: entryForm.subtitle.trim() || null,
-        summary: entryForm.summary.trim() || null,
+        summary: normalizedDescription,
         title: entryForm.title.trim(),
       });
     },
     onSuccess: (entry) => {
       mergeEntry(entry);
+      toast.success(strings.saveAction);
+    },
+  });
+
+  const saveMarkdownMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEntry) {
+        throw new Error(strings.emptyEntries);
+      }
+
+      const normalizedMarkdown = bodyMarkdown.trim();
+
+      if (markdownBlock) {
+        return updateWorkspaceExternalProjectBlock(
+          workspaceId,
+          markdownBlock.id,
+          {
+            content: { markdown: normalizedMarkdown },
+            title: markdownBlock.title,
+          }
+        );
+      }
+
+      return createWorkspaceExternalProjectBlock(workspaceId, {
+        block_type: 'markdown',
+        content: { markdown: normalizedMarkdown },
+        entry_id: activeEntry.id,
+        sort_order: 0,
+        title: strings.bodyMarkdownLabel,
+      });
+    },
+    onSuccess: (block) => {
+      mergeBlock(block);
+      setBodyMarkdown(getMarkdownBlockContent(block));
       toast.success(strings.saveAction);
     },
   });
@@ -481,6 +701,41 @@ export function EntryDetailClient({
     },
   });
 
+  const saveAssetCaptionMutation = useMutation({
+    mutationFn: async (assetId: string) => {
+      const asset = imageAssets.find((item) => item.id === assetId);
+      if (!asset) {
+        throw new Error(strings.emptyEntries);
+      }
+
+      return updateWorkspaceExternalProjectAsset(workspaceId, assetId, {
+        metadata: mergeAssetCaptionMetadata(
+          asset,
+          assetCaptions[assetId] ?? ''
+        ),
+      });
+    },
+    onSuccess: async (asset) => {
+      mergeAsset(
+        toStudioAsset(
+          asset,
+          imageAssets.find((item) => item.id === asset.id) ?? null
+        )
+      );
+      setAssetCaptions((current) => {
+        if (!(asset.id in current)) {
+          return current;
+        }
+
+        const next = { ...current };
+        delete next[asset.id];
+        return next;
+      });
+      await refreshStudioFromBackend();
+      toast.success(strings.saveMediaDetailsAction);
+    },
+  });
+
   const setAsCoverMutation = useMutation({
     mutationFn: async (assetId: string) => {
       const nextOrder = [
@@ -542,6 +797,11 @@ export function EntryDetailClient({
     );
   };
 
+  const deleteSingleAsset = (assetId: string) => {
+    setSelectedAssetIds([assetId]);
+    setDeleteMediaDialogOpen(true);
+  };
+
   if (studioQuery.isPending && !studio) {
     return variant === 'dialog' ? (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -563,8 +823,13 @@ export function EntryDetailClient({
     uploadCoverMutation.isPending ||
     uploadMediaMutation.isPending ||
     saveCoverMutation.isPending ||
+    saveAssetCaptionMutation.isPending ||
     deleteAssetsMutation.isPending ||
     setAsCoverMutation.isPending;
+  const saveProcessing =
+    saveEntryMutation.isPending ||
+    saveMarkdownMutation.isPending ||
+    saveCoverMutation.isPending;
 
   const content = (
     <div className="mx-auto min-h-[calc(100svh-5rem)] max-w-[1580px] space-y-6 pb-10">
@@ -665,13 +930,16 @@ export function EntryDetailClient({
             <Button
               size="sm"
               disabled={
-                (!entryDirty && !coverDirty) ||
-                saveEntryMutation.isPending ||
-                saveCoverMutation.isPending
+                (!entryDirty && !coverDirty && !bodyMarkdownDirty) ||
+                saveProcessing
               }
               onClick={() => {
                 if (entryDirty) {
                   saveEntryMutation.mutate();
+                }
+
+                if (bodyMarkdownDirty) {
+                  saveMarkdownMutation.mutate();
                 }
 
                 if (coverDirty && coverAsset) {
@@ -679,7 +947,11 @@ export function EntryDetailClient({
                 }
               }}
             >
-              <Pencil className="mr-2 h-4 w-4" />
+              {saveProcessing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Pencil className="mr-2 h-4 w-4" />
+              )}
               {strings.saveAction}
             </Button>
             <ActionButton
@@ -858,6 +1130,64 @@ export function EntryDetailClient({
           </Card>
 
           <Card className="border-border/70 bg-card/95 shadow-none">
+            <CardHeader>
+              <CardTitle>{strings.summaryLabel}</CardTitle>
+              <CardDescription>
+                {strings.descriptionEditorDescription}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="entry-subtitle">{strings.subtitleLabel}</Label>
+                <Input
+                  id="entry-subtitle"
+                  className="h-11"
+                  value={entryForm.subtitle}
+                  onChange={(event) =>
+                    setEntryForm((current) =>
+                      current
+                        ? { ...current, subtitle: event.target.value }
+                        : current
+                    )
+                  }
+                />
+              </div>
+              <RichTextEditor
+                content={descriptionContent}
+                onChange={(content) => setDescriptionContent(content)}
+                saveButtonLabel={strings.saveAction}
+                savedButtonLabel={strings.saveAction}
+                writePlaceholder={strings.previewEmptyDescription}
+                className="min-h-[280px] bg-background/70 px-4 pb-4 sm:px-5 sm:pb-5"
+              />
+            </CardContent>
+          </Card>
+
+          {supportsMarkdownBody ? (
+            <Card className="border-border/70 bg-card/95 shadow-none">
+              <CardHeader>
+                <CardTitle>{strings.bodyMarkdownLabel}</CardTitle>
+                <CardDescription>
+                  {strings.bodyMarkdownDescription}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <EntryDetailMarkdownEditor
+                  id="entry-body-markdown"
+                  label={strings.bodyMarkdownLabel}
+                  placeholder={strings.previewEmptyDescription}
+                  previewLabel={strings.markdownPreviewLabel}
+                  previewPlaceholder={strings.previewEmptyDescription}
+                  rows={14}
+                  value={bodyMarkdown}
+                  writeLabel={strings.markdownWriteLabel}
+                  onChange={setBodyMarkdown}
+                />
+              </CardContent>
+            </Card>
+          ) : null}
+
+          <Card className="border-border/70 bg-card/95 shadow-none">
             <CardHeader className="gap-4">
               <div>
                 <CardTitle>{strings.assetGalleryTitle}</CardTitle>
@@ -942,20 +1272,25 @@ export function EntryDetailClient({
               ) : (
                 imageAssets.map((asset, index) => {
                   const isSelected = selectedAssetIds.includes(asset.id);
+                  const caption =
+                    assetCaptions[asset.id] ?? getAssetCaption(asset);
+                  const captionDirty = caption !== getAssetCaption(asset);
 
                   return (
-                    <button
+                    <div
                       key={asset.id}
-                      type="button"
                       className={cn(
                         'overflow-hidden rounded-[1.2rem] border bg-background/75 text-left transition',
                         isSelected
                           ? 'border-primary ring-2 ring-primary/30'
                           : 'border-border/70 hover:border-border'
                       )}
-                      onClick={() => toggleAssetSelection(asset.id)}
                     >
-                      <div className="relative h-36 overflow-hidden border-border/70 border-b bg-background/80">
+                      <button
+                        type="button"
+                        className="relative block h-36 w-full overflow-hidden border-border/70 border-b bg-background/80"
+                        onClick={() => toggleAssetSelection(asset.id)}
+                      >
                         <ResilientMediaImage
                           alt={asset.alt_text ?? activeEntry.title}
                           assetUrl={asset.asset_url}
@@ -964,7 +1299,7 @@ export function EntryDetailClient({
                           previewUrl={asset.preview_url}
                           sizes="(max-width: 1024px) 100vw, 18vw"
                         />
-                      </div>
+                      </button>
                       <div className="space-y-3 p-3">
                         <div className="flex items-center justify-between gap-2">
                           <Badge variant="outline">
@@ -972,32 +1307,91 @@ export function EntryDetailClient({
                               ? strings.coverBadge
                               : strings.assetsLabel}
                           </Badge>
-                          {index !== 0 ? (
+                          <div className="flex items-center gap-2">
+                            {index !== 0 ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={
+                                  setAsCoverMutation.isPending ||
+                                  mediaProcessing
+                                }
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setAsCoverMutation.mutate(asset.id);
+                                }}
+                              >
+                                {setAsCoverMutation.isPending ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : null}
+                                {setAsCoverMutation.isPending
+                                  ? strings.mediaProcessingLabel
+                                  : strings.setAsCoverAction}
+                              </Button>
+                            ) : null}
                             <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={
-                                setAsCoverMutation.isPending || mediaProcessing
-                              }
+                              size="icon"
+                              variant="ghost"
+                              className="size-8"
+                              disabled={mediaProcessing}
                               onClick={(event) => {
                                 event.stopPropagation();
-                                setAsCoverMutation.mutate(asset.id);
+                                deleteSingleAsset(asset.id);
                               }}
                             >
-                              {setAsCoverMutation.isPending ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              ) : null}
-                              {setAsCoverMutation.isPending
-                                ? strings.mediaProcessingLabel
-                                : strings.setAsCoverAction}
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">
+                                {strings.removeMediaAction}
+                              </span>
                             </Button>
-                          ) : null}
+                          </div>
                         </div>
                         <div className="truncate text-sm">
                           {asset.alt_text ?? activeEntry.title}
                         </div>
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor={`entry-asset-caption-${asset.id}`}
+                            className="text-xs"
+                          >
+                            {strings.captionLabel}
+                          </Label>
+                          <Input
+                            id={`entry-asset-caption-${asset.id}`}
+                            value={caption}
+                            placeholder={strings.captionPlaceholder}
+                            onChange={(event) =>
+                              setAssetCaptions((current) => ({
+                                ...current,
+                                [asset.id]: event.target.value,
+                              }))
+                            }
+                          />
+                          {captionDirty ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={
+                                saveAssetCaptionMutation.isPending ||
+                                mediaProcessing
+                              }
+                              onClick={() =>
+                                saveAssetCaptionMutation.mutate(asset.id)
+                              }
+                            >
+                              {saveAssetCaptionMutation.isPending ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Pencil className="mr-2 h-4 w-4" />
+                              )}
+                              {saveAssetCaptionMutation.isPending
+                                ? strings.mediaProcessingLabel
+                                : strings.saveMediaDetailsAction}
+                            </Button>
+                          ) : null}
+                        </div>
                       </div>
-                    </button>
+                    </div>
                   );
                 })
               )}
@@ -1027,37 +1421,6 @@ export function EntryDetailClient({
                   }
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="entry-subtitle">{strings.subtitleLabel}</Label>
-                <Input
-                  id="entry-subtitle"
-                  className="h-11"
-                  value={entryForm.subtitle}
-                  onChange={(event) =>
-                    setEntryForm((current) =>
-                      current
-                        ? { ...current, subtitle: event.target.value }
-                        : current
-                    )
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="entry-summary">{strings.summaryLabel}</Label>
-                <Textarea
-                  id="entry-summary"
-                  rows={6}
-                  className="min-h-[180px] resize-y"
-                  value={entryForm.summary}
-                  onChange={(event) =>
-                    setEntryForm((current) =>
-                      current
-                        ? { ...current, summary: event.target.value }
-                        : current
-                    )
-                  }
-                />
-              </div>
               <div className="grid gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="entry-slug">{strings.slugLabel}</Label>
@@ -1073,6 +1436,32 @@ export function EntryDetailClient({
                     }
                   />
                 </div>
+                {supportsPairedVisual ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="entry-paired-artwork">Paired visual</Label>
+                    <Select
+                      value={pairedArtworkSlug}
+                      onValueChange={setPairedArtworkSlug}
+                    >
+                      <SelectTrigger id="entry-paired-artwork">
+                        <SelectValue placeholder="No paired visual" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">
+                          No paired visual
+                        </SelectItem>
+                        {artworkOptions.map((artworkEntry) => (
+                          <SelectItem
+                            key={artworkEntry.id}
+                            value={artworkEntry.slug}
+                          >
+                            {artworkEntry.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : null}
                 <div className="space-y-2">
                   <Label htmlFor="entry-status">{strings.statusLabel}</Label>
                   <Select
@@ -1280,7 +1669,9 @@ export function EntryDetailClient({
               }
               onClick={() => deleteAssetsMutation.mutate(selectedAssetIds)}
             >
-              {strings.bulkRemoveMediaAction}
+              {selectedAssetCount === 1
+                ? strings.removeMediaAction
+                : strings.bulkRemoveMediaAction}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -9,7 +9,8 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
-import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -69,7 +70,7 @@ class TimeTrackerPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    final userId = supabase.auth.currentUser?.id;
+    final userId = context.read<AuthCubit>().state.user?.id;
 
     return BlocProvider(
       create: (context) {
@@ -148,14 +149,22 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final workspaceCubit = context.read<WorkspaceCubit>();
+      final authCubit = context.read<AuthCubit>();
       final calendarSettingsCubit = context.read<CalendarSettingsCubit>();
       final timeTrackerCubit = context.read<TimeTrackerCubit>();
       final wsId = workspaceCubit.state.currentWorkspace?.id;
-      final userId = supabase.auth.currentUser?.id;
+      final userId = authCubit.state.user?.id;
 
       if (wsId != null) {
+        final capturedWsId = wsId;
+        final capturedUserId = userId;
         await calendarSettingsCubit.loadWorkspacePreference(wsId);
         if (!mounted) return;
+        final latestWsId = workspaceCubit.state.currentWorkspace?.id;
+        final latestUserId = authCubit.state.user?.id;
+        if (latestWsId != capturedWsId || latestUserId != capturedUserId) {
+          return;
+        }
       }
       final firstDayOfWeek = _resolvedFirstDayOfWeek(
         context,
@@ -203,33 +212,91 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
       ],
     );
 
-    return BlocListener<WorkspaceCubit, WorkspaceState>(
-      listenWhen: (prev, curr) =>
-          prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-      listener: (context, wsState) async {
-        final wsId = wsState.currentWorkspace?.id;
-        final userId = supabase.auth.currentUser?.id;
-        if (wsId != null && userId != null) {
-          if (TimeTrackerCubit.seedStateFor(wsId: wsId, userId: userId) ==
-              null) {
-            context.read<TimeTrackerCubit>().prepareForWorkspaceSwitch();
-          }
-          final calendarSettingsCubit = context.read<CalendarSettingsCubit>();
-          await calendarSettingsCubit.loadWorkspacePreference(wsId);
-          if (!context.mounted) return;
-          final firstDayOfWeek = _resolvedFirstDayOfWeek(
-            context,
-            calendarSettingsCubit,
-          );
-          unawaited(
-            context.read<TimeTrackerCubit>().loadData(
-              wsId,
-              userId,
-              firstDayOfWeek: firstDayOfWeek,
-            ),
-          );
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<WorkspaceCubit, WorkspaceState>(
+          listenWhen: (prev, curr) =>
+              prev.currentWorkspace?.id != curr.currentWorkspace?.id,
+          listener: (context, wsState) async {
+            final wsId = wsState.currentWorkspace?.id;
+            final userId = context.read<AuthCubit>().state.user?.id;
+            if (wsId != null && userId != null) {
+              final capturedWsId = wsId;
+              final capturedUserId = userId;
+              if (TimeTrackerCubit.seedStateFor(wsId: wsId, userId: userId) ==
+                  null) {
+                context.read<TimeTrackerCubit>().prepareForWorkspaceSwitch();
+              }
+              final calendarSettingsCubit = context
+                  .read<CalendarSettingsCubit>();
+              await calendarSettingsCubit.loadWorkspacePreference(wsId);
+              if (!context.mounted) return;
+              final latestWsId = context
+                  .read<WorkspaceCubit>()
+                  .state
+                  .currentWorkspace
+                  ?.id;
+              final latestUserId = context.read<AuthCubit>().state.user?.id;
+              if (latestWsId != capturedWsId ||
+                  latestUserId != capturedUserId) {
+                return;
+              }
+              final firstDayOfWeek = _resolvedFirstDayOfWeek(
+                context,
+                calendarSettingsCubit,
+              );
+              unawaited(
+                context.read<TimeTrackerCubit>().loadData(
+                  wsId,
+                  userId,
+                  firstDayOfWeek: firstDayOfWeek,
+                ),
+              );
+            }
+          },
+        ),
+        BlocListener<AuthCubit, AuthState>(
+          listenWhen: (previous, current) =>
+              previous.user?.id != current.user?.id,
+          listener: (context, authState) async {
+            final wsId = context
+                .read<WorkspaceCubit>()
+                .state
+                .currentWorkspace
+                ?.id;
+            final userId = authState.user?.id;
+            if (wsId == null || userId == null || userId.isEmpty) {
+              return;
+            }
+            final capturedWsId = wsId;
+            final capturedUserId = userId;
+            final calendarSettingsCubit = context.read<CalendarSettingsCubit>();
+            await calendarSettingsCubit.loadWorkspacePreference(wsId);
+            if (!context.mounted) return;
+            final latestWsId = context
+                .read<WorkspaceCubit>()
+                .state
+                .currentWorkspace
+                ?.id;
+            final latestUserId = context.read<AuthCubit>().state.user?.id;
+            if (latestWsId != capturedWsId || latestUserId != capturedUserId) {
+              return;
+            }
+            final firstDayOfWeek = _resolvedFirstDayOfWeek(
+              context,
+              calendarSettingsCubit,
+            );
+            unawaited(
+              context.read<TimeTrackerCubit>().loadData(
+                wsId,
+                userId,
+                firstDayOfWeek: firstDayOfWeek,
+                forceRefresh: true,
+              ),
+            );
+          },
+        ),
+      ],
       child: shad.Scaffold(
         child: BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
           buildWhen: (prev, curr) => prev.status != curr.status,
@@ -287,7 +354,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
     final cubit = context.read<TimeTrackerCubit>();
     final wsId =
         context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
-    final userId = supabase.auth.currentUser?.id ?? '';
+    final userId = context.read<AuthCubit>().state.user?.id ?? '';
     if (wsId.isEmpty || userId.isEmpty) {
       return;
     }
@@ -302,7 +369,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
 
   bool _canOpenAddEntryFab(BuildContext context) {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    final userId = supabase.auth.currentUser?.id;
+    final userId = context.read<AuthCubit>().state.user?.id;
     return (wsId?.isNotEmpty ?? false) && (userId?.isNotEmpty ?? false);
   }
 
@@ -351,7 +418,7 @@ class _ErrorView extends StatelessWidget {
               final wsId =
                   context.read<WorkspaceCubit>().state.currentWorkspace?.id ??
                   '';
-              final userId = supabase.auth.currentUser?.id ?? '';
+              final userId = context.read<AuthCubit>().state.user?.id ?? '';
               final calendarSettingsCubit = context
                   .read<CalendarSettingsCubit>();
               if (wsId.isNotEmpty) {

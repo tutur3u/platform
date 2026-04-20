@@ -7,6 +7,8 @@ import { EntryDetailClient } from './entry-detail-client';
 
 const {
   createWorkspaceExternalProjectAssetMock,
+  createWorkspaceExternalProjectBlockMock,
+  deleteWorkspaceExternalProjectAssetMock,
   deleteWorkspaceExternalProjectEntryMock,
   duplicateWorkspaceExternalProjectEntryMock,
   invalidateQueriesMock,
@@ -14,11 +16,14 @@ const {
   routerPushMock,
   routerRefreshMock,
   updateWorkspaceExternalProjectAssetMock,
+  updateWorkspaceExternalProjectBlockMock,
   updateWorkspaceExternalProjectEntryMock,
   optimizeEpmMediaUploadMock,
   uploadWorkspaceExternalProjectAssetFileMock,
 } = vi.hoisted(() => ({
   createWorkspaceExternalProjectAssetMock: vi.fn(),
+  createWorkspaceExternalProjectBlockMock: vi.fn(),
+  deleteWorkspaceExternalProjectAssetMock: vi.fn(),
   deleteWorkspaceExternalProjectEntryMock: vi.fn(),
   duplicateWorkspaceExternalProjectEntryMock: vi.fn(),
   invalidateQueriesMock: vi.fn(),
@@ -27,18 +32,22 @@ const {
   routerPushMock: vi.fn(),
   routerRefreshMock: vi.fn(),
   updateWorkspaceExternalProjectAssetMock: vi.fn(),
+  updateWorkspaceExternalProjectBlockMock: vi.fn(),
   updateWorkspaceExternalProjectEntryMock: vi.fn(),
   uploadWorkspaceExternalProjectAssetFileMock: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/internal-api', () => ({
   createWorkspaceExternalProjectAsset: createWorkspaceExternalProjectAssetMock,
+  createWorkspaceExternalProjectBlock: createWorkspaceExternalProjectBlockMock,
+  deleteWorkspaceExternalProjectAsset: deleteWorkspaceExternalProjectAssetMock,
   deleteWorkspaceExternalProjectEntry: deleteWorkspaceExternalProjectEntryMock,
   duplicateWorkspaceExternalProjectEntry:
     duplicateWorkspaceExternalProjectEntryMock,
   publishWorkspaceExternalProjectEntry:
     publishWorkspaceExternalProjectEntryMock,
   updateWorkspaceExternalProjectAsset: updateWorkspaceExternalProjectAssetMock,
+  updateWorkspaceExternalProjectBlock: updateWorkspaceExternalProjectBlockMock,
   updateWorkspaceExternalProjectEntry: updateWorkspaceExternalProjectEntryMock,
   uploadWorkspaceExternalProjectAssetFile:
     uploadWorkspaceExternalProjectAssetFileMock,
@@ -130,6 +139,31 @@ describe('EntryDetailClient', () => {
       updated_at: '2026-04-19T00:00:00.000Z',
       ws_id: 'ws_123',
     });
+    deleteWorkspaceExternalProjectAssetMock.mockResolvedValue({
+      id: 'asset-2',
+    });
+    createWorkspaceExternalProjectBlockMock.mockResolvedValue({
+      block_type: 'markdown',
+      content: { markdown: 'Body markdown' },
+      created_at: '2026-04-19T00:00:00.000Z',
+      entry_id: 'entry-1',
+      id: 'block-1',
+      sort_order: 0,
+      title: 'Body markdown',
+      updated_at: '2026-04-19T00:00:00.000Z',
+      ws_id: 'ws_123',
+    });
+    updateWorkspaceExternalProjectBlockMock.mockResolvedValue({
+      block_type: 'markdown',
+      content: { markdown: 'Updated body markdown' },
+      created_at: '2026-04-19T00:00:00.000Z',
+      entry_id: 'entry-1',
+      id: 'block-1',
+      sort_order: 0,
+      title: 'Body markdown',
+      updated_at: '2026-04-19T00:00:00.000Z',
+      ws_id: 'ws_123',
+    });
     deleteWorkspaceExternalProjectEntryMock.mockResolvedValue({
       id: 'entry-1',
     });
@@ -158,6 +192,96 @@ describe('EntryDetailClient', () => {
         entryId="entry-1"
         initialStudio={{
           assets: [],
+          blocks: [],
+          collections: [
+            {
+              collection_type: 'artworks',
+              config: {},
+              description: 'Artwork collection',
+              id: 'collection-1',
+              is_enabled: true,
+              slug: 'artworks',
+              title: 'Artworks',
+              ws_id: 'ws_123',
+            } as any,
+          ],
+          entries: [
+            {
+              collection_id: 'collection-1',
+              created_at: '2026-04-19T00:00:00.000Z',
+              created_by: null,
+              id: 'entry-1',
+              metadata: {},
+              profile_data: {},
+              published_at: null,
+              scheduled_for: null,
+              slug: 'entry-one',
+              status: 'draft',
+              subtitle: 'Subtitle',
+              summary: 'Summary',
+              title: 'Entry One',
+              updated_at: '2026-04-19T00:00:00.000Z',
+              updated_by: null,
+              ws_id: 'ws_123',
+            } as any,
+          ],
+          importJobs: [],
+          loadingData: null,
+          publishEvents: [],
+        }}
+        strings={strings}
+        workspaceId="ws_123"
+      />,
+      { wrapper }
+    );
+  }
+
+  function renderClientWithAssets() {
+    render(
+      <EntryDetailClient
+        binding={
+          {
+            adapter: 'yoola',
+            canonical_id: 'project-1',
+            canonical_project: {
+              adapter: 'yoola',
+              allowed_collections: ['artworks'],
+              allowed_features: [],
+              delivery_profile: {},
+              display_name: 'Yoola',
+              id: 'project-1',
+              is_active: true,
+              metadata: {},
+            },
+            enabled: true,
+          } as any
+        }
+        entryId="entry-1"
+        initialStudio={{
+          assets: [
+            {
+              alt_text: 'Entry One',
+              asset_type: 'image',
+              asset_url: 'https://cdn.example.com/cover.png',
+              entry_id: 'entry-1',
+              id: 'asset-1',
+              metadata: {},
+              preview_url: 'https://cdn.example.com/cover-preview.png',
+              sort_order: 0,
+            },
+            {
+              alt_text: 'Alt asset',
+              asset_type: 'image',
+              asset_url: 'https://cdn.example.com/detail.png',
+              entry_id: 'entry-1',
+              id: 'asset-2',
+              metadata: {
+                caption: 'Old caption',
+              },
+              preview_url: 'https://cdn.example.com/detail-preview.png',
+              sort_order: 1,
+            },
+          ] as any,
           blocks: [],
           collections: [
             {
@@ -262,6 +386,68 @@ describe('EntryDetailClient', () => {
       expect(invalidateQueriesMock).toHaveBeenCalledWith({
         queryKey: ['epm-studio', 'ws_123'],
       });
+    });
+  });
+
+  it('quick deletes an individual image from the entry gallery', async () => {
+    renderClientWithAssets();
+
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'epm.remove_media_action' })[1]!
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'epm.remove_media_action' })
+    );
+
+    await waitFor(() => {
+      expect(deleteWorkspaceExternalProjectAssetMock).toHaveBeenCalledWith(
+        'ws_123',
+        'asset-2'
+      );
+    });
+  });
+
+  it('saves captions for individual media items', async () => {
+    updateWorkspaceExternalProjectAssetMock.mockResolvedValue({
+      alt_text: 'Alt asset',
+      asset_type: 'image',
+      asset_url: 'https://cdn.example.com/detail.png',
+      block_id: null,
+      created_at: '2026-04-19T00:00:00.000Z',
+      entry_id: 'entry-1',
+      id: 'asset-2',
+      metadata: {
+        caption: 'Updated caption',
+      },
+      preview_url: 'https://cdn.example.com/detail-preview.png',
+      sort_order: 1,
+      source_url: null,
+      storage_path: 'details/detail.png',
+      updated_at: '2026-04-19T00:00:00.000Z',
+      ws_id: 'ws_123',
+    });
+
+    renderClientWithAssets();
+
+    fireEvent.change(screen.getAllByLabelText('epm.caption_label')[1]!, {
+      target: { value: 'Updated caption' },
+    });
+    fireEvent.click(
+      screen.getAllByRole('button', {
+        name: 'epm.save_media_details_action',
+      })[0]!
+    );
+
+    await waitFor(() => {
+      expect(updateWorkspaceExternalProjectAssetMock).toHaveBeenCalledWith(
+        'ws_123',
+        'asset-2',
+        expect.objectContaining({
+          metadata: {
+            caption: 'Updated caption',
+          },
+        })
+      );
     });
   });
 

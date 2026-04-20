@@ -33,6 +33,7 @@ export type {
   ExternalProjectAttentionItem,
   ExternalProjectBulkUpdateAction,
   ExternalProjectBulkUpdatePayload,
+  ExternalProjectCollection,
   ExternalProjectDeliveryAsset,
   ExternalProjectDeliveryCollection,
   ExternalProjectDeliveryEntry,
@@ -88,10 +89,22 @@ export interface DownloadOptions {
 
 export interface EpmCollectionPayload {
   collection_type: string;
-  config: Json;
+  config: EpmCollectionConfig;
   description?: string | null;
   slug: string;
   title: string;
+}
+
+export interface EpmCollectionNavigationConfig {
+  href?: string | null;
+  title?: string | null;
+  visible?: boolean | null;
+  [key: string]: Json | undefined;
+}
+
+export interface EpmCollectionConfig {
+  navigation?: EpmCollectionNavigationConfig | null;
+  [key: string]: Json | undefined;
 }
 
 export interface EpmEntryPayload {
@@ -119,10 +132,15 @@ export interface EpmAssetPayload {
   asset_type: string;
   block_id?: string | null;
   entry_id?: string | null;
-  metadata: Json;
+  metadata: EpmAssetMetadata;
   sort_order?: number;
   source_url?: string | null;
   storage_path?: string | null;
+}
+
+export interface EpmAssetMetadata {
+  caption?: string | null;
+  [key: string]: Json | undefined;
 }
 
 export interface EpmEntryListOptions {

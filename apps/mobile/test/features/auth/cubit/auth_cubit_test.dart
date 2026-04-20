@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/auth_action_result.dart';
+import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -33,6 +34,17 @@ void main() {
       );
       when(() => authRepository.dispose()).thenReturn(null);
       when(() => authRepository.checkMfaRequired()).thenReturn(false);
+      when(
+        () => authRepository.getStoredAccounts(),
+      ).thenAnswer((_) async => const <StoredAuthAccount>[]);
+      when(
+        () => authRepository.getActiveStoredAccountId(),
+      ).thenAnswer((_) async => null);
+      when(
+        () => authRepository.syncCurrentSessionToMultiAccountStore(
+          switchImmediately: any(named: 'switchImmediately'),
+        ),
+      ).thenAnswer((_) async {});
       when(
         () => authRepository.signInWithApple(),
       ).thenAnswer((_) async => const AuthActionResult.externalFlowStarted());
@@ -245,6 +257,103 @@ void main() {
           isLoading: false,
         ),
       ],
+    );
+
+    final addAccountFlowErrorControllerCompleter =
+        Completer<StreamController<supa.AuthState>>();
+    blocTest<AuthCubit, AuthState>(
+      'preserves add-account flow when auth stream emits an error',
+      build: () {
+        final addAccountFlowErrorController =
+            StreamController<supa.AuthState>();
+        addAccountFlowErrorControllerCompleter.complete(
+          addAccountFlowErrorController,
+        );
+        addTearDown(addAccountFlowErrorController.close);
+        when(
+          () => authRepository.onAuthStateChange(),
+        ).thenAnswer((_) => addAccountFlowErrorController.stream);
+        return AuthCubit(authRepository: authRepository);
+      },
+      act: (cubit) async {
+        cubit.setAddAccountFlow(enabled: true);
+        await Future<void>.delayed(Duration.zero);
+        final addAccountFlowErrorController =
+            await addAccountFlowErrorControllerCompleter.future;
+        addAccountFlowErrorController.addError(
+          const supa.AuthException('OAuth callback failed'),
+        );
+      },
+      expect: () => <AuthState>[
+        const AuthState.unauthenticated().copyWith(isAddAccountFlow: true),
+        const AuthState.unauthenticated().copyWith(
+          error: 'OAuth callback failed',
+          errorCode: null,
+          isLoading: false,
+          isAddAccountFlow: true,
+        ),
+      ],
+    );
+  });
+
+  group('AuthCubit.addAccountFlow', () {
+    late AuthRepository authRepository;
+
+    setUp(() {
+      authRepository = _MockAuthRepository();
+      when(() => authRepository.getCurrentUserSync()).thenReturn(_user());
+      when(() => authRepository.onAuthStateChange()).thenAnswer(
+        (_) => const Stream<supa.AuthState>.empty(),
+      );
+      when(() => authRepository.dispose()).thenReturn(null);
+      when(() => authRepository.checkMfaRequired()).thenReturn(false);
+      when(
+        () => authRepository.getStoredAccounts(),
+      ).thenAnswer((_) async => const <StoredAuthAccount>[]);
+      when(
+        () => authRepository.getActiveStoredAccountId(),
+      ).thenAnswer((_) async => 'user-1');
+      when(
+        () => authRepository.syncCurrentSessionToMultiAccountStore(
+          switchImmediately: any(named: 'switchImmediately'),
+        ),
+      ).thenAnswer((_) async {});
+      when(
+        () => authRepository.switchToStoredAccount(any()),
+      ).thenAnswer((_) async => (success: false, error: null));
+    });
+
+    test(
+      'beginAddAccountFlow keeps the current session active',
+      () async {
+        final cubit = AuthCubit(authRepository: authRepository);
+        addTearDown(cubit.close);
+
+        final started = await cubit.beginAddAccountFlow();
+
+        expect(started, isTrue);
+        expect(cubit.state.status, AuthStatus.authenticated);
+        expect(cubit.state.isAddAccountFlow, isTrue);
+        expect(cubit.state.activeAccountId, 'user-1');
+        verifyNever(() => authRepository.switchToStoredAccount(any()));
+      },
+    );
+
+    test(
+      'cancelAddAccountFlow exits without restoring when still authenticated',
+      () async {
+        final cubit = AuthCubit(authRepository: authRepository);
+        addTearDown(cubit.close);
+
+        final started = await cubit.beginAddAccountFlow();
+        final restored = await cubit.cancelAddAccountFlow();
+
+        expect(started, isTrue);
+        expect(restored, isTrue);
+        expect(cubit.state.status, AuthStatus.authenticated);
+        expect(cubit.state.isAddAccountFlow, isFalse);
+        verifyNever(() => authRepository.switchToStoredAccount(any()));
+      },
     );
   });
 }

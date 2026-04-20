@@ -8,11 +8,15 @@ export type EpmStrings = {
   assetsLabel: string;
   attentionTitle: string;
   backToEpmAction: string;
+  bodyMarkdownDescription: string;
+  bodyMarkdownLabel: string;
   bulkActionsTitle: string;
   bulkRemoveMediaAction: string;
   bulkSelectionHint: string;
   bulkUploadMediaAction: string;
   cancelAction: string;
+  captionLabel: string;
+  captionPlaceholder: string;
   collectionFallbackLabel: string;
   collectionHealthTitle: string;
   collectionsLabel: string;
@@ -32,6 +36,7 @@ export type EpmStrings = {
   deleteEntryAction: string;
   deleteEntryConfirmDescription: string;
   deleteEntryConfirmTitle: string;
+  descriptionEditorDescription: string;
   descriptionLabel: string;
   dashboardModeLabel: string;
   dashboardPreferencesTitle: string;
@@ -90,7 +95,11 @@ export type EpmStrings = {
   profileDataLabel: string;
   manageCollectionAction: string;
   manageCollectionDescription: string;
+  markdownPreviewLabel: string;
+  markdownWriteLabel: string;
   mediaProcessingLabel: string;
+  navigationTitleDescription: string;
+  navigationTitleLabel: string;
   publishAction: string;
   publishedQueue: string;
   quickCreateHint: string;
@@ -99,8 +108,10 @@ export type EpmStrings = {
   refreshAction: string;
   renderedLabel: string;
   replaceCoverAction: string;
+  removeMediaAction: string;
   saveAction: string;
   saveCoverAction: string;
+  saveMediaDetailsAction: string;
   scheduleAction: string;
   scheduledForLabel: string;
   scheduledQueue: string;
@@ -143,11 +154,15 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     assetsLabel: t('epm.assets_label'),
     attentionTitle: t('epm.attention_title'),
     backToEpmAction: t('epm.back_to_epm_action'),
+    bodyMarkdownDescription: t('epm.body_markdown_description'),
+    bodyMarkdownLabel: t('epm.body_markdown_label'),
     bulkActionsTitle: t('epm.bulk_actions_title'),
     bulkRemoveMediaAction: t('epm.bulk_remove_media_action'),
     bulkSelectionHint: t('epm.bulk_selection_hint'),
     bulkUploadMediaAction: t('epm.bulk_upload_media_action'),
     cancelAction: t('epm.cancel_action'),
+    captionLabel: t('epm.caption_label'),
+    captionPlaceholder: t('epm.caption_placeholder'),
     collectionFallbackLabel: t('epm.collection_fallback_label'),
     collectionHealthTitle: t('epm.collection_health_title'),
     collectionsLabel: t('epm.collections_label'),
@@ -167,6 +182,7 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     deleteEntryAction: t('epm.delete_entry_action'),
     deleteEntryConfirmDescription: t('epm.delete_entry_confirm_description'),
     deleteEntryConfirmTitle: t('epm.delete_entry_confirm_title'),
+    descriptionEditorDescription: t('epm.description_editor_description'),
     descriptionLabel: t('epm.description_label'),
     dashboardModeLabel: t('epm.dashboard_mode_label'),
     dashboardPreferencesTitle: t('epm.dashboard_preferences_title'),
@@ -202,6 +218,8 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     loadingPreviewLabel: t('epm.loading_preview_label'),
     metadataLabel: t('epm.metadata_label'),
     mediaProcessingLabel: t('epm.media_processing_label'),
+    navigationTitleDescription: t('epm.navigation_title_description'),
+    navigationTitleLabel: t('epm.navigation_title_label'),
     missingLeadImageLabel: t('epm.missing_lead_image_label'),
     noAdapterLabel: t('epm.no_adapter_label'),
     noCanonicalIdLabel: t('epm.no_canonical_id_label'),
@@ -226,6 +244,8 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     profileDataLabel: t('epm.profile_data_label'),
     manageCollectionAction: t('epm.manage_collection_action'),
     manageCollectionDescription: t('epm.manage_collection_description'),
+    markdownPreviewLabel: t('epm.markdown_preview_label'),
+    markdownWriteLabel: t('epm.markdown_write_label'),
     publishAction: t('epm.publish_action'),
     publishedQueue: t('epm.published_queue'),
     quickCreateHint: t('epm.quick_create_hint'),
@@ -234,8 +254,10 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     refreshAction: t('epm.refresh_action'),
     renderedLabel: t('epm.rendered_label'),
     replaceCoverAction: t('epm.replace_cover_action'),
+    removeMediaAction: t('epm.remove_media_action'),
     saveAction: t('epm.save_action'),
     saveCoverAction: t('epm.save_cover_action'),
+    saveMediaDetailsAction: t('epm.save_media_details_action'),
     scheduleAction: t('epm.schedule_action'),
     scheduledForLabel: t('epm.scheduled_for_label'),
     scheduledQueue: t('epm.scheduled_queue'),

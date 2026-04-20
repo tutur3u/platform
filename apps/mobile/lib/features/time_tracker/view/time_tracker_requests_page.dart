@@ -18,6 +18,7 @@ import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.dart';
@@ -50,24 +51,18 @@ class TimeTrackerRequestsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    final currentUserId = context.read<AuthCubit>().state.user?.id;
+    final currentUserId = context.watch<AuthCubit>().state.user?.id;
     return RepositoryProvider<ITimeTrackerRepository>(
       create: (_) => repository ?? TimeTrackerRepository(),
       child: BlocProvider(
+        key: ValueKey<String?>(currentUserId),
         create: (context) {
           return TimeTrackerRequestsCubit(
             repository: context.read<ITimeTrackerRepository>(),
-            initialState: wsId != null
-                ? TimeTrackerRequestsCubit.seedStateFor(
-                    wsId,
-                    selectedUserId: currentUserId,
-                    statusFilter: 'pending',
-                  )
-                : null,
           );
         },
         child: _RequestsView(
+          key: ValueKey<String?>(currentUserId),
           workspacePermissionsRepository: workspacePermissionsRepository,
         ),
       ),
@@ -76,7 +71,7 @@ class TimeTrackerRequestsPage extends StatelessWidget {
 }
 
 class _RequestsView extends StatefulWidget {
-  const _RequestsView({this.workspacePermissionsRepository});
+  const _RequestsView({super.key, this.workspacePermissionsRepository});
 
   final WorkspacePermissionsRepository? workspacePermissionsRepository;
 
@@ -259,15 +254,41 @@ class _RequestsViewState extends State<_RequestsView> {
     final workspaceState = context.watch<WorkspaceCubit>().state;
     final wsId = workspaceState.currentWorkspace?.id;
 
-    return BlocListener<WorkspaceCubit, WorkspaceState>(
-      listenWhen: (previous, current) =>
-          previous.currentWorkspace?.id != current.currentWorkspace?.id,
-      listener: (context, state) {
-        final nextWsId = state.currentWorkspace?.id;
-        _permissionsWorkspaceId = nextWsId;
-        _requestLoadToken++;
-        unawaited(_loadPermissionsAndThreshold(nextWsId));
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<WorkspaceCubit, WorkspaceState>(
+          listenWhen: (previous, current) =>
+              previous.currentWorkspace?.id != current.currentWorkspace?.id,
+          listener: (context, state) {
+            final nextWsId = state.currentWorkspace?.id;
+            _permissionsWorkspaceId = nextWsId;
+            _requestLoadToken++;
+            unawaited(_loadPermissionsAndThreshold(nextWsId));
+          },
+        ),
+        BlocListener<AuthCubit, AuthState>(
+          listenWhen: (previous, current) =>
+              previous.user?.id != current.user?.id,
+          listener: (context, state) {
+            _requestLoadToken++;
+            context.read<TimeTrackerRequestsCubit>().reset();
+            final wsId = context
+                .read<WorkspaceCubit>()
+                .state
+                .currentWorkspace
+                ?.id;
+            if (wsId == null || wsId.isEmpty) {
+              return;
+            }
+            unawaited(
+              _loadPermissionsAndThreshold(
+                wsId,
+                forceRefreshRequests: true,
+              ),
+            );
+          },
+        ),
+      ],
       child: shad.Scaffold(
         child: Stack(
           children: [

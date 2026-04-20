@@ -8,7 +8,13 @@
  */
 
 export type { EpmClientConfig } from './epm';
-export { EpmClient, isYoolaExternalProjectLoadingData } from './epm';
+export {
+  buildEpmNavigationItems,
+  EpmClient,
+  getEpmCollectionNavigationConfig,
+  getEpmCollectionNavigationTitle,
+  isYoolaExternalProjectLoadingData,
+} from './epm';
 // Errors
 export {
   AuthenticationError,
@@ -62,11 +68,14 @@ export type {
   Document,
   DocumentResponse,
   DownloadOptions,
+  EpmAssetMetadata,
   EpmAssetPayload,
   EpmAssetUpdatePayload,
   EpmAssetUploadOptions,
   EpmBlockPayload,
   EpmBlockUpdatePayload,
+  EpmCollectionConfig,
+  EpmCollectionNavigationConfig,
   EpmCollectionPayload,
   EpmCollectionUpdatePayload,
   EpmEntryListOptions,
@@ -77,6 +86,7 @@ export type {
   ExternalProjectAttentionItem,
   ExternalProjectBulkUpdateAction,
   ExternalProjectBulkUpdatePayload,
+  ExternalProjectCollection,
   ExternalProjectDeliveryAsset,
   ExternalProjectDeliveryCollection,
   ExternalProjectDeliveryEntry,

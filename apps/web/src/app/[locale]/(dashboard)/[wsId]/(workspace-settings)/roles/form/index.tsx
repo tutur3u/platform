@@ -69,6 +69,8 @@ export interface SectionProps {
   wsId: string;
   user: SupabaseUser | null;
   roleId?: string;
+  initialMembers?: WorkspaceUser[];
+  initialMembersCount?: number;
   form: ReturnType<typeof useForm<FormType>>;
   enabledPermissionsCount: { id: string; count: number }[];
 }
@@ -184,7 +186,15 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
     ? totalCount
     : enabledPermissionsCount.reduce((acc, group) => acc + group.count, 0);
 
-  const sectionProps = { wsId, user, roleId, form, enabledPermissionsCount };
+  const sectionProps = {
+    wsId,
+    user,
+    roleId,
+    initialMembers: data?.members as WorkspaceUser[] | undefined,
+    initialMembersCount: data?.user_count,
+    form,
+    enabledPermissionsCount,
+  };
   const [tab, setTab] = useState<
     'display' | 'permissions' | 'members' | 'wallets'
   >(forceDefault ? 'permissions' : 'display');

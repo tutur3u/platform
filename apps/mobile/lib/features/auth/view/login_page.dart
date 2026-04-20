@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'
     hide AppBar, FilledButton, Scaffold, TextButton, TextField;
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/config/env.dart';
@@ -21,7 +23,12 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 enum _LoginStage { identify, otp, password }
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({
+    this.addAccountMode = false,
+    super.key,
+  });
+
+  final bool addAccountMode;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -30,6 +37,9 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   static const _stepTransitionDuration = Duration(milliseconds: 420);
   static const _otpAvailabilityGracePeriod = Duration(seconds: 3);
+  static const _androidBackChannel = MethodChannel('mobile/shell_back');
+  static const _androidDefaultExitMessage = 'Press back again to exit';
+  static const _androidDefaultExitHintMessage = 'Press back again to exit app';
 
   final _emailController = TextEditingController(
     text: Env.isDevelopment ? 'local@tuturuuu.com' : '',
@@ -55,6 +65,14 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      if (widget.addAccountMode) {
+        context.read<AuthCubit>().setAddAccountFlow(enabled: true);
+      }
+    });
     _otpAvailabilityGraceTimer = Timer(_otpAvailabilityGracePeriod, () {
       if (!mounted) {
         return;
@@ -64,7 +82,35 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
+  void didUpdateWidget(covariant LoginPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.addAccountMode != widget.addAccountMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        context.read<AuthCubit>().setAddAccountFlow(
+          enabled: widget.addAccountMode,
+        );
+      });
+      if (oldWidget.addAccountMode && !widget.addAccountMode) {
+        _clearAndroidBackState();
+      }
+    }
+    _syncAndroidBackState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncAndroidBackState();
+  }
+
+  @override
   void dispose() {
+    if (widget.addAccountMode) {
+      _clearAndroidBackState();
+    }
     _retryAfterTimer?.cancel();
     _otpAvailabilityGraceTimer?.cancel();
     _emailController.dispose();
@@ -260,6 +306,57 @@ class _LoginPageState extends State<LoginPage> {
     return context.read<AuthCubit>().signInWithGithub();
   }
 
+  void _syncAndroidBackState() {
+    if (!widget.addAccountMode ||
+        defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+
+    final l10n = context.l10n;
+    unawaited(
+      _androidBackChannel.invokeMethod<void>('updateState', {
+        'route': '/add-account',
+        'exitMessage': l10n.commonPressBackAgainToExit,
+        'exitHintMessage': l10n.commonPressBackAgainToExitHint,
+      }),
+    );
+  }
+
+  void _clearAndroidBackState() {
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+    unawaited(
+      _androidBackChannel.invokeMethod<void>('updateState', {
+        'route': '/',
+        'exitMessage': _androidDefaultExitMessage,
+        'exitHintMessage': _androidDefaultExitHintMessage,
+      }),
+    );
+  }
+
+  Future<void> _onCancelAddAccount() async {
+    final authCubit = context.read<AuthCubit>();
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    final ok = await authCubit.cancelAddAccountFlow();
+    if (!mounted) {
+      return;
+    }
+    if (ok) {
+      return;
+    }
+    final message = authCubit.state.error;
+    if (!toastContext.mounted) {
+      return;
+    }
+    shad.showToast(
+      context: toastContext,
+      builder: (ctx, _) => shad.Alert.destructive(
+        title: Text(message ?? ctx.l10n.authSwitchAccountFailed),
+      ),
+    );
+  }
+
   Widget _buildTurnstile({required bool enabled}) {
     final theme = shad.Theme.of(context);
 
@@ -298,8 +395,13 @@ class _LoginPageState extends State<LoginPage> {
     final isResolvingOtpEnablement =
         otpAvailability.isResolving && !_otpAvailabilityGraceExpired;
 
-    return AuthScaffold(
-      title: l10n.loginTitle,
+    final authScaffold = AuthScaffold(
+      title: widget.addAccountMode ? l10n.authAddAccountTitle : l10n.loginTitle,
+      showBackButton: widget.addAccountMode,
+      backButtonLabel: widget.addAccountMode ? l10n.navHome : null,
+      onBack: widget.addAccountMode
+          ? () => unawaited(_onCancelAddAccount())
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -369,20 +471,43 @@ class _LoginPageState extends State<LoginPage> {
           const shad.Gap(20),
           Center(
             child: GestureDetector(
-              onTap: () => context.push('/signup'),
+              onTap: widget.addAccountMode
+                  ? null
+                  : () => context.push('/signup'),
               child: Text(
-                l10n.loginSignUpPrompt,
+                widget.addAccountMode
+                    ? l10n.authAddAccountHint
+                    : l10n.loginSignUpPrompt,
                 textAlign: TextAlign.center,
                 style: theme.typography.small.copyWith(
-                  color: theme.colorScheme.mutedForeground.withValues(
-                    alpha: 0.82,
-                  ),
+                  color: widget.addAccountMode
+                      ? theme.colorScheme.mutedForeground.withValues(
+                          alpha: 0.92,
+                        )
+                      : theme.colorScheme.mutedForeground.withValues(
+                          alpha: 0.82,
+                        ),
                 ),
               ),
             ),
           ),
         ],
       ),
+    );
+
+    if (!widget.addAccountMode) {
+      return authScaffold;
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          return;
+        }
+        unawaited(_onCancelAddAccount());
+      },
+      child: authScaffold,
     );
   }
 

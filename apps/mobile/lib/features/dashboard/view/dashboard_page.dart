@@ -13,6 +13,8 @@ import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
@@ -116,6 +118,34 @@ class _DashboardView extends StatelessWidget {
               ),
             );
             unawaited(context.read<CalendarCubit>().loadEvents(workspace.id));
+          },
+        ),
+        BlocListener<AuthCubit, AuthState>(
+          listenWhen: (previous, current) =>
+              previous.user?.id != current.user?.id,
+          listener: (context, state) {
+            if (state.status != AuthStatus.authenticated ||
+                state.user == null) {
+              return;
+            }
+            final workspace = context
+                .read<WorkspaceCubit>()
+                .state
+                .currentWorkspace;
+            if (workspace == null) return;
+            unawaited(
+              context.read<TaskListCubit>().loadTasks(
+                wsId: workspace.id,
+                isPersonal: workspace.personal,
+                forceRefresh: true,
+              ),
+            );
+            unawaited(
+              context.read<CalendarCubit>().loadEvents(
+                workspace.id,
+                forceRefresh: true,
+              ),
+            );
           },
         ),
       ],

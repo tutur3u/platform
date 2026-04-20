@@ -25,7 +25,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
 
   String _wsId = '';
   String? _loadedWorkspaceId;
-  String get _cacheKey => '$_wsId::${state.search}';
+  String get _cacheKey => userScopedCacheKey('$_wsId::${state.search}');
 
   static Map<String, dynamic> _decodeCacheJson(Object? json) {
     if (json is! Map) {
@@ -62,7 +62,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
   /// Initialise with workspace ID and load the first page.
   Future<void> load(String wsId, {bool forceRefresh = false}) async {
     _wsId = wsId;
-    final cacheId = '$wsId::';
+    final cacheId = userScopedCacheKey('$wsId::');
     final cached = _cache[cacheId];
     final diskCached = await CacheStore.instance.read<TransactionListState>(
       key: _storeKey(wsId),
@@ -146,7 +146,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
   /// Update the search query and reload from scratch.
   Future<void> setSearch(String query) async {
     if (query == state.search) return;
-    final cached = _cache['$_wsId::$query'];
+    final cached = _cache[userScopedCacheKey('$_wsId::$query')];
     final diskCached = await CacheStore.instance.read<TransactionListState>(
       key: _storeKey(_wsId, search: query),
       decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),

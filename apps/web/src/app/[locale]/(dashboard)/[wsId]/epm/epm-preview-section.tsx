@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
+import { getEntryDescriptionMarkdown } from './entries/[entryId]/entry-detail-shared';
 import { PreviewModeSkeleton } from './epm-client-skeletons';
 import {
   extractMarkdown,
@@ -89,7 +90,7 @@ export function EpmPreviewSection({
             const managedPreviewEntry =
               entries.find((managed) => managed.id === entry.id) ?? null;
             const previewCopy =
-              entry.summary ||
+              getEntryDescriptionMarkdown(entry.summary, '') ||
               extractMarkdown(entry)[0]?.markdown ||
               strings.previewEmptyDescription;
 
@@ -97,7 +98,7 @@ export function EpmPreviewSection({
               <button
                 key={entry.id}
                 type="button"
-                className="group overflow-hidden rounded-[1.2rem] border border-border/70 bg-card/95 text-left transition-colors hover:border-foreground/15 hover:bg-background"
+                className="group flex h-full flex-col overflow-hidden rounded-[1.2rem] border border-border/70 bg-card/95 text-left transition-colors hover:border-foreground/15 hover:bg-background"
                 onClick={() => onOpenEntry(entry.id)}
               >
                 {hasVisual ? (
@@ -126,7 +127,7 @@ export function EpmPreviewSection({
                     </div>
                   </div>
                 ) : (
-                  <div className="border-border/60 border-b bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.10),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.10),transparent_32%),linear-gradient(160deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-3">
+                  <div className="min-h-12 border-border/60 border-b bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.10),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.10),transparent_32%),linear-gradient(160deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-3">
                     <Badge
                       className={cn(
                         'border-0 px-2 py-0.5 text-[11px] shadow-none',
@@ -141,7 +142,10 @@ export function EpmPreviewSection({
                   </div>
                 )}
                 <div
-                  className={cn('space-y-2 p-3', !hasVisual && 'min-h-[152px]')}
+                  className={cn(
+                    'flex flex-1 flex-col justify-end space-y-2 p-3',
+                    !hasVisual && 'min-h-[152px]'
+                  )}
                 >
                   <div className="line-clamp-1 font-medium text-sm">
                     {entry.title}

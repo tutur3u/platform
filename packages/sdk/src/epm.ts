@@ -11,6 +11,7 @@ import type {
   EpmAssetUploadOptions,
   EpmBlockPayload,
   EpmBlockUpdatePayload,
+  EpmCollectionNavigationConfig,
   EpmCollectionPayload,
   EpmCollectionUpdatePayload,
   EpmEntryListOptions,
@@ -18,6 +19,7 @@ import type {
   EpmEntryUpdatePayload,
   EpmPublishEventKind,
   ExternalProjectBulkUpdatePayload,
+  ExternalProjectCollection,
   ExternalProjectDeliveryOptions,
   ExternalProjectDeliveryPayload,
   ExternalProjectLoadingData,
@@ -25,6 +27,7 @@ import type {
   ExternalProjectSummary,
   WorkspaceExternalProjectBinding,
   YoolaExternalProjectLoadingData,
+  YoolaExternalProjectSectionLoadingItem,
 } from './types';
 import { externalProjectDeliveryOptionsSchema } from './types';
 
@@ -103,10 +106,93 @@ function normalizeDeliveryPayloadUrls(
   } satisfies ExternalProjectDeliveryPayload;
 }
 
+function normalizeStudioPayloadUrls(
+  payload: {
+    binding: WorkspaceExternalProjectBinding;
+  } & ExternalProjectStudioData,
+  apiBaseUrl: string
+) {
+  return {
+    ...payload,
+    assets: payload.assets.map((asset) => ({
+      ...asset,
+      asset_url: absolutizeUrl(apiBaseUrl, asset.asset_url),
+      preview_url: absolutizeUrl(apiBaseUrl, asset.preview_url),
+    })),
+  };
+}
+
+export function getEpmCollectionNavigationConfig(
+  config: unknown
+): EpmCollectionNavigationConfig | null {
+  if (!config || typeof config !== 'object' || Array.isArray(config)) {
+    return null;
+  }
+
+  const navigation = (config as Record<string, unknown>).navigation;
+  if (
+    !navigation ||
+    typeof navigation !== 'object' ||
+    Array.isArray(navigation)
+  ) {
+    return null;
+  }
+
+  return navigation as EpmCollectionNavigationConfig;
+}
+
+export function getEpmCollectionNavigationTitle(
+  collection: Pick<ExternalProjectCollection, 'config' | 'title'>
+) {
+  const navigation = getEpmCollectionNavigationConfig(collection.config);
+  return navigation?.title?.trim() ? navigation.title.trim() : collection.title;
+}
+
+export function buildEpmNavigationItems(
+  collections: ExternalProjectCollection[]
+) {
+  return collections
+    .filter((collection) => collection.is_enabled)
+    .map((collection) => {
+      const navigation = getEpmCollectionNavigationConfig(collection.config);
+
+      return {
+        collectionId: collection.id,
+        href: navigation?.href ?? null,
+        navigation: navigation ?? null,
+        slug: collection.slug,
+        title: getEpmCollectionNavigationTitle(collection),
+        visible: navigation?.visible !== false,
+      };
+    })
+    .filter((item) => item.visible);
+}
+
 export function isYoolaExternalProjectLoadingData(
   value: ExternalProjectLoadingData | null | undefined
 ): value is YoolaExternalProjectLoadingData {
   return value?.adapter === 'yoola';
+}
+
+export function getYoolaSingletonSection(
+  loadingData: ExternalProjectLoadingData | null | undefined,
+  slug: string
+) {
+  if (!isYoolaExternalProjectLoadingData(loadingData)) {
+    return null;
+  }
+
+  return loadingData.singletonSections[slug] ?? null;
+}
+
+export function getYoolaSectionMarkdown(
+  section: YoolaExternalProjectSectionLoadingItem | null | undefined
+) {
+  if (!section) {
+    return null;
+  }
+
+  return section.bodyMarkdown?.trim() || section.summary?.trim() || null;
 }
 
 export interface EpmClientConfig {
@@ -292,12 +378,15 @@ export class EpmClient {
     } & ExternalProjectStudioData
   > {
     this.requireApiKey();
-    return this.request(
-      `/workspaces/${encodeURIComponent(workspaceId)}/external-projects`,
+    const payload = await this.request<
       {
-        requiresAuth: true,
-      }
-    );
+        binding: WorkspaceExternalProjectBinding;
+      } & ExternalProjectStudioData
+    >(`/workspaces/${encodeURIComponent(workspaceId)}/external-projects`, {
+      requiresAuth: true,
+    });
+
+    return normalizeStudioPayloadUrls(payload, this.baseUrl);
   }
 
   async getSummary(workspaceId: string): Promise<ExternalProjectSummary> {
@@ -346,6 +435,16 @@ export class EpmClient {
     );
   }
 
+  async deleteCollection(workspaceId: string, collectionId: string) {
+    return this.request(
+      `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/collections/${encodeURIComponent(collectionId)}`,
+      {
+        method: 'DELETE',
+        requiresAuth: true,
+      }
+    );
+  }
+
   async listEntries(workspaceId: string, options: EpmEntryListOptions = {}) {
     const params = new URLSearchParams();
     if (options.collectionId) {
@@ -384,6 +483,16 @@ export class EpmClient {
         body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json' },
         method: 'PATCH',
+        requiresAuth: true,
+      }
+    );
+  }
+
+  async deleteEntry(workspaceId: string, entryId: string) {
+    return this.request(
+      `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/entries/${encodeURIComponent(entryId)}`,
+      {
+        method: 'DELETE',
         requiresAuth: true,
       }
     );
@@ -465,6 +574,16 @@ export class EpmClient {
         body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json' },
         method: 'PATCH',
+        requiresAuth: true,
+      }
+    );
+  }
+
+  async deleteAsset(workspaceId: string, assetId: string) {
+    return this.request(
+      `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/assets/${encodeURIComponent(assetId)}`,
+      {
+        method: 'DELETE',
         requiresAuth: true,
       }
     );
