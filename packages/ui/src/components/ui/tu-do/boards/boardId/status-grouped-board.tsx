@@ -387,18 +387,6 @@ export function StatusGroupedBoard({
             return;
           }
 
-          // Additional check: only one closed list allowed
-          if (targetStatus === 'closed') {
-            const existingClosedLists = groupedLists.closed || [];
-            if (existingClosedLists.length >= 1) {
-              toast.error('Only one closed list allowed per board');
-              queryClient.invalidateQueries({
-                queryKey: ['task_lists', boardId],
-              });
-              return;
-            }
-          }
-
           // Calculate new position
           let newPosition: number;
           if (insertBeforeList) {

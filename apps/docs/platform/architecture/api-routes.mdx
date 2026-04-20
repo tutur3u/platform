@@ -1,6 +1,7 @@
 ---
 title: "API Route Patterns"
 description: "Implementing and organizing API routes in the Tuturuuu platform"
+updatedAt: "2026-04-19"
 ---
 
 The Tuturuuu platform uses Next.js App Router API routes with consistent patterns for versioning, authentication, error handling, and workspace isolation.
@@ -34,6 +35,17 @@ apps/web/src/app/api/
 └── workspaces/           # Workspace management
     └── route.ts
 ```
+
+## Upstream Proxy Routes
+
+When an `apps/web` route proxies requests to an upstream service and needs
+low-level Undici transport controls such as a custom `dispatcher` or larger
+`maxHeaderSize`, prefer `undici.request(...)` over the global server `fetch`.
+
+On Next.js 16, the wrapped route-handler `fetch` can reject custom Undici
+dispatchers with `UND_ERR_INVALID_ARG` / `invalid onRequestStart method`. Keep
+custom transport configuration on the direct Undici request instead of passing
+it through `fetch`.
 
 ## Versioned Public API
 

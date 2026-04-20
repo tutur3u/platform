@@ -2,11 +2,13 @@ import type {
   CanonicalExternalProject,
   ExternalProjectAsset,
   ExternalProjectBlock,
+  ExternalProjectBulkUpdatePayload,
   ExternalProjectCollection,
   ExternalProjectDeliveryPayload,
   ExternalProjectEntry,
   ExternalProjectImportReport,
   ExternalProjectStudioData,
+  ExternalProjectSummary,
   Json,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
@@ -39,6 +41,7 @@ type WorkspaceExternalProjectEntryPayload = {
   collection_id: string;
   metadata: Json;
   profile_data: Json;
+  scheduled_for?: string | null;
   slug: string;
   status: ExternalProjectEntry['status'];
   subtitle?: string | null;
@@ -215,6 +218,19 @@ export async function getWorkspaceExternalProjectStudio(
   });
 }
 
+export async function getWorkspaceExternalProjectSummary(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ExternalProjectSummary>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/summary`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function updateWorkspaceExternalProjectCollection(
   workspaceId: string,
   collectionId: string,
@@ -233,6 +249,21 @@ export async function updateWorkspaceExternalProjectCollection(
         'Content-Type': 'application/json',
       },
       method: 'PATCH',
+    }
+  );
+}
+
+export async function deleteWorkspaceExternalProjectCollection(
+  workspaceId: string,
+  collectionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ id: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/collections/${encodePathSegment(collectionId)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
     }
   );
 }
@@ -311,6 +342,21 @@ export async function updateWorkspaceExternalProjectAsset(
         'Content-Type': 'application/json',
       },
       method: 'PATCH',
+    }
+  );
+}
+
+export async function deleteWorkspaceExternalProjectAsset(
+  workspaceId: string,
+  assetId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ id: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/assets/${encodePathSegment(assetId)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
     }
   );
 }
@@ -398,11 +444,20 @@ export async function createWorkspaceExternalProjectCollection(
 
 export async function listWorkspaceExternalProjectEntries(
   workspaceId: string,
+  query?: {
+    collectionId?: string;
+  },
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+  if (query?.collectionId) {
+    searchParams.set('collectionId', query.collectionId);
+  }
+
+  const suffix = searchParams.size > 0 ? `?${searchParams.toString()}` : '';
   return client.json<ExternalProjectEntry[]>(
-    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/entries`,
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/entries${suffix}`,
     {
       cache: 'no-store',
     }
@@ -446,6 +501,55 @@ export async function updateWorkspaceExternalProjectEntry(
         'Content-Type': 'application/json',
       },
       method: 'PATCH',
+    }
+  );
+}
+
+export async function deleteWorkspaceExternalProjectEntry(
+  workspaceId: string,
+  entryId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ id: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/entries/${encodePathSegment(entryId)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
+    }
+  );
+}
+
+export async function duplicateWorkspaceExternalProjectEntry(
+  workspaceId: string,
+  entryId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ExternalProjectEntry>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/entries/${encodePathSegment(entryId)}/duplicate`,
+    {
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
+}
+
+export async function bulkUpdateWorkspaceExternalProjectEntries(
+  workspaceId: string,
+  payload: ExternalProjectBulkUpdatePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ExternalProjectEntry[]>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/entries/bulk`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
     }
   );
 }

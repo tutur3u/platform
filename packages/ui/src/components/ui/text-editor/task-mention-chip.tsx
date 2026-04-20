@@ -25,9 +25,8 @@ import {
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
-import { useParams } from 'next/navigation';
-import { useTheme } from 'next-themes';
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { useDomResolvedTheme } from '../../../hooks/use-dom-resolved-theme';
 import { useTaskActions } from '../../../hooks/use-task-actions';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import { Badge } from '../badge';
@@ -59,6 +58,7 @@ import { useTaskCardRelationships } from '../tu-do/hooks/useTaskCardRelationship
 import { useTaskLabelManagement } from '../tu-do/hooks/useTaskLabelManagement';
 import { useTaskProjectManagement } from '../tu-do/hooks/useTaskProjectManagement';
 import { CreateListDialog } from '../tu-do/shared/create-list-dialog';
+import { buildWorkspaceTaskUrl } from '../tu-do/shared/task-url';
 import { computeAccessibleLabelStyles } from '../tu-do/utils/label-colors';
 import {
   getAssigneeInitials,
@@ -168,6 +168,18 @@ interface TaskMentionChipProps {
   };
 }
 
+const LOCALE_SEGMENTS = new Set(['en', 'vi']);
+
+function getRouteWorkspaceIdFromPathname(pathname: string): string | undefined {
+  const segments = pathname.split('/').filter(Boolean);
+
+  if (segments.length === 0) {
+    return undefined;
+  }
+
+  return LOCALE_SEGMENTS.has(segments[0] ?? '') ? segments[1] : segments[0];
+}
+
 export function TaskMentionChip({
   entityId,
   displayNumber,
@@ -183,10 +195,14 @@ export function TaskMentionChip({
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
   const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
   const queryClient = useQueryClient();
-  const { resolvedTheme } = useTheme();
-  const params = useParams();
-  const routeWsId = params.wsId as string | undefined;
-  const isDark = resolvedTheme === 'dark';
+  const routeWsId = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    return getRouteWorkspaceIdFromPathname(window.location.pathname);
+  }, []);
+  const isDark = useDomResolvedTheme() === 'dark';
 
   // Dialog states
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -212,9 +228,15 @@ export function TaskMentionChip({
   });
 
   const task = taskPayload?.task as TaskWithBoardId | undefined;
+  const taskWorkspaceId = taskPayload?.taskWsId;
+  const taskWorkspacePersonal = taskPayload?.taskWorkspacePersonal;
+  const boardWorkspaceId = routeWsId ?? taskWorkspaceId;
 
   // Get board config - only fetch when menu opens and we have task data
-  const { data: boardConfig } = useBoardConfig(task?.board_id, routeWsId);
+  const { data: boardConfig } = useBoardConfig(
+    task?.board_id,
+    boardWorkspaceId
+  );
 
   // Fetch workspace labels
   const { data: workspaceLabels = [], isLoading: labelsLoading } =
@@ -592,28 +614,6 @@ export function TaskMentionChip({
     [menuGuardUntil]
   );
 
-  const getTaskUrl = () => {
-    const pathSegments = window.location.pathname.split('/');
-    const wsId = pathSegments[1];
-    return `${window.location.origin}/${wsId}/tasks/${entityId}`;
-  };
-
-  const handleGoToTask = () => {
-    window.open(getTaskUrl(), '_blank', 'noopener,noreferrer');
-    setMenuOpen(false);
-  };
-
-  const handleCopyTaskLink = async () => {
-    try {
-      await navigator.clipboard.writeText(getTaskUrl());
-      toast.success('Task link copied to clipboard');
-    } catch {
-      toast.error('Failed to copy link');
-    }
-    setMenuOpen(false);
-    setPopoverOpen(false);
-  };
-
   // Derive actual display number - prefer fetched task data over props
   // This fixes legacy mentions where task name was stored instead of display number
   const actualDisplayNumber = useMemo(() => {
@@ -635,6 +635,70 @@ export function TaskMentionChip({
     // and subtitle is also the task name, use subtitle
     return subtitle || null;
   }, [task?.name, subtitle]);
+
+  const showTaskResolutionError = useCallback(
+    (fallbackDescription?: string) => {
+      const description =
+        taskError instanceof Error
+          ? taskError.message
+          : (fallbackDescription ??
+            'The linked task could not be resolved from the current mention.');
+
+      toast.error(`Failed to resolve linked task #${actualDisplayNumber}`, {
+        description: `${description} (task id: ${entityId})`,
+      });
+    },
+    [actualDisplayNumber, entityId, taskError]
+  );
+
+  const getTaskUrl = () => {
+    const wsId = routeWsId ?? taskWorkspaceId ?? boardConfig?.ws_id;
+    const boardId = task?.board_id ?? currentTaskList?.board_id ?? null;
+    if (!wsId || !boardId || typeof window === 'undefined') return null;
+    return buildWorkspaceTaskUrl({
+      boardId,
+      currentPathname: window.location.pathname,
+      origin: window.location.origin,
+      taskId: entityId,
+      workspaceId: wsId,
+      isPersonalWorkspace: taskWorkspacePersonal,
+    });
+  };
+
+  const handleGoToTask = () => {
+    const taskUrl = getTaskUrl();
+    if (!taskUrl) {
+      showTaskResolutionError('Task link is not available yet.');
+      return;
+    }
+
+    const openedWindow = window.open(taskUrl, '_blank', 'noopener,noreferrer');
+    if (!openedWindow) {
+      showTaskResolutionError(
+        'The browser blocked the task window from opening.'
+      );
+      return;
+    }
+
+    setMenuOpen(false);
+  };
+
+  const handleCopyTaskLink = async () => {
+    const taskUrl = getTaskUrl();
+    if (!taskUrl) {
+      showTaskResolutionError('Task link is not available yet.');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(taskUrl);
+      toast.success('Task link copied to clipboard');
+    } catch {
+      toast.error('Failed to copy link');
+    }
+    setMenuOpen(false);
+    setPopoverOpen(false);
+  };
 
   const title = actualTaskName
     ? `#${actualDisplayNumber} • ${actualTaskName}`
@@ -664,6 +728,26 @@ export function TaskMentionChip({
         e.stopPropagation();
         (e as any).stopImmediatePropagation?.();
         e.preventDefault();
+
+        if (taskLoading) {
+          toast.info(`Loading linked task #${actualDisplayNumber}...`, {
+            description: `Task id: ${entityId}`,
+          });
+          return;
+        }
+
+        if (taskError) {
+          showTaskResolutionError();
+          return;
+        }
+
+        if (!task) {
+          showTaskResolutionError(
+            'The inline mention still exists, but no live task payload was returned.'
+          );
+          return;
+        }
+
         setPopoverOpen((prev) => !prev);
       }}
       onContextMenu={(e) => {
@@ -1163,9 +1247,6 @@ export function TaskMentionChip({
               boardId={task.board_id}
               wsId={boardConfig.ws_id}
               initialStatus="active"
-              hasClosedList={availableLists.some(
-                (list) => list.status === 'closed'
-              )}
               onSuccess={(listId) => {
                 handleMoveToList(listId);
               }}

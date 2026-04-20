@@ -12130,6 +12130,8 @@
       "task_name_placeholder": "What needs to be done?",
       "task_restored": "Task restored",
       "task_restored_description": "\"{name}\" was restored due to undo operation",
+      "title_too_long_description": "Trim the task title below {max} characters before saving.",
+      "title_too_long_title": "Task title is too long",
       "unassigned": "unassigned",
       "unknown_change": "made a change",
       "unknown_label": "Unknown Label",

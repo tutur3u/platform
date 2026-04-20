@@ -8,27 +8,27 @@ import { MantineThemeProvider } from './mantine-theme-provider';
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <TRPCProvider>
-      <NextIntlClientProvider>
-        <ThemeProvider
-          attribute="class"
-          themes={['system', 'light', 'dark']}
-          enableSystem
-          // Rocket Loader is a Cloudflare optimization that defers the loading
-          // of inline and external scripts to prioritize the website content.
-          // Since next-themes relies on a script injection to avoid screen
-          // flashing on page load, Rocket Loader breaks this functionality.
-          // Individual scripts can be ignored by adding the data-cfasync="false"
-          // attribute to the script tag:
-          scriptProps={{ 'data-cfasync': 'false' }}
-          // see https://github.com/pacocoursey/next-themes?tab=readme-ov-file#using-with-cloudflare-rocket-loader
-          // for more details
-        >
+    <ThemeProvider
+      attribute="class"
+      themes={['system', 'light', 'dark']}
+      enableSystem
+      // Rocket Loader is a Cloudflare optimization that defers the loading
+      // of inline and external scripts to prioritize the website content.
+      // Since next-themes relies on a script injection to avoid screen
+      // flashing on page load, Rocket Loader breaks this functionality.
+      // Individual scripts can be ignored by adding the data-cfasync="false"
+      // attribute to the script tag:
+      scriptProps={{ 'data-cfasync': 'false' }}
+      // see https://github.com/pacocoursey/next-themes?tab=readme-ov-file#using-with-cloudflare-rocket-loader
+      // for more details
+    >
+      <TRPCProvider>
+        <NextIntlClientProvider>
           <MantineThemeProvider>
             <ClientProviders>{children}</ClientProviders>
           </MantineThemeProvider>
-        </ThemeProvider>
-      </NextIntlClientProvider>
-    </TRPCProvider>
+        </NextIntlClientProvider>
+      </TRPCProvider>
+    </ThemeProvider>
   );
 }

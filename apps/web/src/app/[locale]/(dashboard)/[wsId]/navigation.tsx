@@ -44,8 +44,6 @@ import {
   LayoutDashboard,
   LayoutList,
   Link,
-  ListCheck,
-  ListTodo,
   Logs,
   Mail,
   Mails,
@@ -77,7 +75,6 @@ import {
   SquaresIntersect,
   SquareUserRound,
   Star,
-  SwatchBook,
   Tags,
   TextSelect,
   TicketPercent,
@@ -504,8 +501,14 @@ export async function WorkspaceNavigationLinks({
     externalProjectBinding.enabled
       ? {
           title: t('sidebar_tabs.external_projects'),
-          href: `/${personalOrWsId}/external-projects`,
+          href: `/${personalOrWsId}/epm`,
           icon: <BriefcaseBusiness className="h-5 w-5" />,
+          aliases: [
+            `/${personalOrWsId}/epm`,
+            `/${personalOrWsId}/epm/collections`,
+            `/${personalOrWsId}/epm/entries`,
+            `/${personalOrWsId}/external-projects`,
+          ],
           disabled: ENABLE_AI_ONLY || !canAccessExternalProjects,
         }
       : null,
@@ -1033,6 +1036,12 @@ export async function WorkspaceNavigationLinks({
               title: t('sidebar_tabs.education'),
               href: `/${personalOrWsId}/education`,
               icon: <GraduationCap className="h-5 w-5" />,
+              aliases: [
+                `/${personalOrWsId}/education/library`,
+                `/${personalOrWsId}/education/library/quizzes`,
+                `/${personalOrWsId}/education/library/quiz-sets`,
+                `/${personalOrWsId}/education/library/flashcards`,
+              ],
               children: [
                 {
                   title: t('workspace-education-tabs.overview'),
@@ -1046,24 +1055,19 @@ export async function WorkspaceNavigationLinks({
                   icon: <BookText className="h-5 w-5" />,
                 },
                 {
-                  title: t('workspace-education-tabs.flashcards'),
-                  href: `/${personalOrWsId}/education/flashcards`,
-                  icon: <SwatchBook className="h-5 w-5" />,
-                },
-                {
-                  title: t('workspace-education-tabs.quiz-sets'),
-                  href: `/${personalOrWsId}/education/quiz-sets`,
+                  title: t('workspace-education-tabs.library'),
+                  href: `/${personalOrWsId}/education/library`,
                   icon: <LayoutList className="h-5 w-5" />,
-                },
-                {
-                  title: t('workspace-education-tabs.quizzes'),
-                  href: `/${personalOrWsId}/education/quizzes`,
-                  icon: <ListTodo className="h-5 w-5" />,
+                  aliases: [
+                    `/${personalOrWsId}/education/library/quizzes`,
+                    `/${personalOrWsId}/education/library/quiz-sets`,
+                    `/${personalOrWsId}/education/library/flashcards`,
+                  ],
                 },
                 {
                   title: t('workspace-education-tabs.attempts'),
                   href: `/${personalOrWsId}/education/attempts`,
-                  icon: <ListCheck className="h-5 w-5" />,
+                  icon: <ClipboardList className="h-5 w-5" />,
                 },
               ],
               disabled:

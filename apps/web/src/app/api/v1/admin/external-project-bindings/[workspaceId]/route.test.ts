@@ -43,13 +43,17 @@ describe('admin external project binding route', () => {
   });
 
   it('updates bindings through the root-managed rpc', async () => {
+    const adminRpcMock = vi.fn();
     const rpcMock = vi.fn().mockResolvedValue({ error: null });
 
     accessMocks.requireRootExternalProjectsAdmin.mockResolvedValue({
       admin: {
-        rpc: rpcMock,
+        rpc: adminRpcMock,
       },
       ok: true,
+      supabase: {
+        rpc: rpcMock,
+      },
     });
     accessMocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
       canonical_id: 'junly-main',
@@ -77,5 +81,6 @@ describe('admin external project binding route', () => {
         p_next_canonical_id: 'junly-main',
       }
     );
+    expect(adminRpcMock).not.toHaveBeenCalled();
   });
 });

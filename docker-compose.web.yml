@@ -1,0 +1,170 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: dev
+    command: ["bun", "run", "dev:web"]
+    env_file:
+      - path: apps/web/.env.local
+        required: false
+    environment:
+      - CHOKIDAR_INTERVAL=1000
+      - CHOKIDAR_USEPOLLING=1
+      - HOSTNAME=0.0.0.0
+      - NEXT_TELEMETRY_DISABLED=1
+      - NODE_ENV=development
+      - PORT=7803
+      - TSC_WATCHDIRECTORY=DynamicPriorityPolling
+      - TSC_WATCHFILE=DynamicPriorityPolling
+      - WATCHPACK_POLLING=true
+      - SUPABASE_SERVER_URL
+      - UPSTASH_REDIS_REST_TOKEN
+      - UPSTASH_REDIS_REST_URL
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    init: true
+    ports:
+      - "7803:7803"
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/workspace
+      - platform-bun-install:/root/.bun/install/cache
+      # Root workspace dependencies and package-local artifacts stay inside
+      # container-managed volumes so host installs cannot shadow them.
+      - platform-web-next:/workspace/apps/web/.next
+      - platform-web-app-node_modules:/workspace/apps/web/node_modules
+      - platform-web-node_modules:/workspace/node_modules
+      - platform-web-ai-node_modules:/workspace/packages/ai/node_modules
+      - platform-web-ai-dist:/workspace/packages/ai/dist
+      - platform-web-apis-node_modules:/workspace/packages/apis/node_modules
+      - platform-web-apis-dist:/workspace/packages/apis/dist
+      - platform-web-auth-node_modules:/workspace/packages/auth/node_modules
+      - platform-web-auth-dist:/workspace/packages/auth/dist
+      - platform-web-email-service-node_modules:/workspace/packages/email-service/node_modules
+      - platform-web-email-service-dist:/workspace/packages/email-service/dist
+      - platform-web-games-node_modules:/workspace/packages/games/node_modules
+      - platform-web-games-dist:/workspace/packages/games/dist
+      - platform-web-google-node_modules:/workspace/packages/google/node_modules
+      - platform-web-google-dist:/workspace/packages/google/dist
+      - platform-web-hooks-node_modules:/workspace/packages/hooks/node_modules
+      - platform-web-hooks-dist:/workspace/packages/hooks/dist
+      - platform-web-icons-node_modules:/workspace/packages/icons/node_modules
+      - platform-web-icons-dist:/workspace/packages/icons/dist
+      - platform-web-internal-api-node_modules:/workspace/packages/internal-api/node_modules
+      - platform-web-internal-api-dist:/workspace/packages/internal-api/dist
+      - platform-web-masonry-node_modules:/workspace/packages/masonry/node_modules
+      - platform-web-masonry-dist:/workspace/packages/masonry/dist
+      - platform-web-microsoft-node_modules:/workspace/packages/microsoft/node_modules
+      - platform-web-microsoft-dist:/workspace/packages/microsoft/dist
+      - platform-web-offline-node_modules:/workspace/packages/offline/node_modules
+      - platform-web-offline-dist:/workspace/packages/offline/dist
+      - platform-web-payment-node_modules:/workspace/packages/payment/node_modules
+      - platform-web-payment-dist:/workspace/packages/payment/dist
+      - platform-web-satellite-node_modules:/workspace/packages/satellite/node_modules
+      - platform-web-satellite-dist:/workspace/packages/satellite/dist
+      - platform-web-sdk-node_modules:/workspace/packages/sdk/node_modules
+      - platform-web-sdk-dist:/workspace/packages/sdk/dist
+      - platform-web-supabase-node_modules:/workspace/packages/supabase/node_modules
+      - platform-web-supabase-dist:/workspace/packages/supabase/dist
+      - platform-web-turbo:/workspace/.turbo
+      - platform-web-transactional-node_modules:/workspace/packages/transactional/node_modules
+      - platform-web-transactional-dist:/workspace/packages/transactional/dist
+      - platform-web-trigger-node_modules:/workspace/packages/trigger/node_modules
+      - platform-web-trigger-dist:/workspace/packages/trigger/dist
+      - platform-web-turnstile-node_modules:/workspace/packages/turnstile/node_modules
+      - platform-web-turnstile-dist:/workspace/packages/turnstile/dist
+      - platform-web-types-node_modules:/workspace/packages/types/node_modules
+      - platform-web-types-dist:/workspace/packages/types/dist
+      - platform-web-typescript-config-node_modules:/workspace/packages/typescript-config/node_modules
+      - platform-web-typescript-config-dist:/workspace/packages/typescript-config/dist
+      - platform-web-ui-node_modules:/workspace/packages/ui/node_modules
+      - platform-web-ui-dist:/workspace/packages/ui/dist
+      - platform-web-utils-node_modules:/workspace/packages/utils/node_modules
+      - platform-web-utils-dist:/workspace/packages/utils/dist
+      - platform-web-vercel-node_modules:/workspace/packages/vercel/node_modules
+      - platform-web-vercel-dist:/workspace/packages/vercel/dist
+      - platform-web-workflows-node_modules:/workspace/packages/workflows/node_modules
+      - platform-web-workflows-dist:/workspace/packages/workflows/dist
+
+  redis:
+    profiles: ["redis"]
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  serverless-redis-http:
+    profiles: ["redis"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      SRH_CONNECTION_STRING: redis://redis:6379
+      SRH_MODE: env
+      SRH_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:?UPSTASH_REDIS_REST_TOKEN must be set when enabling the redis profile}
+    image: hiett/serverless-redis-http:latest
+    ports:
+      - "8079:80"
+
+volumes:
+  platform-web-app-node_modules:
+  platform-web-ai-node_modules:
+  platform-web-ai-dist:
+  platform-web-apis-node_modules:
+  platform-web-apis-dist:
+  platform-web-auth-node_modules:
+  platform-web-auth-dist:
+  platform-bun-install:
+  platform-web-email-service-node_modules:
+  platform-web-email-service-dist:
+  platform-web-games-node_modules:
+  platform-web-games-dist:
+  platform-web-google-node_modules:
+  platform-web-google-dist:
+  platform-web-hooks-node_modules:
+  platform-web-hooks-dist:
+  platform-web-icons-node_modules:
+  platform-web-icons-dist:
+  platform-web-internal-api-node_modules:
+  platform-web-internal-api-dist:
+  platform-web-masonry-node_modules:
+  platform-web-masonry-dist:
+  platform-web-microsoft-node_modules:
+  platform-web-microsoft-dist:
+  platform-web-next:
+  platform-web-node_modules:
+  platform-web-offline-node_modules:
+  platform-web-offline-dist:
+  platform-web-payment-node_modules:
+  platform-web-payment-dist:
+  platform-web-satellite-node_modules:
+  platform-web-satellite-dist:
+  platform-web-sdk-node_modules:
+  platform-web-sdk-dist:
+  platform-web-supabase-node_modules:
+  platform-web-supabase-dist:
+  platform-web-turbo:
+  platform-web-transactional-node_modules:
+  platform-web-transactional-dist:
+  platform-web-trigger-node_modules:
+  platform-web-trigger-dist:
+  platform-web-turnstile-node_modules:
+  platform-web-turnstile-dist:
+  platform-web-types-node_modules:
+  platform-web-types-dist:
+  platform-web-typescript-config-node_modules:
+  platform-web-typescript-config-dist:
+  platform-web-ui-node_modules:
+  platform-web-ui-dist:
+  platform-web-utils-node_modules:
+  platform-web-utils-dist:
+  platform-web-vercel-node_modules:
+  platform-web-vercel-dist:
+  platform-web-workflows-node_modules:
+  platform-web-workflows-dist:

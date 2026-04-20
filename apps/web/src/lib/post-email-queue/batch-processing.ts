@@ -21,7 +21,9 @@ import type {
   PrefetchedPost,
   PrefetchedPostCheck,
   PrefetchedSentEmail,
+  PrefetchedSentEmailAudit,
   PrefetchPostRow,
+  PrefetchSentEmailAuditRow,
   PrefetchSentEmailRow,
   QueueClaimedRow,
   QueueClaimUpdate,
@@ -42,6 +44,14 @@ export function buildPostEmailSubject(
   username: string
 ): string {
   return `Easy Center | Báo cáo tiến độ ngày ${dayjs(createdAt).format('DD/MM/YYYY')} của ${username}`;
+}
+
+function createPostUserKey(postId: string, userId: string): string {
+  return `${postId}:${userId}`;
+}
+
+function createPostRecipientKey(postId: string, email: string): string {
+  return `${postId}:${email.trim().toLowerCase()}`;
 }
 
 function getWorkspaceGroupName(
@@ -65,6 +75,140 @@ async function markQueueRow(
     .update(patch)
     .eq('id', queueId);
   if (error) throw error;
+}
+
+async function getExistingSentEmailRecord(
+  sbAdmin: TypedSupabaseClient,
+  {
+    postId,
+    userId,
+  }: {
+    postId: PostEmailQueueRow['post_id'];
+    userId: PostEmailQueueRow['user_id'];
+  }
+): Promise<PrefetchedSentEmail | null> {
+  const { data, error } = await sbAdmin
+    .from('sent_emails')
+    .select('id, created_at')
+    .eq('post_id', postId)
+    .eq('receiver_id', userId)
+    .order('created_at', { ascending: true })
+    .limit(1);
+
+  if (error) throw error;
+
+  const existingRecord = data?.[0];
+  if (!existingRecord) return null;
+
+  return {
+    id: existingRecord.id,
+    created_at: existingRecord.created_at,
+  };
+}
+
+async function persistSentEmailRecord(
+  sbAdmin: TypedSupabaseClient,
+  {
+    htmlContent,
+    postId,
+    recipientEmail,
+    senderPlatformUserId,
+    sourceInfo,
+    subject,
+    userId,
+    wsId,
+  }: {
+    htmlContent: string;
+    postId: PostEmailQueueRow['post_id'];
+    recipientEmail: string;
+    senderPlatformUserId: string;
+    sourceInfo: BatchSourceInfo;
+    subject: string;
+    userId: PostEmailQueueRow['user_id'];
+    wsId: PostEmailQueueRow['ws_id'];
+  }
+): Promise<PrefetchedSentEmail> {
+  const existingRecord = await getExistingSentEmailRecord(sbAdmin, {
+    postId,
+    userId,
+  });
+  if (existingRecord) return existingRecord;
+
+  const sentEmailInsert: Database['public']['Tables']['sent_emails']['Insert'] =
+    {
+      post_id: postId,
+      ws_id: wsId,
+      sender_id: senderPlatformUserId,
+      receiver_id: userId,
+      email: recipientEmail,
+      subject,
+      content: htmlContent,
+      source_name: sourceInfo.source_name,
+      source_email: sourceInfo.source_email,
+    };
+
+  const { data: sentEmail, error: sentInsertError } = await sbAdmin
+    .from('sent_emails')
+    .insert(sentEmailInsert)
+    .select('id, created_at')
+    .single();
+
+  if (sentInsertError) throw sentInsertError;
+
+  return {
+    id: sentEmail.id,
+    created_at: sentEmail.created_at,
+  };
+}
+
+async function linkSentEmailToCheck(
+  sbAdmin: TypedSupabaseClient,
+  {
+    postId,
+    sentEmailId,
+    userId,
+  }: {
+    postId: PostEmailQueueRow['post_id'];
+    sentEmailId: string;
+    userId: PostEmailQueueRow['user_id'];
+  }
+): Promise<void> {
+  const { error: checkUpdateError } = await sbAdmin
+    .from('user_group_post_checks')
+    .update({ email_id: sentEmailId })
+    .eq('post_id', postId)
+    .eq('user_id', userId);
+
+  if (checkUpdateError) {
+    console.warn('[PostEmailQueueBatch] Failed to link email_id to check', {
+      postId,
+      userId,
+      emailId: sentEmailId,
+      error: checkUpdateError,
+    });
+  }
+}
+
+function buildSentEmailPersistenceWarning(
+  error: unknown,
+  details?: {
+    auditId?: string;
+    messageId?: string;
+  }
+): string {
+  const message =
+    error instanceof Error
+      ? error.message
+      : 'Unknown sent email persistence error';
+  const suffix = [details?.auditId, details?.messageId]
+    .filter(Boolean)
+    .join(', ');
+
+  if (!suffix) {
+    return `Delivery accepted by provider, but local sent email persistence failed: ${message}`;
+  }
+
+  return `Delivery accepted by provider, but local sent email persistence failed (${suffix}): ${message}`;
 }
 
 async function prefetchBatchData(
@@ -126,6 +270,21 @@ async function prefetchBatchData(
     }
   }
 
+  const sentEmailAuditRows: PrefetchSentEmailAuditRow[] = [];
+  for (const postChunk of chunkArray(postIds, PREFETCH_QUERY_CHUNK_SIZE)) {
+    const { data, error } = await sbAdmin
+      .from('email_audit')
+      .select(
+        'id, entity_id, to_addresses, sent_at, created_at, source_name, source_email, subject, html_content, user_id'
+      )
+      .eq('entity_type', 'post')
+      .eq('status', 'sent')
+      .in('entity_id', postChunk);
+
+    if (error) throw error;
+    sentEmailAuditRows.push(...((data ?? []) as PrefetchSentEmailAuditRow[]));
+  }
+
   const posts = new Map<PostEmailQueueRow['post_id'], PrefetchedPost | null>();
   for (const post of postRows) {
     posts.set(post.id, {
@@ -145,10 +304,47 @@ async function prefetchBatchData(
 
   const existingSentEmails = new Map<string, PrefetchedSentEmail>();
   for (const sentEmail of sentEmailRows) {
-    existingSentEmails.set(`${sentEmail.post_id}:${sentEmail.receiver_id}`, {
-      id: sentEmail.id,
-      created_at: sentEmail.created_at,
-    });
+    if (!sentEmail.post_id) continue;
+
+    existingSentEmails.set(
+      createPostUserKey(sentEmail.post_id, sentEmail.receiver_id),
+      {
+        id: sentEmail.id,
+        created_at: sentEmail.created_at,
+      }
+    );
+  }
+
+  const existingSentEmailAudits = new Map<string, PrefetchedSentEmailAudit>();
+  for (const sentEmailAudit of sentEmailAuditRows) {
+    if (!sentEmailAudit.entity_id) continue;
+
+    for (const recipientEmail of sentEmailAudit.to_addresses ?? []) {
+      const mapKey = createPostRecipientKey(
+        sentEmailAudit.entity_id,
+        recipientEmail
+      );
+      const existingAudit = existingSentEmailAudits.get(mapKey);
+      const existingTimestamp =
+        existingAudit?.sent_at ?? existingAudit?.created_at ?? '';
+      const nextTimestamp =
+        sentEmailAudit.sent_at ?? sentEmailAudit.created_at ?? '';
+
+      if (existingAudit && existingTimestamp >= nextTimestamp) {
+        continue;
+      }
+
+      existingSentEmailAudits.set(mapKey, {
+        created_at: sentEmailAudit.created_at,
+        html_content: sentEmailAudit.html_content,
+        id: sentEmailAudit.id,
+        sender_platform_user_id: sentEmailAudit.user_id,
+        sent_at: sentEmailAudit.sent_at,
+        source_email: sentEmailAudit.source_email,
+        source_name: sentEmailAudit.source_name,
+        subject: sentEmailAudit.subject,
+      });
+    }
   }
 
   const blockedEmailCache = await preloadBlockedEmailCache(
@@ -184,11 +380,13 @@ async function prefetchBatchData(
     postsFound: posts.size,
     checksFound: checks.size,
     sentEmailsFound: existingSentEmails.size,
+    sentEmailAuditsFound: existingSentEmailAudits.size,
     workspacesInitialized: emailServices.size,
   });
 
   const batchPrefetch: BatchPrefetchContext = {
     blockedRecipientEmails,
+    existingSentEmailAudits,
     posts,
     checks,
     existingSentEmails,
@@ -256,7 +454,7 @@ async function processEmailWithContext(
   }
 
   const existingSentEmail = prefetch.existingSentEmails.get(
-    `${row.post_id}:${row.user_id}`
+    createPostUserKey(row.post_id, row.user_id)
   );
 
   if (existingSentEmail) {
@@ -266,6 +464,59 @@ async function processEmailWithContext(
       sent_at: existingSentEmail.created_at,
       sent_email_id: existingSentEmail.id,
       last_error: null,
+      blocked_reason: null,
+    });
+
+    return { id: row.id, status: 'sent' };
+  }
+
+  const existingSentAudit = prefetch.existingSentEmailAudits.get(
+    createPostRecipientKey(row.post_id, context.recipient.email)
+  );
+
+  if (existingSentAudit) {
+    let recoveredSentEmail: PrefetchedSentEmail | null = null;
+    let recoveryWarning: string | null = null;
+
+    if (existingSentAudit.html_content) {
+      try {
+        recoveredSentEmail = await persistSentEmailRecord(sbAdmin, {
+          htmlContent: existingSentAudit.html_content,
+          postId: row.post_id,
+          recipientEmail: context.recipient.email,
+          senderPlatformUserId:
+            existingSentAudit.sender_platform_user_id ??
+            row.sender_platform_user_id,
+          sourceInfo: {
+            source_email: existingSentAudit.source_email,
+            source_name: existingSentAudit.source_name,
+          },
+          subject: existingSentAudit.subject,
+          userId: row.user_id,
+          wsId: row.ws_id,
+        });
+
+        await linkSentEmailToCheck(sbAdmin, {
+          postId: row.post_id,
+          sentEmailId: recoveredSentEmail.id,
+          userId: row.user_id,
+        });
+      } catch (error) {
+        recoveryWarning = buildSentEmailPersistenceWarning(error, {
+          auditId: existingSentAudit.id,
+        });
+      }
+    } else {
+      recoveryWarning =
+        'Delivery was recovered from email audit, but the sent email history row could not be rebuilt automatically.';
+    }
+
+    await markQueueRow(sbAdmin, row.id, {
+      status: 'sent',
+      batch_id: null,
+      sent_at: existingSentAudit.sent_at ?? existingSentAudit.created_at,
+      sent_email_id: recoveredSentEmail?.id ?? null,
+      last_error: recoveryWarning,
       blocked_reason: null,
     });
 
@@ -369,49 +620,40 @@ async function processEmailWithContext(
     return { id: row.id, status: 'failed' };
   }
 
-  const sentEmailInsert: Database['public']['Tables']['sent_emails']['Insert'] =
-    {
-      post_id: row.post_id,
-      ws_id: row.ws_id,
-      sender_id: row.sender_platform_user_id,
-      receiver_id: row.user_id,
-      email: context.recipient.email,
-      subject,
-      content: htmlContent,
-      source_name: sourceInfo.source_name,
-      source_email: sourceInfo.source_email,
-    };
+  const deliveredAt = new Date().toISOString();
+  let sentEmail: PrefetchedSentEmail | null = null;
+  let persistenceWarning: string | null = null;
 
-  const { data: sentEmail, error: sentInsertError } = await sbAdmin
-    .from('sent_emails')
-    .insert(sentEmailInsert)
-    .select('id')
-    .single();
-
-  if (sentInsertError) throw sentInsertError;
-
-  const { error: checkUpdateError } = await sbAdmin
-    .from('user_group_post_checks')
-    .update({ email_id: sentEmail.id })
-    .eq('post_id', row.post_id)
-    .eq('user_id', row.user_id);
-
-  if (checkUpdateError) {
-    console.warn('[PostEmailQueueBatch] Failed to link email_id to check', {
-      rowId: row.id,
+  try {
+    sentEmail = await persistSentEmailRecord(sbAdmin, {
+      htmlContent,
       postId: row.post_id,
+      recipientEmail: context.recipient.email,
+      senderPlatformUserId: row.sender_platform_user_id,
+      sourceInfo,
+      subject,
       userId: row.user_id,
-      emailId: sentEmail.id,
-      error: checkUpdateError,
+      wsId: row.ws_id,
+    });
+
+    await linkSentEmailToCheck(sbAdmin, {
+      postId: row.post_id,
+      sentEmailId: sentEmail.id,
+      userId: row.user_id,
+    });
+  } catch (error) {
+    persistenceWarning = buildSentEmailPersistenceWarning(error, {
+      auditId: sendResult.auditId,
+      messageId: sendResult.messageId,
     });
   }
 
   await markQueueRow(sbAdmin, row.id, {
     status: 'sent',
     batch_id: null,
-    sent_at: new Date().toISOString(),
-    sent_email_id: sentEmail.id,
-    last_error: null,
+    sent_at: deliveredAt,
+    sent_email_id: sentEmail?.id ?? null,
+    last_error: persistenceWarning,
     blocked_reason: null,
   });
 
@@ -602,14 +844,23 @@ export async function processPostEmailQueueBatch(
   }
 
   const batchId = crypto.randomUUID();
-  const now = new Date().toISOString();
-  const claimedRows: QueueClaimedRow[] = [];
+  const results: BatchProcessResult[] = [];
+  let claimedCount = 0;
+  let failed = 0;
+  let timedOut = false;
   let rowIndex = 0;
 
-  while (claimedRows.length < safeSendLimit && rowIndex < rows.length) {
-    if (Date.now() - startTime > maxDurationMs) break;
+  while (claimedCount < safeSendLimit && rowIndex < rows.length) {
+    if (Date.now() - startTime > maxDurationMs) {
+      timedOut = true;
+      break;
+    }
 
-    const slotsRemaining = safeSendLimit - claimedRows.length;
+    const now = new Date().toISOString();
+    const slotsRemaining = Math.min(
+      safeConcurrency,
+      safeSendLimit - claimedCount
+    );
     const claimWindow = rows.slice(rowIndex, rowIndex + slotsRemaining);
     rowIndex += claimWindow.length;
     if (claimWindow.length === 0) break;
@@ -665,6 +916,7 @@ export async function processPostEmailQueueBatch(
       }
     }
 
+    const claimedRows: QueueClaimedRow[] = [];
     for (const row of claimWindow) {
       if (!claimedIdSet.has(row.id)) continue;
       claimedRows.push({
@@ -675,35 +927,39 @@ export async function processPostEmailQueueBatch(
         last_attempt_at: now,
         attempt_count: row.attempt_count + 1,
       });
-      if (claimedRows.length >= safeSendLimit) break;
+      if (claimedRows.length >= slotsRemaining) break;
+    }
+
+    if (claimedRows.length === 0) {
+      continue;
+    }
+
+    claimedCount += claimedRows.length;
+
+    const prefetch = await prefetchBatchData(sbAdmin, claimedRows);
+
+    const batchResult = await processWithConcurrency(
+      claimedRows,
+      (row) => processEmailWithContext(sbAdmin, row, prefetch),
+      (row, error) => normalizeQueueError(sbAdmin, row, error),
+      safeConcurrency,
+      maxDurationMs,
+      startTime
+    );
+
+    results.push(...batchResult.results);
+    failed += batchResult.results.filter(
+      (result) => result.status === 'failed'
+    ).length;
+
+    if (batchResult.timedOut) {
+      timedOut = true;
+      break;
     }
   }
 
-  if (claimedRows.length === 0) {
-    return {
-      claimed: 0,
-      processed: 0,
-      failed: 0,
-      timedOut: false,
-      results: [] as BatchProcessResult[],
-    };
-  }
-
-  const prefetch = await prefetchBatchData(sbAdmin, claimedRows);
-
-  const { results, timedOut } = await processWithConcurrency(
-    claimedRows,
-    (row) => processEmailWithContext(sbAdmin, row, prefetch),
-    (row, error) => normalizeQueueError(sbAdmin, row, error),
-    safeConcurrency,
-    maxDurationMs,
-    startTime
-  );
-
-  const failed = results.filter((result) => result.status === 'failed').length;
-
   return {
-    claimed: claimedRows.length,
+    claimed: claimedCount,
     processed: results.length,
     failed,
     timedOut,

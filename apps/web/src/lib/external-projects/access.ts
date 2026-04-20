@@ -115,6 +115,7 @@ export async function requireRootExternalProjectsAdmin(request: Request) {
     ok: true as const,
     admin: (await createAdminClient()) as TypedSupabaseClient,
     permissions,
+    supabase,
     user,
   };
 }

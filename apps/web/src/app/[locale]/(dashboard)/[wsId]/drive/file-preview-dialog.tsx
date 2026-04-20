@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   Download,
   ExternalLink,
@@ -26,7 +27,6 @@ import { joinPath } from '@tuturuuu/utils/path-helper';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
 import { formatBytes } from '@/utils/file-helper';
 
 // Dynamic imports for heavy components
@@ -121,96 +121,58 @@ export function FilePreviewDialog({
   onOpenChange,
 }: FilePreviewDialogProps) {
   const t = useTranslations();
-
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [textContent, setTextContent] = useState<string>('');
-
   const fileType = file?.name ? getFileType(file.name) : 'other';
   const cleanFileName =
     file?.name?.replace(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
       ''
     ) || '';
+  const relativePath = file?.name ? joinPath(path, file.name) : '';
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!file?.name || !open) {
-      setSignedUrl(null);
-      setTextContent('');
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const fetchSignedUrl = async () => {
-      if (!cancelled) {
-        setLoading(true);
+  const signedUrlQuery = useQuery({
+    queryKey: ['drive-file-preview-url', wsId, relativePath],
+    queryFn: async () => {
+      if (!relativePath) {
+        throw new Error('Missing file path');
       }
-      try {
-        if (!file.name) {
-          toast({
-            title: 'Error',
-            description: 'Failed to load file preview',
-            variant: 'destructive',
-          });
-          return;
-        }
 
-        // The file.name already contains the full path including wsId
-        const fullPath = joinPath(wsId, path, file.name);
-        if (!fullPath) {
-          toast({
-            title: 'Error',
-            description: 'Failed to load file preview',
-            variant: 'destructive',
-          });
-          return;
-        }
+      return createWorkspaceStorageSignedUrl(wsId, relativePath, 3600);
+    },
+    enabled: open && !!relativePath,
+    staleTime: 50 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: 1,
+  });
 
-        const nextSignedUrl = await createWorkspaceStorageSignedUrl(
-          wsId,
-          joinPath(path, file.name),
-          3600
-        );
-
-        if (cancelled) {
-          return;
-        }
-
-        setSignedUrl(nextSignedUrl);
-
-        // For text files, fetch content
-        if (fileType === 'text' || fileType === 'code') {
-          try {
-            const response = await fetch(nextSignedUrl);
-            if (response.ok && !cancelled) {
-              const content = await response.text();
-              if (!cancelled) {
-                setTextContent(content);
-              }
-            }
-          } catch (error) {
-            console.error('Error fetching text content:', error);
-          }
-        }
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+  const textContentQuery = useQuery({
+    queryKey: ['drive-file-preview-text', signedUrlQuery.data],
+    queryFn: async () => {
+      if (!signedUrlQuery.data) {
+        throw new Error('Missing signed URL');
       }
-    };
 
-    void fetchSignedUrl();
+      const response = await fetch(signedUrlQuery.data, {
+        cache: 'no-store',
+      });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [file?.name, open, fileType, wsId, path]);
+      if (!response.ok) {
+        throw new Error('Failed to load file preview');
+      }
+
+      return response.text();
+    },
+    enabled:
+      open &&
+      !!signedUrlQuery.data &&
+      (fileType === 'text' || fileType === 'code'),
+    retry: 1,
+  });
+  const signedUrl = signedUrlQuery.data ?? null;
+  const loading =
+    signedUrlQuery.isPending ||
+    ((fileType === 'text' || fileType === 'code') &&
+      textContentQuery.isPending);
+  const textContent = textContentQuery.data ?? '';
 
   const handleDownload = async () => {
     if (!file?.name || !signedUrl) return;
@@ -296,7 +258,7 @@ export function FilePreviewDialog({
               href={signedUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="block h-full w-full"
+              className="relative block h-full w-full"
               title={t('common.view')}
             >
               <Image
@@ -304,7 +266,6 @@ export function FilePreviewDialog({
                 alt={cleanFileName || 'File preview'}
                 fill
                 className="h-full w-full cursor-zoom-in rounded-lg bg-white object-contain transition-opacity duration-300 dark:bg-black"
-                quality={90}
                 sizes="100vw"
                 priority
               />

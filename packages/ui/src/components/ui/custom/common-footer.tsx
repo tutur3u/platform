@@ -151,6 +151,12 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
               {t('common.qr_generator')}
             </Link>
             <Link
+              href={`${TUTURUUU_URL}/facebook-mockup`}
+              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+            >
+              {t('common.facebook_mockup')}
+            </Link>
+            <Link
               href={`${TUTURUUU_URL}/branding`}
               className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
             >

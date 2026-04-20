@@ -5,6 +5,7 @@ type CookieLike = {
 
 const SUPABASE_BASE64_PREFIX = 'base64-';
 const BASE64_URL_BODY_PATTERN = /^[A-Za-z0-9_-]*$/;
+const LEGACY_JSON_PREFIX_PATTERN = /^[[{]/u;
 const EXPIRED_COOKIE_OPTIONS = {
   expires: new Date(0),
   maxAge: 0,
@@ -59,14 +60,96 @@ function combineAuthCookieChunks(
   return chunks.join('');
 }
 
-function isMalformedBase64CookieValue(cookieValue: string): boolean {
-  if (!cookieValue.startsWith(SUPABASE_BASE64_PREFIX)) {
+function hasMalformedChunkLayout(
+  authCookies: CookieLike[],
+  storageKey: string
+): boolean {
+  const hasBaseCookie = authCookies.some(
+    (cookie) => cookie.name === storageKey
+  );
+  const chunkIndices = authCookies
+    .map((cookie) => getChunkIndex(cookie.name, storageKey))
+    .filter((index): index is number => typeof index === 'number' && index >= 0)
+    .sort((left, right) => left - right);
+
+  if (hasBaseCookie && chunkIndices.length > 0) {
+    return true;
+  }
+
+  if (chunkIndices.length === 0) {
     return false;
   }
 
-  return !BASE64_URL_BODY_PATTERN.test(
-    cookieValue.slice(SUPABASE_BASE64_PREFIX.length)
+  if (chunkIndices[0] !== 0) {
+    return true;
+  }
+
+  for (let index = 1; index < chunkIndices.length; index += 1) {
+    const currentIndex = chunkIndices[index];
+    const previousIndex = chunkIndices[index - 1];
+
+    if (
+      currentIndex === undefined ||
+      previousIndex === undefined ||
+      currentIndex !== previousIndex + 1
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function decodeBase64UrlJson(cookieValue: string): unknown | null {
+  const base64Body = cookieValue.slice(SUPABASE_BASE64_PREFIX.length);
+  return !BASE64_URL_BODY_PATTERN.test(base64Body)
+    ? null
+    : JSON.parse(
+        Buffer.from(
+          `${base64Body.replace(/-/gu, '+').replace(/_/gu, '/')}${'='.repeat(
+            (4 - (base64Body.length % 4 || 4)) % 4
+          )}`,
+          'base64'
+        ).toString('utf8')
+      );
+}
+
+function looksLikeSupabaseSessionPayload(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+
+  return (
+    'access_token' in value ||
+    'refresh_token' in value ||
+    'expires_at' in value ||
+    'user' in value
   );
+}
+
+function isMalformedSupabaseCookieValue(cookieValue: string): boolean {
+  if (!cookieValue) {
+    return true;
+  }
+
+  if (cookieValue.startsWith(SUPABASE_BASE64_PREFIX)) {
+    try {
+      const decodedValue = decodeBase64UrlJson(cookieValue);
+      return !looksLikeSupabaseSessionPayload(decodedValue);
+    } catch {
+      return true;
+    }
+  }
+
+  if (!LEGACY_JSON_PREFIX_PATTERN.test(cookieValue)) {
+    return true;
+  }
+
+  try {
+    return !looksLikeSupabaseSessionPayload(JSON.parse(cookieValue));
+  } catch {
+    return true;
+  }
 }
 
 export function sanitizeSupabaseAuthCookies(
@@ -87,7 +170,13 @@ export function sanitizeSupabaseAuthCookies(
   }
 
   const combinedValue = combineAuthCookieChunks(authCookies, storageKey);
-  if (!combinedValue || !isMalformedBase64CookieValue(combinedValue)) {
+  const malformedChunkLayout = hasMalformedChunkLayout(authCookies, storageKey);
+  if (
+    (!combinedValue && !malformedChunkLayout) ||
+    (combinedValue &&
+      !malformedChunkLayout &&
+      !isMalformedSupabaseCookieValue(combinedValue))
+  ) {
     return cookies;
   }
 
@@ -118,7 +207,13 @@ export function getMalformedSupabaseAuthCookieNames(
   }
 
   const combinedValue = combineAuthCookieChunks(authCookies, storageKey);
-  if (!combinedValue || !isMalformedBase64CookieValue(combinedValue)) {
+  const malformedChunkLayout = hasMalformedChunkLayout(authCookies, storageKey);
+  if (
+    (!combinedValue && !malformedChunkLayout) ||
+    (combinedValue &&
+      !malformedChunkLayout &&
+      !isMalformedSupabaseCookieValue(combinedValue))
+  ) {
     return [];
   }
 

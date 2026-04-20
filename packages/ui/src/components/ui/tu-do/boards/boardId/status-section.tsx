@@ -246,21 +246,10 @@ export function StatusSection({
               variant="ghost"
               size="sm"
               onClick={() => setShowAddForm(true)}
-              className={cn(
-                'group w-full justify-start gap-2 border-2 border-border/40 border-dashed transition-all hover:border-border/60 hover:border-solid hover:bg-background/50 hover:shadow-sm',
-                status === 'closed' &&
-                  lists.length >= 1 &&
-                  'cursor-not-allowed opacity-50 hover:bg-transparent hover:shadow-none'
-              )}
-              disabled={status === 'closed' && lists.length >= 1}
+              className="group w-full justify-start gap-2 border-2 border-border/40 border-dashed transition-all hover:border-border/60 hover:border-solid hover:bg-background/50 hover:shadow-sm"
             >
               <Plus className="h-4 w-4 transition-transform group-hover:scale-110" />
               <span className="font-medium text-xs">Add list</span>
-              {status === 'closed' && lists.length >= 1 && (
-                <span className="ml-auto text-[10px] text-muted-foreground">
-                  (max 1)
-                </span>
-              )}
             </Button>
           )}
         </div>

@@ -458,6 +458,7 @@ export function TaskDialogHeader({
           taskId={taskId}
           wsId={wsId}
           boardId={boardId}
+          isPersonalWorkspace={isPersonalWorkspace}
           pathname={pathname}
           navigateBackTaskName={navigateBackTaskName}
           onClose={handleClose}

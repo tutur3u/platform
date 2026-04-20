@@ -41,6 +41,16 @@ describe('Editor Extensions Integration', () => {
       expect(hasTaskList).toBe(true);
       expect(hasTaskItem).toBe(true);
     });
+
+    it('should configure youtube embeds with a referrer policy', () => {
+      const extensions = getEditorExtensions();
+      const youtubeExtension = extensions.find((ext) => ext.name === 'youtube');
+
+      expect(youtubeExtension).toBeDefined();
+      expect(youtubeExtension?.options.HTMLAttributes.referrerpolicy).toBe(
+        'strict-origin-when-cross-origin'
+      );
+    });
   });
 
   describe('backward compatibility', () => {

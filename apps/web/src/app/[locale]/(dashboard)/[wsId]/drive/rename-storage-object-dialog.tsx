@@ -1,5 +1,7 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
+import { renameWorkspaceStorageObject } from '@tuturuuu/internal-api';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -63,18 +65,36 @@ export function RenameStorageObjectDialog({
 }: RenameStorageObjectDialogProps) {
   const t = useTranslations();
   const [name, setName] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const isFolder = !storageObject?.id;
+  const renameMutation = useMutation({
+    mutationFn: async (nextName: string) => {
+      if (!storageObject?.name) {
+        throw new Error('Missing storage object name');
+      }
+
+      return renameWorkspaceStorageObject(
+        wsId,
+        {
+          path,
+          currentName: storageObject.name,
+          newName: getFinalRenameValue(storageObject, nextName),
+          isFolder,
+        },
+        { fetch }
+      );
+    },
+  });
 
   useEffect(() => {
     if (!open) {
-      setSubmitting(false);
+      renameMutation.reset();
       return;
     }
 
     setName(getDefaultRenameValue(storageObject));
-  }, [open, storageObject]);
+  }, [open, renameMutation, storageObject]);
 
-  const isFolder = !storageObject?.id;
+  const submitting = renameMutation.isPending;
 
   const handleSubmit = async () => {
     if (!storageObject?.name) return;
@@ -82,46 +102,24 @@ export function RenameStorageObjectDialog({
     const trimmedName = name.trim();
     if (!trimmedName) return;
 
-    setSubmitting(true);
+    try {
+      await renameMutation.mutateAsync(trimmedName);
+      toast({
+        title: t('common.success'),
+        description: isFolder
+          ? t('ws-storage-objects.folder_renamed')
+          : t('ws-storage-objects.file_renamed'),
+      });
 
-    const response = await fetch(`/api/v1/workspaces/${wsId}/storage/rename`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-      body: JSON.stringify({
-        path,
-        currentName: storageObject.name,
-        newName: getFinalRenameValue(storageObject, trimmedName),
-        isFolder,
-      }),
-    });
-
-    const payload = (await response.json().catch(() => null)) as {
-      message?: string;
-    } | null;
-
-    if (!response.ok) {
+      onOpenChange(false);
+      onSuccess?.();
+    } catch (error) {
       toast({
         title: t('common.error'),
-        description: payload?.message || t('common.error'),
+        description: error instanceof Error ? error.message : t('common.error'),
         variant: 'destructive',
       });
-      setSubmitting(false);
-      return;
     }
-
-    toast({
-      title: t('common.success'),
-      description: isFolder
-        ? t('ws-storage-objects.folder_renamed')
-        : t('ws-storage-objects.file_renamed'),
-    });
-
-    setSubmitting(false);
-    onOpenChange(false);
-    onSuccess?.();
   };
 
   return (

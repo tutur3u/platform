@@ -15,7 +15,8 @@ export async function GET(_: Request, { params }: Params) {
     .from('workspace_course_modules')
     .select('*')
     .eq('course_id', id)
-    .single();
+    .order('sort_key', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: true });
 
   if (error) {
     console.log(error);

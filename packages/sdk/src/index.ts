@@ -7,6 +7,14 @@
  * @packageDocumentation
  */
 
+export type { EpmClientConfig } from './epm';
+export {
+  buildEpmNavigationItems,
+  EpmClient,
+  getEpmCollectionNavigationConfig,
+  getEpmCollectionNavigationTitle,
+  isYoolaExternalProjectLoadingData,
+} from './epm';
 // Errors
 export {
   AuthenticationError,
@@ -23,10 +31,7 @@ export {
   ValidationError,
 } from './errors';
 export type { ExternalProjectsClientConfig } from './external-projects';
-export {
-  ExternalProjectsClient,
-  isYoolaExternalProjectLoadingData,
-} from './external-projects';
+export { ExternalProjectsClient } from './external-projects';
 export type { RetryConfig, TuturuuuClientConfig } from './storage';
 // Main client
 /**
@@ -63,14 +68,38 @@ export type {
   Document,
   DocumentResponse,
   DownloadOptions,
+  EpmAssetMetadata,
+  EpmAssetPayload,
+  EpmAssetUpdatePayload,
+  EpmAssetUploadOptions,
+  EpmBlockPayload,
+  EpmBlockUpdatePayload,
+  EpmCollectionConfig,
+  EpmCollectionNavigationConfig,
+  EpmCollectionPayload,
+  EpmCollectionUpdatePayload,
+  EpmEntryListOptions,
+  EpmEntryPayload,
+  EpmEntryUpdatePayload,
+  EpmPublishEventKind,
   ExternalProjectAdapterKind,
+  ExternalProjectAttentionItem,
+  ExternalProjectBulkUpdateAction,
+  ExternalProjectBulkUpdatePayload,
+  ExternalProjectCollection,
   ExternalProjectDeliveryAsset,
   ExternalProjectDeliveryCollection,
   ExternalProjectDeliveryEntry,
   ExternalProjectDeliveryOptions,
   ExternalProjectDeliveryPayload,
+  ExternalProjectEntry,
+  ExternalProjectEntryStatus,
   ExternalProjectLoadingData,
   ExternalProjectStudioData,
+  ExternalProjectSummary,
+  ExternalProjectSummaryCollection,
+  ExternalProjectSummaryCounts,
+  ExternalProjectSummaryQueues,
   GetDocumentResponse,
   ImageResizeMode,
   ImageTransformOptions,
@@ -88,6 +117,7 @@ export type {
   UpdateDocumentData,
   UploadOptions,
   UploadResponse,
+  WorkspaceExternalProjectBinding,
   YoolaExternalProjectArtworkLoadingItem,
   YoolaExternalProjectLoadingData,
   YoolaExternalProjectLoreCapsuleLoadingItem,

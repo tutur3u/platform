@@ -1,0 +1,22 @@
+services:
+  docs:
+    build:
+      context: .
+      dockerfile: apps/docs/Dockerfile
+    command:
+      [
+        "sh",
+        "-c",
+        "mintlify dev --host 0.0.0.0 --port ${DOCS_PORT:-3000}",
+      ]
+    environment:
+      CHOKIDAR_USEPOLLING: "1"
+      DOCS_PORT: ${DOCS_PORT:-3000}
+      NODE_ENV: development
+    init: true
+    ports:
+      - "${DOCS_PORT:-3000}:${DOCS_PORT:-3000}"
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/workspace

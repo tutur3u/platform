@@ -14,7 +14,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { useTheme } from 'next-themes';
+import { useDomResolvedTheme } from '../../../../../../hooks/use-dom-resolved-theme';
 import { computeAccessibleLabelStyles } from '../../../utils/label-colors';
 
 // Default translations for when component is rendered outside NextIntlClientProvider
@@ -79,8 +79,7 @@ export function TaskNewLabelDialog({
       translations?.create_label ?? defaultTranslations.create_label,
   };
 
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
+  const isDark = useDomResolvedTheme() === 'dark';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

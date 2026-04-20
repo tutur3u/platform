@@ -107,6 +107,25 @@ describe('Supabase Proxy', () => {
     );
   });
 
+  it('should clear malformed chunked Supabase auth cookies before getClaims', async () => {
+    mockRequest.cookies.getAll = () => [
+      {
+        name: 'sb-test-auth-token.1',
+        value: 'base64-eyJhY2Nlc3NfdG9rZW4iOiJqd3QifQ',
+      },
+      { name: 'other', value: '1' },
+    ];
+
+    await updateSession(mockRequest as any);
+
+    const cookieHandler = (createServerClient as any).mock.calls[0][2].cookies;
+    expect(cookieHandler.getAll()).toEqual([{ name: 'other', value: '1' }]);
+    expect(mockRequest.cookies.set).toHaveBeenCalledWith(
+      'sb-test-auth-token.1',
+      ''
+    );
+  });
+
   it('should return response and JWT Payload', async () => {
     const response = await updateSession(mockRequest as any);
     expect(response.res).toBeDefined();

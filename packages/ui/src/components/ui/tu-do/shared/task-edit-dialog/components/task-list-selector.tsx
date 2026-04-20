@@ -61,11 +61,6 @@ export function TaskListSelector({
     [availableLists, selectedListId]
   );
 
-  const hasClosedList = useMemo(
-    () => availableLists.some((list) => list.status === 'closed'),
-    [availableLists]
-  );
-
   const TriggerIcon = getTaskListTriggerIcon(selectedList);
   const triggerSurfaceClass = getTaskListTriggerSurfaceClass(selectedList);
 
@@ -116,7 +111,6 @@ export function TaskListSelector({
         boardId={boardId}
         wsId={wsId}
         initialStatus="active"
-        hasClosedList={hasClosedList}
         onSuccess={(listId) => {
           onListChange(listId);
         }}

@@ -27,7 +27,6 @@ export function TaskRelationshipsProperties({
   taskId,
   boardId,
   listId,
-  isCreateMode,
   initialActiveTab,
   initialDependencySubTab,
   parentTask,
@@ -56,7 +55,7 @@ export function TaskRelationshipsProperties({
   disabled,
 }: TaskRelationshipsPropertiesProps) {
   const t = useTranslations();
-  const [isExpanded, setIsExpanded] = React.useState(isCreateMode);
+  const [isExpanded, setIsExpanded] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<RelationshipTab>(
     initialActiveTab ?? 'parent'
   );

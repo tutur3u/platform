@@ -1,7 +1,10 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import { useObject } from '@tuturuuu/ai/object/core';
 import { quizSchema } from '@tuturuuu/ai/object/types';
+import type { UpsertWorkspaceQuizPayload } from '@tuturuuu/internal-api';
+import { createWorkspaceQuiz } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -28,22 +31,56 @@ export default function AIQuizzes({
   const [context, setContext] = useState('');
   const [accepted, setAccepted] = useState(false);
 
+  const acceptMutation = useMutation({
+    mutationFn: async () => {
+      if (!object?.quizzes?.length) return;
+
+      const quizzes: UpsertWorkspaceQuizPayload[] = object.quizzes
+        .map((quiz) => {
+          const question = quiz?.question?.trim() ?? '';
+          const quizOptions = (quiz?.quiz_options ?? []).reduce<
+            UpsertWorkspaceQuizPayload['quiz_options']
+          >((acc, option) => {
+            if (!option || typeof option.value !== 'string') return acc;
+            if (option.value.trim().length === 0) return acc;
+            if (typeof option.is_correct !== 'boolean') return acc;
+
+            acc.push({
+              explanation:
+                typeof option.explanation === 'string'
+                  ? option.explanation
+                  : undefined,
+              is_correct: option.is_correct,
+              value: option.value.trim(),
+            });
+            return acc;
+          }, []);
+
+          return {
+            question,
+            quiz_options: quizOptions,
+          };
+        })
+        .filter(
+          (quiz) => quiz.question.length > 0 && quiz.quiz_options.length >= 2
+        );
+
+      if (quizzes.length === 0) {
+        throw new Error('No valid quizzes generated');
+      }
+
+      await createWorkspaceQuiz(wsId, {
+        moduleId,
+        quizzes,
+      });
+    },
+  });
+
   const acceptQuizzes = async () => {
     if (!object?.quizzes?.length) return;
 
     try {
-      const promises = object.quizzes.map((quiz) =>
-        fetch(`/api/v1/workspaces/${wsId}/quizzes`, {
-          method: 'POST',
-          body: JSON.stringify({
-            moduleId,
-            question: quiz?.question,
-            quiz_options: quiz?.quiz_options,
-          }),
-        })
-      );
-
-      await Promise.all(promises);
+      await acceptMutation.mutateAsync();
 
       toast({
         title: t('common.success'),
@@ -83,7 +120,11 @@ export default function AIQuizzes({
             >
               {t('common.regenerate')}
             </Button>
-            <Button variant="outline" onClick={acceptQuizzes}>
+            <Button
+              variant="outline"
+              onClick={acceptQuizzes}
+              disabled={acceptMutation.isPending}
+            >
               {t('common.accept')}
             </Button>
           </div>

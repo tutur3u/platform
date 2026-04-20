@@ -1,3 +1,4 @@
+import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -113,8 +114,11 @@ export const POST = withSessionAuth(
         ? `${wsId}/chats/ai/resources/${chatId}/${timestampedName}`
         : `${wsId}/chats/ai/resources/temp/${user.id}/${timestampedName}`;
 
+      // Membership checks stay request-scoped; storage signed-upload creation uses admin.
+      const storageAdmin = await createDynamicAdminClient();
+
       // Generate signed upload URL (valid for 120 seconds)
-      const { data, error } = await supabase.storage
+      const { data, error } = await storageAdmin.storage
         .from('workspaces')
         .createSignedUploadUrl(storagePath, { upsert: true });
 

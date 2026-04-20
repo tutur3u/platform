@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '14.4';
+  };
   public: {
     Tables: {
       abuse_events: {
@@ -16574,6 +16579,7 @@ export type Database = {
           is_public: boolean;
           is_published: boolean;
           name: string;
+          sort_key: number | null;
           youtube_links: string[] | null;
         };
         Insert: {
@@ -16585,6 +16591,7 @@ export type Database = {
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
+          sort_key?: number | null;
           youtube_links?: string[] | null;
         };
         Update: {
@@ -16596,6 +16603,7 @@ export type Database = {
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
+          sort_key?: number | null;
           youtube_links?: string[] | null;
         };
         Relationships: [
@@ -22631,36 +22639,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       calendar_event_participants: {
         Row: {

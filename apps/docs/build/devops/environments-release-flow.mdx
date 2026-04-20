@@ -1,0 +1,81 @@
+---
+title: 'Environments & Release Flow'
+description: 'How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys.'
+updatedAt: '2026-04-18'
+---
+
+This page explains how Tuturuuu moves from code to running environments.
+
+## Branch-to-Environment Map
+
+| Branch or event | What deploys | Follow-up automation |
+| --- | --- | --- |
+| Feature branch / non-`production` push | Vercel preview deployment for the touched app workflow | None by default |
+| `staging` push | Vercel preview deployment | `supabase-staging.yaml` can apply staging migrations after preview succeeds |
+| `production` push | Vercel production deployment | `supabase-production.yaml` can apply production migrations after prerequisites pass |
+| `main` push for `apps/discord` | Discord Modal deployment after Python CI succeeds | None |
+| Manual `workflow_dispatch` | Depends on workflow | Bypasses normal branch trigger timing, but not the workflow logic |
+| Self-hosted server after `git pull` | Docker deploy from current checkout | Optional blue/green cutover through `bun serve:web:docker:bg` |
+
+## Hosted Web Release Flow
+
+### Preview
+
+- Preview workflows are named `vercel-preview-<app>.yaml`.
+- They trigger on non-`production` pushes.
+- Each workflow checks whether a newer commit exists on the same branch before spending time on install/build/deploy.
+- Preview deploys are the normal validation surface for branch work.
+
+### Staging Database
+
+- `supabase-staging.yaml` is tied to the `Vercel Platform Preview Deployment` workflow on the `staging` branch.
+- The staging migration runs only when the triggering preview deployment concludes successfully, or when manually dispatched.
+- This means `staging` is the branch where app preview and staging schema advancement are meant to stay aligned.
+
+### Production
+
+- Production web deploys run through `vercel-production-<app>.yaml`.
+- `apps/web` production deploys are handled by `vercel-production-platform.yaml`.
+- The production workflow also skips if a newer commit already exists on `production`.
+
+### Production Database
+
+`supabase-production.yaml` is stricter than staging:
+
+1. The latest production Vercel deployment must have concluded successfully.
+2. The latest staging migration must have concluded `success` or `skipped`.
+3. A manual dispatch can still be used when an operator explicitly wants to run it.
+
+This keeps production schema changes behind both application deployment success and a staging gate.
+
+## Self-Hosted Web Release Flow
+
+If a server receives code through `git pull`, use the Docker production commands from
+the checked-out commit:
+
+- `bun serve:web:docker` for in-place replacement
+- `bun serve:web:docker:bg` for blue/green rebuild-before-cutover deployment
+
+Blue/green is the safer path when uptime matters because the new image is built and
+health-checked before the proxy is reloaded.
+
+## Team Release Checklist
+
+1. Merge the change set with green CI.
+2. If Docker behavior changed, make sure `docker-setup-check.yaml` is green.
+3. If database migrations changed, confirm the staging path first.
+4. Promote to `production` only after preview or staging behavior is understood.
+5. Confirm the follow-up Supabase workflow after production deployment.
+6. For self-hosted rollout, deploy from the intended commit and prefer `bun serve:web:docker:bg`.
+
+## Rollback Guidance
+
+- Vercel-hosted rollback: redeploy the previous known-good commit or use Vercel rollback tooling.
+- Supabase rollback: use a corrective migration instead of editing applied migration history.
+- Self-hosted Docker rollback: checkout the previous known-good commit and rerun `bun serve:web:docker:bg`.
+
+## What Not To Do
+
+- Do not push production schema changes directly from a laptop as the normal path.
+- Do not assume `staging` and `production` migrations are interchangeable; they are gated differently.
+- Do not use the in-place Docker path when you specifically need rebuild-before-restart semantics.

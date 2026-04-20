@@ -18,6 +18,20 @@ Tasks provides:
 - **Custom statuses** - Per-board status workflows
 - **Labels & priorities** - Flexible categorization
 
+## Rich Text Editor Notes
+
+The task editor includes isolated React roots inside some Tiptap node views, especially task mention chips.
+
+- Do not mount `next-themes` `ThemeProvider` inside those isolated `createRoot(...)` islands. `next-themes` injects an inline script, and Next.js 16 will warn or fail when that script is rendered from a client subtree instead of the app root.
+- Resolve theme for those islands from `document.documentElement` and `prefers-color-scheme`, then pass that resolved value through local component state instead of re-creating app-wide providers.
+- Add `referrerPolicy="strict-origin-when-cross-origin"` to every YouTube iframe path used by the task editor or its previews. Missing referrer policy can surface as YouTube `Error 153` even when the video URL itself is valid.
+
+## Task Link Notes
+
+- Canonical deep links for board tasks should use the board route with the task query parameter: `/{wsId}/tasks/boards/{boardId}?task={taskId}`.
+- Avoid generating or persisting modal-only URLs such as `/{wsId}/tasks/{taskId}` for share/copy flows unless the dedicated task detail page is the explicit target. The board-backed URL is the reliable reloadable path used by the dashboard task dialog.
+- When reloading or recovering a task deep link, resolve the task through the workspace-scoped task API (`/api/v1/workspaces/{wsId}/tasks/{taskId}`) rather than the current-user task dialog API. The current-user endpoint can 404 for valid board tasks because it is optimized for dialog hydration, not route recovery.
+
 ## Task Hierarchy
 
 ```
@@ -225,6 +239,8 @@ export async function createBoard(wsId: string, name: string) {
 
 Columns within boards (e.g., "To Do", "In Progress", "Done").
 
+Task boards may contain multiple `closed` lists when teams need distinct terminal buckets such as `Abandoned`, `Not Planned`, or `Duplicate`. Treat `closed` as a status group for sorting/reporting, not a singleton board column.
+
 ```sql
 CREATE TABLE task_lists (
   id text PRIMARY KEY,
@@ -265,6 +281,8 @@ export async function reorderLists(
 ### 6. Workspace Tasks
 
 Individual work items.
+
+Task titles support up to `1024` characters. Keep task-only validation on the dedicated task-title limit rather than the generic `name` limit so task routes, drafts, and database checks stay aligned.
 
 ```sql
 CREATE TABLE workspace_tasks (

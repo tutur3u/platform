@@ -2,7 +2,11 @@
  * Type definitions for the Tuturuuu SDK
  */
 
-import type { ShareOptions as BaseShareOptions } from '@tuturuuu/types';
+import type {
+  ShareOptions as BaseShareOptions,
+  ExternalProjectEntryStatus,
+  Json,
+} from '@tuturuuu/types';
 import {
   shareOptionsSchema as baseShareOptionsSchema,
   createDocumentDataSchema,
@@ -26,12 +30,22 @@ export type {
   Document,
   DocumentResponse,
   ExternalProjectAdapterKind,
+  ExternalProjectAttentionItem,
+  ExternalProjectBulkUpdateAction,
+  ExternalProjectBulkUpdatePayload,
+  ExternalProjectCollection,
   ExternalProjectDeliveryAsset,
   ExternalProjectDeliveryCollection,
   ExternalProjectDeliveryEntry,
   ExternalProjectDeliveryPayload,
+  ExternalProjectEntry,
+  ExternalProjectEntryStatus,
   ExternalProjectLoadingData,
   ExternalProjectStudioData,
+  ExternalProjectSummary,
+  ExternalProjectSummaryCollection,
+  ExternalProjectSummaryCounts,
+  ExternalProjectSummaryQueues,
   GetDocumentResponse,
   ListDocumentsOptions,
   ListDocumentsResponse,
@@ -48,6 +62,7 @@ export type {
   UpdateDocumentData,
   UploadOptions,
   UploadResponse,
+  WorkspaceExternalProjectBinding,
   YoolaExternalProjectArtworkLoadingItem,
   YoolaExternalProjectLoadingData,
   YoolaExternalProjectLoreCapsuleLoadingItem,
@@ -71,6 +86,81 @@ export interface ShareOptions extends BaseShareOptions {
 export interface DownloadOptions {
   transform?: ImageTransformOptions;
 }
+
+export interface EpmCollectionPayload {
+  collection_type: string;
+  config: EpmCollectionConfig;
+  description?: string | null;
+  slug: string;
+  title: string;
+}
+
+export interface EpmCollectionNavigationConfig {
+  href?: string | null;
+  title?: string | null;
+  visible?: boolean | null;
+  [key: string]: Json | undefined;
+}
+
+export interface EpmCollectionConfig {
+  navigation?: EpmCollectionNavigationConfig | null;
+  [key: string]: Json | undefined;
+}
+
+export interface EpmEntryPayload {
+  collection_id: string;
+  metadata: Json;
+  profile_data: Json;
+  scheduled_for?: string | null;
+  slug: string;
+  status: ExternalProjectEntryStatus;
+  subtitle?: string | null;
+  summary?: string | null;
+  title: string;
+}
+
+export interface EpmBlockPayload {
+  block_type: string;
+  content: Json;
+  entry_id: string;
+  sort_order?: number;
+  title?: string | null;
+}
+
+export interface EpmAssetPayload {
+  alt_text?: string | null;
+  asset_type: string;
+  block_id?: string | null;
+  entry_id?: string | null;
+  metadata: EpmAssetMetadata;
+  sort_order?: number;
+  source_url?: string | null;
+  storage_path?: string | null;
+}
+
+export interface EpmAssetMetadata {
+  caption?: string | null;
+  [key: string]: Json | undefined;
+}
+
+export interface EpmEntryListOptions {
+  collectionId?: string;
+}
+
+export interface EpmAssetUploadOptions {
+  collectionType: string;
+  entrySlug: string;
+  upsert?: boolean;
+}
+
+export type EpmPublishEventKind = 'publish' | 'preview' | 'unpublish';
+
+export type EpmEntryUpdatePayload = Partial<EpmEntryPayload>;
+export type EpmCollectionUpdatePayload = Partial<EpmCollectionPayload> & {
+  is_enabled?: boolean;
+};
+export type EpmBlockUpdatePayload = Partial<EpmBlockPayload>;
+export type EpmAssetUpdatePayload = Partial<EpmAssetPayload>;
 
 export {
   createDocumentDataSchema,

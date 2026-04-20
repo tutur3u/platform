@@ -433,6 +433,7 @@ export type YoolaExternalProjectArtworkLoadingItem = {
   slug: string;
   title: string;
   summary: string | null;
+  caption: string | null;
   label: string | null;
   category: string | null;
   rarity: string | null;
@@ -450,6 +451,7 @@ export type YoolaExternalProjectLoreCapsuleLoadingItem = {
   entryId: string;
   slug: string;
   title: string;
+  subtitle: string | null;
   summary: string | null;
   teaser: string | null;
   channel: string | null;
@@ -457,16 +459,22 @@ export type YoolaExternalProjectLoreCapsuleLoadingItem = {
   date: string | null;
   tags: string[];
   excerptMarkdown: string | null;
+  bodyMarkdown: string | null;
   artworkEntryId: string | null;
   artworkAssetUrl: string | null;
+  profileData: Record<string, unknown>;
+  metadata: Record<string, unknown>;
 };
 
 export type YoolaExternalProjectSectionLoadingItem = {
   entryId: string;
   slug: string;
   title: string;
+  subtitle: string | null;
   summary: string | null;
   bodyMarkdown: string | null;
+  profileData: Record<string, unknown>;
+  metadata: Record<string, unknown>;
 };
 
 export type YoolaExternalProjectLoadingData = {
@@ -504,6 +512,81 @@ export type ExternalProjectStudioData = {
   importJobs: ExternalProjectImportJob[];
   publishEvents: ExternalProjectPublishEvent[];
   loadingData: ExternalProjectLoadingData | null;
+};
+
+export type ExternalProjectSummaryCollection = {
+  id: string;
+  slug: string;
+  title: string;
+  isEnabled: boolean;
+  totalEntries: number;
+  draftEntries: number;
+  scheduledEntries: number;
+  publishedEntries: number;
+  archivedEntries: number;
+};
+
+export type ExternalProjectSummaryCounts = {
+  collections: number;
+  entries: number;
+  drafts: number;
+  scheduled: number;
+  published: number;
+  archived: number;
+};
+
+export type ExternalProjectAttentionKind =
+  | 'scheduled_soon'
+  | 'missing_media'
+  | 'recently_imported_unpublished'
+  | 'archived_backlog';
+
+export type ExternalProjectAttentionItem = {
+  collectionId: string;
+  collectionTitle: string;
+  detail: string;
+  entryId: string;
+  kind: ExternalProjectAttentionKind;
+  scheduledFor: string | null;
+  slug: string;
+  status: ExternalProjectEntryStatus;
+  summary: string | null;
+  title: string;
+};
+
+export type ExternalProjectSummaryQueues = {
+  archivedBacklog: ExternalProjectAttentionItem[];
+  draftsMissingMedia: ExternalProjectAttentionItem[];
+  recentlyImportedUnpublished: ExternalProjectAttentionItem[];
+  scheduledSoon: ExternalProjectAttentionItem[];
+};
+
+export type ExternalProjectSummary = {
+  adapter: ExternalProjectAdapterKind | null;
+  canonicalProjectId: string | null;
+  collections: ExternalProjectSummaryCollection[];
+  counts: ExternalProjectSummaryCounts;
+  queues: ExternalProjectSummaryQueues;
+  recentActivity: {
+    importJobs: ExternalProjectImportJob[];
+    publishEvents: ExternalProjectPublishEvent[];
+  };
+  workspaceId: string;
+};
+
+export type ExternalProjectBulkUpdateAction =
+  | 'archive'
+  | 'publish'
+  | 'restore-draft'
+  | 'schedule'
+  | 'set-status'
+  | 'unpublish';
+
+export type ExternalProjectBulkUpdatePayload = {
+  action: ExternalProjectBulkUpdateAction;
+  entryIds: string[];
+  scheduledFor?: string | null;
+  status?: ExternalProjectEntryStatus;
 };
 
 export type ExternalProjectImportReport = {

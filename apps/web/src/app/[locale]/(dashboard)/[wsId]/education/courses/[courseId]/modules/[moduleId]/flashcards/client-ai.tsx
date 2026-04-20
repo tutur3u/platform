@@ -1,7 +1,9 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import { useObject } from '@tuturuuu/ai/object/core';
 import { flashcardSchema } from '@tuturuuu/ai/object/types';
+import { createWorkspaceFlashcard } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -27,22 +29,26 @@ export function AIFlashcards({
   const [context, setContext] = useState('');
   const [accepted, setAccepted] = useState(false);
 
+  const acceptMutation = useMutation({
+    mutationFn: async () => {
+      if (!object?.flashcards?.length) return;
+      await Promise.all(
+        object.flashcards.map((card) =>
+          createWorkspaceFlashcard(wsId, {
+            moduleId,
+            front: card?.front || '',
+            back: card?.back || '',
+          })
+        )
+      );
+    },
+  });
+
   const acceptFlashcards = async () => {
     if (!object?.flashcards?.length) return;
 
     try {
-      const promises = object.flashcards.map((card) =>
-        fetch(`/api/v1/workspaces/${wsId}/flashcards`, {
-          method: 'POST',
-          body: JSON.stringify({
-            moduleId,
-            front: card?.front,
-            back: card?.back,
-          }),
-        })
-      );
-
-      await Promise.all(promises);
+      await acceptMutation.mutateAsync();
 
       toast({
         title: t('common.success'),
@@ -109,7 +115,11 @@ export function AIFlashcards({
             >
               {t('common.regenerate')}
             </Button>
-            <Button variant="outline" onClick={acceptFlashcards}>
+            <Button
+              variant="outline"
+              onClick={acceptFlashcards}
+              disabled={acceptMutation.isPending}
+            >
               {t('common.accept')}
             </Button>
           </div>

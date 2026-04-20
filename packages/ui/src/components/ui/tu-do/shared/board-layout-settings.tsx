@@ -866,16 +866,6 @@ export function BoardLayoutSettings({
     []
   );
 
-  const hasClosedList = (groupedLists.closed?.length ?? 0) > 0;
-
-  const editListAllowedStatuses = useMemo(() => {
-    if (hasClosedList && editingList?.status !== 'closed') {
-      return statuses.filter((status) => status !== 'closed');
-    }
-
-    return statuses;
-  }, [editingList?.status, hasClosedList, statuses]);
-
   const openCreateListDialog = useCallback((status: TaskBoardStatus) => {
     setCreateListStatus(status);
     setCreatingList(true);
@@ -906,8 +896,6 @@ export function BoardLayoutSettings({
                     const statusLists = (groupedLists[status] || []).sort(
                       (a, b) => (a?.position || 0) - (b?.position || 0)
                     );
-                    const canCreateInStatus =
-                      status !== 'closed' || statusLists.length === 0;
 
                     return (
                       <div key={status} className="space-y-3">
@@ -937,7 +925,6 @@ export function BoardLayoutSettings({
                             variant="ghost"
                             size="sm"
                             className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground"
-                            disabled={!canCreateInStatus}
                             onClick={() => openCreateListDialog(status)}
                           >
                             <Plus className="h-3.5 w-3.5" />
@@ -954,7 +941,6 @@ export function BoardLayoutSettings({
                               variant="outline"
                               size="sm"
                               className="mt-3 gap-1.5"
-                              disabled={!canCreateInStatus}
                               onClick={() => openCreateListDialog(status)}
                             >
                               <Plus className="h-3.5 w-3.5" />
@@ -1025,7 +1011,6 @@ export function BoardLayoutSettings({
         boardId={boardId}
         wsId={wsId}
         initialStatus={createListStatus}
-        hasClosedList={hasClosedList}
         onSuccess={() => {
           onUpdate();
         }}
@@ -1038,7 +1023,6 @@ export function BoardLayoutSettings({
             setEditingList(null);
           }
         }}
-        allowedStatuses={editListAllowedStatuses}
         list={
           editingList
             ? {

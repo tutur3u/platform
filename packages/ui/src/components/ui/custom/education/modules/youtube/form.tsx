@@ -1,5 +1,7 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
+import { updateWorkspaceCourseModule } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -57,30 +59,21 @@ export default function YouTubeLinkForm({
   const isValid = form.formState.isValid;
   const isSubmitting = form.formState.isSubmitting;
 
-  const disabled = !isDirty || !isValid || isSubmitting;
+  const saveMutation = useMutation({
+    mutationFn: async (payload: z.infer<typeof FormSchema>) =>
+      updateWorkspaceCourseModule(wsId, moduleId, {
+        youtube_links: [...(links || []), payload.link],
+      }),
+  });
 
-  const onSubmit = async (data: z.infer<typeof FormSchema>) => {
+  const disabled =
+    !isDirty || !isValid || isSubmitting || saveMutation.isPending;
+
+  const onSubmit = async (payload: z.infer<typeof FormSchema>) => {
     try {
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/course-modules/${moduleId}`,
-        {
-          method: 'PUT',
-          body: JSON.stringify({
-            youtube_links: [...(links || []), data.link],
-          }),
-        }
-      );
-
-      if (res.ok) {
-        onFinish?.(data);
-        router.refresh();
-      } else {
-        const data = await res.json();
-        toast({
-          title: `Failed to ${link ? 'edit' : 'create'} youtube link`,
-          description: data.message,
-        });
-      }
+      await saveMutation.mutateAsync(payload);
+      onFinish?.(payload);
+      router.refresh();
     } catch (error) {
       toast({
         title: `Failed to ${link ? 'edit' : 'create'} youtube link`,

@@ -180,12 +180,8 @@ function EditListDialogForm({
       return allowedStatuses;
     }
 
-    if (list.status === 'closed') {
-      return statuses;
-    }
-
-    return statuses.filter((itemStatus) => itemStatus !== 'closed');
-  }, [allowedStatuses, list.status]);
+    return statuses;
+  }, [allowedStatuses]);
 
   const defaultStatus = useMemo<TaskBoardStatus>(() => {
     if (list.status && resolvedAllowedStatuses.includes(list.status)) {

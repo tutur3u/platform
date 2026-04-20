@@ -6,10 +6,7 @@ import {
   SwatchBook,
   Youtube,
 } from '@tuturuuu/icons';
-import {
-  createClient,
-  createDynamicClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceCourseModule } from '@tuturuuu/types';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Accordion } from '@tuturuuu/ui/accordion';
@@ -20,6 +17,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import { extractYoutubeId } from '@/utils/url-helper';
 import ClientFlashcards from './flashcards/client-flashcards';
 import ClientQuizzes from './quizzes/client-quizzes';
@@ -41,10 +39,11 @@ interface Props {
 
 export default async function UserGroupDetailsPage({ params }: Props) {
   const t = await getTranslations();
-  const { wsId, courseId, moduleId } = await params;
+  const { wsId: routeWsId, courseId, moduleId } = await params;
+  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
   const data = await getModuleData(courseId, moduleId);
 
-  const storagePath = `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`;
+  const storagePath = `${resolvedWsId}/courses/${courseId}/modules/${moduleId}/resources/`;
   const resources = await getResources({ path: storagePath });
   const flashcards = await getFlashcards(moduleId);
   const quizzes = await getQuizzes(moduleId);
@@ -79,7 +78,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   return (
     <Accordion type="multiple" className="grid gap-4">
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/content`}
+        href={`/${routeWsId}/education/courses/${courseId}/modules/${moduleId}/content`}
         title={t('course-details-tabs.module_content')}
         icon={<Goal className="h-5 w-5" />}
         rawContent={data.content}
@@ -92,7 +91,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/resources`}
+        href={`/${routeWsId}/education/courses/${courseId}/modules/${moduleId}/resources`}
         title={t('course-details-tabs.resources')}
         icon={<Paperclip className="h-5 w-5" />}
         content={
@@ -123,7 +122,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/youtube-links`}
+        href={`/${routeWsId}/education/courses/${courseId}/modules/${moduleId}/youtube-links`}
         title={t('course-details-tabs.youtube_links')}
         icon={<Youtube className="h-5 w-5" />}
         content={
@@ -137,14 +136,14 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/quizzes`}
+        href={`/${routeWsId}/education/courses/${courseId}/modules/${moduleId}/quizzes`}
         title={t('ws-quizzes.plural')}
         icon={<ListTodo className="h-5 w-5" />}
         content={
           quizzes && quizzes.length > 0 ? (
             <div className="grid gap-4 pt-2 md:grid-cols-2">
               <ClientQuizzes
-                wsId={wsId}
+                wsId={resolvedWsId}
                 moduleId={moduleId}
                 quizzes={quizzes}
                 previewMode
@@ -154,14 +153,14 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/quiz-sets`}
+        href={`/${routeWsId}/education/courses/${courseId}/modules/${moduleId}/quiz-sets`}
         title={t('ws-quiz-sets.plural')}
         icon={<ListTodo className="h-5 w-5" />}
         content={
           quizzes && quizzes.length > 0 ? (
             <div className="grid gap-4 pt-2 md:grid-cols-2">
               <ClientQuizzes
-                wsId={wsId}
+                wsId={resolvedWsId}
                 moduleId={moduleId}
                 quizzes={quizzes}
                 previewMode
@@ -171,14 +170,14 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/flashcards`}
+        href={`/${routeWsId}/education/courses/${courseId}/modules/${moduleId}/flashcards`}
         title={t('ws-flashcards.plural')}
         icon={<SwatchBook className="h-5 w-5" />}
         content={
           flashcards && flashcards.length > 0 ? (
             <div className="grid gap-4 pt-2 md:grid-cols-2">
               <ClientFlashcards
-                wsId={wsId}
+                wsId={resolvedWsId}
                 moduleId={moduleId}
                 cards={cards.map(({ frontHTML, backHTML, ...rest }) => ({
                   ...rest,
@@ -192,7 +191,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/extra-content`}
+        href={`/${routeWsId}/education/courses/${courseId}/modules/${moduleId}/extra-content`}
         title={t('course-details-tabs.extra_reading')}
         icon={<BookText className="h-5 w-5" />}
         rawContent={data.extra_content}
@@ -208,7 +207,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
 }
 
 const getModuleData = async (courseId: string, moduleId: string) => {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase
     .from('workspace_course_modules')
@@ -225,7 +224,7 @@ const getModuleData = async (courseId: string, moduleId: string) => {
 };
 
 const getFlashcards = async (moduleId: string) => {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase
     .from('course_module_flashcards')
@@ -240,7 +239,7 @@ const getFlashcards = async (moduleId: string) => {
 };
 
 const getQuizzes = async (moduleId: string) => {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase
     .from('course_module_quizzes')
@@ -255,7 +254,7 @@ const getQuizzes = async (moduleId: string) => {
 };
 
 async function getResources({ path }: { path: string }) {
-  const supabase = await createDynamicClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase.storage.from('workspaces').list(path, {
     sortBy: { column: 'created_at', order: 'desc' },

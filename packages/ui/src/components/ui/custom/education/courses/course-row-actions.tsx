@@ -1,7 +1,9 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
+import { deleteWorkspaceCourse } from '@tuturuuu/internal-api';
 import type { WorkspaceCourse } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { CourseForm } from '@tuturuuu/ui/custom/education/courses/course-form';
@@ -33,33 +35,20 @@ export function WorkspaceCourseRowActions({
   const data = row.original;
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const deleteWorkspaceCourse = async () => {
-    try {
-      const res = await fetch(
-        `/api/v1/workspaces/${data.ws_id}/courses/${data.id}`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      if (res.ok) {
-        router.refresh();
-      } else {
-        const data = await res.json();
-        toast({
-          title: 'Failed to delete workspace course',
-          description: data.message,
-        });
-      }
-    } catch (_err) {
-      toast({
-        title: 'Error',
-        description: 'There was an error while deleting the course.',
-      });
-    } finally {
+  const deleteMutation = useMutation({
+    mutationFn: async () => deleteWorkspaceCourse(data.ws_id, data.id),
+    onSuccess: () => {
+      router.refresh();
       setShowDeleteDialog(false);
-    }
-  };
+    },
+    onError: (error) => {
+      toast({
+        title: 'Failed to delete workspace course',
+        description: error instanceof Error ? error.message : String(error),
+      });
+      setShowDeleteDialog(false);
+    },
+  });
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
@@ -126,7 +115,11 @@ export function WorkspaceCourseRowActions({
             >
               {t('common.cancel')}
             </Button>
-            <Button variant="destructive" onClick={deleteWorkspaceCourse}>
+            <Button
+              variant="destructive"
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+            >
               {t('common.delete')}
             </Button>
           </div>

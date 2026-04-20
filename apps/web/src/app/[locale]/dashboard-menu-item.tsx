@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { ActivitySquare, Database } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getCurrentUserDefaultWorkspace } from '@tuturuuu/internal-api';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -47,46 +47,5 @@ export default function DashboardMenuItem() {
 }
 
 async function fetchDefaultWorkspace() {
-  const supabase = createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
-
-  // First try to get the user's default workspace
-  const { data: userData, error: userError } = await supabase
-    .from('user_private_details')
-    .select('default_workspace_id')
-    .eq('user_id', user.id)
-    .single();
-
-  if (!userError && userData?.default_workspace_id) {
-    // Validate the default workspace exists and user has access
-    const { data: workspace, error } = await supabase
-      .from('workspaces')
-      .select('id, name, workspace_members!inner(user_id)')
-      .eq('id', userData.default_workspace_id)
-      .eq('workspace_members.user_id', user.id)
-      .single();
-
-    if (!error && workspace) {
-      return workspace;
-    }
-  }
-
-  // If no default workspace or invalid, get the first available workspace
-  const { data: workspaces, error } = await supabase
-    .from('workspaces')
-    .select('id, name, workspace_members!inner(user_id)')
-    .eq('workspace_members.user_id', user.id)
-    .limit(1)
-    .maybeSingle();
-
-  if (error || !workspaces) {
-    return null;
-  }
-
-  return workspaces;
+  return getCurrentUserDefaultWorkspace({ fetch });
 }

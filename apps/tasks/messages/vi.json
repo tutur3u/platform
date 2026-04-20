@@ -12130,6 +12130,8 @@
       "task_name_placeholder": "Cần làm gì?",
       "task_restored": "Đã khôi phục công việc",
       "task_restored_description": "\"{name}\" đã được khôi phục do thao tác hoàn tác",
+      "title_too_long_description": "Hãy rút gọn tiêu đề công việc xuống dưới {max} ký tự trước khi lưu.",
+      "title_too_long_title": "Tiêu đề công việc quá dài",
       "unassigned": "đã hủy phân công",
       "unknown_change": "đã thực hiện thay đổi",
       "unknown_label": "Nhãn không xác định",

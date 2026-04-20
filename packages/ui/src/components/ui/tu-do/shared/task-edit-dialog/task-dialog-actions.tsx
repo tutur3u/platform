@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTasksHref } from '@tuturuuu/ui/tu-do/tasks-route-context';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { buildWorkspaceTaskUrl } from '../task-url';
 
 interface TaskDialogActionsProps {
   // Mode
@@ -33,6 +34,7 @@ interface TaskDialogActionsProps {
   taskId?: string;
   wsId: string;
   boardId: string;
+  isPersonalWorkspace?: boolean;
   pathname?: string | null;
 
   // Navigate back info (for create mode with pending relationship)
@@ -53,6 +55,7 @@ export function TaskDialogActions({
   taskId,
   wsId,
   boardId,
+  isPersonalWorkspace = false,
   pathname,
   navigateBackTaskName,
   onClose,
@@ -129,7 +132,14 @@ export function TaskDialogActions({
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
-                const url = `${window.location.origin}${pathname?.split('/tasks/')[0]}/tasks/${taskId}`;
+                const url = buildWorkspaceTaskUrl({
+                  boardId,
+                  currentPathname: pathname ?? window.location.pathname,
+                  origin: window.location.origin,
+                  taskId,
+                  workspaceId: wsId,
+                  isPersonalWorkspace,
+                });
                 navigator.clipboard.writeText(url);
                 toast.success(t('ws-task-boards.messages.task_link_copied'));
                 setIsMoreMenuOpen(false);

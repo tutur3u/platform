@@ -1,9 +1,10 @@
 import { SwatchBook } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import FlashcardForm from '../../../../../flashcards/form';
 import { AIFlashcards } from './client-ai';
 import ClientFlashcards from './client-flashcards';
@@ -23,7 +24,8 @@ interface Props {
 }
 
 export default async function ModuleFlashcardsPage({ params }: Props) {
-  const { wsId, moduleId } = await params;
+  const { wsId: routeWsId, moduleId } = await params;
+  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
   const t = await getTranslations();
   const flashcards = await getFlashcards(moduleId);
 
@@ -69,14 +71,14 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
         singularTitle={t('ws-flashcards.singular')}
         createTitle={t('ws-flashcards.create')}
         createDescription={t('ws-flashcards.create_description')}
-        form={<FlashcardForm wsId={wsId} moduleId={moduleId} />}
+        form={<FlashcardForm wsId={resolvedWsId} moduleId={moduleId} />}
       />
 
       <div className="grid gap-4 md:grid-cols-2">
         {flashcards && flashcards.length > 0 && (
           <>
             <ClientFlashcards
-              wsId={wsId}
+              wsId={resolvedWsId}
               moduleId={moduleId}
               cards={cards.map(({ frontHTML, backHTML, ...rest }) => ({
                 ...rest,
@@ -89,7 +91,7 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
         )}
 
         <div className="col-span-full">
-          <AIFlashcards wsId={wsId} moduleId={moduleId} />
+          <AIFlashcards wsId={resolvedWsId} moduleId={moduleId} />
         </div>
       </div>
     </div>
@@ -97,7 +99,7 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
 }
 
 const getFlashcards = async (moduleId: string) => {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase
     .from('course_module_flashcards')

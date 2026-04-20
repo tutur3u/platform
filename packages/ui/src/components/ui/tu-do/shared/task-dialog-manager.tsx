@@ -4,8 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import { getWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { parseAsString, useQueryState } from 'nuqs';
+import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import {
@@ -19,6 +18,7 @@ import {
   REQUEST_OPEN_TASK_EVENT,
   type RequestOpenTaskPayload,
 } from './task-open-events';
+import { buildWorkspaceTaskUrl } from './task-url';
 
 /**
  * Manager component that renders the centralized task dialog
@@ -29,10 +29,7 @@ import {
  * that benefits from immediate availability over bundle size optimization.
  */
 export function TaskDialogManager({ wsId }: { wsId: string }) {
-  const [openTaskId, setOpenTaskId] = useQueryState(
-    'openTaskId',
-    parseAsString.withOptions({ shallow: true })
-  );
+  const searchParams = useSearchParams();
   const {
     state,
     isPersonalWorkspace,
@@ -48,34 +45,27 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
   // Store the original pathname before URL manipulation
   const originalPathnameRef = useRef<string | null>(null);
   const hasChangedUrlRef = useRef(false);
+  const handledCanonicalTaskQueryRef = useRef<string | null>(null);
 
   // Handle URL manipulation when fakeTaskUrl is enabled.
   // Uses window.history.pushState (not router.push) to update the URL bar
   // without triggering Next.js navigation, which would load the task detail page
   // behind the dialog and cause a jarring double-dialog flash.
   useEffect(() => {
-    if (state.isOpen && state.fakeTaskUrl && state.task?.id) {
-      const currentPath = window.location.pathname;
+    if (state.isOpen && state.fakeTaskUrl && state.task?.id && state.boardId) {
+      const currentPath = `${window.location.pathname}${window.location.search}`;
       if (!originalPathnameRef.current) {
         originalPathnameRef.current = currentPath;
       }
 
       const effectiveWsId = state.taskWsId || wsId;
-      const effectiveWorkspaceSlug = toWorkspaceSlug(effectiveWsId, {
-        personal: state.taskWorkspacePersonal ?? isPersonalWorkspace,
+      const taskUrl = buildWorkspaceTaskUrl({
+        boardId: state.boardId,
+        currentPathname: window.location.pathname,
+        taskId: state.task.id,
+        workspaceId: effectiveWsId,
+        isPersonalWorkspace: state.taskWorkspacePersonal ?? isPersonalWorkspace,
       });
-      // Extract locale prefix from URL (e.g. "/vi" from "/vi/ws-123/...")
-      const wsSegment = `/${effectiveWorkspaceSlug}`;
-      const fallbackWsSegment = `/${effectiveWsId}`;
-      const wsIndex = currentPath.indexOf(wsSegment);
-      const fallbackWsIndex = currentPath.indexOf(fallbackWsSegment);
-      const localePrefix =
-        wsIndex > 0
-          ? currentPath.substring(0, wsIndex)
-          : fallbackWsIndex > 0
-            ? currentPath.substring(0, fallbackWsIndex)
-            : '';
-      const taskUrl = `${localePrefix}/${effectiveWorkspaceSlug}/tasks/${state.task.id}`;
 
       if (currentPath !== taskUrl) {
         window.history.pushState(
@@ -102,6 +92,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     state.isOpen,
     state.fakeTaskUrl,
     state.task?.id,
+    state.boardId,
     state.taskWsId,
     state.taskWorkspacePersonal,
     isPersonalWorkspace,
@@ -231,6 +222,34 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     ]
   );
 
+  const openTaskFromCurrentWorkspace = useCallback(
+    async (taskId: string) => {
+      try {
+        const { task } = await getWorkspaceTask(wsId, taskId, {
+          fetch: (input, init) =>
+            fetch(new URL(String(input), window.location.origin).toString(), {
+              ...init,
+              cache: 'no-store',
+            }),
+        });
+
+        const boardId = task.board_id;
+        if (!boardId) {
+          return false;
+        }
+
+        openTask(task as Task, boardId, undefined, false, {
+          taskWsId: wsId,
+          taskWorkspacePersonal: isPersonalWorkspace,
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [isPersonalWorkspace, openTask, wsId]
+  );
+
   useEffect(() => {
     const handleTaskOpenRequest = (event: Event) => {
       const customEvent = event as CustomEvent<RequestOpenTaskPayload>;
@@ -300,11 +319,44 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
   }, [openTaskById, openTask]);
 
   useEffect(() => {
-    if (!openTaskId) return;
+    const canonicalTaskId = searchParams.get('task');
 
-    void openTaskById(openTaskId);
-    void setOpenTaskId(null);
-  }, [openTaskId, openTaskById, setOpenTaskId]);
+    if (!canonicalTaskId) {
+      handledCanonicalTaskQueryRef.current = null;
+      return;
+    }
+
+    if (handledCanonicalTaskQueryRef.current === canonicalTaskId) {
+      return;
+    }
+
+    handledCanonicalTaskQueryRef.current = canonicalTaskId;
+    void (async () => {
+      const opened = await openTaskFromCurrentWorkspace(canonicalTaskId);
+      if (!opened) {
+        await openTaskById(canonicalTaskId);
+      }
+    })();
+  }, [openTaskById, openTaskFromCurrentWorkspace, searchParams]);
+
+  useEffect(() => {
+    const legacyTaskId = searchParams.get('openTaskId');
+
+    if (!legacyTaskId) {
+      return;
+    }
+
+    void openTaskById(legacyTaskId);
+    const nextSearchParams = new URLSearchParams(searchParams.toString());
+    nextSearchParams.delete('openTaskId');
+
+    const nextQueryString = nextSearchParams.toString();
+    const nextUrl = nextQueryString
+      ? `${window.location.pathname}?${nextQueryString}`
+      : window.location.pathname;
+
+    window.history.replaceState(window.history.state, '', nextUrl);
+  }, [openTaskById, searchParams]);
 
   // Open subtask creation dialog for the current task
   const handleAddSubtask = useCallback(() => {
@@ -407,24 +459,14 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
         })
       | undefined;
 
-    const currentPath = window.location.pathname;
-    const currentWorkspaceSlug = toWorkspaceSlug(wsId, {
-      personal: isPersonalWorkspace,
-    });
-    const wsSegment = `/${currentWorkspaceSlug}`;
-    const fallbackWsSegment = `/${wsId}`;
-    const wsIndex = currentPath.indexOf(wsSegment);
-    const fallbackWsIndex = currentPath.indexOf(fallbackWsSegment);
-    const localePrefix = wsIndex > 0 ? currentPath.slice(0, wsIndex) : '';
-    const fallbackLocalePrefix =
-      fallbackWsIndex > 0 ? currentPath.slice(0, fallbackWsIndex) : '';
     const targetWsId = state.taskWsId || wsId;
-    const targetWorkspaceSlug = toWorkspaceSlug(targetWsId, {
-      personal: state.taskWorkspacePersonal ?? isPersonalWorkspace,
+    const href = buildWorkspaceTaskUrl({
+      boardId,
+      currentPathname: window.location.pathname,
+      taskId,
+      workspaceId: targetWsId,
+      isPersonalWorkspace: state.taskWorkspacePersonal ?? isPersonalWorkspace,
     });
-    const href = `${
-      localePrefix || fallbackLocalePrefix
-    }/${targetWorkspaceSlug}/tasks/${taskId}`;
     const taskName = taskWithLocation?.name || '';
     const boardName = taskWithLocation?.list?.board?.name || '';
     const listName = taskWithLocation?.list?.name || '';
