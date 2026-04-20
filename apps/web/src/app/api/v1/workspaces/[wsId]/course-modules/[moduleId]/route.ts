@@ -60,9 +60,9 @@ async function validateWorkspaceModuleAccess(
   const sbAdmin = await createAdminClient();
   const { data: module, error: moduleError } = await sbAdmin
     .from('workspace_course_modules')
-    .select('id, course_id, workspace_courses!inner(ws_id)')
+    .select('id, group_id, workspace_user_groups!inner(ws_id)')
     .eq('id', moduleId)
-    .eq('workspace_courses.ws_id', normalizedWsId)
+    .eq('workspace_user_groups.ws_id', normalizedWsId)
     .maybeSingle();
 
   if (moduleError) {

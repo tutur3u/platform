@@ -27,7 +27,7 @@ export function ModuleContentEditor({
   const saveMutation = useMutation({
     mutationFn: async (nextContent: JSONContent | null) =>
       updateWorkspaceCourseModule(wsId, moduleId, {
-        course_id: courseId,
+        group_id: courseId,
         content: nextContent,
       }),
     onError: () => {
