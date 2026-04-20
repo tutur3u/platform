@@ -141,16 +141,43 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authNoStoredAccounts => 'Chưa có tài khoản nào được lưu.';
 
   @override
-  String get authSwitchAccount => 'Quản lý tài khoản';
+  String get authSwitchAccount => 'Chuyển tài khoản';
 
   @override
-  String get authSwitchAccountDescription => 'Chuyển tài khoản hoặc thêm mới.';
+  String get authSwitchAccountDescription => 'Chọn một tài khoản đã lưu để tiếp tục.';
 
   @override
   String get authSwitchAccountFailed => 'Không thể chuyển tài khoản.';
 
   @override
   String get authSwitchAccountSuccess => 'Đã chuyển tài khoản.';
+
+  @override
+  String get authManageAccounts => 'Quản lý tài khoản';
+
+  @override
+  String get authManageAccountsDescription => 'Thêm, xóa hoặc đăng xuất các tài khoản trên thiết bị này.';
+
+  @override
+  String get authManageAccountsEmpty => 'Không còn tài khoản nào khác được lưu trên thiết bị này.';
+
+  @override
+  String get authCurrentAccountTitle => 'Tài khoản hiện tại';
+
+  @override
+  String get authCurrentAccountDescription => 'Đây là tài khoản đang được sử dụng trên thiết bị này.';
+
+  @override
+  String get authCurrentAccountBadge => 'Đang sử dụng';
+
+  @override
+  String get authSavedAccountsTitle => 'Tài khoản đã lưu';
+
+  @override
+  String get authSavedAccountsDescription => 'Quản lý các tài khoản được lưu trên thiết bị này mà không đổi tài khoản hiện tại.';
+
+  @override
+  String get authSavedAccountBadge => 'Đã lưu trên thiết bị';
 
   @override
   String get authRemoveAccount => 'Xóa tài khoản';
@@ -4467,6 +4494,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerRequestsThresholdUpdated => 'Đã cập nhật ngưỡng yêu cầu.';
 
   @override
+  String get timerRequestsOpenFailed => 'Không thể mở yêu cầu này lúc này.';
+
+  @override
   String get timerRequestRevertToApproved => 'Hoàn tác về Đã duyệt';
 
   @override
@@ -5285,7 +5315,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get notificationsInviteActionError => 'Không thể cập nhật lời mời lúc này';
 
   @override
-  String get notificationsOpenAction => 'Mở công việc';
+  String get notificationsOpenTaskAction => 'Mở công việc';
+
+  @override
+  String get notificationsOpenRequestAction => 'Mở yêu cầu';
 
   @override
   String get notificationsOpenUnsupported => 'Thông báo này chưa thể mở trên mobile';

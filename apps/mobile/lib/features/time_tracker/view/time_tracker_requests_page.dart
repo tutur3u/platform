@@ -44,10 +44,14 @@ class TimeTrackerRequestsPage extends StatelessWidget {
     super.key,
     this.repository,
     this.workspacePermissionsRepository,
+    this.initialRequestId,
+    this.initialStatusOverride,
   });
 
   final ITimeTrackerRepository? repository;
   final WorkspacePermissionsRepository? workspacePermissionsRepository;
+  final String? initialRequestId;
+  final String? initialStatusOverride;
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +68,8 @@ class TimeTrackerRequestsPage extends StatelessWidget {
         child: _RequestsView(
           key: ValueKey<String?>(currentUserId),
           workspacePermissionsRepository: workspacePermissionsRepository,
+          initialRequestId: initialRequestId,
+          initialStatusOverride: initialStatusOverride,
         ),
       ),
     );
@@ -71,9 +77,16 @@ class TimeTrackerRequestsPage extends StatelessWidget {
 }
 
 class _RequestsView extends StatefulWidget {
-  const _RequestsView({super.key, this.workspacePermissionsRepository});
+  const _RequestsView({
+    super.key,
+    this.workspacePermissionsRepository,
+    this.initialRequestId,
+    this.initialStatusOverride,
+  });
 
   final WorkspacePermissionsRepository? workspacePermissionsRepository;
+  final String? initialRequestId;
+  final String? initialStatusOverride;
 
   @override
   State<_RequestsView> createState() => _RequestsViewState();
@@ -99,6 +112,8 @@ class _RequestsViewState extends State<_RequestsView> {
   bool _hasResolvedPermissions = false;
   int _permissionLoadToken = 0;
   int _requestLoadToken = 0;
+  String? _pendingRouteRequestId;
+  String? _handledRouteRequestId;
   final Map<String, int> _missedEntryDialogRequestVersionByWorkspace =
       <String, int>{};
   final Map<String, int> _thresholdSaveRequestVersionByWorkspace =
@@ -106,6 +121,71 @@ class _RequestsViewState extends State<_RequestsView> {
   bool _didInitializeWorkspaceLoad = false;
 
   String? _currentUserId() => context.read<AuthCubit>().state.user?.id;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedFilter = _filterFromRoute(
+      statusOverride: widget.initialStatusOverride,
+      requestId: widget.initialRequestId,
+    );
+    _pendingRouteRequestId = _normalizedRouteRequestId(widget.initialRequestId);
+  }
+
+  @override
+  void didUpdateWidget(covariant _RequestsView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final nextRequestId = _normalizedRouteRequestId(widget.initialRequestId);
+    final nextFilter = _filterFromRoute(
+      statusOverride: widget.initialStatusOverride,
+      requestId: widget.initialRequestId,
+    );
+    final routeChanged =
+        nextRequestId != _pendingRouteRequestId ||
+        nextFilter != _selectedFilter;
+    if (!routeChanged) {
+      return;
+    }
+
+    setState(() {
+      _selectedFilter = nextFilter;
+      _selectedUserId = null;
+      _pendingRouteRequestId = nextRequestId;
+      _handledRouteRequestId = null;
+    });
+
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null || wsId.isEmpty) {
+      return;
+    }
+    _requestLoadToken++;
+    unawaited(_loadRequests(wsIdOverride: wsId, forceRefresh: true));
+  }
+
+  TimeTrackerRequestStatusFilter _filterFromRoute({
+    required String? statusOverride,
+    required String? requestId,
+  }) {
+    if (_normalizedRouteRequestId(requestId) != null) {
+      return TimeTrackerRequestStatusFilter.all;
+    }
+
+    return switch (statusOverride?.trim().toLowerCase()) {
+      'approved' => TimeTrackerRequestStatusFilter.approved,
+      'rejected' => TimeTrackerRequestStatusFilter.rejected,
+      'needs_info' || 'needsinfo' => TimeTrackerRequestStatusFilter.needsInfo,
+      'all' => TimeTrackerRequestStatusFilter.all,
+      _ => TimeTrackerRequestStatusFilter.pending,
+    };
+  }
+
+  String? _normalizedRouteRequestId(String? requestId) {
+    final trimmed = requestId?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed;
+  }
 
   String? _requestUserFilterId() {
     if (_canManageRequests) {
@@ -198,6 +278,55 @@ class _RequestsViewState extends State<_RequestsView> {
     );
   }
 
+  Future<void> _maybeOpenRequestFromRoute(
+    TimeTrackerRequestsState state,
+  ) async {
+    final requestId = _pendingRouteRequestId;
+    if (requestId == null || requestId == _handledRouteRequestId) {
+      return;
+    }
+    if (state.status == TimeTrackerRequestsStatus.initial ||
+        state.status == TimeTrackerRequestsStatus.loading) {
+      return;
+    }
+
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null || wsId.isEmpty) {
+      return;
+    }
+
+    _handledRouteRequestId = requestId;
+
+    final existing = state.requests
+        .where((request) => request.id == requestId)
+        .firstOrNull;
+    final request =
+        existing ??
+        await context.read<ITimeTrackerRepository>().getRequestById(
+          wsId,
+          requestId,
+        );
+
+    if (!mounted) {
+      return;
+    }
+    if (request == null) {
+      final toastContext = Navigator.of(context, rootNavigator: true).context;
+      if (!toastContext.mounted) {
+        return;
+      }
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          title: Text(context.l10n.timerRequestsOpenFailed),
+        ),
+      );
+      return;
+    }
+
+    await _showRequestDetail(context, request);
+  }
+
   List<ShellActionSpec> _shellActions(BuildContext context, String wsId) {
     final l10n = context.l10n;
     final showSettingsAction =
@@ -286,6 +415,14 @@ class _RequestsViewState extends State<_RequestsView> {
                 forceRefreshRequests: true,
               ),
             );
+          },
+        ),
+        BlocListener<TimeTrackerRequestsCubit, TimeTrackerRequestsState>(
+          listenWhen: (previous, current) =>
+              previous.status != current.status ||
+              previous.requests != current.requests,
+          listener: (context, state) {
+            unawaited(_maybeOpenRequestFromRoute(state));
           },
         ),
       ],

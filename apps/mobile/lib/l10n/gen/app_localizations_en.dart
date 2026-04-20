@@ -141,16 +141,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authNoStoredAccounts => 'No saved accounts yet.';
 
   @override
-  String get authSwitchAccount => 'Manage accounts';
+  String get authSwitchAccount => 'Switch account';
 
   @override
-  String get authSwitchAccountDescription => 'Switch accounts or add another.';
+  String get authSwitchAccountDescription => 'Choose a saved account to continue.';
 
   @override
   String get authSwitchAccountFailed => 'Couldn\'t switch account.';
 
   @override
   String get authSwitchAccountSuccess => 'Switched account.';
+
+  @override
+  String get authManageAccounts => 'Manage accounts';
+
+  @override
+  String get authManageAccountsDescription => 'Add, remove, or log out accounts on this device.';
+
+  @override
+  String get authManageAccountsEmpty => 'No other saved accounts on this device.';
+
+  @override
+  String get authCurrentAccountTitle => 'Current account';
+
+  @override
+  String get authCurrentAccountDescription => 'This is the account currently active on this device.';
+
+  @override
+  String get authCurrentAccountBadge => 'In use now';
+
+  @override
+  String get authSavedAccountsTitle => 'Saved accounts';
+
+  @override
+  String get authSavedAccountsDescription => 'Manage accounts stored on this device without changing the current one.';
+
+  @override
+  String get authSavedAccountBadge => 'Saved on device';
 
   @override
   String get authRemoveAccount => 'Remove account';
@@ -4497,6 +4524,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerRequestsThresholdUpdated => 'Request threshold updated.';
 
   @override
+  String get timerRequestsOpenFailed => 'Couldn\'t open this request right now.';
+
+  @override
   String get timerRequestRevertToApproved => 'Revert to Approved';
 
   @override
@@ -5315,7 +5345,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationsInviteActionError => 'Couldn\'t update this invite right now';
 
   @override
-  String get notificationsOpenAction => 'Open task';
+  String get notificationsOpenTaskAction => 'Open task';
+
+  @override
+  String get notificationsOpenRequestAction => 'Open request';
 
   @override
   String get notificationsOpenUnsupported => 'This notification can\'t be opened yet';

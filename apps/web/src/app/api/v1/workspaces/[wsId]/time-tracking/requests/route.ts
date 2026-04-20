@@ -254,6 +254,7 @@ export async function GET(
     const status = url.searchParams.get('status') || 'pending'; // 'pending', 'approved', 'rejected'
     const userId = url.searchParams.get('userId'); // Optional: filter by user
     const normalizedUserId = userId?.trim();
+    const requestId = url.searchParams.get('requestId')?.trim();
 
     if (
       !canManageAllRequests &&
@@ -300,6 +301,9 @@ export async function GET(
     // Filter by user if specified
     if (effectiveUserId) {
       countQuery = countQuery.eq('user_id', effectiveUserId);
+    }
+    if (requestId) {
+      countQuery = countQuery.eq('id', requestId);
     }
 
     // Execute count query with explicit error handling
@@ -366,6 +370,9 @@ export async function GET(
     // Filter by user if specified
     if (effectiveUserId) {
       query = query.eq('user_id', effectiveUserId);
+    }
+    if (requestId) {
+      query = query.eq('id', requestId);
     }
 
     // Apply pagination and ordering

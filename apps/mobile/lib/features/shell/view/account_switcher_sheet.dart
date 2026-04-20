@@ -1,22 +1,18 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
-import 'package:mobile/features/settings/view/settings_dialogs.dart';
-import 'package:mobile/features/shell/avatar_url_identity.dart';
+import 'package:mobile/features/shell/view/account_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-/// Picks another saved account, or dismisses with null.
-///
-/// Rows include remove; see [AuthCubit.removeAccount].
 Future<String?> showAccountSwitcherSheet(
   BuildContext context, {
   Future<void> Function()? onAddAccount,
+  Future<void> Function()? onManageAccounts,
 }) async {
   final authCubit = context.read<AuthCubit>();
 
@@ -26,232 +22,84 @@ Future<String?> showAccountSwitcherSheet(
     builder: (dialogContext) {
       return BlocProvider.value(
         value: authCubit,
-        child: _AccountSwitcherSheet(onAddAccount: onAddAccount),
+        child: _AccountSwitcherSheet(
+          onAddAccount: onAddAccount,
+          onManageAccounts: onManageAccounts,
+        ),
       );
     },
   );
 }
 
-class _AccountSwitcherSheet extends StatefulWidget {
-  const _AccountSwitcherSheet({this.onAddAccount});
+class _AccountSwitcherSheet extends StatelessWidget {
+  const _AccountSwitcherSheet({
+    this.onAddAccount,
+    this.onManageAccounts,
+  });
 
   final Future<void> Function()? onAddAccount;
-
-  @override
-  State<_AccountSwitcherSheet> createState() => _AccountSwitcherSheetState();
-}
-
-class _AccountSwitcherSheetState extends State<_AccountSwitcherSheet> {
-  String? _removingAccountId;
-  String? _loggingOutAccountId;
-
-  bool get _isMutating =>
-      _removingAccountId != null || _loggingOutAccountId != null;
-
-  Future<void> _removeAccount(StoredAuthAccount account) async {
-    final dialogContext = context;
-    final accountLabel = account.displayName?.trim().isNotEmpty == true
-        ? account.displayName!
-        : account.email?.trim().isNotEmpty == true
-        ? account.email!
-        : account.id;
-
-    final confirmed = await showSettingsConfirmationDialog(
-      context: dialogContext,
-      title: dialogContext.l10n.authRemoveAccount,
-      description: dialogContext.l10n.authRemoveAccountConfirm(accountLabel),
-      confirmLabel: dialogContext.l10n.authRemoveAccount,
-      icon: Icons.delete_outline_rounded,
-      isDestructive: true,
-    );
-
-    if (confirmed != true || !mounted) {
-      return;
-    }
-
-    setState(() => _removingAccountId = account.id);
-
-    final authCubit = context.read<AuthCubit>();
-    final success = await authCubit.removeAccount(account.id);
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() => _removingAccountId = null);
-
-    if (!success) {
-      final toastContext = Navigator.of(context, rootNavigator: true).context;
-      if (!toastContext.mounted) {
-        return;
-      }
-      shad.showToast(
-        context: toastContext,
-        builder: (ctx, _) => shad.Alert.destructive(
-          title: Text(
-            authCubit.state.error ?? ctx.l10n.authRemoveAccountFailed,
-          ),
-        ),
-      );
-      return;
-    }
-
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
-    if (!toastContext.mounted) {
-      return;
-    }
-    shad.showToast(
-      context: toastContext,
-      builder: (ctx, _) => shad.Alert(
-        title: Text(ctx.l10n.authRemoveAccountSuccess),
-      ),
-    );
-  }
-
-  Future<void> _logOutAccount(StoredAuthAccount account) async {
-    final dialogContext = context;
-
-    final confirmed = await showSettingsConfirmationDialog(
-      context: dialogContext,
-      title: dialogContext.l10n.authLogOutConfirmDialogTitle,
-      description: dialogContext.l10n.authLogOutConfirmDialogBody,
-      confirmLabel: dialogContext.l10n.authLogOut,
-      icon: Icons.logout_rounded,
-      isDestructive: true,
-    );
-
-    if (confirmed != true || !mounted) {
-      return;
-    }
-
-    setState(() => _loggingOutAccountId = account.id);
-
-    final authCubit = context.read<AuthCubit>();
-    final isActiveAccount = authCubit.state.activeAccountId == account.id;
-    final success = isActiveAccount
-        ? await authCubit.signOutCurrentAccount()
-        : await authCubit.removeAccount(account.id);
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() => _loggingOutAccountId = null);
-
-    if (!success) {
-      final toastContext = Navigator.of(context, rootNavigator: true).context;
-      if (!toastContext.mounted) {
-        return;
-      }
-      shad.showToast(
-        context: toastContext,
-        builder: (ctx, _) => shad.Alert.destructive(
-          title: Text(
-            authCubit.state.error ?? ctx.l10n.authLogOutCurrentFailed,
-          ),
-        ),
-      );
-      return;
-    }
-
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
-    if (!toastContext.mounted) {
-      return;
-    }
-    shad.showToast(
-      context: toastContext,
-      builder: (ctx, _) => shad.Alert(
-        title: Text(ctx.l10n.authLogOutCurrentSuccess),
-      ),
-    );
-  }
+  final Future<void> Function()? onManageAccounts;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
-        final accounts = [...state.accounts]
-          ..sort((a, b) => b.lastActiveAt.compareTo(a.lastActiveAt));
-        final activeId = state.activeAccountId;
+        final accounts = sortStoredAccountsByRecent(state.accounts);
 
-        return PopScope(
-          canPop: !_isMutating,
-          child: AppDialogScaffold(
-            title: context.l10n.authSwitchAccount,
-            description: context.l10n.authSwitchAccountDescription,
-            icon: Icons.tune_rounded,
-            headerTrailing: shad.PrimaryButton(
-              onPressed: _isMutating
-                  ? null
-                  : () async {
-                      Navigator.of(context).pop();
-                      final add = widget.onAddAccount;
-                      if (add != null) {
-                        await add();
-                      }
-                    },
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.add_rounded, size: 16),
-                  const shad.Gap(6),
-                  Text(context.l10n.authAddAccount),
-                ],
-              ),
+        return AppDialogScaffold(
+          title: context.l10n.authSwitchAccount,
+          description: context.l10n.authSwitchAccountDescription,
+          icon: Icons.swap_horiz_rounded,
+          maxWidth: 420,
+          maxHeightFactor: 0.76,
+          actions: [
+            shad.OutlineButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(context.l10n.commonCancel),
             ),
-            maxWidth: 420,
-            maxHeightFactor: 0.72,
-            actions: [
-              shad.OutlineButton(
-                onPressed: _isMutating
-                    ? null
-                    : () => Navigator.of(context).pop(),
-                child: Text(context.l10n.commonCancel),
+          ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                context.l10n.authSavedAccountsTitle,
+                style: shad.Theme.of(
+                  context,
+                ).typography.small.copyWith(fontWeight: FontWeight.w700),
+              ),
+              if (accounts.length > 1) ...[
+                const shad.Gap(4),
+                Text(
+                  context.l10n.authSavedAccountsDescription,
+                  style: shad.Theme.of(context).typography.textSmall.copyWith(
+                    color: shad.Theme.of(context).colorScheme.mutedForeground,
+                  ),
+                ),
+              ],
+              const shad.Gap(12),
+              if (accounts.isEmpty)
+                _EmptyAccountsState(onAddAccount: onAddAccount)
+              else
+                Column(
+                  children: [
+                    for (var index = 0; index < accounts.length; index++) ...[
+                      _AccountSelectionTile(
+                        account: accounts[index],
+                        isSelected: accounts[index].id == state.activeAccountId,
+                        onTap: () => Navigator.of(
+                          context,
+                        ).pop<String?>(accounts[index].id),
+                      ),
+                      if (index != accounts.length - 1) const shad.Gap(10),
+                    ],
+                  ],
+                ),
+              const shad.Gap(12),
+              _AccountSwitcherActions(
+                onAddAccount: onAddAccount,
+                onManageAccounts: onManageAccounts,
               ),
             ],
-            child: accounts.isEmpty
-                ? const SizedBox.shrink()
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final account in accounts)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _AccountSwitcherTile(
-                            account: account,
-                            isSelected: account.id == activeId,
-                            isRemoving: _removingAccountId == account.id,
-                            isLoggingOut: _loggingOutAccountId == account.id,
-                            isDisabled: _isMutating,
-                            onSelect: _isMutating
-                                ? null
-                                : () => Navigator.of(
-                                    context,
-                                  ).pop<String?>(account.id),
-                            onRemove: _isMutating
-                                ? null
-                                : () async {
-                                    final authCubit = context.read<AuthCubit>();
-                                    final navigator = Navigator.of(context);
-                                    await _removeAccount(account);
-                                    if (!mounted) {
-                                      return;
-                                    }
-                                    final remaining =
-                                        authCubit.state.accounts.length;
-                                    if (remaining <= 1) {
-                                      navigator.pop();
-                                    }
-                                  },
-                            onLogOut: _isMutating
-                                ? null
-                                : () async {
-                                    await _logOutAccount(account);
-                                  },
-                          ),
-                        ),
-                    ],
-                  ),
           ),
         );
       },
@@ -259,272 +107,249 @@ class _AccountSwitcherSheetState extends State<_AccountSwitcherSheet> {
   }
 }
 
-String _accountPrimaryLabel(StoredAuthAccount account) {
-  final name = account.displayName?.trim();
-  if (name != null && name.isNotEmpty) {
-    return name;
-  }
-  final email = account.email?.trim();
-  if (email != null && email.isNotEmpty) {
-    return email;
-  }
-  return account.id;
-}
-
-/// Subtitle when it adds information (never duplicate the title line).
-String? _accountSecondaryLabel(StoredAuthAccount account) {
-  final primary = _accountPrimaryLabel(account);
-  final email = account.email?.trim();
-  if (email == null || email.isEmpty) {
-    return null;
-  }
-  if (email == primary) {
-    return null;
-  }
-  return email;
-}
-
-String _initialsForAccount(StoredAuthAccount account) {
-  final source = account.displayName?.trim().isNotEmpty == true
-      ? account.displayName!.trim()
-      : (account.email?.trim().isNotEmpty == true
-            ? account.email!.trim()
-            : account.id);
-  return _initialsFromDisplayString(source);
-}
-
-String _initialsFromDisplayString(String value) {
-  final trimmed = value.trim();
-  if (trimmed.isEmpty) {
-    return 'U';
-  }
-  final parts = trimmed.split(RegExp(r'\s+'));
-  if (parts.length == 1) {
-    return parts.first.characters.first.toUpperCase();
-  }
-  final first = parts.first.characters.first.toUpperCase();
-  final last = parts.last.characters.first.toUpperCase();
-  return '$first$last';
-}
-
-class _AccountSwitcherAvatar extends StatelessWidget {
-  const _AccountSwitcherAvatar({
+class _AccountSelectionTile extends StatelessWidget {
+  const _AccountSelectionTile({
     required this.account,
     required this.isSelected,
+    required this.onTap,
   });
 
   final StoredAuthAccount account;
   final bool isSelected;
-
-  static const double _size = 38;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    final url = normalizeAvatarUrl(account.avatarUrl);
-    final initials = _initialsForAccount(account);
-
-    return Container(
-      width: _size,
-      height: _size,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isSelected
-              ? theme.colorScheme.primary.withValues(alpha: 0.55)
-              : theme.colorScheme.border.withValues(alpha: 0.35),
-          width: isSelected ? 2 : 1,
-        ),
-        color: colorScheme.surfaceContainerHighest,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: url != null
-          ? Image(
-              image: CachedNetworkImageProvider(
-                url,
-                cacheKey: avatarIdentityKeyForUrl(url) ?? url,
-              ),
-              fit: BoxFit.cover,
-              gaplessPlayback: true,
-              errorBuilder: (context, error, stackTrace) =>
-                  const _AccountSwitcherPlaceholder(),
-            )
-          : _AccountSwitcherInitials(initials: initials),
-    );
-  }
-}
-
-class _AccountSwitcherPlaceholder extends StatelessWidget {
-  const _AccountSwitcherPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return ColoredBox(
-      color: colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Icon(
-          Icons.person_outline_rounded,
-          size: 18,
-          color: colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-}
-
-class _AccountSwitcherInitials extends StatelessWidget {
-  const _AccountSwitcherInitials({required this.initials});
-
-  final String initials;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    return ColoredBox(
-      color: colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Text(
-          initials,
-          style: theme.typography.small.copyWith(
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSurface,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AccountSwitcherTile extends StatelessWidget {
-  const _AccountSwitcherTile({
-    required this.account,
-    required this.isSelected,
-    required this.isRemoving,
-    required this.isLoggingOut,
-    required this.isDisabled,
-    required this.onSelect,
-    required this.onRemove,
-    required this.onLogOut,
-  });
-
-  final StoredAuthAccount account;
-  final bool isSelected;
-  final bool isRemoving;
-  final bool isLoggingOut;
-  final bool isDisabled;
-  final VoidCallback? onSelect;
-  final VoidCallback? onRemove;
-  final VoidCallback? onLogOut;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final title = _accountPrimaryLabel(account);
-    final subtitle = _accountSecondaryLabel(account);
+    final title = accountPrimaryLabel(account);
+    final subtitle = accountSecondaryLabel(account);
 
     return Material(
       color: Colors.transparent,
-      child: Ink(
-        decoration: BoxDecoration(
-          color: isSelected
-              ? theme.colorScheme.primary.withValues(alpha: 0.10)
-              : theme.colorScheme.card,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
             color: isSelected
-                ? theme.colorScheme.primary.withValues(alpha: 0.55)
-                : theme.colorScheme.border.withValues(alpha: 0.75),
+                ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                : theme.colorScheme.card,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isSelected
+                  ? theme.colorScheme.primary.withValues(alpha: 0.4)
+                  : theme.colorScheme.border.withValues(alpha: 0.72),
+            ),
           ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(18),
-                  onTap: isDisabled ? null : onSelect,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 14, 8, 14),
-                    child: Row(
+          child: Row(
+            children: [
+              AccountAvatar(account: account, isSelected: isSelected),
+              const shad.Gap(10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        _AccountSwitcherAvatar(
-                          account: account,
-                          isSelected: isSelected,
-                        ),
-                        const shad.Gap(12),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                title,
-                                style: theme.typography.small.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              if (subtitle != null &&
-                                  subtitle.trim().isNotEmpty) ...[
-                                const shad.Gap(4),
-                                Text(
-                                  subtitle,
-                                  style: theme.typography.textSmall.copyWith(
-                                    color: theme.colorScheme.mutedForeground,
-                                  ),
-                                ),
-                              ],
-                            ],
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.small.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                        const shad.Gap(8),
-                        Icon(
-                          isSelected
-                              ? Icons.check_circle_rounded
-                              : Icons.radio_button_unchecked_rounded,
-                          size: 20,
-                          color: isSelected
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.mutedForeground,
-                        ),
+                        if (isSelected) ...[
+                          const shad.Gap(8),
+                          _AccountStatusBadge(
+                            label: context.l10n.authCurrentAccountBadge,
+                          ),
+                        ],
                       ],
                     ),
-                  ),
+                    if (subtitle != null) ...[
+                      const shad.Gap(3),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.textSmall.copyWith(
+                          color: theme.colorScheme.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const shad.Gap(10),
+              Icon(
+                isSelected
+                    ? Icons.check_circle_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                size: 20,
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.mutedForeground,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountStatusBadge extends StatelessWidget {
+  const _AccountStatusBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: theme.typography.xSmall.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountSwitcherActions extends StatelessWidget {
+  const _AccountSwitcherActions({
+    required this.onAddAccount,
+    required this.onManageAccounts,
+  });
+
+  final Future<void> Function()? onAddAccount;
+  final Future<void> Function()? onManageAccounts;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 360;
+        final buttonWidth = isCompact
+            ? constraints.maxWidth
+            : (constraints.maxWidth - 10) / 2;
+
+        return Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            SizedBox(
+              width: buttonWidth,
+              child: shad.OutlineButton(
+                onPressed: onManageAccounts == null
+                    ? null
+                    : () async {
+                        Navigator.of(context).pop();
+                        await onManageAccounts?.call();
+                      },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.manage_accounts_rounded, size: 18),
+                    const shad.Gap(8),
+                    Flexible(
+                      child: Text(
+                        context.l10n.authManageAccounts,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(right: 6),
-              child: isRemoving || isLoggingOut
-                  ? const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                  : IconButton(
-                      tooltip: isSelected
-                          ? context.l10n.authLogOut
-                          : context.l10n.authRemoveAccount,
-                      onPressed: isDisabled
-                          ? null
-                          : isSelected
-                          ? onLogOut
-                          : onRemove,
-                      icon: Icon(
-                        isSelected
-                            ? Icons.logout_rounded
-                            : Icons.delete_outline_rounded,
-                        color: theme.colorScheme.destructive,
+            SizedBox(
+              width: buttonWidth,
+              child: shad.PrimaryButton(
+                onPressed: onAddAccount == null
+                    ? null
+                    : () async {
+                        Navigator.of(context).pop();
+                        await onAddAccount?.call();
+                      },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.add_rounded, size: 18),
+                    const shad.Gap(8),
+                    Flexible(
+                      child: Text(
+                        context.l10n.authAddAccount,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                  ],
+                ),
+              ),
             ),
           ],
+        );
+      },
+    );
+  }
+}
+
+class _EmptyAccountsState extends StatelessWidget {
+  const _EmptyAccountsState({required this.onAddAccount});
+
+  final Future<void> Function()? onAddAccount;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: theme.colorScheme.border.withValues(alpha: 0.72),
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.l10n.authNoStoredAccounts,
+            style: theme.typography.small.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const shad.Gap(6),
+          Text(
+            context.l10n.authAddAccountDescription,
+            style: theme.typography.textSmall.copyWith(
+              color: theme.colorScheme.mutedForeground,
+            ),
+          ),
+          if (onAddAccount != null) ...[
+            const shad.Gap(12),
+            shad.PrimaryButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await onAddAccount?.call();
+              },
+              child: Text(context.l10n.authAddAccount),
+            ),
+          ],
+        ],
       ),
     );
   }

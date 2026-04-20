@@ -372,6 +372,15 @@ void main() {
               ),
             ),
           ),
+          GoRoute(
+            path: Routes.timerRequests,
+            builder: (context, state) => Scaffold(
+              body: Text(
+                'Request ${state.uri.queryParameters['requestId']} '
+                'Status ${state.uri.queryParameters['status']}',
+              ),
+            ),
+          ),
         ],
       );
     });
@@ -384,6 +393,7 @@ void main() {
     testWidgets('tapping task notification switches workspace and navigates', (
       tester,
     ) async {
+      clearInteractions(workspaceCubit);
       await tester.pumpWidget(
         _buildRouterApp(
           router: router,
@@ -401,5 +411,64 @@ void main() {
       verify(() => workspaceCubit.selectWorkspace(teamWorkspace)).called(1);
       expect(find.text('Board board_2 Task task_9'), findsOneWidget);
     });
+
+    testWidgets(
+      'tapping time tracking request notification switches workspace and '
+      'deep links',
+      (tester) async {
+        when(
+          () => notificationsRepository.fetchNotifications(
+            wsId: any(named: 'wsId'),
+            unreadOnly: any(named: 'unreadOnly'),
+            readOnly: any(named: 'readOnly'),
+            limit: any(named: 'limit'),
+            offset: any(named: 'offset'),
+          ),
+        ).thenAnswer(
+          (_) async => NotificationsPage(
+            notifications: [
+              AppNotification(
+                id: 'notif_request',
+                userId: 'user_1',
+                type: 'time_tracking_request_submitted',
+                title: 'Cross-workspace request',
+                description: 'Open the linked request',
+                data: const {
+                  'workspace_id': 'team_ws',
+                  'workspace_name': 'Team Workspace',
+                },
+                entityType: 'time_tracking_request',
+                entityId: 'request_42',
+                createdAt: DateTime(2026, 3, 25),
+              ),
+            ],
+            count: 1,
+            limit: 20,
+            offset: 0,
+          ),
+        );
+
+        await notificationsCubit.setWorkspace(personalWorkspace);
+        await notificationsCubit.loadTab(NotificationsTab.inbox);
+        clearInteractions(workspaceCubit);
+
+        await tester.pumpWidget(
+          _buildRouterApp(
+            router: router,
+            workspaceCubit: workspaceCubit,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Open notifications'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Cross-workspace request'));
+        await tester.pumpAndSettle();
+
+        verify(() => workspaceCubit.selectWorkspace(teamWorkspace)).called(1);
+        expect(find.text('Request request_42 Status all'), findsOneWidget);
+      },
+    );
   });
 }

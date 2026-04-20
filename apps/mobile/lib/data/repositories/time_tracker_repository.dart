@@ -143,6 +143,8 @@ abstract class ITimeTrackerRepository {
 
   Future<List<WorkspaceUserOption>> getRequestUsers(String wsId);
 
+  Future<TimeTrackingRequest?> getRequestById(String wsId, String requestId);
+
   Future<TimeTrackingRequest> createRequest(
     String wsId, {
     required String title,
@@ -767,6 +769,28 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
         .whereType<Map<String, dynamic>>()
         .map(WorkspaceUserOption.fromJson)
         .toList();
+  }
+
+  @override
+  Future<TimeTrackingRequest?> getRequestById(
+    String wsId,
+    String requestId,
+  ) async {
+    final data = await _api.getJson(
+      _withQuery('/api/v1/workspaces/$wsId/time-tracking/requests', {
+        'status': 'all',
+        'limit': '1',
+        'requestId': requestId,
+      }),
+    );
+
+    final requests = data['requests'] as List<dynamic>? ?? const <dynamic>[];
+    final raw = requests.firstOrNull;
+    if (raw is! Map<String, dynamic>) {
+      return null;
+    }
+
+    return TimeTrackingRequest.fromJson(raw);
   }
 
   @override
