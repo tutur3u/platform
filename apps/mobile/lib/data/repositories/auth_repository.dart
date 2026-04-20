@@ -38,41 +38,46 @@ class AuthRepository {
     DevicePlatform? devicePlatform,
     String? googleWebClientId,
     String? googleIosClientId,
-  }) : _apiClient = apiClient ?? ApiClient(),
-       _client = supabaseClient ?? supabase,
-       _googleIdentityClient =
-           googleIdentityClient ?? GoogleIdentityClientImpl(),
-       _appleIdentityClient =
-           appleIdentityClient ?? const AppleIdentityClientImpl(),
-       _devicePlatform = devicePlatform ?? const DefaultDevicePlatform(),
-       _oauthUrlLauncher =
-           oauthUrlLauncher ??
-           SupabaseOAuthUrlLauncher(
-             devicePlatform: devicePlatform ?? const DefaultDevicePlatform(),
-           ),
-       _packageInfoLoader = packageInfoLoader ?? PackageInfo.fromPlatform,
-       _googleWebClientId = googleWebClientId ?? Env.googleWebClientId,
-       _googleIosClientId = googleIosClientId ?? Env.googleIosClientId,
-       _multiAccountStorageService =
-           multiAccountStorageService ??
-           MultiAccountStorageService(
-             supabaseClient: supabaseClient ?? supabase,
-             secureStorage: secureStorage ?? const FlutterSecureStorage(),
-             apiClient: apiClient ?? ApiClient(),
-             googleIdentityClient:
-                 googleIdentityClient ?? GoogleIdentityClientImpl(),
-           );
+  }) {
+    final resolvedApiClient = apiClient ?? ApiClient();
+    final resolvedSupabaseClient = supabaseClient ?? supabase;
+    final resolvedGoogleIdentityClient =
+        googleIdentityClient ?? GoogleIdentityClientImpl();
+    final resolvedDevicePlatform =
+        devicePlatform ?? const DefaultDevicePlatform();
 
-  final ApiClient _apiClient;
-  final SupabaseClient _client;
-  final GoogleIdentityClient _googleIdentityClient;
-  final AppleIdentityClient _appleIdentityClient;
-  final OAuthUrlLauncher _oauthUrlLauncher;
-  final PackageInfoLoader _packageInfoLoader;
-  final DevicePlatform _devicePlatform;
-  final String _googleWebClientId;
-  final String _googleIosClientId;
-  final MultiAccountStorageService _multiAccountStorageService;
+    _apiClient = resolvedApiClient;
+    _client = resolvedSupabaseClient;
+    _googleIdentityClient = resolvedGoogleIdentityClient;
+    _appleIdentityClient =
+        appleIdentityClient ?? const AppleIdentityClientImpl();
+    _devicePlatform = resolvedDevicePlatform;
+    _oauthUrlLauncher =
+        oauthUrlLauncher ??
+        SupabaseOAuthUrlLauncher(devicePlatform: resolvedDevicePlatform);
+    _packageInfoLoader = packageInfoLoader ?? PackageInfo.fromPlatform;
+    _googleWebClientId = googleWebClientId ?? Env.googleWebClientId;
+    _googleIosClientId = googleIosClientId ?? Env.googleIosClientId;
+    _multiAccountStorageService =
+        multiAccountStorageService ??
+        MultiAccountStorageService(
+          supabaseClient: _client,
+          secureStorage: secureStorage ?? const FlutterSecureStorage(),
+          apiClient: _apiClient,
+          googleIdentityClient: _googleIdentityClient,
+        );
+  }
+
+  late final ApiClient _apiClient;
+  late final SupabaseClient _client;
+  late final GoogleIdentityClient _googleIdentityClient;
+  late final AppleIdentityClient _appleIdentityClient;
+  late final OAuthUrlLauncher _oauthUrlLauncher;
+  late final PackageInfoLoader _packageInfoLoader;
+  late final DevicePlatform _devicePlatform;
+  late final String _googleWebClientId;
+  late final String _googleIosClientId;
+  late final MultiAccountStorageService _multiAccountStorageService;
 
   String? get _mobileOtpPlatform {
     if (_devicePlatform.isIOS) {
@@ -675,8 +680,11 @@ class AuthRepository {
       // Ignore Google sign-out failures and still clear the Supabase session.
     }
 
-    await _client.auth.signOut();
-    await _multiAccountStorageService.clearMultiAccountStore();
+    try {
+      await _client.auth.signOut();
+    } finally {
+      await _multiAccountStorageService.clearMultiAccountStore();
+    }
   }
 
   Future<void> refreshSession() async {

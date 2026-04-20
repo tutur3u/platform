@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -301,6 +302,12 @@ class MultiAccountStorageService {
       if (session == null || user == null) {
         return (success: false, error: 'Failed to restore session');
       }
+      if (user.id != accountId) {
+        return (
+          success: false,
+          error: 'Session restore returned a different account',
+        );
+      }
 
       final now = DateTime.now().millisecondsSinceEpoch;
       final restoredSessionJson = await _readCurrentPersistedSessionJson();
@@ -332,7 +339,7 @@ class MultiAccountStorageService {
       return (success: true, error: null);
     } on AuthException catch (e) {
       return (success: false, error: e.message);
-    } on Exception catch (e) {
+    } on Object catch (e) {
       return (success: false, error: e.toString());
     }
   }
@@ -367,9 +374,31 @@ class MultiAccountStorageService {
     }
 
     if (remaining.isEmpty) {
-      await _client.auth.signOut();
-      await _googleSignOutBestEffort();
-      await clearMultiAccountStore();
+      try {
+        await _client.auth.signOut();
+      } on Object catch (error, stackTrace) {
+        developer.log(
+          'Supabase sign-out failed while removing final account',
+          name: 'MultiAccountStorageService',
+          error: error,
+          stackTrace: stackTrace,
+          level: 900,
+        );
+      }
+
+      try {
+        await _googleSignOutBestEffort();
+      } on Object catch (error, stackTrace) {
+        developer.log(
+          'Google sign-out failed while removing final account',
+          name: 'MultiAccountStorageService',
+          error: error,
+          stackTrace: stackTrace,
+          level: 900,
+        );
+      } finally {
+        await clearMultiAccountStore();
+      }
       return (success: true, switched: false, error: null);
     }
 
@@ -438,14 +467,42 @@ class MultiAccountStorageService {
     for (final account in store.accounts) {
       try {
         await _revokeRefreshTokenGlobally(account.refreshToken);
-      } on Object {
-        // Best-effort sign-out for each account; continue revocation loop.
+      } on Object catch (error, stackTrace) {
+        developer.log(
+          'Failed to revoke stored account refresh token',
+          name: 'MultiAccountStorageService',
+          error: error,
+          stackTrace: stackTrace,
+          level: 900,
+        );
       }
     }
 
-    await _googleSignOutBestEffort();
-    await _client.auth.signOut();
-    await clearMultiAccountStore();
+    try {
+      await _googleSignOutBestEffort();
+    } on Object catch (error, stackTrace) {
+      developer.log(
+        'Google sign-out failed during signOutAllAccounts',
+        name: 'MultiAccountStorageService',
+        error: error,
+        stackTrace: stackTrace,
+        level: 900,
+      );
+    }
+
+    try {
+      await _client.auth.signOut();
+    } on Object catch (error, stackTrace) {
+      developer.log(
+        'Supabase sign-out failed during signOutAllAccounts',
+        name: 'MultiAccountStorageService',
+        error: error,
+        stackTrace: stackTrace,
+        level: 900,
+      );
+    } finally {
+      await clearMultiAccountStore();
+    }
   }
 
   Future<void> _googleSignOutBestEffort() async {
@@ -461,17 +518,53 @@ class MultiAccountStorageService {
       return;
     }
 
+    final tokenUri = Uri.parse(
+      '${Env.supabaseUrl}/auth/v1/token?grant_type=refresh_token',
+    );
+    final tokenResponse = await http.post(
+      tokenUri,
+      headers: {
+        'apikey': Env.supabaseAnonKey,
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'grant_type': 'refresh_token',
+        'refresh_token': refreshToken,
+      }),
+    );
+    if (tokenResponse.statusCode < 200 || tokenResponse.statusCode >= 300) {
+      throw AuthException(
+        'Failed to exchange refresh token '
+        '(${tokenResponse.statusCode}): ${tokenResponse.body}',
+      );
+    }
+
+    final tokenBody = jsonDecode(tokenResponse.body);
+    if (tokenBody is! Map<String, dynamic>) {
+      throw const AuthException('Unexpected token exchange response payload');
+    }
+    final accessToken = tokenBody['access_token'] as String?;
+    if (accessToken == null || accessToken.trim().isEmpty) {
+      throw const AuthException('Token exchange did not return access_token');
+    }
+
     final logoutUri = Uri.parse(
       '${Env.supabaseUrl}/auth/v1/logout?scope=global',
     );
-    await http.post(
+    final logoutResponse = await http.post(
       logoutUri,
       headers: {
         'apikey': Env.supabaseAnonKey,
-        'Authorization': 'Bearer $refreshToken',
+        'Authorization': 'Bearer $accessToken',
         'Content-Type': 'application/json',
       },
       body: jsonEncode({'refresh_token': refreshToken}),
     );
+    if (logoutResponse.statusCode < 200 || logoutResponse.statusCode >= 300) {
+      throw AuthException(
+        'Failed to revoke refresh token globally '
+        '(${logoutResponse.statusCode}): ${logoutResponse.body}',
+      );
+    }
   }
 }

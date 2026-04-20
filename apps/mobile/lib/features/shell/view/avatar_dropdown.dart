@@ -65,6 +65,7 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
 
   Future<void> _showAccountSwitcher() async {
     final authCubit = context.read<AuthCubit>();
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
     await authCubit.syncCurrentSessionToStore();
     if (!mounted) {
       return;
@@ -75,8 +76,11 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
       ..sort((a, b) => b.lastActiveAt.compareTo(a.lastActiveAt));
 
     if (accounts.isEmpty) {
+      if (!toastContext.mounted) {
+        return;
+      }
       shad.showToast(
-        context: context,
+        context: toastContext,
         builder: (toastContext, _) => shad.Alert(
           title: Text(toastContext.l10n.authNoStoredAccounts),
         ),
@@ -102,9 +106,12 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
     if (!mounted) {
       return;
     }
+    if (!toastContext.mounted) {
+      return;
+    }
 
     shad.showToast(
-      context: context,
+      context: toastContext,
       builder: (toastContext, _) => success
           ? shad.Alert(title: Text(toastContext.l10n.authSwitchAccountSuccess))
           : shad.Alert.destructive(
@@ -118,13 +125,17 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
 
   Future<void> _startAddAccountFlow() async {
     final authCubit = context.read<AuthCubit>();
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
     final started = await authCubit.beginAddAccountFlow();
     if (!mounted) {
       return;
     }
     if (!started) {
+      if (!toastContext.mounted) {
+        return;
+      }
       shad.showToast(
-        context: context,
+        context: toastContext,
         builder: (toastContext, _) => shad.Alert.destructive(
           title: Text(
             authCubit.state.error ?? toastContext.l10n.authAddAccountFailed,
@@ -138,6 +149,7 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
 
   Future<void> _signOutCurrentAccount() async {
     final authCubit = context.read<AuthCubit>();
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
     final confirmed = await showSettingsConfirmationDialog(
       context: context,
       title: context.l10n.authLogOutConfirmDialogTitle,
@@ -154,9 +166,12 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
     if (!mounted) {
       return;
     }
+    if (!toastContext.mounted) {
+      return;
+    }
 
     shad.showToast(
-      context: context,
+      context: toastContext,
       builder: (toastContext, _) => success
           ? shad.Alert(title: Text(toastContext.l10n.authLogOutCurrentSuccess))
           : shad.Alert.destructive(

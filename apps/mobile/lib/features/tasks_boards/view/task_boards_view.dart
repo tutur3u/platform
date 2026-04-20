@@ -90,6 +90,10 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
       listenWhen: (prev, curr) =>
           prev.currentWorkspace?.id != curr.currentWorkspace?.id,
       listener: (context, state) {
+        final nextWsId = state.currentWorkspace?.id;
+        _permissionsWorkspaceId = nextWsId;
+        _canManageProjects = false;
+        _hasResolvedPermissions = false;
         unawaited(_loadPermissions());
       },
       child: Stack(

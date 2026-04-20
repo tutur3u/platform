@@ -89,6 +89,14 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
   String? _lastWorkspaceId;
   bool get _ownsRepository => widget.notificationsRepository == null;
 
+  AuthCubit? _authCubitOrNull() {
+    try {
+      return context.read<AuthCubit?>();
+    } on Object {
+      return null;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -151,61 +159,68 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
 
   @override
   Widget build(BuildContext context) {
+    final authCubit = _authCubitOrNull();
+    final notificationsButton =
+        BlocBuilder<NotificationsCubit, NotificationsState>(
+          builder: (context, state) {
+            final unreadCount = state.unreadCount;
+
+            return Semantics(
+              button: true,
+              label: context.l10n.notificationsTitle,
+              child: SizedBox(
+                key: const ValueKey('notifications-action-button'),
+                width: 40,
+                height: 40,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned.fill(
+                      child: shad.IconButton.ghost(
+                        icon: Icon(
+                          unreadCount > 0
+                              ? Icons.notifications_active_outlined
+                              : Icons.notifications_none_rounded,
+                          size: 21,
+                        ),
+                        onPressed: _openPage,
+                      ),
+                    ),
+                    if (unreadCount > 0)
+                      Positioned(
+                        top: 3,
+                        right: 4,
+                        child: IgnorePointer(
+                          child: _UnreadBadge(
+                            key: const ValueKey('notifications-unread-badge'),
+                            count: unreadCount,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+
     return BlocProvider.value(
       value: _notificationsCubit,
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (previous, current) =>
             previous.currentWorkspace?.id != current.currentWorkspace?.id,
         listener: (context, state) => _syncWorkspace(state.currentWorkspace),
-        child: BlocListener<AuthCubit, AuthState>(
-          listenWhen: (previous, current) =>
-              previous.user?.id != current.user?.id,
-          listener: (context, state) {
-            unawaited(_notificationsCubit.refreshUnreadCount());
-          },
-          child: BlocBuilder<NotificationsCubit, NotificationsState>(
-            builder: (context, state) {
-              final unreadCount = state.unreadCount;
-
-              return Semantics(
-                button: true,
-                label: context.l10n.notificationsTitle,
-                child: SizedBox(
-                  key: const ValueKey('notifications-action-button'),
-                  width: 40,
-                  height: 40,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Positioned.fill(
-                        child: shad.IconButton.ghost(
-                          icon: Icon(
-                            unreadCount > 0
-                                ? Icons.notifications_active_outlined
-                                : Icons.notifications_none_rounded,
-                            size: 21,
-                          ),
-                          onPressed: _openPage,
-                        ),
-                      ),
-                      if (unreadCount > 0)
-                        Positioned(
-                          top: 3,
-                          right: 4,
-                          child: IgnorePointer(
-                            child: _UnreadBadge(
-                              key: const ValueKey('notifications-unread-badge'),
-                              count: unreadCount,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
+        child: authCubit == null
+            ? notificationsButton
+            : BlocListener<AuthCubit, AuthState>(
+                bloc: authCubit,
+                listenWhen: (previous, current) =>
+                    previous.user?.id != current.user?.id,
+                listener: (context, state) {
+                  unawaited(_notificationsCubit.refreshUnreadCount());
+                },
+                child: notificationsButton,
+              ),
       ),
     );
   }

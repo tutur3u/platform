@@ -50,14 +50,16 @@ class _AccountSwitcherSheetState extends State<_AccountSwitcherSheet> {
 
   Future<void> _removeAccount(StoredAuthAccount account) async {
     final dialogContext = context;
-    final emailLabel = account.email?.trim().isNotEmpty == true
+    final accountLabel = account.displayName?.trim().isNotEmpty == true
+        ? account.displayName!
+        : account.email?.trim().isNotEmpty == true
         ? account.email!
         : account.id;
 
     final confirmed = await showSettingsConfirmationDialog(
       context: dialogContext,
       title: dialogContext.l10n.authRemoveAccount,
-      description: dialogContext.l10n.authRemoveAccountConfirm(emailLabel),
+      description: dialogContext.l10n.authRemoveAccountConfirm(accountLabel),
       confirmLabel: dialogContext.l10n.authRemoveAccount,
       icon: Icons.delete_outline_rounded,
       isDestructive: true,
@@ -125,7 +127,10 @@ class _AccountSwitcherSheetState extends State<_AccountSwitcherSheet> {
     setState(() => _loggingOutAccountId = account.id);
 
     final authCubit = context.read<AuthCubit>();
-    final success = await authCubit.signOutCurrentAccount();
+    final isActiveAccount = authCubit.state.activeAccountId == account.id;
+    final success = isActiveAccount
+        ? await authCubit.signOutCurrentAccount()
+        : await authCubit.removeAccount(account.id);
 
     if (!mounted) {
       return;

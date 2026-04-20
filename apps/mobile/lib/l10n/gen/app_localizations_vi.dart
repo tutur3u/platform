@@ -156,8 +156,8 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authRemoveAccount => 'Xóa tài khoản';
 
   @override
-  String authRemoveAccountConfirm(Object email) {
-    return 'Xóa $email khỏi thiết bị này? Tài khoản sẽ đăng xuất tại đây. Các tài khoản đã lưu khác vẫn ở trên thiết bị.';
+  String authRemoveAccountConfirm(Object name) {
+    return 'Xóa $name khỏi thiết bị này? Bạn sẽ cần đăng nhập lại.';
   }
 
   @override

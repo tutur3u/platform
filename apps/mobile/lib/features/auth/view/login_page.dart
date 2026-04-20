@@ -38,6 +38,8 @@ class _LoginPageState extends State<LoginPage> {
   static const _stepTransitionDuration = Duration(milliseconds: 420);
   static const _otpAvailabilityGracePeriod = Duration(seconds: 3);
   static const _androidBackChannel = MethodChannel('mobile/shell_back');
+  static const _androidDefaultExitMessage = 'Press back again to exit';
+  static const _androidDefaultExitHintMessage = 'Press back again to exit app';
 
   final _emailController = TextEditingController(
     text: Env.isDevelopment ? 'local@tuturuuu.com' : '',
@@ -327,14 +329,15 @@ class _LoginPageState extends State<LoginPage> {
     unawaited(
       _androidBackChannel.invokeMethod<void>('updateState', {
         'route': '/',
-        'exitMessage': '',
-        'exitHintMessage': '',
+        'exitMessage': _androidDefaultExitMessage,
+        'exitHintMessage': _androidDefaultExitHintMessage,
       }),
     );
   }
 
   Future<void> _onCancelAddAccount() async {
     final authCubit = context.read<AuthCubit>();
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
     final ok = await authCubit.cancelAddAccountFlow();
     if (!mounted) {
       return;
@@ -343,7 +346,6 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
     final message = authCubit.state.error;
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
     if (!toastContext.mounted) {
       return;
     }

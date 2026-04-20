@@ -680,8 +680,11 @@ class AuthCubit extends Cubit<AuthState> {
   Future<bool> removeAccount(String accountId) async {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final previousUserId = state.user?.id;
-    await _clearInMemoryFeatureCaches(userId: previousUserId);
-    await _onBeforeSignOut?.call();
+    final removingActiveAccount = previousUserId == accountId;
+    if (removingActiveAccount) {
+      await _clearInMemoryFeatureCaches(userId: previousUserId);
+      await _onBeforeSignOut?.call();
+    }
     if (isClosed) return false;
     final result = await _repo.removeStoredAccount(accountId);
     if (isClosed) return false;
@@ -753,6 +756,39 @@ class AuthCubit extends Cubit<AuthState> {
       await CacheStore.instance.clearScope(userId: previousUserId);
     }
 
+    final newUser = await _repo.getCurrentUser();
+    if (isClosed) return false;
+    if (newUser != null) {
+      if (_repo.checkMfaRequired()) {
+        emit(
+          AuthState.mfaRequired(newUser).copyWith(
+            isLoading: true,
+            isAddAccountFlow: state.isAddAccountFlow,
+            accounts: state.accounts,
+            activeAccountId: state.activeAccountId,
+          ),
+        );
+      } else {
+        emit(
+          AuthState.authenticated(newUser).copyWith(
+            isLoading: true,
+            isAddAccountFlow: state.isAddAccountFlow,
+            accounts: state.accounts,
+            activeAccountId: state.activeAccountId,
+          ),
+        );
+      }
+    } else {
+      emit(
+        const AuthState.unauthenticated().copyWith(
+          isLoading: true,
+          isAddAccountFlow: state.isAddAccountFlow,
+          accounts: state.accounts,
+          activeAccountId: state.activeAccountId,
+        ),
+      );
+    }
+
     await _reloadStoredAccounts();
     if (isClosed) return false;
     emit(state.copyWith(isLoading: false, error: null, errorCode: null));
@@ -784,7 +820,7 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> _clearInMemoryFeatureCaches({String? userId}) async {
     FinanceCubit.clearUserCache(userId);
-    if (userId == null || userId.isEmpty) {
+    if (userId?.isEmpty ?? false) {
       FinanceCubit.clearUserCache(null);
     }
     WalletsPage.clearCache();

@@ -44,7 +44,15 @@ class AuthScaffold extends StatelessWidget {
                         children: [
                           const Icon(Icons.arrow_back),
                           const SizedBox(width: 8),
-                          Text(backButtonLabel!),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 140),
+                            child: Text(
+                              backButtonLabel!,
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
                       ),
               ),
@@ -71,9 +79,9 @@ class AuthScaffold extends StatelessWidget {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     minHeight: constraints.maxHeight,
-                    minWidth: constraints.maxWidth,
                   ),
-                  child: IntrinsicHeight(
+                  child: Align(
+                    alignment: Alignment.topCenter,
                     child: ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: maxFormW),
                       child: Column(

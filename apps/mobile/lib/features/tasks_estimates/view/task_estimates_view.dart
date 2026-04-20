@@ -87,6 +87,8 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
               final wsId = state.currentWorkspace?.id;
               if (wsId != null) {
                 _permissionsWorkspaceId = wsId;
+                _canManageProjects = false;
+                _hasResolvedPermissions = false;
                 unawaited(_loadPermissions());
                 unawaited(context.read<TaskEstimatesCubit>().loadBoards(wsId));
                 unawaited(context.read<TaskLabelsCubit>().loadLabels(wsId));
@@ -105,6 +107,9 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
               if (wsId == null || wsId.isEmpty) {
                 return;
               }
+              _permissionsWorkspaceId = wsId;
+              _canManageProjects = false;
+              _hasResolvedPermissions = false;
               unawaited(_loadPermissions());
               unawaited(context.read<TaskEstimatesCubit>().loadBoards(wsId));
               unawaited(

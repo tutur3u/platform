@@ -156,8 +156,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authRemoveAccount => 'Remove account';
 
   @override
-  String authRemoveAccountConfirm(Object email) {
-    return 'Remove $email from this device? This signs it out here. Other saved accounts stay on this device.';
+  String authRemoveAccountConfirm(Object name) {
+    return 'Remove $name from this device? You\'ll need to sign in again.';
   }
 
   @override

@@ -65,10 +65,10 @@
     "authSwitchAccountFailed": "Không thể chuyển tài khoản.",
     "authSwitchAccountSuccess": "Đã chuyển tài khoản.",
     "authRemoveAccount": "Xóa tài khoản",
-    "authRemoveAccountConfirm": "Xóa {email} khỏi thiết bị này? Tài khoản sẽ đăng xuất tại đây. Các tài khoản đã lưu khác vẫn ở trên thiết bị.",
+    "authRemoveAccountConfirm": "Xóa {name} khỏi thiết bị này? Bạn sẽ cần đăng nhập lại.",
     "@authRemoveAccountConfirm": {
         "placeholders": {
-            "email": {}
+            "name": {}
         }
     },
     "authRemoveAccountFailed": "Không thể xóa tài khoản này.",

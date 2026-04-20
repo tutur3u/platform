@@ -376,8 +376,8 @@ abstract class AppLocalizations {
   /// No description provided for @authRemoveAccountConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Remove {email} from this device? This signs it out here. Other saved accounts stay on this device.'**
-  String authRemoveAccountConfirm(Object email);
+  /// **'Remove {name} from this device? You\'ll need to sign in again.'**
+  String authRemoveAccountConfirm(Object name);
 
   /// No description provided for @authRemoveAccountFailed.
   ///

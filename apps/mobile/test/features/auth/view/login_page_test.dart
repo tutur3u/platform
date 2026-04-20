@@ -1,4 +1,5 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -137,33 +138,44 @@ void main() {
     testWidgets('reports add-account route to Android back channel', (
       tester,
     ) async {
-      const state = AuthState.unauthenticated();
-      when(() => authCubit.state).thenReturn(state);
-      whenListen(
-        authCubit,
-        const Stream<AuthState>.empty(),
-        initialState: state,
-      );
+      final previousPlatformOverride = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      try {
+        final binding = TestWidgetsFlutterBinding.ensureInitialized();
 
-      await tester.pumpApp(
-        MultiBlocProvider(
-          providers: [
-            BlocProvider.value(value: authCubit),
-            BlocProvider.value(value: appVersionCubit),
-          ],
-          child: const LoginPage(addAccountMode: true),
-        ),
-      );
-      await tester.pump();
+        const state = AuthState.unauthenticated();
+        when(() => authCubit.state).thenReturn(state);
+        whenListen(
+          authCubit,
+          const Stream<AuthState>.empty(),
+          initialState: state,
+        );
 
-      expect(
-        androidBackCalls.where((call) => call.method == 'updateState'),
-        isNotEmpty,
-      );
-      expect(
-        androidBackCalls.last.arguments,
-        containsPair('route', '/add-account'),
-      );
+        await tester.pumpApp(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: authCubit),
+              BlocProvider.value(value: appVersionCubit),
+            ],
+            child: const LoginPage(addAccountMode: true),
+          ),
+        );
+        await tester.pump();
+        await binding.runAsync(() async {
+          await Future<void>.delayed(Duration.zero);
+        });
+
+        final updateCalls = androidBackCalls.where(
+          (call) => call.method == 'updateState',
+        );
+        expect(updateCalls, isNotEmpty);
+        expect(
+          updateCalls.last.arguments,
+          containsPair('route', '/add-account'),
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = previousPlatformOverride;
+      }
     });
 
     testWidgets('disables social buttons while auth is busy', (tester) async {

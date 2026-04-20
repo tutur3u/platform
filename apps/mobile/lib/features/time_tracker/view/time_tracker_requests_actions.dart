@@ -167,11 +167,9 @@ extension _RequestsViewActions on _RequestsViewState {
         _statusChangeGracePeriodMinutes = 0;
         _isThresholdLoading = false;
       });
-      unawaited(
-        _loadRequests(
-          wsIdOverride: wsId,
-          forceRefresh: forceRefreshRequests,
-        ),
+      await _loadRequests(
+        wsIdOverride: wsId,
+        forceRefresh: forceRefreshRequests,
       );
       return;
     }
@@ -276,11 +274,9 @@ extension _RequestsViewActions on _RequestsViewState {
         _statusChangeGracePeriodMinutes = 0;
         _isThresholdLoading = false;
       });
-      unawaited(
-        _loadRequests(
-          wsIdOverride: wsId,
-          forceRefresh: forceRefreshRequests,
-        ),
+      await _loadRequests(
+        wsIdOverride: wsId,
+        forceRefresh: forceRefreshRequests,
       );
       return;
     }
@@ -303,8 +299,9 @@ extension _RequestsViewActions on _RequestsViewState {
       _statusChangeGracePeriodMinutes = statusChangeGracePeriodMinutes;
       _isThresholdLoading = false;
     });
-    unawaited(
-      _loadRequests(wsIdOverride: wsId, forceRefresh: forceRefreshRequests),
+    await _loadRequests(
+      wsIdOverride: wsId,
+      forceRefresh: forceRefreshRequests,
     );
   }
 

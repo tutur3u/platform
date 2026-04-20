@@ -65,10 +65,10 @@
     "authSwitchAccountFailed": "Couldn't switch account.",
     "authSwitchAccountSuccess": "Switched account.",
     "authRemoveAccount": "Remove account",
-    "authRemoveAccountConfirm": "Remove {email} from this device? This signs it out here. Other saved accounts stay on this device.",
+    "authRemoveAccountConfirm": "Remove {name} from this device? You'll need to sign in again.",
     "@authRemoveAccountConfirm": {
         "placeholders": {
-            "email": {}
+            "name": {}
         }
     },
     "authRemoveAccountFailed": "Couldn't remove this account.",

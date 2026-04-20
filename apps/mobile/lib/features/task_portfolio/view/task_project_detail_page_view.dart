@@ -59,6 +59,19 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
               }
             },
           ),
+          BlocListener<AuthCubit, AuthState>(
+            listenWhen: (prev, curr) => prev.user?.id != curr.user?.id,
+            listener: (context, _) {
+              final wsId = context
+                  .read<WorkspaceCubit>()
+                  .state
+                  .currentWorkspace
+                  ?.id;
+              if (wsId != null) {
+                unawaited(context.read<TaskPortfolioCubit>().load(wsId));
+              }
+            },
+          ),
         ],
         child: BlocBuilder<TaskPortfolioCubit, TaskPortfolioState>(
           builder: (context, state) {
