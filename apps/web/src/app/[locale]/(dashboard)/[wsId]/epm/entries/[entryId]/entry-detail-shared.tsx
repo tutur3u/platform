@@ -14,21 +14,45 @@ import type { ComponentProps } from 'react';
 import type { EpmStrings } from '../../epm-strings';
 
 export type EntryFormState = {
+  category: string;
   scheduledFor: string;
   slug: string;
   status: ExternalProjectEntry['status'];
   subtitle: string;
+  tags: string[];
   title: string;
 };
+
+function asProfileDataRecord(
+  value: ExternalProjectEntry['profile_data'] | null | undefined
+) {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function asStringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value
+        .filter((item): item is string => typeof item === 'string')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0)
+    : [];
+}
 
 export function buildEntryFormState(
   entry: ExternalProjectEntry
 ): EntryFormState {
+  const profileData = asProfileDataRecord(entry.profile_data);
+
   return {
+    category:
+      typeof profileData.category === 'string' ? profileData.category : '',
     scheduledFor: toDateTimeLocalValue(entry.scheduled_for),
     slug: entry.slug,
     status: entry.status,
     subtitle: entry.subtitle ?? '',
+    tags: asStringArray(profileData.tags),
     title: entry.title,
   };
 }

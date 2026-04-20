@@ -15,6 +15,20 @@ export type EpmStrings = {
   bulkSelectionHint: string;
   bulkUploadMediaAction: string;
   cancelAction: string;
+  categoryClearAction: string;
+  categoryCreateAction: string;
+  categoryCreateHint: string;
+  categoryCreatePlaceholder: string;
+  categoryDescription: string;
+  categoryExistingDescription: string;
+  categoryLibraryDescription: string;
+  categoryLibraryEmpty: string;
+  categoryLibraryLabel: string;
+  categoryLabel: string;
+  categoryActiveHint: string;
+  categoryPickerPlaceholder: string;
+  categoryPlaceholder: string;
+  categorySearchPlaceholder: string;
   captionLabel: string;
   captionPlaceholder: string;
   carouselInteractionHint: string;
@@ -156,6 +170,21 @@ export type EpmStrings = {
   statusScheduled: string;
   subtitleLabel: string;
   summaryLabel: string;
+  tagsClearAction: string;
+  tagsCreateAction: string;
+  tagsCreateHint: string;
+  tagsCreatePlaceholder: string;
+  tagsDescription: string;
+  tagsEmpty: string;
+  tagsExistingDescription: string;
+  tagLibraryDescription: string;
+  tagLibraryEmpty: string;
+  tagLibraryLabel: string;
+  tagsLabel: string;
+  tagsPickerPlaceholder: string;
+  tagsPlaceholder: string;
+  tagsRemoveAction: string;
+  tagsSearchPlaceholder: string;
   tabsDescription: string;
   title: string;
   titleLabel: string;
@@ -189,6 +218,20 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     bulkSelectionHint: t('epm.bulk_selection_hint'),
     bulkUploadMediaAction: t('epm.bulk_upload_media_action'),
     cancelAction: t('epm.cancel_action'),
+    categoryActiveHint: t('epm.category_active_hint'),
+    categoryClearAction: t('epm.category_clear_action'),
+    categoryCreateAction: t('epm.category_create_action'),
+    categoryCreateHint: t('epm.category_create_hint'),
+    categoryCreatePlaceholder: t('epm.category_create_placeholder'),
+    categoryDescription: t('epm.category_description'),
+    categoryExistingDescription: t('epm.category_existing_description'),
+    categoryLibraryDescription: t('epm.category_library_description'),
+    categoryLibraryEmpty: t('epm.category_library_empty'),
+    categoryLibraryLabel: t('epm.category_library_label'),
+    categoryLabel: t('epm.category_label'),
+    categoryPickerPlaceholder: t('epm.category_picker_placeholder'),
+    categoryPlaceholder: t('epm.category_placeholder'),
+    categorySearchPlaceholder: t('epm.category_search_placeholder'),
     captionLabel: t('epm.caption_label'),
     captionPlaceholder: t('epm.caption_placeholder'),
     carouselInteractionHint: t('epm.carousel_interaction_hint'),
@@ -346,6 +389,21 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     statusScheduled: t('epm.status_scheduled'),
     subtitleLabel: t('epm.subtitle_label'),
     summaryLabel: t('epm.summary_label'),
+    tagsClearAction: t('epm.tags_clear_action'),
+    tagsCreateAction: t('epm.tags_create_action'),
+    tagsCreateHint: t('epm.tags_create_hint'),
+    tagsCreatePlaceholder: t('epm.tags_create_placeholder'),
+    tagsDescription: t('epm.tags_description'),
+    tagsEmpty: t('epm.tags_empty'),
+    tagsExistingDescription: t('epm.tags_existing_description'),
+    tagLibraryDescription: t('epm.tag_library_description'),
+    tagLibraryEmpty: t('epm.tag_library_empty'),
+    tagLibraryLabel: t('epm.tag_library_label'),
+    tagsLabel: t('epm.tags_label'),
+    tagsPickerPlaceholder: t('epm.tags_picker_placeholder'),
+    tagsPlaceholder: t('epm.tags_placeholder'),
+    tagsRemoveAction: t('epm.tags_remove_action'),
+    tagsSearchPlaceholder: t('epm.tags_search_placeholder'),
     tabsDescription: t('epm.tabs_description'),
     title: t('epm.title'),
     titleLabel: t('epm.title_label'),

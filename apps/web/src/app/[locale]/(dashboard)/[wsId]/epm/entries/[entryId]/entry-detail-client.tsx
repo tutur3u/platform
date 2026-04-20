@@ -4,14 +4,22 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/react';
 import {
   ArrowLeft,
+  Check,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Copy,
   Eye,
   ImagePlus,
+  ListOrdered,
   Loader2,
   Pencil,
+  Plus,
   RefreshCw,
+  Sparkles,
+  Tags,
   Trash2,
+  X,
 } from '@tuturuuu/icons';
 import {
   createWorkspaceExternalProjectAsset,
@@ -58,7 +66,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import {
   Dialog,
   DialogContent,
@@ -152,6 +160,38 @@ function asStringArray(value: unknown) {
 
 function dedupeStrings(values: string[]) {
   return [...new Set(values)];
+}
+
+function normalizeEntryCategory(value: unknown) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function normalizeEntryTags(value: unknown) {
+  return dedupeStrings(asStringArray(value));
+}
+
+function normalizeTaxonomyOptions(value: unknown) {
+  return dedupeStrings(
+    asStringArray(value)
+      .map((item) => item.trim())
+      .filter(Boolean)
+  );
+}
+
+function mergeTaxonomyOptions(current: string[], additions: string[]) {
+  return dedupeStrings([
+    ...current,
+    ...additions.map((value) => value.trim()).filter(Boolean),
+  ]);
+}
+
+function parseTaxonomyDraft(value: string) {
+  return dedupeStrings(
+    value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+  );
 }
 
 function areStringArraysEqual(left: string[], right: string[]) {
@@ -293,9 +333,29 @@ export function EntryDetailClient({
           .toLowerCase()
       )
     ) ?? null;
+  const singletonSectionEntries = useMemo(
+    () =>
+      singletonSectionCollection
+        ? entries.filter(
+            (entry) => entry.collection_id === singletonSectionCollection.id
+          )
+        : [],
+    [entries, singletonSectionCollection]
+  );
+  const singletonSectionEntryBySlug = useMemo(
+    () =>
+      new Map(
+        singletonSectionEntries.map((entry) => [entry.slug, entry] as const)
+      ),
+    [singletonSectionEntries]
+  );
   const [entryForm, setEntryForm] = useState(() =>
     activeEntry ? buildEntryFormState(activeEntry) : null
   );
+  const [categoryDraft, setCategoryDraft] = useState('');
+  const [categoryCreateOpen, setCategoryCreateOpen] = useState(false);
+  const [tagDraft, setTagDraft] = useState('');
+  const [tagCreateOpen, setTagCreateOpen] = useState(false);
   const [descriptionContent, setDescriptionContent] =
     useState<JSONContent | null>(() =>
       getEntryDescriptionEditorContent(activeEntry?.summary)
@@ -318,6 +378,86 @@ export function EntryDetailClient({
       .filter(Boolean)
       .join(' ')
       .toLowerCase()
+  );
+  const taxonomySectionConfig = useMemo(() => {
+    if (!activeEntry) {
+      return null;
+    }
+
+    if (isSingletonSectionEntry && activeEntry.slug === 'gallery') {
+      return {
+        isConfigEditor: true,
+        sectionEntry: activeEntry,
+        sectionSlug: 'gallery',
+        sectionTitle: 'Gallery',
+      };
+    }
+
+    if (isSingletonSectionEntry && activeEntry.slug === 'writing') {
+      return {
+        isConfigEditor: true,
+        sectionEntry: activeEntry,
+        sectionSlug: 'writing',
+        sectionTitle: 'Writing',
+      };
+    }
+
+    if (
+      activeCollection?.id === artworkCollection?.id &&
+      singletonSectionCollection
+    ) {
+      return {
+        isConfigEditor: false,
+        sectionEntry: singletonSectionEntryBySlug.get('gallery') ?? null,
+        sectionSlug: 'gallery',
+        sectionTitle: 'Gallery',
+      };
+    }
+
+    if (
+      activeCollection?.id === loreCollection?.id &&
+      singletonSectionCollection
+    ) {
+      return {
+        isConfigEditor: false,
+        sectionEntry: singletonSectionEntryBySlug.get('writing') ?? null,
+        sectionSlug: 'writing',
+        sectionTitle: 'Writing',
+      };
+    }
+
+    return null;
+  }, [
+    activeCollection?.id,
+    activeEntry,
+    artworkCollection?.id,
+    isSingletonSectionEntry,
+    loreCollection?.id,
+    singletonSectionCollection,
+    singletonSectionEntryBySlug,
+  ]);
+  const isTaxonomyConfigEditor = taxonomySectionConfig?.isConfigEditor ?? false;
+  const initialConfiguredCategories = useMemo(
+    () =>
+      normalizeTaxonomyOptions(
+        asProfileDataRecord(taxonomySectionConfig?.sectionEntry?.profile_data)
+          .categoryOptions
+      ),
+    [taxonomySectionConfig?.sectionEntry?.profile_data]
+  );
+  const initialConfiguredTags = useMemo(
+    () =>
+      normalizeTaxonomyOptions(
+        asProfileDataRecord(taxonomySectionConfig?.sectionEntry?.profile_data)
+          .tagOptions
+      ),
+    [taxonomySectionConfig?.sectionEntry?.profile_data]
+  );
+  const [configuredCategoryOptions, setConfiguredCategoryOptions] = useState<
+    string[]
+  >([]);
+  const [configuredTagOptions, setConfiguredTagOptions] = useState<string[]>(
+    []
   );
   const featuredEntryConfig = useMemo(() => {
     if (!isSingletonSectionEntry || !activeEntry) {
@@ -365,13 +505,6 @@ export function EntryDetailClient({
     strings.featuredWritingEntriesDescription,
     strings.featuredWritingEntriesLabel,
   ]);
-  const featuredEntryOptionsBySlug = useMemo(
-    () =>
-      new Map(
-        (featuredEntryConfig?.options ?? []).map((entry) => [entry.slug, entry])
-      ),
-    [featuredEntryConfig]
-  );
   const initialFeaturedEntrySlugs = useMemo(() => {
     if (!featuredEntryConfig) {
       return [];
@@ -392,14 +525,6 @@ export function EntryDetailClient({
       return null;
     }
 
-    const sectionEntryBySlug = new Map(
-      entries
-        .filter(
-          (entry) => entry.collection_id === singletonSectionCollection.id
-        )
-        .map((entry) => [entry.slug, entry] as const)
-    );
-
     if (activeCollection.id === artworkCollection?.id) {
       return {
         cleanupKeys: [
@@ -413,7 +538,7 @@ export function EntryDetailClient({
         featuredLabel: strings.featuredPlacementGalleryLabel,
         sectionSlug: 'gallery',
         sectionTitle: 'Gallery',
-        sectionEntry: sectionEntryBySlug.get('gallery') ?? null,
+        sectionEntry: singletonSectionEntryBySlug.get('gallery') ?? null,
       };
     }
 
@@ -432,7 +557,7 @@ export function EntryDetailClient({
         featuredLabel: strings.featuredPlacementWritingLabel,
         sectionSlug: 'writing',
         sectionTitle: 'Writing',
-        sectionEntry: sectionEntryBySlug.get('writing') ?? null,
+        sectionEntry: singletonSectionEntryBySlug.get('writing') ?? null,
       };
     }
 
@@ -441,9 +566,9 @@ export function EntryDetailClient({
     activeCollection,
     activeEntry,
     artworkCollection?.id,
-    entries,
     loreCollection?.id,
     singletonSectionCollection,
+    singletonSectionEntryBySlug,
     strings.featuredPlacementArtworkDescription,
     strings.featuredPlacementGalleryLabel,
     strings.featuredPlacementSectionMissing,
@@ -468,6 +593,43 @@ export function EntryDetailClient({
     ? featuredPlacementSlugs.indexOf(activeEntry.slug)
     : -1;
   const isFeaturedPlacementActive = featuredPlacementIndex >= 0;
+  const categoryOptions = useMemo(
+    () =>
+      (isTaxonomyConfigEditor
+        ? configuredCategoryOptions
+        : mergeTaxonomyOptions(
+            configuredCategoryOptions,
+            entryForm?.category ? [entryForm.category] : []
+          )
+      ).map((category) => ({
+        description: strings.categoryExistingDescription,
+        label: category,
+        value: category,
+      })),
+    [
+      configuredCategoryOptions,
+      entryForm?.category,
+      isTaxonomyConfigEditor,
+      strings.categoryExistingDescription,
+    ]
+  );
+  const tagOptions = useMemo(
+    () =>
+      (isTaxonomyConfigEditor
+        ? configuredTagOptions
+        : mergeTaxonomyOptions(configuredTagOptions, entryForm?.tags ?? [])
+      ).map((tag) => ({
+        description: strings.tagsExistingDescription,
+        label: tag,
+        value: tag,
+      })),
+    [
+      configuredTagOptions,
+      entryForm?.tags,
+      isTaxonomyConfigEditor,
+      strings.tagsExistingDescription,
+    ]
+  );
 
   const previewQuery = useExternalProjectLivePreview({
     enabled: previewOpen,
@@ -495,6 +657,13 @@ export function EntryDetailClient({
     );
   const supportsPairedVisual =
     Boolean(supportsMarkdownBody) && artworkOptions.length > 0;
+  const taxonomyConfigDirty =
+    Boolean(taxonomySectionConfig) &&
+    (!areStringArraysEqual(
+      configuredCategoryOptions,
+      initialConfiguredCategories
+    ) ||
+      !areStringArraysEqual(configuredTagOptions, initialConfiguredTags));
 
   const entryDirty =
     !!activeEntry &&
@@ -506,6 +675,17 @@ export function EntryDetailClient({
         serializeEntryDescriptionContent(
           parseEntryDescriptionContent(activeEntry.summary)
         ) ||
+      (!isTaxonomyConfigEditor &&
+        entryForm.category !==
+          normalizeEntryCategory(
+            asProfileDataRecord(activeEntry.profile_data).category
+          )) ||
+      (!isTaxonomyConfigEditor &&
+        !areStringArraysEqual(
+          entryForm.tags,
+          normalizeEntryTags(asProfileDataRecord(activeEntry.profile_data).tags)
+        )) ||
+      taxonomyConfigDirty ||
       (supportsPairedVisual
         ? pairedArtworkSlug !==
           ((asProfileDataRecord(activeEntry.profile_data).artworkSlug as
@@ -551,7 +731,19 @@ export function EntryDetailClient({
     }
 
     setEntryForm(buildEntryFormState(activeEntry));
+    setCategoryDraft('');
+    setCategoryCreateOpen(false);
+    setTagDraft('');
+    setTagCreateOpen(false);
   }, [activeEntry]);
+
+  useEffect(() => {
+    setConfiguredCategoryOptions(initialConfiguredCategories);
+  }, [initialConfiguredCategories]);
+
+  useEffect(() => {
+    setConfiguredTagOptions(initialConfiguredTags);
+  }, [initialConfiguredTags]);
 
   useEffect(() => {
     setDescriptionContent(
@@ -676,11 +868,42 @@ export function EntryDetailClient({
       let currentProfileData = {
         ...asProfileDataRecord(activeEntry.profile_data),
       };
+      const taxonomyProfileData = {
+        ...asProfileDataRecord(
+          taxonomySectionConfig?.sectionEntry?.profile_data
+        ),
+      };
+
+      if (configuredCategoryOptions.length > 0) {
+        taxonomyProfileData.categoryOptions = configuredCategoryOptions;
+      } else {
+        delete taxonomyProfileData.categoryOptions;
+      }
+
+      if (configuredTagOptions.length > 0) {
+        taxonomyProfileData.tagOptions = configuredTagOptions;
+      } else {
+        delete taxonomyProfileData.tagOptions;
+      }
 
       if (supportsPairedVisual && pairedArtworkSlug !== '__none__') {
         currentProfileData.artworkSlug = pairedArtworkSlug;
       } else {
         delete currentProfileData.artworkSlug;
+      }
+
+      if (!isTaxonomyConfigEditor && entryForm.category.trim()) {
+        currentProfileData.category = entryForm.category.trim();
+      } else {
+        delete currentProfileData.category;
+      }
+
+      if (!isTaxonomyConfigEditor && entryForm.tags.length > 0) {
+        currentProfileData.tags = dedupeStrings(
+          entryForm.tags.map((tag) => tag.trim()).filter(Boolean)
+        );
+      } else {
+        delete currentProfileData.tags;
       }
 
       if (featuredEntryConfig) {
@@ -698,18 +921,62 @@ export function EntryDetailClient({
         });
       }
 
-      return updateWorkspaceExternalProjectEntry(workspaceId, activeEntry.id, {
-        profile_data: currentProfileData as Json,
-        scheduled_for: fromDateTimeLocalValue(entryForm.scheduledFor),
-        slug: entryForm.slug.trim(),
-        status: entryForm.status,
-        subtitle: entryForm.subtitle.trim() || null,
-        summary: normalizedDescription,
-        title: entryForm.title.trim(),
-      });
+      if (isTaxonomyConfigEditor) {
+        currentProfileData = {
+          ...currentProfileData,
+          ...taxonomyProfileData,
+        };
+      }
+
+      const nextEntries = [
+        await updateWorkspaceExternalProjectEntry(workspaceId, activeEntry.id, {
+          profile_data: currentProfileData as Json,
+          scheduled_for: fromDateTimeLocalValue(entryForm.scheduledFor),
+          slug: entryForm.slug.trim(),
+          status: entryForm.status,
+          subtitle: entryForm.subtitle.trim() || null,
+          summary: normalizedDescription,
+          title: entryForm.title.trim(),
+        }),
+      ];
+
+      if (
+        !isTaxonomyConfigEditor &&
+        taxonomyConfigDirty &&
+        taxonomySectionConfig
+      ) {
+        if (taxonomySectionConfig.sectionEntry) {
+          nextEntries.push(
+            await updateWorkspaceExternalProjectEntry(
+              workspaceId,
+              taxonomySectionConfig.sectionEntry.id,
+              {
+                profile_data: taxonomyProfileData as Json,
+              }
+            )
+          );
+        } else if (singletonSectionCollection) {
+          nextEntries.push(
+            await createWorkspaceExternalProjectEntry(workspaceId, {
+              collection_id: singletonSectionCollection.id,
+              metadata: {},
+              profile_data: taxonomyProfileData as Json,
+              slug: taxonomySectionConfig.sectionSlug,
+              status: 'draft',
+              subtitle: null,
+              summary: null,
+              title: taxonomySectionConfig.sectionTitle,
+            })
+          );
+        }
+      }
+
+      return nextEntries;
     },
-    onSuccess: (entry) => {
-      mergeEntry(entry);
+    onSuccess: (updatedEntries) => {
+      updatedEntries.forEach((entry) => {
+        mergeEntry(entry);
+      });
       toast.success(strings.saveAction);
     },
   });
@@ -1119,6 +1386,134 @@ export function EntryDetailClient({
     );
   };
 
+  const removeEntryTag = (tag: string) => {
+    setEntryForm((current) =>
+      current
+        ? {
+            ...current,
+            tags: current.tags.filter((value) => value !== tag),
+          }
+        : current
+    );
+  };
+
+  const clearEntryTags = () => {
+    setEntryForm((current) =>
+      current
+        ? {
+            ...current,
+            tags: [],
+          }
+        : current
+    );
+  };
+
+  const applyEntryCategory = (value: string) => {
+    const nextCategory = value.trim();
+    if (!nextCategory) {
+      setCategoryDraft('');
+      return;
+    }
+
+    setConfiguredCategoryOptions((current) =>
+      mergeTaxonomyOptions(current, [nextCategory])
+    );
+    if (!isTaxonomyConfigEditor) {
+      setEntryForm((current) =>
+        current
+          ? {
+              ...current,
+              category: nextCategory,
+            }
+          : current
+      );
+    }
+    setCategoryDraft('');
+    setCategoryCreateOpen(false);
+  };
+
+  const addEntryTags = (value: string) => {
+    const nextTags = parseTaxonomyDraft(value);
+
+    if (nextTags.length === 0) return;
+
+    setConfiguredTagOptions((current) =>
+      mergeTaxonomyOptions(current, nextTags)
+    );
+    if (!isTaxonomyConfigEditor) {
+      setEntryForm((current) =>
+        current
+          ? {
+              ...current,
+              tags: dedupeStrings([...current.tags, ...nextTags]),
+            }
+          : current
+      );
+    }
+    setTagDraft('');
+    setTagCreateOpen(false);
+  };
+
+  const removeConfiguredCategory = (category: string) => {
+    setConfiguredCategoryOptions((current) =>
+      current.filter((value) => value !== category)
+    );
+    if (!isTaxonomyConfigEditor) {
+      setEntryForm((current) =>
+        current && current.category === category
+          ? {
+              ...current,
+              category: '',
+            }
+          : current
+      );
+    }
+  };
+
+  const clearConfiguredCategories = () => {
+    setConfiguredCategoryOptions([]);
+    if (!isTaxonomyConfigEditor) {
+      setEntryForm((current) =>
+        current
+          ? {
+              ...current,
+              category: '',
+            }
+          : current
+      );
+    }
+  };
+
+  const removeConfiguredTag = (tag: string) => {
+    setConfiguredTagOptions((current) =>
+      current.filter((value) => value !== tag)
+    );
+    if (!isTaxonomyConfigEditor) {
+      setEntryForm((current) =>
+        current
+          ? {
+              ...current,
+              tags: current.tags.filter((value) => value !== tag),
+            }
+          : current
+      );
+    }
+  };
+
+  const clearConfiguredTags = () => {
+    setConfiguredTagOptions([]);
+    if (!isTaxonomyConfigEditor) {
+      setEntryForm((current) =>
+        current
+          ? {
+              ...current,
+              tags: [],
+            }
+          : current
+      );
+    }
+  };
+
   const moveFeaturedEntry = (slug: string, direction: -1 | 1) => {
     setFeaturedEntrySlugs((current) => {
       const index = current.indexOf(slug);
@@ -1220,12 +1615,13 @@ export function EntryDetailClient({
         onChange={handleMediaInputChange}
       />
 
-      <div className="sticky top-0 z-20 -mx-2 rounded-[1.7rem] border border-border/70 bg-background/95 px-4 py-4 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:mx-0 sm:px-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="max-w-4xl space-y-3">
+      <div className="sticky top-0 z-[60] -mx-2 rounded-[1.45rem] border border-border/70 bg-background/92 px-4 py-3 shadow-sm backdrop-blur-xl supports-[backdrop-filter]:bg-background/78 sm:mx-0 sm:px-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="max-w-4xl space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               {variant === 'page' ? (
                 <Button
+                  size="sm"
                   variant="ghost"
                   onClick={() => router.push(dashboardPath)}
                 >
@@ -1264,17 +1660,17 @@ export function EntryDetailClient({
                 </Badge>
               ) : null}
             </div>
-            <div>
-              <h1 className="font-semibold text-3xl tracking-tight">
+            <div className="space-y-1">
+              <h1 className="font-semibold text-[2rem] leading-none tracking-tight">
                 {activeEntry.title}
               </h1>
-              <p className="mt-2 max-w-2xl text-muted-foreground text-sm leading-6">
+              <p className="max-w-2xl text-muted-foreground text-sm leading-5">
                 {activeEntry.slug}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/70 bg-card/90 p-2">
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/70 bg-card/88 p-1.5">
             <ActionButton
               tooltip={strings.refreshAction}
               size="sm"
@@ -1859,113 +2255,478 @@ export function EntryDetailClient({
                     </Select>
                   </div>
                 ) : null}
-                {featuredEntryConfig ? (
-                  <div className="space-y-3 rounded-[1.1rem] border border-border/70 bg-background/60 p-4">
-                    <div className="space-y-1">
-                      <Label>{featuredEntryConfig.title}</Label>
-                      <p className="text-muted-foreground text-sm">
-                        {featuredEntryConfig.description}
+                <div className="space-y-3 rounded-[1.1rem] border border-border/70 bg-background/60 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="space-y-0.5">
+                      <Label className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="size-6 rounded-md p-0"
+                        >
+                          <ListOrdered className="m-auto h-3.5 w-3.5" />
+                        </Badge>
+                        {isTaxonomyConfigEditor
+                          ? strings.categoryLibraryLabel
+                          : strings.categoryLabel}
+                      </Label>
+                      <p className="text-muted-foreground text-xs leading-5">
+                        {isTaxonomyConfigEditor
+                          ? strings.categoryLibraryDescription
+                          : strings.categoryDescription}
                       </p>
                     </div>
-                    {featuredEntrySlugs.length > 0 ? (
-                      <div className="space-y-2">
-                        {featuredEntrySlugs.map((slug, index) => {
-                          const featuredEntry =
-                            featuredEntryOptionsBySlug.get(slug);
-
-                          if (!featuredEntry) {
-                            return null;
+                    {(
+                      isTaxonomyConfigEditor
+                        ? configuredCategoryOptions.length > 0
+                        : Boolean(entryForm.category)
+                    ) ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={
+                          isTaxonomyConfigEditor
+                            ? clearConfiguredCategories
+                            : () =>
+                                setEntryForm((current) =>
+                                  current
+                                    ? { ...current, category: '' }
+                                    : current
+                                )
+                        }
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        {isTaxonomyConfigEditor
+                          ? strings.categoryClearAction
+                          : strings.categoryClearAction}
+                      </Button>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Combobox
+                      className="min-w-0 flex-1"
+                      mode={isTaxonomyConfigEditor ? 'multiple' : 'single'}
+                      options={categoryOptions}
+                      selected={
+                        isTaxonomyConfigEditor
+                          ? configuredCategoryOptions
+                          : entryForm.category
+                      }
+                      placeholder={strings.categoryPickerPlaceholder}
+                      searchPlaceholder={strings.categorySearchPlaceholder}
+                      createText={strings.categoryCreateAction}
+                      emptyText={strings.emptyEntries}
+                      label={
+                        isTaxonomyConfigEditor &&
+                        configuredCategoryOptions.length > 0 ? (
+                          <span className="truncate">
+                            {configuredCategoryOptions.join(', ')}
+                          </span>
+                        ) : undefined
+                      }
+                      onChange={(value) =>
+                        isTaxonomyConfigEditor
+                          ? Array.isArray(value) &&
+                            setConfiguredCategoryOptions(
+                              normalizeTaxonomyOptions(value)
+                            )
+                          : setEntryForm((current) =>
+                              current && typeof value === 'string'
+                                ? { ...current, category: value }
+                                : current
+                            )
+                      }
+                      onCreate={applyEntryCategory}
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant={categoryCreateOpen ? 'default' : 'outline'}
+                      className="size-9 shrink-0"
+                      onClick={() =>
+                        setCategoryCreateOpen((current) => !current)
+                      }
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span className="sr-only">
+                        {strings.categoryCreateAction}
+                      </span>
+                    </Button>
+                  </div>
+                  {categoryCreateOpen ? (
+                    <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/50 p-2">
+                      <Input
+                        id="entry-category-create"
+                        value={categoryDraft}
+                        placeholder={strings.categoryCreatePlaceholder}
+                        onChange={(event) =>
+                          setCategoryDraft(event.target.value)
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault();
+                            applyEntryCategory(categoryDraft);
                           }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        disabled={!categoryDraft.trim()}
+                        onClick={() => applyEntryCategory(categoryDraft)}
+                      >
+                        <Check className="h-4 w-4" />
+                        <span className="sr-only">
+                          {strings.categoryCreateAction}
+                        </span>
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                          setCategoryCreateOpen(false);
+                          setCategoryDraft('');
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">{strings.cancelAction}</span>
+                      </Button>
+                    </div>
+                  ) : null}
+                  {isTaxonomyConfigEditor ? (
+                    configuredCategoryOptions.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {configuredCategoryOptions.map((category) => (
+                          <button
+                            key={category}
+                            type="button"
+                            className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card px-3 py-1.5 text-sm transition-colors hover:bg-accent/40"
+                            onClick={() => removeConfiguredCategory(category)}
+                          >
+                            <span>{category}</span>
+                            <X className="h-3.5 w-3.5" />
+                            <span className="sr-only">
+                              {strings.categoryClearAction} {category}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-border/70 border-dashed bg-card/50 px-3 py-3 text-muted-foreground text-sm">
+                        {strings.categoryLibraryEmpty}
+                      </div>
+                    )
+                  ) : null}
+                  {!isTaxonomyConfigEditor && entryForm.category ? (
+                    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-card/50 px-3 py-2">
+                      <Badge variant="secondary">{entryForm.category}</Badge>
+                      <span className="text-muted-foreground text-xs">
+                        {strings.categoryActiveHint}
+                      </span>
+                    </div>
+                  ) : null}
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="space-y-0.5">
+                        <Label className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className="size-6 rounded-md p-0"
+                          >
+                            <Tags className="m-auto h-3.5 w-3.5" />
+                          </Badge>
+                          {isTaxonomyConfigEditor
+                            ? strings.tagLibraryLabel
+                            : strings.tagsLabel}
+                        </Label>
+                        <p className="text-muted-foreground text-xs leading-5">
+                          {isTaxonomyConfigEditor
+                            ? strings.tagLibraryDescription
+                            : strings.tagsDescription}
+                        </p>
+                      </div>
+                      {(
+                        isTaxonomyConfigEditor
+                          ? configuredTagOptions.length > 0
+                          : entryForm.tags.length > 0
+                      ) ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={
+                            isTaxonomyConfigEditor
+                              ? clearConfiguredTags
+                              : clearEntryTags
+                          }
+                        >
+                          <X className="mr-2 h-4 w-4" />
+                          {strings.tagsClearAction}
+                        </Button>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Combobox
+                        className="min-w-0 flex-1"
+                        mode="multiple"
+                        options={tagOptions}
+                        selected={
+                          isTaxonomyConfigEditor
+                            ? configuredTagOptions
+                            : entryForm.tags
+                        }
+                        placeholder={strings.tagsPickerPlaceholder}
+                        searchPlaceholder={strings.tagsSearchPlaceholder}
+                        createText={strings.tagsCreateAction}
+                        emptyText={strings.emptyEntries}
+                        label={
+                          (
+                            isTaxonomyConfigEditor
+                              ? configuredTagOptions.length > 0
+                              : entryForm.tags.length > 0
+                          ) ? (
+                            <span className="truncate">
+                              {(isTaxonomyConfigEditor
+                                ? configuredTagOptions
+                                : entryForm.tags
+                              ).join(', ')}
+                            </span>
+                          ) : undefined
+                        }
+                        onChange={(value) =>
+                          isTaxonomyConfigEditor
+                            ? Array.isArray(value) &&
+                              setConfiguredTagOptions(
+                                normalizeTaxonomyOptions(value)
+                              )
+                            : setEntryForm((current) =>
+                                current && Array.isArray(value)
+                                  ? { ...current, tags: value }
+                                  : current
+                              )
+                        }
+                        onCreate={addEntryTags}
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant={tagCreateOpen ? 'default' : 'outline'}
+                        className="size-9 shrink-0"
+                        onClick={() => setTagCreateOpen((current) => !current)}
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span className="sr-only">
+                          {strings.tagsCreateAction}
+                        </span>
+                      </Button>
+                    </div>
+                    {tagCreateOpen ? (
+                      <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/50 p-2">
+                        <Input
+                          id="entry-tag-create"
+                          value={tagDraft}
+                          placeholder={strings.tagsCreatePlaceholder}
+                          onChange={(event) => setTagDraft(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              addEntryTags(tagDraft);
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          size="icon"
+                          disabled={!tagDraft.trim()}
+                          onClick={() => addEntryTags(tagDraft)}
+                        >
+                          <Check className="h-4 w-4" />
+                          <span className="sr-only">
+                            {strings.tagsCreateAction}
+                          </span>
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setTagCreateOpen(false);
+                            setTagDraft('');
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                          <span className="sr-only">
+                            {strings.cancelAction}
+                          </span>
+                        </Button>
+                      </div>
+                    ) : null}
+                    {(
+                      isTaxonomyConfigEditor
+                        ? configuredTagOptions.length > 0
+                        : entryForm.tags.length > 0
+                    ) ? (
+                      <div className="flex flex-wrap gap-2">
+                        {(isTaxonomyConfigEditor
+                          ? configuredTagOptions
+                          : entryForm.tags
+                        ).map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card px-3 py-1.5 text-sm transition-colors hover:bg-accent/40"
+                            onClick={() =>
+                              isTaxonomyConfigEditor
+                                ? removeConfiguredTag(tag)
+                                : removeEntryTag(tag)
+                            }
+                          >
+                            <span>#{tag}</span>
+                            <X className="h-3.5 w-3.5" />
+                            <span className="sr-only">
+                              {strings.tagsRemoveAction} {tag}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-border/70 border-dashed bg-card/50 px-3 py-3 text-muted-foreground text-sm">
+                        {isTaxonomyConfigEditor
+                          ? strings.tagLibraryEmpty
+                          : strings.tagsEmpty}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {featuredEntryConfig ? (
+                  <div className="space-y-3 rounded-[1.1rem] border border-border/70 bg-background/60 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <Label className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className="size-6 rounded-md p-0"
+                          >
+                            <Sparkles className="m-auto h-3.5 w-3.5" />
+                          </Badge>
+                          {featuredEntryConfig.title}
+                        </Label>
+                        <p className="text-muted-foreground text-sm">
+                          {featuredEntryConfig.description}
+                        </p>
+                      </div>
+                      <Badge variant="secondary">
+                        {featuredEntrySlugs.length}
+                      </Badge>
+                    </div>
+                    {featuredEntryConfig.options.length === 0 ? (
+                      <div className="rounded-xl border border-border/70 border-dashed bg-card/50 px-3 py-3 text-muted-foreground text-sm">
+                        {strings.featuredEntriesEmpty}
+                      </div>
+                    ) : (
+                      <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                        {featuredEntryConfig.options.map((option) => {
+                          const selectedIndex = featuredEntrySlugs.indexOf(
+                            option.slug
+                          );
+                          const isSelected = selectedIndex >= 0;
 
                           return (
                             <div
-                              key={slug}
-                              className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/80 px-3 py-2"
+                              key={option.id}
+                              className={cn(
+                                'flex items-center gap-2 rounded-xl border px-2.5 py-2 transition-colors',
+                                isSelected
+                                  ? 'border-primary/40 bg-primary/5'
+                                  : 'border-border/70 bg-card/60'
+                              )}
                             >
-                              <div className="min-w-0 space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="secondary">{index + 1}</Badge>
-                                  <span className="truncate font-medium text-sm">
-                                    {featuredEntry.title}
-                                  </span>
-                                </div>
-                                <div className="truncate text-muted-foreground text-xs">
-                                  {featuredEntry.slug}
-                                </div>
-                              </div>
-                              <div className="flex shrink-0 items-center gap-2">
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="ghost"
-                                  disabled={index === 0}
-                                  onClick={() => moveFeaturedEntry(slug, -1)}
+                              <button
+                                type="button"
+                                className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                                onClick={() =>
+                                  toggleFeaturedEntrySelection(option.slug)
+                                }
+                              >
+                                <span
+                                  className={cn(
+                                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border font-semibold text-xs',
+                                    isSelected
+                                      ? 'border-primary/40 bg-primary text-primary-foreground'
+                                      : 'border-border/70 bg-background/70 text-muted-foreground'
+                                  )}
                                 >
-                                  {strings.previousAction}
-                                </Button>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="ghost"
-                                  disabled={
-                                    index === featuredEntrySlugs.length - 1
-                                  }
-                                  onClick={() => moveFeaturedEntry(slug, 1)}
-                                >
-                                  {strings.nextAction}
-                                </Button>
-                              </div>
+                                  {isSelected ? (
+                                    <Check className="h-4 w-4" />
+                                  ) : (
+                                    <Plus className="h-4 w-4" />
+                                  )}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="truncate font-medium text-sm">
+                                      {option.title}
+                                    </span>
+                                    {isSelected ? (
+                                      <Badge variant="outline">
+                                        {selectedIndex + 1}
+                                      </Badge>
+                                    ) : null}
+                                  </div>
+                                  <div className="truncate text-muted-foreground text-xs">
+                                    {option.subtitle?.trim() || option.slug}
+                                  </div>
+                                </div>
+                              </button>
+                              {isSelected ? (
+                                <div className="flex shrink-0 items-center gap-1">
+                                  <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    className="size-8"
+                                    disabled={selectedIndex === 0}
+                                    onClick={() =>
+                                      moveFeaturedEntry(option.slug, -1)
+                                    }
+                                  >
+                                    <ChevronUp className="h-4 w-4" />
+                                    <span className="sr-only">
+                                      {strings.previousAction}
+                                    </span>
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    className="size-8"
+                                    disabled={
+                                      selectedIndex ===
+                                      featuredEntrySlugs.length - 1
+                                    }
+                                    onClick={() =>
+                                      moveFeaturedEntry(option.slug, 1)
+                                    }
+                                  >
+                                    <ChevronDown className="h-4 w-4" />
+                                    <span className="sr-only">
+                                      {strings.nextAction}
+                                    </span>
+                                  </Button>
+                                </div>
+                              ) : null}
                             </div>
                           );
                         })}
                       </div>
-                    ) : (
+                    )}
+                    {featuredEntryConfig.options.length > 0 &&
+                    featuredEntrySlugs.length === 0 ? (
                       <div className="rounded-xl border border-border/70 border-dashed bg-card/50 px-3 py-3 text-muted-foreground text-sm">
                         {strings.featuredEntriesEmpty}
                       </div>
-                    )}
-                    <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-                      {featuredEntryConfig.options.map((option) => {
-                        const selectedIndex = featuredEntrySlugs.indexOf(
-                          option.slug
-                        );
-
-                        return (
-                          <label
-                            key={option.id}
-                            className={cn(
-                              'flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors',
-                              selectedIndex >= 0
-                                ? 'border-primary/40 bg-primary/5'
-                                : 'border-border/70 bg-card/60 hover:bg-accent/40'
-                            )}
-                          >
-                            <Checkbox
-                              checked={selectedIndex >= 0}
-                              className="mt-0.5"
-                              onCheckedChange={() =>
-                                toggleFeaturedEntrySelection(option.slug)
-                              }
-                            />
-                            <div className="min-w-0 flex-1 space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="truncate font-medium text-sm">
-                                  {option.title}
-                                </span>
-                                {selectedIndex >= 0 ? (
-                                  <Badge variant="outline">
-                                    {selectedIndex + 1}
-                                  </Badge>
-                                ) : null}
-                              </div>
-                              <div className="truncate text-muted-foreground text-xs">
-                                {option.subtitle?.trim() || option.slug}
-                              </div>
-                            </div>
-                          </label>
-                        );
-                      })}
-                    </div>
+                    ) : null}
                   </div>
                 ) : null}
                 <div className="space-y-2">

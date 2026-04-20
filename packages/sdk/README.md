@@ -199,6 +199,8 @@ const loadingData =
 console.log(loadingData.artworkCategories);
 ```
 
+For the Yoola adapter, `artworkCategories` reflects the explicit gallery taxonomy configured on the `singleton-sections/gallery` entry (`profile_data.categoryOptions`), filtered down to categories that currently have artworks.
+
 Yoola-style consumers can also use the helper accessors exported from the SDK:
 
 ```typescript
