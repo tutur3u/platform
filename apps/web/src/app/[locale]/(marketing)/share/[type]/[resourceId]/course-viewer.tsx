@@ -32,14 +32,12 @@ interface CourseViewerProps {
 }
 
 function ModuleSection({ title, icon, content, rawContent, t }: any) {
-  const isContentEmpty =
-    rawContent
-      ? !rawContent.content?.some(
-          (node: any) =>
-            node.type !== 'paragraph' ||
-            (node.content && node.content.length > 0)
-        )
-      : !content;
+  const isContentEmpty = rawContent
+    ? !rawContent.content?.some(
+        (node: any) =>
+          node.type !== 'paragraph' || (node.content && node.content.length > 0)
+      )
+    : !content;
 
   if (isContentEmpty) return null;
 
