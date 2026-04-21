@@ -279,6 +279,7 @@ export {
   getCurrentUserProfile,
   getUserCalendarSettings,
   getUserConfig,
+  listWorkspaceAttendanceExportRecords,
   removeCurrentUserAvatar,
   updateCurrentUserDefaultWorkspace,
   updateCurrentUserProfile,

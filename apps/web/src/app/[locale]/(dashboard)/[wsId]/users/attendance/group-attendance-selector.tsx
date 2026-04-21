@@ -1,8 +1,16 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Check, ChevronsUpDown } from '@tuturuuu/icons';
+import { CalendarDays, Check, ChevronsUpDown, Users } from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@tuturuuu/ui/card';
 import {
   Command,
   CommandEmpty,
@@ -166,71 +174,117 @@ export default function GroupAttendanceSelector({
   });
 
   const isLoadingData = isLoadingSessions || isLoadingMembers;
+  const selectedGroupSessions = groupData?.sessions?.length ?? 0;
+  const selectedGroupMembers = members.length;
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="w-full max-w-sm justify-between"
-            >
-              {selectedGroup
-                ? selectedGroup.name
-                : t('ws-user-groups.select_group_placeholder')}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-100 max-w-(--radix-popover-trigger-width) p-0">
-            <Command shouldFilter={false}>
-              <CommandInput
-                placeholder={t('ws-user-groups.select_group_placeholder')}
-                value={query}
-                onValueChange={setQuery}
-              />
-              <CommandList>
-                {searchGroupsQuery.isLoading ? (
-                  <div className="py-6 text-center text-muted-foreground text-sm">
-                    {tc('loading')}
-                  </div>
-                ) : groups.length > 0 ? (
-                  <CommandGroup>
-                    {groups.map((group) => (
-                      <CommandItem
-                        key={group.id}
-                        value={group.name || ''}
-                        onSelect={() => {
-                          setSelectedGroupId(group.id);
-                          setOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            'mr-2 h-4 w-4',
-                            selectedGroupId === group.id
-                              ? 'opacity-100'
-                              : 'opacity-0'
-                          )}
-                        />
-                        {group.name}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                ) : (
-                  <CommandEmpty>
-                    {query
-                      ? tc('no_results_found')
-                      : t('ws-user-groups.search_group_placeholder')}
-                  </CommandEmpty>
-                )}
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      </div>
+      <Card className="overflow-hidden border-primary/10 bg-linear-to-br from-primary/5 via-background to-background">
+        <CardHeader className="gap-2">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1">
+              <CardTitle>{t('ws-user-attendance.selector_title')}</CardTitle>
+              <CardDescription>
+                {t('ws-user-attendance.selector_description')}
+              </CardDescription>
+            </div>
+            {selectedGroup && (
+              <Badge variant="secondary" className="max-w-full truncate">
+                {t('ws-user-attendance.selected_group_label', {
+                  name: selectedGroup.name,
+                })}
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="h-11 w-full justify-between rounded-xl bg-background/80"
+              >
+                <span className="truncate">
+                  {selectedGroup
+                    ? selectedGroup.name
+                    : t('ws-user-groups.select_group_placeholder')}
+                </span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-100 max-w-(--radix-popover-trigger-width) p-0">
+              <Command shouldFilter={false}>
+                <CommandInput
+                  placeholder={t('ws-user-groups.select_group_placeholder')}
+                  value={query}
+                  onValueChange={setQuery}
+                />
+                <CommandList>
+                  {searchGroupsQuery.isLoading ? (
+                    <div className="py-6 text-center text-muted-foreground text-sm">
+                      {tc('loading')}
+                    </div>
+                  ) : groups.length > 0 ? (
+                    <CommandGroup>
+                      {groups.map((group) => (
+                        <CommandItem
+                          key={group.id}
+                          value={group.name || ''}
+                          onSelect={() => {
+                            setSelectedGroupId(group.id);
+                            setOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-4 w-4',
+                              selectedGroupId === group.id
+                                ? 'opacity-100'
+                                : 'opacity-0'
+                            )}
+                          />
+                          {group.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  ) : (
+                    <CommandEmpty>
+                      {query
+                        ? tc('no_results_found')
+                        : t('ws-user-groups.search_group_placeholder')}
+                    </CommandEmpty>
+                  )}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          <div className="flex flex-wrap gap-2 text-muted-foreground text-sm">
+            <Badge variant="outline" className="gap-1.5 rounded-full">
+              <CalendarDays className="h-3.5 w-3.5" />
+              {t('ws-user-attendance.group_scope_badge')}
+            </Badge>
+            {selectedGroup && !isLoadingData && (
+              <>
+                <Badge variant="outline" className="gap-1.5 rounded-full">
+                  <Users className="h-3.5 w-3.5" />
+                  {t('ws-user-attendance.members_badge', {
+                    count: selectedGroupMembers,
+                  })}
+                </Badge>
+                <Badge variant="outline" className="rounded-full">
+                  {t('ws-user-attendance.sessions_badge', {
+                    count: selectedGroupSessions,
+                  })}
+                </Badge>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Attendance Manager */}
       {selectedGroupId && selectedGroup && (

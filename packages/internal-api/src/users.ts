@@ -25,6 +25,25 @@ export type CurrentUserDefaultWorkspaceResponse = {
   personal?: boolean | null;
 } | null;
 
+export interface WorkspaceAttendanceExportRecord {
+  date: string;
+  groupId: string;
+  groupName: string | null;
+  notes: string;
+  status: string;
+  userDisplayName: string | null;
+  userEmail: string | null;
+  userFullName: string | null;
+  userId: string;
+  userName: string;
+}
+
+export interface ListWorkspaceAttendanceExportResponse {
+  count: number;
+  data: WorkspaceAttendanceExportRecord[];
+  nextOffset?: number;
+}
+
 export type UpdateCurrentUserDefaultWorkspaceResponse = {
   success: boolean;
 };
@@ -245,6 +264,36 @@ export async function createSupportInquiry(
       },
       body: JSON.stringify(payload),
       cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceAttendanceExportRecords(
+  workspaceId: string,
+  {
+    endDate,
+    limit,
+    offset,
+    startDate,
+  }: {
+    endDate: string;
+    limit?: number;
+    offset?: number;
+    startDate: string;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ListWorkspaceAttendanceExportResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/attendance/export`,
+    {
+      cache: 'no-store',
+      query: {
+        endDate,
+        limit,
+        offset,
+        startDate,
+      },
     }
   );
 }
