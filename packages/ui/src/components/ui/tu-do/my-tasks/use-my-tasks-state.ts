@@ -629,6 +629,7 @@ export function useMyTasksState({
     onError: (error: Error) => {
       setAiFlowStep('selecting-destination');
       setBoardSelectorOpen(true);
+      setCommandBarInput((previewEntry ?? pendingTaskTitle).trim());
       toast.error(error.message || t('ws-tasks.errors.failed_create_tasks'));
     },
   });

@@ -250,10 +250,7 @@ export function CommandBar({
     try {
       // AI mode: generate immediately without requiring destination
       if (effectiveAiEnabled) {
-        const success = await onGenerateAI(value.trim());
-        if (success !== false) {
-          onValueChange('');
-        }
+        await onGenerateAI(value.trim());
       } else if (!hasDestination) {
         onOpenBoardSelector(value.trim(), false);
         return;

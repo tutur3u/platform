@@ -9,6 +9,7 @@ const taskProjectsEq = vi.fn();
 const resolvePlanModel = vi.fn();
 const checkAiCredits = vi.fn();
 const generateObject = vi.fn();
+const normalizeWorkspaceId = vi.fn();
 
 const createQueryBuilder = (resolver: ReturnType<typeof vi.fn>) => ({
   eq: vi.fn(() => ({
@@ -67,6 +68,11 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: vi.fn(() => Promise.resolve(userClient)),
 }));
 
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  normalizeWorkspaceId: (...args: Parameters<typeof normalizeWorkspaceId>) =>
+    normalizeWorkspaceId(...args),
+}));
+
 vi.mock('@tuturuuu/ai/credits/resolve-plan-model', () => ({
   PlanModelResolutionError: class PlanModelResolutionError extends Error {
     code: string;
@@ -111,10 +117,12 @@ describe('task journal route', () => {
     resolvePlanModel.mockReset();
     checkAiCredits.mockReset();
     generateObject.mockReset();
+    normalizeWorkspaceId.mockReset();
     userClient.from.mockClear();
   });
 
   it('saves reviewed tasks without re-running AI resolution or credit checks', async () => {
+    normalizeWorkspaceId.mockResolvedValue('ws-1');
     getUser.mockResolvedValue({
       data: { user: { id: 'user-1', email: 'dev@example.com' } },
       error: null,
@@ -212,5 +220,64 @@ describe('task journal route', () => {
     expect(checkAiCredits).not.toHaveBeenCalled();
     expect(generateObject).not.toHaveBeenCalled();
     expect(tasksInsertSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it('normalizes personal workspace aliases before verifying list access', async () => {
+    normalizeWorkspaceId.mockResolvedValue('ws-1');
+    getUser.mockResolvedValue({
+      data: { user: { id: 'user-1', email: 'dev@example.com' } },
+      error: null,
+    });
+    workspaceMemberMaybeSingle.mockResolvedValue({
+      data: { user_id: 'user-1' },
+      error: null,
+    });
+    listMaybeSingle.mockResolvedValue({
+      data: {
+        id: 'list-1',
+        name: 'Inbox',
+      },
+      error: null,
+    });
+    tasksInsertSelect.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    workspaceLabelsEq.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    taskProjectsEq.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/tasks/journal/route'
+    );
+    await POST(
+      new Request('http://localhost/api/v1/workspaces/personal/tasks/journal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry: 'Follow up with the customer this week',
+          listId: 'list-1',
+          tasks: [
+            {
+              title: 'Follow up customer',
+              description: null,
+              priority: null,
+              labels: [],
+              dueDate: null,
+              estimationPoints: null,
+              projectIds: [],
+            },
+          ],
+        }),
+      }),
+      { params: Promise.resolve({ wsId: 'personal' }) }
+    );
+
+    expect(normalizeWorkspaceId).toHaveBeenCalledWith('personal', userClient);
   });
 });

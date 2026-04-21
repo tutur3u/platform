@@ -27,6 +27,7 @@ import {
   MAX_SHORT_TEXT_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { generateObject, NoObjectGeneratedError } from 'ai';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -524,7 +525,7 @@ export async function POST(
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
-    const { wsId } = await params;
+    const { wsId: rawWsId } = await params;
     const supabase = await createClient();
 
     const authResult = await getAuthorizedUser(supabase);
@@ -532,6 +533,7 @@ export async function POST(
       return NextResponse.json(authResult.body, { status: authResult.status });
     }
     const user = authResult.user;
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const rawBody = await req.json();
     const bodyResult = parseRequestBody(rawBody);
