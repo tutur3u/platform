@@ -329,6 +329,7 @@ export type WorkspaceQuizSet = Tables<'workspace_quiz_sets'> & {
 export type WorkspaceCourse = Tables<'workspace_user_groups'> & {
   href?: string;
   description?: string | null;
+  cert_template?: string | null;
 };
 export type WorkspaceCourseModule = Tables<'workspace_course_modules'> & {
   href?: string;

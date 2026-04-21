@@ -14,7 +14,7 @@ export async function GET(_: Request, { params }: Params) {
   const { data, error } = await supabase
     .from('workspace_course_modules')
     .select('*')
-    .eq('course_id', id)
+    .eq('group_id', id)
     .order('sort_key', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: true });
 
@@ -37,7 +37,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const { error } = await supabase.from('workspace_course_modules').insert({
     ...data,
-    course_id: id,
+    group_id: id,
   });
 
   if (error) {

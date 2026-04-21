@@ -19,7 +19,7 @@ interface Props {
 
 interface BuilderModule {
   content: unknown;
-  course_id: string;
+  group_id: string | null;
   created_at: string;
   extra_content: unknown;
   flashcard_count: number;
@@ -39,7 +39,7 @@ export default async function CourseBuilderPage({ params }: Props) {
   const sbAdmin = await createAdminClient();
 
   const { data: course, error: courseError } = await sbAdmin
-    .from('workspace_courses')
+    .from('workspace_user_groups')
     .select('*')
     .eq('ws_id', resolvedWsId)
     .eq('id', courseId)
@@ -51,7 +51,7 @@ export default async function CourseBuilderPage({ params }: Props) {
   const { data: modules, error: modulesError } = await sbAdmin
     .from('workspace_course_modules')
     .select('*')
-    .eq('course_id', courseId)
+    .eq('group_id', courseId)
     .order('sort_key', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: true });
 
@@ -94,7 +94,7 @@ export default async function CourseBuilderPage({ params }: Props) {
 
   const builderModules: BuilderModule[] = (modules ?? []).map((module) => ({
     content: module.content,
-    course_id: module.course_id,
+    group_id: module.group_id,
     created_at: module.created_at,
     extra_content: module.extra_content,
     flashcard_count: flashcardCountByModuleId.get(module.id) ?? 0,

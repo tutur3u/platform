@@ -31,7 +31,7 @@ interface CourseViewerProps {
   })[];
 }
 
-function ModuleSection({ title, icon, content, rawContent, t }: any) {
+function ModuleSection({ title, icon, content, rawContent }: any) {
   const isContentEmpty = rawContent
     ? !rawContent.content?.some(
         (node: any) =>
@@ -47,7 +47,7 @@ function ModuleSection({ title, icon, content, rawContent, t }: any) {
         {icon}
         {title}
       </div>
-      <div className="text-foreground/90 overflow-hidden">
+      <div className="overflow-hidden text-foreground/90">
         {content || rawContent}
       </div>
     </div>
@@ -182,7 +182,6 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
                 {/* Content */}
                 {selectedModule.content && (
                   <ModuleSection
-                    t={t}
                     title={t('course-details-tabs.module_content')}
                     icon={<Goal className="h-5 w-5" />}
                     rawContent={selectedModule.content}
@@ -200,7 +199,6 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
                 {/* YouTube links */}
                 {(selectedModule.youtube_links ?? []).length > 0 && (
                   <ModuleSection
-                    t={t}
                     title={t('course-details-tabs.youtube_links')}
                     icon={<Youtube className="h-5 w-5" />}
                     content={
@@ -221,7 +219,6 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
                 {/* Quizzes indicator */}
                 {selectedModule.quizzes > 0 && (
                   <ModuleSection
-                    t={t}
                     title={t('ws-quizzes.plural')}
                     icon={<ListTodo className="h-5 w-5" />}
                     content={
@@ -237,7 +234,6 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
                 {/* Flashcards indicator */}
                 {selectedModule.flashcards > 0 && (
                   <ModuleSection
-                    t={t}
                     title={t('ws-flashcards.plural')}
                     icon={<SwatchBook className="h-5 w-5" />}
                     content={
@@ -253,7 +249,6 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
                 {/* Extra reading indicator */}
                 {selectedModule.extra_content && (
                   <ModuleSection
-                    t={t}
                     title={t('course-details-tabs.extra_reading')}
                     icon={<BookText className="h-5 w-5" />}
                     content={

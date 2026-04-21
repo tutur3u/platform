@@ -58,7 +58,7 @@ export const PATCH = withSessionAuth(
     const sbAdmin = await createAdminClient();
 
     const { data: course, error: courseError } = await sbAdmin
-      .from('workspace_courses')
+      .from('workspace_user_groups')
       .select('id')
       .eq('id', courseId)
       .eq('ws_id', normalizedWsId)
@@ -81,7 +81,7 @@ export const PATCH = withSessionAuth(
     const { data: existingModules, error: modulesError } = await sbAdmin
       .from('workspace_course_modules')
       .select('id')
-      .eq('course_id', courseId);
+      .eq('group_id', courseId);
 
     if (modulesError) {
       return NextResponse.json(
@@ -115,7 +115,7 @@ export const PATCH = withSessionAuth(
         .from('workspace_course_modules')
         .update({ sort_key: index + 1 })
         .eq('id', moduleId)
-        .eq('course_id', courseId)
+        .eq('group_id', courseId)
     );
 
     const results = await Promise.all(updates);

@@ -13,7 +13,7 @@ export async function PUT(req: Request, { params }: Params) {
   const { courseId: id } = await params;
 
   const { error } = await supabase
-    .from('workspace_courses')
+    .from('workspace_user_groups')
     .update(data)
     .eq('id', id);
 
@@ -33,7 +33,7 @@ export async function DELETE(_: Request, { params }: Params) {
   const { courseId: id } = await params;
 
   const { error } = await supabase
-    .from('workspace_courses')
+    .from('workspace_user_groups')
     .delete()
     .eq('id', id);
 

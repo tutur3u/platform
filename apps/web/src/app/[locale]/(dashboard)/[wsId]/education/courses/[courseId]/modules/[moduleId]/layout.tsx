@@ -134,7 +134,7 @@ async function getData(courseId: string, moduleId: string) {
   const { data, error } = await supabase
     .from('workspace_course_modules')
     .select('*')
-    .eq('course_id', courseId)
+    .eq('group_id', courseId)
     .eq('id', moduleId)
     .maybeSingle();
 

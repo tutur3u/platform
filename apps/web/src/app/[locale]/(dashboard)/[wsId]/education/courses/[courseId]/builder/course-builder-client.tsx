@@ -44,7 +44,7 @@ import { ModuleContentEditor } from '../modules/[moduleId]/content/content-edito
 
 interface BuilderModule {
   content: unknown;
-  course_id: string;
+  group_id: string | null;
   created_at: string;
   extra_content: unknown;
   flashcard_count: number;
@@ -126,7 +126,7 @@ export function CourseBuilderClient({
       if (newModule) {
         const builderModule: BuilderModule = {
           ...newModule,
-          course_id: courseId,
+          group_id: courseId,
           flashcard_count: 0,
           quiz_count: 0,
           quiz_set_count: 0,
@@ -260,7 +260,7 @@ export function CourseBuilderClient({
                     onCreated={(newModule) => {
                       const builderModule: BuilderModule = {
                         ...newModule,
-                        course_id: courseId,
+                        group_id: courseId,
                         flashcard_count: 0,
                         quiz_count: 0,
                         quiz_set_count: 0,

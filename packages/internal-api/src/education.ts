@@ -1,3 +1,4 @@
+import type { WorkspaceCourseModule } from '@tuturuuu/types';
 import {
   encodePathSegment,
   getInternalApiClient,

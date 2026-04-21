@@ -23,7 +23,7 @@ const mocks = vi.hoisted(() => {
 
   const adminSupabase = {
     from: vi.fn((table: string) => {
-      if (table === 'workspace_courses') {
+      if (table === 'workspace_user_groups') {
         return {
           select: vi.fn(() => ({
             eq: vi.fn(() => ({

@@ -18,7 +18,7 @@ interface Props {
 
 interface BuilderModule {
   content: unknown;
-  course_id: string;
+  group_id: string | null;
   created_at: string;
   extra_content: unknown;
   flashcard_count: number;
@@ -93,7 +93,7 @@ export default async function GroupContentPage({ params }: Props) {
 
   const builderModules: BuilderModule[] = (modules ?? []).map((module) => ({
     content: module.content,
-    course_id: groupId, // Using groupId as course_id for the builder
+    group_id: groupId, // Using groupId as group_id for the builder
     created_at: module.created_at,
     extra_content: module.extra_content,
     flashcard_count: flashcardCountByModuleId.get(module.id) ?? 0,
