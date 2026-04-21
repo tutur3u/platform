@@ -96,7 +96,17 @@ export function memberTypeFromInviteStatsRow(
   // API responses may already be normalized with camelCase `memberType`; re-parsing JSON drops snake_case keys.
   const v = row.member_type ?? row.type ?? row.memberType;
   if (v == null || v === '') return 'MEMBER';
-  return String(v).toUpperCase() === 'GUEST' ? 'GUEST' : 'MEMBER';
+
+  const normalized = String(v).toUpperCase();
+  if (normalized === 'MEMBER' || normalized === 'GUEST') {
+    return normalized;
+  }
+
+  console.warn('Unexpected workspace invite link member type', {
+    inviteLinkId: row.id,
+    memberType: v,
+  });
+  return String(v) as WorkspaceInviteLinkMemberType;
 }
 
 /** Map a workspace_invite_links_with_stats row (`member_type` or legacy `type`) to summary shape */

@@ -1,3 +1,4 @@
+-- Recovery-only safety net for partially-applied environments; fresh chains get the same settings when 20260421130000 recreates the view.
 -- If 20260421120000 ran before grants were added to that file, restore SELECT on the stats view.
 -- Safe to apply multiple times.
 ALTER VIEW public.workspace_invite_links_with_stats

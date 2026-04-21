@@ -52,10 +52,7 @@ export async function getWorkspaceMembers({
   const queryBuilder = supabase
     .from('workspace_members_and_invites')
     .select(
-      'id, handle, email, display_name, avatar_url, pending, created_at, type',
-      {
-        count: 'exact',
-      }
+      'id, handle, email, display_name, avatar_url, pending, created_at, type'
     )
     .eq('ws_id', wsId)
     .order('pending')
@@ -127,9 +124,9 @@ export async function getWorkspaceMembers({
     pending: rest.pending ?? undefined,
     workspace_member_type: type,
     display_name: hiddenSecrets.has('HIDE_MEMBER_NAME')
-      ? undefined
+      ? null
       : rest.display_name,
-    email: hiddenSecrets.has('HIDE_MEMBER_EMAIL') ? undefined : email,
+    email: hiddenSecrets.has('HIDE_MEMBER_EMAIL') ? null : email,
     is_creator: workspaceData.creator_id === rest.id,
     roles: rest.id ? (roleMap.get(rest.id) ?? []) : [],
     default_permissions: defaultPermissions,
