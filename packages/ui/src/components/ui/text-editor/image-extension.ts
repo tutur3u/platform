@@ -139,6 +139,8 @@ function calculatePresetWidth(
 interface ImageOptions {
   onImageUpload?: (file: File) => Promise<string>;
   onVideoUpload?: (file: File) => Promise<string>;
+  getOnImageUpload?: () => ((file: File) => Promise<string>) | undefined;
+  getOnVideoUpload?: () => ((file: File) => Promise<string>) | undefined;
 }
 
 /**
@@ -164,6 +166,10 @@ interface ExtendedImageResizeOptions {
   HTMLAttributes: Record<string, any>;
   minWidth?: number;
   maxWidth?: number;
+  onImageUpload?: (file: File) => Promise<string>;
+  onVideoUpload?: (file: File) => Promise<string>;
+  getOnImageUpload?: () => ((file: File) => Promise<string>) | undefined;
+  getOnVideoUpload?: () => ((file: File) => Promise<string>) | undefined;
 }
 
 export const CustomImage = (options: ImageOptions = {}) => {
@@ -223,9 +229,15 @@ export const CustomImage = (options: ImageOptions = {}) => {
     addProseMirrorPlugins() {
       const parentPlugins = this.parent?.() || [];
       const getOnImageUpload = () =>
-        this?.options?.onImageUpload ?? options.onImageUpload;
+        this?.options?.getOnImageUpload?.() ??
+        this?.options?.onImageUpload ??
+        options.getOnImageUpload?.() ??
+        options.onImageUpload;
       const getOnVideoUpload = () =>
-        this?.options?.onVideoUpload ?? options.onVideoUpload;
+        this?.options?.getOnVideoUpload?.() ??
+        this?.options?.onVideoUpload ??
+        options.getOnVideoUpload?.() ??
+        options.onVideoUpload;
 
       return [
         ...parentPlugins,
@@ -610,6 +622,15 @@ export const CustomImage = (options: ImageOptions = {}) => {
                   });
                 }
 
+                if (videos.length > 0 && !onVideoUpload) {
+                  const blockedVideosDescription =
+                    'You do not have permission to upload media in this editor.';
+
+                  toast.error('Videos cannot be uploaded', {
+                    description: blockedVideosDescription,
+                  });
+                }
+
                 if (!onImageUpload && !onVideoUpload) {
                   event.preventDefault();
                   return true;
@@ -875,6 +896,10 @@ export const CustomImage = (options: ImageOptions = {}) => {
   return baseExtension.configure({
     inline: false,
     allowBase64: false,
+    onImageUpload: options.onImageUpload,
+    onVideoUpload: options.onVideoUpload,
+    getOnImageUpload: options.getOnImageUpload,
+    getOnVideoUpload: options.getOnVideoUpload,
     HTMLAttributes: {
       class: 'rounded-md mt-4 mb-2 block w-full',
     },

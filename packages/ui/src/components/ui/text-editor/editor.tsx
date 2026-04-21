@@ -127,6 +127,10 @@ export function RichTextEditor({
   const debouncedOnChangeRef = useRef<ReturnType<typeof debounce> | null>(null);
   // Track when we're in a programmatic update to skip content sync
   const isProgrammaticUpdateRef = useRef(false);
+  const getDelegatedImageUpload = useCallback(
+    () => onImageUploadRef.current,
+    []
+  );
 
   useEffect(() => {
     onImageUploadRef.current = onImageUpload;
@@ -151,22 +155,6 @@ export function RichTextEditor({
       }, 500),
     []
   );
-
-  const delegatedImageUpload = useMemo(() => {
-    if (!onImageUpload) {
-      return undefined;
-    }
-
-    return async (file: File) => {
-      const handler = onImageUploadRef.current;
-      if (!handler) {
-        throw new Error(
-          'You do not have permission to upload images in this editor.'
-        );
-      }
-      return handler(file);
-    };
-  }, [onImageUpload]);
 
   // Store debounced function ref for flushing
   useEffect(() => {
@@ -296,8 +284,10 @@ export function RichTextEditor({
       doc: allowCollaboration ? yjsDoc : undefined,
       provider: allowCollaboration ? yjsProvider : undefined,
       collaborationUser: allowCollaboration ? collaborationUser : undefined,
-      onImageUpload: delegatedImageUpload,
-      onVideoUpload: delegatedImageUpload,
+      onImageUpload,
+      onVideoUpload: onImageUpload,
+      getOnImageUpload: getDelegatedImageUpload,
+      getOnVideoUpload: getDelegatedImageUpload,
       mentionTranslations,
       readOnly,
     }),
@@ -504,43 +494,6 @@ export function RichTextEditor({
     },
   });
 
-  const hadDelegatedImageUploadRef = useRef(Boolean(delegatedImageUpload));
-  useEffect(() => {
-    if (!editor) return;
-
-    const hasDelegatedImageUpload = Boolean(delegatedImageUpload);
-    if (hadDelegatedImageUploadRef.current === hasDelegatedImageUpload) {
-      return;
-    }
-
-    hadDelegatedImageUploadRef.current = hasDelegatedImageUpload;
-
-    editor.setOptions({
-      extensions: getEditorExtensions({
-        titlePlaceholder,
-        writePlaceholder,
-        doc: allowCollaboration ? yjsDoc : undefined,
-        provider: allowCollaboration ? yjsProvider : undefined,
-        collaborationUser: allowCollaboration ? collaborationUser : undefined,
-        onImageUpload: delegatedImageUpload,
-        onVideoUpload: delegatedImageUpload,
-        mentionTranslations,
-        readOnly,
-      }),
-    });
-  }, [
-    editor,
-    delegatedImageUpload,
-    titlePlaceholder,
-    writePlaceholder,
-    allowCollaboration,
-    yjsDoc,
-    yjsProvider,
-    collaborationUser,
-    mentionTranslations,
-    readOnly,
-  ]);
-
   // Recreate editor when collaboration provider becomes available so the
   // CollaborationCaret extension is included. The provider is null on first
   // render because it's created asynchronously in useEffect; this dep
@@ -560,8 +513,10 @@ export function RichTextEditor({
           doc: yjsDoc,
           provider: yjsProvider,
           collaborationUser: collaborationUser,
-          onImageUpload: delegatedImageUpload,
-          onVideoUpload: delegatedImageUpload,
+          onImageUpload,
+          onVideoUpload: onImageUpload,
+          getOnImageUpload: getDelegatedImageUpload,
+          getOnVideoUpload: getDelegatedImageUpload,
           mentionTranslations,
           readOnly,
         }),
@@ -573,11 +528,12 @@ export function RichTextEditor({
     yjsDoc,
     allowCollaboration,
     collaborationUser,
-    delegatedImageUpload,
+    onImageUpload,
     titlePlaceholder,
     writePlaceholder,
     mentionTranslations,
     readOnly,
+    getDelegatedImageUpload,
   ]);
 
   // Update editor's editable state when props change

@@ -30,6 +30,10 @@ export function getKnownUploadErrorKey(
   const name = errorLike.name ?? error.name;
   const message = (errorLike.message ?? error.message ?? '').toLowerCase();
 
+  if (code === 'PENDING_PERMISSION_CHECK') {
+    return 'pending_permission_check';
+  }
+
   if (
     code === 'INSUFFICIENT_PERMISSIONS' ||
     code === 'FORBIDDEN' ||
@@ -45,10 +49,6 @@ export function getKnownUploadErrorKey(
     name === 'PermissionError'
   ) {
     return 'insufficient_permissions';
-  }
-
-  if (code === 'PENDING_PERMISSION_CHECK') {
-    return 'pending_permission_check';
   }
 
   if (
@@ -83,6 +83,10 @@ export function getUploadErrorMessage(
   const knownErrorKey = getKnownUploadErrorKey(error);
   if (knownErrorKey) {
     return UPLOAD_ERROR_MESSAGES[knownErrorKey];
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
   }
 
   return fallback;
