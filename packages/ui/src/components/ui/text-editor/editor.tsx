@@ -152,15 +152,21 @@ export function RichTextEditor({
     []
   );
 
-  const delegatedImageUpload = useCallback(async (file: File) => {
-    const handler = onImageUploadRef.current;
-    if (!handler) {
-      throw new Error(
-        'You do not have permission to upload images in this editor.'
-      );
+  const delegatedImageUpload = useMemo(() => {
+    if (!onImageUpload) {
+      return undefined;
     }
-    return handler(file);
-  }, []);
+
+    return async (file: File) => {
+      const handler = onImageUploadRef.current;
+      if (!handler) {
+        throw new Error(
+          'You do not have permission to upload images in this editor.'
+        );
+      }
+      return handler(file);
+    };
+  }, [onImageUpload]);
 
   // Store debounced function ref for flushing
   useEffect(() => {
@@ -497,6 +503,43 @@ export function RichTextEditor({
       }
     },
   });
+
+  const hadDelegatedImageUploadRef = useRef(Boolean(delegatedImageUpload));
+  useEffect(() => {
+    if (!editor) return;
+
+    const hasDelegatedImageUpload = Boolean(delegatedImageUpload);
+    if (hadDelegatedImageUploadRef.current === hasDelegatedImageUpload) {
+      return;
+    }
+
+    hadDelegatedImageUploadRef.current = hasDelegatedImageUpload;
+
+    editor.setOptions({
+      extensions: getEditorExtensions({
+        titlePlaceholder,
+        writePlaceholder,
+        doc: allowCollaboration ? yjsDoc : undefined,
+        provider: allowCollaboration ? yjsProvider : undefined,
+        collaborationUser: allowCollaboration ? collaborationUser : undefined,
+        onImageUpload: delegatedImageUpload,
+        onVideoUpload: delegatedImageUpload,
+        mentionTranslations,
+        readOnly,
+      }),
+    });
+  }, [
+    editor,
+    delegatedImageUpload,
+    titlePlaceholder,
+    writePlaceholder,
+    allowCollaboration,
+    yjsDoc,
+    yjsProvider,
+    collaborationUser,
+    mentionTranslations,
+    readOnly,
+  ]);
 
   // Recreate editor when collaboration provider becomes available so the
   // CollaborationCaret extension is included. The provider is null on first

@@ -14,6 +14,7 @@ import {
   MAX_IMAGE_SIZE,
   MAX_VIDEO_SIZE,
 } from './media-utils';
+import { getKnownUploadErrorKey, getUploadErrorMessage } from './upload-errors';
 import {
   createLoadingPlaceholder,
   findUploadPlaceholder,
@@ -140,13 +141,6 @@ interface ImageOptions {
   onVideoUpload?: (file: File) => Promise<string>;
 }
 
-function getUploadErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof Error && error.message.trim().length > 0) {
-    return error.message;
-  }
-  return fallback;
-}
-
 /**
  * Adjusts a drop position to the nearest valid block-level insertion point.
  * If dropping inside a textblock (paragraph, heading, etc.), moves to after that block.
@@ -228,7 +222,10 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
     addProseMirrorPlugins() {
       const parentPlugins = this.parent?.() || [];
-      const { onImageUpload, onVideoUpload } = options;
+      const getOnImageUpload = () =>
+        this?.options?.onImageUpload ?? options.onImageUpload;
+      const getOnVideoUpload = () =>
+        this?.options?.onVideoUpload ?? options.onVideoUpload;
 
       return [
         ...parentPlugins,
@@ -423,6 +420,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                   return false;
                 }
 
+                const onImageUpload = getOnImageUpload();
                 if (!onImageUpload) {
                   event.preventDefault();
                   toast.error('Insufficient permissions', {
@@ -496,7 +494,16 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       view.dispatch(placeholderTr);
 
                       // Upload the image
-                      const url = await onImageUpload(image);
+                      const currentOnImageUpload = getOnImageUpload();
+                      if (!currentOnImageUpload) {
+                        throw Object.assign(
+                          new Error('Upload handler unavailable'),
+                          {
+                            code: 'INSUFFICIENT_PERMISSIONS',
+                          }
+                        );
+                      }
+                      const url = await currentOnImageUpload(image);
 
                       // Get fresh state after upload
                       const currentState = view.state;
@@ -547,12 +554,18 @@ export const CustomImage = (options: ImageOptions = {}) => {
                         image.name,
                         error
                       );
-                      toast.error('Failed to upload image', {
-                        description: getUploadErrorMessage(
-                          error,
-                          'Please try again.'
-                        ),
-                      });
+                      const errorKey = getKnownUploadErrorKey(error);
+                      toast.error(
+                        errorKey === 'insufficient_permissions'
+                          ? 'Insufficient permissions'
+                          : 'Failed to upload image',
+                        {
+                          description: getUploadErrorMessage(
+                            error,
+                            'Please try again.'
+                          ),
+                        }
+                      );
                       // Remove placeholder on error
                       const removeTr = view.state.tr;
                       removeTr.setMeta(imageUploadPlaceholderPluginKey, {
@@ -585,10 +598,15 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
                 if (images.length === 0 && videos.length === 0) return false;
 
+                const onImageUpload = getOnImageUpload();
+                const onVideoUpload = getOnVideoUpload();
+
                 if (images.length > 0 && !onImageUpload) {
-                  toast.error('Insufficient permissions', {
-                    description:
-                      'You do not have permission to upload images in this editor.',
+                  const blockedImagesDescription =
+                    'You do not have permission to upload media in this editor.';
+
+                  toast.error('Images cannot be uploaded', {
+                    description: blockedImagesDescription,
                   });
                 }
 
@@ -627,7 +645,8 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
                   // Process images
                   for (const image of images) {
-                    if (!onImageUpload) continue;
+                    const currentOnImageUpload = getOnImageUpload();
+                    if (!currentOnImageUpload) continue;
                     const uploadId = generateUploadId();
 
                     try {
@@ -665,7 +684,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       view.dispatch(placeholderTr);
 
                       // Upload the image
-                      const url = await onImageUpload(image);
+                      const url = await currentOnImageUpload(image);
 
                       // Try imageResize first (custom), fallback to image (base)
                       const { schema } = view.state;
@@ -708,12 +727,18 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       currentPos = insertPos + node.nodeSize;
                     } catch (error) {
                       console.error('Failed to upload image:', error);
-                      toast.error('Failed to upload image', {
-                        description: getUploadErrorMessage(
-                          error,
-                          'Please try again.'
-                        ),
-                      });
+                      const errorKey = getKnownUploadErrorKey(error);
+                      toast.error(
+                        errorKey === 'insufficient_permissions'
+                          ? 'Insufficient permissions'
+                          : 'Failed to upload image',
+                        {
+                          description: getUploadErrorMessage(
+                            error,
+                            'Please try again.'
+                          ),
+                        }
+                      );
                       // Remove placeholder on error
                       const removeTr = view.state.tr;
                       removeTr.setMeta(imageUploadPlaceholderPluginKey, {
@@ -725,7 +750,8 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
                   // Process videos
                   for (const video of videos) {
-                    if (!onVideoUpload) continue;
+                    const currentOnVideoUpload = getOnVideoUpload();
+                    if (!currentOnVideoUpload) continue;
                     const uploadId = generateUploadId();
 
                     try {
@@ -768,7 +794,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       view.dispatch(placeholderTr);
 
                       // Upload the video
-                      const url = await onVideoUpload(video);
+                      const url = await currentOnVideoUpload(video);
 
                       // Check for video node type
                       const { schema } = view.state;
@@ -809,12 +835,18 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       currentPos = insertPos + node.nodeSize;
                     } catch (error) {
                       console.error('Failed to upload video:', error);
-                      toast.error('Failed to upload video', {
-                        description: getUploadErrorMessage(
-                          error,
-                          'Please try again.'
-                        ),
-                      });
+                      const errorKey = getKnownUploadErrorKey(error);
+                      toast.error(
+                        errorKey === 'insufficient_permissions'
+                          ? 'Insufficient permissions'
+                          : 'Failed to upload video',
+                        {
+                          description: getUploadErrorMessage(
+                            error,
+                            'Please try again.'
+                          ),
+                        }
+                      );
                       // Remove placeholder on error
                       const removeTr = view.state.tr;
                       removeTr.setMeta(imageUploadPlaceholderPluginKey, {

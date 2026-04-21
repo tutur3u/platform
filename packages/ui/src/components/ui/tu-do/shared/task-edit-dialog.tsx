@@ -182,6 +182,12 @@ export function TaskEditDialog({
   // User requested: always disable editing for shared tasks, regardless of permission
   const disabled = !!shareCode;
 
+  // Keep this permission query disabled when `disabled` shared-link mode is active
+  // (`enabled` becomes false) so `canManageTaskMedia` stays undefined while
+  // `isCheckingTaskMediaPermission` remains false for read-only visitors. That
+  // allows `imageUploadHandler` to stay unset for shared-link views without
+  // forcing a permission request that could re-enable upload affordances. The
+  // query only runs when `effectiveTaskWsId` exists and `disabled` is false.
   const { data: canManageTaskMedia, isPending: isCheckingTaskMediaPermission } =
     useQuery({
       queryKey: [
@@ -934,35 +940,64 @@ export function TaskEditDialog({
       if (!effectiveTaskWsId) {
         throw new Error(t('error'));
       }
-      if (canManageTaskMedia === false) {
-        throw new Error(t('insufficient_permissions'));
-      }
-      try {
-        const uploadResult = await uploadWorkspaceTaskFile(
-          effectiveTaskWsId,
-          file,
-          { taskId: task?.id }
-        );
 
-        const query = new URLSearchParams({ path: uploadResult.path });
-        if (task?.id) {
-          query.set('taskId', task.id);
-        }
-
-        return `/api/v1/workspaces/${encodeURIComponent(effectiveTaskWsId)}/storage/share?${query.toString()}`;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : t('error');
-        toast.error(t('error'), { description: message });
-        throw error;
+      if (disabled) {
+        throw Object.assign(new Error(t('insufficient_permissions')), {
+          code: 'INSUFFICIENT_PERMISSIONS',
+        });
       }
+
+      let hasPermission = canManageTaskMedia;
+      if (hasPermission === undefined || isCheckingTaskMediaPermission) {
+        hasPermission = await queryClient.fetchQuery({
+          queryKey: [
+            'workspace-permission',
+            effectiveTaskWsId,
+            'manage_drive_tasks_directory',
+          ],
+          queryFn: async () => {
+            const result = await checkWorkspacePermission(
+              effectiveTaskWsId,
+              'manage_drive_tasks_directory'
+            );
+            return result.hasPermission;
+          },
+          staleTime: 5 * 60 * 1000,
+        });
+      }
+
+      if (!hasPermission) {
+        throw Object.assign(new Error(t('insufficient_permissions')), {
+          code: 'INSUFFICIENT_PERMISSIONS',
+        });
+      }
+
+      const uploadResult = await uploadWorkspaceTaskFile(
+        effectiveTaskWsId,
+        file,
+        { taskId: task?.id }
+      );
+
+      const query = new URLSearchParams({ path: uploadResult.path });
+      if (task?.id) {
+        query.set('taskId', task.id);
+      }
+
+      return `/api/v1/workspaces/${encodeURIComponent(effectiveTaskWsId)}/storage/share?${query.toString()}`;
     },
-    [canManageTaskMedia, effectiveTaskWsId, task?.id, t]
+    [
+      canManageTaskMedia,
+      disabled,
+      effectiveTaskWsId,
+      isCheckingTaskMediaPermission,
+      queryClient,
+      task?.id,
+      t,
+    ]
   );
 
   const imageUploadHandler =
-    !effectiveTaskWsId ||
-    isCheckingTaskMediaPermission ||
-    canManageTaskMedia === false
+    !effectiveTaskWsId || disabled || canManageTaskMedia === false
       ? undefined
       : handleImageUpload;
 
