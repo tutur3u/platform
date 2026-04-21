@@ -10,7 +10,12 @@ const {
   refreshBlueGreenProxyIfRunning,
   runBlueGreenStandbyRefreshWorkflow,
 } = require('./docker-web/blue-green.js');
-const { getComposeEnvironment, WEB_ENV_FILE } = require('./docker-web/env.js');
+const {
+  ensureProductionRedisToken,
+  ensureWebEnvFile,
+  getComposeEnvironment,
+  WEB_ENV_FILE,
+} = require('./docker-web/env.js');
 const {
   getComposeCommandArgs,
   getComposeFile,
@@ -19,6 +24,7 @@ const {
 } = require('./docker-web/compose.js');
 const {
   ROOT_DIR,
+  WATCH_ARGS_FILE,
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
   WATCH_RUNTIME_DIR,
@@ -42,17 +48,20 @@ const DEFAULT_STANDBY_REFRESH_AFTER_MS = 15 * 60_000;
 const DEFAULT_LOCK_CONFLICT_ACTION = 'fail';
 const MAX_GIT_FAILURE_BACKOFF_MS = 15 * 60_000;
 const DEFAULT_REPLACE_WATCHER_TIMEOUT_MS = 5_000;
+const CONTAINER_SELF_RESTART_EXIT_CODE = 75;
 const MAX_EVENTS = 8;
 const DISPLAY_DEPLOYMENTS = 3;
 const BLUE_GREEN_COLORS = ['blue', 'green'];
 const PROD_COMPOSE_FILE = getComposeFile('prod');
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
+const BLUE_GREEN_WATCHER_SERVICE = 'web-blue-green-watcher';
 const INTERNAL_PROXY_METRIC_EXCLUDE_PATHS = new Set([
   '/api/health',
   '/__platform/drain-status',
 ]);
 const SELF_WATCHED_FILES = [path.relative(ROOT_DIR, __filename)];
 const WATCH_PENDING_DEPLOY_ENV = 'WATCHER_PENDING_BLUE_GREEN_DEPLOY';
+const WATCHER_CONTAINER_ENV = 'PLATFORM_BLUE_GREEN_WATCHER_CONTAINER';
 const ANSI = {
   blue: '\x1b[34m',
   bold: '\x1b[1m',
@@ -146,6 +155,147 @@ function getWatcherComposeEnv({
     rootDir,
     withRedis: true,
   });
+}
+
+function writeWatchArgsFile(
+  argv,
+  { fsImpl = fs, paths = getWatchPaths() } = {}
+) {
+  fsImpl.mkdirSync(paths.runtimeDir, { recursive: true });
+  fsImpl.writeFileSync(paths.argsFile, JSON.stringify(argv, null, 2), 'utf8');
+}
+
+function readWatchArgsFile({ fsImpl = fs, paths = getWatchPaths() } = {}) {
+  if (!fsImpl.existsSync(paths.argsFile)) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(fsImpl.readFileSync(paths.argsFile, 'utf8'));
+    return Array.isArray(parsed) &&
+      parsed.every((value) => typeof value === 'string')
+      ? parsed
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+async function startBlueGreenWatcherContainer(
+  argv,
+  {
+    env = process.env,
+    envFilePath = WEB_ENV_FILE,
+    fsImpl = fs,
+    rootDir = ROOT_DIR,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  parseArgs(argv);
+
+  await runChecked('docker', ['compose', 'version'], {
+    env,
+    fsImpl,
+    runCommand: run,
+    stdio: 'ignore',
+  });
+
+  ensureWebEnvFile(fsImpl, envFilePath);
+  ensureProductionRedisToken(
+    {
+      composeGlobalArgs: ['--profile', 'redis'],
+      mode: 'prod',
+    },
+    env,
+    (composeGlobalArgs, profileName) => composeGlobalArgs.includes(profileName),
+    {
+      fsImpl,
+      rootDir,
+    }
+  );
+
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+
+  writeWatchArgsFile(argv, {
+    fsImpl,
+    paths: getWatchPaths(rootDir),
+  });
+
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      PROD_COMPOSE_FILE,
+      ['--profile', 'redis'],
+      'up',
+      '--build',
+      '--detach',
+      '--force-recreate',
+      '--remove-orphans',
+      BLUE_GREEN_WATCHER_SERVICE
+    ),
+    {
+      env: composeEnv,
+      fsImpl,
+      runCommand: run,
+    }
+  );
+}
+
+async function streamBlueGreenWatcherLogs({
+  env = process.env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+  const result = await run(
+    'docker',
+    getComposeCommandArgs(
+      PROD_COMPOSE_FILE,
+      ['--profile', 'redis'],
+      'logs',
+      '--follow',
+      '--tail',
+      '100',
+      BLUE_GREEN_WATCHER_SERVICE
+    ),
+    {
+      env: composeEnv,
+      fsImpl,
+    }
+  );
+
+  if (
+    result.signal &&
+    (result.signal === 'SIGINT' || result.signal === 'SIGTERM')
+  ) {
+    return;
+  }
+
+  if (result.code !== 0) {
+    const detail = result.stderr?.trim() || result.stdout?.trim();
+    throw new Error(
+      detail
+        ? `Unable to stream watcher logs.\n${detail}`
+        : 'Unable to stream watcher logs.'
+    );
+  }
+}
+
+async function runWatcherCommand(argv = process.argv.slice(2), options = {}) {
+  await startBlueGreenWatcherContainer(argv, options);
+  await streamBlueGreenWatcherLogs(options);
 }
 
 function sleep(ms) {
@@ -3299,6 +3449,15 @@ async function main(argv = process.argv.slice(2), options = {}) {
 
     if (result?.restartRequired) {
       cleanup();
+      if (env[WATCHER_CONTAINER_ENV] === '1') {
+        ui.info(
+          'Watcher script changed. Restarting the containerized watcher process.'
+        );
+        ui.close();
+        processImpl.exit?.(CONTAINER_SELF_RESTART_EXIT_CODE);
+        return;
+      }
+
       await spawnReplacementWatcher({
         argv: options.restartArgv ?? process.argv.slice(1),
         cwd: rootDir,
@@ -3325,11 +3484,15 @@ async function main(argv = process.argv.slice(2), options = {}) {
 }
 
 if (require.main === module) {
-  void main();
+  const entrypoint =
+    process.env[WATCHER_CONTAINER_ENV] === '1' ? main : runWatcherCommand;
+  void entrypoint();
 }
 
 module.exports = {
   BLUE_GREEN_PROXY_SERVICE,
+  BLUE_GREEN_WATCHER_SERVICE,
+  CONTAINER_SELF_RESTART_EXIT_CODE,
   DEFAULT_DEPLOY_COMMAND,
   DEFAULT_GIT_FAILURE_BACKOFF_MS,
   DEFAULT_INTERVAL_MS,
@@ -3338,11 +3501,13 @@ module.exports = {
   MAX_DEPLOYMENTS,
   MAX_EVENTS,
   SELF_WATCHED_FILES,
+  WATCH_ARGS_FILE,
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
   WATCH_PENDING_DEPLOY_ENV,
   WATCH_RUNTIME_DIR,
   WATCH_STATUS_FILE,
+  WATCHER_CONTAINER_ENV,
   acquireWatchLock,
   appendDeploymentHistory,
   buildDashboardView,
@@ -3380,6 +3545,7 @@ module.exports = {
   prependPendingDeployment,
   pullTrackedBranch,
   readDeploymentHistory,
+  readWatchArgsFile,
   readWatchLock,
   readWatchStatus,
   releaseWatchLock,
@@ -3390,16 +3556,20 @@ module.exports = {
   runPendingDeployAfterRestart,
   runDeployWatchIteration,
   runDeployWatchLoop,
+  runWatcherCommand,
   sleep,
   spawnReplacementWatcher,
+  startBlueGreenWatcherContainer,
   stripAnsi,
   summarizeRequestRate,
+  streamBlueGreenWatcherLogs,
   terminateExistingWatcher,
   createPendingDeploymentEntry,
   createQuietRunCommand,
   summarizeBlueGreenRuntime,
   summarizeResult,
   waitForProcessExit,
+  writeWatchArgsFile,
   writeWatchStatus,
   writeDeploymentHistory,
 };

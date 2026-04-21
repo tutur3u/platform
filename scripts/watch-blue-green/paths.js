@@ -16,11 +16,16 @@ const WATCH_STATUS_FILE = path.join(
   WATCH_RUNTIME_DIR,
   'blue-green-auto-deploy.status.json'
 );
+const WATCH_ARGS_FILE = path.join(
+  WATCH_RUNTIME_DIR,
+  'blue-green-auto-deploy.args.json'
+);
 
 function getWatchPaths(rootDir = ROOT_DIR) {
   const runtimeDir = path.join(rootDir, 'tmp', 'docker-web', 'watch');
 
   return {
+    argsFile: path.join(runtimeDir, 'blue-green-auto-deploy.args.json'),
     blueGreen: getBlueGreenPaths(rootDir),
     historyFile: path.join(runtimeDir, 'blue-green-auto-deploy.history.json'),
     lockFile: path.join(runtimeDir, 'blue-green-auto-deploy.lock'),
@@ -31,6 +36,7 @@ function getWatchPaths(rootDir = ROOT_DIR) {
 
 module.exports = {
   ROOT_DIR,
+  WATCH_ARGS_FILE,
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
   WATCH_RUNTIME_DIR,

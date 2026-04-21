@@ -48,6 +48,17 @@ services:
     volumes:
       - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
+  web-blue-green-watcher:
+    build:
+      context: .
+      dockerfile: apps/web/docker/blue-green-watcher.Dockerfile
+    init: true
+    volumes:
+      - .:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+      - platform-bun-install:/root/.bun/install/cache
+      - platform-blue-green-watcher-node_modules:/workspace/node_modules
+
   redis:
     profiles: ["redis"]
     image: redis:7-alpine
@@ -75,3 +86,7 @@ services:
 secrets:
   web_env:
     file: apps/web/.env.local
+
+volumes:
+  platform-bun-install:
+  platform-blue-green-watcher-node_modules:

@@ -1,7 +1,7 @@
 ---
 title: 'Web Docker Deployment'
 description: 'Run the web app in Docker for development, production, and blue/green self-hosted rollout.'
-updatedAt: '2026-04-18'
+updatedAt: '2026-04-21'
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime.
@@ -9,6 +9,7 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 ## Files That Define The Stack
 
 - `apps/web/Dockerfile`
+- `apps/web/docker/blue-green-watcher.Dockerfile`
 - `docker-compose.web.yml`
 - `docker-compose.web.prod.yml`
 - `scripts/docker-web.js`
@@ -24,7 +25,7 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 | `bun dev:web:docker:down` | Stop the Docker dev workflow |
 | `bun serve:web:docker` | Build and run the production web image in-place |
 | `bun serve:web:docker:bg` | Blue/green production deploy with health-checked cutover |
-| `bun serve:web:docker:bg:watch` | Poll the tracked GitHub branch every 1s and auto-run blue/green after a successful fast-forward pull |
+| `bun serve:web:docker:bg:watch` | Recreate the watcher container, then tail its live logs while it polls the tracked branch and auto-runs blue/green after a successful fast-forward pull |
 | `bun serve:web:docker:down` | Stop the production Docker stack |
 | `bun serve:web:docker:bg:down` | Stop the blue/green stack and clear local runtime state |
 | `bun check:docker` | Validate Dockerfile and compose parity rules |
@@ -292,6 +293,20 @@ also provides a long-running auto-deploy watcher:
 bun serve:web:docker:bg:watch
 ```
 
+That command now bootstraps Docker instead of running the watcher loop as a
+host PID. Each invocation:
+
+1. Writes the forwarded watcher CLI args to `tmp/docker-web/watch/blue-green-auto-deploy.args.json`.
+2. Rebuilds and force-recreates the dedicated `web-blue-green-watcher` service.
+3. Tails that container's live logs so the terminal still shows the watcher dashboard.
+
+The watcher container mounts:
+
+- the repo worktree at `/workspace`
+- `/var/run/docker.sock` so it can manage the blue/green compose stack itself
+- the shared Bun install cache volume
+- a dedicated watcher `node_modules` volume so `bun i` stays container-local
+
 Behavior:
 
 1. Locks the current local branch and tracked upstream at startup.
@@ -331,6 +346,20 @@ Behavior:
 16. If another watcher already owns the lock, a new invocation can fail with
     guidance, mirror the active watcher with `--resume-if-running`, or replace
     it with `--replace-existing`.
+
+Operational notes for the containerized watcher:
+
+- Re-running `bun serve:web:docker:bg:watch` intentionally recreates the
+  watcher container so it picks up local repo changes, new CLI args, and
+  watcher-image updates in one path.
+- Git fetch/pull credentials now need to be usable inside the watcher
+  container because the watcher no longer runs directly on the host.
+- The watcher image lives at `apps/web/docker/blue-green-watcher.Dockerfile`.
+- Its entrypoint wrapper relaunches the watcher in-place when
+  `scripts/watch-blue-green-deploy.js` requests a self-restart after pulling a
+  new watcher revision.
+- `bun serve:web:docker:bg:down` also stops the watcher service because it is
+  part of the production compose stack now.
 
 Dashboard details:
 

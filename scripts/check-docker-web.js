@@ -5,6 +5,13 @@ const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const WEB_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'web', 'Dockerfile');
+const WATCHER_DOCKERFILE_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'web',
+  'docker',
+  'blue-green-watcher.Dockerfile'
+);
 const WEB_COMPOSE_FILE_PATH = path.join(ROOT_DIR, 'docker-compose.web.yml');
 const WEB_PROD_COMPOSE_FILE_PATH = path.join(
   ROOT_DIR,
@@ -324,7 +331,12 @@ function validateDockerProdCompose(composeContent) {
     '  web:',
     '  web-blue:',
     '  web-green:',
+    '  web-blue-green-watcher:',
     '  web-proxy:',
+    '      dockerfile: apps/web/docker/blue-green-watcher.Dockerfile',
+    '      - /var/run/docker.sock:/var/run/docker.sock',
+    '      - platform-bun-install:/root/.bun/install/cache',
+    '      - platform-blue-green-watcher-node_modules:/workspace/node_modules',
     '    image: nginx:1.27-alpine',
     'http://127.0.0.1:7803/__platform/drain-status',
     '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',
@@ -351,6 +363,26 @@ function validateDockerProdCompose(composeContent) {
   return errors;
 }
 
+function validateWatcherDockerfile(dockerfileContent) {
+  const errors = [];
+  const requiredSnippets = [
+    'FROM oven/bun:1.3.13-alpine',
+    'RUN apk add --no-cache docker-cli git openssh-client',
+    'COPY apps/web/docker/blue-green-watcher-entrypoint.js /usr/local/bin/blue-green-watcher-entrypoint.js',
+    'CMD ["bun", "/usr/local/bin/blue-green-watcher-entrypoint.js"]',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!dockerfileContent.includes(snippet)) {
+      errors.push(
+        `apps/web/docker/blue-green-watcher.Dockerfile is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
 function checkDockerWebSetup({
   rootDir = ROOT_DIR,
   fsImpl = fs,
@@ -366,6 +398,16 @@ function checkDockerWebSetup({
     path.join(rootDir, 'docker-compose.web.prod.yml'),
     'utf8'
   ),
+  watcherDockerfileContent = fsImpl.readFileSync(
+    path.join(
+      rootDir,
+      'apps',
+      'web',
+      'docker',
+      'blue-green-watcher.Dockerfile'
+    ),
+    'utf8'
+  ),
   workspacePackageJsonPaths = listWorkspacePackageJsonPaths(rootDir, fsImpl),
   fileDependencyPaths = listFileDependencyPaths(rootDir, fsImpl),
 } = {}) {
@@ -377,6 +419,7 @@ function checkDockerWebSetup({
     }),
     ...validateDockerCompose(composeContent, { workspacePackageJsonPaths }),
     ...validateDockerProdCompose(prodComposeContent),
+    ...validateWatcherDockerfile(watcherDockerfileContent),
   ];
 }
 
@@ -401,6 +444,7 @@ if (require.main === module) {
 
 module.exports = {
   ROOT_DIR,
+  WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
   WEB_PROD_COMPOSE_FILE_PATH,
@@ -413,4 +457,5 @@ module.exports = {
   validateDockerCompose,
   validateDockerProdCompose,
   validateDockerfile,
+  validateWatcherDockerfile,
 };

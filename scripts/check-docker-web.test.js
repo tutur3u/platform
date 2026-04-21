@@ -6,6 +6,7 @@ const path = require('node:path');
 
 const {
   ROOT_DIR,
+  WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
   WEB_PROD_COMPOSE_FILE_PATH,
@@ -18,6 +19,7 @@ const {
   validateDockerCompose,
   validateDockerProdCompose,
   validateDockerfile,
+  validateWatcherDockerfile,
 } = require('./check-docker-web.js');
 
 test('listWorkspacePackageJsonPaths discovers current workspace manifests', () => {
@@ -189,6 +191,16 @@ test('validateDockerProdCompose reports missing blue-green proxy wiring', () => 
   );
 });
 
+test('validateDockerProdCompose reports missing watcher container wiring', () => {
+  const composeContent = fs
+    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
+    .replace('      - /var/run/docker.sock:/var/run/docker.sock\n', '');
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(errors.join('\n'), /\/var\/run\/docker\.sock/);
+});
+
 test('validateDockerProdCompose reports a drifted proxy healthcheck path', () => {
   const composeContent = fs
     .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
@@ -202,6 +214,22 @@ test('validateDockerProdCompose reports a drifted proxy healthcheck path', () =>
   );
 });
 
+test('validateWatcherDockerfile accepts the current watcher Dockerfile', () => {
+  const dockerfileContent = fs.readFileSync(WATCHER_DOCKERFILE_PATH, 'utf8');
+
+  assert.deepEqual(validateWatcherDockerfile(dockerfileContent), []);
+});
+
+test('validateWatcherDockerfile reports missing docker cli tooling', () => {
+  const dockerfileContent = fs
+    .readFileSync(WATCHER_DOCKERFILE_PATH, 'utf8')
+    .replace('RUN apk add --no-cache docker-cli git openssh-client\n', '');
+
+  const errors = validateWatcherDockerfile(dockerfileContent);
+
+  assert.match(errors.join('\n'), /docker-cli git openssh-client/);
+});
+
 test('checkDockerWebSetup passes for the current repository', () => {
   assert.deepEqual(checkDockerWebSetup({ rootDir: ROOT_DIR }), []);
 });
@@ -212,10 +240,22 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
   );
 
   try {
-    fs.mkdirSync(path.join(tempDir, 'apps', 'web'), { recursive: true });
+    fs.mkdirSync(path.join(tempDir, 'apps', 'web', 'docker'), {
+      recursive: true,
+    });
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'web', 'Dockerfile'),
       'FROM scratch AS deps\n'
+    );
+    fs.writeFileSync(
+      path.join(
+        tempDir,
+        'apps',
+        'web',
+        'docker',
+        'blue-green-watcher.Dockerfile'
+      ),
+      'FROM scratch\n'
     );
     fs.writeFileSync(
       path.join(tempDir, 'docker-compose.web.yml'),
