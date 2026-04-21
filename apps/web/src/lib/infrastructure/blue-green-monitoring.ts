@@ -6,6 +6,7 @@ import type {
   BlueGreenMonitoringSnapshot,
   BlueGreenMonitoringStatus,
   BlueGreenMonitoringWatcherHealth,
+  BlueGreenMonitoringWatcherLog,
 } from '@tuturuuu/internal-api/infrastructure';
 
 type FsLike = Pick<typeof fs, 'existsSync' | 'readFileSync'>;
@@ -247,6 +248,57 @@ function normalizeRecentRequests(
   });
 }
 
+function normalizeWatcherLogs(
+  entries: unknown
+): BlueGreenMonitoringWatcherLog[] {
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+
+  return entries.flatMap((entry) => {
+    const record = toRecord(entry);
+    const time = toFiniteNumber(record?.time);
+    const message = typeof record?.message === 'string' ? record.message : null;
+    const level = typeof record?.level === 'string' ? record.level : null;
+
+    if (time == null || !message || !level) {
+      return [];
+    }
+
+    return [
+      {
+        activeColor:
+          typeof record?.activeColor === 'string' ? record.activeColor : null,
+        commitHash:
+          typeof record?.commitHash === 'string' ? record.commitHash : null,
+        commitShortHash:
+          typeof record?.commitShortHash === 'string'
+            ? record.commitShortHash
+            : null,
+        deploymentKey:
+          typeof record?.deploymentKey === 'string'
+            ? record.deploymentKey
+            : null,
+        deploymentKind:
+          typeof record?.deploymentKind === 'string'
+            ? record.deploymentKind
+            : null,
+        deploymentStamp:
+          typeof record?.deploymentStamp === 'string'
+            ? record.deploymentStamp
+            : null,
+        deploymentStatus:
+          typeof record?.deploymentStatus === 'string'
+            ? record.deploymentStatus
+            : null,
+        level,
+        message,
+        time,
+      },
+    ];
+  });
+}
+
 function normalizeWatcherHealth(
   updatedAt: number | null,
   intervalMs: number | null,
@@ -318,6 +370,11 @@ export function readBlueGreenMonitoringSnapshot({
       path.join(watchDir, 'blue-green-request-telemetry.summary.json'),
       fsImpl
     ) ?? null;
+  const watcherLogs =
+    readJsonFile<Array<Record<string, unknown>>>(
+      path.join(watchDir, 'blue-green-auto-deploy.logs.json'),
+      fsImpl
+    ) ?? [];
 
   const activeColor = readTextFile(path.join(prodDir, 'active-color'), fsImpl);
   const deploymentStamp = readTextFile(
@@ -493,6 +550,7 @@ export function readBlueGreenMonitoringSnapshot({
       lastCheckAt: toFiniteNumber(status?.lastCheckAt),
       lastDeployAt: toFiniteNumber(status?.lastDeployAt),
       lastDeployStatus: humanizeStatus(status?.lastDeployStatus),
+      logs: normalizeWatcherLogs(watcherLogs),
       lastResult:
         status?.lastResult && typeof status.lastResult === 'object'
           ? (status.lastResult as Record<string, unknown>)

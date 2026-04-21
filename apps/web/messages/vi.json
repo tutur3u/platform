@@ -1550,6 +1550,8 @@
       "deployments": "Chưa có lịch sử triển khai.",
       "events": "Chưa ghi nhận sự kiện nào từ watcher.",
       "ledger": "Lịch sử triển khai sẽ xuất hiện tại đây sau lần rollout đầu tiên.",
+      "logs": "Nhật ký watcher sẽ xuất hiện tại đây khi tiến trình poll, build và deploy.",
+      "logs_scoped": "Chưa có nhật ký watcher nào khớp với phạm vi triển khai đã chọn.",
       "requests": "Nhật ký request gần đây sẽ xuất hiện sau khi proxy bắt đầu drain lưu lượng.",
       "velocity": "Tốc độ request sẽ xuất hiện sau khi các lần triển khai thành công bắt đầu phục vụ lưu lượng."
     },
@@ -1570,11 +1572,18 @@
       "requests": "Request",
       "title": "Sổ Theo Dõi Triển Khai"
     },
+    "logs": {
+      "description": "Nhật ký watcher đã lưu gần nhất, có thể lọc theo deployment stamp hoặc commit để dễ kiểm tra các lần phục hồi và rollout lỗi.",
+      "entries": "bản ghi",
+      "scope_all": "Tất Cả Triển Khai"
+    },
     "panels": {
       "cadence": "Nhịp Của Watcher",
       "containers": "Container",
       "deployments": "Triển khai",
       "events": "Sự kiện",
+      "latest_logs": "Nhật Ký Mới Nhất",
+      "logs": "Nhật ký",
       "recent_requests": "Request Gần Đây",
       "requests": "Request",
       "rollout_now": "Rollout Hiện Tại",

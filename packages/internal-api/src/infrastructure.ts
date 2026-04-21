@@ -105,6 +105,19 @@ export interface BlueGreenMonitoringRequestLog {
   time: number;
 }
 
+export interface BlueGreenMonitoringWatcherLog {
+  activeColor: string | null;
+  commitHash: string | null;
+  commitShortHash: string | null;
+  deploymentKey: string | null;
+  deploymentKind: string | null;
+  deploymentStamp: string | null;
+  deploymentStatus: string | null;
+  level: string;
+  message: string;
+  time: number;
+}
+
 export interface BlueGreenMonitoringSnapshot {
   analytics: {
     current: {
@@ -172,6 +185,7 @@ export interface BlueGreenMonitoringSnapshot {
     lastCheckAt: number | null;
     lastDeployAt: number | null;
     lastDeployStatus: string | null;
+    logs: BlueGreenMonitoringWatcherLog[];
     lastResult: Record<string, unknown> | null;
     latestCommit: {
       committedAt: string | null;

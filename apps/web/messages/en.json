@@ -1550,6 +1550,8 @@
       "deployments": "No deployment history is available yet.",
       "events": "No watcher events have been recorded yet.",
       "ledger": "Deployment history will appear here after the first rollout.",
+      "logs": "Watcher logs will appear here as the poller pulls, builds, and deploys.",
+      "logs_scoped": "No watcher logs matched the selected deployment scope yet.",
       "requests": "Recent request logs will appear after the proxy starts draining traffic.",
       "velocity": "Request velocity appears after successful deployments collect traffic."
     },
@@ -1570,11 +1572,18 @@
       "requests": "Requests",
       "title": "Deployment Ledger"
     },
+    "logs": {
+      "description": "Latest persisted watcher logs, filterable by deployment stamp or commit so recovery and rollout failures are easier to inspect.",
+      "entries": "entries",
+      "scope_all": "All Deployments"
+    },
     "panels": {
       "cadence": "Watcher Cadence",
       "containers": "Containers",
       "deployments": "Deployments",
       "events": "Events",
+      "latest_logs": "Latest Logs",
+      "logs": "Logs",
       "recent_requests": "Recent Requests",
       "requests": "Requests",
       "rollout_now": "Rollout Now",

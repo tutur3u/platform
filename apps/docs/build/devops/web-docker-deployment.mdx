@@ -433,6 +433,12 @@ Dashboard details:
   100,000,000 recent drained request-log records on disk, with rolling
   daily/weekly/monthly/yearly metric buckets plus a recent-request excerpt for
   the monitoring dashboard.
+- The watcher also persists a separate latest-log ledger under
+  `tmp/docker-web/watch/blue-green-auto-deploy.logs.json`, which captures the
+  high-level poll/pull/build/deploy watcher messages with deployment stamps and
+  commit hashes when available. The infrastructure dashboard uses that ledger
+  for a deployment-scoped latest-log view without needing live `docker logs`
+  access.
 - The watcher uses the same Docker runtime env resolution as the real deploy
   flow, so blue/green status probes still work when the Redis profile is part
   of the production compose file.

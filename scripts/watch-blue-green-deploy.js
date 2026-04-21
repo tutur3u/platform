@@ -28,6 +28,7 @@ const {
   WATCH_ARGS_FILE,
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
+  WATCH_LOG_FILE,
   WATCH_PENDING_DEPLOY_FILE,
   WATCH_RUNTIME_DIR,
   WATCH_STATUS_FILE,
@@ -50,6 +51,11 @@ const {
   summarizeRequestRate,
   syncProxyTrafficStore,
 } = require('./watch-blue-green/telemetry.js');
+const {
+  appendWatcherLogEntry,
+  createWatcherLogEntry,
+  readWatcherLogEntries,
+} = require('./watch-blue-green/logs.js');
 const DEFAULT_INTERVAL_MS = 1_000;
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
 const DEFAULT_GIT_FAILURE_BACKOFF_MS = 60_000;
@@ -1252,6 +1258,7 @@ function createWatchUi(initialState = {}, options = {}) {
   const clearIntervalImpl = options.clearIntervalImpl ?? clearInterval;
   const isTTY = options.isTTY ?? Boolean(stdout.isTTY);
   const maxEvents = options.maxEvents ?? MAX_EVENTS;
+  const onEvent = options.onEvent ?? null;
   const state = {
     deployments: [],
     events: [],
@@ -1299,14 +1306,13 @@ function createWatchUi(initialState = {}, options = {}) {
   }
 
   function pushEvent(level, message) {
-    state.events = [
-      {
-        level,
-        message,
-        time: now(),
-      },
-      ...state.events,
-    ].slice(0, maxEvents);
+    const event = {
+      level,
+      message,
+      time: now(),
+    };
+    state.events = [event, ...state.events].slice(0, maxEvents);
+    onEvent?.(event, state);
 
     if (!isTTY) {
       const writer = level === 'error' ? stderr : stdout;
@@ -1517,17 +1523,19 @@ function serializeWatchStatus(
   state,
   { now = Date.now(), processImpl = process } = {}
 ) {
+  const { logs: _logs, ...serializableState } = state;
+
   return {
-    ...state,
+    ...serializableState,
     lastResult:
-      state.lastResult == null
+      serializableState.lastResult == null
         ? null
         : {
-            ...state.lastResult,
+            ...serializableState.lastResult,
             error:
-              state.lastResult.error instanceof Error
-                ? state.lastResult.error.message
-                : (state.lastResult.error ?? null),
+              serializableState.lastResult.error instanceof Error
+                ? serializableState.lastResult.error.message
+                : (serializableState.lastResult.error ?? null),
           },
     ownerPid: processImpl.pid,
     updatedAt: now,
@@ -3240,6 +3248,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
         currentBlueGreen: initialRuntimeSnapshot.currentBlueGreen,
         dockerResources: initialRuntimeSnapshot.dockerResources,
         deployments: initialRuntimeSnapshot.deployments,
+        logs: readWatcherLogEntries(paths, fsImpl),
         intervalMs: parsed.intervalMs,
         lastDeployAt: initialDeploymentSummary.lastDeployAt,
         lastDeployStatus: initialDeploymentSummary.lastDeployStatus,
@@ -3247,6 +3256,16 @@ async function main(argv = process.argv.slice(2), options = {}) {
         startedAt: Date.now(),
       },
       {
+        onEvent: (event, state) => {
+          const nextLogs = appendWatcherLogEntry(
+            createWatcherLogEntry(event, state),
+            {
+              fsImpl,
+              paths,
+            }
+          );
+          state.logs = nextLogs;
+        },
         onStateChange: (state) => {
           writeWatchStatus(state, {
             fsImpl,
@@ -3659,6 +3678,7 @@ module.exports = {
   WATCH_ARGS_FILE,
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
+  WATCH_LOG_FILE,
   WATCH_PENDING_DEPLOY_FILE,
   WATCH_PENDING_DEPLOY_ENV,
   WATCH_RUNTIME_DIR,

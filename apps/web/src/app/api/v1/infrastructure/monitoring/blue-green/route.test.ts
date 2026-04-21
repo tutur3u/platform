@@ -156,6 +156,7 @@ describe('blue-green monitoring route', () => {
         lastCheckAt: Date.now(),
         lastDeployAt: Date.now(),
         lastDeployStatus: 'successful',
+        logs: [],
         lastResult: { status: 'up-to-date' },
         latestCommit: {
           committedAt: '2026-04-21T10:00:00.000Z',

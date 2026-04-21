@@ -14,8 +14,10 @@ import {
 import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrastructure';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useTranslations } from 'next-intl';
+import { useDeferredValue, useState } from 'react';
 import {
   formatClockTime,
   formatCompactNumber,
@@ -564,6 +566,159 @@ export function RecentRequestsPanel({
         </ScrollArea>
       )}
     </div>
+  );
+}
+
+export function WatcherLogsPanel({
+  deployments,
+  logs,
+}: {
+  deployments: BlueGreenMonitoringSnapshot['deployments'];
+  logs: BlueGreenMonitoringSnapshot['watcher']['logs'];
+}) {
+  const t = useTranslations('blue-green-monitoring');
+  const [selectedScope, setSelectedScope] = useState('all');
+  const deferredScope = useDeferredValue(selectedScope);
+  const scopeOptions = [
+    {
+      key: 'all',
+      label: t('logs.scope_all'),
+    },
+    ...deployments
+      .map((deployment) => {
+        const deploymentKey =
+          deployment.deploymentStamp != null
+            ? `stamp:${deployment.deploymentStamp}`
+            : deployment.commitHash != null
+              ? `commit:${deployment.commitHash}`
+              : null;
+
+        if (!deploymentKey) {
+          return null;
+        }
+
+        return {
+          key: deploymentKey,
+          label:
+            deployment.commitShortHash ??
+            deployment.deploymentStamp ??
+            deployment.activeColor ??
+            t('states.none'),
+        };
+      })
+      .filter(
+        (value, index, values): value is { key: string; label: string } =>
+          value != null &&
+          values.findIndex((candidate) => candidate?.key === value.key) ===
+            index
+      ),
+  ];
+  const scopeKeys = new Set(scopeOptions.map((option) => option.key));
+  const effectiveScope = scopeKeys.has(deferredScope) ? deferredScope : 'all';
+  const filteredLogs =
+    effectiveScope === 'all'
+      ? logs
+      : logs.filter((log) => log.deploymentKey === effectiveScope);
+
+  return (
+    <section className="rounded-[2rem] border border-border/60 bg-background/80 p-5">
+      <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+            {t('panels.logs')}
+          </p>
+          <h3 className="mt-1 font-semibold text-lg">
+            {t('panels.latest_logs')}
+          </h3>
+          <p className="mt-2 max-w-3xl text-muted-foreground text-sm">
+            {t('logs.description')}
+          </p>
+        </div>
+        <Badge variant="secondary" className="rounded-full">
+          {filteredLogs.length} {t('logs.entries')}
+        </Badge>
+      </div>
+
+      <ScrollArea className="pb-4">
+        <div className="flex gap-2">
+          {scopeOptions.map((option) => (
+            <Button
+              key={option.key}
+              className="rounded-full"
+              onClick={() => setSelectedScope(option.key)}
+              size="sm"
+              variant={effectiveScope === option.key ? 'default' : 'outline'}
+            >
+              {option.label}
+            </Button>
+          ))}
+        </div>
+      </ScrollArea>
+
+      {filteredLogs.length === 0 ? (
+        <div className="mt-4 rounded-2xl border border-border/60 border-dashed bg-background/60 p-6 text-center text-muted-foreground text-sm">
+          {effectiveScope === 'all' ? t('empty.logs') : t('empty.logs_scoped')}
+        </div>
+      ) : (
+        <ScrollArea className="mt-4 h-[420px] pr-3">
+          <div className="space-y-3">
+            {filteredLogs.map((log, index) => {
+              const deploymentLabel =
+                log.commitShortHash ??
+                log.deploymentStamp ??
+                log.activeColor ??
+                t('states.none');
+              const levelVariant =
+                log.level === 'error'
+                  ? 'destructive'
+                  : log.level === 'warn'
+                    ? 'secondary'
+                    : 'outline';
+
+              return (
+                <div
+                  key={`${log.time}-${log.message}-${index}`}
+                  className="rounded-2xl border border-border/50 bg-background/85 p-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant={levelVariant} className="rounded-full">
+                          {log.level.toUpperCase()}
+                        </Badge>
+                        <Badge variant="outline" className="rounded-full">
+                          {deploymentLabel}
+                        </Badge>
+                        {log.deploymentStatus ? (
+                          <Badge variant="outline" className="rounded-full">
+                            {t(
+                              getDeploymentStatusTranslationKey(
+                                log.deploymentStatus
+                              )
+                            )}
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <p className="mt-3 whitespace-pre-wrap font-mono text-sm leading-6">
+                        {log.message}
+                      </p>
+                    </div>
+                    <div className="text-right text-xs">
+                      <div className="font-medium">
+                        {formatClockTime(log.time)}
+                      </div>
+                      <div className="mt-1 text-muted-foreground">
+                        {formatRelativeTime(log.time)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      )}
+    </section>
   );
 }
 

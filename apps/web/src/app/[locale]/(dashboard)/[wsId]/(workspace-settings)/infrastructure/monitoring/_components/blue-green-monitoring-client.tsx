@@ -31,6 +31,7 @@ import {
   RuntimeTopologyPanel,
   TrafficPeriodsPanel,
   WatcherCadencePanel,
+  WatcherLogsPanel,
 } from './blue-green-monitoring-panels';
 import {
   formatBytes,
@@ -332,6 +333,11 @@ export function BlueGreenMonitoringClient() {
         </div>
         <EventStreamPanel watcher={snapshot.watcher} />
       </div>
+
+      <WatcherLogsPanel
+        deployments={snapshot.deployments}
+        logs={snapshot.watcher.logs}
+      />
 
       <RecentRequestsPanel requests={snapshot.analytics.recentRequests} />
 
