@@ -59,7 +59,7 @@ jobs:
           node-version: 24
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Validate Docker parity checks
         run: node scripts/check-docker-web.js

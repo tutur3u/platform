@@ -226,7 +226,13 @@ export function useTaskDialogKeyboardShortcuts({
   useEffect(() => {
     if (!editorInstance || !isOpen) return;
 
-    const editorDom = editorInstance.view.dom as HTMLElement | null;
+    let editorDom: HTMLElement | null = null;
+    try {
+      editorDom = editorInstance.view.dom as HTMLElement | null;
+    } catch {
+      return;
+    }
+
     if (!editorDom) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
