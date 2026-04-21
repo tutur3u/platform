@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { CalendarDays, Check, ChevronsUpDown, Users } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -25,7 +25,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import GroupAttendanceClient from '../groups/[groupId]/attendance/client';
 
 type Member = {
@@ -44,6 +44,61 @@ interface Props {
   canUpdateAttendance: boolean;
 }
 
+interface GroupOption {
+  id: string;
+  name: string | null;
+}
+
+interface GroupsPageResponse {
+  data?: GroupOption[];
+  count?: number;
+}
+
+const GROUPS_PAGE_SIZE = 50;
+
+async function fetchGroupsPage({
+  wsId,
+  query,
+  page,
+  workspaceUserId,
+  hasManageUsers,
+}: {
+  wsId: string;
+  query: string;
+  page: number;
+  workspaceUserId?: string;
+  hasManageUsers: boolean;
+}): Promise<Required<GroupsPageResponse>> {
+  const searchParams = new URLSearchParams({
+    page: String(page),
+    pageSize: String(GROUPS_PAGE_SIZE),
+  });
+
+  if (query.trim()) {
+    searchParams.set('q', query.trim());
+  }
+
+  if (workspaceUserId && !hasManageUsers) {
+    searchParams.set('userId', workspaceUserId);
+  }
+
+  const res = await fetch(
+    `/api/v1/workspaces/${wsId}/users/groups?${searchParams.toString()}`,
+    { cache: 'no-store' }
+  );
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch groups');
+  }
+
+  const payload = (await res.json()) as GroupsPageResponse;
+
+  return {
+    data: payload.data ?? [],
+    count: payload.count ?? 0,
+  };
+}
+
 export default function GroupAttendanceSelector({
   wsId,
   workspaceUserId,
@@ -59,44 +114,42 @@ export default function GroupAttendanceSelector({
   const [query, setQuery] = useState('');
   const [debouncedQuery] = useDebounce(query, 300);
 
-  // Search groups (only active when searching)
-  const searchGroupsQuery = useQuery({
+  const groupsQuery = useInfiniteQuery({
     queryKey: [
-      'user-groups-search-attendance',
+      'user-groups-attendance',
       wsId,
       workspaceUserId,
       hasManageUsers,
       debouncedQuery,
     ],
-    queryFn: async () => {
-      if (!debouncedQuery) return [];
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      fetchGroupsPage({
+        wsId,
+        query: debouncedQuery,
+        page: pageParam,
+        workspaceUserId,
+        hasManageUsers,
+      }),
+    getNextPageParam: (lastPage, allPages) => {
+      const loadedCount = allPages.reduce(
+        (total, page) => total + page.data.length,
+        0
+      );
 
-      const searchParams = new URLSearchParams({
-        q: debouncedQuery,
-        limit: '20',
-      });
-      if (workspaceUserId && !hasManageUsers) {
-        searchParams.set('userId', workspaceUserId);
+      if (loadedCount >= lastPage.count) {
+        return undefined;
       }
 
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/users/groups?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) throw new Error('Failed to fetch groups');
-      const { data } = await res.json();
-      return data || [];
+      return allPages.length + 1;
     },
-    enabled:
-      !!wsId &&
-      (hasManageUsers || !!workspaceUserId) &&
-      debouncedQuery.length > 0,
+    enabled: !!wsId && (hasManageUsers || !!workspaceUserId),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Fetch selected group details (to display correct name even if not in search results)
   const selectedGroupQuery = useQuery({
-    queryKey: ['selected-group-details-attendance', selectedGroupId],
+    queryKey: ['selected-group-details-attendance', wsId, selectedGroupId],
     queryFn: async () => {
       if (!selectedGroupId) return null;
       const res = await fetch(
@@ -111,11 +164,19 @@ export default function GroupAttendanceSelector({
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  const groups = (searchGroupsQuery.data || []) as Array<{
-    id: string;
-    name: string | null;
-  }>;
-  const selectedGroup = selectedGroupQuery.data;
+  const groups = useMemo(
+    () => (groupsQuery.data?.pages ?? []).flatMap((page) => page.data),
+    [groupsQuery.data?.pages]
+  );
+  const selectedGroup =
+    groups.find((group) => group.id === selectedGroupId) ??
+    selectedGroupQuery.data;
+
+  useEffect(() => {
+    if (!selectedGroupId && groups[0]?.id) {
+      setSelectedGroupId(groups[0].id);
+    }
+  }, [groups, selectedGroupId]);
 
   // Fetch group sessions when a group is selected
   const { data: groupData, isLoading: isLoadingSessions } = useQuery({
@@ -222,40 +283,72 @@ export default function GroupAttendanceSelector({
                   value={query}
                   onValueChange={setQuery}
                 />
-                <CommandList>
-                  {searchGroupsQuery.isLoading ? (
+                <CommandList
+                  onScroll={(event) => {
+                    if (
+                      !groupsQuery.hasNextPage ||
+                      groupsQuery.isFetchingNextPage
+                    )
+                      return;
+
+                    const element = event.currentTarget;
+                    const remainingScrollDistance =
+                      element.scrollHeight -
+                      element.scrollTop -
+                      element.clientHeight;
+
+                    if (remainingScrollDistance <= 48) {
+                      void groupsQuery.fetchNextPage();
+                    }
+                  }}
+                >
+                  {groupsQuery.isLoading ? (
                     <div className="py-6 text-center text-muted-foreground text-sm">
                       {tc('loading')}
                     </div>
                   ) : groups.length > 0 ? (
-                    <CommandGroup>
-                      {groups.map((group) => (
-                        <CommandItem
-                          key={group.id}
-                          value={group.name || ''}
-                          onSelect={() => {
-                            setSelectedGroupId(group.id);
-                            setOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              'mr-2 h-4 w-4',
-                              selectedGroupId === group.id
-                                ? 'opacity-100'
-                                : 'opacity-0'
-                            )}
-                          />
-                          {group.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
+                    <>
+                      <CommandGroup>
+                        {groups.map((group) => (
+                          <CommandItem
+                            key={group.id}
+                            value={group.name || ''}
+                            onSelect={() => {
+                              setSelectedGroupId(group.id);
+                              setOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                selectedGroupId === group.id
+                                  ? 'opacity-100'
+                                  : 'opacity-0'
+                              )}
+                            />
+                            {group.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                      {groupsQuery.isFetchingNextPage && (
+                        <div className="px-2 py-2 text-center text-muted-foreground text-xs">
+                          {tc('loading')}
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <CommandEmpty>
                       {query
                         ? tc('no_results_found')
                         : t('ws-user-groups.search_group_placeholder')}
                     </CommandEmpty>
+                  )}
+                  {groupsQuery.isError && (
+                    <div className="px-2 py-2 text-center text-destructive text-sm">
+                      {groupsQuery.error instanceof Error
+                        ? groupsQuery.error.message
+                        : tc('error')}
+                    </div>
                   )}
                 </CommandList>
               </Command>
