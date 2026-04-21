@@ -4,7 +4,8 @@
 
 DROP VIEW IF EXISTS public.workspace_invite_links_with_stats;
 
-CREATE OR REPLACE VIEW public.workspace_invite_links_with_stats AS
+CREATE OR REPLACE VIEW public.workspace_invite_links_with_stats
+WITH (security_invoker = true) AS
 SELECT
   wil.id,
   wil.ws_id,

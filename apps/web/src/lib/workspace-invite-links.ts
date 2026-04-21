@@ -1,3 +1,5 @@
+import type { Database } from '@tuturuuu/types/db';
+
 export interface InviteLinkJoinedUser {
   id: string | null;
   display_name: string | null;
@@ -20,7 +22,8 @@ export interface InviteLinkUse {
   user: InviteLinkJoinedUser;
 }
 
-export type WorkspaceInviteLinkMemberType = 'MEMBER' | 'GUEST';
+export type WorkspaceInviteLinkMemberType =
+  Database['public']['Enums']['workspace_member_type'];
 
 export interface InviteLinkSummary {
   id: string;
@@ -100,32 +103,18 @@ export function memberTypeFromInviteStatsRow(
 export function mapInviteLinkRowFromApi(
   row: Record<string, unknown>
 ): InviteLinkSummary {
-  const memberType = memberTypeFromInviteStatsRow(row);
-  const raw: RawInviteLinkDetails = {
-    id: row.id as string | null,
-    ws_id: row.ws_id as string | null,
-    code: row.code as string | null,
-    creator_id: row.creator_id as string | null,
-    max_uses: row.max_uses as number | null,
-    expires_at: row.expires_at as string | null,
-    created_at: row.created_at as string | null,
-    current_uses: row.current_uses as number | null,
-    is_expired: row.is_expired as boolean | null,
-    is_full: row.is_full as boolean | null,
-    type: memberType,
-  };
   return {
-    id: raw.id ?? '',
-    ws_id: raw.ws_id ?? '',
-    code: raw.code ?? '',
-    creator_id: raw.creator_id ?? '',
-    max_uses: raw.max_uses ?? null,
-    expires_at: raw.expires_at ?? null,
-    created_at: raw.created_at ?? '',
-    current_uses: raw.current_uses ?? 0,
-    is_expired: raw.is_expired ?? false,
-    is_full: raw.is_full ?? false,
-    memberType,
+    id: (row.id as string | null) ?? '',
+    ws_id: (row.ws_id as string | null) ?? '',
+    code: (row.code as string | null) ?? '',
+    creator_id: (row.creator_id as string | null) ?? '',
+    max_uses: (row.max_uses as number | null) ?? null,
+    expires_at: (row.expires_at as string | null) ?? null,
+    created_at: (row.created_at as string | null) ?? '',
+    current_uses: (row.current_uses as number | null) ?? 0,
+    is_expired: (row.is_expired as boolean | null) ?? false,
+    is_full: (row.is_full as boolean | null) ?? false,
+    memberType: memberTypeFromInviteStatsRow(row),
   };
 }
 
