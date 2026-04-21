@@ -20,12 +20,15 @@ import { useTranslations } from 'next-intl';
 import {
   ContainerResourceChart,
   DeploymentStoryChart,
+  PeriodTrendChart,
   RequestVelocityChart,
 } from './blue-green-monitoring-charts';
 import {
   DeploymentLedger,
   EventStreamPanel,
+  RecentRequestsPanel,
   RuntimeTopologyPanel,
+  TrafficPeriodsPanel,
   WatcherCadencePanel,
 } from './blue-green-monitoring-panels';
 import {
@@ -123,9 +126,9 @@ export function BlueGreenMonitoringClient() {
     },
     {
       icon: <Network className="h-4 w-4" />,
-      label: t('stats.network'),
-      value: formatBytes(snapshot.dockerResources.totalRxBytes),
-      meta: `${t('chart.tx')} ${formatBytes(snapshot.dockerResources.totalTxBytes)}`,
+      label: t('stats.persisted_logs'),
+      value: formatCompactNumber(snapshot.analytics.totalPersistedLogs),
+      meta: t('stats.log_retention'),
     },
     {
       icon: <GitBranch className="h-4 w-4" />,
@@ -263,7 +266,22 @@ export function BlueGreenMonitoringClient() {
         ))}
       </div>
 
-      <div className="grid gap-6 2xl:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid gap-6 2xl:grid-cols-[1.05fr_0.95fr]">
+        <TrafficPeriodsPanel analytics={snapshot.analytics} />
+        <section className="rounded-[2rem] border border-border/60 bg-background/80 p-5">
+          <div className="mb-4">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+              {t('panels.traffic')}
+            </p>
+            <h3 className="mt-1 font-semibold text-lg">
+              {t('chart.request_velocity')}
+            </h3>
+          </div>
+          <PeriodTrendChart metrics={snapshot.analytics.trends.daily} />
+        </section>
+      </div>
+
+      <div className="grid gap-6 2xl:grid-cols-[1.05fr_0.95fr]">
         <section className="rounded-[2rem] border border-border/60 bg-background/80 p-5">
           <div className="mb-4">
             <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
@@ -282,7 +300,7 @@ export function BlueGreenMonitoringClient() {
               {t('panels.deployments')}
             </p>
             <h3 className="mt-1 font-semibold text-lg">
-              {t('chart.request_velocity')}
+              {t('chart.deploy_request_velocity')}
             </h3>
           </div>
           <RequestVelocityChart deployments={snapshot.deployments} />
@@ -308,6 +326,8 @@ export function BlueGreenMonitoringClient() {
         </div>
         <EventStreamPanel watcher={snapshot.watcher} />
       </div>
+
+      <RecentRequestsPanel requests={snapshot.analytics.recentRequests} />
 
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">

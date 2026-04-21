@@ -415,11 +415,21 @@ Dashboard details:
   per-container row for `proxy`, `green`, and `blue` when those services are
   running. This is sampled from `docker stats --no-stream`, so it stays local
   to the host and is appropriate for self-hosted operator monitoring.
-- Request counters are derived from the local `web-proxy` container logs, so
-  they stay self-hosted and do not require any external analytics service.
+- Request counters now come from a persisted local proxy-log drain under
+  `tmp/docker-web/watch/blue-green-request-telemetry.*`, not from one-off
+  `docker logs` scrapes in the dashboard. The watcher continuously drains
+  structured `web-proxy` access logs into a local ledger, so request metrics
+  survive watcher restarts and do not require any external analytics service.
 - Internal proxy health checks for `/api/health` and
   `/__platform/drain-status` are excluded from the request totals so the
   numbers reflect real served traffic more closely.
+- The proxy now emits structured JSON access logs that include the upstream
+  deployment stamp and blue/green color. That lets the watcher link requests
+  back to the correct deployment instead of only estimating by time window.
+- The watcher retains up to 10,000 deployment history entries and up to
+  100,000,000 recent drained request-log records on disk, with rolling
+  daily/weekly/monthly/yearly metric buckets plus a recent-request excerpt for
+  the monitoring dashboard.
 - The watcher uses the same Docker runtime env resolution as the real deploy
   flow, so blue/green status probes still work when the Redis profile is part
   of the production compose file.
@@ -451,6 +461,10 @@ Dashboard details:
   successful built/deployed commit after a watcher restart or container
   recreate, the watcher builds the current `HEAD` before settling back into
   normal polling.
+- The same reconciliation now also runs during steady-state polling: if Git is
+  already up to date but the latest successful deployment record still points
+  at an older commit, the watcher rebuilds/deploys the current `HEAD` instead
+  of incorrectly reporting `up-to-date`.
 
 ## Browser-State 502 Recovery
 

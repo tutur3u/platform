@@ -1,6 +1,9 @@
 'use client';
 
-import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrastructure';
+import type {
+  BlueGreenMonitoringPeriodMetric,
+  BlueGreenMonitoringSnapshot,
+} from '@tuturuuu/internal-api/infrastructure';
 import {
   type ChartConfig,
   ChartContainer,
@@ -331,6 +334,94 @@ export function ContainerResourceChart({
         ))}
       </div>
     </div>
+  );
+}
+
+export function PeriodTrendChart({
+  metrics,
+}: {
+  metrics: BlueGreenMonitoringPeriodMetric[];
+}) {
+  const t = useTranslations('blue-green-monitoring');
+  const chartData = useMemo(
+    () =>
+      metrics
+        .slice(0, 10)
+        .reverse()
+        .map((metric) => ({
+          bucket: metric.bucketLabel,
+          peakRpm: metric.peakRequestsPerMinute,
+          requests: metric.requestCount,
+        })),
+    [metrics]
+  );
+
+  const chartConfig = {
+    peakRpm: {
+      color: 'var(--chart-4)',
+      label: t('chart.peak_rpm'),
+    },
+    requests: {
+      color: 'var(--chart-1)',
+      label: t('chart.requests'),
+    },
+  } satisfies ChartConfig;
+
+  if (chartData.length === 0) {
+    return <MonitoringChartEmptyState label={t('empty.velocity')} />;
+  }
+
+  return (
+    <ChartContainer config={chartConfig} className="h-[280px] w-full">
+      <ComposedChart accessibilityLayer data={chartData} barGap={18}>
+        <CartesianGrid vertical={false} />
+        <XAxis
+          axisLine={false}
+          dataKey="bucket"
+          tickLine={false}
+          tickMargin={8}
+        />
+        <YAxis
+          axisLine={false}
+          tickFormatter={(value) => formatCompactNumber(Number(value))}
+          tickLine={false}
+          width={44}
+          yAxisId="requests"
+        />
+        <YAxis
+          axisLine={false}
+          orientation="right"
+          tickLine={false}
+          width={44}
+          yAxisId="rpm"
+        />
+        <ChartTooltip
+          content={
+            <ChartTooltipContent
+              formatter={(value, name) => [
+                formatNumber(Number(value)),
+                ' ',
+                name === 'peakRpm' ? t('chart.peak_rpm') : t('chart.requests'),
+              ]}
+            />
+          }
+        />
+        <Bar
+          dataKey="requests"
+          fill="var(--color-requests)"
+          radius={[10, 10, 2, 2]}
+          yAxisId="requests"
+        />
+        <Line
+          dataKey="peakRpm"
+          dot={false}
+          stroke="var(--color-peakRpm)"
+          strokeWidth={2.5}
+          type="monotone"
+          yAxisId="rpm"
+        />
+      </ComposedChart>
+    </ChartContainer>
   );
 }
 

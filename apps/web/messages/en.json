@@ -1522,6 +1522,7 @@
       "build_minutes": "Build Minutes",
       "container_pressure": "Container Pressure",
       "cpu": "CPU",
+      "deploy_request_velocity": "Deployment Request Velocity",
       "memory": "Memory",
       "peak_rpm": "Peak RPM",
       "request_velocity": "Request Velocity",
@@ -1548,6 +1549,7 @@
       "deployments": "No deployment history is available yet.",
       "events": "No watcher events have been recorded yet.",
       "ledger": "Deployment history will appear here after the first rollout.",
+      "requests": "Recent request logs will appear after the proxy starts draining traffic.",
       "velocity": "Request velocity appears after successful deployments collect traffic."
     },
     "hero": {
@@ -1561,6 +1563,7 @@
     "ledger": {
       "avg_rpm": "Avg RPM",
       "build_time": "Build Time",
+      "errors": "Errors",
       "no_commit_subject": "No commit summary captured",
       "peak_rpm": "Peak RPM",
       "requests": "Requests",
@@ -1571,10 +1574,23 @@
       "containers": "Containers",
       "deployments": "Deployments",
       "events": "Events",
+      "recent_requests": "Recent Requests",
+      "requests": "Requests",
       "runtime": "Runtime",
       "signal_feed": "Signal Feed",
+      "time_windows": "Daily, Weekly, Monthly, Yearly",
       "topology": "Topology",
+      "traffic": "Traffic",
       "watcher": "Watcher"
+    },
+    "periods": {
+      "daily": "Daily",
+      "monthly": "Monthly",
+      "weekly": "Weekly",
+      "yearly": "Yearly"
+    },
+    "requests": {
+      "internal": "Internal Probe"
     },
     "runtime": {
       "activated_at": "Activated At",
@@ -1600,11 +1616,15 @@
     "stats": {
       "active_color": "Active Color",
       "avg_build": "Average Build",
+      "avg_latency": "Avg Latency",
       "cpu": "CPU",
       "current_rpm": "Current RPM",
+      "deployments_touched": "Deployments Touched",
+      "log_retention": "Persisted request log retention",
       "mean_rollout": "Mean rollout time",
       "memory": "Memory",
       "network": "Network",
+      "persisted_logs": "Persisted Logs",
       "requests_per_minute": "Requests per minute",
       "served_requests": "Served requests",
       "total_container_cpu": "Total container CPU",

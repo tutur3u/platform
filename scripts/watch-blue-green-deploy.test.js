@@ -14,7 +14,6 @@ const {
   DEFAULT_INTERVAL_MS,
   DISPLAY_DEPLOYMENTS,
   MAX_GIT_FAILURE_BACKOFF_MS,
-  MAX_DEPLOYMENTS,
   SELF_WATCHED_FILES,
   WATCH_ARGS_FILE,
   WATCH_PENDING_DEPLOY_ENV,
@@ -867,7 +866,7 @@ test('isProcessAlive handles missing and inaccessible processes safely', () => {
   );
 });
 
-test('appendDeploymentHistory closes the prior active deployment and keeps only the last 5 entries', () => {
+test('appendDeploymentHistory closes the prior active deployment and preserves retained history ordering', () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-history-'));
   const paths = getWatchPaths(tempDir);
 
@@ -968,7 +967,7 @@ test('appendDeploymentHistory closes the prior active deployment and keeps only 
 
     const history = readDeploymentHistory(paths, fs);
 
-    assert.equal(history.length, MAX_DEPLOYMENTS);
+    assert.equal(history.length, 6);
     assert.equal(history[0].commitShortHash, 'f6');
     assert.equal(history[1].commitShortHash, 'e5');
     assert.equal(history[2].commitShortHash, 'd4');
@@ -1103,6 +1102,30 @@ test('parseProxyLogEntries keeps only access lines and collectDeploymentTraffic 
   assert.equal(enriched[0].lifetimeMs, 30 * 60 * 1_000);
 });
 
+test('parseProxyLogEntries understands structured nginx JSON access logs', () => {
+  const parsed = parseProxyLogEntries(
+    '2026-04-18T11:05:00.000000000Z {"time":"2026-04-18T11:05:00+00:00","host":"platform.test","method":"GET","path":"/ops?tab=traffic","status":200,"requestTime":0.245,"upstreamAddr":"172.18.0.4:7803","deploymentStamp":"deploy-2026-04-18T11-00-00Z","deploymentColor":"green"}'
+  );
+
+  assert.deepEqual(parsed, [
+    {
+      deploymentColor: 'green',
+      deploymentStamp: 'deploy-2026-04-18T11-00-00Z',
+      host: 'platform.test',
+      isInternal: false,
+      method: 'GET',
+      path: '/ops?tab=traffic',
+      rawLine:
+        '2026-04-18T11:05:00.000000000Z {"time":"2026-04-18T11:05:00+00:00","host":"platform.test","method":"GET","path":"/ops?tab=traffic","status":200,"requestTime":0.245,"upstreamAddr":"172.18.0.4:7803","deploymentStamp":"deploy-2026-04-18T11-00-00Z","deploymentColor":"green"}',
+      requestTimeMs: 245,
+      sourceFormat: 'json',
+      status: 200,
+      time: Date.parse('2026-04-18T11:05:00.000000000Z'),
+      upstreamAddress: '172.18.0.4:7803',
+    },
+  ]);
+});
+
 test('summarizeRequestRate computes total, per-minute, and per-day traffic stats', () => {
   const startTime = Date.parse('2026-04-18T00:00:00.000Z');
   const endTime = Date.parse('2026-04-20T00:00:00.000Z');
@@ -1127,6 +1150,7 @@ test('summarizeRequestRate computes total, per-minute, and per-day traffic stats
     dailyAverageRequests: 2.5,
     dailyPeakRequests: 3,
     dailyRequestCount: 3,
+    errorCount: 0,
     peakRequestsPerMinute: 2,
     requestCount: 5,
   });
@@ -1578,6 +1602,8 @@ test('runDeployWatchIteration skips dirty worktrees before fetch and still repor
       'git status --porcelain',
       prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
       `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`,
+      prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
+      `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`,
     ]);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -1861,6 +1887,9 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
 });
 
 test('runDeployWatchIteration keeps polling when bun.lock is the only dirty file', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-bun-lock-'));
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getWatchPaths(tempDir);
   const calls = [];
   const runCommand = async (command, args) => {
     const key = `${command} ${args.join(' ')}`;
@@ -1898,22 +1927,36 @@ test('runDeployWatchIteration keeps polling when bun.lock is the only dirty file
 
     throw new Error(`Unexpected command: ${key}`);
   };
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
 
-  const result = await runDeployWatchIteration(
-    {
-      branch: 'main',
-      remote: 'origin',
-      upstreamBranch: 'main',
-      upstreamRef: 'origin/main',
-    },
-    {
-      log: { error() {}, info() {}, warn() {} },
-      runCommand,
-    }
-  );
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        envFilePath,
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        paths,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
 
-  assert.equal(result.status, 'up-to-date');
-  assert.ok(calls.includes('git fetch origin main'));
+    assert.equal(result.status, 'up-to-date');
+    assert.ok(calls.includes('git fetch origin main'));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('runDeployWatchIteration refreshes a stale standby deployment after 15 minutes', async () => {
@@ -2897,6 +2940,127 @@ test('main skips recovery deploys when the latest successful build already match
       false
     );
     assert.equal(readPendingDeployRequest(paths, fs), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('main reconciles HEAD when git is current but the latest successful deployment is stale', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-reconcile-head-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const uiState = {};
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: 500,
+          activeColor: 'blue',
+          commitHash: 'aaa111111111111111111',
+          commitShortHash: 'aaa111',
+          commitSubject: 'Older deployed revision',
+          finishedAt: 500,
+          startedAt: 100,
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    await main(['--once'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      processImpl: {
+        argv: ['node', 'scripts/watch-blue-green-deploy.js'],
+        exit() {},
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult('main\n');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref --symbolic-full-name @{u}') {
+          return createResult('origin/main\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return createResult(
+            'bbb222222222222222222\nbbb222\nReconcile runtime with latest head\n2026-04-18T10:59:00.000Z\n'
+          );
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git fetch origin main') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse HEAD') {
+          return createResult('bbb222\n');
+        }
+
+        if (key === 'git rev-parse origin/main') {
+          return createResult('bbb222\n');
+        }
+
+        if (key === 'bun upgrade' || key === 'bun i') {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+        ) {
+          return createResult('');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error() {},
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn() {},
+      },
+    });
+
+    assert.ok(
+      calls.includes(
+        `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+      )
+    );
+    assert.ok(calls.includes('bun upgrade'));
+    assert.ok(calls.includes('bun i'));
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

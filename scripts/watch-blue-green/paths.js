@@ -24,6 +24,18 @@ const WATCH_PENDING_DEPLOY_FILE = path.join(
   WATCH_RUNTIME_DIR,
   'blue-green-auto-deploy.pending-deploy.json'
 );
+const WATCH_REQUEST_LOG_DIR = path.join(
+  WATCH_RUNTIME_DIR,
+  'blue-green-request-logs'
+);
+const WATCH_REQUEST_SUMMARY_FILE = path.join(
+  WATCH_RUNTIME_DIR,
+  'blue-green-request-telemetry.summary.json'
+);
+const WATCH_REQUEST_STATE_FILE = path.join(
+  WATCH_RUNTIME_DIR,
+  'blue-green-request-telemetry.state.json'
+);
 
 function getWatchPaths(rootDir = ROOT_DIR) {
   const runtimeDir = path.join(rootDir, 'tmp', 'docker-web', 'watch');
@@ -37,6 +49,15 @@ function getWatchPaths(rootDir = ROOT_DIR) {
       runtimeDir,
       'blue-green-auto-deploy.pending-deploy.json'
     ),
+    requestLogDir: path.join(runtimeDir, 'blue-green-request-logs'),
+    requestSummaryFile: path.join(
+      runtimeDir,
+      'blue-green-request-telemetry.summary.json'
+    ),
+    requestStateFile: path.join(
+      runtimeDir,
+      'blue-green-request-telemetry.state.json'
+    ),
     runtimeDir,
     statusFile: path.join(runtimeDir, 'blue-green-auto-deploy.status.json'),
   };
@@ -48,6 +69,9 @@ module.exports = {
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
   WATCH_PENDING_DEPLOY_FILE,
+  WATCH_REQUEST_LOG_DIR,
+  WATCH_REQUEST_STATE_FILE,
+  WATCH_REQUEST_SUMMARY_FILE,
   WATCH_RUNTIME_DIR,
   WATCH_STATUS_FILE,
   getWatchPaths,

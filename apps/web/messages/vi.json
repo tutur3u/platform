@@ -1522,6 +1522,7 @@
       "build_minutes": "Phút build",
       "container_pressure": "Áp lực container",
       "cpu": "CPU",
+      "deploy_request_velocity": "Tốc Độ Request Theo Bản Triển Khai",
       "memory": "Bộ nhớ",
       "peak_rpm": "RPM đỉnh",
       "request_velocity": "Tốc độ request",
@@ -1548,6 +1549,7 @@
       "deployments": "Chưa có lịch sử triển khai.",
       "events": "Chưa ghi nhận sự kiện nào từ watcher.",
       "ledger": "Lịch sử triển khai sẽ xuất hiện tại đây sau lần rollout đầu tiên.",
+      "requests": "Nhật ký request gần đây sẽ xuất hiện sau khi proxy bắt đầu drain lưu lượng.",
       "velocity": "Tốc độ request sẽ xuất hiện sau khi các lần triển khai thành công bắt đầu phục vụ lưu lượng."
     },
     "hero": {
@@ -1561,6 +1563,7 @@
     "ledger": {
       "avg_rpm": "RPM TB",
       "build_time": "Thời gian build",
+      "errors": "Lỗi",
       "no_commit_subject": "Không có tóm tắt commit",
       "peak_rpm": "RPM đỉnh",
       "requests": "Request",
@@ -1571,10 +1574,23 @@
       "containers": "Container",
       "deployments": "Triển khai",
       "events": "Sự kiện",
+      "recent_requests": "Request Gần Đây",
+      "requests": "Request",
       "runtime": "Runtime",
       "signal_feed": "Luồng tín hiệu",
+      "time_windows": "Theo Ngày, Tuần, Tháng, Năm",
       "topology": "Tô-pô",
+      "traffic": "Lưu lượng",
       "watcher": "Watcher"
+    },
+    "periods": {
+      "daily": "Ngày",
+      "monthly": "Tháng",
+      "weekly": "Tuần",
+      "yearly": "Năm"
+    },
+    "requests": {
+      "internal": "Probe Nội Bộ"
     },
     "runtime": {
       "activated_at": "Kích hoạt lúc",
@@ -1600,11 +1616,15 @@
     "stats": {
       "active_color": "Màu hoạt động",
       "avg_build": "Build trung bình",
+      "avg_latency": "Độ Trễ TB",
       "cpu": "CPU",
       "current_rpm": "RPM hiện tại",
+      "deployments_touched": "Số Bản Triển Khai Liên Quan",
+      "log_retention": "Dung lượng lưu giữ nhật ký request",
       "mean_rollout": "Thời gian rollout trung bình",
       "memory": "Bộ nhớ",
       "network": "Mạng",
+      "persisted_logs": "Nhật Ký Đã Lưu",
       "requests_per_minute": "Request mỗi phút",
       "served_requests": "Request đã phục vụ",
       "total_container_cpu": "Tổng CPU container",

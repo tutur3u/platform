@@ -345,8 +345,9 @@ test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
 
   assert.match(
     config,
-    /map \$http_upgrade \$connection_upgrade \{[\s\S]*resolver 127\.0\.0\.11 ipv6=off valid=5s;\n\nupstream web_upstream \{/u
+    /map \$http_upgrade \$connection_upgrade \{[\s\S]*resolver 127\.0\.0\.11 ipv6=off valid=5s;\n\n(?:log_format[\s\S]*?\n\n)?upstream web_upstream \{/u
   );
+  assert.match(config, /access_log \/dev\/stdout platform_blue_green_json;/);
   assert.match(config, /upstream web_upstream {/);
   assert.match(
     config,

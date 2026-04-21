@@ -2,7 +2,7 @@ const fs = require('node:fs');
 
 const { getWatchPaths } = require('./paths.js');
 
-const MAX_DEPLOYMENTS = 5;
+const MAX_DEPLOYMENTS = 10_000;
 const SKIP_WATCH_HISTORY_ENV = 'DOCKER_WEB_SKIP_WATCH_HISTORY';
 
 function readDeploymentHistory(paths = getWatchPaths(), fsImpl = fs) {

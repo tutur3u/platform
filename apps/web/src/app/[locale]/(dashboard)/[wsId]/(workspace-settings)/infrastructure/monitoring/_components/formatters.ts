@@ -34,6 +34,26 @@ export function formatNumber(value: number | null | undefined) {
   return new Intl.NumberFormat('en-US').format(Math.round(value));
 }
 
+export function formatDecimalNumber(
+  value: number | null | undefined,
+  {
+    maximumFractionDigits = 1,
+    minimumFractionDigits = 0,
+  }: {
+    maximumFractionDigits?: number;
+    minimumFractionDigits?: number;
+  } = {}
+) {
+  if (value == null || !Number.isFinite(value)) {
+    return '0';
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits,
+    minimumFractionDigits,
+  }).format(value);
+}
+
 export function formatCompactNumber(value: number | null | undefined) {
   if (value == null || !Number.isFinite(value)) {
     return '0';
@@ -92,6 +112,22 @@ export function formatDuration(value: number | null | undefined) {
   ].filter((value): value is string => Boolean(value));
 
   return parts.slice(0, 2).join(' ');
+}
+
+export function formatLatencyMs(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value) || value < 0) {
+    return '0 ms';
+  }
+
+  if (value >= 1000) {
+    return `${formatDecimalNumber(value / 1000, {
+      maximumFractionDigits: value >= 10_000 ? 0 : 1,
+    })} s`;
+  }
+
+  return `${formatDecimalNumber(value, {
+    maximumFractionDigits: value >= 100 ? 0 : 1,
+  })} ms`;
 }
 
 export function formatClockTime(value: number | string | null | undefined) {

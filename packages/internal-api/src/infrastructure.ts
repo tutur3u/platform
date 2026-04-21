@@ -49,6 +49,7 @@ export interface BlueGreenMonitoringContainerResource {
 
 export interface BlueGreenMonitoringDeployment {
   activatedAt?: number | null;
+  averageLatencyMs?: number | null;
   activeColor?: string | null;
   averageRequestsPerMinute?: number | null;
   buildDurationMs?: number | null;
@@ -59,8 +60,12 @@ export interface BlueGreenMonitoringDeployment {
   dailyPeakRequests?: number | null;
   dailyRequestCount?: number | null;
   deploymentKind?: string | null;
+  deploymentStamp?: string | null;
   endedAt?: number | null;
+  errorCount?: number | null;
   finishedAt?: number | null;
+  firstRequestAt?: number | null;
+  lastRequestAt?: number | null;
   lifetimeMs?: number | null;
   peakRequestsPerMinute?: number | null;
   requestCount?: number | null;
@@ -69,7 +74,54 @@ export interface BlueGreenMonitoringDeployment {
   status?: string | null;
 }
 
+export interface BlueGreenMonitoringPeriodMetric {
+  averageLatencyMs: number | null;
+  bucketLabel: string;
+  bucketStart: number;
+  deploymentCount: number;
+  errorCount: number;
+  errorRate: number;
+  peakRequestsPerMinute: number;
+  requestCount: number;
+  statusCounts: {
+    clientError: number;
+    informational: number;
+    redirect: number;
+    serverError: number;
+    success: number;
+  };
+}
+
+export interface BlueGreenMonitoringRequestLog {
+  deploymentColor: string | null;
+  deploymentKey: string | null;
+  deploymentStamp: string | null;
+  host: string | null;
+  isInternal: boolean;
+  method: string | null;
+  path: string;
+  requestTimeMs: number | null;
+  status: number | null;
+  time: number;
+}
+
 export interface BlueGreenMonitoringSnapshot {
+  analytics: {
+    current: {
+      daily: BlueGreenMonitoringPeriodMetric | null;
+      monthly: BlueGreenMonitoringPeriodMetric | null;
+      weekly: BlueGreenMonitoringPeriodMetric | null;
+      yearly: BlueGreenMonitoringPeriodMetric | null;
+    };
+    recentRequests: BlueGreenMonitoringRequestLog[];
+    totalPersistedLogs: number;
+    trends: {
+      daily: BlueGreenMonitoringPeriodMetric[];
+      monthly: BlueGreenMonitoringPeriodMetric[];
+      weekly: BlueGreenMonitoringPeriodMetric[];
+      yearly: BlueGreenMonitoringPeriodMetric[];
+    };
+  };
   deployments: BlueGreenMonitoringDeployment[];
   dockerResources: {
     containers: BlueGreenMonitoringContainerResource[];
@@ -88,6 +140,7 @@ export interface BlueGreenMonitoringSnapshot {
     failedDeployments: number;
     successfulDeployments: number;
     totalDeployments: number;
+    totalPersistedLogs: number;
     totalRequestsServed: number;
   };
   runtime: {

@@ -7,6 +7,7 @@ const readline = require('node:readline');
 
 const {
   readBlueGreenActiveColor,
+  readBlueGreenDeploymentStamp,
   refreshBlueGreenProxyIfRunning,
   runBlueGreenStandbyRefreshWorkflow,
 } = require('./docker-web/blue-green.js');
@@ -42,6 +43,13 @@ const {
   readDeploymentHistory,
   writeDeploymentHistory,
 } = require('./watch-blue-green/history.js');
+const {
+  enrichDeploymentsWithTelemetry,
+  parseProxyLogEntries,
+  readTelemetrySummary,
+  summarizeRequestRate,
+  syncProxyTrafficStore,
+} = require('./watch-blue-green/telemetry.js');
 const DEFAULT_INTERVAL_MS = 1_000;
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
 const DEFAULT_GIT_FAILURE_BACKOFF_MS = 60_000;
@@ -56,10 +64,6 @@ const BLUE_GREEN_COLORS = ['blue', 'green'];
 const PROD_COMPOSE_FILE = getComposeFile('prod');
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const BLUE_GREEN_WATCHER_SERVICE = 'web-blue-green-watcher';
-const INTERNAL_PROXY_METRIC_EXCLUDE_PATHS = new Set([
-  '/api/health',
-  '/__platform/drain-status',
-]);
 const SELF_WATCHED_FILES = [path.relative(ROOT_DIR, __filename)];
 const CONTAINER_REFRESH_WATCHED_FILES = [
   'apps/web/docker/blue-green-watcher-entrypoint.js',
@@ -1885,6 +1889,7 @@ async function runPendingDeployAfterRestart({
   });
   const deployFinishedAt = now();
   const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+  const deploymentStamp = readBlueGreenDeploymentStamp(paths.blueGreen, fsImpl);
   const history = appendDeploymentHistory(
     {
       activatedAt: deployFinishedAt,
@@ -1893,6 +1898,7 @@ async function runPendingDeployAfterRestart({
       commitHash: latestCommit.hash,
       commitShortHash: latestCommit.shortHash,
       commitSubject: latestCommit.subject,
+      deploymentStamp,
       finishedAt: deployFinishedAt,
       startedAt: deployStartedAt,
       status: 'successful',
@@ -2417,91 +2423,6 @@ async function collectDockerResources(
   }
 }
 
-function parseProxyLogEntries(output) {
-  return output
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const timestampMatch = line.match(/^(\d{4}-\d{2}-\d{2}T\S+)\s+(.*)$/);
-
-      if (!timestampMatch) {
-        return null;
-      }
-
-      const [, isoTime, message] = timestampMatch;
-      const time = Date.parse(isoTime);
-      const requestMatch = message.match(
-        /"([A-Z]+)\s+([^"\s]+)\s+HTTP\/[0-9.]+"/
-      );
-
-      if (!Number.isFinite(time) || !requestMatch) {
-        return null;
-      }
-
-      return {
-        path: requestMatch[2],
-        time,
-      };
-    })
-    .filter(Boolean);
-}
-
-function summarizeRequestRate(entries, startTime, endTime) {
-  if (
-    !Number.isFinite(startTime) ||
-    !Number.isFinite(endTime) ||
-    endTime <= startTime
-  ) {
-    return {
-      averageRequestsPerMinute: 0,
-      dailyAverageRequests: 0,
-      dailyPeakRequests: 0,
-      dailyRequestCount: 0,
-      peakRequestsPerMinute: 0,
-      requestCount: 0,
-    };
-  }
-
-  const minuteBucketCounts = new Map();
-  const dayBucketCounts = new Map();
-  let requestCount = 0;
-
-  for (const entry of entries) {
-    if (INTERNAL_PROXY_METRIC_EXCLUDE_PATHS.has(entry.path)) {
-      continue;
-    }
-
-    if (entry.time < startTime || entry.time >= endTime) {
-      continue;
-    }
-
-    requestCount += 1;
-    const minuteBucket = Math.floor(entry.time / 60_000);
-    const dayBucket = Math.floor(entry.time / 86_400_000);
-    minuteBucketCounts.set(
-      minuteBucket,
-      (minuteBucketCounts.get(minuteBucket) ?? 0) + 1
-    );
-    dayBucketCounts.set(dayBucket, (dayBucketCounts.get(dayBucket) ?? 0) + 1);
-  }
-
-  const durationMinutes = Math.max((endTime - startTime) / 60_000, 1 / 60);
-  const durationDays = Math.max((endTime - startTime) / 86_400_000, 1 / 86_400);
-  const finalDayBucket = Math.floor(
-    Math.max(startTime, endTime - 1) / 86_400_000
-  );
-
-  return {
-    averageRequestsPerMinute: requestCount / durationMinutes,
-    dailyAverageRequests: requestCount / durationDays,
-    dailyPeakRequests: Math.max(0, ...dayBucketCounts.values()),
-    dailyRequestCount: dayBucketCounts.get(finalDayBucket) ?? 0,
-    peakRequestsPerMinute: Math.max(0, ...minuteBucketCounts.values()),
-    requestCount,
-  };
-}
-
 async function collectDeploymentTraffic(
   deployments,
   {
@@ -2509,6 +2430,7 @@ async function collectDeploymentTraffic(
     envFilePath = WEB_ENV_FILE,
     fsImpl = fs,
     now = Date.now(),
+    paths = getWatchPaths(),
     rootDir = ROOT_DIR,
     runCommand: run = runCommand,
   } = {}
@@ -2516,21 +2438,15 @@ async function collectDeploymentTraffic(
   const successfulDeployments = deployments.filter(
     (entry) => entry.status === 'successful' && entry.activatedAt
   );
+  const telemetrySummary = readTelemetrySummary(paths, fsImpl);
 
-  if (successfulDeployments.length === 0) {
-    return deployments.map((entry) => ({
-      ...entry,
-      averageRequestsPerMinute: null,
-      dailyAverageRequests: null,
-      dailyPeakRequests: null,
-      dailyRequestCount: null,
-      lifetimeMs:
-        entry.status === 'successful' && entry.activatedAt
-          ? Math.max(0, (entry.endedAt ?? now) - entry.activatedAt)
-          : null,
-      peakRequestsPerMinute: null,
-      requestCount: null,
-    }));
+  if (
+    successfulDeployments.length === 0 &&
+    (telemetrySummary?.totalLogEntries ?? 0) === 0
+  ) {
+    return enrichDeploymentsWithTelemetry(deployments, telemetrySummary, {
+      now,
+    });
   }
 
   try {
@@ -2544,94 +2460,29 @@ async function collectDeploymentTraffic(
         runCommand: run,
       }
     );
-
-    if (!containerId) {
-      return deployments.map((entry) => ({
-        ...entry,
-        averageRequestsPerMinute: null,
-        dailyAverageRequests: null,
-        dailyPeakRequests: null,
-        dailyRequestCount: null,
-        lifetimeMs:
-          entry.status === 'successful' && entry.activatedAt
-            ? Math.max(0, (entry.endedAt ?? now) - entry.activatedAt)
-            : null,
-        peakRequestsPerMinute: null,
-        requestCount: null,
-      }));
+    if (successfulDeployments.length > 0 || containerId) {
+      await syncProxyTrafficStore(deployments, {
+        containerId,
+        env,
+        fsImpl,
+        now,
+        paths,
+        runChecked,
+        runCommand: run,
+      });
     }
 
-    const earliestActivatedAt = Math.min(
-      ...successfulDeployments.map((entry) => entry.activatedAt)
+    return enrichDeploymentsWithTelemetry(
+      deployments,
+      readTelemetrySummary(paths, fsImpl),
+      { now }
     );
-    const result = await runChecked(
-      'docker',
-      [
-        'logs',
-        '--timestamps',
-        '--since',
-        new Date(earliestActivatedAt).toISOString(),
-        containerId,
-      ],
-      {
-        env,
-        runCommand: run,
-        stdio: 'pipe',
-      }
-    );
-    const entries = parseProxyLogEntries(result.stdout);
-
-    return deployments.map((deployment) => {
-      const lifetimeMs =
-        deployment.status === 'successful' && deployment.activatedAt
-          ? Math.max(0, (deployment.endedAt ?? now) - deployment.activatedAt)
-          : null;
-
-      if (deployment.status !== 'successful' || !deployment.activatedAt) {
-        return {
-          ...deployment,
-          averageRequestsPerMinute: null,
-          dailyAverageRequests: null,
-          dailyPeakRequests: null,
-          dailyRequestCount: null,
-          lifetimeMs,
-          peakRequestsPerMinute: null,
-          requestCount: null,
-        };
-      }
-
-      const endTime = deployment.endedAt ?? now;
-      const rateSummary = summarizeRequestRate(
-        entries,
-        deployment.activatedAt,
-        endTime
-      );
-
-      return {
-        ...deployment,
-        averageRequestsPerMinute: rateSummary.averageRequestsPerMinute,
-        dailyAverageRequests: rateSummary.dailyAverageRequests,
-        dailyPeakRequests: rateSummary.dailyPeakRequests,
-        dailyRequestCount: rateSummary.dailyRequestCount,
-        lifetimeMs,
-        peakRequestsPerMinute: rateSummary.peakRequestsPerMinute,
-        requestCount: rateSummary.requestCount,
-      };
-    });
   } catch {
-    return deployments.map((entry) => ({
-      ...entry,
-      averageRequestsPerMinute: null,
-      dailyAverageRequests: null,
-      dailyPeakRequests: null,
-      dailyRequestCount: null,
-      lifetimeMs:
-        entry.status === 'successful' && entry.activatedAt
-          ? Math.max(0, (entry.endedAt ?? now) - entry.activatedAt)
-          : null,
-      peakRequestsPerMinute: null,
-      requestCount: null,
-    }));
+    return enrichDeploymentsWithTelemetry(
+      deployments,
+      readTelemetrySummary(paths, fsImpl),
+      { now }
+    );
   }
 }
 
@@ -2804,6 +2655,121 @@ async function runDeployWatchIteration(
         env,
         runCommand: run,
       });
+      const latestDeployedCommitHash = getLatestSuccessfulDeploymentCommitHash(
+        readDeploymentHistory(paths, fsImpl)
+      );
+
+      if (
+        latestDeployedCommitHash &&
+        latestCommit.hash &&
+        latestCommit.hash !== latestDeployedCommitHash
+      ) {
+        log.warn?.(
+          `Latest successful deployment is ${latestDeployedCommitHash ? latestDeployedCommitHash.slice(0, 12) : 'missing'}. Rebuilding ${latestCommit.shortHash} to reconcile runtime drift.`
+        );
+        log.info?.(
+          `Refreshing Bun runtime and dependencies for ${latestCommit.shortHash} before reconciliation deploy.`
+        );
+
+        await runBunUpgradeAndInstall({
+          env,
+          runCommand: run,
+        });
+
+        const deployStartedAt = now();
+        onDeploymentStart({
+          checkedAt,
+          latestCommit,
+          pendingDeployment: createPendingDeploymentEntry({
+            deploymentKind: 'reconcile',
+            latestCommit,
+            startedAt: deployStartedAt,
+            status: 'building',
+          }),
+        });
+
+        try {
+          await runBlueGreenDeploy({
+            deployCommand,
+            env,
+            runCommand: run,
+          });
+
+          const deployFinishedAt = now();
+          const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+          const deploymentStamp = readBlueGreenDeploymentStamp(
+            paths.blueGreen,
+            fsImpl
+          );
+          const history = appendDeploymentHistory(
+            {
+              activatedAt: deployFinishedAt,
+              activeColor,
+              buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              commitSubject: latestCommit.subject,
+              deploymentKind: 'reconcile',
+              deploymentStamp,
+              finishedAt: deployFinishedAt,
+              startedAt: deployStartedAt,
+              status: 'successful',
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
+
+          log.info?.(
+            `Blue/green reconciliation deployment completed for ${latestCommit.shortHash}.`
+          );
+
+          return attachRuntime(
+            {
+              checkedAt,
+              latestCommit,
+              reconciledFromCommitHash: latestDeployedCommitHash,
+              status: 'deployed',
+            },
+            history
+          );
+        } catch (error) {
+          const deployFinishedAt = now();
+          const history = appendDeploymentHistory(
+            {
+              buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              commitSubject: latestCommit.subject,
+              deploymentKind: 'reconcile',
+              finishedAt: deployFinishedAt,
+              startedAt: deployStartedAt,
+              status: 'failed',
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
+
+          log.error?.(
+            `Blue/green reconciliation deployment failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+          );
+
+          return attachRuntime(
+            {
+              checkedAt,
+              error,
+              latestCommit,
+              reconciledFromCommitHash: latestDeployedCommitHash,
+              status: 'deploy-failed',
+            },
+            history
+          );
+        }
+      }
+
       const runtimeSnapshot = await attachRuntime({
         checkedAt,
         latestCommit,
@@ -2848,6 +2814,10 @@ async function runDeployWatchIteration(
         });
 
         const refreshFinishedAt = now();
+        const deploymentStamp = readBlueGreenDeploymentStamp(
+          paths.blueGreen,
+          fsImpl
+        );
         const history = appendDeploymentHistory(
           {
             activatedAt: refreshFinishedAt,
@@ -2857,6 +2827,7 @@ async function runDeployWatchIteration(
             commitShortHash: latestCommit.shortHash,
             commitSubject: latestCommit.subject,
             deploymentKind: 'standby-refresh',
+            deploymentStamp,
             finishedAt: refreshFinishedAt,
             startedAt: refreshStartedAt,
             status: 'successful',
@@ -3049,6 +3020,10 @@ async function runDeployWatchIteration(
 
         const deployFinishedAt = now();
         const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+        const deploymentStamp = readBlueGreenDeploymentStamp(
+          paths.blueGreen,
+          fsImpl
+        );
         const history = appendDeploymentHistory(
           {
             activatedAt: deployFinishedAt,
@@ -3057,6 +3032,7 @@ async function runDeployWatchIteration(
             commitHash: latestCommit.hash,
             commitShortHash: latestCommit.shortHash,
             commitSubject: latestCommit.subject,
+            deploymentStamp,
             finishedAt: deployFinishedAt,
             startedAt: deployStartedAt,
             status: 'successful',

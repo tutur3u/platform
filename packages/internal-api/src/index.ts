@@ -159,6 +159,8 @@ export {
   type BlueGreenMonitoringContainerResource,
   type BlueGreenMonitoringDeployment,
   type BlueGreenMonitoringEvent,
+  type BlueGreenMonitoringPeriodMetric,
+  type BlueGreenMonitoringRequestLog,
   type BlueGreenMonitoringSnapshot,
   type BlueGreenMonitoringStatus,
   type BlueGreenMonitoringWatcherHealth,

@@ -83,6 +83,22 @@ describe('blue-green monitoring route', () => {
       createPermissionsResult(['view_infrastructure'])
     );
     readBlueGreenMonitoringSnapshotMock.mockReturnValue({
+      analytics: {
+        current: {
+          daily: null,
+          monthly: null,
+          weekly: null,
+          yearly: null,
+        },
+        recentRequests: [],
+        totalPersistedLogs: 480,
+        trends: {
+          daily: [],
+          monthly: [],
+          weekly: [],
+          yearly: [],
+        },
+      },
       deployments: [
         {
           activeColor: 'green',
@@ -108,6 +124,7 @@ describe('blue-green monitoring route', () => {
         failedDeployments: 0,
         successfulDeployments: 1,
         totalDeployments: 1,
+        totalPersistedLogs: 480,
         totalRequestsServed: 320,
       },
       runtime: {

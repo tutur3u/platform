@@ -19,7 +19,9 @@ import {
   formatClockTime,
   formatCompactNumber,
   formatDateTime,
+  formatDecimalNumber,
   formatDuration,
+  formatLatencyMs,
   formatNumber,
   formatRelativeTime,
   getColorTranslationKey,
@@ -254,6 +256,172 @@ export function EventStreamPanel({
   );
 }
 
+export function TrafficPeriodsPanel({
+  analytics,
+}: {
+  analytics: BlueGreenMonitoringSnapshot['analytics'];
+}) {
+  const t = useTranslations('blue-green-monitoring');
+  const periods = [
+    ['daily', analytics.current.daily],
+    ['weekly', analytics.current.weekly],
+    ['monthly', analytics.current.monthly],
+    ['yearly', analytics.current.yearly],
+  ] as const;
+
+  return (
+    <div className="rounded-[2rem] border border-border/60 bg-background/70 p-5 backdrop-blur-sm">
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+            {t('panels.traffic')}
+          </p>
+          <h3 className="mt-1 font-semibold text-lg">
+            {t('panels.time_windows')}
+          </h3>
+        </div>
+        <Badge variant="secondary" className="rounded-full">
+          {formatCompactNumber(analytics.totalPersistedLogs)}
+        </Badge>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        {periods.map(([periodKey, metric]) => (
+          <div
+            key={periodKey}
+            className="rounded-[1.7rem] border border-border/60 bg-background/85 p-4"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="font-medium text-sm">
+                  {t(`periods.${periodKey}`)}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {metric?.bucketLabel ?? '—'}
+                </p>
+              </div>
+              <Badge variant="outline" className="rounded-full">
+                {formatDecimalNumber((metric?.errorRate ?? 0) * 100, {
+                  maximumFractionDigits: 1,
+                })}
+                %
+              </Badge>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <MetricBlock
+                icon={<Activity className="h-4 w-4" />}
+                label={t('stats.total_requests')}
+                value={formatCompactNumber(metric?.requestCount ?? 0)}
+              />
+              <MetricBlock
+                icon={<Gauge className="h-4 w-4" />}
+                label={t('chart.peak_rpm')}
+                value={formatNumber(metric?.peakRequestsPerMinute ?? 0)}
+              />
+              <MetricBlock
+                icon={<Clock className="h-4 w-4" />}
+                label={t('stats.avg_latency')}
+                value={formatLatencyMs(metric?.averageLatencyMs)}
+              />
+              <MetricBlock
+                icon={<GitBranch className="h-4 w-4" />}
+                label={t('stats.deployments_touched')}
+                value={formatNumber(metric?.deploymentCount ?? 0)}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function RecentRequestsPanel({
+  requests,
+}: {
+  requests: BlueGreenMonitoringSnapshot['analytics']['recentRequests'];
+}) {
+  const t = useTranslations('blue-green-monitoring');
+
+  return (
+    <div className="rounded-[2rem] border border-border/60 bg-background/70 p-5 backdrop-blur-sm">
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+            {t('panels.requests')}
+          </p>
+          <h3 className="mt-1 font-semibold text-lg">
+            {t('panels.recent_requests')}
+          </h3>
+        </div>
+        <Badge variant="secondary" className="rounded-full">
+          {requests.length}
+        </Badge>
+      </div>
+
+      {requests.length === 0 ? (
+        <div className="rounded-2xl border border-border/60 border-dashed bg-background/60 p-6 text-center text-muted-foreground text-sm">
+          {t('empty.requests')}
+        </div>
+      ) : (
+        <ScrollArea className="h-[420px] pr-3">
+          <div className="space-y-3">
+            {requests.map((request) => {
+              const deploymentLabel =
+                request.deploymentStamp ??
+                request.deploymentColor ??
+                t('states.none');
+              const status = request.status ?? 0;
+
+              return (
+                <div
+                  key={`${request.time}-${request.path}-${request.status}-${request.deploymentKey ?? 'none'}`}
+                  className="rounded-2xl border border-border/50 bg-background/80 p-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant={status >= 400 ? 'destructive' : 'outline'}
+                          className="rounded-full"
+                        >
+                          {request.method ?? 'REQ'}
+                        </Badge>
+                        <span className="truncate font-medium text-sm">
+                          {request.path}
+                        </span>
+                        {request.isInternal ? (
+                          <Badge variant="secondary" className="rounded-full">
+                            {t('requests.internal')}
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-3 text-muted-foreground text-xs">
+                        <span>{deploymentLabel}</span>
+                        <span>{formatClockTime(request.time)}</span>
+                        <span>{formatLatencyMs(request.requestTimeMs)}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium text-sm">
+                        {request.status ?? '—'}
+                      </div>
+                      <div className="text-muted-foreground text-xs">
+                        {formatRelativeTime(request.time)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      )}
+    </div>
+  );
+}
+
 export function DeploymentLedger({
   deployments,
 }: {
@@ -305,6 +473,9 @@ export function DeploymentLedger({
                       ? t(activeColorKey)
                       : (deployment.activeColor ?? t('states.none'))}
                   </p>
+                  <p className="mt-1 text-muted-foreground text-xs">
+                    {deployment.deploymentStamp ?? t('states.none')}
+                  </p>
                 </div>
                 <div className="text-right text-xs">
                   <div className="text-muted-foreground">
@@ -324,7 +495,7 @@ export function DeploymentLedger({
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <MetricBlock
                   icon={<Clock className="h-4 w-4" />}
                   label={t('ledger.build_time')}
@@ -333,7 +504,12 @@ export function DeploymentLedger({
                 <MetricBlock
                   icon={<Gauge className="h-4 w-4" />}
                   label={t('ledger.avg_rpm')}
-                  value={formatNumber(deployment.averageRequestsPerMinute)}
+                  value={formatDecimalNumber(
+                    deployment.averageRequestsPerMinute,
+                    {
+                      maximumFractionDigits: 1,
+                    }
+                  )}
                 />
                 <MetricBlock
                   icon={<Activity className="h-4 w-4" />}
@@ -344,6 +520,16 @@ export function DeploymentLedger({
                   icon={<SquareStack className="h-4 w-4" />}
                   label={t('ledger.requests')}
                   value={formatCompactNumber(deployment.requestCount)}
+                />
+                <MetricBlock
+                  icon={<TriangleAlert className="h-4 w-4" />}
+                  label={t('ledger.errors')}
+                  value={formatCompactNumber(deployment.errorCount)}
+                />
+                <MetricBlock
+                  icon={<Clock className="h-4 w-4" />}
+                  label={t('stats.avg_latency')}
+                  value={formatLatencyMs(deployment.averageLatencyMs)}
                 />
               </div>
             </div>
