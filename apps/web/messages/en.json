@@ -1537,6 +1537,7 @@
     },
     "deployment_status": {
       "active": "Active",
+      "building": "Building",
       "deploying": "Deploying",
       "ended": "Ended",
       "failed": "Failed",
@@ -1576,6 +1577,7 @@
       "events": "Events",
       "recent_requests": "Recent Requests",
       "requests": "Requests",
+      "rollout_now": "Rollout Now",
       "runtime": "Runtime",
       "signal_feed": "Signal Feed",
       "time_windows": "Daily, Weekly, Monthly, Yearly",
@@ -1591,6 +1593,19 @@
     },
     "requests": {
       "internal": "Internal Probe"
+    },
+    "rollout": {
+      "avg_latency": "Avg Latency",
+      "commit": "Commit",
+      "description": "Track the newest build, deployment phase, and recovery state before it settles into the historical ledger.",
+      "failure_title": "Latest rollout failure",
+      "idle_title": "Watcher is tracking the branch",
+      "in_progress_meta": "Live rollout telemetry",
+      "last_change": "Last Change",
+      "last_result": "Last Result",
+      "phase_time": "Phase Time",
+      "requests": "Requests",
+      "route": "Target Route"
     },
     "runtime": {
       "activated_at": "Activated At",

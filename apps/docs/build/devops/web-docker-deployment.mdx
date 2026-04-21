@@ -303,6 +303,9 @@ host PID. Each invocation:
 The watcher container mounts:
 
 - the repo worktree at `/workspace`
+- the same repo again at the real host checkout path via
+  `PLATFORM_HOST_WORKSPACE_DIR`, so host Docker bind mounts resolve against
+  the host filesystem when the watcher shells into `docker compose ...`
 - `/var/run/docker.sock` so it can manage the blue/green compose stack itself
 - the shared Bun install cache volume
 - a dedicated watcher `node_modules` volume so `bun i` stays container-local
@@ -451,6 +454,11 @@ Dashboard details:
   rollout handoff shells into `docker compose ...`, and capped production
   builds create/use a dedicated Buildx builder from inside the watcher
   container.
+- When the watcher drives Docker Desktop through `/var/run/docker.sock`, it
+  must run the deploy handoff from the mirrored host-path mount, not a
+  container-only path like `/workspace`. Otherwise Docker Desktop rejects bind
+  mounts such as `./tmp/docker-web/prod/nginx.conf` with "mounts denied"
+  because `/workspace/...` is not a real shared host path.
 - Starting `bun serve:web:docker:bg:watch` now clears the persisted watcher
   lock/status snapshot before the watcher service is force-recreated, so a
   stale lock from the previous container cannot block the replacement watcher.

@@ -1537,6 +1537,7 @@
     },
     "deployment_status": {
       "active": "Đang hoạt động",
+      "building": "Đang build",
       "deploying": "Đang triển khai",
       "ended": "Đã kết thúc",
       "failed": "Thất bại",
@@ -1576,6 +1577,7 @@
       "events": "Sự kiện",
       "recent_requests": "Request Gần Đây",
       "requests": "Request",
+      "rollout_now": "Rollout Hiện Tại",
       "runtime": "Runtime",
       "signal_feed": "Luồng tín hiệu",
       "time_windows": "Theo Ngày, Tuần, Tháng, Năm",
@@ -1591,6 +1593,19 @@
     },
     "requests": {
       "internal": "Probe Nội Bộ"
+    },
+    "rollout": {
+      "avg_latency": "Độ Trễ TB",
+      "commit": "Commit",
+      "description": "Theo dõi bản build mới nhất, pha triển khai và trạng thái phục hồi trước khi nó đi vào sổ lịch sử.",
+      "failure_title": "Lỗi rollout mới nhất",
+      "idle_title": "Watcher đang theo dõi nhánh",
+      "in_progress_meta": "Telemetry rollout trực tiếp",
+      "last_change": "Thay đổi gần nhất",
+      "last_result": "Kết quả gần nhất",
+      "phase_time": "Thời gian pha",
+      "requests": "Request",
+      "route": "Tuyến mục tiêu"
     },
     "runtime": {
       "activated_at": "Kích hoạt lúc",

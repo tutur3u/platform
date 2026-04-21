@@ -7,6 +7,7 @@ const COLOR_TRANSLATION_KEYS = {
 
 const DEPLOYMENT_STATUS_TRANSLATION_KEYS = {
   active: 'deployment_status.active',
+  building: 'deployment_status.building',
   deploying: 'deployment_status.deploying',
   ended: 'deployment_status.ended',
   failed: 'deployment_status.failed',

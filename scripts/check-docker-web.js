@@ -334,9 +334,16 @@ function validateDockerProdCompose(composeContent) {
     '  web-blue-green-watcher:',
     '  web-proxy:',
     '      dockerfile: apps/web/docker/blue-green-watcher.Dockerfile',
+    '      - PLATFORM_HOST_WORKSPACE_DIR',
+    '      - .:' + '${' + 'PLATFORM_HOST_WORKSPACE_DIR' + '}',
     '      - /var/run/docker.sock:/var/run/docker.sock',
     '      - platform-bun-install:/root/.bun/install/cache',
     '      - platform-blue-green-watcher-node_modules:/workspace/node_modules',
+    '      - platform-blue-green-watcher-node_modules:' +
+      '${' +
+      'PLATFORM_HOST_WORKSPACE_DIR' +
+      '}' +
+      '/node_modules',
     '    image: nginx:1.27-alpine',
     'http://127.0.0.1:7803/__platform/drain-status',
     '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',

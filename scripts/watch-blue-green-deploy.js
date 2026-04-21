@@ -64,6 +64,7 @@ const BLUE_GREEN_COLORS = ['blue', 'green'];
 const PROD_COMPOSE_FILE = getComposeFile('prod');
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const BLUE_GREEN_WATCHER_SERVICE = 'web-blue-green-watcher';
+const HOST_WORKSPACE_DIR_ENV = 'PLATFORM_HOST_WORKSPACE_DIR';
 const SELF_WATCHED_FILES = [path.relative(ROOT_DIR, __filename)];
 const CONTAINER_REFRESH_WATCHED_FILES = [
   'apps/web/docker/blue-green-watcher-entrypoint.js',
@@ -157,13 +158,16 @@ function getWatcherComposeEnv({
   fsImpl = fs,
   rootDir = ROOT_DIR,
 } = {}) {
-  return getComposeEnvironment({
-    baseEnv,
-    envFilePath,
-    fsImpl,
-    rootDir,
-    withRedis: true,
-  });
+  return {
+    ...getComposeEnvironment({
+      baseEnv,
+      envFilePath,
+      fsImpl,
+      rootDir,
+      withRedis: true,
+    }),
+    [HOST_WORKSPACE_DIR_ENV]: rootDir,
+  };
 }
 
 function writeWatchArgsFile(
@@ -3650,6 +3654,7 @@ module.exports = {
   MAX_DEPLOYMENTS,
   MAX_EVENTS,
   CONTAINER_REFRESH_WATCHED_FILES,
+  HOST_WORKSPACE_DIR_ENV,
   SELF_WATCHED_FILES,
   WATCH_ARGS_FILE,
   WATCH_HISTORY_FILE,

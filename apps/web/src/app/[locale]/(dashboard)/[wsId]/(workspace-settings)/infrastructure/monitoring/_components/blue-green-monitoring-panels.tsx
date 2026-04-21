@@ -12,6 +12,7 @@ import {
   TriangleAlert,
 } from '@tuturuuu/icons';
 import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrastructure';
+import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Badge } from '@tuturuuu/ui/badge';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useTranslations } from 'next-intl';
@@ -334,6 +335,150 @@ export function TrafficPeriodsPanel({
         ))}
       </div>
     </div>
+  );
+}
+
+export function RolloutStagePanel({
+  deployments,
+  watcher,
+}: {
+  deployments: BlueGreenMonitoringSnapshot['deployments'];
+  watcher: BlueGreenMonitoringSnapshot['watcher'];
+}) {
+  const t = useTranslations('blue-green-monitoring');
+  const latestDeployment = deployments[0] ?? null;
+  const watcherStatus =
+    typeof watcher.lastDeployStatus === 'string' && watcher.lastDeployStatus
+      ? watcher.lastDeployStatus
+      : null;
+  const status =
+    latestDeployment?.status ??
+    (watcherStatus === 'up-to-date' ? 'successful' : watcherStatus) ??
+    'unknown';
+  const statusKey = getDeploymentStatusTranslationKey(status);
+  const colorKey = getColorTranslationKey(latestDeployment?.activeColor);
+  const startedAt =
+    latestDeployment?.startedAt ??
+    latestDeployment?.finishedAt ??
+    watcher.lastDeployAt;
+  const phaseDuration =
+    status === 'building' || status === 'deploying'
+      ? startedAt != null
+        ? formatDuration(Math.max(0, Date.now() - startedAt))
+        : '—'
+      : formatDuration(latestDeployment?.buildDurationMs);
+  const requestMeta =
+    latestDeployment?.status === 'successful'
+      ? t('stats.served_requests')
+      : t('rollout.in_progress_meta');
+  const failureDetail =
+    typeof watcher.lastResult?.error === 'string'
+      ? (watcher.lastResult.error.split('\n')[0]?.trim() ?? null)
+      : null;
+  const accentClass =
+    status === 'failed'
+      ? 'border-dynamic-red/25 bg-[radial-gradient(circle_at_top_left,rgba(248,113,113,0.18),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.96),rgba(255,241,242,0.92))] dark:bg-[radial-gradient(circle_at_top_left,rgba(239,68,68,0.22),transparent_32%),linear-gradient(135deg,rgba(20,10,13,0.96),rgba(39,13,19,0.92))]'
+      : status === 'building'
+        ? 'border-dynamic-orange/25 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.96),rgba(255,251,235,0.92))] dark:bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.24),transparent_32%),linear-gradient(135deg,rgba(21,14,6,0.96),rgba(39,25,8,0.92))]'
+        : status === 'deploying'
+          ? 'border-dynamic-blue/25 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.18),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.96),rgba(239,246,255,0.92))] dark:bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.24),transparent_32%),linear-gradient(135deg,rgba(8,14,27,0.96),rgba(12,24,44,0.92))]'
+          : 'border-border/60 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.96),rgba(240,253,250,0.92))] dark:bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.18),transparent_32%),linear-gradient(135deg,rgba(8,18,16,0.96),rgba(11,27,23,0.92))]';
+
+  return (
+    <section
+      className={`overflow-hidden rounded-[2rem] border p-5 shadow-sm backdrop-blur-sm ${accentClass}`}
+    >
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div className="max-w-3xl space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary" className="rounded-full">
+              {t('panels.rollout_now')}
+            </Badge>
+            <Badge variant="outline" className="rounded-full">
+              {t(statusKey)}
+            </Badge>
+            {latestDeployment?.deploymentKind ? (
+              <Badge variant="outline" className="rounded-full">
+                {latestDeployment.deploymentKind}
+              </Badge>
+            ) : null}
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-2xl tracking-tight md:text-3xl">
+              {latestDeployment?.commitSubject ?? t('rollout.idle_title')}
+            </h3>
+            <p className="mt-2 text-muted-foreground text-sm md:text-base">
+              {t('rollout.description')}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-5 text-sm">
+            <div>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
+                {t('rollout.commit')}
+              </p>
+              <p className="mt-1 font-medium">
+                {latestDeployment?.commitShortHash ?? t('states.none')}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
+                {t('rollout.route')}
+              </p>
+              <p className="mt-1 font-medium">
+                {colorKey
+                  ? t(colorKey)
+                  : (latestDeployment?.activeColor ?? t('states.none'))}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
+                {t('rollout.last_change')}
+              </p>
+              <p className="mt-1 font-medium">
+                {formatRelativeTime(startedAt)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:w-[420px]">
+          <MetricBlock
+            icon={<Clock className="h-4 w-4" />}
+            label={t('rollout.phase_time')}
+            value={phaseDuration}
+            meta={formatClockTime(startedAt)}
+          />
+          <MetricBlock
+            icon={<SquareStack className="h-4 w-4" />}
+            label={t('rollout.requests')}
+            value={formatCompactNumber(latestDeployment?.requestCount)}
+            meta={requestMeta}
+          />
+          <MetricBlock
+            icon={<Gauge className="h-4 w-4" />}
+            label={t('rollout.avg_latency')}
+            value={formatLatencyMs(latestDeployment?.averageLatencyMs)}
+            meta={t('stats.avg_latency')}
+          />
+          <MetricBlock
+            icon={<Activity className="h-4 w-4" />}
+            label={t('rollout.last_result')}
+            value={watcherStatus ? t(statusKey) : '—'}
+            meta={formatRelativeTime(watcher.lastDeployAt)}
+          />
+        </div>
+      </div>
+
+      {failureDetail ? (
+        <Alert className="mt-5 rounded-[1.6rem] border-dynamic-red/25 bg-dynamic-red/5">
+          <TriangleAlert className="h-4 w-4" />
+          <AlertTitle>{t('rollout.failure_title')}</AlertTitle>
+          <AlertDescription>{failureDetail}</AlertDescription>
+        </Alert>
+      ) : null}
+    </section>
   );
 }
 

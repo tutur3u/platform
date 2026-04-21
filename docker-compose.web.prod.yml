@@ -55,12 +55,16 @@ services:
     build:
       context: .
       dockerfile: apps/web/docker/blue-green-watcher.Dockerfile
+    environment:
+      - PLATFORM_HOST_WORKSPACE_DIR
     init: true
     volumes:
       - .:/workspace
+      - .:${PLATFORM_HOST_WORKSPACE_DIR}
       - /var/run/docker.sock:/var/run/docker.sock
       - platform-bun-install:/root/.bun/install/cache
       - platform-blue-green-watcher-node_modules:/workspace/node_modules
+      - platform-blue-green-watcher-node_modules:${PLATFORM_HOST_WORKSPACE_DIR}/node_modules
 
   redis:
     profiles: ["redis"]

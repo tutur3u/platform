@@ -13,6 +13,7 @@ const {
   DEFAULT_GIT_FAILURE_BACKOFF_MS,
   DEFAULT_INTERVAL_MS,
   DISPLAY_DEPLOYMENTS,
+  HOST_WORKSPACE_DIR_ENV,
   MAX_GIT_FAILURE_BACKOFF_MS,
   SELF_WATCHED_FILES,
   WATCH_ARGS_FILE,
@@ -29,6 +30,7 @@ const {
   formatRelativeTime,
   formatRequestsPerMinute,
   getGitFailureBackoffMs,
+  getWatcherComposeEnv,
   getWatchPaths,
   isRecoverableGitCommandError,
   isProcessAlive,
@@ -2472,6 +2474,7 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-container-'));
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
   const calls = [];
+  const envs = [];
   const paths = getWatchPaths(tempDir);
 
   try {
@@ -2498,8 +2501,9 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
       envFilePath,
       fsImpl: fs,
       rootDir: tempDir,
-      runCommand: async (command, args) => {
+      runCommand: async (command, args, options = {}) => {
         calls.push(`${command} ${args.join(' ')}`);
+        envs.push(options.env ?? null);
         return createResult('');
       },
     });
@@ -2525,9 +2529,19 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
     );
     assert.equal(fs.existsSync(paths.lockFile), false);
     assert.equal(fs.existsSync(paths.statusFile), false);
+    assert.equal(envs[1][HOST_WORKSPACE_DIR_ENV], tempDir);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
+});
+
+test('getWatcherComposeEnv injects the mirrored host workspace path', () => {
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: { PATH: 'test-path' },
+    rootDir: '/tmp/platform-worktree',
+  });
+
+  assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], '/tmp/platform-worktree');
 });
 
 test('clearContainerManagedWatcherState removes persisted lock and status files', () => {

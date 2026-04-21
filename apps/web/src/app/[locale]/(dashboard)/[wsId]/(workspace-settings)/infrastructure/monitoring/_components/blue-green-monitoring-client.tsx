@@ -27,6 +27,7 @@ import {
   DeploymentLedger,
   EventStreamPanel,
   RecentRequestsPanel,
+  RolloutStagePanel,
   RuntimeTopologyPanel,
   TrafficPeriodsPanel,
   WatcherCadencePanel,
@@ -265,6 +266,11 @@ export function BlueGreenMonitoringClient() {
           </div>
         ))}
       </div>
+
+      <RolloutStagePanel
+        deployments={snapshot.deployments}
+        watcher={snapshot.watcher}
+      />
 
       <div className="grid gap-6 2xl:grid-cols-[1.05fr_0.95fr]">
         <TrafficPeriodsPanel analytics={snapshot.analytics} />

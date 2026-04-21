@@ -201,6 +201,16 @@ test('validateDockerProdCompose reports missing watcher container wiring', () =>
   assert.match(errors.join('\n'), /\/var\/run\/docker\.sock/);
 });
 
+test('validateDockerProdCompose reports missing watcher host workspace wiring', () => {
+  const composeContent = fs
+    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
+    .replace('      - .:' + '${' + 'PLATFORM_HOST_WORKSPACE_DIR' + '}\n', '');
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(errors.join('\n'), /PLATFORM_HOST_WORKSPACE_DIR/);
+});
+
 test('validateDockerProdCompose reports missing monitoring runtime mount', () => {
   const composeContent = fs
     .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
