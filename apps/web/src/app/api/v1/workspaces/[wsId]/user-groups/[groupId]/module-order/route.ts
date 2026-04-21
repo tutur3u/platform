@@ -72,10 +72,7 @@ export const PATCH = withSessionAuth(
     }
 
     if (!group) {
-      return NextResponse.json(
-        { message: 'Group not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: 'Group not found' }, { status: 404 });
     }
 
     const { data: existingModules, error: modulesError } = await sbAdmin

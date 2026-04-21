@@ -8731,6 +8731,13 @@
     "workspaces": "Workspaces",
     "workspaces-description": "Workspaces that you have access to will be listed here."
   },
+  "share-course": {
+    "badge": "Shared Course",
+    "flashcard_count": "{count, plural, =1 {1 flashcard} other {# flashcards}} available",
+    "no_published_modules": "No published modules yet.",
+    "published_modules": "published modules",
+    "quiz_count": "{count, plural, =1 {1 quiz} other {# quizzes}} available"
+  },
   "sidebar_recent_items": {
     "board_badge": "Board",
     "debt_item": "Debt",

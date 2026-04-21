@@ -8731,6 +8731,13 @@
     "workspaces": "Không gian làm việc",
     "workspaces-description": "Không gian làm việc mà bạn có quyền truy cập sẽ được liệt kê ở đây."
   },
+  "share-course": {
+    "badge": "Khóa học được chia sẻ",
+    "flashcard_count": "Có {count} thẻ ghi nhớ",
+    "no_published_modules": "Chưa có mô-đun nào được xuất bản.",
+    "published_modules": "mô-đun đã xuất bản",
+    "quiz_count": "Có {count} câu hỏi"
+  },
   "sidebar_recent_items": {
     "board_badge": "Bảng",
     "debt_item": "Khoản nợ",

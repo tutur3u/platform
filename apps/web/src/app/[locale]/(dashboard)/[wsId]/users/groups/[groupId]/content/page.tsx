@@ -6,8 +6,7 @@ import { CourseBuilderClient } from '../../../../education/courses/[courseId]/bu
 
 export const metadata: Metadata = {
   title: 'Group Content Builder',
-  description:
-    'Build and publish course modules within your user group.',
+  description: 'Build and publish course modules within your user group.',
 };
 
 interface Props {

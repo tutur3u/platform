@@ -23,7 +23,10 @@ export default function GroupShareButton({ groupId }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const shareUrl =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/share/course/${groupId}`
+      : '';
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl);
