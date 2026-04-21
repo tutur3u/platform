@@ -127,6 +127,10 @@ export function RichTextEditor({
   const debouncedOnChangeRef = useRef<ReturnType<typeof debounce> | null>(null);
   // Track when we're in a programmatic update to skip content sync
   const isProgrammaticUpdateRef = useRef(false);
+  const getDelegatedImageUpload = useCallback(
+    () => onImageUploadRef.current,
+    []
+  );
 
   useEffect(() => {
     onImageUploadRef.current = onImageUpload;
@@ -280,8 +284,10 @@ export function RichTextEditor({
       doc: allowCollaboration ? yjsDoc : undefined,
       provider: allowCollaboration ? yjsProvider : undefined,
       collaborationUser: allowCollaboration ? collaborationUser : undefined,
-      onImageUpload: onImageUploadRef.current,
-      onVideoUpload: onImageUploadRef.current,
+      onImageUpload,
+      onVideoUpload: onImageUpload,
+      getOnImageUpload: getDelegatedImageUpload,
+      getOnVideoUpload: getDelegatedImageUpload,
       mentionTranslations,
       readOnly,
     }),
@@ -507,8 +513,10 @@ export function RichTextEditor({
           doc: yjsDoc,
           provider: yjsProvider,
           collaborationUser: collaborationUser,
-          onImageUpload: onImageUploadRef.current,
-          onVideoUpload: onImageUploadRef.current,
+          onImageUpload,
+          onVideoUpload: onImageUpload,
+          getOnImageUpload: getDelegatedImageUpload,
+          getOnVideoUpload: getDelegatedImageUpload,
           mentionTranslations,
           readOnly,
         }),
@@ -520,10 +528,12 @@ export function RichTextEditor({
     yjsDoc,
     allowCollaboration,
     collaborationUser,
+    onImageUpload,
     titlePlaceholder,
     writePlaceholder,
     mentionTranslations,
     readOnly,
+    getDelegatedImageUpload,
   ]);
 
   // Update editor's editable state when props change

@@ -8,11 +8,13 @@ import {
 } from 'prosemirror-state';
 import ImageResize from 'tiptap-extension-resize-image';
 import {
+  formatBytes,
   getImageDimensions,
   getVideoDimensions,
   MAX_IMAGE_SIZE,
   MAX_VIDEO_SIZE,
 } from './media-utils';
+import { getKnownUploadErrorKey, getUploadErrorMessage } from './upload-errors';
 import {
   createLoadingPlaceholder,
   findUploadPlaceholder,
@@ -137,6 +139,8 @@ function calculatePresetWidth(
 interface ImageOptions {
   onImageUpload?: (file: File) => Promise<string>;
   onVideoUpload?: (file: File) => Promise<string>;
+  getOnImageUpload?: () => ((file: File) => Promise<string>) | undefined;
+  getOnVideoUpload?: () => ((file: File) => Promise<string>) | undefined;
 }
 
 /**
@@ -162,6 +166,10 @@ interface ExtendedImageResizeOptions {
   HTMLAttributes: Record<string, any>;
   minWidth?: number;
   maxWidth?: number;
+  onImageUpload?: (file: File) => Promise<string>;
+  onVideoUpload?: (file: File) => Promise<string>;
+  getOnImageUpload?: () => ((file: File) => Promise<string>) | undefined;
+  getOnVideoUpload?: () => ((file: File) => Promise<string>) | undefined;
 }
 
 export const CustomImage = (options: ImageOptions = {}) => {
@@ -220,7 +228,16 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
     addProseMirrorPlugins() {
       const parentPlugins = this.parent?.() || [];
-      const { onImageUpload, onVideoUpload } = options;
+      const getOnImageUpload = () =>
+        this?.options?.getOnImageUpload?.() ??
+        this?.options?.onImageUpload ??
+        options.getOnImageUpload?.() ??
+        options.onImageUpload;
+      const getOnVideoUpload = () =>
+        this?.options?.getOnVideoUpload?.() ??
+        this?.options?.onVideoUpload ??
+        options.getOnVideoUpload?.() ??
+        options.onVideoUpload;
 
       return [
         ...parentPlugins,
@@ -415,6 +432,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                   return false;
                 }
 
+                const onImageUpload = getOnImageUpload();
                 if (!onImageUpload) {
                   event.preventDefault();
                   toast.error('Insufficient permissions', {
@@ -457,6 +475,9 @@ export const CustomImage = (options: ImageOptions = {}) => {
                           'Image size must be less than 5MB:',
                           image.name
                         );
+                        toast.error('Image too large', {
+                          description: `"${image.name}" exceeds the ${formatBytes(MAX_IMAGE_SIZE)} upload limit.`,
+                        });
                         continue;
                       }
 
@@ -485,7 +506,16 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       view.dispatch(placeholderTr);
 
                       // Upload the image
-                      const url = await onImageUpload(image);
+                      const currentOnImageUpload = getOnImageUpload();
+                      if (!currentOnImageUpload) {
+                        throw Object.assign(
+                          new Error('Upload handler unavailable'),
+                          {
+                            code: 'INSUFFICIENT_PERMISSIONS',
+                          }
+                        );
+                      }
+                      const url = await currentOnImageUpload(image);
 
                       // Get fresh state after upload
                       const currentState = view.state;
@@ -536,6 +566,18 @@ export const CustomImage = (options: ImageOptions = {}) => {
                         image.name,
                         error
                       );
+                      const errorKey = getKnownUploadErrorKey(error);
+                      toast.error(
+                        errorKey === 'insufficient_permissions'
+                          ? 'Insufficient permissions'
+                          : 'Failed to upload image',
+                        {
+                          description: getUploadErrorMessage(
+                            error,
+                            'Please try again.'
+                          ),
+                        }
+                      );
                       // Remove placeholder on error
                       const removeTr = view.state.tr;
                       removeTr.setMeta(imageUploadPlaceholderPluginKey, {
@@ -568,10 +610,24 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
                 if (images.length === 0 && videos.length === 0) return false;
 
+                const onImageUpload = getOnImageUpload();
+                const onVideoUpload = getOnVideoUpload();
+
                 if (images.length > 0 && !onImageUpload) {
-                  toast.error('Insufficient permissions', {
-                    description:
-                      'You do not have permission to upload images in this editor.',
+                  const blockedImagesDescription =
+                    'You do not have permission to upload media in this editor.';
+
+                  toast.error('Images cannot be uploaded', {
+                    description: blockedImagesDescription,
+                  });
+                }
+
+                if (videos.length > 0 && !onVideoUpload) {
+                  const blockedVideosDescription =
+                    'You do not have permission to upload media in this editor.';
+
+                  toast.error('Videos cannot be uploaded', {
+                    description: blockedVideosDescription,
                   });
                 }
 
@@ -610,13 +666,17 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
                   // Process images
                   for (const image of images) {
-                    if (!onImageUpload) continue;
+                    const currentOnImageUpload = getOnImageUpload();
+                    if (!currentOnImageUpload) continue;
                     const uploadId = generateUploadId();
 
                     try {
                       // Validate file size (max 5MB)
                       if (image.size > MAX_IMAGE_SIZE) {
                         console.error('Image too large:', image.name);
+                        toast.error('Image too large', {
+                          description: `"${image.name}" exceeds the ${formatBytes(MAX_IMAGE_SIZE)} upload limit.`,
+                        });
                         continue;
                       }
 
@@ -645,7 +705,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       view.dispatch(placeholderTr);
 
                       // Upload the image
-                      const url = await onImageUpload(image);
+                      const url = await currentOnImageUpload(image);
 
                       // Try imageResize first (custom), fallback to image (base)
                       const { schema } = view.state;
@@ -688,6 +748,18 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       currentPos = insertPos + node.nodeSize;
                     } catch (error) {
                       console.error('Failed to upload image:', error);
+                      const errorKey = getKnownUploadErrorKey(error);
+                      toast.error(
+                        errorKey === 'insufficient_permissions'
+                          ? 'Insufficient permissions'
+                          : 'Failed to upload image',
+                        {
+                          description: getUploadErrorMessage(
+                            error,
+                            'Please try again.'
+                          ),
+                        }
+                      );
                       // Remove placeholder on error
                       const removeTr = view.state.tr;
                       removeTr.setMeta(imageUploadPlaceholderPluginKey, {
@@ -699,13 +771,17 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
                   // Process videos
                   for (const video of videos) {
-                    if (!onVideoUpload) continue;
+                    const currentOnVideoUpload = getOnVideoUpload();
+                    if (!currentOnVideoUpload) continue;
                     const uploadId = generateUploadId();
 
                     try {
                       // Validate file size (max 50MB for videos)
                       if (video.size > MAX_VIDEO_SIZE) {
                         console.error('Video too large:', video.name);
+                        toast.error('Video too large', {
+                          description: `"${video.name}" exceeds the ${formatBytes(MAX_VIDEO_SIZE)} upload limit.`,
+                        });
                         continue;
                       }
 
@@ -739,7 +815,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       view.dispatch(placeholderTr);
 
                       // Upload the video
-                      const url = await onVideoUpload(video);
+                      const url = await currentOnVideoUpload(video);
 
                       // Check for video node type
                       const { schema } = view.state;
@@ -780,6 +856,18 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       currentPos = insertPos + node.nodeSize;
                     } catch (error) {
                       console.error('Failed to upload video:', error);
+                      const errorKey = getKnownUploadErrorKey(error);
+                      toast.error(
+                        errorKey === 'insufficient_permissions'
+                          ? 'Insufficient permissions'
+                          : 'Failed to upload video',
+                        {
+                          description: getUploadErrorMessage(
+                            error,
+                            'Please try again.'
+                          ),
+                        }
+                      );
                       // Remove placeholder on error
                       const removeTr = view.state.tr;
                       removeTr.setMeta(imageUploadPlaceholderPluginKey, {
@@ -808,6 +896,10 @@ export const CustomImage = (options: ImageOptions = {}) => {
   return baseExtension.configure({
     inline: false,
     allowBase64: false,
+    onImageUpload: options.onImageUpload,
+    onVideoUpload: options.onVideoUpload,
+    getOnImageUpload: options.getOnImageUpload,
+    getOnVideoUpload: options.getOnVideoUpload,
     HTMLAttributes: {
       class: 'rounded-md mt-4 mb-2 block w-full',
     },
