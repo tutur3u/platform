@@ -409,56 +409,57 @@ extension _RequestsViewActions on _RequestsViewState {
     );
   }
 
-  void _showRequestDetail(BuildContext context, TimeTrackingRequest request) {
+  Future<void> _showRequestDetail(
+    BuildContext context,
+    TimeTrackingRequest request,
+  ) {
     final cubit = context.read<TimeTrackerRequestsCubit>();
     final repository = context.read<ITimeTrackerRepository>();
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null || wsId.isEmpty) {
-      return;
+      return Future<void>.value();
     }
     final currentUser = context.read<AuthCubit>().state.user;
     final currentUserId = currentUser?.id;
     final currentUserDisplayName = _extractUserDisplayName(currentUser);
 
-    unawaited(
-      showAdaptiveDrawer(
-        context: context,
-        builder: (_) => RequestDetailSheet(
-          request: request,
-          wsId: wsId,
-          repository: repository,
-          currentUserId: currentUserId,
-          currentUserDisplayName: currentUserDisplayName,
-          isManager: _canManageRequests,
-          statusChangeGracePeriodMinutes: _statusChangeGracePeriodMinutes,
-          onApprove: () => cubit.approveRequest(request.id, wsId),
-          onReject: (reason) =>
-              cubit.rejectRequest(request.id, wsId, reason: reason),
-          onRequestInfo: (reason) =>
-              cubit.requestMoreInfo(request.id, wsId, reason: reason),
-          onResubmit: () => cubit.resubmitRequest(request.id, wsId),
-          canEdit:
-              request.approvalStatus == ApprovalStatus.pending ||
-              request.approvalStatus == ApprovalStatus.needsInfo,
-          onEdit:
-              (
-                title,
-                startTime,
-                endTime, {
-                description,
-                removedImages,
-                newImageLocalPaths,
-              }) => cubit.updateRequest(
-                wsId,
-                request.id,
-                title,
-                startTime,
-                endTime,
-                description: description,
-                removedImages: removedImages,
-                newImageLocalPaths: newImageLocalPaths,
-              ),
-        ),
+    return showAdaptiveDrawer(
+      context: context,
+      builder: (_) => RequestDetailSheet(
+        request: request,
+        wsId: wsId,
+        repository: repository,
+        currentUserId: currentUserId,
+        currentUserDisplayName: currentUserDisplayName,
+        isManager: _canManageRequests,
+        statusChangeGracePeriodMinutes: _statusChangeGracePeriodMinutes,
+        onApprove: () => cubit.approveRequest(request.id, wsId),
+        onReject: (reason) =>
+            cubit.rejectRequest(request.id, wsId, reason: reason),
+        onRequestInfo: (reason) =>
+            cubit.requestMoreInfo(request.id, wsId, reason: reason),
+        onResubmit: () => cubit.resubmitRequest(request.id, wsId),
+        canEdit:
+            request.approvalStatus == ApprovalStatus.pending ||
+            request.approvalStatus == ApprovalStatus.needsInfo,
+        onEdit:
+            (
+              title,
+              startTime,
+              endTime, {
+              description,
+              removedImages,
+              newImageLocalPaths,
+            }) => cubit.updateRequest(
+              wsId,
+              request.id,
+              title,
+              startTime,
+              endTime,
+              description: description,
+              removedImages: removedImages,
+              newImageLocalPaths: newImageLocalPaths,
+            ),
       ),
     );
   }

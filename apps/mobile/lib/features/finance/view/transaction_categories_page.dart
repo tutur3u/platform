@@ -9,6 +9,7 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
@@ -1884,6 +1885,7 @@ class _TaxonomyTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         shad.TextField(
+          contextMenuBuilder: platformTextContextMenuBuilder(),
           controller: controller,
           placeholder: Text(placeholder),
           autofocus: autofocus,
@@ -1912,6 +1914,7 @@ class _TaxonomyTextArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return shad.TextArea(
+      contextMenuBuilder: platformTextContextMenuBuilder(),
       controller: controller,
       placeholder: Text(placeholder),
       initialHeight: 96,

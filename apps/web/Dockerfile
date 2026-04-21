@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM oven/bun:1.3.12 AS deps
+FROM oven/bun:1.3.13 AS deps
 
 WORKDIR /workspace
 
@@ -58,7 +58,7 @@ COPY packages/workflows/package.json ./packages/workflows/package.json
 RUN --mount=type=cache,id=platform-web-bun-install,target=/root/.bun/install/cache \
   bun install --frozen-lockfile
 
-FROM oven/bun:1.3.12 AS dev
+FROM oven/bun:1.3.13 AS dev
 
 WORKDIR /workspace
 
@@ -73,7 +73,7 @@ RUN chmod +x apps/web/docker/dev-entrypoint.sh
 ENTRYPOINT ["./apps/web/docker/dev-entrypoint.sh"]
 CMD ["bun", "run", "dev:web"]
 
-FROM oven/bun:1.3.12 AS builder
+FROM oven/bun:1.3.13 AS builder
 
 WORKDIR /workspace
 

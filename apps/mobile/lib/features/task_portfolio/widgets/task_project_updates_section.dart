@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide Card;
 import 'package:intl/intl.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/data/models/task_project_update.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -104,6 +105,7 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
           ),
           const shad.Gap(10),
           shad.TextArea(
+            contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _newUpdateController,
             placeholder: Text(context.l10n.taskPortfolioUpdatePlaceholder),
             enabled: !_isPosting,
@@ -188,6 +190,7 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
             const shad.Gap(8),
             if (isEditing)
               shad.TextArea(
+                contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _editUpdateController,
                 enabled: !_isSavingEdit,
                 minHeight: 80,

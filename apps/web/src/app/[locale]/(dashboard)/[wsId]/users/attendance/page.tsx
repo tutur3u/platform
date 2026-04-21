@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import AttendanceExportCard from './attendance-export-card';
 import GroupAttendanceSelector from './group-attendance-selector';
 
 export const metadata: Metadata = {
@@ -59,12 +60,15 @@ export default async function WorkspaceUserAttendancePage({ params }: Props) {
               description={t('ws-user-attendance.description')}
             />
             <Separator className="my-4" />
-            <GroupAttendanceSelector
-              wsId={wsId}
-              workspaceUserId={user?.virtual_user_id}
-              hasManageUsers={hasManageUsers}
-              canUpdateAttendance={canUpdateAttendance}
-            />
+            <div className="space-y-6">
+              <AttendanceExportCard wsId={wsId} />
+              <GroupAttendanceSelector
+                wsId={wsId}
+                workspaceUserId={user?.virtual_user_id}
+                hasManageUsers={hasManageUsers}
+                canUpdateAttendance={canUpdateAttendance}
+              />
+            </div>
           </>
         );
       }}

@@ -3,19 +3,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/react';
 import {
-  ArrowLeft,
-  CheckCircle2,
-  Copy,
-  Eye,
-  ImagePlus,
-  Loader2,
-  Pencil,
-  RefreshCw,
-  Trash2,
-} from '@tuturuuu/icons';
-import {
   createWorkspaceExternalProjectAsset,
   createWorkspaceExternalProjectBlock,
+  createWorkspaceExternalProjectEntry,
   deleteWorkspaceExternalProjectAsset,
   deleteWorkspaceExternalProjectEntry,
   duplicateWorkspaceExternalProjectEntry,
@@ -33,83 +23,37 @@ import type {
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@tuturuuu/ui/accordion';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@tuturuuu/ui/alert-dialog';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
-import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
-import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useExternalProjectLivePreview } from '../../../external-projects/use-external-project-live-preview';
 import { optimizeEpmMediaUpload } from '../../epm-media-upload';
 import type { EpmStrings } from '../../epm-strings';
-import { ResilientMediaImage } from '../../resilient-media-image';
 import { getEpmStudioQueryKey, useEpmStudio } from '../../use-epm-studio';
+import { EntryDetailConfirmDialogs } from './entry-detail-confirm-dialogs';
+import { EntryDetailHeader } from './entry-detail-header';
 import { EntryDetailLoadingState } from './entry-detail-loading-state';
-import { EntryDetailMarkdownEditor } from './entry-detail-markdown-editor';
+import { EntryDetailMainColumn } from './entry-detail-main-column';
 import { EntryDetailPreviewSheet } from './entry-detail-preview-sheet';
 import {
-  ActionButton,
   buildEntryFormState,
-  formatDateLabel,
-  formatStatus,
+  type FeaturedEntryEditorConfig,
+  type FeaturedPlacementConfig,
   fromDateTimeLocalValue,
   getEntryDescriptionEditorContent,
   getMarkdownBlockContent,
   parseEntryDescriptionContent,
   serializeEntryDescriptionContent,
   sortImageAssets,
-  statusTone,
   toStudioAsset,
 } from './entry-detail-shared';
-
-function getAssetCaption(asset: ExternalProjectStudioAsset | null | undefined) {
-  const metadata = asset?.metadata;
-  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
-    return '';
-  }
-
-  const caption = (metadata as Record<string, unknown>).caption;
-  return typeof caption === 'string' ? caption : '';
-}
+import { EntryDetailSidebar } from './entry-detail-sidebar';
 
 function mergeAssetCaptionMetadata(
   asset: ExternalProjectStudioAsset,
@@ -129,6 +73,97 @@ function mergeAssetCaptionMetadata(
   }
 
   return nextMetadata as Json;
+}
+
+function asProfileDataRecord(
+  value: ExternalProjectEntry['profile_data'] | null | undefined
+) {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function asStringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value
+        .filter((item): item is string => typeof item === 'string')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0)
+    : [];
+}
+
+function dedupeStrings(values: string[]) {
+  return [...new Set(values)];
+}
+
+function normalizeEntryCategory(value: unknown) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function normalizeEntryTags(value: unknown) {
+  return dedupeStrings(asStringArray(value));
+}
+
+function normalizeTaxonomyOptions(value: unknown) {
+  return dedupeStrings(
+    asStringArray(value)
+      .map((item) => item.trim())
+      .filter(Boolean)
+  );
+}
+
+function mergeTaxonomyOptions(current: string[], additions: string[]) {
+  return dedupeStrings([
+    ...current,
+    ...additions.map((value) => value.trim()).filter(Boolean),
+  ]);
+}
+
+function parseTaxonomyDraft(value: string) {
+  return dedupeStrings(
+    value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+  );
+}
+
+function areStringArraysEqual(left: string[], right: string[]) {
+  return (
+    left.length === right.length &&
+    left.every((value, index) => value === right[index])
+  );
+}
+
+function getFeaturedProfileSlugs(
+  profileData: Record<string, unknown>,
+  keys: string[]
+) {
+  return dedupeStrings(keys.flatMap((key) => asStringArray(profileData[key])));
+}
+
+function mergeFeaturedProfileData({
+  featuredKey,
+  nextSlugs,
+  profileData,
+  resetKeys,
+}: {
+  featuredKey: string;
+  nextSlugs: string[];
+  profileData: Record<string, unknown>;
+  resetKeys: string[];
+}) {
+  const nextProfileData = { ...profileData };
+
+  for (const key of resetKeys) {
+    delete nextProfileData[key];
+  }
+
+  if (nextSlugs.length > 0) {
+    nextProfileData[featuredKey] = nextSlugs;
+  }
+
+  return nextProfileData;
 }
 
 export function EntryDetailClient({
@@ -198,6 +233,15 @@ export function EntryDetailClient({
   const coverAsset = imageAssets[0] ?? null;
   const artworkCollection =
     collections.find((collection) => collection.slug === 'artworks') ?? null;
+  const loreCollection =
+    collections.find((collection) =>
+      /lore|writing/.test(
+        [collection.slug, collection.collection_type, collection.title]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+      )
+    ) ?? null;
   const artworkOptions = useMemo(
     () =>
       artworkCollection
@@ -207,9 +251,45 @@ export function EntryDetailClient({
         : [],
     [artworkCollection, entries]
   );
+  const loreOptions = useMemo(
+    () =>
+      loreCollection
+        ? entries.filter((entry) => entry.collection_id === loreCollection.id)
+        : [],
+    [entries, loreCollection]
+  );
+  const singletonSectionCollection =
+    collections.find((collection) =>
+      /singleton|section/.test(
+        [collection.slug, collection.collection_type, collection.title]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+      )
+    ) ?? null;
+  const singletonSectionEntries = useMemo(
+    () =>
+      singletonSectionCollection
+        ? entries.filter(
+            (entry) => entry.collection_id === singletonSectionCollection.id
+          )
+        : [],
+    [entries, singletonSectionCollection]
+  );
+  const singletonSectionEntryBySlug = useMemo(
+    () =>
+      new Map(
+        singletonSectionEntries.map((entry) => [entry.slug, entry] as const)
+      ),
+    [singletonSectionEntries]
+  );
   const [entryForm, setEntryForm] = useState(() =>
     activeEntry ? buildEntryFormState(activeEntry) : null
   );
+  const [categoryDraft, setCategoryDraft] = useState('');
+  const [categoryCreateOpen, setCategoryCreateOpen] = useState(false);
+  const [tagDraft, setTagDraft] = useState('');
+  const [tagCreateOpen, setTagCreateOpen] = useState(false);
   const [descriptionContent, setDescriptionContent] =
     useState<JSONContent | null>(() =>
       getEntryDescriptionEditorContent(activeEntry?.summary)
@@ -221,17 +301,270 @@ export function EntryDetailClient({
     getMarkdownBlockContent(markdownBlock)
   );
   const [pairedArtworkSlug, setPairedArtworkSlug] = useState(() => {
-    const profileData =
-      activeEntry?.profile_data &&
-      typeof activeEntry.profile_data === 'object' &&
-      !Array.isArray(activeEntry.profile_data)
-        ? (activeEntry.profile_data as Record<string, unknown>)
-        : {};
+    const profileData = asProfileDataRecord(activeEntry?.profile_data);
 
     return typeof profileData.artworkSlug === 'string'
       ? profileData.artworkSlug
       : '__none__';
   });
+  const isSingletonSectionEntry = /singleton|section/.test(
+    [activeCollection?.slug, activeCollection?.collection_type]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+  );
+  const taxonomySectionConfig = useMemo(() => {
+    if (!activeEntry) {
+      return null;
+    }
+
+    if (isSingletonSectionEntry && activeEntry.slug === 'gallery') {
+      return {
+        isConfigEditor: true,
+        sectionEntry: activeEntry,
+        sectionSlug: 'gallery',
+        sectionTitle: 'Gallery',
+      };
+    }
+
+    if (isSingletonSectionEntry && activeEntry.slug === 'writing') {
+      return {
+        isConfigEditor: true,
+        sectionEntry: activeEntry,
+        sectionSlug: 'writing',
+        sectionTitle: 'Writing',
+      };
+    }
+
+    if (
+      activeCollection?.id === artworkCollection?.id &&
+      singletonSectionCollection
+    ) {
+      return {
+        isConfigEditor: false,
+        sectionEntry: singletonSectionEntryBySlug.get('gallery') ?? null,
+        sectionSlug: 'gallery',
+        sectionTitle: 'Gallery',
+      };
+    }
+
+    if (
+      activeCollection?.id === loreCollection?.id &&
+      singletonSectionCollection
+    ) {
+      return {
+        isConfigEditor: false,
+        sectionEntry: singletonSectionEntryBySlug.get('writing') ?? null,
+        sectionSlug: 'writing',
+        sectionTitle: 'Writing',
+      };
+    }
+
+    return null;
+  }, [
+    activeCollection?.id,
+    activeEntry,
+    artworkCollection?.id,
+    isSingletonSectionEntry,
+    loreCollection?.id,
+    singletonSectionCollection,
+    singletonSectionEntryBySlug,
+  ]);
+  const isTaxonomyConfigEditor = taxonomySectionConfig?.isConfigEditor ?? false;
+  const initialConfiguredCategories = useMemo(
+    () =>
+      normalizeTaxonomyOptions(
+        asProfileDataRecord(taxonomySectionConfig?.sectionEntry?.profile_data)
+          .categoryOptions
+      ),
+    [taxonomySectionConfig?.sectionEntry?.profile_data]
+  );
+  const initialConfiguredTags = useMemo(
+    () =>
+      normalizeTaxonomyOptions(
+        asProfileDataRecord(taxonomySectionConfig?.sectionEntry?.profile_data)
+          .tagOptions
+      ),
+    [taxonomySectionConfig?.sectionEntry?.profile_data]
+  );
+  const [configuredCategoryOptions, setConfiguredCategoryOptions] = useState<
+    string[]
+  >([]);
+  const [configuredTagOptions, setConfiguredTagOptions] = useState<string[]>(
+    []
+  );
+  const featuredEntryConfig = useMemo<FeaturedEntryEditorConfig | null>(() => {
+    if (!isSingletonSectionEntry || !activeEntry) {
+      return null;
+    }
+
+    if (activeEntry.slug === 'gallery' && artworkOptions.length > 0) {
+      return {
+        cleanupKeys: [
+          'featuredArtworkSlugs',
+          'carouselArtworkSlugs',
+          'featuredSlugs',
+        ],
+        description: strings.featuredGalleryEntriesDescription,
+        key: 'featuredArtworkSlugs',
+        options: artworkOptions,
+        title: strings.featuredGalleryEntriesLabel,
+      };
+    }
+
+    if (activeEntry.slug === 'writing' && loreOptions.length > 0) {
+      return {
+        cleanupKeys: [
+          'featuredEntrySlugs',
+          'featuredLoreSlugs',
+          'carouselEntrySlugs',
+          'carouselLoreSlugs',
+          'featuredSlugs',
+        ],
+        description: strings.featuredWritingEntriesDescription,
+        key: 'featuredEntrySlugs',
+        options: loreOptions,
+        title: strings.featuredWritingEntriesLabel,
+      };
+    }
+
+    return null;
+  }, [
+    activeEntry,
+    artworkOptions,
+    isSingletonSectionEntry,
+    loreOptions,
+    strings.featuredGalleryEntriesDescription,
+    strings.featuredGalleryEntriesLabel,
+    strings.featuredWritingEntriesDescription,
+    strings.featuredWritingEntriesLabel,
+  ]);
+  const initialFeaturedEntrySlugs = useMemo(() => {
+    if (!featuredEntryConfig) {
+      return [];
+    }
+
+    const optionSlugs = new Set(
+      featuredEntryConfig.options.map((entry) => entry.slug)
+    );
+
+    return getFeaturedProfileSlugs(
+      asProfileDataRecord(activeEntry?.profile_data),
+      featuredEntryConfig.cleanupKeys
+    ).filter((slug) => optionSlugs.has(slug));
+  }, [activeEntry?.profile_data, featuredEntryConfig]);
+  const [featuredEntrySlugs, setFeaturedEntrySlugs] = useState<string[]>([]);
+  const featuredPlacementConfig =
+    useMemo<FeaturedPlacementConfig | null>(() => {
+      if (!activeEntry || !activeCollection || !singletonSectionCollection) {
+        return null;
+      }
+
+      if (activeCollection.id === artworkCollection?.id) {
+        return {
+          cleanupKeys: [
+            'featuredArtworkSlugs',
+            'carouselArtworkSlugs',
+            'featuredSlugs',
+          ],
+          description: strings.featuredPlacementArtworkDescription,
+          emptyState: strings.featuredPlacementSectionMissing,
+          featuredKey: 'featuredArtworkSlugs',
+          featuredLabel: strings.featuredPlacementGalleryLabel,
+          sectionSlug: 'gallery',
+          sectionTitle: 'Gallery',
+          sectionEntry: singletonSectionEntryBySlug.get('gallery') ?? null,
+        };
+      }
+
+      if (activeCollection.id === loreCollection?.id) {
+        return {
+          cleanupKeys: [
+            'featuredEntrySlugs',
+            'featuredLoreSlugs',
+            'carouselEntrySlugs',
+            'carouselLoreSlugs',
+            'featuredSlugs',
+          ],
+          description: strings.featuredPlacementWritingDescription,
+          emptyState: strings.featuredPlacementSectionMissing,
+          featuredKey: 'featuredEntrySlugs',
+          featuredLabel: strings.featuredPlacementWritingLabel,
+          sectionSlug: 'writing',
+          sectionTitle: 'Writing',
+          sectionEntry: singletonSectionEntryBySlug.get('writing') ?? null,
+        };
+      }
+
+      return null;
+    }, [
+      activeCollection,
+      activeEntry,
+      artworkCollection?.id,
+      loreCollection?.id,
+      singletonSectionCollection,
+      singletonSectionEntryBySlug,
+      strings.featuredPlacementArtworkDescription,
+      strings.featuredPlacementGalleryLabel,
+      strings.featuredPlacementSectionMissing,
+      strings.featuredPlacementWritingDescription,
+      strings.featuredPlacementWritingLabel,
+    ]);
+  const featuredPlacementSlugs = useMemo(() => {
+    if (!featuredPlacementConfig?.sectionEntry) {
+      return [];
+    }
+
+    const profileData = asProfileDataRecord(
+      featuredPlacementConfig.sectionEntry.profile_data
+    );
+
+    return getFeaturedProfileSlugs(
+      profileData,
+      featuredPlacementConfig.cleanupKeys
+    );
+  }, [featuredPlacementConfig]);
+  const featuredPlacementIndex = activeEntry
+    ? featuredPlacementSlugs.indexOf(activeEntry.slug)
+    : -1;
+  const isFeaturedPlacementActive = featuredPlacementIndex >= 0;
+  const categoryOptions = useMemo(
+    () =>
+      (isTaxonomyConfigEditor
+        ? configuredCategoryOptions
+        : mergeTaxonomyOptions(
+            configuredCategoryOptions,
+            entryForm?.category ? [entryForm.category] : []
+          )
+      ).map((category) => ({
+        description: strings.categoryExistingDescription,
+        label: category,
+        value: category,
+      })),
+    [
+      configuredCategoryOptions,
+      entryForm?.category,
+      isTaxonomyConfigEditor,
+      strings.categoryExistingDescription,
+    ]
+  );
+  const tagOptions = useMemo(
+    () =>
+      (isTaxonomyConfigEditor
+        ? configuredTagOptions
+        : mergeTaxonomyOptions(configuredTagOptions, entryForm?.tags ?? [])
+      ).map((tag) => ({
+        description: strings.tagsExistingDescription,
+        label: tag,
+        value: tag,
+      })),
+    [
+      configuredTagOptions,
+      entryForm?.tags,
+      isTaxonomyConfigEditor,
+      strings.tagsExistingDescription,
+    ]
+  );
 
   const previewQuery = useExternalProjectLivePreview({
     enabled: previewOpen,
@@ -251,13 +584,21 @@ export function EntryDetailClient({
     serializeEntryDescriptionContent(descriptionContent);
   const supportsMarkdownBody =
     !!markdownBlock ||
-    [activeCollection?.slug, activeCollection?.collection_type]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase()
-      .match(/lore|writing|singleton|section/);
+    /lore|writing|singleton|section/.test(
+      [activeCollection?.slug, activeCollection?.collection_type]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+    );
   const supportsPairedVisual =
     Boolean(supportsMarkdownBody) && artworkOptions.length > 0;
+  const taxonomyConfigDirty =
+    Boolean(taxonomySectionConfig) &&
+    (!areStringArraysEqual(
+      configuredCategoryOptions,
+      initialConfiguredCategories
+    ) ||
+      !areStringArraysEqual(configuredTagOptions, initialConfiguredTags));
 
   const entryDirty =
     !!activeEntry &&
@@ -269,14 +610,25 @@ export function EntryDetailClient({
         serializeEntryDescriptionContent(
           parseEntryDescriptionContent(activeEntry.summary)
         ) ||
+      (!isTaxonomyConfigEditor &&
+        entryForm.category !==
+          normalizeEntryCategory(
+            asProfileDataRecord(activeEntry.profile_data).category
+          )) ||
+      (!isTaxonomyConfigEditor &&
+        !areStringArraysEqual(
+          entryForm.tags,
+          normalizeEntryTags(asProfileDataRecord(activeEntry.profile_data).tags)
+        )) ||
+      taxonomyConfigDirty ||
       (supportsPairedVisual
         ? pairedArtworkSlug !==
-          (((activeEntry.profile_data &&
-          typeof activeEntry.profile_data === 'object' &&
-          !Array.isArray(activeEntry.profile_data)
-            ? (activeEntry.profile_data as Record<string, unknown>)
-            : {}
-          )?.artworkSlug as string | undefined) ?? '__none__')
+          ((asProfileDataRecord(activeEntry.profile_data).artworkSlug as
+            | string
+            | undefined) ?? '__none__')
+        : false) ||
+      (featuredEntryConfig
+        ? !areStringArraysEqual(featuredEntrySlugs, initialFeaturedEntrySlugs)
         : false) ||
       entryForm.status !== activeEntry.status ||
       fromDateTimeLocalValue(entryForm.scheduledFor) !==
@@ -285,9 +637,6 @@ export function EntryDetailClient({
     !!activeEntry &&
     coverAltText !== (coverAsset?.alt_text ?? activeEntry.title);
   const activeEntryTitle = activeEntry?.title ?? strings.title;
-  const hasCoverMedia = Boolean(
-    coverAsset?.preview_url || coverAsset?.asset_url
-  );
   const bodyMarkdownDirty =
     bodyMarkdown.trim() !== getMarkdownBlockContent(markdownBlock).trim();
 
@@ -314,7 +663,19 @@ export function EntryDetailClient({
     }
 
     setEntryForm(buildEntryFormState(activeEntry));
+    setCategoryDraft('');
+    setCategoryCreateOpen(false);
+    setTagDraft('');
+    setTagCreateOpen(false);
   }, [activeEntry]);
+
+  useEffect(() => {
+    setConfiguredCategoryOptions(initialConfiguredCategories);
+  }, [initialConfiguredCategories]);
+
+  useEffect(() => {
+    setConfiguredTagOptions(initialConfiguredTags);
+  }, [initialConfiguredTags]);
 
   useEffect(() => {
     setDescriptionContent(
@@ -336,12 +697,7 @@ export function EntryDetailClient({
   }, [markdownBlock]);
 
   useEffect(() => {
-    const profileData =
-      activeEntry?.profile_data &&
-      typeof activeEntry.profile_data === 'object' &&
-      !Array.isArray(activeEntry.profile_data)
-        ? (activeEntry.profile_data as Record<string, unknown>)
-        : {};
+    const profileData = asProfileDataRecord(activeEntry?.profile_data);
 
     setPairedArtworkSlug(
       typeof profileData.artworkSlug === 'string'
@@ -349,6 +705,10 @@ export function EntryDetailClient({
         : '__none__'
     );
   }, [activeEntry?.profile_data]);
+
+  useEffect(() => {
+    setFeaturedEntrySlugs(initialFeaturedEntrySlugs);
+  }, [initialFeaturedEntrySlugs]);
 
   useEffect(() => {
     setSelectedAssetIds((current) =>
@@ -381,11 +741,15 @@ export function EntryDetailClient({
   const mergeEntry = (nextEntry: ExternalProjectEntry) => {
     updateStudioCache((current) => ({
       ...current,
-      entries: current.entries.map((entry) =>
-        entry.id === nextEntry.id ? nextEntry : entry
-      ),
+      entries: current.entries.some((entry) => entry.id === nextEntry.id)
+        ? current.entries.map((entry) =>
+            entry.id === nextEntry.id ? nextEntry : entry
+          )
+        : [nextEntry, ...current.entries],
     }));
-    setEntryForm(buildEntryFormState(nextEntry));
+    if (nextEntry.id === activeEntry?.id) {
+      setEntryForm(buildEntryFormState(nextEntry));
+    }
   };
 
   const mergeAsset = (nextAsset: ExternalProjectStudioAsset) => {
@@ -433,12 +797,26 @@ export function EntryDetailClient({
         throw new Error(strings.emptyEntries);
       }
 
-      const currentProfileData =
-        activeEntry.profile_data &&
-        typeof activeEntry.profile_data === 'object' &&
-        !Array.isArray(activeEntry.profile_data)
-          ? { ...(activeEntry.profile_data as Record<string, unknown>) }
-          : {};
+      let currentProfileData = {
+        ...asProfileDataRecord(activeEntry.profile_data),
+      };
+      const taxonomyProfileData = {
+        ...asProfileDataRecord(
+          taxonomySectionConfig?.sectionEntry?.profile_data
+        ),
+      };
+
+      if (configuredCategoryOptions.length > 0) {
+        taxonomyProfileData.categoryOptions = configuredCategoryOptions;
+      } else {
+        delete taxonomyProfileData.categoryOptions;
+      }
+
+      if (configuredTagOptions.length > 0) {
+        taxonomyProfileData.tagOptions = configuredTagOptions;
+      } else {
+        delete taxonomyProfileData.tagOptions;
+      }
 
       if (supportsPairedVisual && pairedArtworkSlug !== '__none__') {
         currentProfileData.artworkSlug = pairedArtworkSlug;
@@ -446,18 +824,91 @@ export function EntryDetailClient({
         delete currentProfileData.artworkSlug;
       }
 
-      return updateWorkspaceExternalProjectEntry(workspaceId, activeEntry.id, {
-        profile_data: currentProfileData as Json,
-        scheduled_for: fromDateTimeLocalValue(entryForm.scheduledFor),
-        slug: entryForm.slug.trim(),
-        status: entryForm.status,
-        subtitle: entryForm.subtitle.trim() || null,
-        summary: normalizedDescription,
-        title: entryForm.title.trim(),
-      });
+      if (!isTaxonomyConfigEditor && entryForm.category.trim()) {
+        currentProfileData.category = entryForm.category.trim();
+      } else {
+        delete currentProfileData.category;
+      }
+
+      if (!isTaxonomyConfigEditor && entryForm.tags.length > 0) {
+        currentProfileData.tags = dedupeStrings(
+          entryForm.tags.map((tag) => tag.trim()).filter(Boolean)
+        );
+      } else {
+        delete currentProfileData.tags;
+      }
+
+      if (featuredEntryConfig) {
+        const validSlugs = new Set(
+          featuredEntryConfig.options.map((entry) => entry.slug)
+        );
+        const nextFeaturedSlugs = dedupeStrings(
+          featuredEntrySlugs.filter((slug) => validSlugs.has(slug))
+        );
+        currentProfileData = mergeFeaturedProfileData({
+          featuredKey: featuredEntryConfig.key,
+          nextSlugs: nextFeaturedSlugs,
+          profileData: currentProfileData,
+          resetKeys: featuredEntryConfig.cleanupKeys,
+        });
+      }
+
+      if (isTaxonomyConfigEditor) {
+        currentProfileData = {
+          ...currentProfileData,
+          ...taxonomyProfileData,
+        };
+      }
+
+      const nextEntries = [
+        await updateWorkspaceExternalProjectEntry(workspaceId, activeEntry.id, {
+          profile_data: currentProfileData as Json,
+          scheduled_for: fromDateTimeLocalValue(entryForm.scheduledFor),
+          slug: entryForm.slug.trim(),
+          status: entryForm.status,
+          subtitle: entryForm.subtitle.trim() || null,
+          summary: normalizedDescription,
+          title: entryForm.title.trim(),
+        }),
+      ];
+
+      if (
+        !isTaxonomyConfigEditor &&
+        taxonomyConfigDirty &&
+        taxonomySectionConfig
+      ) {
+        if (taxonomySectionConfig.sectionEntry) {
+          nextEntries.push(
+            await updateWorkspaceExternalProjectEntry(
+              workspaceId,
+              taxonomySectionConfig.sectionEntry.id,
+              {
+                profile_data: taxonomyProfileData as Json,
+              }
+            )
+          );
+        } else if (singletonSectionCollection) {
+          nextEntries.push(
+            await createWorkspaceExternalProjectEntry(workspaceId, {
+              collection_id: singletonSectionCollection.id,
+              metadata: {},
+              profile_data: taxonomyProfileData as Json,
+              slug: taxonomySectionConfig.sectionSlug,
+              status: 'draft',
+              subtitle: null,
+              summary: null,
+              title: taxonomySectionConfig.sectionTitle,
+            })
+          );
+        }
+      }
+
+      return nextEntries;
     },
-    onSuccess: (entry) => {
-      mergeEntry(entry);
+    onSuccess: (updatedEntries) => {
+      updatedEntries.forEach((entry) => {
+        mergeEntry(entry);
+      });
       toast.success(strings.saveAction);
     },
   });
@@ -493,6 +944,68 @@ export function EntryDetailClient({
       mergeBlock(block);
       setBodyMarkdown(getMarkdownBlockContent(block));
       toast.success(strings.saveAction);
+    },
+  });
+
+  const updateFeaturedPlacementMutation = useMutation({
+    mutationFn: async (updater: (current: string[]) => string[]) => {
+      const sectionEntry = featuredPlacementConfig?.sectionEntry;
+      if (!sectionEntry || !activeEntry || !featuredPlacementConfig) {
+        throw new Error(strings.featuredPlacementSectionMissing);
+      }
+
+      const validSlugs = new Set(
+        (featuredPlacementConfig.featuredKey === 'featuredArtworkSlugs'
+          ? artworkOptions
+          : loreOptions
+        ).map((entry) => entry.slug)
+      );
+      const nextSlugs = dedupeStrings(
+        updater(featuredPlacementSlugs).filter((slug) => validSlugs.has(slug))
+      );
+      const nextProfileData = mergeFeaturedProfileData({
+        featuredKey: featuredPlacementConfig.featuredKey,
+        nextSlugs,
+        profileData: asProfileDataRecord(sectionEntry.profile_data),
+        resetKeys: featuredPlacementConfig.cleanupKeys,
+      });
+
+      return updateWorkspaceExternalProjectEntry(workspaceId, sectionEntry.id, {
+        profile_data: nextProfileData as Json,
+      });
+    },
+    onSuccess: (entry) => {
+      mergeEntry(entry);
+      toast.success(strings.saveAction);
+    },
+  });
+
+  const createFeaturedPlacementConfigMutation = useMutation({
+    mutationFn: async () => {
+      if (
+        !activeEntry ||
+        !featuredPlacementConfig ||
+        !singletonSectionCollection
+      ) {
+        throw new Error(strings.featuredPlacementSectionMissing);
+      }
+
+      return createWorkspaceExternalProjectEntry(workspaceId, {
+        collection_id: singletonSectionCollection.id,
+        metadata: {},
+        profile_data: {
+          [featuredPlacementConfig.featuredKey]: [activeEntry.slug],
+        } as Json,
+        slug: featuredPlacementConfig.sectionSlug,
+        status: 'draft',
+        subtitle: null,
+        summary: null,
+        title: featuredPlacementConfig.sectionTitle,
+      });
+    },
+    onSuccess: (entry) => {
+      mergeEntry(entry);
+      toast.success(strings.featuredPlacementCreateSuccessToast);
     },
   });
 
@@ -797,6 +1310,188 @@ export function EntryDetailClient({
     );
   };
 
+  const toggleFeaturedEntrySelection = (slug: string) => {
+    setFeaturedEntrySlugs((current) =>
+      current.includes(slug)
+        ? current.filter((value) => value !== slug)
+        : [...current, slug]
+    );
+  };
+
+  const removeEntryTag = (tag: string) => {
+    setEntryForm((current) =>
+      current
+        ? {
+            ...current,
+            tags: current.tags.filter((value) => value !== tag),
+          }
+        : current
+    );
+  };
+
+  const clearEntryTags = () => {
+    setEntryForm((current) =>
+      current
+        ? {
+            ...current,
+            tags: [],
+          }
+        : current
+    );
+  };
+
+  const applyEntryCategory = (value: string) => {
+    const nextCategory = value.trim();
+    if (!nextCategory) {
+      setCategoryDraft('');
+      return;
+    }
+
+    setConfiguredCategoryOptions((current) =>
+      mergeTaxonomyOptions(current, [nextCategory])
+    );
+    if (!isTaxonomyConfigEditor) {
+      setEntryForm((current) =>
+        current
+          ? {
+              ...current,
+              category: nextCategory,
+            }
+          : current
+      );
+    }
+    setCategoryDraft('');
+    setCategoryCreateOpen(false);
+  };
+
+  const addEntryTags = (value: string) => {
+    const nextTags = parseTaxonomyDraft(value);
+
+    if (nextTags.length === 0) return;
+
+    setConfiguredTagOptions((current) =>
+      mergeTaxonomyOptions(current, nextTags)
+    );
+    if (!isTaxonomyConfigEditor) {
+      setEntryForm((current) =>
+        current
+          ? {
+              ...current,
+              tags: dedupeStrings([...current.tags, ...nextTags]),
+            }
+          : current
+      );
+    }
+    setTagDraft('');
+    setTagCreateOpen(false);
+  };
+
+  const removeConfiguredCategory = (category: string) => {
+    setConfiguredCategoryOptions((current) =>
+      current.filter((value) => value !== category)
+    );
+    if (!isTaxonomyConfigEditor) {
+      setEntryForm((current) =>
+        current && current.category === category
+          ? {
+              ...current,
+              category: '',
+            }
+          : current
+      );
+    }
+  };
+
+  const clearConfiguredCategories = () => {
+    setConfiguredCategoryOptions([]);
+    if (!isTaxonomyConfigEditor) {
+      setEntryForm((current) =>
+        current
+          ? {
+              ...current,
+              category: '',
+            }
+          : current
+      );
+    }
+  };
+
+  const removeConfiguredTag = (tag: string) => {
+    setConfiguredTagOptions((current) =>
+      current.filter((value) => value !== tag)
+    );
+    if (!isTaxonomyConfigEditor) {
+      setEntryForm((current) =>
+        current
+          ? {
+              ...current,
+              tags: current.tags.filter((value) => value !== tag),
+            }
+          : current
+      );
+    }
+  };
+
+  const clearConfiguredTags = () => {
+    setConfiguredTagOptions([]);
+    if (!isTaxonomyConfigEditor) {
+      setEntryForm((current) =>
+        current
+          ? {
+              ...current,
+              tags: [],
+            }
+          : current
+      );
+    }
+  };
+
+  const moveFeaturedEntry = (slug: string, direction: -1 | 1) => {
+    setFeaturedEntrySlugs((current) => {
+      const index = current.indexOf(slug);
+      const nextIndex = index + direction;
+
+      if (index === -1 || nextIndex < 0 || nextIndex >= current.length) {
+        return current;
+      }
+
+      const next = [...current];
+      [next[index], next[nextIndex]] = [next[nextIndex]!, next[index]!];
+      return next;
+    });
+  };
+
+  const toggleFeaturedPlacement = () => {
+    if (!activeEntry) {
+      return;
+    }
+
+    updateFeaturedPlacementMutation.mutate((current) =>
+      current.includes(activeEntry.slug)
+        ? current.filter((slug) => slug !== activeEntry.slug)
+        : [...current, activeEntry.slug]
+    );
+  };
+
+  const moveFeaturedPlacement = (direction: -1 | 1) => {
+    if (!activeEntry) {
+      return;
+    }
+
+    updateFeaturedPlacementMutation.mutate((current) => {
+      const index = current.indexOf(activeEntry.slug);
+      const nextIndex = index + direction;
+
+      if (index === -1 || nextIndex < 0 || nextIndex >= current.length) {
+        return current;
+      }
+
+      const next = [...current];
+      [next[index], next[nextIndex]] = [next[nextIndex]!, next[index]!];
+      return next;
+    });
+  };
+
   const deleteSingleAsset = (assetId: string) => {
     setSelectedAssetIds([assetId]);
     setDeleteMediaDialogOpen(true);
@@ -830,6 +1525,36 @@ export function EntryDetailClient({
     saveEntryMutation.isPending ||
     saveMarkdownMutation.isPending ||
     saveCoverMutation.isPending;
+  const featuredPlacementProcessing =
+    updateFeaturedPlacementMutation.isPending ||
+    createFeaturedPlacementConfigMutation.isPending;
+  const dirty = entryDirty || coverDirty || bodyMarkdownDirty;
+  const collectionTitle =
+    activeCollection?.title ?? strings.collectionFallbackLabel;
+  const featuredPlacementLabel = featuredPlacementConfig?.sectionEntry
+    ? featuredPlacementConfig.featuredLabel
+    : null;
+
+  const refreshWorkspace = () => {
+    setPreviewRefreshToken((value) => value + 1);
+    queryClient.invalidateQueries({
+      queryKey: getEpmStudioQueryKey(workspaceId),
+    });
+  };
+
+  const saveCurrentEntry = () => {
+    if (entryDirty) {
+      saveEntryMutation.mutate();
+    }
+
+    if (bodyMarkdownDirty) {
+      saveMarkdownMutation.mutate();
+    }
+
+    if (coverDirty && coverAsset) {
+      saveCoverMutation.mutate();
+    }
+  };
 
   const content = (
     <div className="mx-auto min-h-[calc(100svh-5rem)] max-w-[1580px] space-y-6 pb-10">
@@ -849,833 +1574,213 @@ export function EntryDetailClient({
         onChange={handleMediaInputChange}
       />
 
-      <div className="sticky top-0 z-20 -mx-2 rounded-[1.7rem] border border-border/70 bg-background/95 px-4 py-4 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:mx-0 sm:px-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="max-w-4xl space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              {variant === 'page' ? (
-                <Button
-                  variant="ghost"
-                  onClick={() => router.push(dashboardPath)}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  {strings.backToEpmAction}
-                </Button>
-              ) : null}
-              <Badge variant="outline">
-                {activeCollection?.title ?? strings.collectionFallbackLabel}
-              </Badge>
-              <Badge className={statusTone(activeEntry.status)}>
-                {formatStatus(activeEntry.status, strings)}
-              </Badge>
-              {coverAsset ? (
-                <Badge variant="outline">{strings.coverBadge}</Badge>
-              ) : null}
-              {entryDirty || coverDirty ? (
-                <Badge variant="outline">{strings.saveAction}</Badge>
-              ) : null}
-              {mediaProcessing ? (
-                <Badge
-                  variant="outline"
-                  className="border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue"
-                >
-                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                  {strings.mediaProcessingLabel}
-                </Badge>
-              ) : null}
-            </div>
-            <div>
-              <h1 className="font-semibold text-3xl tracking-tight">
-                {activeEntry.title}
-              </h1>
-              <p className="mt-2 max-w-2xl text-muted-foreground text-sm leading-6">
-                {activeEntry.slug}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/70 bg-card/90 p-2">
-            <ActionButton
-              tooltip={strings.refreshAction}
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setPreviewRefreshToken((value) => value + 1);
-                queryClient.invalidateQueries({
-                  queryKey: getEpmStudioQueryKey(workspaceId),
-                });
-              }}
-            >
-              <RefreshCw className="h-4 w-4" />
-            </ActionButton>
-            <ActionButton
-              tooltip={strings.openPreviewAction}
-              size="sm"
-              variant="outline"
-              onClick={() => setPreviewOpen(true)}
-            >
-              <Eye className="mr-2 h-4 w-4" />
-              {strings.openPreviewAction}
-            </ActionButton>
-            <ActionButton
-              tooltip={strings.duplicateAction}
-              size="sm"
-              variant="outline"
-              disabled={duplicateEntryMutation.isPending}
-              onClick={() => duplicateEntryMutation.mutate()}
-            >
-              <Copy className="mr-2 h-4 w-4" />
-              {strings.duplicateAction}
-            </ActionButton>
-            <Button
-              size="sm"
-              disabled={
-                (!entryDirty && !coverDirty && !bodyMarkdownDirty) ||
-                saveProcessing
-              }
-              onClick={() => {
-                if (entryDirty) {
-                  saveEntryMutation.mutate();
-                }
-
-                if (bodyMarkdownDirty) {
-                  saveMarkdownMutation.mutate();
-                }
-
-                if (coverDirty && coverAsset) {
-                  saveCoverMutation.mutate();
-                }
-              }}
-            >
-              {saveProcessing ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Pencil className="mr-2 h-4 w-4" />
-              )}
-              {strings.saveAction}
-            </Button>
-            <ActionButton
-              size="sm"
-              tooltip={
-                activeEntry.status === 'published'
-                  ? strings.unpublishAction
-                  : strings.publishAction
-              }
-              disabled={publishEntryMutation.isPending}
-              onClick={() =>
-                publishEntryMutation.mutate(
-                  activeEntry.status === 'published' ? 'unpublish' : 'publish'
-                )
-              }
-            >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              {activeEntry.status === 'published'
-                ? strings.unpublishAction
-                : strings.publishAction}
-            </ActionButton>
-            <ActionButton
-              tooltip={strings.deleteEntryAction}
-              size="sm"
-              variant="outline"
-              disabled={deleteEntryMutation.isPending}
-              onClick={() => setDeleteEntryDialogOpen(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </ActionButton>
-          </div>
-        </div>
-      </div>
+      <EntryDetailHeader
+        activeEntry={activeEntry}
+        activeEntryTitle={activeEntryTitle}
+        collectionTitle={collectionTitle}
+        coverVisible={Boolean(coverAsset)}
+        dashboardPath={dashboardPath}
+        dirty={dirty}
+        featuredPlacementActive={isFeaturedPlacementActive}
+        featuredPlacementIndex={featuredPlacementIndex}
+        featuredPlacementLabel={featuredPlacementLabel}
+        featuredPlacementProcessing={featuredPlacementProcessing}
+        mediaProcessing={mediaProcessing}
+        onBack={(path) => router.push(path)}
+        onDelete={() => setDeleteEntryDialogOpen(true)}
+        onDuplicate={() => duplicateEntryMutation.mutate()}
+        onOpenPreview={() => setPreviewOpen(true)}
+        onPublishToggle={() =>
+          publishEntryMutation.mutate(
+            activeEntry.status === 'published' ? 'unpublish' : 'publish'
+          )
+        }
+        onRefresh={refreshWorkspace}
+        onSave={saveCurrentEntry}
+        onToggleFeaturedPlacement={toggleFeaturedPlacement}
+        publishPending={publishEntryMutation.isPending}
+        saveDisabled={!dirty || saveProcessing}
+        saveProcessing={saveProcessing}
+        strings={strings}
+        variant={variant}
+      />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="space-y-5">
-          <Card className="overflow-hidden border-border/70 bg-card/95 shadow-none">
-            <CardContent className="space-y-4 p-5 lg:p-6">
-              <div
-                className={cn(
-                  'relative overflow-hidden rounded-[1.6rem] border border-border/70 bg-background/80',
-                  hasCoverMedia
-                    ? 'min-h-[320px] lg:min-h-[420px]'
-                    : 'flex min-h-[280px] flex-col justify-between p-6'
-                )}
-              >
-                {coverAsset && hasCoverMedia ? (
-                  <ResilientMediaImage
-                    alt={coverAsset.alt_text ?? activeEntry.title}
-                    assetUrl={coverAsset.asset_url}
-                    className="object-cover"
-                    fill
-                    previewUrl={coverAsset.preview_url}
-                    sizes="(max-width: 1280px) 100vw, 62vw"
-                  />
-                ) : null}
-                {coverAsset && hasCoverMedia ? (
-                  <>
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/24 to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 p-5">
-                      <p className="text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
-                        {strings.coverImageTitle}
-                      </p>
-                      <h2 className="mt-3 font-semibold text-2xl tracking-tight">
-                        {activeEntry.title}
-                      </h2>
-                      <p className="mt-2 max-w-xl text-muted-foreground text-sm leading-6">
-                        {strings.coverImageDescription}
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <div className="space-y-5">
-                    <div className="space-y-2">
-                      <p className="text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
-                        {strings.coverImageTitle}
-                      </p>
-                      <h2 className="font-semibold text-2xl tracking-tight">
-                        {strings.noCoverTitle}
-                      </h2>
-                      <p className="max-w-md text-muted-foreground text-sm leading-6">
-                        {strings.noCoverDescription}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        disabled={mediaProcessing}
-                        onClick={() => coverInputRef.current?.click()}
-                      >
-                        {uploadCoverMutation.isPending ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <ImagePlus className="mr-2 h-4 w-4" />
-                        )}
-                        {uploadCoverMutation.isPending
-                          ? strings.mediaProcessingLabel
-                          : strings.uploadCoverAction}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setPreviewOpen(true)}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        {strings.openPreviewAction}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-              {coverAsset ? (
-                <div className="rounded-[1.35rem] border border-border/70 bg-background/80 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
-                        {strings.coverImageTitle}
-                      </div>
-                      <div className="mt-1 text-muted-foreground text-sm">
-                        {strings.coverImageDescription}
-                      </div>
-                    </div>
-                    <ActionButton
-                      size="sm"
-                      tooltip={strings.coverImageDescription}
-                      disabled={mediaProcessing}
-                      onClick={() => coverInputRef.current?.click()}
-                    >
-                      {uploadCoverMutation.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <ImagePlus className="mr-2 h-4 w-4" />
-                      )}
-                      {uploadCoverMutation.isPending
-                        ? strings.mediaProcessingLabel
-                        : strings.replaceCoverAction}
-                    </ActionButton>
-                  </div>
-                  <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-end">
-                    <div className="flex-1 space-y-2">
-                      <Label htmlFor="entry-cover-alt">
-                        {strings.titleLabel}
-                      </Label>
-                      <Input
-                        id="entry-cover-alt"
-                        value={coverAltText}
-                        onChange={(event) =>
-                          setCoverAltText(event.target.value)
-                        }
-                      />
-                    </div>
-                    <ActionButton
-                      size="sm"
-                      tooltip={strings.saveCoverAction}
-                      variant="outline"
-                      disabled={
-                        !coverDirty ||
-                        saveCoverMutation.isPending ||
-                        mediaProcessing
-                      }
-                      onClick={() => saveCoverMutation.mutate()}
-                    >
-                      {saveCoverMutation.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Pencil className="mr-2 h-4 w-4" />
-                      )}
-                      {saveCoverMutation.isPending
-                        ? strings.mediaProcessingLabel
-                        : strings.saveCoverAction}
-                    </ActionButton>
-                  </div>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
+        <EntryDetailMainColumn
+          activeEntry={activeEntry}
+          assetCaptions={assetCaptions}
+          bodyMarkdown={bodyMarkdown}
+          bodyMarkdownLabel={strings.bodyMarkdownLabel}
+          bodyMarkdownPlaceholder={strings.previewEmptyDescription}
+          bodyMarkdownWriteLabel={strings.markdownWriteLabel}
+          coverAltText={coverAltText}
+          coverAsset={coverAsset}
+          coverDirty={coverDirty}
+          deleteAssetsPending={deleteAssetsMutation.isPending}
+          descriptionContent={descriptionContent}
+          imageAssets={imageAssets}
+          mediaProcessing={mediaProcessing}
+          onBodyMarkdownChange={setBodyMarkdown}
+          onCaptionChange={(assetId, value) =>
+            setAssetCaptions((current) => ({
+              ...current,
+              [assetId]: value,
+            }))
+          }
+          onCoverAltTextChange={setCoverAltText}
+          onCoverInputClick={() => coverInputRef.current?.click()}
+          onDeleteSelectedMedia={() => setDeleteMediaDialogOpen(true)}
+          onDeleteSingleAsset={deleteSingleAsset}
+          onDescriptionChange={setDescriptionContent}
+          onOpenPreview={() => setPreviewOpen(true)}
+          onSaveAssetCaption={(assetId) =>
+            saveAssetCaptionMutation.mutate(assetId)
+          }
+          onSaveCover={() => saveCoverMutation.mutate()}
+          onSelectAllMedia={() =>
+            setSelectedAssetIds((current) =>
+              current.length === imageAssets.length
+                ? []
+                : imageAssets.map((asset) => asset.id)
+            )
+          }
+          onSetAsCover={(assetId) => setAsCoverMutation.mutate(assetId)}
+          onSubtitleChange={(value) =>
+            setEntryForm((current) =>
+              current ? { ...current, subtitle: value } : current
+            )
+          }
+          onToggleAssetSelection={toggleAssetSelection}
+          onUploadMediaClick={() => mediaInputRef.current?.click()}
+          saveAssetCaptionPending={saveAssetCaptionMutation.isPending}
+          saveCoverPending={saveCoverMutation.isPending}
+          selectedAssetCount={selectedAssetCount}
+          selectedAssetIds={selectedAssetIds}
+          setAsCoverPending={setAsCoverMutation.isPending}
+          strings={strings}
+          subtitle={entryForm.subtitle}
+          supportsMarkdownBody={supportsMarkdownBody}
+          uploadCoverPending={uploadCoverMutation.isPending}
+          uploadMediaPending={uploadMediaMutation.isPending}
+        />
 
-          <Card className="border-border/70 bg-card/95 shadow-none">
-            <CardHeader>
-              <CardTitle>{strings.summaryLabel}</CardTitle>
-              <CardDescription>
-                {strings.descriptionEditorDescription}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="entry-subtitle">{strings.subtitleLabel}</Label>
-                <Input
-                  id="entry-subtitle"
-                  className="h-11"
-                  value={entryForm.subtitle}
-                  onChange={(event) =>
-                    setEntryForm((current) =>
-                      current
-                        ? { ...current, subtitle: event.target.value }
-                        : current
-                    )
-                  }
-                />
-              </div>
-              <RichTextEditor
-                content={descriptionContent}
-                onChange={(content) => setDescriptionContent(content)}
-                saveButtonLabel={strings.saveAction}
-                savedButtonLabel={strings.saveAction}
-                writePlaceholder={strings.previewEmptyDescription}
-                className="min-h-[280px] bg-background/70 px-4 pb-4 sm:px-5 sm:pb-5"
-              />
-            </CardContent>
-          </Card>
+        <EntryDetailSidebar
+          activeCollectionDescription={activeCollection?.description}
+          activeCollectionSlug={activeCollection?.slug}
+          activeCollectionTitle={collectionTitle}
+          activeEntry={activeEntry}
+          artworkOptions={artworkOptions}
+          binding={binding}
+          categoryCreateOpen={categoryCreateOpen}
+          categoryDraft={categoryDraft}
+          categoryOptions={categoryOptions}
+          configuredCategoryOptions={configuredCategoryOptions}
+          configuredTagOptions={configuredTagOptions}
+          createFeaturedPlacementConfigPending={
+            createFeaturedPlacementConfigMutation.isPending
+          }
+          entryForm={entryForm}
+          featuredEntryConfig={featuredEntryConfig}
+          featuredEntrySlugs={featuredEntrySlugs}
+          featuredPlacementActive={isFeaturedPlacementActive}
+          featuredPlacementConfig={featuredPlacementConfig}
+          featuredPlacementIndex={featuredPlacementIndex}
+          featuredPlacementProcessing={featuredPlacementProcessing}
+          featuredPlacementSlugsLength={featuredPlacementSlugs.length}
+          isTaxonomyConfigEditor={isTaxonomyConfigEditor}
+          onAddTags={addEntryTags}
+          onApplyCategory={applyEntryCategory}
+          onCategoryCreateOpenChange={setCategoryCreateOpen}
+          onCategoryDraftChange={setCategoryDraft}
+          onCategorySelectionChange={(value) => {
+            if (isTaxonomyConfigEditor) {
+              if (Array.isArray(value)) {
+                setConfiguredCategoryOptions(normalizeTaxonomyOptions(value));
+              }
+              return;
+            }
 
-          {supportsMarkdownBody ? (
-            <Card className="border-border/70 bg-card/95 shadow-none">
-              <CardHeader>
-                <CardTitle>{strings.bodyMarkdownLabel}</CardTitle>
-                <CardDescription>
-                  {strings.bodyMarkdownDescription}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <EntryDetailMarkdownEditor
-                  id="entry-body-markdown"
-                  label={strings.bodyMarkdownLabel}
-                  placeholder={strings.previewEmptyDescription}
-                  previewLabel={strings.markdownPreviewLabel}
-                  previewPlaceholder={strings.previewEmptyDescription}
-                  rows={14}
-                  value={bodyMarkdown}
-                  writeLabel={strings.markdownWriteLabel}
-                  onChange={setBodyMarkdown}
-                />
-              </CardContent>
-            </Card>
-          ) : null}
-
-          <Card className="border-border/70 bg-card/95 shadow-none">
-            <CardHeader className="gap-4">
-              <div>
-                <CardTitle>{strings.assetGalleryTitle}</CardTitle>
-                <CardDescription>
-                  {strings.coverImageDescription}
-                </CardDescription>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={mediaProcessing}
-                  onClick={() => mediaInputRef.current?.click()}
-                >
-                  {uploadMediaMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <ImagePlus className="mr-2 h-4 w-4" />
-                  )}
-                  {uploadMediaMutation.isPending
-                    ? strings.mediaProcessingLabel
-                    : strings.bulkUploadMediaAction}
-                </Button>
-                {imageAssets.length > 0 ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={mediaProcessing}
-                    onClick={() =>
-                      setSelectedAssetIds((current) =>
-                        current.length === imageAssets.length
-                          ? []
-                          : imageAssets.map((asset) => asset.id)
-                      )
-                    }
-                  >
-                    {selectedAssetCount === imageAssets.length
-                      ? strings.cancelAction
-                      : strings.selectAllMediaAction}
-                  </Button>
-                ) : null}
-                {selectedAssetCount > 0 ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={mediaProcessing}
-                    onClick={() => setDeleteMediaDialogOpen(true)}
-                  >
-                    {deleteAssetsMutation.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="mr-2 h-4 w-4" />
-                    )}
-                    {deleteAssetsMutation.isPending
-                      ? strings.mediaProcessingLabel
-                      : strings.bulkRemoveMediaAction}
-                  </Button>
-                ) : null}
-              </div>
-            </CardHeader>
-            <CardContent className="grid gap-3 md:grid-cols-3">
-              {mediaProcessing ? (
-                <div className="flex items-center gap-3 rounded-[1.1rem] border border-dynamic-blue/20 bg-dynamic-blue/5 px-4 py-3 text-dynamic-blue text-sm md:col-span-3">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>{strings.mediaProcessingLabel}</span>
-                </div>
-              ) : null}
-              {imageAssets.length === 0 ? (
-                <button
-                  type="button"
-                  className="rounded-[1.2rem] border border-border/70 border-dashed bg-background/50 p-6 text-left transition hover:border-border hover:bg-background/70 md:col-span-3"
-                  disabled={mediaProcessing}
-                  onClick={() => mediaInputRef.current?.click()}
-                >
-                  <div className="font-medium">
-                    {strings.bulkUploadMediaAction}
-                  </div>
-                  <div className="mt-2 text-muted-foreground text-sm">
-                    {strings.coverImageDescription}
-                  </div>
-                </button>
-              ) : (
-                imageAssets.map((asset, index) => {
-                  const isSelected = selectedAssetIds.includes(asset.id);
-                  const caption =
-                    assetCaptions[asset.id] ?? getAssetCaption(asset);
-                  const captionDirty = caption !== getAssetCaption(asset);
-
-                  return (
-                    <div
-                      key={asset.id}
-                      className={cn(
-                        'overflow-hidden rounded-[1.2rem] border bg-background/75 text-left transition',
-                        isSelected
-                          ? 'border-primary ring-2 ring-primary/30'
-                          : 'border-border/70 hover:border-border'
-                      )}
-                    >
-                      <button
-                        type="button"
-                        className="relative block h-36 w-full overflow-hidden border-border/70 border-b bg-background/80"
-                        onClick={() => toggleAssetSelection(asset.id)}
-                      >
-                        <ResilientMediaImage
-                          alt={asset.alt_text ?? activeEntry.title}
-                          assetUrl={asset.asset_url}
-                          className="object-cover"
-                          fill
-                          previewUrl={asset.preview_url}
-                          sizes="(max-width: 1024px) 100vw, 18vw"
-                        />
-                      </button>
-                      <div className="space-y-3 p-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <Badge variant="outline">
-                            {index === 0
-                              ? strings.coverBadge
-                              : strings.assetsLabel}
-                          </Badge>
-                          <div className="flex items-center gap-2">
-                            {index !== 0 ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={
-                                  setAsCoverMutation.isPending ||
-                                  mediaProcessing
-                                }
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setAsCoverMutation.mutate(asset.id);
-                                }}
-                              >
-                                {setAsCoverMutation.isPending ? (
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : null}
-                                {setAsCoverMutation.isPending
-                                  ? strings.mediaProcessingLabel
-                                  : strings.setAsCoverAction}
-                              </Button>
-                            ) : null}
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="size-8"
-                              disabled={mediaProcessing}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                deleteSingleAsset(asset.id);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">
-                                {strings.removeMediaAction}
-                              </span>
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="truncate text-sm">
-                          {asset.alt_text ?? activeEntry.title}
-                        </div>
-                        <div className="space-y-2">
-                          <Label
-                            htmlFor={`entry-asset-caption-${asset.id}`}
-                            className="text-xs"
-                          >
-                            {strings.captionLabel}
-                          </Label>
-                          <Input
-                            id={`entry-asset-caption-${asset.id}`}
-                            value={caption}
-                            placeholder={strings.captionPlaceholder}
-                            onChange={(event) =>
-                              setAssetCaptions((current) => ({
-                                ...current,
-                                [asset.id]: event.target.value,
-                              }))
-                            }
-                          />
-                          {captionDirty ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={
-                                saveAssetCaptionMutation.isPending ||
-                                mediaProcessing
-                              }
-                              onClick={() =>
-                                saveAssetCaptionMutation.mutate(asset.id)
-                              }
-                            >
-                              {saveAssetCaptionMutation.isPending ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              ) : (
-                                <Pencil className="mr-2 h-4 w-4" />
-                              )}
-                              {saveAssetCaptionMutation.isPending
-                                ? strings.mediaProcessingLabel
-                                : strings.saveMediaDetailsAction}
-                            </Button>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-5 xl:sticky xl:top-28 xl:self-start">
-          <Card className="border-border/70 bg-card/95 shadow-none">
-            <CardHeader>
-              <CardTitle>{strings.detailsTitle}</CardTitle>
-              <CardDescription>{strings.editEntryDescription}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="entry-title">{strings.titleLabel}</Label>
-                <Input
-                  id="entry-title"
-                  className="h-11"
-                  value={entryForm.title}
-                  onChange={(event) =>
-                    setEntryForm((current) =>
-                      current
-                        ? { ...current, title: event.target.value }
-                        : current
-                    )
-                  }
-                />
-              </div>
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="entry-slug">{strings.slugLabel}</Label>
-                  <Input
-                    id="entry-slug"
-                    value={entryForm.slug}
-                    onChange={(event) =>
-                      setEntryForm((current) =>
-                        current
-                          ? { ...current, slug: event.target.value }
-                          : current
-                      )
-                    }
-                  />
-                </div>
-                {supportsPairedVisual ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="entry-paired-artwork">Paired visual</Label>
-                    <Select
-                      value={pairedArtworkSlug}
-                      onValueChange={setPairedArtworkSlug}
-                    >
-                      <SelectTrigger id="entry-paired-artwork">
-                        <SelectValue placeholder="No paired visual" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">
-                          No paired visual
-                        </SelectItem>
-                        {artworkOptions.map((artworkEntry) => (
-                          <SelectItem
-                            key={artworkEntry.id}
-                            value={artworkEntry.slug}
-                          >
-                            {artworkEntry.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ) : null}
-                <div className="space-y-2">
-                  <Label htmlFor="entry-status">{strings.statusLabel}</Label>
-                  <Select
-                    value={entryForm.status}
-                    onValueChange={(value) =>
-                      setEntryForm((current) =>
-                        current
-                          ? {
-                              ...current,
-                              status: value as ExternalProjectEntry['status'],
-                            }
-                          : current
-                      )
-                    }
-                  >
-                    <SelectTrigger id="entry-status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">
-                        {strings.statusDraft}
-                      </SelectItem>
-                      <SelectItem value="scheduled">
-                        {strings.statusScheduled}
-                      </SelectItem>
-                      <SelectItem value="published">
-                        {strings.statusPublished}
-                      </SelectItem>
-                      <SelectItem value="archived">
-                        {strings.statusArchived}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="entry-scheduled-for">
-                    {strings.scheduledForLabel}
-                  </Label>
-                  <Input
-                    id="entry-scheduled-for"
-                    type="datetime-local"
-                    value={entryForm.scheduledFor}
-                    onChange={(event) =>
-                      setEntryForm((current) =>
-                        current
-                          ? { ...current, scheduledFor: event.target.value }
-                          : current
-                      )
-                    }
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/70 bg-card/95 shadow-none">
-            <CardHeader>
-              <CardTitle>{strings.workspaceStatusTitle}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid gap-3">
-                <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
-                  <div className="text-muted-foreground text-xs">
-                    {strings.collectionsLabel}
-                  </div>
-                  <div className="mt-2 font-medium text-lg">
-                    {activeCollection?.title ?? strings.collectionFallbackLabel}
-                  </div>
-                  <div className="mt-2 text-muted-foreground text-sm">
-                    {activeCollection?.description || activeCollection?.slug}
-                  </div>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
-                    <div className="text-muted-foreground text-xs">
-                      {strings.statusLabel}
-                    </div>
-                    <div className="mt-2 font-medium">
-                      {formatStatus(activeEntry.status, strings)}
-                    </div>
-                  </div>
-                  <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
-                    <div className="text-muted-foreground text-xs">
-                      {strings.scheduledForLabel}
-                    </div>
-                    <div className="mt-2 font-medium">
-                      {formatDateLabel(activeEntry.scheduled_for, strings)}
-                    </div>
-                  </div>
-                </div>
-                <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
-                  <div className="text-muted-foreground text-xs">
-                    {strings.workspaceBindingLabel}
-                  </div>
-                  <div className="mt-2 font-medium">
-                    {binding.canonical_project?.display_name ??
-                      strings.unboundLabel}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/70 bg-card/95 shadow-none">
-            <CardHeader>
-              <CardTitle>{strings.metadataLabel}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Accordion
-                type="multiple"
-                defaultValue={['metadata']}
-                className="space-y-3"
-              >
-                <AccordionItem
-                  value="metadata"
-                  className="rounded-[1.1rem] border border-border/70 px-4"
-                >
-                  <AccordionTrigger>{strings.metadataLabel}</AccordionTrigger>
-                  <AccordionContent>
-                    <pre className="overflow-x-auto rounded-xl border border-border/70 bg-background/80 p-3 text-xs leading-6">
-                      {JSON.stringify(activeEntry.metadata ?? {}, null, 2)}
-                    </pre>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem
-                  value="profile-data"
-                  className="rounded-[1.1rem] border border-border/70 px-4"
-                >
-                  <AccordionTrigger>
-                    {strings.profileDataLabel}
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <pre className="overflow-x-auto rounded-xl border border-border/70 bg-background/80 p-3 text-xs leading-6">
-                      {JSON.stringify(activeEntry.profile_data ?? {}, null, 2)}
-                    </pre>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem
-                  value="binding"
-                  className="rounded-[1.1rem] border border-border/70 px-4"
-                >
-                  <AccordionTrigger>
-                    {strings.workspaceBindingLabel}
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-2 text-sm">
-                      <div className="rounded-xl border border-border/70 bg-background/75 px-3 py-2">
-                        {binding.canonical_id ?? strings.noCanonicalIdLabel}
-                      </div>
-                      <div className="rounded-xl border border-border/70 bg-background/75 px-3 py-2">
-                        {binding.adapter ?? strings.noAdapterLabel}
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </CardContent>
-          </Card>
-        </div>
+            setEntryForm((current) =>
+              current && typeof value === 'string'
+                ? { ...current, category: value }
+                : current
+            );
+          }}
+          onClearCategories={
+            isTaxonomyConfigEditor
+              ? clearConfiguredCategories
+              : () =>
+                  setEntryForm((current) =>
+                    current ? { ...current, category: '' } : current
+                  )
+          }
+          onClearTags={
+            isTaxonomyConfigEditor ? clearConfiguredTags : clearEntryTags
+          }
+          onCreateFeaturedPlacementConfig={() =>
+            createFeaturedPlacementConfigMutation.mutate()
+          }
+          onFeaturedEntryMove={moveFeaturedEntry}
+          onFeaturedEntryToggle={toggleFeaturedEntrySelection}
+          onFeaturedPlacementMove={moveFeaturedPlacement}
+          onFeaturedPlacementToggle={toggleFeaturedPlacement}
+          onPairedArtworkChange={setPairedArtworkSlug}
+          onRemoveCategory={removeConfiguredCategory}
+          onRemoveTag={(tag) =>
+            isTaxonomyConfigEditor
+              ? removeConfiguredTag(tag)
+              : removeEntryTag(tag)
+          }
+          onScheduledForChange={(value) =>
+            setEntryForm((current) =>
+              current ? { ...current, scheduledFor: value } : current
+            )
+          }
+          onSlugChange={(value) =>
+            setEntryForm((current) =>
+              current ? { ...current, slug: value } : current
+            )
+          }
+          onStatusChange={(status) =>
+            setEntryForm((current) =>
+              current ? { ...current, status } : current
+            )
+          }
+          onTagCreateOpenChange={setTagCreateOpen}
+          onTagDraftChange={setTagDraft}
+          onTagSelectionChange={(value) =>
+            isTaxonomyConfigEditor
+              ? setConfiguredTagOptions(normalizeTaxonomyOptions(value))
+              : setEntryForm((current) =>
+                  current ? { ...current, tags: value } : current
+                )
+          }
+          onTitleChange={(value) =>
+            setEntryForm((current) =>
+              current ? { ...current, title: value } : current
+            )
+          }
+          pairedArtworkSlug={pairedArtworkSlug}
+          strings={strings}
+          supportsPairedVisual={supportsPairedVisual}
+          tagCreateOpen={tagCreateOpen}
+          tagDraft={tagDraft}
+          tagOptions={tagOptions}
+        />
       </div>
 
-      <AlertDialog
-        open={deleteEntryDialogOpen}
-        onOpenChange={setDeleteEntryDialogOpen}
-      >
-        <AlertDialogContent className="rounded-[1.5rem] border-border/70">
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {strings.deleteEntryConfirmTitle}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {strings.deleteEntryConfirmDescription}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{strings.cancelAction}</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={deleteEntryMutation.isPending}
-              onClick={() => deleteEntryMutation.mutate()}
-            >
-              {strings.deleteEntryAction}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        open={deleteMediaDialogOpen}
-        onOpenChange={setDeleteMediaDialogOpen}
-      >
-        <AlertDialogContent className="rounded-[1.5rem] border-border/70">
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {strings.deleteAssetConfirmTitle}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {strings.deleteAssetConfirmDescription}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{strings.cancelAction}</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={
-                selectedAssetCount === 0 || deleteAssetsMutation.isPending
-              }
-              onClick={() => deleteAssetsMutation.mutate(selectedAssetIds)}
-            >
-              {selectedAssetCount === 1
-                ? strings.removeMediaAction
-                : strings.bulkRemoveMediaAction}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <EntryDetailConfirmDialogs
+        deleteEntryOpen={deleteEntryDialogOpen}
+        deleteEntryPending={deleteEntryMutation.isPending}
+        deleteMediaOpen={deleteMediaDialogOpen}
+        deleteMediaPending={deleteAssetsMutation.isPending}
+        onDeleteEntry={() => deleteEntryMutation.mutate()}
+        onDeleteEntryOpenChange={setDeleteEntryDialogOpen}
+        onDeleteMedia={() => deleteAssetsMutation.mutate(selectedAssetIds)}
+        onDeleteMediaOpenChange={setDeleteMediaDialogOpen}
+        selectedAssetCount={selectedAssetCount}
+        strings={strings}
+      />
 
       <EntryDetailPreviewSheet
         coverAsset={coverAsset}

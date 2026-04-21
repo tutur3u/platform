@@ -36,6 +36,7 @@ import 'package:mobile/features/settings/view/settings_workspace_members_page.da
 import 'package:mobile/features/settings/view/settings_workspace_page.dart';
 import 'package:mobile/features/settings/view/settings_workspace_roles_page.dart';
 import 'package:mobile/features/settings/view/settings_workspace_secrets_page.dart';
+import 'package:mobile/features/shell/view/manage_accounts_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_project_detail_page.dart';
@@ -442,7 +443,10 @@ GoRouter createAppRouter(
           ),
           GoRoute(
             path: Routes.timerRequests,
-            builder: (context, state) => const TimeTrackerRequestsPage(),
+            builder: (context, state) => TimeTrackerRequestsPage(
+              initialRequestId: state.uri.queryParameters['requestId'],
+              initialStatusOverride: state.uri.queryParameters['status'],
+            ),
           ),
           GoRoute(
             path: Routes.timerHistory,
@@ -468,6 +472,10 @@ GoRouter createAppRouter(
               initialSection: TimeTrackerSection.stats,
               initialStatsScope: TimeTrackerStatsScope.workspace,
             ),
+          ),
+          GoRoute(
+            path: Routes.profileAccounts,
+            builder: (context, state) => const ManageAccountsPage(),
           ),
           GoRoute(
             path: Routes.profileRoot,

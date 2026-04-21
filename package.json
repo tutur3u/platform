@@ -4,7 +4,7 @@
     "@biomejs/biome": "^2.4.12",
     "@lingual/i18n-check": "0.9.3",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@typescript/native-preview": "^7.0.0-dev.20260419.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260420.1",
     "@vitest/coverage-v8": "^4.1.4",
     "lucide-static": "^1.8.0",
     "turbo": "^2.9.6",
@@ -15,7 +15,7 @@
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "bun@1.3.12",
+  "packageManager": "bun@1.3.13",
   "private": true,
   "scripts": {
     "clean": "rm -rf bun.lock && find . -name node_modules -prune -o \\( -name .next -o -name .turbo \\) -type d -exec rm -rf {} + && bunx npkill --delete-all -y",
@@ -37,6 +37,7 @@
     "serve:web": "cd apps/web && bun serve:web",
     "dev": "turbo run dev --parallel",
     "check": "node scripts/check.js",
+    "check:now": "node scripts/check.js --force-now",
     "check:docker": "node scripts/check-docker-web.js",
     "check:mobile": "node scripts/check-mobile.js",
     "dev:mobile": "cd apps/mobile && flutter run --dart-define-from-file=.env --flavor development --target lib/main_development.dart",

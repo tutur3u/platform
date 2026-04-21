@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/goal.dart';
@@ -160,6 +161,7 @@ class _GoalFormSheetState extends State<GoalFormSheet> {
             Text(l10n.timerGoalsDailyMinutes),
             const shad.Gap(4),
             shad.TextField(
+              contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _dailyController,
               keyboardType: TextInputType.number,
               placeholder: const Text('480'),
@@ -168,6 +170,7 @@ class _GoalFormSheetState extends State<GoalFormSheet> {
             Text(l10n.timerGoalsWeeklyMinutesOptional),
             const shad.Gap(4),
             shad.TextField(
+              contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _weeklyController,
               keyboardType: TextInputType.number,
               placeholder: const Text('2400'),

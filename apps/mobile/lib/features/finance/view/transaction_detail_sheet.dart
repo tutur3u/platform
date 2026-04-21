@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/number_symbols.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/utils/currency_conversion.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
@@ -24,7 +25,6 @@ import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
-
 part 'transaction_detail_sheet_amount_parsing.dart';
 part 'transaction_detail_sheet_edit_dialog.dart';
 part 'transaction_detail_sheet_edit_dialog_logic.dart';

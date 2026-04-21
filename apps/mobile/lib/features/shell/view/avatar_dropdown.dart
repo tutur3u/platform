@@ -91,6 +91,7 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
     final selected = await showAccountSwitcherSheet(
       context,
       onAddAccount: _startAddAccountFlow,
+      onManageAccounts: _openManageAccountsPage,
     );
 
     if (!mounted || selected == null) {
@@ -145,6 +146,13 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
       return;
     }
     context.go(Routes.addAccount);
+  }
+
+  Future<void> _openManageAccountsPage() async {
+    if (!mounted) {
+      return;
+    }
+    await context.push(Routes.profileAccounts);
   }
 
   Future<void> _signOutCurrentAccount() async {

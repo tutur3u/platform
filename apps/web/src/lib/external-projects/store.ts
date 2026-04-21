@@ -50,6 +50,16 @@ function asStringArray(value: unknown): string[] {
     : [];
 }
 
+function normalizeStringArray(value: unknown): string[] {
+  return [
+    ...new Set(
+      asStringArray(value)
+        .map((item) => item.trim())
+        .filter(Boolean)
+    ),
+  ];
+}
+
 function addDays(date: Date, days: number) {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
@@ -216,15 +226,6 @@ function buildYoolaLoadingData(
     } satisfies YoolaExternalProjectLoreCapsuleLoadingItem;
   });
 
-  const artworksByCategory = artworks.reduce<
-    Record<string, YoolaExternalProjectArtworkLoadingItem[]>
-  >((accumulator, artwork) => {
-    const category = artwork.category ?? 'UNCATEGORIZED';
-    accumulator[category] ??= [];
-    accumulator[category].push(artwork);
-    return accumulator;
-  }, {});
-
   const singletonSections = Object.fromEntries(
     (singletonCollection?.entries ?? []).map((entry) => [
       entry.slug,
@@ -241,9 +242,29 @@ function buildYoolaLoadingData(
     ])
   );
 
+  const artworksByCategory = artworks.reduce<
+    Record<string, YoolaExternalProjectArtworkLoadingItem[]>
+  >((accumulator, artwork) => {
+    const category = artwork.category ?? 'UNCATEGORIZED';
+    accumulator[category] ??= [];
+    accumulator[category].push(artwork);
+    return accumulator;
+  }, {});
+  const gallerySectionProfileData = asJsonObject(
+    singletonSections.gallery?.profileData ?? null
+  );
+  const availableArtworkCategories = new Set(
+    Object.keys(artworksByCategory).map((category) => category.toLowerCase())
+  );
+  const configuredArtworkCategories = normalizeStringArray(
+    gallerySectionProfileData.categoryOptions
+  ).filter((category) =>
+    availableArtworkCategories.has(category.toLowerCase())
+  );
+
   return {
     adapter: 'yoola',
-    artworkCategories: Object.keys(artworksByCategory),
+    artworkCategories: configuredArtworkCategories,
     artworks,
     artworksByCategory,
     featuredArtwork: artworks[0] ?? null,

@@ -15,8 +15,24 @@ export type EpmStrings = {
   bulkSelectionHint: string;
   bulkUploadMediaAction: string;
   cancelAction: string;
+  categoryClearAction: string;
+  categoryCreateAction: string;
+  categoryCreateHint: string;
+  categoryCreatePlaceholder: string;
+  categoryDescription: string;
+  categoryExistingDescription: string;
+  categoryLibraryDescription: string;
+  categoryLibraryEmpty: string;
+  categoryLibraryLabel: string;
+  categoryLabel: string;
+  categoryActiveHint: string;
+  categoryPickerPlaceholder: string;
+  categoryPlaceholder: string;
+  categorySearchPlaceholder: string;
   captionLabel: string;
   captionPlaceholder: string;
+  carouselInteractionHint: string;
+  closeFullscreenAction: string;
   collectionFallbackLabel: string;
   collectionHealthTitle: string;
   collectionsLabel: string;
@@ -63,10 +79,31 @@ export type EpmStrings = {
   entryDeckTitle: string;
   entrySummaryTitle: string;
   featuredEntryTitle: string;
+  featuredEntriesEmpty: string;
+  featuredGalleryEntriesDescription: string;
+  featuredGalleryEntriesLabel: string;
+  featuredPlacementActiveDescription: string;
+  featuredPlacementActiveLabel: string;
+  featuredPlacementAddAction: string;
+  featuredPlacementArtworkDescription: string;
+  featuredPlacementCreateAction: string;
+  featuredPlacementCreateSuccessToast: string;
+  featuredPlacementGalleryLabel: string;
+  featuredPlacementInactiveDescription: string;
+  featuredPlacementInactiveLabel: string;
+  featuredPlacementPositionLabel: string;
+  featuredPlacementRemoveAction: string;
+  featuredPlacementSectionMissing: string;
+  featuredPlacementTitle: string;
+  featuredPlacementWritingDescription: string;
+  featuredPlacementWritingLabel: string;
+  featuredWritingEntriesDescription: string;
+  featuredWritingEntriesLabel: string;
   filterAll: string;
   focusOperator: string;
   focusVisual: string;
   focusWorkflow: string;
+  fullscreenAction: string;
   importAction: string;
   importHint: string;
   loadingPreviewLabel: string;
@@ -76,6 +113,7 @@ export type EpmStrings = {
   noCanonicalIdLabel: string;
   noCoverDescription: string;
   noCoverTitle: string;
+  nextAction: string;
   noneLabel: string;
   notScheduledLabel: string;
   openDetailsAction: string;
@@ -92,6 +130,7 @@ export type EpmStrings = {
   previewModeLabel: string;
   previewProjectLabel: string;
   previewTitle: string;
+  previousAction: string;
   profileDataLabel: string;
   manageCollectionAction: string;
   manageCollectionDescription: string;
@@ -106,6 +145,7 @@ export type EpmStrings = {
   recentUnpublishedHint: string;
   recoveryHint: string;
   refreshAction: string;
+  resetZoomAction: string;
   renderedLabel: string;
   replaceCoverAction: string;
   removeMediaAction: string;
@@ -130,6 +170,21 @@ export type EpmStrings = {
   statusScheduled: string;
   subtitleLabel: string;
   summaryLabel: string;
+  tagsClearAction: string;
+  tagsCreateAction: string;
+  tagsCreateHint: string;
+  tagsCreatePlaceholder: string;
+  tagsDescription: string;
+  tagsEmpty: string;
+  tagsExistingDescription: string;
+  tagLibraryDescription: string;
+  tagLibraryEmpty: string;
+  tagLibraryLabel: string;
+  tagsLabel: string;
+  tagsPickerPlaceholder: string;
+  tagsPlaceholder: string;
+  tagsRemoveAction: string;
+  tagsSearchPlaceholder: string;
   tabsDescription: string;
   title: string;
   titleLabel: string;
@@ -141,6 +196,8 @@ export type EpmStrings = {
   workflowTab: string;
   workspaceBindingLabel: string;
   workspaceStatusTitle: string;
+  zoomInAction: string;
+  zoomOutAction: string;
 };
 
 export function buildEpmStrings(t: (key: any) => string): EpmStrings {
@@ -161,8 +218,24 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     bulkSelectionHint: t('epm.bulk_selection_hint'),
     bulkUploadMediaAction: t('epm.bulk_upload_media_action'),
     cancelAction: t('epm.cancel_action'),
+    categoryActiveHint: t('epm.category_active_hint'),
+    categoryClearAction: t('epm.category_clear_action'),
+    categoryCreateAction: t('epm.category_create_action'),
+    categoryCreateHint: t('epm.category_create_hint'),
+    categoryCreatePlaceholder: t('epm.category_create_placeholder'),
+    categoryDescription: t('epm.category_description'),
+    categoryExistingDescription: t('epm.category_existing_description'),
+    categoryLibraryDescription: t('epm.category_library_description'),
+    categoryLibraryEmpty: t('epm.category_library_empty'),
+    categoryLibraryLabel: t('epm.category_library_label'),
+    categoryLabel: t('epm.category_label'),
+    categoryPickerPlaceholder: t('epm.category_picker_placeholder'),
+    categoryPlaceholder: t('epm.category_placeholder'),
+    categorySearchPlaceholder: t('epm.category_search_placeholder'),
     captionLabel: t('epm.caption_label'),
     captionPlaceholder: t('epm.caption_placeholder'),
+    carouselInteractionHint: t('epm.carousel_interaction_hint'),
+    closeFullscreenAction: t('epm.close_fullscreen_action'),
     collectionFallbackLabel: t('epm.collection_fallback_label'),
     collectionHealthTitle: t('epm.collection_health_title'),
     collectionsLabel: t('epm.collections_label'),
@@ -209,10 +282,47 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     entryDeckTitle: t('epm.entry_deck_title'),
     entrySummaryTitle: t('epm.entry_summary_title'),
     featuredEntryTitle: t('epm.featured_entry_title'),
+    featuredEntriesEmpty: t('epm.featured_entries_empty'),
+    featuredGalleryEntriesDescription: t(
+      'epm.featured_gallery_entries_description'
+    ),
+    featuredGalleryEntriesLabel: t('epm.featured_gallery_entries_label'),
+    featuredPlacementActiveDescription: t(
+      'epm.featured_placement_active_description'
+    ),
+    featuredPlacementActiveLabel: t('epm.featured_placement_active_label'),
+    featuredPlacementAddAction: t('epm.featured_placement_add_action'),
+    featuredPlacementArtworkDescription: t(
+      'epm.featured_placement_artwork_description'
+    ),
+    featuredPlacementCreateAction: t('epm.featured_placement_create_action'),
+    featuredPlacementCreateSuccessToast: t(
+      'epm.featured_placement_create_success_toast'
+    ),
+    featuredPlacementGalleryLabel: t('epm.featured_placement_gallery_label'),
+    featuredPlacementInactiveDescription: t(
+      'epm.featured_placement_inactive_description'
+    ),
+    featuredPlacementInactiveLabel: t('epm.featured_placement_inactive_label'),
+    featuredPlacementPositionLabel: t('epm.featured_placement_position_label'),
+    featuredPlacementRemoveAction: t('epm.featured_placement_remove_action'),
+    featuredPlacementSectionMissing: t(
+      'epm.featured_placement_section_missing'
+    ),
+    featuredPlacementTitle: t('epm.featured_placement_title'),
+    featuredPlacementWritingDescription: t(
+      'epm.featured_placement_writing_description'
+    ),
+    featuredPlacementWritingLabel: t('epm.featured_placement_writing_label'),
+    featuredWritingEntriesDescription: t(
+      'epm.featured_writing_entries_description'
+    ),
+    featuredWritingEntriesLabel: t('epm.featured_writing_entries_label'),
     filterAll: t('epm.filter_all'),
     focusOperator: t('epm.focus_operator'),
     focusVisual: t('epm.focus_visual'),
     focusWorkflow: t('epm.focus_workflow'),
+    fullscreenAction: t('epm.fullscreen_action'),
     importAction: t('epm.import_action'),
     importHint: t('epm.import_hint'),
     loadingPreviewLabel: t('epm.loading_preview_label'),
@@ -225,6 +335,7 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     noCanonicalIdLabel: t('epm.no_canonical_id_label'),
     noCoverDescription: t('epm.no_cover_description'),
     noCoverTitle: t('epm.no_cover_title'),
+    nextAction: t('epm.next_action'),
     noneLabel: t('epm.none_label'),
     notScheduledLabel: t('epm.not_scheduled_label'),
     openDetailsAction: t('epm.open_details_action'),
@@ -241,6 +352,7 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     previewModeLabel: t('epm.preview_mode_label'),
     previewProjectLabel: t('epm.preview_project_label'),
     previewTitle: t('epm.preview_title'),
+    previousAction: t('epm.previous_action'),
     profileDataLabel: t('epm.profile_data_label'),
     manageCollectionAction: t('epm.manage_collection_action'),
     manageCollectionDescription: t('epm.manage_collection_description'),
@@ -252,6 +364,7 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     recentUnpublishedHint: t('epm.recent_unpublished_hint'),
     recoveryHint: t('epm.recovery_hint'),
     refreshAction: t('epm.refresh_action'),
+    resetZoomAction: t('epm.reset_zoom_action'),
     renderedLabel: t('epm.rendered_label'),
     replaceCoverAction: t('epm.replace_cover_action'),
     removeMediaAction: t('epm.remove_media_action'),
@@ -276,6 +389,21 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     statusScheduled: t('epm.status_scheduled'),
     subtitleLabel: t('epm.subtitle_label'),
     summaryLabel: t('epm.summary_label'),
+    tagsClearAction: t('epm.tags_clear_action'),
+    tagsCreateAction: t('epm.tags_create_action'),
+    tagsCreateHint: t('epm.tags_create_hint'),
+    tagsCreatePlaceholder: t('epm.tags_create_placeholder'),
+    tagsDescription: t('epm.tags_description'),
+    tagsEmpty: t('epm.tags_empty'),
+    tagsExistingDescription: t('epm.tags_existing_description'),
+    tagLibraryDescription: t('epm.tag_library_description'),
+    tagLibraryEmpty: t('epm.tag_library_empty'),
+    tagLibraryLabel: t('epm.tag_library_label'),
+    tagsLabel: t('epm.tags_label'),
+    tagsPickerPlaceholder: t('epm.tags_picker_placeholder'),
+    tagsPlaceholder: t('epm.tags_placeholder'),
+    tagsRemoveAction: t('epm.tags_remove_action'),
+    tagsSearchPlaceholder: t('epm.tags_search_placeholder'),
     tabsDescription: t('epm.tabs_description'),
     title: t('epm.title'),
     titleLabel: t('epm.title_label'),
@@ -287,5 +415,7 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     workflowTab: t('epm.workflow_tab'),
     workspaceBindingLabel: t('epm.workspace_binding_label'),
     workspaceStatusTitle: t('epm.workspace_status_title'),
+    zoomInAction: t('epm.zoom_in_action'),
+    zoomOutAction: t('epm.zoom_out_action'),
   };
 }

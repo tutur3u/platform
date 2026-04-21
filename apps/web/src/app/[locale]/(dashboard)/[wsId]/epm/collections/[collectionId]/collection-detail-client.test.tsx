@@ -216,4 +216,12 @@ describe('CollectionDetailClient', () => {
 
     expect(routerPushMock).toHaveBeenCalledWith('/ws_123/epm/entries/entry-2');
   });
+
+  it('opens entry details from the collection card without nesting buttons', () => {
+    renderClient();
+
+    fireEvent.click(screen.getByRole('button', { name: /Entry One/i }));
+
+    expect(routerPushMock).toHaveBeenCalledWith('/ws_123/epm/entries/entry-1');
+  });
 });

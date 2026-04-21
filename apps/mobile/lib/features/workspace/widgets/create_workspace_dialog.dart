@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart' hide Chip, Divider;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -190,6 +191,7 @@ class _CreateWorkspaceContentState extends State<_CreateWorkspaceContent> {
                 const shad.Gap(16),
               ],
               shad.TextField(
+                contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _controller,
                 placeholder: Text(l10n.workspaceCreateNameHint),
                 enabled: canCreate && !state.isCreating,

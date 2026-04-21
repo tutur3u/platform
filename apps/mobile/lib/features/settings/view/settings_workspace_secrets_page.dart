@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -21,7 +22,6 @@ import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
-
 part 'settings_workspace_secrets_page_widgets.dart';
 
 const _driveStorageProviderSecret = 'DRIVE_STORAGE_PROVIDER';

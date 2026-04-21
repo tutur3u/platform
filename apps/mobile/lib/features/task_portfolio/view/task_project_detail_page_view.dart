@@ -227,6 +227,8 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               shad.TextField(
+                                contextMenuBuilder:
+                                    platformTextContextMenuBuilder(),
                                 placeholder: Text(
                                   context.l10n.taskPortfolioSearchTasksHint,
                                 ),

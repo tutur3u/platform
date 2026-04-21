@@ -1,7 +1,7 @@
 ---
 title: 'tuturuuu'
 description: 'Official TypeScript/JavaScript SDK for the Tuturuuu platform'
-updatedAt: '2026-03-27'
+updatedAt: '2026-04-20'
 ---
 
 # Tuturuuu SDK
@@ -316,6 +316,52 @@ const results = await client.documents.search('meeting notes', {
 
 console.log(results.data); // Matching documents
 ```
+
+## EPM Delivery
+
+The SDK also exposes the External Project Management (EPM) delivery client for branded external apps and preview surfaces.
+
+```typescript
+const delivery = await client.externalProjects.getDelivery('workspace-id');
+
+if (delivery.loadingData?.adapter === 'yoola') {
+  console.log(delivery.loadingData.featuredArtwork?.title);
+  console.log(delivery.loadingData.singletonSections.about?.bodyMarkdown);
+}
+
+const yoolaLoadingData =
+  await client.externalProjects.getYoolaLoadingData('workspace-id');
+console.log(yoolaLoadingData.artworkCategories);
+```
+
+For the Yoola adapter, `artworkCategories` comes from the configured gallery taxonomy on `singleton-sections/gallery` (`profile_data.categoryOptions`) rather than being inferred from every artwork entry.
+
+### TanStack Query
+
+For React apps, keep the SDK as the delivery boundary and TanStack Query as the cache owner:
+
+```typescript
+import { useQuery } from '@tanstack/react-query';
+import {
+  getEpmDeliveryQueryOptions,
+  getYoolaLoadingDataQueryOptions,
+} from 'tuturuuu';
+
+const deliveryQuery = useQuery({
+  ...getEpmDeliveryQueryOptions(client.externalProjects, 'workspace-id'),
+  staleTime: 60_000,
+});
+
+const yoolaLoadingQuery = useQuery({
+  ...getYoolaLoadingDataQueryOptions(
+    client.externalProjects,
+    'workspace-id'
+  ),
+  staleTime: 60_000,
+});
+```
+
+In external Next.js apps, prefer hydrating the delivery query once near the root layout and deriving page-level view models from that shared cache instead of letting each route perform its own SDK fetch.
 
 ## Error Handling
 

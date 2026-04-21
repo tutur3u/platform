@@ -41,6 +41,7 @@ class ShellChromeConfig {
       Routes.taskEstimates => l10n.taskPlanningTitle,
       Routes.taskPortfolio => l10n.taskPortfolioTitle,
       Routes.profileRoot => l10n.profileTitle,
+      Routes.profileAccounts => l10n.authManageAccounts,
       Routes.settings => l10n.settingsTitle,
       Routes.settingsWorkspace => l10n.settingsWorkspaceSectionTitle,
       Routes.settingsWorkspaceSecrets => l10n.settingsWorkspaceSecretsTitle,

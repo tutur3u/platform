@@ -5,6 +5,12 @@ import {
   getEpmCollectionNavigationTitle,
 } from './epm';
 import { ValidationError } from './errors';
+import {
+  getEpmDeliveryQueryKey,
+  getEpmDeliveryQueryOptions,
+  getEpmLoadingDataQueryKey,
+  getYoolaLoadingDataQueryKey,
+} from './query';
 
 const mockFetch = vi.fn();
 const originalFetch = globalThis.fetch;
@@ -279,5 +285,74 @@ describe('EpmClient', () => {
         visible: true,
       },
     ]);
+  });
+
+  it('builds TanStack Query helpers for delivery and loading data', async () => {
+    const client = new EpmClient({
+      apiKey: 'ttr_test_key',
+      baseUrl: 'https://example.com/api/v1',
+      fetch: mockFetch,
+    });
+
+    mockFetch.mockResolvedValueOnce(
+      createMockResponse({
+        adapter: 'yoola',
+        canonicalProjectId: 'project-1',
+        collections: [],
+        generatedAt: '2026-04-20T09:00:00.000Z',
+        loadingData: {
+          adapter: 'yoola',
+          artworkCategories: [],
+          artworks: [],
+          artworksByCategory: {},
+          featuredArtwork: null,
+          loreCapsules: [],
+          singletonSections: {},
+        },
+        profileData: {},
+        workspaceId: 'ws_123',
+      })
+    );
+
+    const deliveryQuery = getEpmDeliveryQueryOptions(client, 'ws_123', {
+      preview: true,
+    });
+
+    expect(getEpmDeliveryQueryKey('ws_123', { preview: true })).toEqual([
+      'tuturuuu',
+      'epm',
+      'default',
+      'delivery',
+      'ws_123',
+      true,
+    ]);
+    expect(getEpmLoadingDataQueryKey('ws_123')).toEqual([
+      'tuturuuu',
+      'epm',
+      'default',
+      'loading-data',
+      'ws_123',
+      false,
+    ]);
+    expect(getYoolaLoadingDataQueryKey('ws_123')).toEqual([
+      'tuturuuu',
+      'epm',
+      'default',
+      'yoola-loading-data',
+      'ws_123',
+      false,
+    ]);
+
+    const payload = await deliveryQuery.queryFn();
+
+    expect(deliveryQuery.queryKey).toEqual([
+      'tuturuuu',
+      'epm',
+      'default',
+      'delivery',
+      'ws_123',
+      true,
+    ]);
+    expect(payload.workspaceId).toBe('ws_123');
   });
 });

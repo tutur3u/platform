@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
@@ -357,6 +358,7 @@ class _ActivityHeaderCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: shad.TextField(
+        contextMenuBuilder: platformTextContextMenuBuilder(),
         controller: searchController,
         hintText: l10n.financeSearchTransactions,
         onChanged: onChanged,

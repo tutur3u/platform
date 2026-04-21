@@ -18,3 +18,19 @@ The post email queue now treats provider-accepted delivery as durable once it is
 
 - The queue worker should only claim rows that it can start in the current processing slice.
 - Avoid front-claiming the whole `sendLimit`; stranded `processing` rows interact badly with stale cleanup and can create duplicate delivery attempts after requeue.
+
+## Attendance Exports
+
+The workspace attendance page now supports exporting attendance for everyone across a selected date range.
+
+### Behavior
+
+- The export is inclusive: records on both the start date and end date are included.
+- Exports are workspace-wide and include all recorded attendance rows across groups in the selected period.
+- The UI builds the file client-side, but the data source remains the authenticated internal API route at `/api/v1/workspaces/:wsId/users/attendance/export`.
+
+### Implementation Notes
+
+- Keep range filtering on the persisted `user_group_attendance.date` string values with `gte(startDate)` and `lte(endDate)` to avoid timezone drift.
+- Page the API response for large exports instead of assuming a single Supabase page will return every matching row.
+- Excel and CSV generation should stay in the client so the page can reuse localized column labels and progress feedback.

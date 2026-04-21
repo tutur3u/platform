@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
@@ -244,6 +245,7 @@ class HabitsSearchField extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               radius: 22,
               child: shad.TextField(
+                contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: controller,
                 hintText: context.l10n.habitsSearchHint,
                 onChanged: onChanged,

@@ -17,6 +17,7 @@ abstract final class Routes {
   static const notifications = '/notifications';
   static const notificationsArchive = '/notifications/archive';
   static const profileRoot = '/profile';
+  static const profileAccounts = '/profile/accounts';
   static const tasks = '/tasks';
   static const habits = '/habits';
   static const habitsActivity = '/habits/activity';
@@ -68,6 +69,21 @@ abstract final class Routes {
       '/tasks/portfolio/projects/$projectId';
 
   static String taskBoardDetailPath(String boardId) => '/tasks/boards/$boardId';
+
+  static String timerRequestsPath({
+    String? requestId,
+    String? status,
+  }) {
+    final queryParameters = <String, String>{
+      if (requestId != null && requestId.isNotEmpty) 'requestId': requestId,
+      if (status != null && status.isNotEmpty) 'status': status,
+    };
+
+    return Uri(
+      path: timerRequests,
+      queryParameters: queryParameters.isEmpty ? null : queryParameters,
+    ).toString();
+  }
 
   static String normalizeLocation(String value) {
     var normalized = value;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' hide TextField;
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/features/time_tracker/widgets/category_selector_button.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -326,6 +327,7 @@ class _TimerAdvancedSectionState extends State<TimerAdvancedSection>
                       ),
                       const shad.Gap(6),
                       shad.TextField(
+                        contextMenuBuilder: platformTextContextMenuBuilder(),
                         controller: _descController,
                         hintText: l10n.timerSessionDescription,
                         maxLines: 4,

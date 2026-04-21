@@ -7,6 +7,7 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
@@ -736,6 +737,7 @@ class _WorkspaceSearchSheetState extends State<_WorkspaceSearchSheet> {
           ),
           const shad.Gap(12),
           shad.TextField(
+            contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _controller,
             autofocus: true,
             hintText: l10n.timerSearchSessions,

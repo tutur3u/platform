@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/utils/supported_currencies.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -49,6 +50,7 @@ class _CurrencyPickerDialogState extends State<CurrencyPickerDialog> {
       child: Column(
         children: [
           shad.TextField(
+            contextMenuBuilder: platformTextContextMenuBuilder(),
             controller: _searchController,
             hintText: l10n.financeWalletSearchCurrency,
             onChanged: (value) => setState(() => _query = value),

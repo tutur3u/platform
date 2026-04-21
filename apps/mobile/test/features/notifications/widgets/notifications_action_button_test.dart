@@ -281,8 +281,6 @@ void main() {
   group('NotificationsSheet navigation', () {
     late _MockWorkspaceCubit workspaceCubit;
     late _MockNotificationsRepository notificationsRepository;
-    late NotificationsCubit notificationsCubit;
-    late GoRouter router;
 
     const personalWorkspace = Workspace(
       id: 'personal_ws',
@@ -297,10 +295,6 @@ void main() {
     setUp(() async {
       workspaceCubit = _MockWorkspaceCubit();
       notificationsRepository = _MockNotificationsRepository();
-      notificationsCubit = NotificationsCubit(
-        notificationsRepository: notificationsRepository,
-      );
-
       const workspaceState = WorkspaceState(
         status: WorkspaceStatus.loaded,
         currentWorkspace: personalWorkspace,
@@ -351,17 +345,44 @@ void main() {
           offset: 0,
         ),
       );
+    });
 
-      await notificationsCubit.setWorkspace(personalWorkspace);
-      await notificationsCubit.loadTab(NotificationsTab.inbox);
-
-      router = GoRouter(
+    testWidgets('tapping task notification switches workspace and navigates', (
+      tester,
+    ) async {
+      final taskNotification = AppNotification(
+        id: 'notif_task',
+        userId: 'user_1',
+        type: 'task_assigned',
+        title: 'Cross-workspace task',
+        description: 'Open the linked task',
+        data: const {
+          'workspace_id': 'team_ws',
+          'workspace_name': 'Team Workspace',
+          'board_id': 'board_2',
+        },
+        entityType: 'task',
+        entityId: 'task_9',
+        createdAt: DateTime(2026, 3, 25),
+      );
+      final taskNotificationsCubit = NotificationsCubit(
+        notificationsRepository: notificationsRepository,
+        initialState: NotificationsState(
+          unreadCount: 1,
+          inbox: NotificationFeedState(
+            status: NotificationFeedStatus.loaded,
+            items: [taskNotification],
+            totalCount: 1,
+          ),
+        ),
+      );
+      final taskRouter = GoRouter(
         initialLocation: '/test',
         routes: [
           GoRoute(
             path: '/test',
             builder: (context, state) =>
-                _NotificationsLauncher(cubit: notificationsCubit),
+                _NotificationsLauncher(cubit: taskNotificationsCubit),
           ),
           GoRoute(
             path: Routes.taskBoardDetail,
@@ -372,21 +393,26 @@ void main() {
               ),
             ),
           ),
+          GoRoute(
+            path: Routes.timerRequests,
+            builder: (context, state) => Scaffold(
+              body: Text(
+                'Request ${state.uri.queryParameters['requestId']} '
+                'Status ${state.uri.queryParameters['status']}',
+              ),
+            ),
+          ),
         ],
       );
-    });
+      addTearDown(() async {
+        await taskNotificationsCubit.close();
+        taskRouter.dispose();
+      });
 
-    tearDown(() async {
-      await notificationsCubit.close();
-      router.dispose();
-    });
-
-    testWidgets('tapping task notification switches workspace and navigates', (
-      tester,
-    ) async {
+      clearInteractions(workspaceCubit);
       await tester.pumpWidget(
         _buildRouterApp(
-          router: router,
+          router: taskRouter,
           workspaceCubit: workspaceCubit,
         ),
       );
@@ -400,6 +426,116 @@ void main() {
 
       verify(() => workspaceCubit.selectWorkspace(teamWorkspace)).called(1);
       expect(find.text('Board board_2 Task task_9'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
     });
+
+    testWidgets(
+      'tapping time tracking request notification switches workspace and '
+      'deep links',
+      (tester) async {
+        final requestNotification = AppNotification(
+          id: 'notif_request',
+          userId: 'user_1',
+          type: 'time_tracking_request_submitted',
+          title: 'Cross-workspace request',
+          description: 'Open the linked request',
+          data: const {
+            'workspace_id': 'team_ws',
+            'workspace_name': 'Team Workspace',
+          },
+          entityType: 'time_tracking_request',
+          entityId: 'request_42',
+          createdAt: DateTime(2026, 3, 25),
+        );
+        final requestNotificationsCubit = NotificationsCubit(
+          notificationsRepository: notificationsRepository,
+          initialState: NotificationsState(
+            unreadCount: 1,
+            inbox: NotificationFeedState(
+              status: NotificationFeedStatus.loaded,
+              items: [requestNotification],
+              totalCount: 1,
+            ),
+          ),
+        );
+        when(
+          () => notificationsRepository.fetchNotifications(
+            wsId: any(named: 'wsId'),
+            unreadOnly: any(named: 'unreadOnly'),
+            readOnly: any(named: 'readOnly'),
+            limit: any(named: 'limit'),
+            offset: any(named: 'offset'),
+          ),
+        ).thenAnswer(
+          (_) async => NotificationsPage(
+            notifications: [requestNotification],
+            count: 1,
+            limit: 20,
+            offset: 0,
+          ),
+        );
+
+        final requestRouter = GoRouter(
+          initialLocation: '/test',
+          routes: [
+            GoRoute(
+              path: '/test',
+              builder: (context, state) =>
+                  _NotificationsLauncher(cubit: requestNotificationsCubit),
+            ),
+            GoRoute(
+              path: Routes.taskBoardDetail,
+              builder: (context, state) => Scaffold(
+                body: Text(
+                  'Board ${state.pathParameters['boardId']} '
+                  'Task ${state.uri.queryParameters['taskId']}',
+                ),
+              ),
+            ),
+            GoRoute(
+              path: Routes.timerRequests,
+              builder: (context, state) => Scaffold(
+                body: Text(
+                  'Request ${state.uri.queryParameters['requestId']} '
+                  'Status ${state.uri.queryParameters['status']}',
+                ),
+              ),
+            ),
+          ],
+        );
+        addTearDown(() async {
+          await requestNotificationsCubit.close();
+          requestRouter.dispose();
+        });
+
+        clearInteractions(workspaceCubit);
+
+        await tester.pumpWidget(
+          _buildRouterApp(
+            router: requestRouter,
+            workspaceCubit: workspaceCubit,
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        await tester.tap(find.text('Open notifications'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        await tester.tap(find.text('Cross-workspace request'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        verify(() => workspaceCubit.selectWorkspace(teamWorkspace)).called(1);
+        expect(find.text('Request request_42 Status all'), findsOneWidget);
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+      },
+    );
   });
 }

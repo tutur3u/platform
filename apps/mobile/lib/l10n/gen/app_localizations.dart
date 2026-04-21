@@ -346,13 +346,13 @@ abstract class AppLocalizations {
   /// No description provided for @authSwitchAccount.
   ///
   /// In en, this message translates to:
-  /// **'Manage accounts'**
+  /// **'Switch account'**
   String get authSwitchAccount;
 
   /// No description provided for @authSwitchAccountDescription.
   ///
   /// In en, this message translates to:
-  /// **'Switch accounts or add another.'**
+  /// **'Choose a saved account to continue.'**
   String get authSwitchAccountDescription;
 
   /// No description provided for @authSwitchAccountFailed.
@@ -366,6 +366,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Switched account.'**
   String get authSwitchAccountSuccess;
+
+  /// No description provided for @authManageAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage accounts'**
+  String get authManageAccounts;
+
+  /// No description provided for @authManageAccountsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add, remove, or log out accounts on this device.'**
+  String get authManageAccountsDescription;
+
+  /// No description provided for @authManageAccountsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No other saved accounts on this device.'**
+  String get authManageAccountsEmpty;
+
+  /// No description provided for @authCurrentAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Current account'**
+  String get authCurrentAccountTitle;
+
+  /// No description provided for @authCurrentAccountDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the account currently active on this device.'**
+  String get authCurrentAccountDescription;
+
+  /// No description provided for @authCurrentAccountBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'In use now'**
+  String get authCurrentAccountBadge;
+
+  /// No description provided for @authSavedAccountsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved accounts'**
+  String get authSavedAccountsTitle;
+
+  /// No description provided for @authSavedAccountsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage accounts stored on this device without changing the current one.'**
+  String get authSavedAccountsDescription;
+
+  /// No description provided for @authSavedAccountBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on device'**
+  String get authSavedAccountBadge;
 
   /// No description provided for @authRemoveAccount.
   ///
@@ -8575,6 +8629,12 @@ abstract class AppLocalizations {
   /// **'Request threshold updated.'**
   String get timerRequestsThresholdUpdated;
 
+  /// No description provided for @timerRequestsOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open this request right now.'**
+  String get timerRequestsOpenFailed;
+
   /// No description provided for @timerRequestRevertToApproved.
   ///
   /// In en, this message translates to:
@@ -10159,11 +10219,17 @@ abstract class AppLocalizations {
   /// **'Couldn\'t update this invite right now'**
   String get notificationsInviteActionError;
 
-  /// No description provided for @notificationsOpenAction.
+  /// No description provided for @notificationsOpenTaskAction.
   ///
   /// In en, this message translates to:
   /// **'Open task'**
-  String get notificationsOpenAction;
+  String get notificationsOpenTaskAction;
+
+  /// No description provided for @notificationsOpenRequestAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Open request'**
+  String get notificationsOpenRequestAction;
 
   /// No description provided for @notificationsOpenUnsupported.
   ///

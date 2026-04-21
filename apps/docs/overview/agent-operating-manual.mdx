@@ -1,7 +1,7 @@
 ---
 title: 'Agent Operating Manual'
 description: 'Field guide summarizing the AGENTS.md policies for autonomous contributors inside the Tuturuuu monorepo.'
-updatedAt: '2026-04-18'
+updatedAt: '2026-04-20'
 ---
 
 This page distills the canonical rules defined in [AGENTS.md](https://github.com/tutur3u/platform/blob/main/AGENTS.md). Treat the original document as the source of truth—this guide exists to make the most important expectations discoverable inside the docs site.
@@ -59,6 +59,7 @@ See AGENTS.md §4 for full step-by-step instructions across all workflows.
 ## Tooling & Environment Rules
 
 - Single package manager: **Bun**. Use workspace filters (`bun --filter ...`) to target apps/packages.
+- Use `bun check:now` when you need to cancel queued or running repo-root `bun check` invocations for the current workspace and start a fresh pass immediately.
 - Supabase lifecycle via scripts: `sb:start`, `sb:stop`, `sb:new`, `sb:up`, `sb:typegen` (user applies pushes).
 - Do not invent new caches; rely on Turborepo + Bun caching.
 - Python services (`apps/discord/`) maintain their own pinned dependencies and README instructions.

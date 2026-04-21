@@ -29,6 +29,7 @@ class _FieldBlock extends StatelessWidget {
         Text(label, style: theme.typography.small),
         const shad.Gap(6),
         shad.TextField(
+          contextMenuBuilder: platformTextContextMenuBuilder(),
           key: fieldKey,
           controller: controller,
           keyboardType: keyboardType,

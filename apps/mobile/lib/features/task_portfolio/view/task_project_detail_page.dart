@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
@@ -21,7 +22,6 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
-
 part 'task_project_detail_page_cards.dart';
 part 'task_project_detail_page_states.dart';
 part 'task_project_detail_page_utils.dart';

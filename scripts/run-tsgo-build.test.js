@@ -26,7 +26,7 @@ test('syncBuildInfoCache clears stale build info when the cache key changes', ()
   writeFile(path.join(repoRoot, 'bun.lock'), 'lock-v1');
   writeFile(
     path.join(repoRoot, 'package.json'),
-    JSON.stringify({ packageManager: 'bun@1.3.10' })
+    JSON.stringify({ packageManager: 'bun@1.3.13' })
   );
   writeFile(path.join(workspaceDir, 'package.json'), JSON.stringify({}));
   writeFile(path.join(workspaceDir, 'tsconfig.json'), JSON.stringify({}));
@@ -49,7 +49,7 @@ test('syncBuildInfoCache preserves build info when the dependency key is unchang
   writeFile(path.join(repoRoot, 'bun.lock'), 'lock-v1');
   writeFile(
     path.join(repoRoot, 'package.json'),
-    JSON.stringify({ packageManager: 'bun@1.3.10' })
+    JSON.stringify({ packageManager: 'bun@1.3.13' })
   );
   writeFile(path.join(workspaceDir, 'package.json'), JSON.stringify({}));
   writeFile(path.join(workspaceDir, 'tsconfig.json'), JSON.stringify({}));
@@ -71,7 +71,7 @@ test('syncBuildInfoCache invalidates build info when bun.lock changes', () => {
   writeFile(path.join(repoRoot, 'bun.lock'), 'lock-v1');
   writeFile(
     path.join(repoRoot, 'package.json'),
-    JSON.stringify({ packageManager: 'bun@1.3.10' })
+    JSON.stringify({ packageManager: 'bun@1.3.13' })
   );
   writeFile(path.join(workspaceDir, 'package.json'), JSON.stringify({}));
   writeFile(path.join(workspaceDir, 'tsconfig.json'), JSON.stringify({}));

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -763,6 +764,7 @@ class _MembersTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         shad.TextField(
+          contextMenuBuilder: platformTextContextMenuBuilder(),
           controller: controller,
           keyboardType: keyboardType,
           placeholder: Text(placeholder),
