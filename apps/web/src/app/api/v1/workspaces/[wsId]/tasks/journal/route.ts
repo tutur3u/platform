@@ -526,7 +526,7 @@ export async function POST(
 ) {
   try {
     const { wsId: rawWsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(req);
 
     const authResult = await getAuthorizedUser(supabase);
     if (authResult.kind === 'error') {
@@ -772,7 +772,7 @@ export async function POST(
       );
     }
 
-    const labelMapResult = await loadLabelNameMap(supabase, wsId);
+    const labelMapResult = await loadLabelNameMap(sbAdmin, wsId);
     if (labelMapResult.kind === 'error') {
       return NextResponse.json(labelMapResult.body, {
         status: labelMapResult.status,
@@ -835,7 +835,7 @@ export async function POST(
       const labelName = toTitleCase(label.name.trim());
       const color = pickLabelColor(labelNameMap.size);
 
-      const { data: createdLabel, error: createLabelError } = await supabase
+      const { data: createdLabel, error: createLabelError } = await sbAdmin
         .from('workspace_task_labels')
         .insert({
           name: labelName,
@@ -866,6 +866,7 @@ export async function POST(
     const tasksToInsert = candidateTasks.map((task) => ({
       name: task.title,
       description: task.description || null,
+      creator_id: user.id,
       list_id: listCheck.id,
       priority: task.priority,
       end_date: task.dueDate,
@@ -873,7 +874,7 @@ export async function POST(
       created_at: nowIso,
     }));
 
-    const { data: insertedTasks, error: insertError } = await supabase
+    const { data: insertedTasks, error: insertError } = await sbAdmin
       .from('tasks')
       .insert(tasksToInsert)
       .select(
@@ -949,7 +950,7 @@ export async function POST(
     }
 
     if (labelAssignments.length) {
-      const { error: labelInsertError } = await supabase
+      const { error: labelInsertError } = await sbAdmin
         .from('task_labels')
         .insert(labelAssignments);
 
@@ -983,7 +984,7 @@ export async function POST(
     }
 
     if (projectAssignments.length) {
-      const { error: projectInsertError } = await supabase
+      const { error: projectInsertError } = await sbAdmin
         .from('task_project_tasks')
         .insert(projectAssignments);
 
@@ -1002,7 +1003,7 @@ export async function POST(
         }))
       );
 
-      const { error: assigneeInsertError } = await supabase
+      const { error: assigneeInsertError } = await sbAdmin
         .from('task_assignees')
         .insert(assigneeAssignments);
 

@@ -5,8 +5,11 @@ const workspaceMemberMaybeSingle = vi.fn();
 const listMaybeSingle = vi.fn();
 const tasksInsertSelect = vi.fn();
 const workspaceLabelsEq = vi.fn();
+const workspaceTaskLabelSingle = vi.fn();
 const taskProjectsEq = vi.fn();
 const taskProjectTasksInsert = vi.fn();
+const taskLabelsInsert = vi.fn();
+const taskAssigneesInsert = vi.fn();
 const resolvePlanModel = vi.fn();
 const checkAiCredits = vi.fn();
 const generateObject = vi.fn();
@@ -46,16 +49,13 @@ const userClient = {
             eq: workspaceLabelsEq,
           })),
         };
-      case 'task_projects':
-        return {
-          select: vi.fn(() => ({
-            eq: taskProjectsEq,
-          })),
-        };
       case 'task_labels':
+        return {
+          insert: taskLabelsInsert,
+        };
       case 'task_assignees':
         return {
-          insert: vi.fn(),
+          insert: taskAssigneesInsert,
         };
       case 'task_project_tasks':
         return {
@@ -74,11 +74,40 @@ const adminClient = {
         return {
           select: vi.fn(() => createQueryBuilder(listMaybeSingle)),
         };
+      case 'tasks':
+        return {
+          insert: vi.fn(() => ({
+            select: tasksInsertSelect,
+          })),
+        };
+      case 'workspace_task_labels':
+        return {
+          select: vi.fn(() => ({
+            eq: workspaceLabelsEq,
+          })),
+          insert: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: workspaceTaskLabelSingle,
+            })),
+          })),
+        };
       case 'task_projects':
         return {
           select: vi.fn(() => ({
             eq: taskProjectsEq,
           })),
+        };
+      case 'task_labels':
+        return {
+          insert: taskLabelsInsert,
+        };
+      case 'task_project_tasks':
+        return {
+          insert: taskProjectTasksInsert,
+        };
+      case 'task_assignees':
+        return {
+          insert: taskAssigneesInsert,
         };
       default:
         throw new Error(`Unexpected admin table: ${table}`);
@@ -136,9 +165,18 @@ describe('task journal route', () => {
     listMaybeSingle.mockReset();
     tasksInsertSelect.mockReset();
     workspaceLabelsEq.mockReset();
+    workspaceTaskLabelSingle.mockReset();
     taskProjectsEq.mockReset();
     taskProjectTasksInsert.mockReset();
     taskProjectTasksInsert.mockResolvedValue({
+      error: null,
+    });
+    taskLabelsInsert.mockReset();
+    taskLabelsInsert.mockResolvedValue({
+      error: null,
+    });
+    taskAssigneesInsert.mockReset();
+    taskAssigneesInsert.mockResolvedValue({
       error: null,
     });
     resolvePlanModel.mockReset();
@@ -292,6 +330,8 @@ describe('task journal route', () => {
     expect(checkAiCredits).not.toHaveBeenCalled();
     expect(generateObject).not.toHaveBeenCalled();
     expect(tasksInsertSelect).toHaveBeenCalledTimes(1);
+    expect(adminClient.from).toHaveBeenCalledWith('tasks');
+    expect(userClient.from).not.toHaveBeenCalledWith('tasks');
   });
 
   it('loads workspace projects through the admin client after workspace access passes', async () => {
