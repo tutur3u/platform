@@ -252,11 +252,17 @@ test('validateWatcherDockerfile accepts the current watcher Dockerfile', () => {
 test('validateWatcherDockerfile reports missing docker cli tooling', () => {
   const dockerfileContent = fs
     .readFileSync(WATCHER_DOCKERFILE_PATH, 'utf8')
-    .replace('RUN apk add --no-cache docker-cli git openssh-client\n', '');
+    .replace(
+      'RUN apk add --no-cache docker-cli docker-cli-compose git openssh-client\n',
+      ''
+    );
 
   const errors = validateWatcherDockerfile(dockerfileContent);
 
-  assert.match(errors.join('\n'), /docker-cli git openssh-client/);
+  assert.match(
+    errors.join('\n'),
+    /docker-cli docker-cli-compose git openssh-client/
+  );
 });
 
 test('checkDockerWebSetup passes for the current repository', () => {

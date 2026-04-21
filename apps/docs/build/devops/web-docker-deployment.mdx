@@ -436,6 +436,9 @@ Dashboard details:
   mount/env pair in sync if the runtime path changes, or the dashboard will
   degrade to an empty offline state even while blue/green deployments still
   work.
+- The watcher image must also include the Docker Compose CLI plugin
+  (`docker-cli-compose` on Alpine) because the rollout handoff still shells
+  into `docker compose ...` from inside the watcher container.
 
 ## Browser-State 502 Recovery
 
