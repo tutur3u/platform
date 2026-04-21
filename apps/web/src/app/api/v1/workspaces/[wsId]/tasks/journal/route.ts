@@ -781,7 +781,7 @@ export async function POST(
     const labelNameMap = labelMapResult.labelNameMap;
 
     // Load valid project IDs for the workspace and validate before insertion
-    const projectIdsResult = await loadWorkspaceProjectIds(supabase, wsId);
+    const projectIdsResult = await loadWorkspaceProjectIds(sbAdmin, wsId);
     if (projectIdsResult.kind === 'error') {
       return NextResponse.json(projectIdsResult.body, {
         status: projectIdsResult.status,

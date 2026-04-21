@@ -40,6 +40,7 @@ The task editor includes isolated React roots inside some Tiptap node views, esp
 - If the final create request fails, reopen the destination-selection step with the reviewed tasks still in memory. Do not clear the journal draft optimistically before the insert succeeds, or users can lose the prompt they just refined.
 - Any workspace alias accepted by the board/list bootstrap endpoints, such as `personal`, must also be normalized by the journal save route before membership and list checks. Otherwise the picker can show valid destinations while the final save still rejects the same workspace context.
 - The journal save route should verify workspace membership first with the request-scoped client, then validate the chosen list against that normalized workspace. Admin-backed list checks are fine for consistency with selector data, but they must never bypass the caller's workspace access gate.
+- Any workspace-scoped project validation in that same save route should follow the same pattern: verify membership with the request-scoped client first, then resolve valid `task_projects` IDs through the admin client scoped to the normalized workspace. Do not read protected workspace project tables directly from the caller-scoped client after access has already been established.
 
 ## Task Hierarchy
 

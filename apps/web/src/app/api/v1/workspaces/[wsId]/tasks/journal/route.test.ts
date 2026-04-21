@@ -6,6 +6,7 @@ const listMaybeSingle = vi.fn();
 const tasksInsertSelect = vi.fn();
 const workspaceLabelsEq = vi.fn();
 const taskProjectsEq = vi.fn();
+const taskProjectTasksInsert = vi.fn();
 const resolvePlanModel = vi.fn();
 const checkAiCredits = vi.fn();
 const generateObject = vi.fn();
@@ -52,10 +53,13 @@ const userClient = {
           })),
         };
       case 'task_labels':
-      case 'task_project_tasks':
       case 'task_assignees':
         return {
           insert: vi.fn(),
+        };
+      case 'task_project_tasks':
+        return {
+          insert: taskProjectTasksInsert,
         };
       default:
         throw new Error(`Unexpected table: ${table}`);
@@ -69,6 +73,12 @@ const adminClient = {
       case 'task_lists':
         return {
           select: vi.fn(() => createQueryBuilder(listMaybeSingle)),
+        };
+      case 'task_projects':
+        return {
+          select: vi.fn(() => ({
+            eq: taskProjectsEq,
+          })),
         };
       default:
         throw new Error(`Unexpected admin table: ${table}`);
@@ -127,6 +137,10 @@ describe('task journal route', () => {
     tasksInsertSelect.mockReset();
     workspaceLabelsEq.mockReset();
     taskProjectsEq.mockReset();
+    taskProjectTasksInsert.mockReset();
+    taskProjectTasksInsert.mockResolvedValue({
+      error: null,
+    });
     resolvePlanModel.mockReset();
     checkAiCredits.mockReset();
     generateObject.mockReset();
@@ -278,6 +292,92 @@ describe('task journal route', () => {
     expect(checkAiCredits).not.toHaveBeenCalled();
     expect(generateObject).not.toHaveBeenCalled();
     expect(tasksInsertSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads workspace projects through the admin client after workspace access passes', async () => {
+    normalizeWorkspaceId.mockResolvedValue('ws-1');
+    getUser.mockResolvedValue({
+      data: { user: { id: 'user-1', email: 'dev@example.com' } },
+      error: null,
+    });
+    workspaceMemberMaybeSingle.mockResolvedValue({
+      data: { user_id: 'user-1' },
+      error: null,
+    });
+    listMaybeSingle.mockResolvedValue({
+      data: {
+        id: 'list-1',
+        name: 'Inbox',
+      },
+      error: null,
+    });
+    taskProjectsEq.mockResolvedValue({
+      data: [{ id: 'project-1' }],
+      error: null,
+    });
+    taskProjectTasksInsert.mockResolvedValue({
+      error: null,
+    });
+    tasksInsertSelect.mockResolvedValue({
+      data: [
+        {
+          id: 'task-1',
+          name: 'Follow up customer',
+          description: null,
+          priority: null,
+          completed: false,
+          start_date: null,
+          end_date: null,
+          created_at: '2026-04-21T10:00:00.000Z',
+          list_id: 'list-1',
+          task_lists: {
+            id: 'list-1',
+            name: 'Inbox',
+            board_id: 'board-1',
+            workspace_boards: {
+              id: 'board-1',
+              name: 'Board',
+              ws_id: 'ws-1',
+            },
+          },
+        },
+      ],
+      error: null,
+    });
+    workspaceLabelsEq.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/tasks/journal/route'
+    );
+    const response = await POST(
+      new Request('http://localhost/api/v1/workspaces/ws-1/tasks/journal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry: 'Follow up with the customer this week',
+          listId: 'list-1',
+          tasks: [
+            {
+              title: 'Follow up customer',
+              description: null,
+              priority: null,
+              labels: [],
+              dueDate: null,
+              estimationPoints: null,
+              projectIds: ['project-1'],
+            },
+          ],
+        }),
+      }),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(201);
+    expect(adminClient.from).toHaveBeenCalledWith('task_projects');
+    expect(userClient.from).not.toHaveBeenCalledWith('task_projects');
   });
 
   it('normalizes personal workspace aliases before verifying list access', async () => {
