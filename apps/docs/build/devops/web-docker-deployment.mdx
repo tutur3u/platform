@@ -308,19 +308,24 @@ Behavior:
 7. Skips pulls if the worktree is dirty.
 8. Uses `git pull --ff-only` only when the local branch is strictly behind the
    locked upstream.
-9. Runs `bun serve:web:docker:bg` automatically after a successful fast-forward
+9. Runs `bun upgrade` and then `bun i` automatically after every successful
+   fast-forward pull so the host Bun runtime and installed dependencies match
+   the fetched revision before the deploy handoff continues.
+10. Treats a worktree that is dirty only because of `bun.lock` as watchable, so
+    host-side install churn does not stop subsequent polling cycles.
+11. Runs `bun serve:web:docker:bg` automatically after a successful fast-forward
    pull.
-10. If `scripts/watch-blue-green-deploy.js` itself changed in the pulled
+12. If `scripts/watch-blue-green-deploy.js` itself changed in the pulled
    revision, the current watcher does not deploy from the old process. It
    releases its lock, spawns a replacement watcher with the same CLI args, and
    exits first.
-11. The replacement watcher refreshes the live `web-proxy` nginx config and
+13. The replacement watcher refreshes the live `web-proxy` nginx config and
    workers in place if blue/green is already serving traffic, verifies proxy
    routing through `/__platform/drain-status`, and only then starts the new
    blue/green build/promotion.
-12. Stops immediately if the checked-out branch changes while the watcher is
+14. Stops immediately if the checked-out branch changes while the watcher is
     running.
-13. If another watcher already owns the lock, a new invocation can fail with
+15. If another watcher already owns the lock, a new invocation can fail with
     guidance, mirror the active watcher with `--resume-if-running`, or replace
     it with `--replace-existing`.
 
@@ -338,6 +343,9 @@ Dashboard details:
 - The watcher parser also normalizes locale-style decimal commas from
   `docker stats`, so hosts that emit values like `0,10%` or `24,0MiB` no
   longer collapse into zeroed metrics.
+- Host dependency refreshes can rewrite `bun.lock`; the watcher now ignores
+  that file as a sole dirty-worktree signal so polling continues after the
+  automatic `bun upgrade` / `bun i` step.
 - Normal promotions keep the long-lived `web-proxy` container and bound port
   stable, which avoids transient listener drops for upstreams such as
   Cloudflare Tunnel that are connected to `:7803`.

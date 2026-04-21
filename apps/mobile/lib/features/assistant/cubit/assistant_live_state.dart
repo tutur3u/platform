@@ -19,6 +19,8 @@ class AssistantLiveState extends Equatable {
     this.isInterrupted = false,
     this.isPersisting = false,
     this.audioLevel = 0,
+    this.assistantAudioLevel = 0,
+    this.isAssistantSpeaking = false,
     this.latestCameraFrame,
     this.userDraft = '',
     this.userTranscript = '',
@@ -42,6 +44,8 @@ class AssistantLiveState extends Equatable {
   final bool isInterrupted;
   final bool isPersisting;
   final double audioLevel;
+  final double assistantAudioLevel;
+  final bool isAssistantSpeaking;
   final Uint8List? latestCameraFrame;
   final String userDraft;
   final String userTranscript;
@@ -76,6 +80,8 @@ class AssistantLiveState extends Equatable {
     bool? isInterrupted,
     bool? isPersisting,
     double? audioLevel,
+    double? assistantAudioLevel,
+    bool? isAssistantSpeaking,
     Object? latestCameraFrame = _assistantLiveSentinel,
     String? userDraft,
     String? userTranscript,
@@ -108,6 +114,8 @@ class AssistantLiveState extends Equatable {
       isInterrupted: isInterrupted ?? this.isInterrupted,
       isPersisting: isPersisting ?? this.isPersisting,
       audioLevel: audioLevel ?? this.audioLevel,
+      assistantAudioLevel: assistantAudioLevel ?? this.assistantAudioLevel,
+      isAssistantSpeaking: isAssistantSpeaking ?? this.isAssistantSpeaking,
       latestCameraFrame: latestCameraFrame == _assistantLiveSentinel
           ? this.latestCameraFrame
           : latestCameraFrame as Uint8List?,
@@ -142,6 +150,8 @@ class AssistantLiveState extends Equatable {
     isInterrupted,
     isPersisting,
     audioLevel,
+    assistantAudioLevel,
+    isAssistantSpeaking,
     latestCameraFrame,
     userDraft,
     userTranscript,

@@ -19,19 +19,44 @@ class AssistantChromeCubit extends Cubit<AssistantChromeState> {
   void toggleFullscreen() {
     emit(state.copyWith(isFullscreen: !state.isFullscreen));
   }
+
+  void enterLiveMode() {
+    emit(state.copyWith(isLiveMode: true, isFullscreen: true));
+  }
+
+  void exitLiveMode() {
+    emit(state.copyWith(isLiveMode: false, isFullscreen: false));
+  }
+
+  void setLiveMode({required bool value}) {
+    emit(
+      state.copyWith(
+        isLiveMode: value,
+        isFullscreen: value,
+      ),
+    );
+  }
 }
 
 class AssistantChromeState extends Equatable {
-  const AssistantChromeState({this.isFullscreen = false});
+  const AssistantChromeState({
+    this.isFullscreen = false,
+    this.isLiveMode = false,
+  });
 
   final bool isFullscreen;
+  final bool isLiveMode;
 
-  AssistantChromeState copyWith({bool? isFullscreen}) {
+  AssistantChromeState copyWith({
+    bool? isFullscreen,
+    bool? isLiveMode,
+  }) {
     return AssistantChromeState(
       isFullscreen: isFullscreen ?? this.isFullscreen,
+      isLiveMode: isLiveMode ?? this.isLiveMode,
     );
   }
 
   @override
-  List<Object?> get props => [isFullscreen];
+  List<Object?> get props => [isFullscreen, isLiveMode];
 }
