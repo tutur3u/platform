@@ -23,6 +23,7 @@ const {
   formatRequestsPerMinute,
   getWatchPaths,
   isProcessAlive,
+  listDirtyWorktreePaths,
   parseArgs,
   parseProxyLogEntries,
   parseUpstreamRef,
@@ -30,6 +31,7 @@ const {
   readWatchLock,
   releaseWatchLock,
   resolveCurrentBlueGreenStatus,
+  runBunUpgradeAndInstall,
   runPendingDeployAfterRestart,
   runDeployWatchIteration,
   runDeployWatchLoop,
@@ -131,6 +133,37 @@ test('formatRelativeTime clamps tiny future drift so the dashboard does not flic
     '5.0s'
   );
   assert.equal(formatRequestsPerMinute(2.5), '2.5 rpm');
+});
+
+test('listDirtyWorktreePaths expands rename records and keeps bun.lock visible', async () => {
+  assert.deepEqual(
+    await listDirtyWorktreePaths({
+      runCommand: createRunCommandMock(
+        new Map([
+          [
+            'git status --porcelain',
+            createResult(
+              ' M bun.lock\nR  old-name.js -> new-name.js\n?? apps/web/tmp.txt\n'
+            ),
+          ],
+        ])
+      ),
+    }),
+    ['bun.lock', 'old-name.js', 'new-name.js', 'apps/web/tmp.txt']
+  );
+});
+
+test('runBunUpgradeAndInstall runs bun upgrade before bun i', async () => {
+  const calls = [];
+
+  await runBunUpgradeAndInstall({
+    runCommand: async (command, args) => {
+      calls.push(`${command} ${args.join(' ')}`);
+      return createResult('');
+    },
+  });
+
+  assert.deepEqual(calls, ['bun upgrade', 'bun i']);
 });
 
 test('buildDashboardView shows blue/green runtime and the top 3 prioritized deployments', () => {
@@ -1542,6 +1575,14 @@ test('runDeployWatchIteration restarts before deployment when the watcher script
       return createResult('Updating aaa111..bbb222\n');
     }
 
+    if (key === 'bun upgrade') {
+      return createResult('');
+    }
+
+    if (key === 'bun i') {
+      return createResult('');
+    }
+
     if (
       key ===
       `git diff --name-only aaa111 bbb222 -- ${SELF_WATCHED_FILES.join(' ')}`
@@ -1636,6 +1677,14 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
       return createResult('Updating aaa111..bbb222\n');
     }
 
+    if (key === 'bun upgrade') {
+      return createResult('');
+    }
+
+    if (key === 'bun i') {
+      return createResult('');
+    }
+
     if (
       key ===
       `git diff --name-only aaa111 bbb222 -- ${SELF_WATCHED_FILES.join(' ')}`
@@ -1687,6 +1736,62 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
   assert.equal(pendingStates[0].pendingDeployment.status, 'deploying');
   assert.equal(pendingStates[0].pendingDeployment.commitShortHash, 'bbb222');
   assert.equal(result.status, 'deployed');
+});
+
+test('runDeployWatchIteration keeps polling when bun.lock is the only dirty file', async () => {
+  const calls = [];
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    calls.push(key);
+
+    if (key === 'git rev-parse --abbrev-ref HEAD') {
+      return createResult('main\n');
+    }
+
+    if (key === 'git status --porcelain') {
+      return createResult(' M bun.lock\n');
+    }
+
+    if (key === 'git fetch origin main') {
+      return createResult('');
+    }
+
+    if (key === 'git rev-parse HEAD') {
+      return createResult('aaa111\n');
+    }
+
+    if (key === 'git rev-parse origin/main') {
+      return createResult('aaa111\n');
+    }
+
+    if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+      return createResult(
+        'aaa111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n'
+      );
+    }
+
+    if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+      return createResult('');
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  const result = await runDeployWatchIteration(
+    {
+      branch: 'main',
+      remote: 'origin',
+      upstreamBranch: 'main',
+      upstreamRef: 'origin/main',
+    },
+    {
+      log: { error() {}, info() {}, warn() {} },
+      runCommand,
+    }
+  );
+
+  assert.equal(result.status, 'up-to-date');
+  assert.ok(calls.includes('git fetch origin main'));
 });
 
 test('runDeployWatchIteration refreshes a stale standby deployment after 15 minutes', async () => {
@@ -2187,6 +2292,14 @@ test('main restarts the watcher with a pending deploy handoff env when the watch
         if (key === 'git pull --ff-only origin main') {
           pullCompleted = true;
           return createResult('Updating aaa111..bbb222\n');
+        }
+
+        if (key === 'bun upgrade') {
+          return createResult('');
+        }
+
+        if (key === 'bun i') {
+          return createResult('');
         }
 
         if (

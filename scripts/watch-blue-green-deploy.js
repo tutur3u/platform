@@ -1448,13 +1448,55 @@ async function getRevision(ref, { env, runCommand: run = runCommand } = {}) {
   return gitStdout(['rev-parse', ref], { env, runCommand: run });
 }
 
-async function hasDirtyWorktree({ env, runCommand: run = runCommand } = {}) {
-  const status = await gitStdout(['status', '--porcelain'], {
+function parseDirtyWorktreePaths(statusOutput) {
+  return statusOutput
+    .split('\n')
+    .map((line) => line.trimEnd())
+    .filter(Boolean)
+    .flatMap((line) => {
+      const pathSpec = line.slice(3).trim();
+
+      if (!pathSpec) {
+        return [];
+      }
+
+      if (!pathSpec.includes(' -> ')) {
+        return [pathSpec];
+      }
+
+      return pathSpec
+        .split(' -> ')
+        .map((value) => value.trim())
+        .filter(Boolean);
+    });
+}
+
+async function listDirtyWorktreePaths({
+  env,
+  runCommand: run = runCommand,
+} = {}) {
+  const result = await runChecked('git', ['status', '--porcelain'], {
+    env,
+    runCommand: run,
+    stdio: 'pipe',
+  });
+  const status = result.stdout.replace(/\s+$/, '');
+
+  return parseDirtyWorktreePaths(status);
+}
+
+async function hasDirtyWorktree({
+  env,
+  ignoredPaths = [],
+  runCommand: run = runCommand,
+} = {}) {
+  const dirtyPaths = await listDirtyWorktreePaths({
     env,
     runCommand: run,
   });
+  const ignored = new Set(ignoredPaths);
 
-  return status.length > 0;
+  return dirtyPaths.some((value) => !ignored.has(value));
 }
 
 async function fetchTrackedBranch(
@@ -1518,6 +1560,20 @@ async function runBlueGreenDeploy({
       ...(env ?? process.env),
       [SKIP_WATCH_HISTORY_ENV]: '1',
     },
+    runCommand: run,
+  });
+}
+
+async function runBunUpgradeAndInstall({
+  env,
+  runCommand: run = runCommand,
+} = {}) {
+  await runChecked('bun', ['upgrade'], {
+    env,
+    runCommand: run,
+  });
+  await runChecked('bun', ['i'], {
+    env,
     runCommand: run,
   });
 }
@@ -2471,7 +2527,13 @@ async function runDeployWatchIteration(
     );
   }
 
-  if (await hasDirtyWorktree({ env, runCommand: run })) {
+  const hasBlockingDirtyWorktree = await hasDirtyWorktree({
+    env,
+    ignoredPaths: ['bun.lock'],
+    runCommand: run,
+  });
+
+  if (hasBlockingDirtyWorktree) {
     log.warn?.(
       `Skipping poll because the worktree has uncommitted changes on ${target.branch}.`
     );
@@ -2637,6 +2699,15 @@ async function runDeployWatchIteration(
         12
       )} to ${updatedHead.slice(0, 12)}.`
     );
+
+    log.info?.(
+      `Refreshing Bun runtime and dependencies for ${updatedHead.slice(0, 12)}.`
+    );
+
+    await runBunUpgradeAndInstall({
+      env,
+      runCommand: run,
+    });
 
     const deployStartedAt = now();
     onDeploymentStart({
@@ -3222,6 +3293,7 @@ module.exports = {
   getWatcherComposeEnv,
   getWatchPaths,
   hasDirtyWorktree,
+  listDirtyWorktreePaths,
   hasWatchedScriptChanges,
   isAncestor,
   isProcessAlive,
@@ -3240,6 +3312,7 @@ module.exports = {
   releaseWatchLock,
   resolveCurrentBlueGreenStatus,
   resolveLockedBranchTarget,
+  runBunUpgradeAndInstall,
   runBlueGreenDeploy,
   runPendingDeployAfterRestart,
   runDeployWatchIteration,
