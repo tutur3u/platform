@@ -17640,18 +17640,21 @@ export type Database = {
           created_at: string;
           email: string;
           invited_by: string | null;
+          type: Database['public']['Enums']['workspace_member_type'];
           ws_id: string;
         };
         Insert: {
           created_at?: string;
           email: string;
           invited_by?: string | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           ws_id: string;
         };
         Update: {
           created_at?: string;
           email?: string;
           invited_by?: string | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           ws_id?: string;
         };
         Relationships: [
@@ -19648,6 +19651,7 @@ export type Database = {
           expires_at: string | null;
           id: string;
           max_uses: number | null;
+          type: Database['public']['Enums']['workspace_member_type'];
           updated_at: string;
           ws_id: string;
         };
@@ -19658,6 +19662,7 @@ export type Database = {
           expires_at?: string | null;
           id?: string;
           max_uses?: number | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           updated_at?: string;
           ws_id: string;
         };
@@ -19668,6 +19673,7 @@ export type Database = {
           expires_at?: string | null;
           id?: string;
           max_uses?: number | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           updated_at?: string;
           ws_id?: string;
         };
@@ -19733,16 +19739,19 @@ export type Database = {
       workspace_invites: {
         Row: {
           created_at: string | null;
+          type: Database['public']['Enums']['workspace_member_type'];
           user_id: string;
           ws_id: string;
         };
         Insert: {
           created_at?: string | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           user_id: string;
           ws_id: string;
         };
         Update: {
           created_at?: string | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           user_id?: string;
           ws_id?: string;
         };
@@ -19893,18 +19902,21 @@ export type Database = {
         Row: {
           created_at: string | null;
           sort_key: number | null;
+          type: Database['public']['Enums']['workspace_member_type'];
           user_id: string;
           ws_id: string;
         };
         Insert: {
           created_at?: string | null;
           sort_key?: number | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           user_id?: string;
           ws_id: string;
         };
         Update: {
           created_at?: string | null;
           sort_key?: number | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           user_id?: string;
           ws_id?: string;
         };
@@ -24064,6 +24076,9 @@ export type Database = {
           is_expired: boolean | null;
           is_full: boolean | null;
           max_uses: number | null;
+          member_type:
+            | Database['public']['Enums']['workspace_member_type']
+            | null;
           updated_at: string | null;
           ws_id: string | null;
         };
@@ -24144,6 +24159,7 @@ export type Database = {
           handle: string | null;
           id: string | null;
           pending: boolean | null;
+          type: Database['public']['Enums']['workspace_member_type'] | null;
           ws_id: string | null;
         };
         Relationships: [];
@@ -30420,6 +30436,7 @@ export type Database = {
         | 'gemini-2.0-flash-lite'
         | 'gemini-2.5-flash-lite';
       workspace_calendar_type: 'primary' | 'tasks' | 'habits' | 'custom';
+      workspace_member_type: 'MEMBER' | 'GUEST';
       workspace_order_product_kind:
         | 'subscription_product'
         | 'credit_pack'
@@ -32558,6 +32575,7 @@ export const Constants = {
         'gemini-2.5-flash-lite',
       ],
       workspace_calendar_type: ['primary', 'tasks', 'habits', 'custom'],
+      workspace_member_type: ['MEMBER', 'GUEST'],
       workspace_order_product_kind: [
         'subscription_product',
         'credit_pack',

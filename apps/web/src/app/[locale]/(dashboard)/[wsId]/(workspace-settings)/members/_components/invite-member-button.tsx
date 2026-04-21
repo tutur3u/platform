@@ -22,6 +22,13 @@ import {
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -40,6 +47,7 @@ interface Props {
 const FormSchema = z.object({
   wsId: z.guid(),
   email: z.email(),
+  memberType: z.enum(['MEMBER', 'GUEST']),
 });
 
 export default function InviteMemberButton({
@@ -51,7 +59,7 @@ export default function InviteMemberButton({
   disabled,
 }: Props) {
   const router = useRouter();
-  const t = useTranslations();
+  const t = useTranslations('ws-members');
 
   const [open, setOpen] = useState(false);
 
@@ -60,18 +68,22 @@ export default function InviteMemberButton({
     values: {
       wsId,
       email: '',
+      memberType: 'MEMBER' as const,
     },
   });
 
   const inviteMember = async (values: z.infer<typeof FormSchema>) => {
     const res = await fetch(`/api/workspaces/${wsId}/members/invite`, {
       method: 'POST',
-      body: JSON.stringify(values),
+      body: JSON.stringify({
+        email: values.email,
+        memberType: values.memberType,
+      }),
     });
 
     if (res.ok) {
-      toast.success(t('ws-members.invitation-sent'), {
-        description: t('ws-members.invitation-sent-description', {
+      toast.success(t('invitation-sent'), {
+        description: t('invitation-sent-description', {
           email: values.email,
         }),
       });
@@ -80,20 +92,18 @@ export default function InviteMemberButton({
     } else {
       const data = await res.json();
 
-      // Handle seat limit reached error with actionable toast
       if (data.errorCode === 'SEAT_LIMIT_REACHED') {
-        toast.error(t('ws-members.seat-limit-reached'), {
-          description: t('ws-members.seat-limit-reached-description'),
+        toast.error(t('seat-limit-reached'), {
+          description: t('seat-limit-reached-description'),
           action: {
-            label: t('ws-members.manage-billing'),
+            label: t('manage-billing'),
             onClick: () => router.push(`/${wsId}/billing`),
           },
           duration: 10000,
         });
       } else {
-        toast.error(t('ws-members.invitation-failed'), {
-          description:
-            data.message || t('ws-members.invitation-failed-description'),
+        toast.error(t('invitation-failed'), {
+          description: data.message || t('invitation-failed-description'),
         });
       }
     }
@@ -119,9 +129,9 @@ export default function InviteMemberButton({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Invite member</DialogTitle>
+          <DialogTitle>{t('invite_dialog_title')}</DialogTitle>
           <DialogDescription>
-            Invite a member to your workspace.
+            {t('invite_dialog_description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -136,7 +146,7 @@ export default function InviteMemberButton({
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t('invite_email_label')}</FormLabel>
                     <FormControl>
                       <Input placeholder="username@example.com" {...field} />
                     </FormControl>
@@ -145,15 +155,41 @@ export default function InviteMemberButton({
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="memberType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('invite_membership_label')}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="MEMBER">
+                          {t('invite_membership_member')}
+                        </SelectItem>
+                        <SelectItem value="GUEST">
+                          {t('invite_membership_guest')}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <Button type="submit" className="w-full">
-                Invite Member
+                {t('invite_submit')}
               </Button>
             </form>
           </Form>
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8">
             <p className="text-center text-muted-foreground">
-              You do not have permission to invite members.
+              {t('invite_no_permission')}
             </p>
           </div>
         )}

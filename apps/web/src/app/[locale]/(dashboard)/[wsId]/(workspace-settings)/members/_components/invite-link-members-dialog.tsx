@@ -175,7 +175,7 @@ export function InviteLinkMembersDialog({
             </div>
           ) : inviteLink ? (
             <>
-              <div className="grid gap-3 md:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-2xl border border-border bg-foreground/[0.02] p-4">
                   <p className="text-foreground/60 text-xs uppercase tracking-[0.18em]">
                     {t('ws-invite-links.link-code')}
@@ -209,6 +209,22 @@ export function InviteLinkMembersDialog({
                   </p>
                   <p className="text-foreground/50 text-xs">
                     {moment(inviteLink.created_at).fromNow()}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-border bg-foreground/[0.02] p-4">
+                  <p className="text-foreground/60 text-xs uppercase tracking-[0.18em]">
+                    {t('ws-members.invite_membership_label')}
+                  </p>
+                  <p className="mt-3 font-semibold text-foreground text-sm">
+                    {inviteLink.memberType === 'GUEST'
+                      ? t('ws-invite-links.membership-short-guest')
+                      : t('ws-invite-links.membership-short-member')}
+                  </p>
+                  <p className="text-foreground/50 text-xs">
+                    {inviteLink.memberType === 'GUEST'
+                      ? t('ws-members.invite_membership_guest')
+                      : t('ws-members.invite_membership_member')}
                   </p>
                 </div>
               </div>

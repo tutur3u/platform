@@ -23,6 +23,13 @@ import {
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
@@ -32,6 +39,7 @@ import * as z from 'zod';
 import {
   type InviteLinkDetails,
   type InviteLinkSummary,
+  mapInviteLinkRowFromApi,
   normalizeInviteLinkDetails,
 } from '@/lib/workspace-invite-links';
 import { InviteLinkMembersDialog } from './invite-link-members-dialog';
@@ -44,11 +52,13 @@ interface Props {
 const CreateLinkSchema = z.object({
   maxUses: z.coerce.number().int().positive().optional().nullable(),
   expiresAt: z.string().optional().nullable(),
+  memberType: z.enum(['MEMBER', 'GUEST']),
 });
 
 export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
   const router = useRouter();
   const t = useTranslations();
+  const tMembers = useTranslations('ws-members');
   const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
@@ -62,6 +72,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
     defaultValues: {
       maxUses: null,
       expiresAt: null,
+      memberType: 'MEMBER' as const,
     },
   });
 
@@ -75,7 +86,10 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
         cache: 'no-store',
       });
       if (!res.ok) throw new Error('Failed to fetch invite links');
-      return res.json();
+      const raw = (await res.json()) as Record<string, unknown>[];
+      return Array.isArray(raw)
+        ? raw.map((row) => mapInviteLinkRowFromApi(row))
+        : [];
     },
   });
 
@@ -111,6 +125,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
           expiresAt: values.expiresAt
             ? new Date(values.expiresAt).toISOString()
             : null,
+          memberType: values.memberType,
         }),
       });
 
@@ -280,6 +295,40 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
                   >
                     <FormField
                       control={form.control}
+                      name="memberType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            {tMembers('invite_membership_label')}
+                          </FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="MEMBER">
+                                {tMembers('invite_membership_member')}
+                              </SelectItem>
+                              <SelectItem value="GUEST">
+                                {tMembers('invite_membership_guest')}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            {t('ws-invite-links.membership-type-description')}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
                       name="maxUses"
                       render={({ field }) => (
                         <FormItem>
@@ -377,8 +426,19 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
                 {/* Header with status */}
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {getStatusBadge(link)}
+                      <span
+                        className={`rounded-full px-2 py-1 font-medium text-xs ${
+                          link.memberType === 'GUEST'
+                            ? 'bg-dynamic-orange/10 text-dynamic-orange'
+                            : 'bg-dynamic-blue/10 text-dynamic-blue'
+                        }`}
+                      >
+                        {link.memberType === 'GUEST'
+                          ? t('ws-invite-links.membership-short-guest')
+                          : t('ws-invite-links.membership-short-member')}
+                      </span>
                     </div>
                   </div>
 

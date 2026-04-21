@@ -149,6 +149,7 @@ describe('validateInvite', () => {
           logo_url: null,
         },
         memberCount: 5,
+        memberType: 'MEMBER',
         seatLimitReached: true,
         seatStatus: {
           currentSeats: 5,

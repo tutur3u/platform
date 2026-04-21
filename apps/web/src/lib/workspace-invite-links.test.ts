@@ -75,6 +75,7 @@ describe('workspace invite links normalization', () => {
       current_uses: 1,
       is_expired: false,
       is_full: false,
+      type: 'MEMBER',
       uses: [
         {
           id: 'use-4',
@@ -92,6 +93,37 @@ describe('workspace invite links normalization', () => {
 
     expect(normalized.uses).toHaveLength(1);
     expect(normalized.uses[0]?.user.display_name).toBe('Linus Torvalds');
+    expect(normalized.memberType).toBe('MEMBER');
+
+    const guestLink = normalizeInviteLinkDetails({
+      id: 'link-g',
+      ws_id: 'ws-1',
+      code: 'GUEST',
+      creator_id: 'creator-1',
+      max_uses: null,
+      expires_at: null,
+      created_at: '2026-04-20T08:00:00.000Z',
+      current_uses: 0,
+      is_expired: false,
+      is_full: false,
+      type: 'GUEST',
+    });
+    expect(guestLink.memberType).toBe('GUEST');
+
+    const guestFromViewColumn = normalizeInviteLinkDetails({
+      id: 'link-g2',
+      ws_id: 'ws-1',
+      code: 'GUEST2',
+      creator_id: 'creator-1',
+      max_uses: null,
+      expires_at: null,
+      created_at: '2026-04-20T08:00:00.000Z',
+      current_uses: 0,
+      is_expired: false,
+      is_full: false,
+      member_type: 'GUEST',
+    });
+    expect(guestFromViewColumn.memberType).toBe('GUEST');
 
     const normalizedWithoutUses = normalizeInviteLinkDetails({
       id: 'link-2',
@@ -107,5 +139,26 @@ describe('workspace invite links normalization', () => {
     });
 
     expect(normalizedWithoutUses.uses).toEqual([]);
+    expect(normalizedWithoutUses.memberType).toBe('MEMBER');
+  });
+
+  it('preserves guest when re-normalizing an already API-shaped invite link payload', () => {
+    const apiPayload = {
+      id: 'link-api',
+      ws_id: 'ws-1',
+      code: 'ABC',
+      creator_id: 'c1',
+      max_uses: 5,
+      expires_at: null,
+      created_at: '2026-04-20T08:00:00.000Z',
+      current_uses: 1,
+      is_expired: false,
+      is_full: false,
+      memberType: 'GUEST' as const,
+      uses: [],
+    };
+
+    const again = normalizeInviteLinkDetails(apiPayload);
+    expect(again.memberType).toBe('GUEST');
   });
 });
