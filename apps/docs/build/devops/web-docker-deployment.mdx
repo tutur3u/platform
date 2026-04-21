@@ -323,9 +323,12 @@ Behavior:
    workers in place if blue/green is already serving traffic, verifies proxy
    routing through `/__platform/drain-status`, and only then starts the new
    blue/green build/promotion.
-14. Stops immediately if the checked-out branch changes while the watcher is
+14. Retries recoverable Git command failures instead of exiting. The first retry
+    waits 1 minute, then the watcher backs off exponentially on consecutive Git
+    failures up to a 15 minute ceiling.
+15. Stops immediately if the checked-out branch changes while the watcher is
     running.
-15. If another watcher already owns the lock, a new invocation can fail with
+16. If another watcher already owns the lock, a new invocation can fail with
     guidance, mirror the active watcher with `--resume-if-running`, or replace
     it with `--replace-existing`.
 
@@ -346,6 +349,9 @@ Dashboard details:
 - Host dependency refreshes can rewrite `bun.lock`; the watcher now ignores
   that file as a sole dirty-worktree signal so polling continues after the
   automatic `bun upgrade` / `bun i` step.
+- Recoverable Git poll failures stay visible in the dashboard as a retrying
+  watcher state instead of terminating the process, and the next-check timer
+  reflects the active backoff delay.
 - Normal promotions keep the long-lived `web-proxy` container and bound port
   stable, which avoids transient listener drops for upstreams such as
   Cloudflare Tunnel that are connected to `:7803`.

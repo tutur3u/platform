@@ -37,8 +37,10 @@ const {
 } = require('./watch-blue-green/history.js');
 const DEFAULT_INTERVAL_MS = 1_000;
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
+const DEFAULT_GIT_FAILURE_BACKOFF_MS = 60_000;
 const DEFAULT_STANDBY_REFRESH_AFTER_MS = 15 * 60_000;
 const DEFAULT_LOCK_CONFLICT_ACTION = 'fail';
+const MAX_GIT_FAILURE_BACKOFF_MS = 15 * 60_000;
 const DEFAULT_REPLACE_WATCHER_TIMEOUT_MS = 5_000;
 const MAX_EVENTS = 8;
 const DISPLAY_DEPLOYMENTS = 3;
@@ -356,6 +358,8 @@ function summarizeResult(result) {
       return colorize('yellow', 'Dirty worktree, waiting');
     case 'diverged':
       return colorize('yellow', 'Branch diverged, waiting');
+    case 'git-failed':
+      return colorize('yellow', 'Git failed, retrying');
     case 'restarting':
       return colorize('magenta', 'Restarting watcher');
     case 'standby-refresh-failed':
@@ -1446,6 +1450,25 @@ function getStandbyRefreshCandidate(
 
 async function getRevision(ref, { env, runCommand: run = runCommand } = {}) {
   return gitStdout(['rev-parse', ref], { env, runCommand: run });
+}
+
+function isRecoverableGitCommandError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return /Command failed \(\d+\): git\b/.test(message);
+}
+
+function getGitFailureBackoffMs(
+  failureCount,
+  {
+    baseMs = DEFAULT_GIT_FAILURE_BACKOFF_MS,
+    maxMs = MAX_GIT_FAILURE_BACKOFF_MS,
+  } = {}
+) {
+  if (!Number.isFinite(failureCount) || failureCount <= 0) {
+    return baseMs;
+  }
+
+  return Math.min(maxMs, baseMs * 2 ** Math.max(0, failureCount - 1));
 }
 
 function parseDirtyWorktreePaths(statusOutput) {
@@ -2543,300 +2566,328 @@ async function runDeployWatchIteration(
     });
   }
 
-  await fetchTrackedBranch(target, { env, runCommand: run });
+  try {
+    await fetchTrackedBranch(target, { env, runCommand: run });
 
-  const localHead = await getRevision('HEAD', { env, runCommand: run });
-  const upstreamHead = await getRevision(target.upstreamRef, {
-    env,
-    runCommand: run,
-  });
-
-  if (localHead === upstreamHead) {
-    const latestCommit = await getCommitMetadata('HEAD', {
+    const localHead = await getRevision('HEAD', { env, runCommand: run });
+    const upstreamHead = await getRevision(target.upstreamRef, {
       env,
       runCommand: run,
     });
-    const runtimeSnapshot = await attachRuntime({
-      checkedAt,
-      latestCommit,
-      status: 'up-to-date',
-    });
-    const standbyRefreshCandidate = getStandbyRefreshCandidate(
-      runtimeSnapshot,
-      latestCommit,
-      {
-        now: checkedAt,
-      }
-    );
 
-    if (!standbyRefreshCandidate) {
-      return runtimeSnapshot;
-    }
-
-    log.info?.(
-      `Refreshing standby ${standbyRefreshCandidate.standbyColor} to ${latestCommit.shortHash} after the 15 minute stale window.`
-    );
-
-    const refreshStartedAt = now();
-    onDeploymentStart({
-      checkedAt,
-      latestCommit,
-      pendingDeployment: createPendingDeploymentEntry({
-        activeColor: standbyRefreshCandidate.standbyColor,
-        deploymentKind: 'standby-refresh',
-        latestCommit,
-        startedAt: refreshStartedAt,
-        status: 'building',
-      }),
-    });
-
-    try {
-      await runBlueGreenStandbyRefresh({
+    if (localHead === upstreamHead) {
+      const latestCommit = await getCommitMetadata('HEAD', {
         env,
-        envFilePath,
-        fsImpl,
-        rootDir,
         runCommand: run,
       });
-
-      const refreshFinishedAt = now();
-      const history = appendDeploymentHistory(
-        {
-          activatedAt: refreshFinishedAt,
-          activeColor: standbyRefreshCandidate.standbyColor,
-          buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
-          commitHash: latestCommit.hash,
-          commitShortHash: latestCommit.shortHash,
-          commitSubject: latestCommit.subject,
-          deploymentKind: 'standby-refresh',
-          finishedAt: refreshFinishedAt,
-          startedAt: refreshStartedAt,
-          status: 'successful',
-        },
-        {
-          fsImpl,
-          paths,
-        }
-      );
-
-      log.info?.(
-        `Standby ${standbyRefreshCandidate.standbyColor} now matches ${latestCommit.shortHash}.`
-      );
-
-      return attachRuntime(
-        {
-          checkedAt,
-          latestCommit,
-          status: 'standby-refreshed',
-        },
-        history
-      );
-    } catch (error) {
-      const refreshFinishedAt = now();
-      const history = appendDeploymentHistory(
-        {
-          activeColor: standbyRefreshCandidate.standbyColor,
-          buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
-          commitHash: latestCommit.hash,
-          commitShortHash: latestCommit.shortHash,
-          commitSubject: latestCommit.subject,
-          deploymentKind: 'standby-refresh',
-          finishedAt: refreshFinishedAt,
-          startedAt: refreshStartedAt,
-          status: 'failed',
-        },
-        {
-          fsImpl,
-          paths,
-        }
-      );
-
-      log.error?.(
-        `Standby ${standbyRefreshCandidate.standbyColor} refresh failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
-      );
-
-      return attachRuntime(
-        {
-          checkedAt,
-          error,
-          latestCommit,
-          status: 'standby-refresh-failed',
-        },
-        history
-      );
-    }
-  }
-
-  if (await isAncestor(localHead, upstreamHead, { env, runCommand: run })) {
-    await pullTrackedBranch(target, { env, runCommand: run });
-
-    const updatedHead = await getRevision('HEAD', { env, runCommand: run });
-
-    if (updatedHead === localHead) {
-      return attachRuntime({
+      const runtimeSnapshot = await attachRuntime({
         checkedAt,
-        latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
+        latestCommit,
         status: 'up-to-date',
       });
-    }
-
-    const restartRequired = await hasWatchedScriptChanges(
-      localHead,
-      updatedHead,
-      {
-        env,
-        runCommand: run,
-      }
-    );
-    const latestCommit = await getCommitMetadata('HEAD', {
-      env,
-      runCommand: run,
-    });
-
-    log.info?.(
-      `Pulled ${target.branch} from ${localHead.slice(
-        0,
-        12
-      )} to ${updatedHead.slice(0, 12)}.`
-    );
-
-    log.info?.(
-      `Refreshing Bun runtime and dependencies for ${updatedHead.slice(0, 12)}.`
-    );
-
-    await runBunUpgradeAndInstall({
-      env,
-      runCommand: run,
-    });
-
-    const deployStartedAt = now();
-    onDeploymentStart({
-      checkedAt,
-      latestCommit,
-      pendingDeployment: createPendingDeploymentEntry({
+      const standbyRefreshCandidate = getStandbyRefreshCandidate(
+        runtimeSnapshot,
         latestCommit,
-        startedAt: deployStartedAt,
-        status: 'deploying',
-      }),
-    });
+        {
+          now: checkedAt,
+        }
+      );
 
-    try {
-      if (restartRequired) {
-        log.warn?.(
-          'Watcher script changed in the pulled revision. Restarting watcher before deployment.'
+      if (!standbyRefreshCandidate) {
+        return runtimeSnapshot;
+      }
+
+      log.info?.(
+        `Refreshing standby ${standbyRefreshCandidate.standbyColor} to ${latestCommit.shortHash} after the 15 minute stale window.`
+      );
+
+      const refreshStartedAt = now();
+      onDeploymentStart({
+        checkedAt,
+        latestCommit,
+        pendingDeployment: createPendingDeploymentEntry({
+          activeColor: standbyRefreshCandidate.standbyColor,
+          deploymentKind: 'standby-refresh',
+          latestCommit,
+          startedAt: refreshStartedAt,
+          status: 'building',
+        }),
+      });
+
+      try {
+        await runBlueGreenStandbyRefresh({
+          env,
+          envFilePath,
+          fsImpl,
+          rootDir,
+          runCommand: run,
+        });
+
+        const refreshFinishedAt = now();
+        const history = appendDeploymentHistory(
+          {
+            activatedAt: refreshFinishedAt,
+            activeColor: standbyRefreshCandidate.standbyColor,
+            buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            deploymentKind: 'standby-refresh',
+            finishedAt: refreshFinishedAt,
+            startedAt: refreshStartedAt,
+            status: 'successful',
+          },
+          {
+            fsImpl,
+            paths,
+          }
         );
 
+        log.info?.(
+          `Standby ${standbyRefreshCandidate.standbyColor} now matches ${latestCommit.shortHash}.`
+        );
+
+        return attachRuntime(
+          {
+            checkedAt,
+            latestCommit,
+            status: 'standby-refreshed',
+          },
+          history
+        );
+      } catch (error) {
+        const refreshFinishedAt = now();
+        const history = appendDeploymentHistory(
+          {
+            activeColor: standbyRefreshCandidate.standbyColor,
+            buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            deploymentKind: 'standby-refresh',
+            finishedAt: refreshFinishedAt,
+            startedAt: refreshStartedAt,
+            status: 'failed',
+          },
+          {
+            fsImpl,
+            paths,
+          }
+        );
+
+        log.error?.(
+          `Standby ${standbyRefreshCandidate.standbyColor} refresh failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+        );
+
+        return attachRuntime(
+          {
+            checkedAt,
+            error,
+            latestCommit,
+            status: 'standby-refresh-failed',
+          },
+          history
+        );
+      }
+    }
+
+    if (await isAncestor(localHead, upstreamHead, { env, runCommand: run })) {
+      await pullTrackedBranch(target, { env, runCommand: run });
+
+      const updatedHead = await getRevision('HEAD', { env, runCommand: run });
+
+      if (updatedHead === localHead) {
         return attachRuntime({
           checkedAt,
-          latestCommit,
-          newHead: updatedHead,
-          oldHead: localHead,
-          restartRequired,
-          status: 'restarting',
+          latestCommit: await getCommitMetadata('HEAD', {
+            env,
+            runCommand: run,
+          }),
+          status: 'up-to-date',
         });
       }
 
-      log.info?.(
-        `Starting blue/green deployment for ${updatedHead.slice(0, 12)}.`
+      const restartRequired = await hasWatchedScriptChanges(
+        localHead,
+        updatedHead,
+        {
+          env,
+          runCommand: run,
+        }
       );
-
-      await runBlueGreenDeploy({
-        deployCommand,
+      const latestCommit = await getCommitMetadata('HEAD', {
         env,
         runCommand: run,
       });
 
-      const deployFinishedAt = now();
-      const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
-      const history = appendDeploymentHistory(
-        {
-          activatedAt: deployFinishedAt,
-          activeColor,
-          buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
-          commitHash: latestCommit.hash,
-          commitShortHash: latestCommit.shortHash,
-          commitSubject: latestCommit.subject,
-          finishedAt: deployFinishedAt,
-          startedAt: deployStartedAt,
-          status: 'successful',
-        },
-        {
-          fsImpl,
-          paths,
-        }
+      log.info?.(
+        `Pulled ${target.branch} from ${localHead.slice(
+          0,
+          12
+        )} to ${updatedHead.slice(0, 12)}.`
       );
 
       log.info?.(
-        `Blue/green deployment completed for ${updatedHead.slice(0, 12)}.`
+        `Refreshing Bun runtime and dependencies for ${updatedHead.slice(0, 12)}.`
       );
 
-      return attachRuntime(
-        {
-          checkedAt,
+      await runBunUpgradeAndInstall({
+        env,
+        runCommand: run,
+      });
+
+      const deployStartedAt = now();
+      onDeploymentStart({
+        checkedAt,
+        latestCommit,
+        pendingDeployment: createPendingDeploymentEntry({
           latestCommit,
-          newHead: updatedHead,
-          oldHead: localHead,
-          restartRequired: false,
-          status: 'deployed',
-        },
-        history
-      );
-    } catch (error) {
-      const deployFinishedAt = now();
-      const history = appendDeploymentHistory(
-        {
-          buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
-          commitHash: latestCommit.hash,
-          commitShortHash: latestCommit.shortHash,
-          commitSubject: latestCommit.subject,
-          finishedAt: deployFinishedAt,
           startedAt: deployStartedAt,
-          status: 'failed',
-        },
-        {
-          fsImpl,
-          paths,
+          status: 'deploying',
+        }),
+      });
+
+      try {
+        if (restartRequired) {
+          log.warn?.(
+            'Watcher script changed in the pulled revision. Restarting watcher before deployment.'
+          );
+
+          return attachRuntime({
+            checkedAt,
+            latestCommit,
+            newHead: updatedHead,
+            oldHead: localHead,
+            restartRequired,
+            status: 'restarting',
+          });
         }
-      );
 
-      log.error?.(
-        `Blue/green deployment failed for ${updatedHead.slice(0, 12)}: ${error instanceof Error ? error.message : String(error)}`
-      );
+        log.info?.(
+          `Starting blue/green deployment for ${updatedHead.slice(0, 12)}.`
+        );
 
-      return attachRuntime(
-        {
-          checkedAt,
-          error,
-          latestCommit,
-          newHead: updatedHead,
-          oldHead: localHead,
-          restartRequired: false,
-          status: 'deploy-failed',
-        },
-        history
-      );
+        await runBlueGreenDeploy({
+          deployCommand,
+          env,
+          runCommand: run,
+        });
+
+        const deployFinishedAt = now();
+        const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+        const history = appendDeploymentHistory(
+          {
+            activatedAt: deployFinishedAt,
+            activeColor,
+            buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            finishedAt: deployFinishedAt,
+            startedAt: deployStartedAt,
+            status: 'successful',
+          },
+          {
+            fsImpl,
+            paths,
+          }
+        );
+
+        log.info?.(
+          `Blue/green deployment completed for ${updatedHead.slice(0, 12)}.`
+        );
+
+        return attachRuntime(
+          {
+            checkedAt,
+            latestCommit,
+            newHead: updatedHead,
+            oldHead: localHead,
+            restartRequired: false,
+            status: 'deployed',
+          },
+          history
+        );
+      } catch (error) {
+        const deployFinishedAt = now();
+        const history = appendDeploymentHistory(
+          {
+            buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            finishedAt: deployFinishedAt,
+            startedAt: deployStartedAt,
+            status: 'failed',
+          },
+          {
+            fsImpl,
+            paths,
+          }
+        );
+
+        log.error?.(
+          `Blue/green deployment failed for ${updatedHead.slice(0, 12)}: ${error instanceof Error ? error.message : String(error)}`
+        );
+
+        return attachRuntime(
+          {
+            checkedAt,
+            error,
+            latestCommit,
+            newHead: updatedHead,
+            oldHead: localHead,
+            restartRequired: false,
+            status: 'deploy-failed',
+          },
+          history
+        );
+      }
     }
-  }
 
-  if (await isAncestor(upstreamHead, localHead, { env, runCommand: run })) {
+    if (await isAncestor(upstreamHead, localHead, { env, runCommand: run })) {
+      log.warn?.(
+        `Local branch ${target.branch} is ahead of ${target.upstreamRef}; skipping auto-pull.`
+      );
+      return attachRuntime({
+        checkedAt,
+        latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
+        status: 'ahead',
+      });
+    }
+
     log.warn?.(
-      `Local branch ${target.branch} is ahead of ${target.upstreamRef}; skipping auto-pull.`
+      `Local branch ${target.branch} diverged from ${target.upstreamRef}; skipping auto-pull.`
     );
     return attachRuntime({
       checkedAt,
       latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
-      status: 'ahead',
+      status: 'diverged',
+    });
+  } catch (error) {
+    if (!isRecoverableGitCommandError(error)) {
+      throw error;
+    }
+
+    log.warn?.(
+      `Git polling failed on ${target.branch}: ${error instanceof Error ? error.message : String(error)}`
+    );
+
+    let latestCommit = null;
+    try {
+      latestCommit = await getCommitMetadata('HEAD', {
+        env,
+        runCommand: run,
+      });
+    } catch {}
+
+    return attachRuntime({
+      checkedAt,
+      error,
+      latestCommit,
+      status: 'git-failed',
     });
   }
-
-  log.warn?.(
-    `Local branch ${target.branch} diverged from ${target.upstreamRef}; skipping auto-pull.`
-  );
-  return attachRuntime({
-    checkedAt,
-    latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
-    status: 'diverged',
-  });
 }
 
 async function runDeployWatchLoop(
@@ -2859,11 +2910,13 @@ async function runDeployWatchLoop(
     sleepImpl = sleep,
   } = {}
 ) {
+  let consecutiveGitFailures = 0;
+
   while (true) {
     const startedAt = now();
     onIterationStart(startedAt);
 
-    const result = await runDeployWatchIteration(target, {
+    const iterationResult = await runDeployWatchIteration(target, {
       deployCommand,
       env,
       envFilePath,
@@ -2875,6 +2928,22 @@ async function runDeployWatchLoop(
       rootDir,
       runCommand: run,
     });
+    const isGitFailure = iterationResult.status === 'git-failed';
+    consecutiveGitFailures = isGitFailure ? consecutiveGitFailures + 1 : 0;
+    const sleepMs = isGitFailure
+      ? getGitFailureBackoffMs(consecutiveGitFailures)
+      : intervalMs;
+    const result = {
+      ...iterationResult,
+      gitFailureCount: isGitFailure ? consecutiveGitFailures : 0,
+      sleepMs,
+    };
+
+    if (isGitFailure) {
+      log.warn?.(
+        `Retrying Git poll in ${formatDuration(sleepMs)} after ${result.gitFailureCount} consecutive failure${result.gitFailureCount === 1 ? '' : 's'}.`
+      );
+    }
 
     onIterationResult(result);
 
@@ -2882,7 +2951,7 @@ async function runDeployWatchLoop(
       return result;
     }
 
-    await sleepImpl(intervalMs);
+    await sleepImpl(sleepMs);
   }
 }
 
@@ -3213,7 +3282,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
           nextCheckAt:
             iterationResult.restartRequired || parsed.once
               ? null
-              : Date.now() + parsed.intervalMs,
+              : Date.now() + (iterationResult.sleepMs ?? parsed.intervalMs),
         });
       },
       onIterationStart: (startedAt) => {
@@ -3262,8 +3331,10 @@ if (require.main === module) {
 module.exports = {
   BLUE_GREEN_PROXY_SERVICE,
   DEFAULT_DEPLOY_COMMAND,
+  DEFAULT_GIT_FAILURE_BACKOFF_MS,
   DEFAULT_INTERVAL_MS,
   DISPLAY_DEPLOYMENTS,
+  MAX_GIT_FAILURE_BACKOFF_MS,
   MAX_DEPLOYMENTS,
   MAX_EVENTS,
   SELF_WATCHED_FILES,
@@ -3284,6 +3355,7 @@ module.exports = {
   formatDuration,
   formatRelativeTime,
   formatRequestsPerMinute,
+  getGitFailureBackoffMs,
   getLatestDeploymentSummary,
   getCommitMetadata,
   getCurrentBranch,
@@ -3295,6 +3367,7 @@ module.exports = {
   hasDirtyWorktree,
   listDirtyWorktreePaths,
   hasWatchedScriptChanges,
+  isRecoverableGitCommandError,
   isAncestor,
   isProcessAlive,
   listChangedFilesBetweenRevisions,

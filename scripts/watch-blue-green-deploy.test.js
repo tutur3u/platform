@@ -7,8 +7,10 @@ const path = require('node:path');
 const {
   BLUE_GREEN_PROXY_SERVICE,
   DEFAULT_DEPLOY_COMMAND,
+  DEFAULT_GIT_FAILURE_BACKOFF_MS,
   DEFAULT_INTERVAL_MS,
   DISPLAY_DEPLOYMENTS,
+  MAX_GIT_FAILURE_BACKOFF_MS,
   MAX_DEPLOYMENTS,
   SELF_WATCHED_FILES,
   WATCH_PENDING_DEPLOY_ENV,
@@ -21,7 +23,9 @@ const {
   formatCountdown,
   formatRelativeTime,
   formatRequestsPerMinute,
+  getGitFailureBackoffMs,
   getWatchPaths,
+  isRecoverableGitCommandError,
   isProcessAlive,
   listDirtyWorktreePaths,
   parseArgs,
@@ -164,6 +168,27 @@ test('runBunUpgradeAndInstall runs bun upgrade before bun i', async () => {
   });
 
   assert.deepEqual(calls, ['bun upgrade', 'bun i']);
+});
+
+test('getGitFailureBackoffMs starts at one minute and caps exponential retries', () => {
+  assert.equal(getGitFailureBackoffMs(1), DEFAULT_GIT_FAILURE_BACKOFF_MS);
+  assert.equal(getGitFailureBackoffMs(2), DEFAULT_GIT_FAILURE_BACKOFF_MS * 2);
+  assert.equal(getGitFailureBackoffMs(99), MAX_GIT_FAILURE_BACKOFF_MS);
+});
+
+test('isRecoverableGitCommandError only retries wrapped git command failures', () => {
+  assert.equal(
+    isRecoverableGitCommandError(
+      new Error('Command failed (1): git fetch origin main\nnetwork timeout')
+    ),
+    true
+  );
+  assert.equal(
+    isRecoverableGitCommandError(
+      new Error('Current branch changed from main to release.')
+    ),
+    false
+  );
 });
 
 test('buildDashboardView shows blue/green runtime and the top 3 prioritized deployments', () => {
@@ -1535,6 +1560,65 @@ test('runDeployWatchIteration skips dirty worktrees before fetch and still repor
   }
 });
 
+test('runDeployWatchIteration reports git fetch failures without killing the watcher state', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-git-fail-'));
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        envFilePath,
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        now: () => 1234,
+        paths,
+        rootDir: tempDir,
+        runCommand: createRunCommandMock(
+          new Map([
+            ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
+            ['git status --porcelain', createResult('')],
+            [
+              'git fetch origin main',
+              createResult('', {
+                code: 1,
+                stderr: 'fatal: unable to access origin/main',
+              }),
+            ],
+            [
+              'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
+              createResult(
+                'aaa111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n'
+              ),
+            ],
+            [prodComposePsKey(BLUE_GREEN_PROXY_SERVICE), createResult('')],
+          ])
+        ),
+      }
+    );
+
+    assert.equal(result.status, 'git-failed');
+    assert.equal(result.latestCommit?.shortHash, 'aaa111');
+    assert.match(result.error.message, /git fetch origin main/);
+    assert.equal(result.currentBlueGreen.state, 'idle');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('runDeployWatchIteration restarts before deployment when the watcher script changed', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-deploy-'));
   const paths = getWatchPaths(tempDir);
@@ -1980,6 +2064,62 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
+});
+
+test('runDeployWatchLoop backs off for git failures instead of exiting immediately', async () => {
+  const sleepCalls = [];
+  const iterationResults = [];
+  const sentinel = new Error('stop-after-first-retry');
+
+  await assert.rejects(
+    () =>
+      runDeployWatchLoop(
+        {
+          branch: 'main',
+          remote: 'origin',
+          upstreamBranch: 'main',
+          upstreamRef: 'origin/main',
+        },
+        {
+          log: { error() {}, info() {}, warn() {} },
+          onIterationResult: (value) => {
+            iterationResults.push(value);
+          },
+          onIterationStart() {},
+          runCommand: createRunCommandMock(
+            new Map([
+              ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
+              ['git status --porcelain', createResult('')],
+              [
+                'git fetch origin main',
+                createResult('', {
+                  code: 1,
+                  stderr: 'fatal: unable to access origin/main',
+                }),
+              ],
+              [
+                'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
+                createResult(
+                  'aaa111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n'
+                ),
+              ],
+              [prodComposePsKey(BLUE_GREEN_PROXY_SERVICE), createResult('')],
+            ])
+          ),
+          sleepImpl: async (ms) => {
+            sleepCalls.push(ms);
+            throw sentinel;
+          },
+        }
+      ),
+    sentinel
+  );
+
+  assert.deepEqual(sleepCalls, [DEFAULT_GIT_FAILURE_BACKOFF_MS]);
+  assert.equal(iterationResults.length, 1);
+  assert.equal(iterationResults[0].status, 'git-failed');
+  assert.equal(iterationResults[0].gitFailureCount, 1);
+  assert.equal(iterationResults[0].sleepMs, DEFAULT_GIT_FAILURE_BACKOFF_MS);
 });
 
 test('runPendingDeployAfterRestart refreshes the live proxy before running blue/green deploy', async () => {
