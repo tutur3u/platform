@@ -8,6 +8,7 @@ import {
 } from 'prosemirror-state';
 import ImageResize from 'tiptap-extension-resize-image';
 import {
+  formatBytes,
   getImageDimensions,
   getVideoDimensions,
   MAX_IMAGE_SIZE,
@@ -137,6 +138,13 @@ function calculatePresetWidth(
 interface ImageOptions {
   onImageUpload?: (file: File) => Promise<string>;
   onVideoUpload?: (file: File) => Promise<string>;
+}
+
+function getUploadErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+  return fallback;
 }
 
 /**
@@ -457,6 +465,9 @@ export const CustomImage = (options: ImageOptions = {}) => {
                           'Image size must be less than 5MB:',
                           image.name
                         );
+                        toast.error('Image too large', {
+                          description: `"${image.name}" exceeds the ${formatBytes(MAX_IMAGE_SIZE)} upload limit.`,
+                        });
                         continue;
                       }
 
@@ -536,6 +547,12 @@ export const CustomImage = (options: ImageOptions = {}) => {
                         image.name,
                         error
                       );
+                      toast.error('Failed to upload image', {
+                        description: getUploadErrorMessage(
+                          error,
+                          'Please try again.'
+                        ),
+                      });
                       // Remove placeholder on error
                       const removeTr = view.state.tr;
                       removeTr.setMeta(imageUploadPlaceholderPluginKey, {
@@ -617,6 +634,9 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       // Validate file size (max 5MB)
                       if (image.size > MAX_IMAGE_SIZE) {
                         console.error('Image too large:', image.name);
+                        toast.error('Image too large', {
+                          description: `"${image.name}" exceeds the ${formatBytes(MAX_IMAGE_SIZE)} upload limit.`,
+                        });
                         continue;
                       }
 
@@ -688,6 +708,12 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       currentPos = insertPos + node.nodeSize;
                     } catch (error) {
                       console.error('Failed to upload image:', error);
+                      toast.error('Failed to upload image', {
+                        description: getUploadErrorMessage(
+                          error,
+                          'Please try again.'
+                        ),
+                      });
                       // Remove placeholder on error
                       const removeTr = view.state.tr;
                       removeTr.setMeta(imageUploadPlaceholderPluginKey, {
@@ -706,6 +732,9 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       // Validate file size (max 50MB for videos)
                       if (video.size > MAX_VIDEO_SIZE) {
                         console.error('Video too large:', video.name);
+                        toast.error('Video too large', {
+                          description: `"${video.name}" exceeds the ${formatBytes(MAX_VIDEO_SIZE)} upload limit.`,
+                        });
                         continue;
                       }
 
@@ -780,6 +809,12 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       currentPos = insertPos + node.nodeSize;
                     } catch (error) {
                       console.error('Failed to upload video:', error);
+                      toast.error('Failed to upload video', {
+                        description: getUploadErrorMessage(
+                          error,
+                          'Please try again.'
+                        ),
+                      });
                       // Remove placeholder on error
                       const removeTr = view.state.tr;
                       removeTr.setMeta(imageUploadPlaceholderPluginKey, {

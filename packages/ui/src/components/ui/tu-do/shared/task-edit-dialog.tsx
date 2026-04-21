@@ -182,22 +182,23 @@ export function TaskEditDialog({
   // User requested: always disable editing for shared tasks, regardless of permission
   const disabled = !!shareCode;
 
-  const { data: canManageTaskMedia = false } = useQuery({
-    queryKey: [
-      'workspace-permission',
-      effectiveTaskWsId,
-      'manage_drive_tasks_directory',
-    ],
-    queryFn: async () => {
-      const result = await checkWorkspacePermission(
+  const { data: canManageTaskMedia, isPending: isCheckingTaskMediaPermission } =
+    useQuery({
+      queryKey: [
+        'workspace-permission',
         effectiveTaskWsId,
-        'manage_drive_tasks_directory'
-      );
-      return result.hasPermission;
-    },
-    enabled: Boolean(effectiveTaskWsId) && !disabled,
-    staleTime: 5 * 60 * 1000,
-  });
+        'manage_drive_tasks_directory',
+      ],
+      queryFn: async () => {
+        const result = await checkWorkspacePermission(
+          effectiveTaskWsId,
+          'manage_drive_tasks_directory'
+        );
+        return result.hasPermission;
+      },
+      enabled: Boolean(effectiveTaskWsId) && !disabled,
+      staleTime: 5 * 60 * 1000,
+    });
 
   // Core loading state
   const [isLoading, setIsLoading] = useState(false);
@@ -933,7 +934,7 @@ export function TaskEditDialog({
       if (!effectiveTaskWsId) {
         throw new Error(t('error'));
       }
-      if (!canManageTaskMedia) {
+      if (canManageTaskMedia === false) {
         throw new Error(t('insufficient_permissions'));
       }
       try {
@@ -958,7 +959,12 @@ export function TaskEditDialog({
     [canManageTaskMedia, effectiveTaskWsId, task?.id, t]
   );
 
-  const imageUploadHandler = canManageTaskMedia ? handleImageUpload : undefined;
+  const imageUploadHandler =
+    !effectiveTaskWsId ||
+    isCheckingTaskMediaPermission ||
+    canManageTaskMedia === false
+      ? undefined
+      : handleImageUpload;
 
   const handleEstimationConfigSuccess = useCallback(async () => {
     await queryClient.invalidateQueries({

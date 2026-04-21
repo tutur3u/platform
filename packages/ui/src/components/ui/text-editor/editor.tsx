@@ -152,6 +152,16 @@ export function RichTextEditor({
     []
   );
 
+  const delegatedImageUpload = useCallback(async (file: File) => {
+    const handler = onImageUploadRef.current;
+    if (!handler) {
+      throw new Error(
+        'You do not have permission to upload images in this editor.'
+      );
+    }
+    return handler(file);
+  }, []);
+
   // Store debounced function ref for flushing
   useEffect(() => {
     debouncedOnChangeRef.current = debouncedOnChange;
@@ -280,8 +290,8 @@ export function RichTextEditor({
       doc: allowCollaboration ? yjsDoc : undefined,
       provider: allowCollaboration ? yjsProvider : undefined,
       collaborationUser: allowCollaboration ? collaborationUser : undefined,
-      onImageUpload: onImageUploadRef.current,
-      onVideoUpload: onImageUploadRef.current,
+      onImageUpload: delegatedImageUpload,
+      onVideoUpload: delegatedImageUpload,
       mentionTranslations,
       readOnly,
     }),
@@ -507,8 +517,8 @@ export function RichTextEditor({
           doc: yjsDoc,
           provider: yjsProvider,
           collaborationUser: collaborationUser,
-          onImageUpload: onImageUploadRef.current,
-          onVideoUpload: onImageUploadRef.current,
+          onImageUpload: delegatedImageUpload,
+          onVideoUpload: delegatedImageUpload,
           mentionTranslations,
           readOnly,
         }),
@@ -520,6 +530,7 @@ export function RichTextEditor({
     yjsDoc,
     allowCollaboration,
     collaborationUser,
+    delegatedImageUpload,
     titlePlaceholder,
     writePlaceholder,
     mentionTranslations,
