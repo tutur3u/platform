@@ -1501,6 +1501,134 @@
     "unblocked_by": "Unblocked By",
     "updated_at": "Updated At"
   },
+  "blue-green-monitoring": {
+    "actions": {
+      "retry": "Retry"
+    },
+    "alerts": {
+      "failed_description": "The dashboard could not refresh the latest blue/green telemetry snapshot.",
+      "failed_title": "Monitoring is unavailable",
+      "mount_missing_description": "The web container cannot see the watcher runtime directory. Mount ./tmp/docker-web into the app container to expose local rollout telemetry.",
+      "mount_missing_title": "Runtime mount missing",
+      "snapshot_missing_description": "The watcher runtime directory is mounted, but no live status snapshot is present yet. Start the watcher or wait for its first polling cycle.",
+      "snapshot_missing_title": "Waiting for watcher snapshot",
+      "watcher_degraded_missing": "The monitoring runtime path is not mounted inside this web container, so the watcher cannot be observed from the dashboard.",
+      "watcher_degraded_offline": "No recent watcher heartbeat was found. The dashboard is showing the last persisted snapshot, if any.",
+      "watcher_degraded_stale": "The watcher heartbeat is stale. Polling is likely delayed or the watcher is retrying after a failure.",
+      "watcher_degraded_title": "Watcher needs attention"
+    },
+    "chart": {
+      "average_rpm": "Average RPM",
+      "build_minutes": "Build Minutes",
+      "container_pressure": "Container Pressure",
+      "cpu": "CPU",
+      "memory": "Memory",
+      "peak_rpm": "Peak RPM",
+      "request_velocity": "Request Velocity",
+      "requests": "Requests",
+      "rollout_story": "Rollout Story",
+      "rx": "RX",
+      "tx": "TX"
+    },
+    "colors": {
+      "blue": "Blue",
+      "green": "Green"
+    },
+    "deployment_status": {
+      "active": "Active",
+      "deploying": "Deploying",
+      "ended": "Ended",
+      "failed": "Failed",
+      "successful": "Successful",
+      "unknown": "Unknown"
+    },
+    "description": "Watch the blue/green watcher, rollout cadence, request flow, and container load from a single operator dashboard.",
+    "empty": {
+      "containers": "No live container metrics are available yet.",
+      "deployments": "No deployment history is available yet.",
+      "events": "No watcher events have been recorded yet.",
+      "ledger": "Deployment history will appear here after the first rollout.",
+      "velocity": "Request velocity appears after successful deployments collect traffic."
+    },
+    "hero": {
+      "active_route": "{color} currently serving traffic",
+      "branch": "Tracked Branch",
+      "commit": "Latest Commit",
+      "description": "A visual control room for the same blue/green signals that the terminal watcher prints, with more persistent context for operators.",
+      "last_snapshot": "Last Snapshot",
+      "title": "Blue/Green Control Room"
+    },
+    "ledger": {
+      "avg_rpm": "Avg RPM",
+      "build_time": "Build Time",
+      "no_commit_subject": "No commit summary captured",
+      "peak_rpm": "Peak RPM",
+      "requests": "Requests",
+      "title": "Deployment Ledger"
+    },
+    "panels": {
+      "cadence": "Watcher Cadence",
+      "containers": "Containers",
+      "deployments": "Deployments",
+      "events": "Events",
+      "runtime": "Runtime",
+      "signal_feed": "Signal Feed",
+      "topology": "Topology",
+      "watcher": "Watcher"
+    },
+    "runtime": {
+      "activated_at": "Activated At",
+      "active_color": "Active Color",
+      "deployment_stamp": "Deployment Stamp",
+      "live_colors": "Live Colors",
+      "runtime_state": "Runtime State",
+      "standby_color": "Standby Color"
+    },
+    "runtime_badges": {
+      "active": "Live Traffic",
+      "standby": "Warm Standby"
+    },
+    "runtime_states": {
+      "degraded": "Degraded",
+      "idle": "Idle",
+      "serving": "Serving",
+      "unknown": "Unknown"
+    },
+    "states": {
+      "none": "None"
+    },
+    "stats": {
+      "active_color": "Active Color",
+      "avg_build": "Average Build",
+      "cpu": "CPU",
+      "current_rpm": "Current RPM",
+      "mean_rollout": "Mean rollout time",
+      "memory": "Memory",
+      "network": "Network",
+      "requests_per_minute": "Requests per minute",
+      "served_requests": "Served requests",
+      "total_container_cpu": "Total container CPU",
+      "total_container_memory": "Total container memory",
+      "total_requests": "Total Requests",
+      "watcher": "Watcher"
+    },
+    "title": "Blue/Green Monitoring",
+    "watcher": {
+      "args": "Watcher Args",
+      "branch": "Branch",
+      "interval": "Interval",
+      "last_check": "Last Check",
+      "last_result": "Last Result",
+      "next_check": "Next Check",
+      "upstream": "Upstream"
+    },
+    "watcher_health": {
+      "live": "Live",
+      "missing": "Missing",
+      "offline": "Offline",
+      "stale": "Stale"
+    }
+  },
   "branding": {
     "colorCopied": "Copied {color} to clipboard",
     "colors": {

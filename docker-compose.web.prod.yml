@@ -14,6 +14,7 @@ x-web-service: &web-service
     - NODE_ENV=production
     - PORT=7803
     - PLATFORM_BLUE_GREEN_COLOR
+    - PLATFORM_BLUE_GREEN_MONITORING_DIR=/app/runtime/docker-web
     - PLATFORM_DEPLOYMENT_STAMP
     - SUPABASE_SERVER_URL
     - UPSTASH_REDIS_REST_TOKEN
@@ -21,6 +22,8 @@ x-web-service: &web-service
   extra_hosts:
     - "host.docker.internal:host-gateway"
   init: true
+  volumes:
+    - ./tmp/docker-web:/app/runtime/docker-web:ro
 
 services:
   web:

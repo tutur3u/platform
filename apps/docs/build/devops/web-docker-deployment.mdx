@@ -426,6 +426,16 @@ Dashboard details:
 - The active watcher also persists a live status snapshot under
   `tmp/docker-web/watch/`, which is what `--resume-if-running` uses to mirror
   the dashboard without taking over the PID lock.
+- The infrastructure dashboard at
+  `/{ROOT_WORKSPACE_ID}/infrastructure/monitoring` reads the same watcher
+  status snapshot and renders it as a Next.js control room with rollout,
+  request-rate, container-resource, and event-feed views.
+- Production `web`, `web-blue`, and `web-green` containers mount
+  `./tmp/docker-web` read-only at `/app/runtime/docker-web` and use
+  `PLATFORM_BLUE_GREEN_MONITORING_DIR` to find the watcher snapshot. Keep that
+  mount/env pair in sync if the runtime path changes, or the dashboard will
+  degrade to an empty offline state even while blue/green deployments still
+  work.
 
 ## Browser-State 502 Recovery
 

@@ -201,6 +201,35 @@ test('validateDockerProdCompose reports missing watcher container wiring', () =>
   assert.match(errors.join('\n'), /\/var\/run\/docker\.sock/);
 });
 
+test('validateDockerProdCompose reports missing monitoring runtime mount', () => {
+  const composeContent = fs
+    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
+    .replace('    - ./tmp/docker-web:/app/runtime/docker-web:ro\n', '');
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(
+    errors.join('\n'),
+    /\.\/tmp\/docker-web:\/app\/runtime\/docker-web:ro/
+  );
+});
+
+test('validateDockerProdCompose reports missing monitoring env wiring', () => {
+  const composeContent = fs
+    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
+    .replace(
+      '    - PLATFORM_BLUE_GREEN_MONITORING_DIR=/app/runtime/docker-web\n',
+      ''
+    );
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(
+    errors.join('\n'),
+    /PLATFORM_BLUE_GREEN_MONITORING_DIR=\/app\/runtime\/docker-web/
+  );
+});
+
 test('validateDockerProdCompose reports a drifted proxy healthcheck path', () => {
   const composeContent = fs
     .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
