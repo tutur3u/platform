@@ -576,10 +576,11 @@ export async function POST(
     if (wsAccess.kind === 'error') {
       return NextResponse.json(wsAccess.body, { status: wsAccess.status });
     }
+    const sbAdmin = await createAdminClient();
 
     let listCheck: { id: string; name: string | null } | null = null;
     if (listId) {
-      const listResult = await getListIfProvided(supabase, listId, wsId);
+      const listResult = await getListIfProvided(sbAdmin, listId, wsId);
       if (listResult.kind === 'error') {
         return NextResponse.json(listResult.body, {
           status: listResult.status,
@@ -663,7 +664,6 @@ export async function POST(
         // Apply credit-budget cap on maxOutputTokens (defense-in-depth)
         let cappedMaxOutput = creditCheck?.maxOutputTokens ?? null;
         if (creditCheck) {
-          const sbAdmin = await createAdminClient();
           cappedMaxOutput = await capMaxOutputTokensByCredits(
             sbAdmin,
             resolvedModelId!,

@@ -63,8 +63,21 @@ const userClient = {
   }),
 };
 
+const adminClient = {
+  from: vi.fn((table: string) => {
+    switch (table) {
+      case 'task_lists':
+        return {
+          select: vi.fn(() => createQueryBuilder(listMaybeSingle)),
+        };
+      default:
+        throw new Error(`Unexpected admin table: ${table}`);
+    }
+  }),
+};
+
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: vi.fn(),
+  createAdminClient: vi.fn(() => Promise.resolve(adminClient)),
   createClient: vi.fn(() => Promise.resolve(userClient)),
 }));
 
@@ -119,6 +132,51 @@ describe('task journal route', () => {
     generateObject.mockReset();
     normalizeWorkspaceId.mockReset();
     userClient.from.mockClear();
+    adminClient.from.mockClear();
+  });
+
+  it('rejects task creation before list lookup when the user lacks workspace access', async () => {
+    normalizeWorkspaceId.mockResolvedValue('ws-1');
+    getUser.mockResolvedValue({
+      data: { user: { id: 'user-1', email: 'dev@example.com' } },
+      error: null,
+    });
+    workspaceMemberMaybeSingle.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/tasks/journal/route'
+    );
+    const response = await POST(
+      new Request('http://localhost/api/v1/workspaces/ws-1/tasks/journal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry: 'Follow up with the customer this week',
+          listId: 'list-1',
+          tasks: [
+            {
+              title: 'Follow up customer',
+              description: null,
+              priority: null,
+              labels: [],
+              dueDate: null,
+              estimationPoints: null,
+              projectIds: [],
+            },
+          ],
+        }),
+      }),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Workspace access denied',
+    });
+    expect(adminClient.from).not.toHaveBeenCalledWith('task_lists');
   });
 
   it('saves reviewed tasks without re-running AI resolution or credit checks', async () => {
