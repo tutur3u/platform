@@ -224,6 +224,20 @@ describe('useMyTasksState', () => {
       expect(result.current.aiGenerateLabels).toBe(true);
     });
 
+    it('clears board and list immediately when workspace selection changes', () => {
+      const { result } = renderHook(() => useMyTasksState(DEFAULT_PROPS));
+
+      act(() => {
+        result.current.setSelectedBoardId('board-1');
+        result.current.setSelectedListId('list-1');
+        result.current.handleWorkspaceSelectionChange('ws-2');
+      });
+
+      expect(result.current.selectedWorkspaceId).toBe('ws-2');
+      expect(result.current.selectedBoardId).toBe('');
+      expect(result.current.selectedListId).toBe('');
+    });
+
     it('has autoAssignToMe true by default', () => {
       const { result } = renderHook(() => useMyTasksState(DEFAULT_PROPS));
 
@@ -679,6 +693,41 @@ describe('useMyTasksState', () => {
 
     it('routes to createTasksMutation in AI flow with confirmed tasks', async () => {
       const mockMutate = vi.fn();
+      mockUseQuery.mockImplementation((opts: Record<string, any>) => {
+        if (opts?.queryKey?.[0] === 'my-tasks') {
+          return {
+            data: {
+              overdue: [],
+              today: [],
+              upcoming: [],
+              completed: [],
+              totalActiveTasks: 0,
+              totalCompletedTasks: 0,
+              hasMoreCompleted: false,
+              completedPage: 0,
+            },
+            isLoading: false,
+          };
+        }
+
+        if (
+          opts?.queryKey?.[0] === 'workspace' &&
+          opts?.queryKey?.[2] === 'boards-with-lists'
+        ) {
+          return {
+            data: [
+              {
+                id: 'board-1',
+                name: 'Board',
+                task_lists: [{ id: 'list-1', name: 'Inbox', position: 0 }],
+              },
+            ],
+            isLoading: false,
+          };
+        }
+
+        return { data: undefined, isLoading: false };
+      });
       mockUseMutation.mockReturnValue({
         mutate: mockMutate,
         mutateAsync: vi.fn(),
@@ -700,6 +749,7 @@ describe('useMyTasksState', () => {
 
       act(() => {
         result.current.handleConfirmReview(tasks);
+        result.current.setSelectedBoardId('board-1');
         result.current.setSelectedListId('list-1');
       });
 
@@ -714,6 +764,37 @@ describe('useMyTasksState', () => {
           tasks,
         })
       );
+    });
+
+    it('does not submit AI tasks when the AI destination is incomplete', async () => {
+      const mockMutate = vi.fn();
+      mockUseMutation.mockReturnValue({
+        mutate: mockMutate,
+        mutateAsync: vi.fn(),
+        isPending: false,
+      });
+
+      const { result } = renderHook(() => useMyTasksState(DEFAULT_PROPS));
+
+      act(() => {
+        result.current.handleConfirmReview([
+          {
+            title: 'AI Task',
+            description: null,
+            priority: null as any,
+            labels: [],
+            dueDate: null,
+          },
+        ]);
+        result.current.setSelectedListId('list-1');
+      });
+
+      await act(async () => {
+        await result.current.handleBoardSelectorConfirm();
+      });
+
+      expect(mockMutate).not.toHaveBeenCalled();
+      expect(result.current.boardSelectorOpen).toBe(true);
     });
 
     it('routes to handleGenerateAI for AI mode with pending title', async () => {
