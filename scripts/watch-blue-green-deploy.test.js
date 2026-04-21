@@ -7,6 +7,7 @@ const path = require('node:path');
 const {
   BLUE_GREEN_PROXY_SERVICE,
   BLUE_GREEN_WATCHER_SERVICE,
+  CONTAINER_REFRESH_WATCHED_FILES,
   CONTAINER_SELF_RESTART_EXIT_CODE,
   DEFAULT_DEPLOY_COMMAND,
   DEFAULT_GIT_FAILURE_BACKOFF_MS,
@@ -21,6 +22,7 @@ const {
   acquireWatchLock,
   appendDeploymentHistory,
   buildDashboardView,
+  clearContainerManagedWatcherState,
   collectDeploymentTraffic,
   createQuietRunCommand,
   createWatchUi,
@@ -1686,6 +1688,13 @@ test('runDeployWatchIteration restarts before deployment when the watcher script
 
     if (
       key ===
+      `git diff --name-only aaa111 bbb222 -- ${CONTAINER_REFRESH_WATCHED_FILES.join(' ')}`
+    ) {
+      return createResult('');
+    }
+
+    if (
+      key ===
       `git diff --name-only aaa111 bbb222 -- ${SELF_WATCHED_FILES.join(' ')}`
     ) {
       return createResult(`${SELF_WATCHED_FILES[0]}\n`);
@@ -1783,6 +1792,13 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
     }
 
     if (key === 'bun i') {
+      return createResult('');
+    }
+
+    if (
+      key ===
+      `git diff --name-only aaa111 bbb222 -- ${CONTAINER_REFRESH_WATCHED_FILES.join(' ')}`
+    ) {
       return createResult('');
     }
 
@@ -2408,12 +2424,24 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-container-'));
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
   const calls = [];
+  const paths = getWatchPaths(tempDir);
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.writeFileSync(
       envFilePath,
       'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.mkdirSync(paths.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      paths.lockFile,
+      JSON.stringify({ branch: 'main', pid: 18 }, null, 2),
+      'utf8'
+    );
+    fs.writeFileSync(
+      paths.statusFile,
+      JSON.stringify({ ownerPid: 18, status: 'healthy' }, null, 2),
       'utf8'
     );
 
@@ -2447,6 +2475,26 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
       ),
       ['--interval-ms', '5000']
     );
+    assert.equal(fs.existsSync(paths.lockFile), false);
+    assert.equal(fs.existsSync(paths.statusFile), false);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('clearContainerManagedWatcherState removes persisted lock and status files', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-state-clear-'));
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    fs.mkdirSync(paths.runtimeDir, { recursive: true });
+    fs.writeFileSync(paths.lockFile, '{}', 'utf8');
+    fs.writeFileSync(paths.statusFile, '{}', 'utf8');
+
+    clearContainerManagedWatcherState({ fsImpl: fs, paths });
+
+    assert.equal(fs.existsSync(paths.lockFile), false);
+    assert.equal(fs.existsSync(paths.statusFile), false);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -2601,6 +2649,13 @@ test('main restarts the watcher with a pending deploy handoff env when the watch
 
         if (
           key ===
+          `git diff --name-only aaa111 bbb222 -- ${CONTAINER_REFRESH_WATCHED_FILES.join(' ')}`
+        ) {
+          return createResult('');
+        }
+
+        if (
+          key ===
           `git diff --name-only aaa111 bbb222 -- ${SELF_WATCHED_FILES.join(' ')}`
         ) {
           return createResult(`${SELF_WATCHED_FILES[0]}\n`);
@@ -2734,6 +2789,13 @@ test('main exits with the container restart code when the watcher script changes
 
         if (
           key ===
+          `git diff --name-only aaa111 bbb222 -- ${CONTAINER_REFRESH_WATCHED_FILES.join(' ')}`
+        ) {
+          return createResult('');
+        }
+
+        if (
+          key ===
           `git diff --name-only aaa111 bbb222 -- ${SELF_WATCHED_FILES.join(' ')}`
         ) {
           return createResult(`${SELF_WATCHED_FILES[0]}\n`);
@@ -2756,6 +2818,145 @@ test('main exits with the container restart code when the watcher script changes
     });
 
     assert.deepEqual(exits, [CONTAINER_SELF_RESTART_EXIT_CODE]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('main recreates the watcher container when critical watcher runtime files change inside the watcher container', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-container-refresh-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+  const uiState = {};
+  let pullCompleted = false;
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    await main([], {
+      env: {
+        PATH: process.env.PATH,
+        [WATCHER_CONTAINER_ENV]: '1',
+      },
+      envFilePath,
+      fsImpl: fs,
+      processImpl: {
+        argv: ['bun', 'scripts/watch-blue-green-deploy.js'],
+        exit() {
+          throw new Error(
+            'main should recreate the container instead of exiting'
+          );
+        },
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult('main\n');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref --symbolic-full-name @{u}') {
+          return createResult('origin/main\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return pullCompleted
+            ? createResult(
+                'bbb222222222222222222\nbbb222\nRefresh watcher image runtime\n2026-04-18T10:59:00.000Z\n'
+              )
+            : createResult(
+                'aaa111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n'
+              );
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git fetch origin main') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse HEAD') {
+          return createResult(pullCompleted ? 'bbb222\n' : 'aaa111\n');
+        }
+
+        if (key === 'git rev-parse origin/main') {
+          return createResult('bbb222\n');
+        }
+
+        if (key === 'git merge-base --is-ancestor aaa111 bbb222') {
+          return createResult('');
+        }
+
+        if (key === 'git pull --ff-only origin main') {
+          pullCompleted = true;
+          return createResult('Updating aaa111..bbb222\n');
+        }
+
+        if (key === 'bun upgrade') {
+          return createResult('');
+        }
+
+        if (key === 'bun i') {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `git diff --name-only aaa111 bbb222 -- ${CONTAINER_REFRESH_WATCHED_FILES.join(' ')}`
+        ) {
+          return createResult(`${CONTAINER_REFRESH_WATCHED_FILES[0]}\n`);
+        }
+
+        if (
+          key ===
+          `git diff --name-only aaa111 bbb222 -- ${SELF_WATCHED_FILES.join(' ')}`
+        ) {
+          return createResult('');
+        }
+
+        if (key === 'docker compose version') {
+          return createResult('');
+        }
+
+        if (key === prodComposeWatcherUpKey()) {
+          return createResult('');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error() {},
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn() {},
+      },
+    });
+
+    assert.ok(calls.includes('docker compose version'));
+    assert.ok(calls.includes(prodComposeWatcherUpKey()));
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

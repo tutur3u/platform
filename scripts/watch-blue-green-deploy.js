@@ -60,6 +60,10 @@ const INTERNAL_PROXY_METRIC_EXCLUDE_PATHS = new Set([
   '/__platform/drain-status',
 ]);
 const SELF_WATCHED_FILES = [path.relative(ROOT_DIR, __filename)];
+const CONTAINER_REFRESH_WATCHED_FILES = [
+  'apps/web/docker/blue-green-watcher-entrypoint.js',
+  'apps/web/docker/blue-green-watcher.Dockerfile',
+];
 const WATCH_PENDING_DEPLOY_ENV = 'WATCHER_PENDING_BLUE_GREEN_DEPLOY';
 const WATCHER_CONTAINER_ENV = 'PLATFORM_BLUE_GREEN_WATCHER_CONTAINER';
 const ANSI = {
@@ -181,6 +185,14 @@ function readWatchArgsFile({ fsImpl = fs, paths = getWatchPaths() } = {}) {
   }
 }
 
+function clearContainerManagedWatcherState({
+  fsImpl = fs,
+  paths = getWatchPaths(),
+} = {}) {
+  fsImpl.rmSync(paths.lockFile, { force: true });
+  fsImpl.rmSync(paths.statusFile, { force: true });
+}
+
 async function startBlueGreenWatcherContainer(
   argv,
   {
@@ -221,6 +233,10 @@ async function startBlueGreenWatcherContainer(
     rootDir,
   });
 
+  clearContainerManagedWatcherState({
+    fsImpl,
+    paths: getWatchPaths(rootDir),
+  });
   writeWatchArgsFile(argv, {
     fsImpl,
     paths: getWatchPaths(rootDir),
@@ -2857,6 +2873,15 @@ async function runDeployWatchIteration(
         });
       }
 
+      const containerRefreshRequired = await hasWatchedScriptChanges(
+        localHead,
+        updatedHead,
+        {
+          env,
+          relativePaths: CONTAINER_REFRESH_WATCHED_FILES,
+          runCommand: run,
+        }
+      );
       const restartRequired = await hasWatchedScriptChanges(
         localHead,
         updatedHead,
@@ -2898,6 +2923,22 @@ async function runDeployWatchIteration(
       });
 
       try {
+        if (containerRefreshRequired) {
+          log.warn?.(
+            'Watcher container runtime changed in the pulled revision. Recreating the watcher container before deployment.'
+          );
+
+          return attachRuntime({
+            checkedAt,
+            containerRefreshRequired,
+            latestCommit,
+            newHead: updatedHead,
+            oldHead: localHead,
+            restartRequired: false,
+            status: 'restarting',
+          });
+        }
+
         if (restartRequired) {
           log.warn?.(
             'Watcher script changed in the pulled revision. Restarting watcher before deployment.'
@@ -2908,6 +2949,7 @@ async function runDeployWatchIteration(
             latestCommit,
             newHead: updatedHead,
             oldHead: localHead,
+            containerRefreshRequired: false,
             restartRequired,
             status: 'restarting',
           });
@@ -2950,6 +2992,7 @@ async function runDeployWatchIteration(
         return attachRuntime(
           {
             checkedAt,
+            containerRefreshRequired: false,
             latestCommit,
             newHead: updatedHead,
             oldHead: localHead,
@@ -2983,6 +3026,7 @@ async function runDeployWatchIteration(
         return attachRuntime(
           {
             checkedAt,
+            containerRefreshRequired: false,
             error,
             latestCommit,
             newHead: updatedHead,
@@ -3097,7 +3141,7 @@ async function runDeployWatchLoop(
 
     onIterationResult(result);
 
-    if (once || result.restartRequired) {
+    if (once || result.containerRefreshRequired || result.restartRequired) {
       return result;
     }
 
@@ -3471,6 +3515,30 @@ async function main(argv = process.argv.slice(2), options = {}) {
       ui.close();
       return;
     }
+
+    if (result?.containerRefreshRequired) {
+      cleanup();
+      if (env[WATCHER_CONTAINER_ENV] === '1') {
+        ui.info(
+          'Critical watcher container files changed. Recreating the containerized watcher service.'
+        );
+        ui.close();
+        await startBlueGreenWatcherContainer(
+          options.restartArgv ?? process.argv.slice(2),
+          {
+            env,
+            envFilePath,
+            fsImpl,
+            rootDir,
+            runCommand: options.runCommand ?? runCommand,
+          }
+        );
+        return;
+      }
+
+      ui.close();
+      return;
+    }
   } catch (error) {
     ui.error(error instanceof Error ? error.message : String(error));
     processImpl.exitCode =
@@ -3500,6 +3568,7 @@ module.exports = {
   MAX_GIT_FAILURE_BACKOFF_MS,
   MAX_DEPLOYMENTS,
   MAX_EVENTS,
+  CONTAINER_REFRESH_WATCHED_FILES,
   SELF_WATCHED_FILES,
   WATCH_ARGS_FILE,
   WATCH_HISTORY_FILE,
@@ -3512,6 +3581,7 @@ module.exports = {
   appendDeploymentHistory,
   buildDashboardView,
   clearWatchStatus,
+  clearContainerManagedWatcherState,
   collectDeploymentTraffic,
   createWatchUi,
   fetchTrackedBranch,

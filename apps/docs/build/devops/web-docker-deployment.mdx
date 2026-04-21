@@ -439,6 +439,12 @@ Dashboard details:
 - The watcher image must also include the Docker Compose CLI plugin
   (`docker-cli-compose` on Alpine) because the rollout handoff still shells
   into `docker compose ...` from inside the watcher container.
+- Starting `bun serve:web:docker:bg:watch` now clears the persisted watcher
+  lock/status snapshot before the watcher service is force-recreated, so a
+  stale lock from the previous container cannot block the replacement watcher.
+- If the watcher pulls a revision that changes its own Dockerfile or baked
+  entrypoint, it now rebuilds and recreates the `web-blue-green-watcher`
+  service automatically before handing off to the next deployment cycle.
 
 ## Browser-State 502 Recovery
 
