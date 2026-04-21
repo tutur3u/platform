@@ -64,17 +64,15 @@ describe('InviteLinksSection', () => {
       },
     ];
 
-    globalThis.fetch = vi
-      .fn()
-      .mockImplementation((url: string) => {
-        if (url.includes('/invite-links')) {
-          return Promise.resolve({
-            ok: true,
-            json: async () => mockLinks,
-          });
-        }
-        return Promise.reject(new Error('Unknown URL'));
-      }) as unknown as typeof fetch;
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/invite-links')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockLinks,
+        });
+      }
+      return Promise.reject(new Error('Unknown URL'));
+    }) as unknown as typeof fetch;
 
     render(<InviteLinksSection wsId={wsId} canManageMembers={true} />, {
       wrapper: createWrapper(),
