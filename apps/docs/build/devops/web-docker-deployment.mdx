@@ -445,6 +445,12 @@ Dashboard details:
 - If the watcher pulls a revision that changes its own Dockerfile or baked
   entrypoint, it now rebuilds and recreates the `web-blue-green-watcher`
   service automatically before handing off to the next deployment cycle.
+- Recovery handoffs now persist a pending-deploy request under
+  `tmp/docker-web/watch/` and reconcile it against the latest successful
+  deployment history entry on startup. If `HEAD` is newer than the last
+  successful built/deployed commit after a watcher restart or container
+  recreate, the watcher builds the current `HEAD` before settling back into
+  normal polling.
 
 ## Browser-State 502 Recovery
 

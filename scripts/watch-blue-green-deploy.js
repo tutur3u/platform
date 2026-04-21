@@ -27,6 +27,7 @@ const {
   WATCH_ARGS_FILE,
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
+  WATCH_PENDING_DEPLOY_FILE,
   WATCH_RUNTIME_DIR,
   WATCH_STATUS_FILE,
   getWatchPaths,
@@ -1174,6 +1175,63 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
 
 function hasPendingDeployRequest(env = process.env) {
   return env[WATCH_PENDING_DEPLOY_ENV] === '1';
+}
+
+function readPendingDeployRequest(paths = getWatchPaths(), fsImpl = fs) {
+  if (!fsImpl.existsSync(paths.pendingDeployFile)) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(
+      fsImpl.readFileSync(paths.pendingDeployFile, 'utf8')
+    );
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePendingDeployRequest(
+  request,
+  { fsImpl = fs, paths = getWatchPaths() } = {}
+) {
+  fsImpl.mkdirSync(paths.runtimeDir, { recursive: true });
+  fsImpl.writeFileSync(
+    paths.pendingDeployFile,
+    JSON.stringify(request, null, 2),
+    'utf8'
+  );
+}
+
+function clearPendingDeployRequest({
+  fsImpl = fs,
+  paths = getWatchPaths(),
+} = {}) {
+  fsImpl.rmSync(paths.pendingDeployFile, { force: true });
+}
+
+function hasPersistedPendingDeployRequest(
+  env = process.env,
+  { fsImpl = fs, paths = getWatchPaths() } = {}
+) {
+  return (
+    hasPendingDeployRequest(env) ||
+    readPendingDeployRequest(paths, fsImpl) != null
+  );
+}
+
+function getLatestSuccessfulDeploymentCommitHash(deployments = []) {
+  const latestSuccessfulDeployment = deployments.find(
+    (entry) =>
+      entry?.status === 'successful' &&
+      typeof entry.commitHash === 'string' &&
+      entry.commitHash.length > 0
+  );
+
+  return latestSuccessfulDeployment?.commitHash ?? null;
 }
 
 function createWatchUi(initialState = {}, options = {}) {
@@ -2924,6 +2982,18 @@ async function runDeployWatchIteration(
 
       try {
         if (containerRefreshRequired) {
+          writePendingDeployRequest(
+            {
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              reason: 'container-refresh',
+              requestedAt: new Date(checkedAt).toISOString(),
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
           log.warn?.(
             'Watcher container runtime changed in the pulled revision. Recreating the watcher container before deployment.'
           );
@@ -2940,6 +3010,18 @@ async function runDeployWatchIteration(
         }
 
         if (restartRequired) {
+          writePendingDeployRequest(
+            {
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              reason: 'process-restart',
+              requestedAt: new Date(checkedAt).toISOString(),
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
           log.warn?.(
             'Watcher script changed in the pulled revision. Restarting watcher before deployment.'
           );
@@ -3303,109 +3385,132 @@ async function main(argv = process.argv.slice(2), options = {}) {
       handleTermination('SIGTERM');
     });
 
-    if (hasPendingDeployRequest(env)) {
-      const pendingStartedAt =
-        typeof options.now === 'function' ? options.now() : Date.now();
-      const buildingDeployment = createPendingDeploymentEntry({
-        latestCommit,
-        startedAt: pendingStartedAt,
-        status: 'building',
-      });
-      const buildingDeployments = prependPendingDeployment(
-        ui.state.deployments,
-        buildingDeployment
+    if (
+      hasPersistedPendingDeployRequest(env, {
+        fsImpl,
+        paths,
+      })
+    ) {
+      const latestDeployedCommitHash = getLatestSuccessfulDeploymentCommitHash(
+        readDeploymentHistory(paths, fsImpl)
       );
-      const buildingSummary = getLatestDeploymentSummary(buildingDeployments);
 
-      ui.update({
-        dockerResources: ui.state.dockerResources,
-        deployments: buildingDeployments,
-        lastDeployAt: buildingSummary.lastDeployAt,
-        lastDeployStatus: buildingSummary.lastDeployStatus,
-        nextCheckAt: null,
-      });
-
-      try {
-        const pendingResult = await runPendingDeployAfterRestart({
-          deployCommand: options.deployCommand ?? DEFAULT_DEPLOY_COMMAND,
-          env,
-          envFilePath,
+      if (latestCommit.hash && latestCommit.hash === latestDeployedCommitHash) {
+        clearPendingDeployRequest({
           fsImpl,
-          latestCommit,
-          log: ui,
-          now: options.now ?? (() => Date.now()),
           paths,
-          rootDir,
-          runCommand: run,
-        });
-        const runtimeSnapshot = await loadRuntimeSnapshot({
-          env,
-          envFilePath,
-          fsImpl,
-          now: typeof options.now === 'function' ? options.now() : Date.now(),
-          paths,
-          rootDir,
-          runCommand: run,
-          history: pendingResult.history,
-        });
-        const latestDeploymentSummary = getLatestDeploymentSummary(
-          runtimeSnapshot.deployments
-        );
-
-        ui.update({
-          currentBlueGreen: runtimeSnapshot.currentBlueGreen,
-          dockerResources: runtimeSnapshot.dockerResources,
-          deployments: runtimeSnapshot.deployments,
-          lastDeployAt: latestDeploymentSummary.lastDeployAt,
-          lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
-          lastResult: { status: 'deployed' },
-          nextCheckAt: Date.now() + parsed.intervalMs,
         });
         ui.info(
-          `Blue/green deployment completed for ${latestCommit.shortHash}.`
+          `Recovered watcher is already serving ${latestCommit.shortHash}; skipping the pending deploy handoff.`
         );
-      } catch (error) {
-        const deployFinishedAt =
+      } else {
+        const pendingStartedAt =
           typeof options.now === 'function' ? options.now() : Date.now();
-        const history = appendDeploymentHistory(
-          {
-            buildDurationMs: Math.max(0, deployFinishedAt - pendingStartedAt),
-            commitHash: latestCommit.hash,
-            commitShortHash: latestCommit.shortHash,
-            commitSubject: latestCommit.subject,
-            finishedAt: deployFinishedAt,
-            startedAt: pendingStartedAt,
-            status: 'failed',
-          },
-          {
-            fsImpl,
-            paths,
-          }
-        );
-        const runtimeSnapshot = await loadRuntimeSnapshot({
-          env,
-          envFilePath,
-          fsImpl,
-          now: deployFinishedAt,
-          paths,
-          rootDir,
-          runCommand: run,
-          history,
+        const buildingDeployment = createPendingDeploymentEntry({
+          latestCommit,
+          startedAt: pendingStartedAt,
+          status: 'building',
         });
-        const latestDeploymentSummary = getLatestDeploymentSummary(
-          runtimeSnapshot.deployments
+        const buildingDeployments = prependPendingDeployment(
+          ui.state.deployments,
+          buildingDeployment
         );
+        const buildingSummary = getLatestDeploymentSummary(buildingDeployments);
 
         ui.update({
-          currentBlueGreen: runtimeSnapshot.currentBlueGreen,
-          dockerResources: runtimeSnapshot.dockerResources,
-          deployments: runtimeSnapshot.deployments,
-          lastDeployAt: latestDeploymentSummary.lastDeployAt,
-          lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
-          lastResult: { error, status: 'deploy-failed' },
-          nextCheckAt: Date.now() + parsed.intervalMs,
+          dockerResources: ui.state.dockerResources,
+          deployments: buildingDeployments,
+          lastDeployAt: buildingSummary.lastDeployAt,
+          lastDeployStatus: buildingSummary.lastDeployStatus,
+          nextCheckAt: null,
         });
-        throw error;
+
+        try {
+          const pendingResult = await runPendingDeployAfterRestart({
+            deployCommand: options.deployCommand ?? DEFAULT_DEPLOY_COMMAND,
+            env,
+            envFilePath,
+            fsImpl,
+            latestCommit,
+            log: ui,
+            now: options.now ?? (() => Date.now()),
+            paths,
+            rootDir,
+            runCommand: run,
+          });
+          const runtimeSnapshot = await loadRuntimeSnapshot({
+            env,
+            envFilePath,
+            fsImpl,
+            now: typeof options.now === 'function' ? options.now() : Date.now(),
+            paths,
+            rootDir,
+            runCommand: run,
+            history: pendingResult.history,
+          });
+          const latestDeploymentSummary = getLatestDeploymentSummary(
+            runtimeSnapshot.deployments
+          );
+
+          ui.update({
+            currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+            dockerResources: runtimeSnapshot.dockerResources,
+            deployments: runtimeSnapshot.deployments,
+            lastDeployAt: latestDeploymentSummary.lastDeployAt,
+            lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
+            lastResult: { status: 'deployed' },
+            nextCheckAt: Date.now() + parsed.intervalMs,
+          });
+          clearPendingDeployRequest({
+            fsImpl,
+            paths,
+          });
+          ui.info(
+            `Blue/green deployment completed for ${latestCommit.shortHash}.`
+          );
+        } catch (error) {
+          const deployFinishedAt =
+            typeof options.now === 'function' ? options.now() : Date.now();
+          const history = appendDeploymentHistory(
+            {
+              buildDurationMs: Math.max(0, deployFinishedAt - pendingStartedAt),
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              commitSubject: latestCommit.subject,
+              finishedAt: deployFinishedAt,
+              startedAt: pendingStartedAt,
+              status: 'failed',
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
+          const runtimeSnapshot = await loadRuntimeSnapshot({
+            env,
+            envFilePath,
+            fsImpl,
+            now: deployFinishedAt,
+            paths,
+            rootDir,
+            runCommand: run,
+            history,
+          });
+          const latestDeploymentSummary = getLatestDeploymentSummary(
+            runtimeSnapshot.deployments
+          );
+
+          ui.update({
+            currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+            dockerResources: runtimeSnapshot.dockerResources,
+            deployments: runtimeSnapshot.deployments,
+            lastDeployAt: latestDeploymentSummary.lastDeployAt,
+            lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
+            lastResult: { error, status: 'deploy-failed' },
+            nextCheckAt: Date.now() + parsed.intervalMs,
+          });
+          throw error;
+        }
       }
     }
 
@@ -3573,6 +3678,7 @@ module.exports = {
   WATCH_ARGS_FILE,
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
+  WATCH_PENDING_DEPLOY_FILE,
   WATCH_PENDING_DEPLOY_ENV,
   WATCH_RUNTIME_DIR,
   WATCH_STATUS_FILE,
@@ -3582,6 +3688,7 @@ module.exports = {
   buildDashboardView,
   clearWatchStatus,
   clearContainerManagedWatcherState,
+  clearPendingDeployRequest,
   collectDeploymentTraffic,
   createWatchUi,
   fetchTrackedBranch,
@@ -3592,6 +3699,7 @@ module.exports = {
   formatRequestsPerMinute,
   getGitFailureBackoffMs,
   getLatestDeploymentSummary,
+  getLatestSuccessfulDeploymentCommitHash,
   getCommitMetadata,
   getCurrentBranch,
   getProdComposeServiceContainerId,
@@ -3615,6 +3723,7 @@ module.exports = {
   prependPendingDeployment,
   pullTrackedBranch,
   readDeploymentHistory,
+  readPendingDeployRequest,
   readWatchArgsFile,
   readWatchLock,
   readWatchStatus,
@@ -3636,10 +3745,12 @@ module.exports = {
   terminateExistingWatcher,
   createPendingDeploymentEntry,
   createQuietRunCommand,
+  hasPersistedPendingDeployRequest,
   summarizeBlueGreenRuntime,
   summarizeResult,
   waitForProcessExit,
   writeWatchArgsFile,
+  writePendingDeployRequest,
   writeWatchStatus,
   writeDeploymentHistory,
 };

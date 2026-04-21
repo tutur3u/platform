@@ -40,6 +40,7 @@ const {
   readDeploymentHistory,
   readWatchArgsFile,
   readWatchLock,
+  readPendingDeployRequest,
   releaseWatchLock,
   resolveCurrentBlueGreenStatus,
   runBunUpgradeAndInstall,
@@ -60,6 +61,10 @@ const {
   mirrorExistingWatchSession,
   readWatchStatus,
   terminateExistingWatcher,
+  clearPendingDeployRequest,
+  getLatestSuccessfulDeploymentCommitHash,
+  hasPersistedPendingDeployRequest,
+  writePendingDeployRequest,
   writeWatchStatus,
 } = require('./watch-blue-green-deploy.js');
 
@@ -2500,6 +2505,44 @@ test('clearContainerManagedWatcherState removes persisted lock and status files'
   }
 });
 
+test('pending deploy requests persist across restarts and can be cleared explicitly', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-pending-file-'));
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    writePendingDeployRequest(
+      {
+        commitHash: 'bbb222222222222222222',
+        commitShortHash: 'bbb222',
+        reason: 'process-restart',
+      },
+      { fsImpl: fs, paths }
+    );
+
+    assert.equal(
+      hasPersistedPendingDeployRequest(
+        {},
+        {
+          fsImpl: fs,
+          paths,
+        }
+      ),
+      true
+    );
+    assert.deepEqual(readPendingDeployRequest(paths, fs), {
+      commitHash: 'bbb222222222222222222',
+      commitShortHash: 'bbb222',
+      reason: 'process-restart',
+    });
+
+    clearPendingDeployRequest({ fsImpl: fs, paths });
+
+    assert.equal(readPendingDeployRequest(paths, fs), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('streamBlueGreenWatcherLogs follows the watcher service output', async () => {
   const calls = [];
 
@@ -2557,6 +2600,303 @@ test('runWatcherCommand boots the watcher container before tailing logs', async 
       prodComposeWatcherUpKey(),
       prodComposeWatcherLogsKey(),
     ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getLatestSuccessfulDeploymentCommitHash returns the newest successful commit', () => {
+  assert.equal(
+    getLatestSuccessfulDeploymentCommitHash([
+      {
+        commitHash: null,
+        status: 'deploying',
+      },
+      {
+        commitHash: 'bbb222222222222222222',
+        status: 'successful',
+      },
+      {
+        commitHash: 'aaa111111111111111111',
+        status: 'successful',
+      },
+    ]),
+    'bbb222222222222222222'
+  );
+});
+
+test('main deploys the latest fetched revision after recovery when the last successful build is stale', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-pending-deploy-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const uiState = {};
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: 500,
+          activeColor: 'green',
+          commitHash: 'aaa111111111111111111',
+          commitShortHash: 'aaa111',
+          commitSubject: 'Old deployed revision',
+          finishedAt: 500,
+          startedAt: 100,
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+    writePendingDeployRequest(
+      {
+        commitHash: 'bbb222222222222222222',
+        commitShortHash: 'bbb222',
+        reason: 'process-restart',
+      },
+      { fsImpl: fs, paths }
+    );
+
+    await main(['--once'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      now: (() => {
+        const values = [1000, 2000, 5000, 6000];
+        return () => values.shift() ?? 6000;
+      })(),
+      processImpl: {
+        argv: ['node', 'scripts/watch-blue-green-deploy.js'],
+        exit() {},
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('proxy-123\n');
+        }
+
+        if (key === prodComposePsKey('web-green')) {
+          return createResult('green-123\n');
+        }
+
+        if (key === prodComposePsKey('web-blue')) {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -t`
+        ) {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload`
+        ) {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`
+        ) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult('main\n');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref --symbolic-full-name @{u}') {
+          return createResult('origin/main\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return createResult(
+            'bbb222222222222222222\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:59:00.000Z\n'
+          );
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git fetch origin main') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse HEAD') {
+          return createResult('bbb222\n');
+        }
+
+        if (key === 'git rev-parse origin/main') {
+          return createResult('bbb222\n');
+        }
+
+        if (
+          key ===
+          `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+        ) {
+          return createResult('');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error() {},
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn() {},
+      },
+    });
+
+    assert.ok(
+      calls.includes(
+        `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+      )
+    );
+    assert.equal(readPendingDeployRequest(paths, fs), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('main skips recovery deploys when the latest successful build already matches HEAD', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-pending-skip-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const uiState = {};
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: 500,
+          activeColor: 'green',
+          commitHash: 'bbb222222222222222222',
+          commitShortHash: 'bbb222',
+          commitSubject: 'Latest deployed revision',
+          finishedAt: 500,
+          startedAt: 100,
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+    writePendingDeployRequest(
+      {
+        commitHash: 'bbb222222222222222222',
+        commitShortHash: 'bbb222',
+        reason: 'process-restart',
+      },
+      { fsImpl: fs, paths }
+    );
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    await main(['--once'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      processImpl: {
+        argv: ['node', 'scripts/watch-blue-green-deploy.js'],
+        exit() {},
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult('main\n');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref --symbolic-full-name @{u}') {
+          return createResult('origin/main\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return createResult(
+            'bbb222222222222222222\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:59:00.000Z\n'
+          );
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git fetch origin main') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse HEAD') {
+          return createResult('bbb222\n');
+        }
+
+        if (key === 'git rev-parse origin/main') {
+          return createResult('bbb222\n');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error() {},
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn() {},
+      },
+    });
+
+    assert.equal(
+      calls.includes(
+        `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+      ),
+      false
+    );
+    assert.equal(readPendingDeployRequest(paths, fs), null);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
