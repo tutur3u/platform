@@ -253,7 +253,7 @@ test('validateWatcherDockerfile reports missing docker cli tooling', () => {
   const dockerfileContent = fs
     .readFileSync(WATCHER_DOCKERFILE_PATH, 'utf8')
     .replace(
-      'RUN apk add --no-cache docker-cli docker-cli-compose git openssh-client\n',
+      'RUN apk add --no-cache docker-cli docker-cli-buildx docker-cli-compose git openssh-client\n',
       ''
     );
 
@@ -261,7 +261,7 @@ test('validateWatcherDockerfile reports missing docker cli tooling', () => {
 
   assert.match(
     errors.join('\n'),
-    /docker-cli docker-cli-compose git openssh-client/
+    /docker-cli docker-cli-buildx docker-cli-compose git openssh-client/
   );
 });
 

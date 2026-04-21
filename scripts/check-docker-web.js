@@ -369,7 +369,7 @@ function validateWatcherDockerfile(dockerfileContent) {
   const errors = [];
   const requiredSnippets = [
     'FROM oven/bun:1.3.13-alpine',
-    'RUN apk add --no-cache docker-cli docker-cli-compose git openssh-client',
+    'RUN apk add --no-cache docker-cli docker-cli-buildx docker-cli-compose git openssh-client',
     'COPY apps/web/docker/blue-green-watcher-entrypoint.js /usr/local/bin/blue-green-watcher-entrypoint.js',
     'CMD ["bun", "/usr/local/bin/blue-green-watcher-entrypoint.js"]',
   ];

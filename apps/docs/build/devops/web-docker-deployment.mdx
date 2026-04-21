@@ -446,9 +446,11 @@ Dashboard details:
   mount/env pair in sync if the runtime path changes, or the dashboard will
   degrade to an empty offline state even while blue/green deployments still
   work.
-- The watcher image must also include the Docker Compose CLI plugin
-  (`docker-cli-compose` on Alpine) because the rollout handoff still shells
-  into `docker compose ...` from inside the watcher container.
+- The watcher image must also include both the Docker Compose and Buildx CLI
+  plugins (`docker-cli-compose` and `docker-cli-buildx` on Alpine) because the
+  rollout handoff shells into `docker compose ...`, and capped production
+  builds create/use a dedicated Buildx builder from inside the watcher
+  container.
 - Starting `bun serve:web:docker:bg:watch` now clears the persisted watcher
   lock/status snapshot before the watcher service is force-recreated, so a
   stale lock from the previous container cannot block the replacement watcher.

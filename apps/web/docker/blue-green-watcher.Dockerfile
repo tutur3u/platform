@@ -5,7 +5,7 @@ WORKDIR /workspace
 ENV CI=1
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN apk add --no-cache docker-cli docker-cli-compose git openssh-client
+RUN apk add --no-cache docker-cli docker-cli-buildx docker-cli-compose git openssh-client
 
 COPY apps/web/docker/blue-green-watcher-entrypoint.js /usr/local/bin/blue-green-watcher-entrypoint.js
 
