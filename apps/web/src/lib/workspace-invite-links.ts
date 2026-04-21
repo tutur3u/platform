@@ -58,6 +58,8 @@ export interface RawInviteLinkDetails {
   /** View `workspace_invite_links_with_stats` exposes `member_type`; legacy rows may use `type`. */
   member_type?: WorkspaceInviteLinkMemberType | null;
   type?: WorkspaceInviteLinkMemberType | null;
+  /** Already-normalized API responses may expose camelCase `memberType`. */
+  memberType?: WorkspaceInviteLinkMemberType | null;
   uses?: RawInviteLinkUse[] | InviteLinkUse[] | null;
 }
 

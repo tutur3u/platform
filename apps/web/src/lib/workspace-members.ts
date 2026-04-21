@@ -74,24 +74,35 @@ export async function getWorkspaceMembers({
 
   if (workspaceError) throw workspaceError;
 
-  const userIds = data
-    .filter((member) => !member.pending && member.id)
-    .map((member) => member.id as string);
+  const userIds = [
+    ...new Set(
+      data
+        .filter((member) => !member.pending && member.id)
+        .map((member) => member.id as string)
+    ),
+  ];
 
-  let roleMembershipsData: WorkspaceRoleMembershipRow[] = [];
+  const roleMembershipsData: WorkspaceRoleMembershipRow[] = [];
   if (userIds.length > 0) {
-    const { data: rawRoleMembershipsData, error: roleMembershipsError } =
-      await supabase
-        .from('workspace_role_members')
-        .select(
-          'user_id, workspace_roles!inner(id, name, ws_id, workspace_role_permissions(permission, enabled))'
-        )
-        .eq('workspace_roles.ws_id', wsId)
-        .in('user_id', userIds);
+    const userIdBatchSize = 500;
 
-    if (roleMembershipsError) throw roleMembershipsError;
-    roleMembershipsData =
-      (rawRoleMembershipsData as WorkspaceRoleMembershipRow[] | null) ?? [];
+    for (let index = 0; index < userIds.length; index += userIdBatchSize) {
+      const userIdBatch = userIds.slice(index, index + userIdBatchSize);
+      const { data: rawRoleMembershipsData, error: roleMembershipsError } =
+        await supabase
+          .from('workspace_role_members')
+          .select(
+            'user_id, workspace_roles!inner(id, name, ws_id, workspace_role_permissions(permission, enabled))'
+          )
+          .eq('workspace_roles.ws_id', wsId)
+          .in('user_id', userIdBatch);
+
+      if (roleMembershipsError) throw roleMembershipsError;
+      roleMembershipsData.push(
+        ...((rawRoleMembershipsData as WorkspaceRoleMembershipRow[] | null) ??
+          [])
+      );
+    }
   }
 
   const { data: defaultPermissionsData, error: defaultPermissionsError } =
