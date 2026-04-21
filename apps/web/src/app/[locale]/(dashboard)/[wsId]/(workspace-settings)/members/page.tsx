@@ -154,7 +154,7 @@ const getMembers = async (wsId: string, { status }: { status: string }) => {
   const queryBuilder = supabase
     .from('workspace_members_and_invites')
     .select(
-      'id, handle, email, display_name, avatar_url, pending, created_at',
+      'id, handle, email, display_name, avatar_url, pending, created_at, type',
       {
         count: 'exact',
       }
@@ -214,9 +214,10 @@ const getMembers = async (wsId: string, { status }: { status: string }) => {
     });
   });
 
-  return data.map(({ email, ...rest }) => {
+  return data.map(({ email, type, ...rest }) => {
     return {
       ...rest,
+      workspace_member_type: type,
       display_name:
         secretData.filter((secret) => secret.name === 'HIDE_MEMBER_NAME')
           .length === 0

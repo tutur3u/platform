@@ -9,7 +9,8 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
+  useTranslations: (namespace?: string) => (key: string) =>
+    namespace ? `${namespace}.${key}` : key,
 }));
 
 vi.mock('@tuturuuu/ui/sonner', () => ({
@@ -57,6 +58,7 @@ describe('InviteLinksSection', () => {
         current_uses: 2,
         is_expired: false,
         is_full: false,
+        type: 'MEMBER',
       },
     ];
 

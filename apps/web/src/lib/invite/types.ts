@@ -17,6 +17,8 @@ export interface WorkspaceInfo {
   memberCount: number;
   seatLimitReached?: boolean;
   seatStatus?: SeatStatus;
+  /** Membership level for this invite link (MEMBER vs GUEST) */
+  memberType?: 'MEMBER' | 'GUEST';
 }
 
 export interface ValidateInviteResult {

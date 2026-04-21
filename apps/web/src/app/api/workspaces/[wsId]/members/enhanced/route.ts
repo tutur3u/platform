@@ -60,7 +60,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   const queryBuilder = supabase
     .from('workspace_members_and_invites')
     .select(
-      'id, handle, email, display_name, avatar_url, pending, created_at',
+      'id, handle, email, display_name, avatar_url, pending, created_at, type',
       {
         count: 'exact',
       }
@@ -131,9 +131,10 @@ export async function GET(request: NextRequest, { params }: Params) {
   });
 
   // Transform and return data
-  const members = data.map(({ email, ...rest }) => {
+  const members = data.map(({ email, type, ...rest }) => {
     return {
       ...rest,
+      workspace_member_type: type,
       display_name:
         secretData.filter((secret) => secret.name === 'HIDE_MEMBER_NAME')
           .length === 0

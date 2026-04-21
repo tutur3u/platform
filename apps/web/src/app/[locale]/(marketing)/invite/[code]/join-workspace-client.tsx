@@ -183,8 +183,13 @@ export default function JoinWorkspaceClient({
     return null;
   }
 
-  const { workspace, memberCount, seatLimitReached, seatStatus } =
-    workspaceInfo;
+  const {
+    workspace,
+    memberCount,
+    seatLimitReached,
+    seatStatus,
+    memberType = 'MEMBER',
+  } = workspaceInfo;
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
@@ -249,14 +254,21 @@ export default function JoinWorkspaceClient({
             </div>
 
             {!joined && (
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                <div className="flex items-center gap-1.5 rounded-full bg-dynamic-purple/10 px-3 py-1.5 text-sm">
-                  <Users className="h-4 w-4 text-dynamic-purple" />
-                  <span className="font-medium text-foreground/80">
-                    {memberCount}{' '}
-                    {memberCount === 1 ? t('member') : t('members')}
-                  </span>
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <div className="flex items-center gap-1.5 rounded-full bg-dynamic-purple/10 px-3 py-1.5 text-sm">
+                    <Users className="h-4 w-4 text-dynamic-purple" />
+                    <span className="font-medium text-foreground/80">
+                      {memberCount}{' '}
+                      {memberCount === 1 ? t('member') : t('members')}
+                    </span>
+                  </div>
                 </div>
+                <p className="max-w-sm text-center text-foreground/65 text-sm leading-relaxed">
+                  {memberType === 'GUEST'
+                    ? t('join-as-guest-hint')
+                    : t('join-as-member-hint')}
+                </p>
               </div>
             )}
 

@@ -20,6 +20,8 @@ export interface InviteLinkUse {
   user: InviteLinkJoinedUser;
 }
 
+export type WorkspaceInviteLinkMemberType = 'MEMBER' | 'GUEST';
+
 export interface InviteLinkSummary {
   id: string;
   ws_id: string;
@@ -31,6 +33,8 @@ export interface InviteLinkSummary {
   current_uses: number;
   is_expired: boolean;
   is_full: boolean;
+  /** People who use this link join as this membership type */
+  memberType: WorkspaceInviteLinkMemberType;
 }
 
 export interface InviteLinkDetails extends InviteLinkSummary {
@@ -48,6 +52,9 @@ export interface RawInviteLinkDetails {
   current_uses: number | null;
   is_expired: boolean | null;
   is_full: boolean | null;
+  /** View `workspace_invite_links_with_stats` exposes `member_type`; legacy rows may use `type`. */
+  member_type?: WorkspaceInviteLinkMemberType | null;
+  type?: WorkspaceInviteLinkMemberType | null;
   uses?: RawInviteLinkUse[] | InviteLinkUse[] | null;
 }
 
@@ -79,6 +86,49 @@ export function normalizeInviteLinkUse(
   };
 }
 
+/** Resolve MEMBER vs GUEST from a stats view row (`member_type` preferred; legacy `type` supported). */
+export function memberTypeFromInviteStatsRow(
+  row: Record<string, unknown>
+): WorkspaceInviteLinkMemberType {
+  // API responses may already be normalized with camelCase `memberType`; re-parsing JSON drops snake_case keys.
+  const v = row.member_type ?? row.type ?? row.memberType;
+  if (v == null || v === '') return 'MEMBER';
+  return String(v).toUpperCase() === 'GUEST' ? 'GUEST' : 'MEMBER';
+}
+
+/** Map a workspace_invite_links_with_stats row (`member_type` or legacy `type`) to summary shape */
+export function mapInviteLinkRowFromApi(
+  row: Record<string, unknown>
+): InviteLinkSummary {
+  const memberType = memberTypeFromInviteStatsRow(row);
+  const raw: RawInviteLinkDetails = {
+    id: row.id as string | null,
+    ws_id: row.ws_id as string | null,
+    code: row.code as string | null,
+    creator_id: row.creator_id as string | null,
+    max_uses: row.max_uses as number | null,
+    expires_at: row.expires_at as string | null,
+    created_at: row.created_at as string | null,
+    current_uses: row.current_uses as number | null,
+    is_expired: row.is_expired as boolean | null,
+    is_full: row.is_full as boolean | null,
+    type: memberType,
+  };
+  return {
+    id: raw.id ?? '',
+    ws_id: raw.ws_id ?? '',
+    code: raw.code ?? '',
+    creator_id: raw.creator_id ?? '',
+    max_uses: raw.max_uses ?? null,
+    expires_at: raw.expires_at ?? null,
+    created_at: raw.created_at ?? '',
+    current_uses: raw.current_uses ?? 0,
+    is_expired: raw.is_expired ?? false,
+    is_full: raw.is_full ?? false,
+    memberType,
+  };
+}
+
 export function normalizeInviteLinkDetails(
   rawDetails: RawInviteLinkDetails
 ): InviteLinkDetails {
@@ -89,16 +139,9 @@ export function normalizeInviteLinkDetails(
     : [];
 
   return {
-    id: rawDetails.id ?? '',
-    ws_id: rawDetails.ws_id ?? '',
-    code: rawDetails.code ?? '',
-    creator_id: rawDetails.creator_id ?? '',
-    max_uses: rawDetails.max_uses ?? null,
-    expires_at: rawDetails.expires_at ?? null,
-    created_at: rawDetails.created_at ?? '',
-    current_uses: rawDetails.current_uses ?? 0,
-    is_expired: rawDetails.is_expired ?? false,
-    is_full: rawDetails.is_full ?? false,
+    ...mapInviteLinkRowFromApi(
+      rawDetails as unknown as Record<string, unknown>
+    ),
     uses,
   };
 }

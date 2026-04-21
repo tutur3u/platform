@@ -13,6 +13,7 @@ interface Params {
 const UpdateInviteLinkSchema = z.object({
   maxUses: z.number().int().positive().optional().nullable(),
   expiresAt: z.string().datetime().optional().nullable(),
+  memberType: z.enum(['MEMBER', 'GUEST']).optional(),
 });
 
 // GET - Get invite link details including users who joined via this link
@@ -195,7 +196,7 @@ export async function PATCH(req: Request, { params }: Params) {
       );
     }
 
-    const { maxUses, expiresAt } = validation.data;
+    const { maxUses, expiresAt, memberType } = validation.data;
 
     // Update the invite link using user-scoped client (RLS enforced)
     const { data: updatedLink, error: updateError } = await supabase
@@ -203,6 +204,7 @@ export async function PATCH(req: Request, { params }: Params) {
       .update({
         max_uses: maxUses,
         expires_at: expiresAt,
+        ...(memberType !== undefined ? { type: memberType } : {}),
       })
       .eq('id', linkId)
       .select()
