@@ -575,33 +575,49 @@ export async function POST(
       return NextResponse.json(wsAccess.body, { status: wsAccess.status });
     }
 
-    let resolvedModelId: string;
-    try {
-      const resolvedModel = await resolvePlanModel({
-        capability: 'language',
-        wsId,
-      });
-      resolvedModelId = resolvedModel.modelId;
-    } catch (error) {
-      if (error instanceof PlanModelResolutionError) {
-        const status = error.code === 'NO_ALLOCATION' ? 503 : 500;
+    let listCheck: { id: string; name: string | null } | null = null;
+    if (listId) {
+      const listResult = await getListIfProvided(supabase, listId, wsId);
+      if (listResult.kind === 'error') {
+        return NextResponse.json(listResult.body, {
+          status: listResult.status,
+        });
+      }
+      listCheck = listResult.list;
+    }
+
+    const providedTasks = normalizeProvidedTasks(tasks);
+    const shouldInvokeAI = !providedTasks || previewOnly;
+    const { timezoneContext, clientIsoTimestamp, localTimeDescription } =
+      computeTimeContext(clientTimezone, clientTimestamp);
+
+    let resolvedModelId: string | null = null;
+    let creditCheck: CreditCheckResult | null = null;
+    let systemPrompt: string | null = null;
+
+    if (shouldInvokeAI) {
+      try {
+        const resolvedModel = await resolvePlanModel({
+          capability: 'language',
+          wsId,
+        });
+        resolvedModelId = resolvedModel.modelId;
+      } catch (error) {
+        if (error instanceof PlanModelResolutionError) {
+          const status = error.code === 'NO_ALLOCATION' ? 503 : 500;
+          return NextResponse.json(
+            { error: error.message, code: error.code },
+            { status }
+          );
+        }
+
+        console.error('Failed to resolve task journal model:', error);
         return NextResponse.json(
-          { error: error.message, code: error.code },
-          { status }
+          { error: 'Failed to resolve AI model for task journal.' },
+          { status: 500 }
         );
       }
 
-      console.error('Failed to resolve task journal model:', error);
-      return NextResponse.json(
-        { error: 'Failed to resolve AI model for task journal.' },
-        { status: 500 }
-      );
-    }
-
-    // Pre-flight AI credit check
-    let creditCheck: CreditCheckResult | null = null;
-    const shouldInvokeAIEarly = !tasks?.length || previewOnly;
-    if (shouldInvokeAIEarly) {
       const result = await checkAiCredits(
         wsId,
         resolvedModelId,
@@ -620,31 +636,16 @@ export async function POST(
           { status: 403 }
         );
       }
+
+      systemPrompt = buildSystemPrompt(
+        generateDescriptions,
+        generatePriority,
+        generateLabels,
+        localTimeDescription,
+        timezoneContext,
+        clientIsoTimestamp
+      );
     }
-
-    let listCheck: { id: string; name: string | null } | null = null;
-    if (listId) {
-      const listResult = await getListIfProvided(supabase, listId, wsId);
-      if (listResult.kind === 'error') {
-        return NextResponse.json(listResult.body, {
-          status: listResult.status,
-        });
-      }
-      listCheck = listResult.list;
-    }
-
-    const { timezoneContext, clientIsoTimestamp, localTimeDescription } =
-      computeTimeContext(clientTimezone, clientTimestamp);
-    const systemPrompt = buildSystemPrompt(
-      generateDescriptions,
-      generatePriority,
-      generateLabels,
-      localTimeDescription,
-      timezoneContext,
-      clientIsoTimestamp
-    );
-
-    const providedTasks = normalizeProvidedTasks(tasks);
 
     let aiTasks:
       | {
@@ -655,8 +656,6 @@ export async function POST(
         }[]
       | null = null;
 
-    const shouldInvokeAI = !providedTasks || previewOnly;
-
     if (shouldInvokeAI) {
       try {
         // Apply credit-budget cap on maxOutputTokens (defense-in-depth)
@@ -665,7 +664,7 @@ export async function POST(
           const sbAdmin = await createAdminClient();
           cappedMaxOutput = await capMaxOutputTokensByCredits(
             sbAdmin,
-            resolvedModelId,
+            resolvedModelId!,
             creditCheck.maxOutputTokens,
             creditCheck.remainingCredits
           );
@@ -681,8 +680,8 @@ export async function POST(
         }
 
         const result = await generateAiTasks(
-          resolvedModelId,
-          systemPrompt,
+          resolvedModelId!,
+          systemPrompt!,
           trimmedEntry,
           cappedMaxOutput
         );
@@ -693,7 +692,7 @@ export async function POST(
           deductAiCredits({
             wsId,
             userId: user.id,
-            modelId: resolvedModelId,
+            modelId: resolvedModelId!,
             inputTokens: result.usage.inputTokens ?? 0,
             outputTokens: result.usage.outputTokens ?? 0,
             reasoningTokens:
@@ -715,7 +714,7 @@ export async function POST(
             deductAiCredits({
               wsId,
               userId: user.id,
-              modelId: resolvedModelId,
+              modelId: resolvedModelId!,
               inputTokens: failedUsage.inputTokens ?? 0,
               outputTokens: failedUsage.outputTokens ?? 0,
               reasoningTokens: failedUsage.reasoningTokens ?? 0,
