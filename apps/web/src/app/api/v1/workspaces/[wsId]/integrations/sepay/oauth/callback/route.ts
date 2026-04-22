@@ -98,26 +98,30 @@ export async function GET(request: NextRequest, { params }: Params) {
     return response;
   }
 
-  const encryptedAccessToken = encryptSepayToken(exchanged.accessToken);
-  const encryptedRefreshToken = encryptSepayToken(exchanged.refreshToken);
+  try {
+    const encryptedAccessToken = encryptSepayToken(exchanged.accessToken);
+    const encryptedRefreshToken = encryptSepayToken(exchanged.refreshToken);
 
-  const { error: upsertError } = await access.sbAdmin
-    .from('sepay_connections')
-    .upsert(
-      {
-        access_token_encrypted: encryptedAccessToken,
-        access_token_expires_at: exchanged.expiresAt,
-        refresh_token_encrypted: encryptedRefreshToken,
-        scopes: exchanged.scopes,
-        status: 'active',
-        updated_at: new Date().toISOString(),
-        ws_id: access.wsId,
-      },
-      { onConflict: 'ws_id' }
-    );
+    const { error: upsertError } = await access.sbAdmin
+      .from('sepay_connections')
+      .upsert(
+        {
+          access_token_encrypted: encryptedAccessToken,
+          access_token_expires_at: exchanged.expiresAt,
+          refresh_token_encrypted: encryptedRefreshToken,
+          scopes: exchanged.scopes,
+          status: 'active',
+          updated_at: new Date().toISOString(),
+          ws_id: access.wsId,
+        },
+        { onConflict: 'ws_id' }
+      );
 
-  if (upsertError) {
-    console.error('Failed to save SePay connection:', upsertError);
+    if (upsertError) {
+      throw upsertError;
+    }
+  } catch (error) {
+    console.error('Failed to save SePay connection:', error);
     const response = NextResponse.json(
       { message: 'Failed to save SePay OAuth connection' },
       { status: 500 }

@@ -50,7 +50,8 @@ export async function POST(request: Request, { params }: Params) {
       status: 'revoked',
       updated_at: nowIso,
     })
-    .eq('ws_id', access.wsId);
+    .eq('ws_id', access.wsId)
+    .neq('status', 'revoked');
 
   if (deactivateConnectionsError) {
     console.error(

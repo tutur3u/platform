@@ -108,9 +108,30 @@ export async function ensureSepayAccessToken(input: {
     };
   }
 
-  const refreshed = await refreshSepayAccessToken({
-    refreshTokenEncrypted: connection.refresh_token_encrypted,
-  });
+  let refreshed: Awaited<ReturnType<typeof refreshSepayAccessToken>>;
+  try {
+    refreshed = await refreshSepayAccessToken({
+      refreshTokenEncrypted: connection.refresh_token_encrypted,
+    });
+  } catch (error) {
+    const { error: statusError } = await input.sbAdmin
+      .from('sepay_connections')
+      .update({
+        status: 'error',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', connection.id)
+      .eq('ws_id', input.wsId);
+
+    if (statusError) {
+      console.error(
+        'Failed to persist SePay connection refresh error state:',
+        statusError
+      );
+    }
+
+    throw error;
+  }
 
   const encryptedAccessToken = encryptSepayToken(refreshed.accessToken);
   const encryptedRefreshToken = encryptSepayToken(refreshed.refreshToken);
@@ -317,21 +338,6 @@ export async function provisionSepayWebhookEndpoint(input: {
     }
   }
 
-  const { data, error, token } = await createSepayEndpointTokenRow({
-    sbAdmin: input.sbAdmin,
-    wsId: input.wsId,
-  });
-
-  if (error || !data?.id) {
-    throw new Error('Failed to create SePay endpoint token');
-  }
-
-  const endpointId = data.id;
-
-  if (!token) {
-    throw new Error('Provisioning requires a newly created endpoint token');
-  }
-
   const webhookApiKey = getSepayWebhookAuthSecret();
   if (!webhookApiKey) {
     throw new Error('Missing SEPAY_WEBHOOK_API_KEY or SEPAY_WEBHOOK_SECRET');
@@ -351,7 +357,22 @@ export async function provisionSepayWebhookEndpoint(input: {
     throw new Error('No SePay bank account found for webhook provisioning');
   }
 
-  const webhookUrl = `${resolveSepayAppOrigin()}/api/v1/webhooks/sepay/${token}`;
+  const { data, error, token } = await createSepayEndpointTokenRow({
+    sbAdmin: input.sbAdmin,
+    wsId: input.wsId,
+  });
+
+  if (error || !data?.id) {
+    throw new Error('Failed to create SePay endpoint token');
+  }
+
+  const endpointId = data.id;
+
+  if (!token) {
+    throw new Error('Provisioning requires a newly created endpoint token');
+  }
+  const origin = resolveSepayAppOrigin();
+  const webhookUrl = `${origin}/api/v1/webhooks/sepay/${token}`;
   const webhook = await createSepayWebhook({
     accessToken,
     bankAccountId,

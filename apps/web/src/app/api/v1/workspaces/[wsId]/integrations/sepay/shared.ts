@@ -35,13 +35,34 @@ export async function requireSepayAccess(
   rawWsId: string
 ): Promise<SepayAccessContext | { error: NextResponse }> {
   const supabase = await createClient(request);
-  let wsId: string;
 
-  try {
-    wsId = await normalizeWorkspaceId(rawWsId, supabase);
-  } catch {
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) {
+    console.error('Failed to authenticate SePay access request:', authError);
+    return {
+      error: NextResponse.json(
+        { message: 'Failed to authenticate request' },
+        { status: 500 }
+      ),
+    };
+  }
+
+  if (!authData.user) {
     return {
       error: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  let wsId: string;
+  try {
+    wsId = await normalizeWorkspaceId(rawWsId, supabase);
+  } catch (error) {
+    console.error('Failed to normalize SePay workspace id:', error);
+    return {
+      error: NextResponse.json(
+        { message: 'Failed to resolve workspace' },
+        { status: 500 }
+      ),
     };
   }
 

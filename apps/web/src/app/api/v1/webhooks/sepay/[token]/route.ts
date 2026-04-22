@@ -356,7 +356,9 @@ export async function POST(request: Request, { params }: Params) {
       }
     }
 
-    eventId = eventRow?.id ?? null;
+    if (!eventId) {
+      eventId = eventRow?.id ?? null;
+    }
   }
 
   if (!eventId) {

@@ -30,16 +30,26 @@ export function encryptSepayToken(token: string) {
 }
 
 export function decryptSepayToken(encryptedToken: string) {
-  const [ivPart, ciphertextPart, authTagPart] = encryptedToken.split('.');
+  const parts = encryptedToken.split('.');
 
-  if (!ivPart || !ciphertextPart || !authTagPart) {
+  if (parts.length !== 3 || parts.some((part) => part.length === 0)) {
     throw new Error('Invalid encrypted SePay token format');
   }
+
+  const [ivPart, ciphertextPart, authTagPart] = parts as [
+    string,
+    string,
+    string,
+  ];
 
   const key = getEncryptionKey();
   const iv = Buffer.from(ivPart, 'base64url');
   const ciphertext = Buffer.from(ciphertextPart, 'base64url');
   const authTag = Buffer.from(authTagPart, 'base64url');
+
+  if (iv.length !== 12 || authTag.length !== 16 || ciphertext.length === 0) {
+    throw new Error('Invalid encrypted SePay token format');
+  }
 
   const decipher = createDecipheriv('aes-256-gcm', key, iv);
   decipher.setAuthTag(authTag);

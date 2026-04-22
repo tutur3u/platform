@@ -23,6 +23,8 @@ interface SepayApiListResponse<T> {
   status?: string;
 }
 
+const SEPAY_FETCH_TIMEOUT_MS = 10_000;
+
 function normalizeBaseUrl(value: string) {
   return value.trim().replace(/\/$/, '');
 }
@@ -47,26 +49,6 @@ function getSepayOauthBaseUrl() {
   return 'https://my.sepay.vn';
 }
 
-function requireSepayApiBaseUrl() {
-  const baseUrl = getSepayApiBaseUrl();
-
-  if (!baseUrl) {
-    throw new Error('Missing SEPAY_API_BASE_URL');
-  }
-
-  return baseUrl;
-}
-
-function requireSepayOauthBaseUrl() {
-  const baseUrl = getSepayOauthBaseUrl();
-
-  if (!baseUrl) {
-    throw new Error('Missing SEPAY_OAUTH_BASE_URL');
-  }
-
-  return baseUrl;
-}
-
 function readScopes(input?: string) {
   if (!input) {
     return [] as string[];
@@ -76,6 +58,26 @@ function readScopes(input?: string) {
     .split(' ')
     .map((scope) => scope.trim())
     .filter(Boolean);
+}
+
+async function fetchSepay(url: string, init: RequestInit) {
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: AbortSignal.timeout(SEPAY_FETCH_TIMEOUT_MS),
+    });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.name === 'AbortError' || error.name === 'TimeoutError')
+    ) {
+      throw new Error(
+        `SePay request timed out after ${SEPAY_FETCH_TIMEOUT_MS}ms`
+      );
+    }
+
+    throw error;
+  }
 }
 
 export async function exchangeSepayAuthorizationCode(input: {
@@ -89,7 +91,7 @@ export async function exchangeSepayAuthorizationCode(input: {
     throw new Error('Missing SePay OAuth client credentials');
   }
 
-  const tokenUrl = `${requireSepayOauthBaseUrl()}/oauth/token`;
+  const tokenUrl = `${getSepayOauthBaseUrl()}/oauth/token`;
   const body = new URLSearchParams({
     client_id: clientId,
     client_secret: clientSecret,
@@ -98,7 +100,7 @@ export async function exchangeSepayAuthorizationCode(input: {
     redirect_uri: input.redirectUri,
   });
 
-  const response = await fetch(tokenUrl, {
+  const response = await fetchSepay(tokenUrl, {
     body,
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -142,7 +144,7 @@ export async function refreshSepayAccessToken(input: {
   }
 
   const refreshToken = decryptSepayToken(input.refreshTokenEncrypted);
-  const tokenUrl = `${requireSepayOauthBaseUrl()}/oauth/token`;
+  const tokenUrl = `${getSepayOauthBaseUrl()}/oauth/token`;
   const body = new URLSearchParams({
     client_id: clientId,
     client_secret: clientSecret,
@@ -150,7 +152,7 @@ export async function refreshSepayAccessToken(input: {
     refresh_token: refreshToken,
   });
 
-  const response = await fetch(tokenUrl, {
+  const response = await fetchSepay(tokenUrl, {
     body,
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -184,7 +186,7 @@ export async function refreshSepayAccessToken(input: {
 }
 
 export async function listSepayBankAccounts(input: { accessToken: string }) {
-  const response = await fetch(`${requireSepayApiBaseUrl()}/bank-accounts`, {
+  const response = await fetchSepay(`${getSepayApiBaseUrl()}/bank-accounts`, {
     headers: {
       Authorization: `Bearer ${input.accessToken}`,
       'Content-Type': 'application/json',
@@ -211,7 +213,7 @@ export async function createSepayWebhook(input: {
   name: string;
   requestApiKey: string;
 }) {
-  const response = await fetch(`${requireSepayApiBaseUrl()}/webhooks`, {
+  const response = await fetchSepay(`${getSepayApiBaseUrl()}/webhooks`, {
     body: JSON.stringify({
       active: 1,
       api_key: input.requestApiKey,
@@ -243,7 +245,7 @@ export async function createSepayWebhook(input: {
     message?: string;
   };
 
-  if (!json.id) {
+  if (json.id == null || json.id === '') {
     throw new Error('SePay webhook creation response missing webhook id');
   }
 

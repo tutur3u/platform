@@ -52,6 +52,7 @@
                   "platform/architecture/api-routes",
                   "platform/architecture/trpc",
                   "platform/architecture/authentication",
+                  "platform/architecture/sepay-integration",
                   "platform/architecture/authorization",
                   "platform/architecture/workspaces-permissions",
                   {
@@ -113,7 +114,8 @@
                   "build/devops/environments-release-flow",
                   "build/devops/web-docker-deployment",
                   "build/devops/github-actions-runbook",
-                  "build/devops/secrets-and-configuration"
+                  "build/devops/secrets-and-configuration",
+                  "build/devops/sepay-testing-guide"
                 ]
               },
               "build/development-tools/overview",

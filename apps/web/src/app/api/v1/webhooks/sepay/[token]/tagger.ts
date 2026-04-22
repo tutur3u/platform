@@ -75,15 +75,25 @@ export async function classifyTagIds(input: {
 
     const pickedTagIds = classification.object.tagIds;
     const pickedReasons = classification.object.reasons;
+    const candidateTagIds = new Set(candidateTags.map((tag) => tag.id));
+    const seenTagIds = new Set<string>();
+    const validEntries: Array<{ reason: string; tagId: string }> = [];
 
-    // Filter to only include valid tag IDs that exist in candidates
-    const validTagIds = [...new Set(pickedTagIds)].filter((id) =>
-      candidateTags.some((tag) => tag.id === id)
-    );
+    for (const [index, tagId] of pickedTagIds.entries()) {
+      if (!candidateTagIds.has(tagId) || seenTagIds.has(tagId)) {
+        continue;
+      }
+
+      seenTagIds.add(tagId);
+      validEntries.push({
+        reason: pickedReasons[index] ?? '',
+        tagId,
+      });
+    }
 
     return {
-      tagIds: validTagIds,
-      reasons: pickedReasons.slice(0, validTagIds.length),
+      tagIds: validEntries.map((entry) => entry.tagId),
+      reasons: validEntries.map((entry) => entry.reason),
     };
   } catch {
     return {

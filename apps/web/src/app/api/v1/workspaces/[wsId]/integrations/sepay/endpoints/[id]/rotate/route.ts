@@ -13,9 +13,6 @@ interface Params {
   }>;
 }
 
-const rotateResponseColumns =
-  'id, ws_id, wallet_id, token_prefix, active, sepay_webhook_id, created_at, rotated_at, last_used_at';
-
 export async function POST(request: Request, { params }: Params) {
   const { id: rawEndpointId, wsId: rawWsId } = await params;
   const access = await requireSepayAccess(request, rawWsId);
@@ -63,12 +60,15 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const nowIso = new Date().toISOString();
-  const { error: deactivateError } = await sbAdmin
+  const { data: deactivatedEndpoint, error: deactivateError } = await sbAdmin
     .from('sepay_webhook_endpoints')
     .update({ active: false, rotated_at: nowIso })
     .eq('id', endpointId)
     .eq('ws_id', wsId)
-    .is('deleted_at', null);
+    .eq('active', true)
+    .is('deleted_at', null)
+    .select('id')
+    .maybeSingle();
 
   if (deactivateError) {
     console.error(
@@ -78,6 +78,13 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json(
       { message: 'Error rotating SePay endpoint' },
       { status: 500 }
+    );
+  }
+
+  if (!deactivatedEndpoint) {
+    return NextResponse.json(
+      { message: 'SePay endpoint was already rotated' },
+      { status: 409 }
     );
   }
 
@@ -119,24 +126,8 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { data: responseRow, error: responseError } = await sbAdmin
-    .from('sepay_webhook_endpoints')
-    .select(rotateResponseColumns)
-    .eq('id', rotated.id)
-    .eq('ws_id', wsId)
-    .is('deleted_at', null)
-    .maybeSingle();
-
-  if (responseError || !responseRow) {
-    console.error('Error loading rotated SePay endpoint:', responseError);
-    return NextResponse.json(
-      { message: 'Error rotating SePay endpoint' },
-      { status: 500 }
-    );
-  }
-
   return NextResponse.json({
-    ...responseRow,
+    ...rotated,
     token,
   });
 }

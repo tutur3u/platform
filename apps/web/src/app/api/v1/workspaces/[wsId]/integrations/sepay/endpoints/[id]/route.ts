@@ -58,19 +58,28 @@ export async function DELETE(request: Request, { params }: Params) {
     );
   }
 
-  const { error: deleteError } = await sbAdmin
+  const { data: deletedEndpoint, error: deleteError } = await sbAdmin
     .from('sepay_webhook_endpoints')
     .update({ active: false, deleted_at: new Date().toISOString() })
     .eq('id', endpointId)
     .eq('ws_id', wsId)
     .eq('active', true)
-    .is('deleted_at', null);
+    .is('deleted_at', null)
+    .select('id')
+    .maybeSingle();
 
   if (deleteError) {
     console.error('Error deleting SePay endpoint:', deleteError);
     return NextResponse.json(
       { message: 'Error deleting SePay endpoint' },
       { status: 500 }
+    );
+  }
+
+  if (!deletedEndpoint) {
+    return NextResponse.json(
+      { message: 'SePay endpoint not found' },
+      { status: 404 }
     );
   }
 

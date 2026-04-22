@@ -1,0 +1,66 @@
+---
+title: 'SePay Integration'
+description: 'Architecture and implementation notes for the SePay finance integration.'
+updatedAt: '2026-04-22'
+---
+
+## Goal
+
+The SePay integration connects a workspace to SePay through OAuth, provisions
+webhooks without manual SePay UI setup, ingests transaction events, and writes
+normalized finance records into the platform.
+
+## Flow
+
+1. A workspace admin starts the OAuth flow.
+2. The platform stores an opaque state token in a short-lived HttpOnly cookie.
+3. The OAuth callback exchanges the code, encrypts the SePay tokens, and stores
+   them in `sepay_connections`.
+4. The platform syncs SePay bank accounts into `sepay_wallet_links`.
+5. The platform provisions a SePay webhook endpoint and stores the hashed token
+   in `sepay_webhook_endpoints`.
+6. SePay sends transaction webhooks to `/api/v1/webhooks/sepay/[token]`.
+7. The webhook route validates auth, resolves the workspace and wallet,
+   deduplicates/retries safely through `sepay_webhook_events`, classifies the
+   transaction, and inserts `wallet_transactions`.
+
+## Data Model
+
+### `sepay_connections`
+
+Stores the workspace-level OAuth connection, encrypted access and refresh
+tokens, scopes, expiry, and connection status.
+
+### `sepay_wallet_links`
+
+Maps SePay bank-account metadata to workspace wallets so webhook deliveries can
+ resolve to the correct wallet without manual per-event routing.
+
+### `sepay_webhook_endpoints`
+
+Stores the hashed endpoint token, optional linked wallet, SePay webhook id, and
+active/rotation state for workspace webhook routing.
+
+### `sepay_webhook_events`
+
+Stores the raw webhook payload, dedupe keys, processing status, failure reason,
+and the created `wallet_transactions.id` when processing succeeds.
+
+## Processing Rules
+
+- `transferType: "in"` is written as a positive wallet transaction amount.
+- `transferType: "out"` is written as a negative wallet transaction amount.
+- Webhook retries reopen only events previously marked `failed`.
+- `received`, `processed`, and `duplicate` rows are treated as non-replayable
+  duplicates.
+- Auto-classification failures must not block ingestion; the route falls back to
+  an uncategorized category.
+
+## Operational Notes
+
+- Required runtime env vars are documented in
+  [Secrets & Configuration](/build/devops/secrets-and-configuration).
+- The end-to-end validation flow lives in
+  [SePay Testing Guide](/build/devops/sepay-testing-guide).
+- OAuth callback state is intentionally cookie-backed rather than a custom HMAC
+  payload.

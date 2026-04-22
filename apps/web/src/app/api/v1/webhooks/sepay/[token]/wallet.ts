@@ -142,6 +142,8 @@ export async function resolveOrCreateWallet(input: {
     if (data?.id) {
       return data.id;
     }
+
+    throw new Error('Endpoint wallet is not valid for this workspace');
   }
 
   const hasLinkIdentifiers =
