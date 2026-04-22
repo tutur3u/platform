@@ -47,6 +47,7 @@ type Limiters = {
 };
 
 const limiterCache = new Map<string, Limiters>();
+const cache = new Map();
 
 const NO_READ_RATE_LIMITS: RateLimitConfig[] = [];
 
@@ -178,6 +179,7 @@ function createRateLimitBuckets(
       redis,
       limiter: Ratelimit.slidingWindow(config.limit, config.duration),
       prefix: `${prefixBase}:${kind}:${config.window}`,
+      ephemeralCache: cache,
       analytics: false,
     }),
   }));
@@ -193,12 +195,7 @@ async function getRateLimiters(
     return cached;
   }
 
-  const redis = await getUpstashRestRedisClient();
-  if (!redis) {
-    const disabled = { get: [], mutate: [] };
-    limiterCache.set(cacheKey, disabled);
-    return disabled;
-  }
+  const redis = getUpstashRestRedisClient();
 
   const limiters = {
     get: createRateLimitBuckets(redis, prefixBase, 'get', profile.get),
@@ -278,52 +275,54 @@ export async function guardApiProxyRequest(
   ) {
     const ip = extractIPFromRequest(req.headers);
 
-    if (ip !== 'unknown') {
-      const blockInfo = await isIPBlockedEdge(ip);
-      if (blockInfo) {
-        const retryAfter = Math.max(
-          1,
-          Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
-        );
+    if (ip === 'unknown') {
+      return NextResponse.json(
+        { error: 'Unable to determine client IP' },
+        { status: 400 }
+      );
+    }
 
-        return buildRateLimitResponse(429, retryAfter);
+    const blockInfo = await isIPBlockedEdge(ip);
+    if (blockInfo) {
+      const retryAfter = Math.max(
+        1,
+        Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
+      );
+
+      return buildRateLimitResponse(429, retryAfter);
+    }
+
+    const routePolicy = getRoutePolicy(req, routePolicies);
+    const isRead = req.method === 'GET' || req.method === 'HEAD';
+    const limiters = await getRateLimiters(
+      `${options.prefixBase}:${routePolicy.key}`,
+      routePolicy.rateLimits
+    );
+    const activeLimiters = isRead ? limiters.get : limiters.mutate;
+
+    for (const { limiter, window } of activeLimiters) {
+      if (!limiter) {
+        continue;
       }
 
-      const routePolicy = getRoutePolicy(req, routePolicies);
-      const isRead = req.method === 'GET' || req.method === 'HEAD';
-      const limiters = await getRateLimiters(
-        `${options.prefixBase}:${routePolicy.key}`,
-        routePolicy.rateLimits
+      const { success, limit, remaining, reset } = await limiter.limit(ip);
+
+      const consumed = limit - remaining;
+      const kind = isRead ? 'read' : 'mutate';
+      console.log(
+        `[ProxyGuard] ${routePolicy.key}:${kind}:${window} ${consumed}/${limit} | IP: ${ip} | path: ${req.nextUrl.pathname}`
       );
-      const activeLimiters = isRead ? limiters.get : limiters.mutate;
 
-      for (const { limiter, window } of activeLimiters) {
-        if (!limiter) {
-          continue;
-        }
+      if (!success) {
+        const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
 
-        const { success, limit, remaining, reset } = await limiter.limit(ip);
-
-        const consumed = limit - remaining;
-        const kind = isRead ? 'read' : 'mutate';
-        console.log(
-          `[ProxyGuard] ${routePolicy.key}:${kind}:${window} ${consumed}/${limit} | IP: ${ip} | path: ${req.nextUrl.pathname}`
-        );
-
-        if (!success) {
-          const retryAfter = Math.max(
-            1,
-            Math.ceil((reset - Date.now()) / 1000)
-          );
-
-          return buildRateLimitResponse(429, retryAfter, {
-            'X-RateLimit-Limit': `${limit}`,
-            'X-RateLimit-Remaining': `${remaining}`,
-            'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
-            'X-RateLimit-Window': window,
-            'X-RateLimit-Policy': routePolicy.key,
-          });
-        }
+        return buildRateLimitResponse(429, retryAfter, {
+          'X-RateLimit-Limit': `${limit}`,
+          'X-RateLimit-Remaining': `${remaining}`,
+          'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
+          'X-RateLimit-Window': window,
+          'X-RateLimit-Policy': routePolicy.key,
+        });
       }
     }
   }
