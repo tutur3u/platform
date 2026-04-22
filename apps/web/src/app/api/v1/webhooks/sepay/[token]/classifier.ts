@@ -52,41 +52,29 @@ async function ensureFallbackCategory(input: {
       return existingCategoryId;
     }
 
-    const { data: created, error: createError } = await input.sbAdmin
-      .from('transaction_categories')
-      .insert({
-        color: null,
-        icon: null,
-        is_expense: input.isExpense,
-        name: fallbackName,
-        ws_id: input.wsId,
-      })
-      .select('id')
-      .single();
+    const ensuredCategoryResponse = await input.sbAdmin.rpc(
+      'ensure_sepay_fallback_transaction_category' as never,
+      {
+        p_is_expense: input.isExpense,
+        p_name: fallbackName,
+        p_ws_id: input.wsId,
+      } as never
+    );
+    const ensuredCategoryId = ensuredCategoryResponse.data as string | null;
+    const createError = ensuredCategoryResponse.error;
 
-    if (!createError && created?.id) {
-      return created.id;
-    }
-
-    const { data: retried, error: retryError } = await input.sbAdmin
-      .from('transaction_categories')
-      .select('id')
-      .eq('ws_id', input.wsId)
-      .eq('name', fallbackName)
-      .eq('is_expense', input.isExpense)
-      .order('created_at', { ascending: true })
-      .limit(1);
-
-    if (retryError) {
-      throw new Error('Failed to re-query fallback transaction category');
-    }
-
-    const retriedCategoryId = retried?.[0]?.id;
-    if (!retriedCategoryId) {
+    if (createError) {
       throw new Error('Failed to create fallback transaction category');
     }
 
-    return retriedCategoryId;
+    if (
+      typeof ensuredCategoryId !== 'string' ||
+      ensuredCategoryId.length === 0
+    ) {
+      throw new Error('Failed to create fallback transaction category');
+    }
+
+    return ensuredCategoryId;
   })();
 
   fallbackCategoryCache.set(cacheKey, fallbackCategoryPromise);

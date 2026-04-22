@@ -30,8 +30,12 @@ type ExistingSepayWebhookEvent = {
   created_transaction_id: string | null;
   id: string;
   payload?: Json | null;
+  received_at?: string | null;
   status: 'duplicate' | 'failed' | 'processed' | 'received';
 };
+
+const FALLBACK_DEDUPE_WINDOW_MS = 2 * 60_000;
+const STALE_RECEIVED_EVENT_TTL_MS = 5 * 60_000;
 
 function isJsonObject(
   value: Json | null | undefined
@@ -80,7 +84,7 @@ async function findExistingWebhookEvent(input: {
   if (input.payload.eventId) {
     const { data, error } = await input.sbAdmin
       .from('sepay_webhook_events')
-      .select('id, status, created_transaction_id')
+      .select('id, status, created_transaction_id, received_at')
       .eq('ws_id', input.wsId)
       .eq('wallet_id', input.walletId)
       .eq('sepay_event_id', input.payload.eventId)
@@ -97,15 +101,20 @@ async function findExistingWebhookEvent(input: {
     return null;
   }
 
+  // This fallback path only runs when SePay omitted eventId, which should be rare.
+  const recentIso = new Date(
+    Date.now() - FALLBACK_DEDUPE_WINDOW_MS
+  ).toISOString();
+
   const { data, error } = await input.sbAdmin
     .from('sepay_webhook_events')
-    .select('id, status, created_transaction_id, payload')
+    .select('id, status, created_transaction_id, payload, received_at')
     .eq('ws_id', input.wsId)
     .eq('wallet_id', input.walletId)
     .eq('reference_code', input.payload.referenceCode)
     .eq('transfer_type', input.payload.transferType)
     .eq('transfer_amount', input.payload.transferAmount)
-    .eq('transaction_date', input.payload.transactionDate)
+    .gt('received_at', recentIso)
     .is('sepay_event_id', null)
     .order('received_at', { ascending: false })
     .limit(10);
@@ -162,6 +171,24 @@ async function reuseFailedWebhookEvent(input: {
   return data.id;
 }
 
+function shouldRetryReceivedEvent(existingEvent: ExistingSepayWebhookEvent) {
+  if (
+    existingEvent.status !== 'received' ||
+    existingEvent.created_transaction_id
+  ) {
+    return false;
+  }
+
+  const receivedAt = existingEvent.received_at
+    ? new Date(existingEvent.received_at).getTime()
+    : Number.NaN;
+
+  return (
+    Number.isFinite(receivedAt) &&
+    Date.now() - receivedAt >= STALE_RECEIVED_EVENT_TTL_MS
+  );
+}
+
 async function markStoredTransactionProcessed(input: {
   eventId: string;
   sbAdmin: TypedSupabaseClient;
@@ -198,8 +225,14 @@ async function prepareWebhookEvent(input: {
 
   if (
     existingEvent.status === 'processed' ||
-    existingEvent.status === 'duplicate' ||
-    existingEvent.status === 'received'
+    existingEvent.status === 'duplicate'
+  ) {
+    return { eventId: existingEvent.id, shouldSkip: true as const };
+  }
+
+  if (
+    existingEvent.status === 'received' &&
+    !shouldRetryReceivedEvent(existingEvent)
   ) {
     return { eventId: existingEvent.id, shouldSkip: true as const };
   }

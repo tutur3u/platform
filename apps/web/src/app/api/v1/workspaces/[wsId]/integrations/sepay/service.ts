@@ -3,6 +3,7 @@ import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { getSepayWebhookAuthSecret } from '@/lib/sepay';
 import {
   createSepayWebhook,
+  deleteSepayWebhook,
   listSepayBankAccounts,
   refreshSepayAccessToken,
 } from '@/lib/sepay-api';
@@ -26,9 +27,13 @@ function resolveSepayBankAccountKey(account: {
   bank_account_id?: string | null;
   id?: string | null;
 }) {
-  return (
-    account.bank_account_id ?? account.id ?? account.account_number ?? null
-  );
+  const bankAccountId = account.bank_account_id?.trim();
+  if (bankAccountId && /^\d+$/.test(bankAccountId)) {
+    return bankAccountId;
+  }
+
+  const fallbackId = account.id?.trim();
+  return fallbackId && /^\d+$/.test(fallbackId) ? fallbackId : null;
 }
 
 function resolveConfiguredOrigin(value?: string) {
@@ -384,6 +389,8 @@ export async function provisionSepayWebhookEndpoint(input: {
     throw new Error('No SePay bank account found for webhook provisioning');
   }
 
+  const origin = resolveSepayAppOrigin();
+
   const { data, error, token } = await createSepayEndpointTokenRow({
     sbAdmin: input.sbAdmin,
     wsId: input.wsId,
@@ -398,17 +405,44 @@ export async function provisionSepayWebhookEndpoint(input: {
   if (!token) {
     throw new Error('Provisioning requires a newly created endpoint token');
   }
-  const origin = resolveSepayAppOrigin();
   const webhookUrl = `${origin}/api/v1/webhooks/sepay/${token}`;
-  const webhook = await createSepayWebhook({
-    accessToken,
-    bankAccountId,
-    callbackUrl: webhookUrl,
-    name: activeBankAccount.label
-      ? `Tuturuuu - ${activeBankAccount.label}`
-      : 'Tuturuuu Finance Integration',
-    requestApiKey: webhookApiKey,
-  });
+  let webhook: Awaited<ReturnType<typeof createSepayWebhook>>;
+  try {
+    webhook = await createSepayWebhook({
+      accessToken,
+      bankAccountId,
+      callbackUrl: webhookUrl,
+      name: activeBankAccount.label
+        ? `Tuturuuu - ${activeBankAccount.label}`
+        : 'Tuturuuu Finance Integration',
+      requestApiKey: webhookApiKey,
+    });
+  } catch (error) {
+    const cleanupTimestamp = new Date().toISOString();
+    const { error: cleanupError } = await input.sbAdmin
+      .from('sepay_webhook_endpoints')
+      .update({
+        active: false,
+        deleted_at: cleanupTimestamp,
+        rotated_at: cleanupTimestamp,
+      })
+      .eq('id', endpointId)
+      .eq('ws_id', input.wsId)
+      .is('deleted_at', null);
+
+    if (cleanupError) {
+      console.error(
+        'Failed to clean up orphaned SePay endpoint token row after remote webhook creation failure',
+        {
+          cleanupError,
+          endpointId,
+          wsId: input.wsId,
+        }
+      );
+    }
+
+    throw error;
+  }
 
   const { data: matchedWalletLink, error: walletLinkError } =
     await input.sbAdmin
@@ -436,6 +470,33 @@ export async function provisionSepayWebhookEndpoint(input: {
     .is('deleted_at', null);
 
   if (updateError) {
+    console.error(
+      'Failed to persist SePay webhook identifier after remote creation',
+      {
+        endpointId,
+        updateError,
+        webhookId: webhook.webhookId,
+        wsId: input.wsId,
+      }
+    );
+
+    try {
+      await deleteSepayWebhook({
+        accessToken,
+        webhookId: webhook.webhookId,
+      });
+    } catch (cleanupError) {
+      console.error(
+        'Failed to clean up remote SePay webhook after DB update failure',
+        {
+          cleanupError,
+          endpointId,
+          webhookId: webhook.webhookId,
+          wsId: input.wsId,
+        }
+      );
+    }
+
     throw new Error('Failed to persist SePay webhook identifier');
   }
 

@@ -68,7 +68,25 @@ async function findLinkedWalletId(input: {
     return gatewayAgnosticCandidates[0]?.wallet_id ?? null;
   }
 
-  return walletCandidates.length === 1 ? walletCandidates[0]?.wallet_id : null;
+  if (walletCandidates.length === 1) {
+    return walletCandidates[0]?.wallet_id ?? null;
+  }
+
+  console.warn(
+    'Ambiguous SePay wallet link candidates, refusing auto-resolution',
+    {
+      candidates: walletCandidates.map((candidate) => ({
+        sepayGateway: candidate.sepay_gateway,
+        walletId: candidate.wallet_id,
+      })),
+      gateway: input.payload.gateway,
+      wsId: input.wsId,
+    }
+  );
+
+  throw new Error(
+    'Ambiguous SePay wallet links matched this payload; relink the workspace wallet configuration'
+  );
 }
 
 async function findLinkedWalletIdByBankKey(input: {
@@ -128,10 +146,6 @@ function buildWalletLinkBankAccountKey(payload: {
 
   if (payload.accountNumber) {
     return `${payload.gateway ?? 'bank'}:${payload.accountNumber}`;
-  }
-
-  if (payload.referenceCode) {
-    return `reference:${payload.referenceCode}`;
   }
 
   return null;

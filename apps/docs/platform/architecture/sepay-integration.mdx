@@ -71,4 +71,11 @@ and the created `wallet_transactions.id` when processing succeeds.
 - OAuth callback state is intentionally cookie-backed rather than a custom HMAC
   payload.
 - SePay account sync follows cursor pagination and retries `429` responses using
-  `Retry-After` before failing the workspace sync.
+  SePay's `x-sepay-userapi-retry-after` header before failing the workspace
+  sync.
+- Webhook provisioning only accepts numeric SePay bank-account ids
+  (`bank_account_id` or numeric `id`) and best-effort deletes the remote webhook
+  if local persistence of the resulting webhook id fails.
+- Fallback uncategorized transaction categories are created through a
+  workspace/name/direction advisory-lock RPC so concurrent webhook workers reuse
+  one canonical fallback category id.

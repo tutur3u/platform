@@ -26,6 +26,7 @@ interface SepayApiListResponse<T> {
 const SEPAY_FETCH_TIMEOUT_MS = 10_000;
 const SEPAY_BANK_ACCOUNT_PAGE_LIMIT = 100;
 const SEPAY_BANK_ACCOUNT_RATE_LIMIT_RETRIES = 3;
+const SEPAY_BANK_ACCOUNT_MAX_PAGES = 100;
 
 function normalizeBaseUrl(value: string) {
   return value.trim().replace(/\/$/, '');
@@ -98,6 +99,14 @@ function readRetryAfterMs(value: string | null, fallbackMs: number) {
   }
 
   return Math.max(0, retryAt - Date.now());
+}
+
+function readSepayRetryAfterMs(response: Response, fallbackMs: number) {
+  return readRetryAfterMs(
+    response.headers.get('x-sepay-userapi-retry-after') ??
+      response.headers.get('retry-after'),
+    fallbackMs
+  );
 }
 
 async function delay(ms: number) {
@@ -211,6 +220,8 @@ export async function refreshSepayAccessToken(input: {
 
 export async function listSepayBankAccounts(input: { accessToken: string }) {
   const allAccounts: SepayBankAccount[] = [];
+  const visitedSinceIds = new Set<string>();
+  let pageCount = 0;
   let sinceId: string | null = null;
 
   while (true) {
@@ -235,12 +246,7 @@ export async function listSepayBankAccounts(input: { accessToken: string }) {
       attempt < SEPAY_BANK_ACCOUNT_RATE_LIMIT_RETRIES;
       attempt += 1
     ) {
-      await delay(
-        readRetryAfterMs(
-          response.headers.get('retry-after'),
-          1000 * (attempt + 1)
-        )
-      );
+      await delay(readSepayRetryAfterMs(response, 1000 * (attempt + 1)));
 
       response = await fetchSepay(url.toString(), {
         headers: {
@@ -274,11 +280,14 @@ export async function listSepayBankAccounts(input: { accessToken: string }) {
     if (
       pageAccounts.length < SEPAY_BANK_ACCOUNT_PAGE_LIMIT ||
       !nextSinceId ||
-      nextSinceId === sinceId
+      visitedSinceIds.has(nextSinceId) ||
+      pageCount >= SEPAY_BANK_ACCOUNT_MAX_PAGES
     ) {
       break;
     }
 
+    visitedSinceIds.add(nextSinceId);
+    pageCount += 1;
     sinceId = nextSinceId;
   }
 
@@ -292,6 +301,10 @@ export async function createSepayWebhook(input: {
   name: string;
   requestApiKey: string;
 }) {
+  if (!/^\d+$/.test(input.bankAccountId)) {
+    throw new Error('Invalid SePay bank account id');
+  }
+
   const response = await fetchSepay(`${getSepayApiBaseUrl()}/webhooks`, {
     body: JSON.stringify({
       active: 1,
@@ -331,4 +344,26 @@ export async function createSepayWebhook(input: {
   return {
     webhookId: String(json.id),
   };
+}
+
+export async function deleteSepayWebhook(input: {
+  accessToken: string;
+  webhookId: string;
+}) {
+  const response = await fetchSepay(
+    `${getSepayApiBaseUrl()}/webhooks/${encodeURIComponent(input.webhookId)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${input.accessToken}`,
+      },
+      method: 'DELETE',
+    }
+  );
+
+  if (!response.ok) {
+    const responseText = await response.text();
+    throw new Error(
+      `Failed to delete SePay webhook: ${response.status} ${responseText}`
+    );
+  }
 }

@@ -38,6 +38,17 @@ describe('normalizeSepayPayload', () => {
     expect(parsed.success).toBe(false);
   });
 
+  it('rejects negative amounts instead of normalizing them to positive', () => {
+    const parsed = normalizeSepayPayload({
+      amount: '-500',
+      created_at: '2026-04-22T10:15:30Z',
+      direction: 'income',
+      id: 'evt_123',
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
   it('rejects ambiguous non-ISO date strings', () => {
     const parsed = normalizeSepayPayload({
       amount: '125000',

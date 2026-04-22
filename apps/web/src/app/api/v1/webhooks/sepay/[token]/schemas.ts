@@ -104,7 +104,7 @@ function parseAmount(value: string | null): number | null {
       return null;
     }
 
-    return Number(absolute);
+    return Number(asBigInt);
   }
 
   if (/^-?\d+(?:\.\d+)?$/.test(normalized)) {
@@ -123,7 +123,7 @@ function parseAmount(value: string | null): number | null {
       return null;
     }
 
-    const parsed = Number(unsigned);
+    const parsed = Number(normalized);
 
     if (!Number.isFinite(parsed)) {
       return null;
