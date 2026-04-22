@@ -1,7 +1,7 @@
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
-import { ROOT_WORKSPACE_ID, toWorkspaceSlug } from '@tuturuuu/utils/constants';
+import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
@@ -10,7 +10,6 @@ import {
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/common';
 import { SidebarProvider } from '@/context/sidebar-context';
-import { hasRootExternalProjectsAdminPermission } from '@/lib/external-projects/access';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import { getNavigationLinks } from './navigation';
@@ -35,7 +34,6 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!workspace?.joined) redirect('/');
 
   const wsId = workspace.id;
-  const rootPermissions = await getPermissions({ wsId: ROOT_WORKSPACE_ID });
   const workspaceSlug = toWorkspaceSlug(wsId, {
     personal: !!workspace.personal,
   });
@@ -74,8 +72,6 @@ export default async function Layout({ children, params }: LayoutProps) {
         defaultCollapsed={defaultCollapsed}
         links={
           await getNavigationLinks({
-            includeAdmin:
-              hasRootExternalProjectsAdminPermission(rootPermissions),
             personalOrWsId: workspaceSlug,
             workspaceId: wsId,
           })

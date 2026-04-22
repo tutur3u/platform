@@ -24,8 +24,9 @@ Tuturuuu CMS now lives in the dedicated `apps/cms` satellite app.
 - `/{wsId}/library`: library landing for collections and entries
 - `/{wsId}/library/collections/{collectionId}`: collection detail
 - `/{wsId}/library/entries/{entryId}`: entry detail
+- `/{wsId}/members`: workspace member search, invite, removal, and role assignment
 - `/{wsId}/preview`: delivery preview
-- `/{wsId}/settings`: CMS settings, import tools, workspace member management, and role assignment
+- `/{wsId}/settings`: CMS settings and import tools
 
 The old CMS route model (`/{wsId}/content`, `/{wsId}/collections/...`, `/{wsId}/admin`) is removed instead of redirected.
 
@@ -42,13 +43,15 @@ The old CMS route model (`/{wsId}/content`, `/{wsId}/collections/...`, `/{wsId}/
 
 - Use `/{wsId}` as the concise starting point for counts, attention queues, recent activity, and bound-project context.
 - Use `/{wsId}/library` for collection browsing and entry navigation.
+- Use `/{wsId}/members` for routine collaborator management without leaving CMS.
 - Keep collection configuration on collection detail pages and entry authoring on entry detail pages.
 - Use `/{wsId}/preview` as the delivered-content surface backed by the existing preview delivery route.
-- Use `/{wsId}/settings` for import/sync operations, binding status, and standalone workspace member management.
+- Use `/{wsId}/settings` for import/sync operations and binding status.
 
 ## Member Management In CMS
 
-- Workspace member search, invite, remove, and role-assignment controls now live directly inside `/{wsId}/settings`.
+- Workspace member search, invite, remove, and role-assignment controls now have a dedicated `/{wsId}/members` sidebar route.
+- The settings page reuses the same member-management module, so the members experience stays consistent across both entry points.
 - This keeps standalone CMS usable without forcing operators back into the main platform app for routine collaborator changes.
 - The CMS settings surface still respects `manage_workspace_members` and `manage_workspace_roles`.
 
@@ -64,5 +67,5 @@ The old CMS route model (`/{wsId}/content`, `/{wsId}/collections/...`, `/{wsId}/
 
 - Link into the CMS-native route map directly.
 - Prefer the root `/internal/projects` console for canonical project and workspace-link operations.
-- Put new CMS member-management UX inside the CMS settings route unless there is a strong permission or workflow reason to keep it elsewhere.
+- Keep bound-workspace collaborator management on the dedicated `/{wsId}/members` route, and do not surface `/internal/projects` shortcuts inside non-root workspace sidebars.
 - Update both `apps/cms/messages/en.json` and `apps/cms/messages/vi.json`, then run `bun i18n:sort` whenever CMS copy changes.
