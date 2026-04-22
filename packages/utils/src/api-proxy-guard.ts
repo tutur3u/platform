@@ -277,53 +277,67 @@ export async function guardApiProxyRequest(
 
     if (ip === 'unknown') {
       return NextResponse.json(
-        { error: 'Unable to determine client IP' },
+        {
+          error: 'Unknown Client IP',
+          message: 'Unable to determine client IP address',
+        },
         { status: 400 }
       );
     }
 
-    const blockInfo = await isIPBlockedEdge(ip);
-    if (blockInfo) {
-      const retryAfter = Math.max(
-        1,
-        Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
-      );
+    try {
+      const blockInfo = await isIPBlockedEdge(ip);
+      if (blockInfo) {
+        const retryAfter = Math.max(
+          1,
+          Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
+        );
 
-      return buildRateLimitResponse(429, retryAfter);
-    }
-
-    const routePolicy = getRoutePolicy(req, routePolicies);
-    const isRead = req.method === 'GET' || req.method === 'HEAD';
-    const limiters = await getRateLimiters(
-      `${options.prefixBase}:${routePolicy.key}`,
-      routePolicy.rateLimits
-    );
-    const activeLimiters = isRead ? limiters.get : limiters.mutate;
-
-    for (const { limiter, window } of activeLimiters) {
-      if (!limiter) {
-        continue;
+        return buildRateLimitResponse(429, retryAfter);
       }
 
-      const { success, limit, remaining, reset } = await limiter.limit(ip);
-
-      const consumed = limit - remaining;
-      const kind = isRead ? 'read' : 'mutate';
-      console.log(
-        `[ProxyGuard] ${routePolicy.key}:${kind}:${window} ${consumed}/${limit} | IP: ${ip} | path: ${req.nextUrl.pathname}`
+      const routePolicy = getRoutePolicy(req, routePolicies);
+      const isRead = req.method === 'GET' || req.method === 'HEAD';
+      const limiters = await getRateLimiters(
+        `${options.prefixBase}:${routePolicy.key}`,
+        routePolicy.rateLimits
       );
+      const activeLimiters = isRead ? limiters.get : limiters.mutate;
 
-      if (!success) {
-        const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+      for (const { limiter, window } of activeLimiters) {
+        if (!limiter) {
+          continue;
+        }
 
-        return buildRateLimitResponse(429, retryAfter, {
-          'X-RateLimit-Limit': `${limit}`,
-          'X-RateLimit-Remaining': `${remaining}`,
-          'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
-          'X-RateLimit-Window': window,
-          'X-RateLimit-Policy': routePolicy.key,
-        });
+        const { success, limit, remaining, reset } = await limiter.limit(ip);
+
+        const consumed = limit - remaining;
+        const kind = isRead ? 'read' : 'mutate';
+        console.log(
+          `[ProxyGuard] ${routePolicy.key}:${kind}:${window} ${consumed}/${limit} | IP: ${ip} | path: ${req.nextUrl.pathname}`
+        );
+
+        if (!success) {
+          const retryAfter = Math.max(
+            1,
+            Math.ceil((reset - Date.now()) / 1000)
+          );
+
+          return buildRateLimitResponse(429, retryAfter, {
+            'X-RateLimit-Limit': `${limit}`,
+            'X-RateLimit-Remaining': `${remaining}`,
+            'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
+            'X-RateLimit-Window': window,
+            'X-RateLimit-Policy': routePolicy.key,
+          });
+        }
       }
+    } catch (error) {
+      console.error('[ProxyGuard] Rate limiter error:', error);
+      return NextResponse.json(
+        { error: 'Internal Server Error', message: 'Rate limiter failure' },
+        { status: 500 }
+      );
     }
   }
 

@@ -173,28 +173,21 @@ async function deleteKeys(...keys: string[]): Promise<void> {
 export async function isIPBlocked(
   ipAddress: string
 ): Promise<BlockInfo | null> {
-  try {
-    const redis = getUpstashRestRedisClient();
-    if (!redis) return null;
+  const redis = getUpstashRestRedisClient();
 
-    const cached = await redis.get<string>(REDIS_KEYS.IP_BLOCKED(ipAddress));
-    if (!cached) return null;
+  const cached = await redis.get<string>(REDIS_KEYS.IP_BLOCKED(ipAddress));
+  if (!cached) return null;
 
-    const blockInfo = typeof cached === 'string' ? JSON.parse(cached) : cached;
-    if (new Date(blockInfo.expiresAt) <= new Date()) return null;
+  const blockInfo = typeof cached === 'string' ? JSON.parse(cached) : cached;
+  if (new Date(blockInfo.expiresAt) <= new Date()) return null;
 
-    return {
-      id: blockInfo.id,
-      blockLevel: blockInfo.level,
-      reason: blockInfo.reason,
-      expiresAt: new Date(blockInfo.expiresAt),
-      blockedAt: new Date(blockInfo.blockedAt),
-    };
-  } catch (error) {
-    // Fail-open: if Redis is unavailable, allow request through
-    console.error('[Abuse Protection] Redis error:', error);
-    return null;
-  }
+  return {
+    id: blockInfo.id,
+    blockLevel: blockInfo.level,
+    reason: blockInfo.reason,
+    expiresAt: new Date(blockInfo.expiresAt),
+    blockedAt: new Date(blockInfo.blockedAt),
+  };
 }
 
 /**
