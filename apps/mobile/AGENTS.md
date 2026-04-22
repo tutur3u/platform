@@ -68,6 +68,7 @@ The authoritative repo-wide instructions live in [`../../AGENTS.md`](../../AGENT
 - **Inline Mobile Streaming State**: Create/update the pending assistant message as soon as stream starts and keep streaming/thinking indicators inline with transcript.
 - **Explicit Mobile Live Entry**: Do not auto-create Gemini Live sessions on workspace/chat load. Keep normal text chat on the standard `AssistantChatCubit` path, and only route text/audio through `AssistantLiveCubit` after the user explicitly enters live mode for the current chat.
 - **Dedicated Mobile Live Presentation State**: Drive fullscreen live UI from explicit page/chrome presentation state, not from inferred transport signals such as bound live `chatId`, socket status, or restored model ids. Reconnects and restored live transcripts must not silently force the user back into live mode or overwrite the normal text-model selection.
+- **Fullscreen Live Status Must Expose Detail Inline**: Do not rely on a generic live status badge or a secondary info sheet for failure diagnosis. Fullscreen live mode must render the current status detail inline, provide a primary recovery action for reconnecting/error states, and keep reconnecting states labeled as reconnecting even when a transport error reason is present.
 - **Branded Mobile Loading States**: Use `NovaLoadingIndicator` for primary page and section loading states in `apps/mobile`; reserve circular progress spinners for compact inline actions where the Nova mark would be too large or ambiguous.
 
 ## 4. Flutter Tooling & Platform Details

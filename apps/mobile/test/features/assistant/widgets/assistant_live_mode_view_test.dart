@@ -52,6 +52,13 @@ void main() {
 
     expect(find.text('Gemini 3.1 Flash Live'), findsOneWidget);
     expect(find.text('Live transcript'), findsOneWidget);
+    expect(
+      find.text(
+        'Microphone streaming is active. '
+        'Mira will keep listening for new audio input.',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Mute mic'), findsOneWidget);
     expect(find.text('Type'), findsOneWidget);
     expect(find.text('Mira'), findsWidgets);
@@ -101,5 +108,52 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('shows inline error details in the live header', (tester) async {
+    tester.view.physicalSize = const Size(1179, 2556);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: AssistantLiveModeView(
+            chatState: const AssistantChatState(
+              fallbackChatId: 'fallback-chat',
+            ),
+            liveState: const AssistantLiveState(
+              status: AssistantLiveConnectionStatus.error,
+              error: 'Socket closed unexpectedly.',
+            ),
+            liveUiState: const AssistantLiveUiState(
+              kind: AssistantLiveUiKind.error,
+              tone: AssistantLiveUiTone.error,
+              workspaceTier: 'PRO',
+              activeTier: 'PRO',
+              creditSource: AssistantCreditSource.workspace,
+              isEligible: true,
+              isVisibleLiveSession: true,
+              error: 'Socket closed unexpectedly.',
+            ),
+            assistantName: 'Mira',
+            scrollController: ScrollController(),
+            onClose: () async {},
+            onRetry: () async {},
+            onToggleMicrophone: () async {},
+            onToggleCamera: () async {},
+            onDisconnect: () async {},
+            onOpenTextEntry: () async {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Needs attention'), findsNWidgets(2));
+    expect(find.text('Socket closed unexpectedly.'), findsOneWidget);
+    expect(find.text('Retry live session'), findsOneWidget);
   });
 }

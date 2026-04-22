@@ -59,11 +59,10 @@ class AssistantLiveUiState extends Equatable {
     };
   }
 
-  String detailLabel(
-    AppLocalizations l10n,
-    AssistantLiveState liveState,
-  ) {
-    if (kind == AssistantLiveUiKind.error && error?.isNotEmpty == true) {
+  String detailLabel(AppLocalizations l10n, AssistantLiveState liveState) {
+    if ((kind == AssistantLiveUiKind.error ||
+            kind == AssistantLiveUiKind.reconnecting) &&
+        error?.isNotEmpty == true) {
       return error!;
     }
     if (kind == AssistantLiveUiKind.permissionDenied) {
@@ -124,19 +123,6 @@ AssistantLiveUiState deriveAssistantLiveUiState({
   final workspaceTier = shellState.workspaceCredits.tier;
   final activeTier = shellState.activeCredits.tier;
 
-  if (liveState.error?.isNotEmpty == true) {
-    return AssistantLiveUiState(
-      kind: AssistantLiveUiKind.error,
-      tone: AssistantLiveUiTone.error,
-      workspaceTier: workspaceTier,
-      activeTier: activeTier,
-      creditSource: shellState.creditSource,
-      isEligible: isEligible,
-      isVisibleLiveSession: isVisibleLiveSession,
-      error: liveState.error,
-    );
-  }
-
   if (liveState.microphonePermission == AssistantLivePermissionState.denied ||
       liveState.cameraPermission == AssistantLivePermissionState.denied) {
     return AssistantLiveUiState(
@@ -147,6 +133,19 @@ AssistantLiveUiState deriveAssistantLiveUiState({
       creditSource: shellState.creditSource,
       isEligible: isEligible,
       isVisibleLiveSession: isVisibleLiveSession,
+    );
+  }
+
+  if (liveState.status == AssistantLiveConnectionStatus.error) {
+    return AssistantLiveUiState(
+      kind: AssistantLiveUiKind.error,
+      tone: AssistantLiveUiTone.error,
+      workspaceTier: workspaceTier,
+      activeTier: activeTier,
+      creditSource: shellState.creditSource,
+      isEligible: isEligible,
+      isVisibleLiveSession: isVisibleLiveSession,
+      error: liveState.error,
     );
   }
 
@@ -182,6 +181,7 @@ AssistantLiveUiState deriveAssistantLiveUiState({
     creditSource: shellState.creditSource,
     isEligible: isEligible,
     isVisibleLiveSession: isVisibleLiveSession,
+    error: liveState.error,
     showBlockedReason: showBlockedReason,
   );
 }

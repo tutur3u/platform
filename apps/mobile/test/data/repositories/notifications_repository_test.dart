@@ -116,10 +116,9 @@ void main() {
       await repository.markRead(id: 'notif_1', read: true);
 
       verify(
-        () => apiClient.patchJson(
-          '/api/v1/notifications/notif_1',
-          {'read': true},
-        ),
+        () => apiClient.patchJson('/api/v1/notifications/notif_1', {
+          'read': true,
+        }),
       ).called(1);
     });
 
@@ -150,22 +149,16 @@ void main() {
       await repository.declineWorkspaceInvite('ws_1');
       await repository.updateMetadata(
         id: 'notif_1',
-        metadata: const {
-          'action_taken': 'accepted',
-        },
+        metadata: const {'action_taken': 'accepted'},
       );
 
       verify(
-        () => apiClient.postJson(
-          '/api/workspaces/ws_1/accept-invite',
-          const {},
-        ),
+        () =>
+            apiClient.postJson('/api/workspaces/ws_1/accept-invite', const {}),
       ).called(1);
       verify(
-        () => apiClient.postJson(
-          '/api/workspaces/ws_1/decline-invite',
-          const {},
-        ),
+        () =>
+            apiClient.postJson('/api/workspaces/ws_1/decline-invite', const {}),
       ).called(1);
       verify(
         () => apiClient.patchJson(

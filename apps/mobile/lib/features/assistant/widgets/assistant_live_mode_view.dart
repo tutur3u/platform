@@ -5,6 +5,8 @@ import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_activity_blob.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_status_panel.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_status_row.dart';
 import 'package:mobile/features/assistant/widgets/assistant_status_badge.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -50,6 +52,8 @@ class AssistantLiveModeView extends StatelessWidget {
         ? context.l10n.assistantLiveStageAssistantSpeaking
         : context.l10n.assistantLiveStageAssistantReady;
     final showRetry = liveState.status == AssistantLiveConnectionStatus.error;
+    final showExpandedStatusPanel =
+        _showStatusPanel && MediaQuery.sizeOf(context).height >= 720;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -67,9 +71,11 @@ class AssistantLiveModeView extends StatelessWidget {
           Padding(
             padding: EdgeInsets.fromLTRB(12, safeArea.top + 8, 12, 12),
             child: _LiveModeHeader(
+              liveState: liveState,
               liveUiState: liveUiState,
               onClose: onClose,
               onRetry: onRetry,
+              showStatusDetail: !showExpandedStatusPanel,
               showRetry: showRetry,
             ),
           ),
@@ -155,11 +161,24 @@ class AssistantLiveModeView extends StatelessWidget {
                         children: [
                           Padding(
                             padding: const EdgeInsets.fromLTRB(18, 16, 18, 10),
-                            child: Text(
-                              context.l10n.assistantLiveTranscriptTitle,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  context.l10n.assistantLiveTranscriptTitle,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                if (showExpandedStatusPanel) ...[
+                                  const SizedBox(height: 12),
+                                  AssistantLiveStatusPanel(
+                                    liveUiState: liveUiState,
+                                    liveState: liveState,
+                                    onRetry: onRetry,
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                           Expanded(
@@ -231,19 +250,29 @@ class AssistantLiveModeView extends StatelessWidget {
       liveState.isCameraActive &&
       cameraController != null &&
       cameraController!.value.isInitialized;
+
+  bool get _showStatusPanel =>
+      liveState.isBusy ||
+      liveUiState.kind == AssistantLiveUiKind.error ||
+      liveUiState.kind == AssistantLiveUiKind.reconnecting ||
+      liveUiState.kind == AssistantLiveUiKind.permissionDenied;
 }
 
 class _LiveModeHeader extends StatelessWidget {
   const _LiveModeHeader({
+    required this.liveState,
     required this.liveUiState,
     required this.onClose,
     required this.onRetry,
+    required this.showStatusDetail,
     required this.showRetry,
   });
 
+  final AssistantLiveState liveState;
   final AssistantLiveUiState liveUiState;
   final Future<void> Function() onClose;
   final Future<void> Function() onRetry;
+  final bool showStatusDetail;
   final bool showRetry;
 
   @override
@@ -281,6 +310,13 @@ class _LiveModeHeader extends StatelessWidget {
                   _ModelBadge(label: context.l10n.assistantLiveModelBadge),
                 ],
               ),
+              if (showStatusDetail) ...[
+                const SizedBox(height: 10),
+                AssistantLiveStatusRow(
+                  liveUiState: liveUiState,
+                  liveState: liveState,
+                ),
+              ],
             ],
           ),
         ),

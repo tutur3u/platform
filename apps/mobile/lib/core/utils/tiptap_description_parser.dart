@@ -393,19 +393,12 @@ String _escape(String value) {
       .replaceAll(')', r'\)');
 }
 
-String _extractPlainText(
-  Object? node, {
-  int depth = 0,
-  int? orderedIndex,
-}) {
+String _extractPlainText(Object? node, {int depth = 0, int? orderedIndex}) {
   if (node is List) {
     return node
         .map(
-          (item) => _extractPlainText(
-            item,
-            depth: depth,
-            orderedIndex: orderedIndex,
-          ),
+          (item) =>
+              _extractPlainText(item, depth: depth, orderedIndex: orderedIndex),
         )
         .join()
         .trimRight();
