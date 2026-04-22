@@ -1,4 +1,5 @@
 import { Bot, ExternalLink, Settings } from '@tuturuuu/icons';
+import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -6,6 +7,7 @@ import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 export const metadata: Metadata = {
   title: 'Integrations',
@@ -16,10 +18,19 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
+  searchParams: Promise<{
+    reason?: string;
+    sepay?: string;
+  }>;
 }
 
-export default async function IntegrationsPage({ params }: Props) {
+export default async function IntegrationsPage({
+  params,
+  searchParams,
+}: Props) {
   const { wsId: id } = await params;
+  const { reason, sepay } = await searchParams;
+  const t = await getTranslations('integrations-page');
 
   const workspace = await getWorkspace(id);
   if (!workspace) notFound();
@@ -78,6 +89,24 @@ export default async function IntegrationsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      {sepay === 'connected' ? (
+        <Alert>
+          <AlertTitle>{t('sepay-connected-title')}</AlertTitle>
+          <AlertDescription>
+            {t('sepay-connected-description')}
+          </AlertDescription>
+        </Alert>
+      ) : sepay === 'error' ? (
+        <Alert>
+          <AlertTitle>{t('sepay-error-title')}</AlertTitle>
+          <AlertDescription>
+            {reason === 'post_connect_provisioning_failed'
+              ? t('sepay-error-provisioning-description')
+              : t('sepay-error-description')}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
       {/* Header */}
       <div className="space-y-6 rounded-xl border border-dynamic-border/20 bg-linear-to-r from-dynamic-blue/5 via-dynamic-purple/5 to-dynamic-green/5 p-8">
         <div className="flex items-center justify-between">

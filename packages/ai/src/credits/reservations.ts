@@ -10,7 +10,7 @@ import type {
 
 type ReserveFixedCreditsRpcParams = {
   p_ws_id: string;
-  p_user_id: string;
+  p_user_id?: string | null;
   p_amount: number;
   p_model_id: string;
   p_feature: string;
@@ -67,7 +67,7 @@ async function getRpcCaller(
 export async function reserveFixedAiCredits(
   params: {
     wsId: string;
-    userId: string;
+    userId?: string;
     amount: number;
     modelId: string;
     feature: AiFeature;
@@ -90,7 +90,7 @@ export async function reserveFixedAiCredits(
 
   const { data, error } = await rpc('reserve_fixed_ai_credits', {
     p_ws_id: params.wsId,
-    p_user_id: params.userId,
+    p_user_id: params.userId ?? null,
     p_amount: params.amount,
     p_model_id: gatewayModelId,
     p_feature: params.feature,

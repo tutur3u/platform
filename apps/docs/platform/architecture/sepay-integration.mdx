@@ -1,0 +1,88 @@
+---
+title: 'SePay Integration'
+description: 'Architecture and implementation notes for the SePay finance integration.'
+updatedAt: '2026-04-22'
+---
+
+## Goal
+
+The SePay integration connects a workspace to SePay through OAuth, provisions
+webhooks without manual SePay UI setup, ingests transaction events, and writes
+normalized finance records into the platform.
+
+## Flow
+
+1. A workspace admin starts the OAuth flow.
+2. The platform stores an opaque state token in a short-lived HttpOnly cookie.
+3. The OAuth callback exchanges the code, encrypts the SePay tokens, stores
+   them in `sepay_connections`, and redirects the browser back to the workspace
+   integrations surface with a compact success or error query flag.
+4. The platform syncs SePay bank accounts into `sepay_wallet_links`.
+5. The platform provisions a SePay webhook endpoint and stores the hashed token
+   in `sepay_webhook_endpoints`.
+6. SePay sends transaction webhooks to `/api/v1/webhooks/sepay/[token]`.
+7. The webhook route validates auth, resolves the workspace and wallet,
+   deduplicates/retries safely through `sepay_webhook_events`, classifies the
+   transaction, and inserts `wallet_transactions`.
+
+## Data Model
+
+### `sepay_connections`
+
+Stores the workspace-level OAuth connection, encrypted access and refresh
+tokens, scopes, expiry, and connection status.
+
+### `sepay_wallet_links`
+
+Maps SePay bank-account metadata to workspace wallets so webhook deliveries can
+ resolve to the correct wallet without manual per-event routing.
+
+### `sepay_webhook_endpoints`
+
+Stores the hashed endpoint token, optional linked wallet, SePay webhook id, and
+active/rotation state for workspace webhook routing. The endpoint `ws_id` is
+treated as immutable after insert so existing event rows cannot drift across
+workspaces through later admin-backed updates.
+
+### `sepay_webhook_events`
+
+Stores the raw webhook payload, dedupe keys, processing status, failure reason,
+and the created `wallet_transactions.id` when processing succeeds.
+
+## Processing Rules
+
+- Incoming `transferAmount` values are normalized to a positive magnitude.
+- Direction is derived from `transferType`, not from the sign of
+  `transferAmount`.
+- `transferType: "in"` is written as a positive wallet transaction amount.
+- `transferType: "out"` is written as a negative wallet transaction amount.
+- Webhook retries reopen `failed` events immediately.
+- `received` events become retriable once they are older than the stale-event
+  TTL and still do not have a `created_transaction_id`.
+- `processed` and `duplicate` rows are treated as non-replayable duplicates.
+- Auto-classification failures must not block ingestion; the route falls back to
+  an uncategorized category.
+- SePay AI enrichers reserve fixed workspace-scoped AI credits before each
+  classifier/tagger model call and release the reservation on failure, so
+  webhook retries do not leak credits or block on long model latency.
+
+## Operational Notes
+
+- Required runtime env vars are documented in
+  [Secrets & Configuration](/build/devops/secrets-and-configuration).
+- The end-to-end validation flow lives in
+  [SePay Testing Guide](/build/devops/sepay-testing-guide).
+- OAuth callback state is intentionally cookie-backed rather than a custom HMAC
+  payload.
+- SePay account sync follows cursor pagination and retries `429` responses using
+  SePay's `x-sepay-userapi-retry-after` header before failing the workspace
+  sync.
+- Webhook provisioning only accepts numeric SePay bank-account ids
+  (`bank_account_id` or numeric `id`) and best-effort deletes the remote webhook
+  if local persistence of the resulting webhook id fails.
+- Fallback uncategorized transaction categories are created through a
+  workspace/name/direction advisory-lock RPC so concurrent webhook workers reuse
+  one canonical fallback category id.
+- Eventless webhook dedupe uses a short `received_at` window for proactive
+  duplicate detection, but the post-insert unique-key recovery path can still
+  reopen the older canonical row when SePay retries the same event later.

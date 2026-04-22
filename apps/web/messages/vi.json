@@ -5553,6 +5553,13 @@
     "users": "Người dùng",
     "workspaces": "Không gian làm việc"
   },
+  "integrations-page": {
+    "sepay-connected-description": "SePay đã được kết nối thành công. Việc đồng bộ tài khoản ngân hàng và cấu hình webhook đã sẵn sàng để kiểm tra trong không gian làm việc này.",
+    "sepay-connected-title": "SePay đã được kết nối",
+    "sepay-error-description": "SePay chưa thể hoàn tất kết nối. Hãy kiểm tra trạng thái tích hợp và thử lại từ không gian làm việc này.",
+    "sepay-error-provisioning-description": "SePay đã kết nối, nhưng bước đồng bộ tài khoản ngân hàng hoặc cấu hình webhook ban đầu chưa hoàn tất. Hãy thử lại các thao tác thiết lập từ không gian làm việc này.",
+    "sepay-error-title": "Thiết lập SePay cần được xử lý"
+  },
   "inventory": {
     "default_referral_promotion": "Khuyến mãi được cấp mặc định",
     "referral_count_cap": "Giới hạn số lượt giới thiệu",

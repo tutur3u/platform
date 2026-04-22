@@ -1,0 +1,191 @@
+---
+title: 'SePay Testing Guide'
+description: 'End-to-end validation steps for OAuth, provisioning, and webhook ingestion.'
+updatedAt: '2026-04-22'
+---
+
+## Prerequisites
+
+- The web app is reachable locally.
+- You have a target workspace id.
+- `ENABLE_SEPAY_INTEGRATION=true` is set in `workspace_secrets`.
+- The web runtime is configured with:
+  - `SEPAY_OAUTH_CLIENT_ID`
+  - `SEPAY_OAUTH_CLIENT_SECRET`
+  - `SEPAY_OAUTH_TOKEN_ENCRYPTION_SECRET`
+  - `SEPAY_WEBHOOK_API_KEY` or `SEPAY_WEBHOOK_SECRET`
+  - `WEB_APP_URL` or `NEXT_PUBLIC_WEB_APP_URL` or `NEXT_PUBLIC_APP_URL`
+- Optional overrides:
+  - `SEPAY_OAUTH_AUTHORIZE_URL`
+  - `SEPAY_OAUTH_BASE_URL`
+  - `SEPAY_API_BASE_URL`
+
+## Enable The Workspace Flag
+
+```sql
+insert into workspace_secrets (ws_id, name, value)
+values ('<WS_ID>', 'ENABLE_SEPAY_INTEGRATION', 'true')
+on conflict (ws_id, name)
+do update set value = excluded.value;
+```
+
+## Validate OAuth
+
+1. Start OAuth from the same browser session that will receive the callback.
+2. Call:
+
+```bash
+curl -X POST \
+  "http://localhost:7803/api/v1/workspaces/<WS_ID>/integrations/sepay/oauth/start" \
+  -H "Authorization: Bearer <YOUR_APP_TOKEN>" \
+  -c /tmp/sepay-oauth.cookies
+```
+
+3. Open the returned `authorizeUrl`.
+4. Complete SePay consent.
+5. Confirm the callback succeeds and the workspace receives a SePay connection.
+
+## Validate Provisioning
+
+```bash
+curl "http://localhost:7803/api/v1/workspaces/<WS_ID>/integrations/sepay/endpoints" \
+  -H "Authorization: Bearer <YOUR_APP_TOKEN>"
+```
+
+Expected:
+
+- At least one active endpoint.
+- `token_prefix` is present.
+- `sepay_webhook_id` is present after provisioning.
+
+Database checks:
+
+```sql
+select id, ws_id, status, access_token_expires_at, scopes
+from sepay_connections
+where ws_id = '<WS_ID>';
+
+select id, ws_id, sepay_bank_account_id, sepay_sub_account_id, wallet_id, active
+from sepay_wallet_links
+where ws_id = '<WS_ID>';
+
+select id, ws_id, active, deleted_at, token_prefix, sepay_webhook_id
+from sepay_webhook_endpoints
+where ws_id = '<WS_ID>'
+order by created_at desc;
+```
+
+## Validate Webhook Ingestion
+
+```bash
+curl -X POST \
+  "http://localhost:7803/api/v1/webhooks/sepay/<ENDPOINT_TOKEN>" \
+  -H "Authorization: Bearer <SEPAY_WEBHOOK_API_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "evt_test_001",
+    "gateway": "VCB",
+    "transactionDate": "2026-04-09T10:00:00+07:00",
+    "accountNumber": "0071000888888",
+    "subAccount": null,
+    "content": "Thu tien don hang #1001",
+    "description": "Thanh toan don hang",
+    "transferType": "in",
+    "transferAmount": 150000,
+    "referenceCode": "REF1001",
+    "code": "PAY1001"
+  }'
+```
+
+Expected:
+
+- The API returns success, or duplicate-safe success on replay.
+- A `sepay_webhook_events` row exists for `evt_test_001`.
+- A `wallet_transactions` row exists and is linked through
+  `created_transaction_id`.
+- `transactionDate` should always include an explicit timezone such as
+  `+07:00`. Bare `YYYY-MM-DD HH:mm:ss` strings are interpreted as Vietnam time
+  (UTC+7) for SePay compatibility; omitting the timezone in test payloads is a
+  fixture bug, not a supported operator shortcut.
+
+Verification query:
+
+```sql
+select id, sepay_event_id, status, created_transaction_id, failure_reason
+from sepay_webhook_events
+where ws_id = '<WS_ID>'
+order by received_at desc
+limit 20;
+
+select id, wallet_id, category_id, amount, creator_id, description, taken_at
+from wallet_transactions
+where creator_id in (
+  select id
+  from workspace_users
+  where ws_id = '<WS_ID>'
+    and full_name = 'SePay System'
+)
+order by created_at desc
+limit 20;
+```
+
+## Idempotency
+
+Resend the exact same payload with the same `id`.
+
+Expected:
+
+- No duplicate transaction is inserted.
+- The event is treated as a duplicate/no-op.
+
+## Expense Direction
+
+Send a payload with `transferType: "out"` and a positive `transferAmount`.
+
+Expected:
+
+- `wallet_transactions.amount` is stored as a negative value.
+- The transaction resolves against an expense category.
+
+## Endpoint Lifecycle
+
+1. Create an endpoint.
+2. Rotate the endpoint.
+3. Delete the endpoint.
+
+Expected:
+
+- Deleted endpoints have `active = false`.
+- Deleted endpoints have `deleted_at is not null`.
+- Listing routes exclude deleted endpoints.
+- Token resolution ignores deleted endpoints.
+
+## Disconnect
+
+```bash
+curl -X POST \
+  "http://localhost:7803/api/v1/workspaces/<WS_ID>/integrations/sepay/disconnect" \
+  -H "Authorization: Bearer <YOUR_APP_TOKEN>"
+```
+
+Expected:
+
+- `sepay_connections.status = 'revoked'`
+- Active endpoints are marked inactive and soft-deleted.
+
+## Failure Paths
+
+- Invalid webhook auth header is rejected.
+- Invalid webhook JSON body returns a validation error.
+- Unknown endpoint token is rejected.
+- Disabled feature flag blocks SePay workspace APIs.
+
+## Troubleshooting
+
+- OAuth start failures usually mean missing OAuth env vars or app-origin config.
+- OAuth callback state failures usually mean the callback did not reuse the
+  browser session or cookie jar that started OAuth.
+- Provisioning failures usually mean SePay has no usable bank account or the
+  webhook scopes were not granted.
+- Missing transactions should be debugged from
+  `sepay_webhook_events.failure_reason` first.

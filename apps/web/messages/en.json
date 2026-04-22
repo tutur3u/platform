@@ -5553,6 +5553,13 @@
     "users": "Users",
     "workspaces": "Workspaces"
   },
+  "integrations-page": {
+    "sepay-connected-description": "SePay connected successfully. Bank-account sync and webhook provisioning are ready to verify from this workspace.",
+    "sepay-connected-title": "SePay connected",
+    "sepay-error-description": "SePay could not finish connecting. Review the integration status and retry the flow from this workspace.",
+    "sepay-error-provisioning-description": "SePay connected, but the initial bank-account sync or webhook provisioning did not finish. Retry the setup actions from this workspace.",
+    "sepay-error-title": "SePay setup needs attention"
+  },
   "inventory": {
     "default_referral_promotion": "Default referral promotion",
     "referral_count_cap": "Referral count cap",
