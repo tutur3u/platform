@@ -1,6 +1,6 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { loadSharedCourseContent } from '@/lib/share/load-shared-course';
 import { CourseViewer } from './course-viewer';
 
 export const dynamic = 'force-dynamic';
@@ -19,16 +19,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: 'Shared Content' };
   }
 
-  const sbAdmin = await createAdminClient();
-  const { data: group } = await sbAdmin
-    .from('workspace_user_groups')
-    .select('name')
-    .eq('id', resourceId)
-    .maybeSingle();
+  const sharedCourse = await loadSharedCourseContent(resourceId);
 
   return {
-    title: group?.name ? `${group.name} – Course Content` : 'Course Content',
-    description: `View the shared course content for ${group?.name ?? 'this group'}.`,
+    title: sharedCourse
+      ? `${sharedCourse.group.name} – Course Content`
+      : 'Course Content',
+    description: sharedCourse
+      ? `View the shared course content for ${sharedCourse.group.name}.`
+      : 'View shared course content.',
   };
 }
 
@@ -38,18 +37,10 @@ export default async function SharePage({ params }: Props) {
   // Only support 'course' type for now
   if (type !== 'course') notFound();
 
-  // Fetch from the internal API route
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:7803';
-  const res = await fetch(`${appUrl}/api/share/${type}/${resourceId}`, {
-    cache: 'no-store',
-  });
+  const sharedCourse = await loadSharedCourseContent(resourceId);
+  if (!sharedCourse) notFound();
 
-  if (!res.ok) {
-    if (res.status === 404) notFound();
-    throw new Error('Failed to fetch shared content');
-  }
-
-  const { group, modules: publishedModules } = await res.json();
-
-  return <CourseViewer group={group} modules={publishedModules} />;
+  return (
+    <CourseViewer group={sharedCourse.group} modules={sharedCourse.modules} />
+  );
 }

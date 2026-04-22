@@ -28,10 +28,16 @@ export default function GroupShareButton({ groupId }: Props) {
       ? `${window.location.origin}/share/course/${groupId}`
       : '';
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(shareUrl);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
+  const handleCopy = async () => {
+    if (!shareUrl || copiedLink) return;
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy group share link', error);
+    }
   };
 
   return (
@@ -39,7 +45,7 @@ export default function GroupShareButton({ groupId }: Props) {
       <Button
         variant="outline"
         onClick={() => setIsOpen(true)}
-        className="border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20"
+        className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20"
       >
         <Share className="mr-2 h-5 w-5" />
         {t('share')}
@@ -59,7 +65,7 @@ export default function GroupShareButton({ groupId }: Props) {
                   value={shareUrl}
                   size={256}
                   marginSize={1}
-                  className="rounded-lg border bg-white p-2"
+                  className="rounded-lg border border-dynamic-border bg-background p-2"
                 />
               </div>
             )}
@@ -72,7 +78,7 @@ export default function GroupShareButton({ groupId }: Props) {
                 variant={copiedLink ? 'outline' : 'default'}
                 className="w-full"
                 onClick={handleCopy}
-                disabled={copiedLink}
+                disabled={!shareUrl || copiedLink}
               >
                 {copiedLink ? (
                   <CheckCheck className="mr-2 h-4 w-4" />

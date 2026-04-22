@@ -1,3 +1,18 @@
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_type
+    where typnamespace = 'public'::regnamespace
+      and typname = 'workspace_guest_permission_t'
+  ) then
+    create type "public"."workspace_guest_permission_t" as enum (
+      'course:view',
+      'course:complete'
+    );
+  end if;
+end $$;
+
 create table "public"."workspace_guests" (
     "id" uuid not null default gen_random_uuid(),
     "created_at" timestamp with time zone not null default now(),
@@ -21,28 +36,14 @@ create index "workspace_guests_ws_id_idx" on "public"."workspace_guests" using b
 
 create index "workspace_guests_user_id_idx" on "public"."workspace_guests" using btree (user_id);
 
-grant delete on table "public"."workspace_guests" to "anon";
-grant insert on table "public"."workspace_guests" to "anon";
-grant references on table "public"."workspace_guests" to "anon";
-grant select on table "public"."workspace_guests" to "anon";
-grant trigger on table "public"."workspace_guests" to "anon";
-grant truncate on table "public"."workspace_guests" to "anon";
-grant update on table "public"."workspace_guests" to "anon";
-
 grant delete on table "public"."workspace_guests" to "authenticated";
 grant insert on table "public"."workspace_guests" to "authenticated";
-grant references on table "public"."workspace_guests" to "authenticated";
 grant select on table "public"."workspace_guests" to "authenticated";
-grant trigger on table "public"."workspace_guests" to "authenticated";
-grant truncate on table "public"."workspace_guests" to "authenticated";
 grant update on table "public"."workspace_guests" to "authenticated";
 
 grant delete on table "public"."workspace_guests" to "service_role";
 grant insert on table "public"."workspace_guests" to "service_role";
-grant references on table "public"."workspace_guests" to "service_role";
 grant select on table "public"."workspace_guests" to "service_role";
-grant trigger on table "public"."workspace_guests" to "service_role";
-grant truncate on table "public"."workspace_guests" to "service_role";
 grant update on table "public"."workspace_guests" to "service_role";
 
 
@@ -50,7 +51,7 @@ grant update on table "public"."workspace_guests" to "service_role";
 create table "public"."workspace_guest_permissions" (
     "id" uuid not null default gen_random_uuid(),
     "guest_id" uuid not null,
-    "permission" text not null,
+    "permission" "public"."workspace_guest_permission_t" not null,
     "enable" boolean not null default true,
     "created_at" timestamp with time zone not null default now(),
     "resource_id" uuid,
@@ -64,30 +65,49 @@ alter table "public"."workspace_guest_permissions" add constraint "workspace_gue
 alter table "public"."workspace_guest_permissions" validate constraint "workspace_guest_permissions_guest_id_fkey";
 
 create index "workspace_guest_permissions_guest_id_idx" on "public"."workspace_guest_permissions" using btree (guest_id);
-
-grant delete on table "public"."workspace_guest_permissions" to "anon";
-grant insert on table "public"."workspace_guest_permissions" to "anon";
-grant references on table "public"."workspace_guest_permissions" to "anon";
-grant select on table "public"."workspace_guest_permissions" to "anon";
-grant trigger on table "public"."workspace_guest_permissions" to "anon";
-grant truncate on table "public"."workspace_guest_permissions" to "anon";
-grant update on table "public"."workspace_guest_permissions" to "anon";
+create unique index "ux_workspace_guest_perm_global"
+  on "public"."workspace_guest_permissions" using btree (guest_id, permission)
+  where resource_id is null;
+create unique index "ux_workspace_guest_perm_resource"
+  on "public"."workspace_guest_permissions" using btree (guest_id, permission, resource_id)
+  where resource_id is not null;
 
 grant delete on table "public"."workspace_guest_permissions" to "authenticated";
 grant insert on table "public"."workspace_guest_permissions" to "authenticated";
-grant references on table "public"."workspace_guest_permissions" to "authenticated";
 grant select on table "public"."workspace_guest_permissions" to "authenticated";
-grant trigger on table "public"."workspace_guest_permissions" to "authenticated";
-grant truncate on table "public"."workspace_guest_permissions" to "authenticated";
 grant update on table "public"."workspace_guest_permissions" to "authenticated";
 
 grant delete on table "public"."workspace_guest_permissions" to "service_role";
 grant insert on table "public"."workspace_guest_permissions" to "service_role";
-grant references on table "public"."workspace_guest_permissions" to "service_role";
 grant select on table "public"."workspace_guest_permissions" to "service_role";
-grant trigger on table "public"."workspace_guest_permissions" to "service_role";
-grant truncate on table "public"."workspace_guest_permissions" to "service_role";
 grant update on table "public"."workspace_guest_permissions" to "service_role";
 
--- Apply strict text limits if applicable (though we only have 'permission' text)
--- For now, let's just keep it simple as per request
+create policy "Workspace members can manage workspace guests"
+on "public"."workspace_guests"
+as permissive
+for all
+to authenticated
+using (is_org_member(auth.uid(), ws_id))
+with check (is_org_member(auth.uid(), ws_id));
+
+create policy "Workspace members can manage workspace guest permissions"
+on "public"."workspace_guest_permissions"
+as permissive
+for all
+to authenticated
+using (
+  exists (
+    select 1
+    from "public"."workspace_guests" wg
+    where wg.id = "workspace_guest_permissions"."guest_id"
+      and is_org_member(auth.uid(), wg.ws_id)
+  )
+)
+with check (
+  exists (
+    select 1
+    from "public"."workspace_guests" wg
+    where wg.id = "workspace_guest_permissions"."guest_id"
+      and is_org_member(auth.uid(), wg.ws_id)
+  )
+);

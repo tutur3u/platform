@@ -96,7 +96,9 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
             )}
             <div className="mt-1 flex flex-wrap gap-2">
               <Badge variant="secondary">
-                {modules.length} {t('share-course.published_modules')}
+                {t('share-course.published_modules', {
+                  count: modules.length,
+                })}
               </Badge>
             </div>
           </div>
@@ -121,7 +123,7 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
                       className={cn(
                         'flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-semibold text-xs transition-colors',
                         isActive
-                          ? 'bg-dynamic-blue text-white'
+                          ? 'bg-dynamic-blue text-background'
                           : 'bg-dynamic-blue/10 text-dynamic-blue'
                       )}
                     >
@@ -266,7 +268,7 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
           ) : (
             <div className="flex h-full flex-col items-center justify-center text-foreground/50">
               <BookOpenText className="mb-4 h-12 w-12 opacity-20" />
-              <p>Select a module to view its content</p>
+              <p>{t('share-course.select_module')}</p>
             </div>
           )}
         </div>

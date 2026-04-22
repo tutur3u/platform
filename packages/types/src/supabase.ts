@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.5';
-  };
   public: {
     Tables: {
       abuse_events: {
@@ -2208,21 +2203,21 @@ export type Database = {
         Row: {
           completed_date: string;
           created_at: string;
-          group_id: string | null;
+          group_id: string;
           id: string;
           user_id: string;
         };
         Insert: {
           completed_date: string;
           created_at?: string;
-          group_id?: string | null;
+          group_id: string;
           id?: string;
           user_id?: string;
         };
         Update: {
           completed_date?: string;
           created_at?: string;
-          group_id?: string | null;
+          group_id?: string;
           id?: string;
           user_id?: string;
         };
@@ -16616,7 +16611,7 @@ export type Database = {
           content: Json | null;
           created_at: string;
           extra_content: Json | null;
-          group_id: string | null;
+          group_id: string;
           id: string;
           is_public: boolean;
           is_published: boolean;
@@ -16628,7 +16623,7 @@ export type Database = {
           content?: Json | null;
           created_at?: string;
           extra_content?: Json | null;
-          group_id?: string | null;
+          group_id: string;
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
@@ -16640,7 +16635,7 @@ export type Database = {
           content?: Json | null;
           created_at?: string;
           extra_content?: Json | null;
-          group_id?: string | null;
+          group_id?: string;
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
@@ -18965,7 +18960,7 @@ export type Database = {
           enable: boolean;
           guest_id: string;
           id: string;
-          permission: string;
+          permission: Database['public']['Enums']['workspace_guest_permission_t'];
           resource_id: string | null;
         };
         Insert: {
@@ -18973,7 +18968,7 @@ export type Database = {
           enable?: boolean;
           guest_id: string;
           id?: string;
-          permission: string;
+          permission: Database['public']['Enums']['workspace_guest_permission_t'];
           resource_id?: string | null;
         };
         Update: {
@@ -18981,7 +18976,7 @@ export type Database = {
           enable?: boolean;
           guest_id?: string;
           id?: string;
-          permission?: string;
+          permission?: Database['public']['Enums']['workspace_guest_permission_t'];
           resource_id?: string | null;
         };
         Relationships: [
@@ -21730,8 +21725,10 @@ export type Database = {
       workspace_user_groups: {
         Row: {
           archived: boolean;
+          cert_template: Database['public']['Enums']['certificate_templates'];
           created_at: string | null;
           creator_id: string | null;
+          description: string | null;
           ending_date: string | null;
           id: string;
           is_guest: boolean | null;
@@ -21743,8 +21740,10 @@ export type Database = {
         };
         Insert: {
           archived?: boolean;
+          cert_template?: Database['public']['Enums']['certificate_templates'];
           created_at?: string | null;
           creator_id?: string | null;
+          description?: string | null;
           ending_date?: string | null;
           id?: string;
           is_guest?: boolean | null;
@@ -21756,8 +21755,10 @@ export type Database = {
         };
         Update: {
           archived?: boolean;
+          cert_template?: Database['public']['Enums']['certificate_templates'];
           created_at?: string | null;
           creator_id?: string | null;
+          description?: string | null;
           ending_date?: string | null;
           id?: string;
           is_guest?: boolean | null;
@@ -22774,7 +22775,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -28036,6 +28066,10 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      reorder_workspace_course_modules: {
+        Args: { p_group_id: string; p_module_ids: string[] };
+        Returns: undefined;
+      };
       reserve_fixed_ai_credits: {
         Args: {
           p_amount: number;
@@ -30555,6 +30589,7 @@ export type Database = {
         | 'gemini-2.0-flash-lite'
         | 'gemini-2.5-flash-lite';
       workspace_calendar_type: 'primary' | 'tasks' | 'habits' | 'custom';
+      workspace_guest_permission_t: 'course:view' | 'course:complete';
       workspace_order_product_kind:
         | 'subscription_product'
         | 'credit_pack'
@@ -32693,6 +32728,7 @@ export const Constants = {
         'gemini-2.5-flash-lite',
       ],
       workspace_calendar_type: ['primary', 'tasks', 'habits', 'custom'],
+      workspace_guest_permission_t: ['course:view', 'course:complete'],
       workspace_order_product_kind: [
         'subscription_product',
         'credit_pack',

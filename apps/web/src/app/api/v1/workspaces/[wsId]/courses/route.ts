@@ -14,8 +14,7 @@ export async function GET(_: Request, { params }: Params) {
   const { data, error } = await supabase
     .from('workspace_user_groups')
     .select('*')
-    .eq('ws_id', id)
-    .single();
+    .eq('ws_id', id);
 
   if (error) {
     console.log(error);

@@ -75,8 +75,8 @@ export function CourseModuleForm({
   const onSubmit = async (payload: z.infer<typeof FormSchema>) => {
     try {
       const result = await saveMutation.mutateAsync(payload);
-      if (onCreated) {
-        if (result) onCreated(result);
+      if (result && onCreated) {
+        onCreated(result);
       } else {
         router.refresh();
       }

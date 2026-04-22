@@ -1,56 +1,166 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { Database, Json } from '@tuturuuu/types';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { withSessionAuth } from '@/lib/api-auth';
 
-interface Params {
-  params: Promise<{
-    groupId: string;
-  }>;
+interface RouteParams {
+  groupId: string;
+  wsId: string;
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
-  const { groupId: id } = await params;
+type WorkspaceCourseModuleInsert =
+  Database['public']['Tables']['workspace_course_modules']['Insert'];
 
-  const { data, error } = await supabase
-    .from('workspace_course_modules')
-    .select('*')
-    .eq('group_id', id)
-    .order('sort_key', { ascending: true, nullsFirst: false })
-    .order('created_at', { ascending: true });
+const CreateModuleSchema = z
+  .object({
+    content: z.custom<Json>().optional(),
+    extra_content: z.custom<Json>().optional(),
+    is_public: z.boolean().optional(),
+    is_published: z.boolean().optional(),
+    name: z.string().trim().min(1).max(255),
+    youtube_links: z.array(z.string().trim()).nullable().optional(),
+  })
+  .strict();
 
-  if (error) {
-    console.log(error);
+async function validateWorkspaceGroupAccess(
+  wsId: string,
+  groupId: string,
+  userId: string,
+  sessionSupabase: TypedSupabaseClient
+) {
+  const normalizedWsId = await normalizeWorkspaceId(wsId, sessionSupabase);
+
+  const { data: membership, error: membershipError } = await sessionSupabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', normalizedWsId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (membershipError) {
     return NextResponse.json(
-      { message: 'Error fetching workspace course modules' },
+      { message: 'Failed to verify workspace access' },
       { status: 500 }
     );
   }
 
-  return NextResponse.json(data);
-}
-
-export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
-  const { groupId: id } = await params;
-
-  const data = await req.json();
-
-  const { data: module, error } = await supabase
-    .from('workspace_course_modules')
-    .insert({
-      ...data,
-      group_id: id,
-    })
-    .select('*')
-    .single();
-
-  if (error) {
-    console.log(error);
+  if (!membership) {
     return NextResponse.json(
-      { message: 'Error creating workspace course module' },
+      { message: "You don't have access to this workspace" },
+      { status: 403 }
+    );
+  }
+
+  const sbAdmin = await createAdminClient();
+  const { data: group, error: groupError } = await sbAdmin
+    .from('workspace_user_groups')
+    .select('id')
+    .eq('id', groupId)
+    .eq('ws_id', normalizedWsId)
+    .maybeSingle();
+
+  if (groupError) {
+    return NextResponse.json(
+      { message: 'Failed to validate group' },
       { status: 500 }
     );
   }
 
-  return NextResponse.json(module);
+  if (!group) {
+    return NextResponse.json({ message: 'Group not found' }, { status: 404 });
+  }
+
+  return { sbAdmin };
 }
+
+export const GET = withSessionAuth(
+  async (_request, context, params: RouteParams | Promise<RouteParams>) => {
+    const { wsId, groupId } = await params;
+
+    const access = await validateWorkspaceGroupAccess(
+      wsId,
+      groupId,
+      context.user.id,
+      context.supabase
+    );
+    if (access instanceof NextResponse) return access;
+
+    const { data, error } = await access.sbAdmin
+      .from('workspace_course_modules')
+      .select('*')
+      .eq('group_id', groupId)
+      .order('sort_key', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      return NextResponse.json(
+        { message: 'Error fetching workspace course modules' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(data);
+  },
+  { rateLimit: { maxRequests: 60, windowMs: 60000 } }
+);
+
+export const POST = withSessionAuth(
+  async (request, context, params: RouteParams | Promise<RouteParams>) => {
+    const { wsId, groupId } = await params;
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { message: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    const parsed = CreateModuleSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: 'Invalid request body', errors: parsed.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const access = await validateWorkspaceGroupAccess(
+      wsId,
+      groupId,
+      context.user.id,
+      context.supabase
+    );
+    if (access instanceof NextResponse) return access;
+
+    const insertPayload: WorkspaceCourseModuleInsert = {
+      content: parsed.data.content ?? null,
+      extra_content: parsed.data.extra_content ?? null,
+      group_id: groupId,
+      is_public: parsed.data.is_public ?? false,
+      is_published: parsed.data.is_published ?? false,
+      name: parsed.data.name,
+      youtube_links: parsed.data.youtube_links ?? null,
+    };
+
+    const { data: module, error } = await access.sbAdmin
+      .from('workspace_course_modules')
+      .insert(insertPayload)
+      .select('*')
+      .single();
+
+    if (error) {
+      return NextResponse.json(
+        { message: 'Error creating workspace course module' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(module);
+  },
+  { rateLimit: { maxRequests: 60, windowMs: 60000 } }
+);
