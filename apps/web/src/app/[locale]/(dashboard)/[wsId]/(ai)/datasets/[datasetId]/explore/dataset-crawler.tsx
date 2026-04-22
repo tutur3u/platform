@@ -696,7 +696,7 @@ export function DatasetCrawler({
             />
             {form.formState.errors.url && (
               <p className="mt-1 text-xs text-destructive">
-                {form.formState.errors.url.message}
+                {String(form.formState.errors.url.message)}
               </p>
             )}
           </div>

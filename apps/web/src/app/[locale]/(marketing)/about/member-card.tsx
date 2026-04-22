@@ -1,5 +1,5 @@
 import { Card, CardContent, CardFooter, CardHeader } from '@ncthub/ui/card';
-import { Facebook, Linkedin } from '@ncthub/ui/icons';
+import { SiFacebook, SiLinkerd } from '@ncthub/ui/icons';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -45,17 +45,17 @@ export default function MemberCard({
         <p className="text-muted-foreground italic">"{quote}"</p>
         <p className="mt-2 text-sm text-foreground/80">{bio}</p>
       </CardContent>
-      <CardFooter className="flex justify-center gap-4 p-4 pt-0">
+      <CardFooter className="bg-transparent border-none flex justify-center gap-4 p-4 pt-0">
         {socials.facebook ? (
           <Link
             href={socials.facebook}
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Facebook className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
+            <SiFacebook className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
           </Link>
         ) : (
-          <Facebook className="h-6 w-6 text-muted-foreground" />
+          <SiFacebook className="h-6 w-6 text-muted-foreground" />
         )}
 
         {socials.linkedin ? (
@@ -64,10 +64,10 @@ export default function MemberCard({
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Linkedin className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
+            <SiLinkerd className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
           </Link>
         ) : (
-          <Linkedin className="h-6 w-6 text-muted-foreground" />
+          <SiLinkerd className="h-6 w-6 text-muted-foreground" />
         )}
       </CardFooter>
     </Card>

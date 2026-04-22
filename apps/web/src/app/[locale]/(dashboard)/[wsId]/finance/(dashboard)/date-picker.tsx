@@ -49,9 +49,7 @@ export function DatePicker({
           selected={defaultValue}
           onSelect={(date) => {
             onValueChange(date);
-          }}
-          onSubmit={(date) => {
-            onValueChange(date);
+            setOpen(false);
           }}
           fromDate={fromDate}
           toDate={toDate}

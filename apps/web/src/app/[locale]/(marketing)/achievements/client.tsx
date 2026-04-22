@@ -19,8 +19,8 @@ import type { Achievement } from './data';
 
 const categoryColors = {
   Hackathon: 'default',
-  Competition: 'success',
-  Contest: 'warning',
+  Competition: 'default',
+  Contest: 'outline',
   Tournament: 'secondary',
   Award: 'default',
 } as const;

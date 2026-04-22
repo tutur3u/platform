@@ -50,10 +50,6 @@ export function DatePicker({
           onSelect={(date) => {
             setDate(date);
             onValueChange?.(date);
-          }}
-          onSubmit={(date) => {
-            setDate(date);
-            onValueChange?.(date);
             setOpen(false);
           }}
           initialFocus

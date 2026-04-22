@@ -64,17 +64,7 @@ export default function PlanUserFilter({
             {guestCount}/{GUEST_LIMIT}
           </span>
         </div>
-        <Progress
-          value={guestProgress}
-          className="h-2"
-          indicatorClassName={
-            guestProgress >= 90
-              ? 'bg-dynamic-red'
-              : guestProgress >= 75
-                ? 'bg-dynamic-yellow'
-                : ''
-          }
-        />
+        <Progress value={guestProgress} className="h-2" />
       </div>
 
       <div className={listClassName}>

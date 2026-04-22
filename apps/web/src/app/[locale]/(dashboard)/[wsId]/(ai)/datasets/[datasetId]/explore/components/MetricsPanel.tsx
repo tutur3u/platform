@@ -71,7 +71,7 @@ export function MetricsPanel({ metrics, crawlState }: Props) {
                 <div className="text-2xl font-bold">{metrics.requestCount}</div>
                 <Badge
                   variant={
-                    metrics.failedRequests === 0 ? 'success' : 'destructive'
+                    metrics.failedRequests === 0 ? 'default' : 'destructive'
                   }
                 >
                   {metrics.failedRequests} failed
@@ -146,7 +146,7 @@ export function MetricsPanel({ metrics, crawlState }: Props) {
                   </div>
                   <Badge
                     variant={
-                      metrics.failedRequests === 0 ? 'success' : 'destructive'
+                      metrics.failedRequests === 0 ? 'default' : 'destructive'
                     }
                   >
                     {(

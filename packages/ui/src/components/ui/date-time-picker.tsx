@@ -266,10 +266,6 @@ export function DateTimePicker({
               mode="single"
               selected={date}
               onSelect={handleSelect}
-              onSubmit={(date) => {
-                handleSelect(date);
-                setIsCalendarOpen(false);
-              }}
               initialFocus
               disabled={
                 minDate

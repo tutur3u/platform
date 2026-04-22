@@ -47,13 +47,7 @@ const FolderFormSchema = z.object({
 });
 
 const ObjectFormSchema = z.object({
-  files: z.custom<File[]>((value) => {
-    if (value.length === 0) {
-      throw new Error('At least one file is required');
-    }
-
-    return value;
-  }),
+  files: z.array(z.instanceof(File)).min(1),
 });
 
 export function StorageFolderForm({
@@ -151,7 +145,7 @@ export function StorageObjectForm({
 
   const [loading, setLoading] = useState(false);
 
-  const form = useForm({
+  const form = useForm<z.infer<typeof ObjectFormSchema>>({
     resolver: zodResolver(ObjectFormSchema),
     defaultValues: {
       files: [],
@@ -244,7 +238,9 @@ export function StorageObjectForm({
                     placeholder="Files"
                     accept={accept}
                     onChange={(e) => {
-                      onChange(e.target.files && Array.from(e.target.files));
+                      onChange(
+                        e.target.files ? Array.from(e.target.files) : []
+                      );
                     }}
                     multiple
                   />
