@@ -1,14 +1,14 @@
-import { Box, Check, Loader2, Plus, Search } from '@tuturuuu/icons';
+import { Box, Check, Loader2, Plus } from '@tuturuuu/icons';
 import {
   DropdownMenuItem,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
-import { normalizeBoardText } from '../board-text-utils';
+import { TaskResourceSearchField } from '../../../shared/task-resource-search-field';
+import { projectNameMatchesQuery } from '../../../shared/task-resource-search-filters';
 
 interface TaskProject {
   id: string;
@@ -57,11 +57,8 @@ export function TaskProjectsMenu({
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter projects based on search
-  const filteredProjects = availableProjects.filter(
-    (project) =>
-      !searchQuery ||
-      normalizeBoardText(project.name).includes(normalizeBoardText(searchQuery))
+  const filteredProjects = availableProjects.filter((project) =>
+    projectNameMatchesQuery(project.name, searchQuery)
   );
 
   return (
@@ -71,20 +68,11 @@ export function TaskProjectsMenu({
         {t.projects}
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="w-80 p-0">
-        {/* Search Input */}
-        <div className="border-b p-2">
-          <div className="relative">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={t.searchProjects}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.stopPropagation()}
-              onPointerDownCapture={(e) => e.stopPropagation()}
-              className="h-8 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
-            />
-          </div>
-        </div>
+        <TaskResourceSearchField
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder={t.searchProjects}
+        />
 
         {/* Projects List */}
         {isLoading ? (
