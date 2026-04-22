@@ -766,7 +766,15 @@ export default function LoginForm() {
       }
 
       if (user && !requiresMFA) {
-        await processNextUrl();
+        try {
+          await processNextUrl();
+        } catch (error) {
+          console.error(
+            '[login] Failed to process authenticated returnUrl navigation:',
+            error
+          );
+          setReadyForAuth(true);
+        }
       } else {
         setReadyForAuth(true);
       }

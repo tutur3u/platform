@@ -4,6 +4,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://tuturuuu.com',
   },
   {
+    name: 'cms',
+    url: 'https://cms.tuturuuu.com',
+  },
+  {
     name: 'calendar',
     url: 'https://calendar.tuturuuu.com',
   },
@@ -34,6 +38,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
 ] as const;
 
 export const DEV_INTERNAL_APP_DOMAINS = [
+  {
+    name: 'cms',
+    url: 'http://localhost:7811',
+  },
   {
     name: 'calendar',
     url: 'http://localhost:3001',

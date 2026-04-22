@@ -428,6 +428,13 @@ export async function resendVerificationEmail() {
 
 The platform supports token-based authentication across different apps using `@tuturuuu/auth/cross-app`.
 
+When a new satellite app participates in centralized login, wire both sides in the same patch:
+
+- Register the app URL in `packages/utils/src/internal-domains.ts` so `mapUrlToApp(...)` can recognize its `returnUrl`.
+- Add `apps/<app>/src/app/api/auth/verify-app-token/route.ts` with `createPOST('<app>')` so `/verify-token` can exchange the cross-app token for an app-local session.
+
+If either piece is missing, centralized login can stall on the web login spinner or land on `/verify-token` with no token-verification endpoint to finish the handoff.
+
 ### Generate Cross-App Token
 
 ```typescript
