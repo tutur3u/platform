@@ -12,7 +12,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Props {
   groupId: string;
@@ -22,11 +22,13 @@ export default function GroupShareButton({ groupId }: Props) {
   const t = useTranslations('ws-user-group-details');
   const [isOpen, setIsOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
 
-  const shareUrl =
-    typeof window !== 'undefined'
-      ? `${window.location.origin}/share/course/${groupId}`
-      : '';
+  useEffect(() => {
+    setShareUrl(
+      `${window.location.origin}/share/course/${encodeURIComponent(groupId)}`
+    );
+  }, [groupId]);
 
   const handleCopy = async () => {
     if (!shareUrl || copiedLink) return;

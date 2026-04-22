@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceCourseBuilderModule } from '@tuturuuu/types';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
@@ -15,22 +16,6 @@ interface Props {
     courseId: string;
     wsId: string;
   }>;
-}
-
-interface BuilderModule {
-  content: unknown;
-  group_id: string | null;
-  created_at: string;
-  extra_content: unknown;
-  flashcard_count: number;
-  id: string;
-  is_public: boolean;
-  is_published: boolean;
-  name: string;
-  quiz_count: number;
-  quiz_set_count: number;
-  sort_key: number | null;
-  youtube_links: string[] | null;
 }
 
 export default async function CourseBuilderPage({ params }: Props) {
@@ -92,24 +77,23 @@ export default async function CourseBuilderPage({ params }: Props) {
     );
   }
 
-  const builderModules: BuilderModule[] = (modules ?? []).map((module) => ({
-    content: module.content,
-    group_id: module.group_id,
-    created_at: module.created_at,
-    extra_content: module.extra_content,
-    flashcard_count: flashcardCountByModuleId.get(module.id) ?? 0,
-    id: module.id,
-    is_public: module.is_public,
-    is_published: module.is_published,
-    name: module.name,
-    quiz_count: quizCountByModuleId.get(module.id) ?? 0,
-    quiz_set_count: quizSetCountByModuleId.get(module.id) ?? 0,
-    sort_key:
-      typeof (module as { sort_key?: number | null }).sort_key === 'number'
-        ? ((module as { sort_key?: number | null }).sort_key ?? null)
-        : null,
-    youtube_links: module.youtube_links,
-  }));
+  const builderModules: WorkspaceCourseBuilderModule[] = (modules ?? []).map(
+    (module) => ({
+      content: module.content,
+      group_id: module.group_id,
+      created_at: module.created_at,
+      extra_content: module.extra_content,
+      flashcard_count: flashcardCountByModuleId.get(module.id) ?? 0,
+      id: module.id,
+      is_public: module.is_public,
+      is_published: module.is_published,
+      name: module.name,
+      quiz_count: quizCountByModuleId.get(module.id) ?? 0,
+      quiz_set_count: quizSetCountByModuleId.get(module.id) ?? 0,
+      sort_key: module.sort_key ?? null,
+      youtube_links: module.youtube_links,
+    })
+  );
 
   return (
     <CourseBuilderClient

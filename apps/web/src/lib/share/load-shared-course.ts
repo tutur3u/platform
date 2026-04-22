@@ -2,26 +2,31 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceCourseModule } from '@tuturuuu/types';
-
-interface SharedCourseModule extends WorkspaceCourseModule {
-  flashcards: number;
-  quizzes: number;
-  quizSets: number;
-}
+import type { SharedCourseGroup, SharedCourseModule } from '@tuturuuu/types';
+import type { JSONContent } from '@tuturuuu/types/tiptap';
+import { validate as validateUuid } from 'uuid';
 
 interface SharedCourseContent {
-  group: {
-    description: string | null;
-    name: string;
-  };
+  group: SharedCourseGroup;
   modules: SharedCourseModule[];
+}
+
+function toRichTextContent(value: unknown): JSONContent | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as JSONContent;
 }
 
 export async function loadSharedCourseContent(
   groupId: string,
   request?: Request
 ): Promise<SharedCourseContent | null> {
+  if (!validateUuid(groupId)) {
+    return null;
+  }
+
   const sessionSupabase = request
     ? await createClient(request)
     : await createClient();
@@ -146,6 +151,7 @@ export async function loadSharedCourseContent(
     },
     modules: publishedModules.map((module) => ({
       ...module,
+      content: toRichTextContent(module.content),
       flashcards: flashcardCount.get(module.id) ?? 0,
       quizzes: quizCount.get(module.id) ?? 0,
       quizSets: quizSetCount.get(module.id) ?? 0,

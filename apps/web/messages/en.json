@@ -8965,9 +8965,15 @@
   "share-course": {
     "badge": "Shared Course",
     "flashcard_count": "{count, plural, =1 {1 flashcard} other {# flashcards}} available",
+    "flashcard_label": "Flashcards",
+    "flashcard_short": "F",
     "no_published_modules": "No published modules yet.",
     "published_modules": "{count, plural, =1 {1 published module} other {# published modules}}",
     "quiz_count": "{count, plural, =1 {1 quiz} other {# quizzes}} available",
+    "quiz_label": "Quizzes",
+    "quiz_set_label": "Quiz sets",
+    "quiz_set_short": "S",
+    "quiz_short": "Q",
     "select_module": "Select a module to view its content"
   },
   "sidebar_recent_items": {
@@ -15418,7 +15424,7 @@
     "confirm_remove_member": "Are you sure you want to remove this member?",
     "copy_link": "Copy Link",
     "courses": "Courses",
-    "current_group_name": "this group",
+    "current_group_name": "this",
     "link_copied": "Link copied to clipboard",
     "manager": "Manager",
     "managers": "Managers",
@@ -15435,7 +15441,7 @@
     "requests": "Requests",
     "schedule": "Group Schedule",
     "search_users_placeholder": "Search users...",
-    "select_and_submit": "{groupActionLabel} to the group {groupName}",
+    "select_and_submit": "{groupActionLabel} to {groupName}",
     "share": "Share",
     "share_description": "Generate a link to share this group."
   },

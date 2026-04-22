@@ -18,5 +18,4 @@ begin
 end;
 $$;
 
-grant execute on function "public"."reorder_workspace_course_modules"(uuid, uuid[]) to authenticated;
 grant execute on function "public"."reorder_workspace_course_modules"(uuid, uuid[]) to service_role;

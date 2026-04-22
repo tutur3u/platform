@@ -2,11 +2,11 @@ import { loadSharedCourseContent } from '@/lib/share/load-shared-course';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ Id: string }> }
+  { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
-    const { Id } = await params;
-    const sharedCourse = await loadSharedCourseContent(Id, request);
+    const { courseId } = await params;
+    const sharedCourse = await loadSharedCourseContent(courseId, request);
     if (!sharedCourse) {
       return Response.json({ error: 'Course not found' }, { status: 404 });
     }

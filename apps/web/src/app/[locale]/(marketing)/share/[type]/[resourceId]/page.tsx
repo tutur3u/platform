@@ -13,21 +13,15 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { type, resourceId } = await params;
+  const { type } = await params;
 
   if (type !== 'course') {
     return { title: 'Shared Content' };
   }
 
-  const sharedCourse = await loadSharedCourseContent(resourceId);
-
   return {
-    title: sharedCourse
-      ? `${sharedCourse.group.name} – Course Content`
-      : 'Course Content',
-    description: sharedCourse
-      ? `View the shared course content for ${sharedCourse.group.name}.`
-      : 'View shared course content.',
+    title: 'Course Content',
+    description: 'View shared course content.',
   };
 }
 

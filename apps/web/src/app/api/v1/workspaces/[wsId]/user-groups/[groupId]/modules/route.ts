@@ -1,6 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { Database, Json } from '@tuturuuu/types';
+import type { Json, TablesInsert } from '@tuturuuu/types';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -11,8 +11,7 @@ interface RouteParams {
   wsId: string;
 }
 
-type WorkspaceCourseModuleInsert =
-  Database['public']['Tables']['workspace_course_modules']['Insert'];
+type WorkspaceCourseModuleInsert = TablesInsert<'workspace_course_modules'>;
 
 const CreateModuleSchema = z
   .object({
@@ -147,7 +146,7 @@ export const POST = withSessionAuth(
       youtube_links: parsed.data.youtube_links ?? null,
     };
 
-    const { data: module, error } = await access.sbAdmin
+    const { data: created, error } = await access.sbAdmin
       .from('workspace_course_modules')
       .insert(insertPayload)
       .select('*')
@@ -160,7 +159,7 @@ export const POST = withSessionAuth(
       );
     }
 
-    return NextResponse.json(module);
+    return NextResponse.json(created);
   },
   { rateLimit: { maxRequests: 60, windowMs: 60000 } }
 );

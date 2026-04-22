@@ -583,6 +583,10 @@ DROP POLICY "old_policy" ON workspace_tasks;
    UPDATE workspace_course_modules
    SET group_id = course_id
    WHERE group_id IS NULL;
+
+   -- Verify the backfill before dropping or rewiring the legacy FK in a follow-up migration.
+   -- SELECT COUNT(*) FILTER (WHERE group_id IS NULL) AS unmigrated
+   -- FROM workspace_course_modules;
    ```
 
 ### ❌ DON'T

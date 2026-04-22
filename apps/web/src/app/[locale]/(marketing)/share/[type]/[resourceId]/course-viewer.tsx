@@ -9,34 +9,43 @@ import {
   SwatchBook,
   Youtube,
 } from '@tuturuuu/icons';
-import type { WorkspaceCourseModule } from '@tuturuuu/types';
+import type { SharedCourseGroup, SharedCourseModule } from '@tuturuuu/types';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
-
 import { Badge } from '@tuturuuu/ui/badge';
-
 import { YoutubeEmbed } from '@tuturuuu/ui/custom/education/modules/youtube/embed';
-
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useQueryState } from 'nuqs';
+import type { ReactNode } from 'react';
 import { extractYoutubeId } from '@/utils/url-helper';
 
 interface CourseViewerProps {
-  group: { name?: string; description?: string | null };
-  modules: (WorkspaceCourseModule & {
-    quizzes: number;
-    flashcards: number;
-    quizSets: number;
-  })[];
+  group: SharedCourseGroup;
+  modules: SharedCourseModule[];
 }
 
-function ModuleSection({ title, icon, content, rawContent }: any) {
+interface ModuleSectionProps {
+  content?: ReactNode;
+  icon: ReactNode;
+  rawContent?: JSONContent | null;
+  title: ReactNode;
+}
+
+function hasVisibleRichContent(content?: JSONContent | null) {
+  return (content?.content ?? []).some(
+    (node) => node.type !== 'paragraph' || (node.content?.length ?? 0) > 0
+  );
+}
+
+function ModuleSection({
+  title,
+  icon,
+  content,
+  rawContent,
+}: ModuleSectionProps) {
   const isContentEmpty = rawContent
-    ? !rawContent.content?.some(
-        (node: any) =>
-          node.type !== 'paragraph' || (node.content && node.content.length > 0)
-      )
+    ? !hasVisibleRichContent(rawContent)
     : !content;
 
   if (isContentEmpty) return null;
@@ -47,9 +56,7 @@ function ModuleSection({ title, icon, content, rawContent }: any) {
         {icon}
         {title}
       </div>
-      <div className="overflow-hidden text-foreground/90">
-        {content || rawContent}
-      </div>
+      <div className="overflow-hidden text-foreground/90">{content}</div>
     </div>
   );
 }
@@ -141,26 +148,29 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
                   <div className="ml-9 flex items-center gap-1.5">
                     {module.quizzes > 0 && (
                       <Badge
+                        aria-label={t('share-course.quiz_label')}
                         variant="outline"
                         className="h-4 rounded-sm border-foreground/10 px-1 text-[10px] text-foreground/60"
                       >
-                        Q {module.quizzes}
+                        {t('share-course.quiz_short')} {module.quizzes}
                       </Badge>
                     )}
                     {module.quizSets > 0 && (
                       <Badge
+                        aria-label={t('share-course.quiz_set_label')}
                         variant="outline"
                         className="h-4 rounded-sm border-foreground/10 px-1 text-[10px] text-foreground/60"
                       >
-                        S {module.quizSets}
+                        {t('share-course.quiz_set_short')} {module.quizSets}
                       </Badge>
                     )}
                     {module.flashcards > 0 && (
                       <Badge
+                        aria-label={t('share-course.flashcard_label')}
                         variant="outline"
                         className="h-4 rounded-sm border-foreground/10 px-1 text-[10px] text-foreground/60"
                       >
-                        F {module.flashcards}
+                        {t('share-course.flashcard_short')} {module.flashcards}
                       </Badge>
                     )}
                   </div>

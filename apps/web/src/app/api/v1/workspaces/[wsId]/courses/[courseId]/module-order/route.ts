@@ -9,7 +9,7 @@ const ModuleOrderSchema = z.object({
 });
 
 const RouteParamsSchema = z.object({
-  courseId: z.string().uuid(),
+  courseId: z.guid(),
   wsId: z.string().min(1),
 });
 

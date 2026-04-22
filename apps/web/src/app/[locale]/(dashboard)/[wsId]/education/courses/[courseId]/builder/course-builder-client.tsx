@@ -19,7 +19,10 @@ import {
   reorderWorkspaceCourseModules,
   type UpsertWorkspaceCourseModulePayload,
 } from '@tuturuuu/internal-api';
-import type { WorkspaceCourse } from '@tuturuuu/types';
+import type {
+  WorkspaceCourseBuilderCourse,
+  WorkspaceCourseBuilderModule,
+} from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -42,26 +45,10 @@ import QuizSetForm from '../../../quiz-sets/form';
 import QuizForm from '../../../quizzes/form';
 import { ModuleContentEditor } from '../modules/[moduleId]/content/content-editor';
 
-interface BuilderModule {
-  content: unknown;
-  group_id: string | null;
-  created_at: string;
-  extra_content: unknown;
-  flashcard_count: number;
-  id: string;
-  is_public: boolean;
-  is_published: boolean;
-  name: string;
-  quiz_count: number;
-  quiz_set_count: number;
-  sort_key: number | null;
-  youtube_links: string[] | null;
-}
-
 interface CourseBuilderClientProps {
-  course: WorkspaceCourse;
+  course: WorkspaceCourseBuilderCourse;
   courseId: string;
-  modules: BuilderModule[];
+  modules: WorkspaceCourseBuilderModule[];
   resolvedWsId: string;
   routeWsId: string;
 }
@@ -94,7 +81,8 @@ export function CourseBuilderClient({
   const router = useRouter();
   const { toast } = useToast();
   const t = useTranslations();
-  const [modules, setModules] = useState<BuilderModule[]>(initialModules);
+  const [modules, setModules] =
+    useState<WorkspaceCourseBuilderModule[]>(initialModules);
   const [activeModuleId, setActiveModuleId] = useState<string | null>(
     initialModules[0]?.id ?? null
   );
@@ -124,7 +112,7 @@ export function CourseBuilderClient({
     },
     onSuccess: (newModule) => {
       if (newModule) {
-        const builderModule: BuilderModule = {
+        const builderModule: WorkspaceCourseBuilderModule = {
           ...newModule,
           group_id: courseId,
           flashcard_count: 0,
@@ -258,7 +246,7 @@ export function CourseBuilderClient({
                     wsId={resolvedWsId}
                     courseId={courseId}
                     onCreated={(newModule) => {
-                      const builderModule: BuilderModule = {
+                      const builderModule: WorkspaceCourseBuilderModule = {
                         ...newModule,
                         group_id: courseId,
                         flashcard_count: 0,

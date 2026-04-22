@@ -26,12 +26,9 @@ select
 from "public"."workspace_courses" wc
 on conflict ("id") do update
 set
-  "ws_id" = excluded."ws_id",
-  "name" = excluded."name",
   "description" = excluded."description",
   "cert_template" = excluded."cert_template",
-  "created_at" = coalesce("workspace_user_groups"."created_at", excluded."created_at"),
-  "is_guest" = false;
+  "created_at" = coalesce("workspace_user_groups"."created_at", excluded."created_at");
 
 -- 3. Rewire workspace_course_modules without dropping legacy mappings first.
 drop policy if exists "Allow all access for workspace member" on "public"."workspace_course_modules";
