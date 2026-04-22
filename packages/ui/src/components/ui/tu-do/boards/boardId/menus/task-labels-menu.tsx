@@ -1,15 +1,15 @@
-import { Check, Loader2, Plus, Search, Tag } from '@tuturuuu/icons';
+import { Check, Loader2, Plus, Tag } from '@tuturuuu/icons';
 import {
   DropdownMenuItem,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import { LabelChip, type TaskLabel } from '../../../shared/label-chip';
-import { normalizeBoardText } from '../board-text-utils';
+import { TaskResourceSearchField } from '../../../shared/task-resource-search-field';
+import { labelNameMatchesQuery } from '../../../shared/task-resource-search-filters';
 
 interface TaskLabelsMenuProps {
   taskLabels: Array<Pick<TaskLabel, 'id' | 'name' | 'color'>>;
@@ -50,10 +50,8 @@ export function TaskLabelsMenu({
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredLabels = availableLabels.filter(
-    (label) =>
-      !searchQuery ||
-      normalizeBoardText(label.name).includes(normalizeBoardText(searchQuery))
+  const filteredLabels = availableLabels.filter((label) =>
+    labelNameMatchesQuery(label.name, searchQuery)
   );
 
   return (
@@ -63,19 +61,11 @@ export function TaskLabelsMenu({
         {t.labels}
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="w-80 p-0">
-        <div className="border-b p-2">
-          <div className="relative">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={t.searchLabels}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.stopPropagation()}
-              onPointerDownCapture={(e) => e.stopPropagation()}
-              className="h-8 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
-            />
-          </div>
-        </div>
+        <TaskResourceSearchField
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder={t.searchLabels}
+        />
 
         {isLoading ? (
           <div className="flex items-center justify-center gap-2 px-2 py-6">
