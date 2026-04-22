@@ -135,6 +135,9 @@ alter table "public"."workspace_guest_permissions"
 create index if not exists "workspace_guest_permissions_guest_id_idx"
   on "public"."workspace_guest_permissions" using btree (guest_id);
 
+create index if not exists "workspace_guest_permissions_resource_id_idx"
+  on "public"."workspace_guest_permissions" using btree (resource_id);
+
 create unique index if not exists "ux_workspace_guest_perm_global"
   on "public"."workspace_guest_permissions" using btree (guest_id, permission)
   where resource_id is null;
@@ -173,7 +176,7 @@ on "public"."workspace_guests"
 as permissive
 for select
 to authenticated
-using (is_org_member(auth.uid(), ws_id));
+using (is_org_member(auth.uid(), ws_id) or user_id = auth.uid());
 
 create policy "Workspace members can create workspace guests"
 on "public"."workspace_guests"
@@ -322,7 +325,7 @@ using (
     select 1
     from "public"."workspace_guests" wg
     where wg.id = "workspace_guest_permissions"."guest_id"
-      and is_org_member(auth.uid(), wg.ws_id)
+      and (is_org_member(auth.uid(), wg.ws_id) or wg.user_id = auth.uid())
   )
 );
 
@@ -336,6 +339,15 @@ with check (
     select 1
     from "public"."workspace_guests" wg
     where wg.id = "workspace_guest_permissions"."guest_id"
+      and (
+        "workspace_guest_permissions"."resource_id" is null
+        or exists (
+          select 1
+          from "public"."workspace_user_groups" wug
+          where wug.id = "workspace_guest_permissions"."resource_id"
+            and wug.ws_id = wg.ws_id
+        )
+      )
       and wg.ws_id in (
         select wrp.ws_id
         from workspace_role_members wrm
@@ -373,6 +385,15 @@ using (
     select 1
     from "public"."workspace_guests" wg
     where wg.id = "workspace_guest_permissions"."guest_id"
+      and (
+        "workspace_guest_permissions"."resource_id" is null
+        or exists (
+          select 1
+          from "public"."workspace_user_groups" wug
+          where wug.id = "workspace_guest_permissions"."resource_id"
+            and wug.ws_id = wg.ws_id
+        )
+      )
       and wg.ws_id in (
         select wrp.ws_id
         from workspace_role_members wrm

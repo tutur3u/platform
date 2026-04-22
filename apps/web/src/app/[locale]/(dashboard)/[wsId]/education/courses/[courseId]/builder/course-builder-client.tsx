@@ -22,7 +22,7 @@ import {
 import type {
   WorkspaceCourseBuilderCourse,
   WorkspaceCourseBuilderModule,
-} from '@tuturuuu/types';
+} from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -88,6 +88,28 @@ export function CourseBuilderClient({
   );
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
+  const appendCreatedModule = (newModule: {
+    content: WorkspaceCourseBuilderModule['content'];
+    created_at: WorkspaceCourseBuilderModule['created_at'];
+    extra_content: WorkspaceCourseBuilderModule['extra_content'];
+    id: WorkspaceCourseBuilderModule['id'];
+    is_public: WorkspaceCourseBuilderModule['is_public'];
+    is_published: WorkspaceCourseBuilderModule['is_published'];
+    name: WorkspaceCourseBuilderModule['name'];
+    sort_key: WorkspaceCourseBuilderModule['sort_key'];
+    youtube_links: WorkspaceCourseBuilderModule['youtube_links'];
+  }) => {
+    const builderModule: WorkspaceCourseBuilderModule = {
+      ...newModule,
+      group_id: courseId,
+      flashcard_count: 0,
+      quiz_count: 0,
+      quiz_set_count: 0,
+    };
+    setModules((prev) => [...prev, builderModule]);
+    setActiveModuleId(newModule.id);
+  };
+
   const activeModule = useMemo(
     () => modules.find((module) => module.id === activeModuleId) ?? null,
     [activeModuleId, modules]
@@ -112,15 +134,7 @@ export function CourseBuilderClient({
     },
     onSuccess: (newModule) => {
       if (newModule) {
-        const builderModule: WorkspaceCourseBuilderModule = {
-          ...newModule,
-          group_id: courseId,
-          flashcard_count: 0,
-          quiz_count: 0,
-          quiz_set_count: 0,
-        };
-        setModules((prev) => [...prev, builderModule]);
-        setActiveModuleId(newModule.id);
+        appendCreatedModule(newModule);
       }
       toast({
         title: t('common.success'),
@@ -245,17 +259,7 @@ export function CourseBuilderClient({
                   <CourseModuleForm
                     wsId={resolvedWsId}
                     courseId={courseId}
-                    onCreated={(newModule) => {
-                      const builderModule: WorkspaceCourseBuilderModule = {
-                        ...newModule,
-                        group_id: courseId,
-                        flashcard_count: 0,
-                        quiz_count: 0,
-                        quiz_set_count: 0,
-                      };
-                      setModules((prev) => [...prev, builderModule]);
-                      setActiveModuleId(newModule.id);
-                    }}
+                    onCreated={appendCreatedModule}
                   />
                 }
                 trigger={

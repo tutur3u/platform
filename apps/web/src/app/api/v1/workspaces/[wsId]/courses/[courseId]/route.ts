@@ -114,6 +114,7 @@ export const PUT = withSessionAuth(
       .from('workspace_user_groups')
       .update(updatePayload)
       .eq('id', parsedParams.data.courseId)
+      .eq('is_guest', false)
       .eq('ws_id', access.normalizedWsId)
       .select('id')
       .maybeSingle();
@@ -159,6 +160,7 @@ export const DELETE = withSessionAuth(
       .from('workspace_user_groups')
       .delete()
       .eq('id', parsedParams.data.courseId)
+      .eq('is_guest', false)
       .eq('ws_id', access.normalizedWsId)
       .select('id')
       .maybeSingle();

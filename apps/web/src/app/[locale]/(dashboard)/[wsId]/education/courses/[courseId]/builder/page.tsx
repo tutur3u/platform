@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceCourseBuilderModule } from '@tuturuuu/types';
+import type { WorkspaceCourseBuilderModule } from '@tuturuuu/types/db';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';

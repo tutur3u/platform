@@ -1,7 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json, TablesInsert } from '@tuturuuu/types';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -12,6 +15,11 @@ interface RouteParams {
 }
 
 type WorkspaceCourseModuleInsert = TablesInsert<'workspace_course_modules'>;
+
+const RouteParamsSchema = z.object({
+  groupId: z.guid(),
+  wsId: z.string().min(1),
+});
 
 const CreateModuleSchema = z
   .object({
@@ -28,8 +36,17 @@ async function validateWorkspaceGroupAccess(
   wsId: string,
   groupId: string,
   userId: string,
-  sessionSupabase: TypedSupabaseClient
+  sessionSupabase: TypedSupabaseClient,
+  request: Request
 ) {
+  const parsedParams = RouteParamsSchema.safeParse({ groupId, wsId });
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      { message: 'Invalid route params', errors: parsedParams.error.issues },
+      { status: 400 }
+    );
+  }
+
   const normalizedWsId = await normalizeWorkspaceId(wsId, sessionSupabase);
 
   const { data: membership, error: membershipError } = await sessionSupabase
@@ -49,6 +66,17 @@ async function validateWorkspaceGroupAccess(
   if (!membership) {
     return NextResponse.json(
       { message: "You don't have access to this workspace" },
+      { status: 403 }
+    );
+  }
+
+  const permissions = await getPermissions({
+    request,
+    wsId: normalizedWsId,
+  });
+  if (!permissions?.containsPermission('manage_users')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
       { status: 403 }
     );
   }
@@ -76,14 +104,15 @@ async function validateWorkspaceGroupAccess(
 }
 
 export const GET = withSessionAuth(
-  async (_request, context, params: RouteParams | Promise<RouteParams>) => {
+  async (request, context, params: RouteParams | Promise<RouteParams>) => {
     const { wsId, groupId } = await params;
 
     const access = await validateWorkspaceGroupAccess(
       wsId,
       groupId,
       context.user.id,
-      context.supabase
+      context.supabase,
+      request
     );
     if (access instanceof NextResponse) return access;
 
@@ -132,7 +161,8 @@ export const POST = withSessionAuth(
       wsId,
       groupId,
       context.user.id,
-      context.supabase
+      context.supabase,
+      request
     );
     if (access instanceof NextResponse) return access;
 

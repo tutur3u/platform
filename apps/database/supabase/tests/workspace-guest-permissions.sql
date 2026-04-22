@@ -1,5 +1,5 @@
 begin;
-select plan(24);
+select plan(25);
 
 -- Check table existence
 select has_table('public', 'workspace_guest_permissions', 'Table workspace_guest_permissions should exist');
@@ -144,6 +144,16 @@ select ok(
       and indexname = 'ux_workspace_guest_perm_resource'
   ),
   'Should have a unique index for resource-scoped guest permissions'
+);
+select ok(
+  exists (
+    select 1
+    from pg_indexes
+    where schemaname = 'public'
+      and tablename = 'workspace_guest_permissions'
+      and indexname = 'workspace_guest_permissions_resource_id_idx'
+  ),
+  'Should have an index on resource_id for FK cleanup and lookups'
 );
 
 select * from finish();
