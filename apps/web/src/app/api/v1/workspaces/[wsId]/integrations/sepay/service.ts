@@ -21,6 +21,16 @@ interface SepayConnectionRow {
   ws_id: string;
 }
 
+function resolveSepayBankAccountKey(account: {
+  account_number?: string | null;
+  bank_account_id?: string | null;
+  id?: string | null;
+}) {
+  return (
+    account.bank_account_id ?? account.id ?? account.account_number ?? null
+  );
+}
+
 function resolveConfiguredOrigin(value?: string) {
   if (!value) {
     return null;
@@ -204,8 +214,7 @@ export async function syncSepayBankAccounts(input: {
   let linkedCount = 0;
 
   for (const account of bankAccounts) {
-    const bankAccountId =
-      account.bank_account_id ?? account.id ?? account.account_number;
+    const bankAccountId = resolveSepayBankAccountKey(account);
 
     if (!bankAccountId) {
       continue;
@@ -330,17 +339,22 @@ export async function provisionSepayWebhookEndpoint(input: {
 
   const bankAccounts = await listSepayBankAccounts({ accessToken });
   const activeBankAccount =
-    bankAccounts.find((account) => account.active !== false && account.id) ??
-    bankAccounts.find((account) => account.id);
+    bankAccounts.find(
+      (account) =>
+        account.active !== false && resolveSepayBankAccountKey(account)
+    ) ?? bankAccounts.find((account) => resolveSepayBankAccountKey(account));
+  const bankAccountId = activeBankAccount
+    ? resolveSepayBankAccountKey(activeBankAccount)
+    : null;
 
-  if (!activeBankAccount?.id) {
+  if (!activeBankAccount || !bankAccountId) {
     throw new Error('No SePay bank account found for webhook provisioning');
   }
 
   const webhookUrl = `${resolveSepayAppOrigin()}/api/v1/webhooks/sepay/${token}`;
   const webhook = await createSepayWebhook({
     accessToken,
-    bankAccountId: String(activeBankAccount.id),
+    bankAccountId,
     callbackUrl: webhookUrl,
     name: activeBankAccount.label
       ? `Tuturuuu - ${activeBankAccount.label}`
@@ -353,7 +367,7 @@ export async function provisionSepayWebhookEndpoint(input: {
     .select('wallet_id')
     .eq('ws_id', input.wsId)
     .eq('active', true)
-    .eq('sepay_bank_account_id', String(activeBankAccount.id))
+    .eq('sepay_bank_account_id', bankAccountId)
     .is('sepay_sub_account_id', null)
     .limit(1)
     .maybeSingle();

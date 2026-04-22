@@ -146,8 +146,7 @@ export async function resolveOrCreateWallet(input: {
 
   const hasLinkIdentifiers =
     Boolean(input.payload.bankAccountId) ||
-    Boolean(input.payload.accountNumber) ||
-    Boolean(input.payload.gateway);
+    Boolean(input.payload.accountNumber);
 
   if (hasLinkIdentifiers) {
     const linkedWalletId = await findLinkedWalletId({
@@ -210,6 +209,18 @@ export async function resolveOrCreateWallet(input: {
   if (createWalletLinkError) {
     if (createWalletLinkError.code !== '23505') {
       throw new Error('Failed to create SePay wallet link');
+    }
+
+    const { error: deleteWalletError } = await input.sbAdmin
+      .from('workspace_wallets')
+      .delete()
+      .eq('id', createdWallet.id)
+      .eq('ws_id', input.wsId);
+
+    if (deleteWalletError) {
+      throw new Error(
+        'Failed to clean up auto-created wallet after SePay link conflict'
+      );
     }
 
     const linkedWalletId = await findLinkedWalletIdByBankKey({

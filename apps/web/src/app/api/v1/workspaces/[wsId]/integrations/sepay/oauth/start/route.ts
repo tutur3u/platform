@@ -50,7 +50,6 @@ export async function POST(request: Request, { params }: Params) {
   const response = NextResponse.json({
     authorizeUrl,
     callbackUrl,
-    expiresAt: oauthState.expiresAt,
     state: oauthState.state,
   });
 

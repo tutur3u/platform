@@ -32,13 +32,8 @@ export function getSepayOauthStateMaxAgeSeconds(ttlMs?: number) {
   return Math.max(1, Math.ceil((ttlMs ?? DEFAULT_STATE_TTL_MS) / 1000));
 }
 
-export function createSepayOauthState(input?: { ttlMs?: number }) {
-  const now = Date.now();
-  const ttlMs = input?.ttlMs ?? DEFAULT_STATE_TTL_MS;
-  const exp = now + ttlMs;
-
+export function createSepayOauthState() {
   return {
-    expiresAt: new Date(exp).toISOString(),
     state: randomBytes(32).toString('base64url'),
   };
 }

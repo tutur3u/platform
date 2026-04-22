@@ -3,6 +3,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 type SepayAdminClient = TypedSupabaseClient;
 
 export async function markEventFailed(input: {
+  createdTransactionId?: string | null;
   eventId: string;
   failureReason: string;
   sbAdmin: SepayAdminClient;
@@ -10,6 +11,7 @@ export async function markEventFailed(input: {
   const { error } = await input.sbAdmin
     .from('sepay_webhook_events')
     .update({
+      created_transaction_id: input.createdTransactionId ?? null,
       failure_reason: input.failureReason.slice(0, 1000),
       processed_at: new Date().toISOString(),
       status: 'failed',
@@ -28,11 +30,14 @@ export function buildTransactionDescription(input: {
   referenceCode: string | null;
   transferType: 'in' | 'out';
 }) {
-  return (
-    input.content ??
-    input.description ??
-    input.referenceCode ??
-    input.code ??
-    `SePay ${input.transferType} transaction`
-  );
+  const description = [
+    input.content,
+    input.description,
+    input.referenceCode,
+    input.code,
+  ]
+    .map((value) => value?.trim())
+    .find((value): value is string => Boolean(value));
+
+  return description ?? `SePay ${input.transferType} transaction`;
 }

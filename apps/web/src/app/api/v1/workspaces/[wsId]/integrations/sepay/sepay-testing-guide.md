@@ -14,6 +14,8 @@ This guide helps you validate the end-to-end SePay flow in the current backend i
   - `SEPAY_OAUTH_TOKEN_ENCRYPTION_SECRET`
   - `SEPAY_WEBHOOK_API_KEY` (or `SEPAY_WEBHOOK_SECRET`)
   - `WEB_APP_URL` (or `NEXT_PUBLIC_WEB_APP_URL` / `NEXT_PUBLIC_APP_URL`)
+- Required workspace configuration is present:
+  - `workspace_secrets.ENABLE_SEPAY_INTEGRATION=true`
 - Optional overrides (defaults are already set to SePay production docs values):
   - `SEPAY_OAUTH_AUTHORIZE_URL` (default: `https://my.sepay.vn/oauth/authorize`)
   - `SEPAY_OAUTH_BASE_URL` (default: `https://my.sepay.vn`)
@@ -130,7 +132,7 @@ limit 20;
 select id, wallet_id, category_id, amount, creator_id, description, taken_at
 from wallet_transactions
 where creator_id in (
-  select user_id from workspace_users where ws_id = '<WS_ID>' and role = 'system'
+  select id from workspace_users where ws_id = '<WS_ID>' and role = 'system'
 )
 order by created_at desc
 limit 20;

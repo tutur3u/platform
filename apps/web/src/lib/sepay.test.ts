@@ -11,9 +11,21 @@ import {
 const originalSepayWebhookApiKey = process.env.SEPAY_WEBHOOK_API_KEY;
 const originalSepayWebhookSecret = process.env.SEPAY_WEBHOOK_SECRET;
 
+function restoreEnvVar(
+  key: 'SEPAY_WEBHOOK_API_KEY' | 'SEPAY_WEBHOOK_SECRET',
+  value: string | undefined
+) {
+  if (value === undefined) {
+    delete process.env[key];
+    return;
+  }
+
+  process.env[key] = value;
+}
+
 afterEach(() => {
-  process.env.SEPAY_WEBHOOK_API_KEY = originalSepayWebhookApiKey;
-  process.env.SEPAY_WEBHOOK_SECRET = originalSepayWebhookSecret;
+  restoreEnvVar('SEPAY_WEBHOOK_API_KEY', originalSepayWebhookApiKey);
+  restoreEnvVar('SEPAY_WEBHOOK_SECRET', originalSepayWebhookSecret);
 });
 
 describe('sepay helpers', () => {
@@ -27,7 +39,7 @@ describe('sepay helpers', () => {
 
   it('validates webhook authorization header against configured secret', () => {
     process.env.SEPAY_WEBHOOK_API_KEY = 'sepay-secret';
-    process.env.SEPAY_WEBHOOK_SECRET = undefined;
+    delete process.env.SEPAY_WEBHOOK_SECRET;
 
     expect(isValidSepayWebhookAuthorization('Bearer sepay-secret')).toBe(true);
     expect(isValidSepayWebhookAuthorization('Token sepay-secret')).toBe(true);

@@ -11,7 +11,11 @@ import {
 import { classifyCategoryId } from './classifier';
 import { resolveEndpointByToken } from './endpoint';
 import { buildTransactionDescription, markEventFailed } from './event';
-import { normalizeSepayPayload, sepayRawPayloadSchema } from './schemas';
+import {
+  type NormalizedSepayPayload,
+  normalizeSepayPayload,
+  sepayRawPayloadSchema,
+} from './schemas';
 import { ensureSystemVirtualUser } from './system-user';
 import { classifyTagIds } from './tagger';
 import { resolveOrCreateWallet } from './wallet';
@@ -22,16 +26,168 @@ interface Params {
   }>;
 }
 
+type ExistingSepayWebhookEvent = {
+  created_transaction_id: string | null;
+  id: string;
+  status: 'duplicate' | 'failed' | 'processed' | 'received';
+};
+
+async function findExistingWebhookEvent(input: {
+  payload: NormalizedSepayPayload;
+  sbAdmin: TypedSupabaseClient;
+  walletId: string;
+  wsId: string;
+}) {
+  if (input.payload.eventId) {
+    const { data, error } = await input.sbAdmin
+      .from('sepay_webhook_events')
+      .select('id, status, created_transaction_id')
+      .eq('ws_id', input.wsId)
+      .eq('wallet_id', input.walletId)
+      .eq('sepay_event_id', input.payload.eventId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error('Failed to lookup SePay event by event id');
+    }
+
+    return (data as ExistingSepayWebhookEvent | null) ?? null;
+  }
+
+  if (!input.payload.referenceCode) {
+    return null;
+  }
+
+  const { data, error } = await input.sbAdmin
+    .from('sepay_webhook_events')
+    .select('id, status, created_transaction_id')
+    .eq('ws_id', input.wsId)
+    .eq('wallet_id', input.walletId)
+    .eq('reference_code', input.payload.referenceCode)
+    .eq('transfer_type', input.payload.transferType)
+    .eq('transfer_amount', input.payload.transferAmount)
+    .eq('transaction_date', input.payload.transactionDate)
+    .is('sepay_event_id', null)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error('Failed to lookup SePay event by fallback key');
+  }
+
+  return (data as ExistingSepayWebhookEvent | null) ?? null;
+}
+
+async function reuseFailedWebhookEvent(input: {
+  endpointId: string;
+  existingEventId: string;
+  payload: NormalizedSepayPayload;
+  sbAdmin: TypedSupabaseClient;
+  walletId: string;
+  wsId: string;
+}) {
+  const { data, error } = await input.sbAdmin
+    .from('sepay_webhook_events')
+    .update({
+      created_transaction_id: null,
+      endpoint_id: input.endpointId,
+      failure_reason: null,
+      payload: input.payload.raw as Json,
+      processed_at: null,
+      received_at: new Date().toISOString(),
+      reference_code: input.payload.referenceCode,
+      sepay_event_id: input.payload.eventId,
+      status: 'received',
+      transaction_date: input.payload.transactionDate,
+      transfer_amount: input.payload.transferAmount,
+      transfer_type: input.payload.transferType,
+      wallet_id: input.walletId,
+    })
+    .eq('id', input.existingEventId)
+    .eq('ws_id', input.wsId)
+    .select('id')
+    .maybeSingle();
+
+  if (error || !data?.id) {
+    throw new Error('Failed to reopen failed SePay webhook event');
+  }
+
+  return data.id;
+}
+
+async function markStoredTransactionProcessed(input: {
+  eventId: string;
+  sbAdmin: TypedSupabaseClient;
+}) {
+  const { error } = await input.sbAdmin
+    .from('sepay_webhook_events')
+    .update({
+      failure_reason: null,
+      processed_at: new Date().toISOString(),
+      status: 'processed',
+    })
+    .eq('id', input.eventId);
+
+  if (error) {
+    console.error(
+      'Failed to restore SePay webhook event to processed status:',
+      error
+    );
+  }
+}
+
+async function prepareWebhookEvent(input: {
+  endpointId: string;
+  payload: NormalizedSepayPayload;
+  sbAdmin: TypedSupabaseClient;
+  walletId: string;
+  wsId: string;
+}) {
+  const existingEvent = await findExistingWebhookEvent(input);
+
+  if (!existingEvent) {
+    return { eventId: null, shouldSkip: false as const };
+  }
+
+  if (
+    existingEvent.status === 'processed' ||
+    existingEvent.status === 'duplicate' ||
+    existingEvent.status === 'received'
+  ) {
+    return { eventId: existingEvent.id, shouldSkip: true as const };
+  }
+
+  if (existingEvent.created_transaction_id) {
+    await markStoredTransactionProcessed({
+      eventId: existingEvent.id,
+      sbAdmin: input.sbAdmin,
+    });
+
+    return { eventId: existingEvent.id, shouldSkip: true as const };
+  }
+
+  return {
+    eventId: await reuseFailedWebhookEvent({
+      endpointId: input.endpointId,
+      existingEventId: existingEvent.id,
+      payload: input.payload,
+      sbAdmin: input.sbAdmin,
+      walletId: input.walletId,
+      wsId: input.wsId,
+    }),
+    shouldSkip: false as const,
+  };
+}
+
 export async function POST(request: Request, { params }: Params) {
   const webhookSecret = getSepayWebhookAuthSecret();
   if (!webhookSecret) {
-    return NextResponse.json(
-      { message: 'SePay webhook secret is not configured' },
-      { status: 500 }
-    );
+    console.error('SePay webhook secret is not configured');
   }
 
-  if (!isValidSepayWebhookAuthorization(request.headers.get('authorization'))) {
+  if (
+    !webhookSecret ||
+    !isValidSepayWebhookAuthorization(request.headers.get('authorization'))
+  ) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -119,73 +275,99 @@ export async function POST(request: Request, { params }: Params) {
     .eq('id', endpoint.id)
     .eq('ws_id', endpoint.ws_id);
 
-  const existingEventQuery = payload.eventId
-    ? sbAdmin
-        .from('sepay_webhook_events')
-        .select('id')
-        .eq('ws_id', endpoint.ws_id)
-        .eq('wallet_id', walletId)
-        .eq('sepay_event_id', payload.eventId)
-        .limit(1)
-    : null;
+  let eventId: string | null = null;
 
-  if (existingEventQuery) {
-    const { data: existingEvents, error: existingEventError } =
-      await existingEventQuery;
+  try {
+    const preparedEvent = await prepareWebhookEvent({
+      endpointId: endpoint.id,
+      payload,
+      sbAdmin,
+      walletId,
+      wsId: endpoint.ws_id,
+    });
 
-    if (existingEventError) {
-      console.error(
-        'Error checking duplicate SePay event:',
-        existingEventError
-      );
-      return NextResponse.json(
-        { message: 'Failed to process webhook event' },
-        { status: 500 }
-      );
-    }
-
-    if ((existingEvents ?? []).length > 0) {
-      return NextResponse.json({ success: true, duplicate: true });
-    }
-  }
-
-  const { data: eventRow, error: insertEventError } = await sbAdmin
-    .from('sepay_webhook_events')
-    .insert([
-      {
-        endpoint_id: endpoint.id,
-        payload: payload.raw as Json,
-        reference_code: payload.referenceCode,
-        sepay_event_id: payload.eventId,
-        status: 'received',
-        transaction_date: payload.transactionDate,
-        transfer_amount: payload.transferAmount,
-        transfer_type: payload.transferType,
-        wallet_id: walletId,
-        ws_id: endpoint.ws_id,
-      },
-    ])
-    .select('id')
-    .single();
-
-  if (insertEventError) {
-    if (insertEventError.code === '23505') {
+    if (preparedEvent.shouldSkip) {
       return NextResponse.json({ success: true, duplicate: true });
     }
 
-    console.error('Error creating SePay webhook event row:', insertEventError);
+    eventId = preparedEvent.eventId;
+  } catch (error) {
+    console.error('Error preparing SePay webhook event:', error);
     return NextResponse.json(
       { message: 'Failed to process webhook event' },
       { status: 500 }
     );
   }
 
-  if (!eventRow?.id) {
+  if (!eventId) {
+    const { data: eventRow, error: insertEventError } = await sbAdmin
+      .from('sepay_webhook_events')
+      .insert([
+        {
+          endpoint_id: endpoint.id,
+          payload: payload.raw as Json,
+          reference_code: payload.referenceCode,
+          sepay_event_id: payload.eventId,
+          status: 'received',
+          transaction_date: payload.transactionDate,
+          transfer_amount: payload.transferAmount,
+          transfer_type: payload.transferType,
+          wallet_id: walletId,
+          ws_id: endpoint.ws_id,
+        },
+      ])
+      .select('id')
+      .single();
+
+    if (insertEventError) {
+      if (insertEventError.code === '23505') {
+        try {
+          const preparedEvent = await prepareWebhookEvent({
+            endpointId: endpoint.id,
+            payload,
+            sbAdmin,
+            walletId,
+            wsId: endpoint.ws_id,
+          });
+
+          if (preparedEvent.shouldSkip) {
+            return NextResponse.json({ success: true, duplicate: true });
+          }
+
+          eventId = preparedEvent.eventId;
+        } catch (error) {
+          console.error(
+            'Error recovering from SePay webhook event insert race:',
+            error
+          );
+        }
+      } else {
+        console.error(
+          'Error creating SePay webhook event row:',
+          insertEventError
+        );
+      }
+
+      if (!eventId) {
+        return NextResponse.json(
+          { message: 'Failed to process webhook event' },
+          { status: 500 }
+        );
+      }
+    }
+
+    eventId = eventRow?.id ?? null;
+  }
+
+  if (!eventId) {
     return NextResponse.json(
       { message: 'Failed to process webhook event' },
       { status: 500 }
     );
   }
+
+  const persistedEventId = eventId;
+  let createdTransactionId: string | null = null;
 
   try {
     const classification = await classifyCategoryId({
@@ -238,6 +420,8 @@ export async function POST(request: Request, { params }: Params) {
       throw new Error('Failed to create wallet transaction from webhook');
     }
 
+    createdTransactionId = createdTransaction.id;
+
     // Insert transaction tags if any were classified
     if (tagClassification.tagIds.length > 0) {
       const tagInserts = tagClassification.tagIds.map((tagId) => ({
@@ -266,7 +450,7 @@ export async function POST(request: Request, { params }: Params) {
         processed_at: new Date().toISOString(),
         status: 'processed',
       })
-      .eq('id', eventRow.id);
+      .eq('id', persistedEventId);
 
     if (finalizeEventError) {
       throw new Error('Failed to update webhook event as processed');
@@ -280,7 +464,8 @@ export async function POST(request: Request, { params }: Params) {
     console.error('Failed to process SePay webhook event:', error);
     try {
       await markEventFailed({
-        eventId: eventRow.id,
+        createdTransactionId,
+        eventId: persistedEventId,
         failureReason,
         sbAdmin,
       });
@@ -291,6 +476,9 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    return NextResponse.json({ success: true, processed: false });
+    return NextResponse.json(
+      { success: false, processed: false },
+      { status: 500 }
+    );
   }
 }

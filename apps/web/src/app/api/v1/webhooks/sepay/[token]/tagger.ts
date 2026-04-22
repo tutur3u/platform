@@ -77,7 +77,7 @@ export async function classifyTagIds(input: {
     const pickedReasons = classification.object.reasons;
 
     // Filter to only include valid tag IDs that exist in candidates
-    const validTagIds = pickedTagIds.filter((id) =>
+    const validTagIds = [...new Set(pickedTagIds)].filter((id) =>
       candidateTags.some((tag) => tag.id === id)
     );
 
