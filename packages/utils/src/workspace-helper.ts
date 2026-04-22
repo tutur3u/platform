@@ -33,6 +33,19 @@ export class WorkspaceAccessError extends Error {
   }
 }
 
+export type WorkspaceMemberType = 'MEMBER' | 'GUEST';
+
+export type WorkspaceMembershipCheckError =
+  | 'membership_lookup_failed'
+  | 'membership_missing'
+  | 'membership_type_mismatch';
+
+export interface WorkspaceMembershipCheckResult {
+  ok: boolean;
+  error?: WorkspaceMembershipCheckError;
+  membershipType?: WorkspaceMemberType;
+}
+
 export class WorkspaceRedirectRequiredError extends Error {
   public readonly redirectTo: string;
 
@@ -655,6 +668,48 @@ export async function getPermissions({
     !containsPermission(permission);
 
   return { permissions, containsPermission, withoutPermission };
+}
+
+export async function verifyWorkspaceMembershipType({
+  requiredType = 'MEMBER',
+  supabase,
+  userId,
+  wsId,
+}: {
+  wsId: string;
+  userId: string;
+  supabase: TypedSupabaseClient;
+  requiredType?: WorkspaceMemberType;
+}): Promise<WorkspaceMembershipCheckResult> {
+  const { data: membership, error } = await supabase
+    .from('workspace_members')
+    .select('type')
+    .eq('ws_id', wsId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) {
+    return { ok: false, error: 'membership_lookup_failed' };
+  }
+
+  if (!membership) {
+    return { ok: false, error: 'membership_missing' };
+  }
+
+  const membershipType = membership.type;
+
+  if (membershipType !== requiredType) {
+    return {
+      ok: false,
+      error: 'membership_type_mismatch',
+      membershipType,
+    };
+  }
+
+  return {
+    ok: true,
+    membershipType,
+  };
 }
 
 export interface GetWorkspaceUserOptions {

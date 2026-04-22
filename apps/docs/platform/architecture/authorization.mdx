@@ -115,6 +115,26 @@ Many workspace-scoped routes first convert the route param into a canonical work
 
 This is the baseline for routes that accept `personal` or `internal` in the URL but must query by UUID in the database.
 
+For non-permission routes that still require protected workspace access, use `verifyWorkspaceMembershipType(...)` from `packages/utils/src/workspace-helper.ts` and keep the default `requiredType` (`MEMBER`).
+
+```ts
+const membership = await verifyWorkspaceMembershipType({
+  wsId: normalizedWsId,
+  userId: user.id,
+  supabase,
+});
+
+if (membership.error === 'membership_lookup_failed') {
+  return NextResponse.json({ message: 'Failed to verify workspace access' }, { status: 500 });
+}
+
+if (!membership.ok) {
+  return NextResponse.json({ message: "You don't have access to this workspace" }, { status: 403 });
+}
+```
+
+`workspace_members` now supports `MEMBER` and `GUEST`. If a route is not explicitly guest-capable, it should require `MEMBER` and avoid ad-hoc `.from('workspace_members')` checks that only validate row existence.
+
 ### 3. Membership + explicit permission gate
 
 Privileged routes call `getPermissions()` after normalization and reject when `containsPermission(...)` fails.
