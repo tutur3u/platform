@@ -1,5 +1,12 @@
 import { Card, CardContent, CardFooter, CardHeader } from '@ncthub/ui/card';
-import { SiGithub, Globe, Monitor, Play, Users, Wrench } from '@ncthub/ui/icons';
+import {
+  SiGithub,
+  Globe,
+  Monitor,
+  Play,
+  Users,
+  Wrench,
+} from '@ncthub/ui/icons';
 import { cn } from '@ncthub/utils/format';
 import { motion } from 'framer-motion';
 import type { Project } from './data';

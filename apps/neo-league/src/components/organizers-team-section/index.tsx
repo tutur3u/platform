@@ -58,7 +58,7 @@ export default function OrganizersTeamSection() {
             <span className="text-primary">Teams</span>
           </h3>
 
-          <Tabs defaultValue={teams[0]?.name} className="flex-col" >
+          <Tabs defaultValue={teams[0]?.name} className="flex-col">
             {/* Tab Triggers */}
             <TabsList className="mx-auto mb-8 flex h-auto w-full flex-wrap justify-center gap-2 bg-transparent p-0 text-dark">
               {teams.map((team) => (
