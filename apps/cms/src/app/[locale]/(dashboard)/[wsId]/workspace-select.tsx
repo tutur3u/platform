@@ -28,10 +28,10 @@ export function WorkspaceSelect({
         const nextBasePath = `/${nextSlug}`;
 
         if (nextSlug === 'internal') {
-          return `${nextBasePath}/admin`;
+          return `${nextBasePath}/projects`;
         }
 
-        if (currentPathname.endsWith('/admin')) {
+        if (currentPathname.endsWith('/projects')) {
           return nextBasePath;
         }
 

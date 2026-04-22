@@ -1,4 +1,10 @@
-import { Eye, FileText, LayoutDashboard, ShieldUser } from '@tuturuuu/icons';
+import {
+  Eye,
+  FileText,
+  LayoutDashboard,
+  Settings2,
+  ShieldUser,
+} from '@tuturuuu/icons';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getTranslations } from 'next-intl/server';
@@ -20,8 +26,8 @@ export async function getNavigationLinks({
   if (isInternalWorkspace) {
     return [
       {
-        title: t('common.admin'),
-        href: `/${personalOrWsId}/admin`,
+        title: t('common.projects'),
+        href: `/${personalOrWsId}/projects`,
         icon: <ShieldUser className="h-4 w-4" />,
         matchExact: true,
       },
@@ -36,10 +42,14 @@ export async function getNavigationLinks({
       matchExact: true,
     },
     {
-      title: t('common.content'),
-      href: `/${personalOrWsId}/content`,
+      title: t('common.library'),
+      href: `/${personalOrWsId}/library`,
       icon: <FileText className="h-4 w-4" />,
-      aliases: [`/${personalOrWsId}/content`, `/${personalOrWsId}/collections`],
+      aliases: [
+        `/${personalOrWsId}/library`,
+        `/${personalOrWsId}/library/entries`,
+        `/${personalOrWsId}/library/collections`,
+      ],
     },
     {
       title: t('common.preview'),
@@ -47,10 +57,16 @@ export async function getNavigationLinks({
       icon: <Eye className="h-4 w-4" />,
       aliases: [`/${personalOrWsId}/preview`],
     },
+    {
+      title: t('common.settings'),
+      href: `/${personalOrWsId}/settings`,
+      icon: <Settings2 className="h-4 w-4" />,
+      aliases: [`/${personalOrWsId}/settings`],
+    },
     includeAdmin
       ? {
-          title: t('common.admin'),
-          href: '/internal/admin',
+          title: t('common.projects'),
+          href: '/internal/projects',
           icon: <ShieldUser className="h-4 w-4" />,
         }
       : null,

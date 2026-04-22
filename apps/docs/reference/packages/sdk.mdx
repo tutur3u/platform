@@ -317,9 +317,9 @@ const results = await client.documents.search('meeting notes', {
 console.log(results.data); // Matching documents
 ```
 
-## EPM Delivery
+## CMS Delivery
 
-The SDK also exposes the External Project Management (EPM) delivery client for branded external apps and preview surfaces.
+The SDK also exposes the external-project delivery client that powers Tuturuuu CMS preview surfaces and branded external apps.
 
 ```typescript
 const delivery = await client.externalProjects.getDelivery('workspace-id');

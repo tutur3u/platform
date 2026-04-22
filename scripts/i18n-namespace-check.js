@@ -201,7 +201,7 @@ function resolveKeyPath(json, namespace, key) {
     current = current[segment];
   }
 
-  return true;
+  return current !== null && current !== undefined;
 }
 
 /**

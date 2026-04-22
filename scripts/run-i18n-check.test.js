@@ -91,6 +91,28 @@ test('findInvalidKeys detects interpolation and tag regressions', () => {
   ]);
 });
 
+test('findInvalidKeys rejects null or non-string translation leaves', () => {
+  const source = {
+    greeting: 'Hello',
+    subtitle: null,
+  };
+  const target = {
+    greeting: null,
+    subtitle: null,
+  };
+
+  assert.deepEqual(findInvalidKeys(source, target, []), [
+    {
+      key: 'greeting',
+      message: 'Expected type "string" but received "null"',
+    },
+    {
+      key: 'subtitle',
+      message: 'Expected a non-null string translation but received "null"',
+    },
+  ]);
+});
+
 test('runFallbackCheck succeeds for matching locale trees', () => {
   const projectRoot = createTempProject();
   writeJson(path.join(projectRoot, 'apps/web/messages/en/common.json'), {

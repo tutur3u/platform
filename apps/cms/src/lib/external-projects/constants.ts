@@ -4,4 +4,4 @@ export {
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
   EXTERNAL_PROJECT_ENABLED_SECRET,
   EXTERNAL_PROJECT_PREVIEW_QUERY_PARAM,
-} from '@/features/epm/constants';
+} from '@/features/cms-studio/constants';

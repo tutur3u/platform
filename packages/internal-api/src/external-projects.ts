@@ -9,6 +9,7 @@ import type {
   ExternalProjectImportReport,
   ExternalProjectStudioData,
   ExternalProjectSummary,
+  ExternalProjectWorkspaceBindingSummary,
   Json,
   WorkspaceExternalProjectBinding,
   WorkspaceExternalProjectBindingAudit,
@@ -201,6 +202,18 @@ export async function updateWorkspaceExternalProjectBinding(
         'Content-Type': 'application/json',
       },
       method: 'PATCH',
+    }
+  );
+}
+
+export async function listExternalProjectWorkspaceBindings(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ExternalProjectWorkspaceBindingSummary[]>(
+    '/api/v1/admin/external-project-bindings',
+    {
+      cache: 'no-store',
     }
   );
 }

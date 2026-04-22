@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { EpmClient } from '@/features/epm/epm-client';
-import { buildEpmStrings } from '@/features/epm/epm-strings';
+import { buildCmsStrings } from '@/features/cms-studio/cms-strings';
+import { CmsStudioClient } from '@/features/cms-studio/cms-studio-client';
 import { getCmsWorkspaceAccess } from '@/lib/external-projects/access';
 
 interface Props {
@@ -21,10 +21,12 @@ export default async function CmsPreviewPage({ params }: Props) {
   const t = await getTranslations('external-projects');
 
   return (
-    <EpmClient
+    <CmsStudioClient
       binding={access.binding}
+      headerDescription="Review the delivered experience and jump back into the CMS library when content needs changes."
       initialMode="preview"
-      strings={buildEpmStrings(t)}
+      showModeSwitch={false}
+      strings={buildCmsStrings(t)}
       workspaceId={access.normalizedWorkspaceId}
     />
   );

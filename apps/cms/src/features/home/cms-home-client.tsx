@@ -140,21 +140,26 @@ export function CmsHomeClient({
                   {t('sidebar_tabs.external_projects')}
                 </Badge>
                 <CardTitle className="text-3xl">
-                  {t('common.dashboard')}
+                  {t('external-projects.epm.title')}
                 </CardTitle>
                 <CardDescription className="max-w-2xl text-sm leading-6">
-                  {t('external-projects.epm.preview_description')}
+                  {t('external-projects.studio.home_description')}
                 </CardDescription>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button asChild>
-                  <Link href={`/${workspaceSlug}/content`}>
-                    {t('common.content')}
+                  <Link href={`/${workspaceSlug}/library`}>
+                    {t('common.library')}
                   </Link>
                 </Button>
                 <Button asChild variant="outline">
                   <Link href={`/${workspaceSlug}/preview`}>
                     {t('common.preview')}
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href={`/${workspaceSlug}/settings`}>
+                    {t('common.settings')}
                   </Link>
                 </Button>
               </div>
@@ -236,7 +241,7 @@ export function CmsHomeClient({
           {summary.collections.map((collection) => (
             <Link
               key={collection.id}
-              href={`/${workspaceSlug}/collections/${collection.id}`}
+              href={`/${workspaceSlug}/library/collections/${collection.id}`}
               className="rounded-2xl border border-border/60 bg-background/70 p-4 transition hover:border-foreground/30"
             >
               <div className="flex items-start justify-between gap-3">

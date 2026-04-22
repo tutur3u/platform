@@ -15,6 +15,7 @@ import {
 } from '@tuturuuu/internal-api';
 import type {
   CanonicalExternalProject,
+  ExternalProjectWorkspaceBindingSummary,
   Json,
   WorkspaceExternalProjectBindingAudit,
 } from '@tuturuuu/types';
@@ -38,56 +39,13 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { type ReactNode, useDeferredValue, useState } from 'react';
 import {
   DEFAULT_EXTERNAL_PROJECT_COLLECTIONS,
   EXTERNAL_PROJECT_ADAPTER_OPTIONS,
 } from '@/lib/external-projects/constants';
-
-type Strings = {
-  actionPanelDescription: string;
-  actionPanelTitle: string;
-  activeLabel: string;
-  activeProjectsLabel: string;
-  adapterCoverageLabel: string;
-  adapterLabel: string;
-  allAdaptersLabel: string;
-  auditFeedDescription: string;
-  bindAction: string;
-  bindDescription: string;
-  bindTitle: string;
-  bindingPreviewLabel: string;
-  canonicalIdLabel: string;
-  createAction: string;
-  createDescription: string;
-  createTitle: string;
-  deliveryProfileHint: string;
-  deliveryProfileLabel: string;
-  displayNameLabel: string;
-  inactiveLabel: string;
-  invalidJsonLabel: string;
-  liveBindingsLabel: string;
-  noAuditsDescription: string;
-  noAuditsTitle: string;
-  noProjectsDescription: string;
-  noProjectsTitle: string;
-  overviewDescription: string;
-  overviewTitle: string;
-  recentAuditsTitle: string;
-  recommendedCollectionsLabel: string;
-  registryDescription: string;
-  registryTitle: string;
-  resultsLabel: string;
-  rootSearchPlaceholder: string;
-  saveAction: string;
-  searchEmptyDescription: string;
-  searchEmptyTitle: string;
-  totalProjectsLabel: string;
-  unbindAction: string;
-  unboundLabel: string;
-  useForBindingAction: string;
-  workspaceIdLabel: string;
-};
 
 function buildDefaultDeliveryProfile(
   adapter: CanonicalExternalProject['adapter']
@@ -117,8 +75,19 @@ function formatCanonicalToken(value: string) {
     .join(' ');
 }
 
-function formatAuditTime(value: string) {
+function formatAuditTime(value: string | null) {
+  if (!value) {
+    return '—';
+  }
+
   return new Date(value).toLocaleString();
+}
+
+function getWorkspaceLabel(
+  workspace: Pick<ExternalProjectWorkspaceBindingSummary, 'name'>,
+  unnamedLabel: string
+) {
+  return workspace.name || unnamedLabel;
 }
 
 function MetricCard({
@@ -160,11 +129,20 @@ function EmptyPanel({
   );
 }
 
+function WorkspaceStatusBadge({ enabled }: { enabled: boolean }) {
+  const t = useTranslations();
+
+  return (
+    <Badge variant={enabled ? 'default' : 'outline'} className="rounded-full">
+      {enabled ? t('common.enabled') : t('common.disabled')}
+    </Badge>
+  );
+}
+
 function ProjectRegistryCard({
   onPrepareBinding,
   onSave,
   project,
-  strings,
 }: {
   onPrepareBinding: () => void;
   onSave: (
@@ -173,20 +151,8 @@ function ProjectRegistryCard({
     deliveryProfile: Json
   ) => void;
   project: CanonicalExternalProject;
-  strings: Pick<
-    Strings,
-    | 'activeLabel'
-    | 'adapterLabel'
-    | 'deliveryProfileHint'
-    | 'deliveryProfileLabel'
-    | 'displayNameLabel'
-    | 'inactiveLabel'
-    | 'invalidJsonLabel'
-    | 'recommendedCollectionsLabel'
-    | 'saveAction'
-    | 'useForBindingAction'
-  >;
 }) {
+  const tRoot = useTranslations('external-projects.root');
   const [displayName, setDisplayName] = useState(project.display_name);
   const [isActive, setIsActive] = useState(project.is_active);
   const [deliveryProfileText, setDeliveryProfileText] = useState(
@@ -207,27 +173,27 @@ function ProjectRegistryCard({
               variant={isActive ? 'default' : 'outline'}
               className="rounded-full"
             >
-              {isActive ? strings.activeLabel : strings.inactiveLabel}
+              {isActive ? tRoot('active_label') : tRoot('inactive_label')}
             </Badge>
           </div>
           <div>
             <div className="font-medium text-lg">{project.display_name}</div>
             <div className="text-muted-foreground text-sm">
-              {project.id} · {strings.adapterLabel}:{' '}
+              {project.id} · {tRoot('adapter_label')}:{' '}
               {formatCanonicalToken(project.adapter)}
             </div>
           </div>
         </div>
 
         <Button variant="outline" onClick={onPrepareBinding}>
-          {strings.useForBindingAction}
+          {tRoot('use_for_binding_action')}
         </Button>
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[0.62fr_0.38fr]">
         <div className="space-y-4">
           <div className="grid gap-2">
-            <Label>{strings.displayNameLabel}</Label>
+            <Label>{tRoot('display_name_label')}</Label>
             <Input
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
@@ -236,9 +202,9 @@ function ProjectRegistryCard({
 
           <div className="grid gap-2">
             <div className="flex items-center justify-between gap-3">
-              <Label>{strings.deliveryProfileLabel}</Label>
+              <Label>{tRoot('delivery_profile_label')}</Label>
               <span className="text-muted-foreground text-xs">
-                {strings.deliveryProfileHint}
+                {tRoot('delivery_profile_hint')}
               </span>
             </div>
             <Textarea
@@ -253,7 +219,7 @@ function ProjectRegistryCard({
             />
             {deliveryProfileText.trim() && deliveryProfileJson === null ? (
               <p className="text-destructive text-xs">
-                {strings.invalidJsonLabel}
+                {tRoot('invalid_json_label')}
               </p>
             ) : null}
           </div>
@@ -262,7 +228,7 @@ function ProjectRegistryCard({
         <div className="space-y-4">
           <div className="rounded-xl border border-border/70 bg-card/80 p-4">
             <div className="mb-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
-              {strings.recommendedCollectionsLabel}
+              {tRoot('recommended_collections_label')}
             </div>
             <div className="flex flex-wrap gap-2">
               {project.allowed_collections.map((collection) => (
@@ -284,7 +250,7 @@ function ProjectRegistryCard({
               id={`active-${project.id}`}
             />
             <Label htmlFor={`active-${project.id}`}>
-              {strings.activeLabel}
+              {tRoot('active_label')}
             </Label>
           </div>
 
@@ -296,7 +262,7 @@ function ProjectRegistryCard({
             }
             disabled={!displayName.trim() || deliveryProfileJson === null}
           >
-            {strings.saveAction}
+            {tRoot('save_action')}
           </Button>
         </div>
       </div>
@@ -306,13 +272,15 @@ function ProjectRegistryCard({
 
 export function RootExternalProjectsAdminClient({
   initialAudits,
+  initialBindings,
   initialProjects,
-  strings,
 }: {
   initialAudits: WorkspaceExternalProjectBindingAudit[];
+  initialBindings: ExternalProjectWorkspaceBindingSummary[];
   initialProjects: CanonicalExternalProject[];
-  strings: Strings;
 }) {
+  const t = useTranslations();
+  const tRoot = useTranslations('external-projects.root');
   const queryClient = useQueryClient();
   const [createForm, setCreateForm] = useState({
     adapter: 'junly' as CanonicalExternalProject['adapter'],
@@ -320,44 +288,98 @@ export function RootExternalProjectsAdminClient({
     displayName: '',
     id: '',
   });
-  const [bindingForm, setBindingForm] = useState({
-    canonicalId: initialProjects[0]?.id ?? '',
-    workspaceId: '',
-  });
   const [adapterFilter, setAdapterFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [projectSearchQuery, setProjectSearchQuery] = useState('');
+  const [workspaceSearchQuery, setWorkspaceSearchQuery] = useState('');
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(
+    initialBindings.find((workspace) => workspace.binding.canonical_id)?.id ??
+      initialBindings[0]?.id ??
+      ''
+  );
+  const [bindingForm, setBindingForm] = useState(() => {
+    const selectedWorkspace =
+      initialBindings.find(
+        (workspace) => workspace.id === selectedWorkspaceId
+      ) ??
+      initialBindings[0] ??
+      null;
 
-  const deferredSearchQuery = useDeferredValue(searchQuery);
-  const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
+    return {
+      canonicalId: selectedWorkspace?.binding.canonical_id ?? '',
+      workspaceId: selectedWorkspace?.id ?? '',
+    };
+  });
+
+  const deferredProjectSearchQuery = useDeferredValue(projectSearchQuery);
+  const deferredWorkspaceSearchQuery = useDeferredValue(workspaceSearchQuery);
+  const normalizedProjectQuery = deferredProjectSearchQuery
+    .trim()
+    .toLowerCase();
+  const normalizedWorkspaceQuery = deferredWorkspaceSearchQuery
+    .trim()
+    .toLowerCase();
   const createPayloadJson = tryParseJson(createForm.deliveryProfile);
-  const selectedBindingProject =
-    initialProjects.find((project) => project.id === bindingForm.canonicalId) ??
-    null;
   const activeProjects = initialProjects.filter((project) => project.is_active);
-  const activeBindingCount = Array.from(
-    initialAudits
-      .reduce((map, audit) => {
-        if (!map.has(audit.destination_ws_id)) {
-          map.set(audit.destination_ws_id, audit.next_canonical_id);
-        }
-        return map;
-      }, new Map<string, string | null>())
-      .values()
-  ).filter(Boolean).length;
+  const selectedWorkspace =
+    initialBindings.find((workspace) => workspace.id === selectedWorkspaceId) ??
+    null;
+  const currentBindingProject =
+    initialProjects.find(
+      (project) =>
+        project.id ===
+        (bindingForm.canonicalId || selectedWorkspace?.binding.canonical_id)
+    ) ?? null;
+  const selectableProjects =
+    currentBindingProject &&
+    !activeProjects.some((project) => project.id === currentBindingProject.id)
+      ? [currentBindingProject, ...activeProjects]
+      : activeProjects;
+  const activeBindingCount = initialBindings.filter(
+    (workspace) => workspace.binding.enabled
+  ).length;
   const adapterCoverageCount = new Set(
     initialProjects.map((project) => project.adapter)
   ).size;
-
   const filteredProjects = initialProjects.filter((project) => {
     const matchesAdapter =
       adapterFilter === 'all' || project.adapter === adapterFilter;
     const matchesQuery =
-      !normalizedQuery ||
-      project.id.toLowerCase().includes(normalizedQuery) ||
-      project.display_name.toLowerCase().includes(normalizedQuery);
+      !normalizedProjectQuery ||
+      project.id.toLowerCase().includes(normalizedProjectQuery) ||
+      project.display_name.toLowerCase().includes(normalizedProjectQuery);
 
     return matchesAdapter && matchesQuery;
   });
+  const filteredBindings = initialBindings.filter((workspace) => {
+    if (!normalizedWorkspaceQuery) {
+      return true;
+    }
+
+    return [
+      workspace.id,
+      workspace.name,
+      workspace.binding.canonical_id,
+      workspace.binding.canonical_project?.display_name,
+      workspace.binding.adapter,
+    ]
+      .filter(Boolean)
+      .some((value) => value?.toLowerCase().includes(normalizedWorkspaceQuery));
+  });
+  const selectedWorkspaceAudits = selectedWorkspace
+    ? initialAudits.filter(
+        (audit) => audit.destination_ws_id === selectedWorkspace.id
+      )
+    : [];
+
+  const selectWorkspace = (
+    workspace: ExternalProjectWorkspaceBindingSummary
+  ) => {
+    setSelectedWorkspaceId(workspace.id);
+    setBindingForm({
+      canonicalId: workspace.binding.canonical_id ?? '',
+      workspaceId: workspace.id,
+    });
+  };
 
   const createProjectMutation = useMutation({
     mutationFn: async () =>
@@ -418,47 +440,51 @@ export function RootExternalProjectsAdminClient({
     !createForm.displayName.trim() ||
     createPayloadJson === null ||
     createProjectMutation.isPending;
-
   const bindDisabled =
-    !bindingForm.workspaceId.trim() || bindMutation.isPending;
+    !bindingForm.workspaceId.trim() ||
+    bindingForm.canonicalId ===
+      (selectedWorkspace?.binding.canonical_id ?? '') ||
+    bindMutation.isPending;
+  const unbindDisabled =
+    !selectedWorkspace?.binding.canonical_id || bindMutation.isPending;
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-3xl border border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.12),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))]">
+      <section className="overflow-hidden rounded-3xl border border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(15,23,42,0.08),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(248,250,252,0.9))] shadow-sm">
         <div className="grid gap-6 p-6 xl:grid-cols-[1.1fr_0.9fr] xl:p-8">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/60 px-3 py-1 text-muted-foreground text-xs uppercase tracking-[0.24em]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground text-xs uppercase tracking-[0.24em]">
               <Sparkles className="h-3.5 w-3.5" />
-              {strings.overviewTitle}
+              {tRoot('overview_title')}
             </div>
             <div className="space-y-2">
               <h1 className="max-w-2xl font-semibold text-3xl tracking-tight">
-                {strings.registryTitle}
+                {tRoot('registry_title')}
               </h1>
               <p className="max-w-2xl text-muted-foreground text-sm leading-6">
-                {strings.overviewDescription}
+                {tRoot('overview_description')}
               </p>
             </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <MetricCard
-              label={strings.totalProjectsLabel}
+              label={tRoot('total_projects_label')}
               value={String(initialProjects.length)}
               icon={<BriefcaseBusiness className="h-4 w-4" />}
             />
             <MetricCard
-              label={strings.activeProjectsLabel}
+              label={tRoot('active_projects_label')}
               value={String(activeProjects.length)}
               icon={<CheckCircle2 className="h-4 w-4" />}
             />
             <MetricCard
-              label={strings.liveBindingsLabel}
+              label={tRoot('live_bindings_label')}
               value={String(activeBindingCount)}
               icon={<Link className="h-4 w-4" />}
             />
             <MetricCard
-              label={strings.adapterCoverageLabel}
+              label={tRoot('adapter_coverage_label')}
               value={`${adapterCoverageCount}/${EXTERNAL_PROJECT_ADAPTER_OPTIONS.length}`}
               icon={<Sparkles className="h-4 w-4" />}
             />
@@ -466,97 +492,268 @@ export function RootExternalProjectsAdminClient({
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr]">
-        <div className="space-y-6">
-          <Card className="border-border/70 bg-card/80">
-            <CardHeader>
-              <CardTitle>{strings.registryTitle}</CardTitle>
-              <CardDescription>{strings.registryDescription}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
-                <div className="grid gap-2">
-                  <Label>{strings.rootSearchPlaceholder}</Label>
-                  <Input
-                    value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    placeholder={strings.rootSearchPlaceholder}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>{strings.adapterLabel}</Label>
-                  <Select
-                    value={adapterFilter}
-                    onValueChange={setAdapterFilter}
+      <div className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
+        <Card className="border-border/70 bg-card/95 shadow-none">
+          <CardHeader>
+            <CardTitle>{tRoot('workspace_list_title')}</CardTitle>
+            <CardDescription>
+              {tRoot('workspace_list_description')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-2">
+              <Label htmlFor="cms-workspace-search">
+                {t('common.workspace')}
+              </Label>
+              <Input
+                id="cms-workspace-search"
+                value={workspaceSearchQuery}
+                onChange={(event) =>
+                  setWorkspaceSearchQuery(event.target.value)
+                }
+                placeholder={tRoot('workspace_search_placeholder')}
+              />
+            </div>
+
+            <div className="text-muted-foreground text-sm">
+              {filteredBindings.length} {t('common.workspaces')}
+            </div>
+
+            {filteredBindings.length === 0 ? (
+              <EmptyPanel
+                title={tRoot('workspace_empty_title')}
+                description={tRoot('workspace_empty_description')}
+              />
+            ) : (
+              <div className="space-y-3">
+                {filteredBindings.map((workspace) => (
+                  <button
+                    key={workspace.id}
+                    type="button"
+                    className={cn(
+                      'w-full rounded-[1.35rem] border p-4 text-left transition-colors',
+                      workspace.id === selectedWorkspaceId
+                        ? 'border-foreground/15 bg-background'
+                        : 'border-border/70 bg-background/75 hover:border-foreground/15'
+                    )}
+                    onClick={() => selectWorkspace(workspace)}
                   >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        {strings.allAdaptersLabel}
-                      </SelectItem>
-                      {EXTERNAL_PROJECT_ADAPTER_OPTIONS.map((adapter) => (
-                        <SelectItem key={adapter} value={adapter}>
-                          {formatCanonicalToken(adapter)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="font-medium">
+                            {getWorkspaceLabel(
+                              workspace,
+                              t('common.unnamed-workspace')
+                            )}
+                          </div>
+                          <WorkspaceStatusBadge
+                            enabled={workspace.binding.enabled}
+                          />
+                          {workspace.personal ? (
+                            <Badge variant="secondary" className="rounded-full">
+                              {t('common.personal_account')}
+                            </Badge>
+                          ) : null}
+                        </div>
+                        <div className="text-muted-foreground text-sm">
+                          {workspace.binding.canonical_project?.display_name ??
+                            workspace.binding.canonical_id ??
+                            tRoot('unbound_label')}
+                        </div>
+                      </div>
 
-              <div className="text-muted-foreground text-sm">
-                {filteredProjects.length} {strings.resultsLabel}
+                      <div className="space-y-2 text-right text-muted-foreground text-xs">
+                        <div>
+                          {workspace.binding.adapter
+                            ? formatCanonicalToken(workspace.binding.adapter)
+                            : tRoot('unbound_label')}
+                        </div>
+                        <div>{formatAuditTime(workspace.last_changed_at)}</div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
               </div>
+            )}
+          </CardContent>
+        </Card>
 
-              {filteredProjects.length === 0 ? (
+        <div className="space-y-6">
+          <Card className="border-border/70 bg-card/95 shadow-none">
+            <CardHeader>
+              <CardTitle>{tRoot('selected_workspace_title')}</CardTitle>
+              <CardDescription>
+                {tRoot('selected_workspace_description')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {!selectedWorkspace ? (
                 <EmptyPanel
-                  title={strings.searchEmptyTitle}
-                  description={strings.searchEmptyDescription}
+                  title={tRoot('no_workspace_selected_title')}
+                  description={tRoot('no_workspace_selected_description')}
                 />
               ) : (
-                <div className="space-y-4">
-                  {filteredProjects.map((project) => (
-                    <ProjectRegistryCard
-                      key={project.id}
-                      project={project}
-                      strings={strings}
-                      onPrepareBinding={() =>
-                        setBindingForm((current) => ({
-                          ...current,
-                          canonicalId: project.id,
-                        }))
-                      }
-                      onSave={(displayName, isActive, deliveryProfile) =>
-                        updateProjectMutation.mutate({
-                          deliveryProfile,
-                          displayName,
-                          id: project.id,
-                          isActive,
-                        })
-                      }
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                      <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                        {t('common.workspace')}
+                      </div>
+                      <div className="mt-2 font-medium text-lg">
+                        {getWorkspaceLabel(
+                          selectedWorkspace,
+                          t('common.unnamed-workspace')
+                        )}
+                      </div>
+                      <div className="mt-1 text-muted-foreground text-sm">
+                        {selectedWorkspace.id}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                      <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                        {tRoot('binding_preview_label')}
+                      </div>
+                      <div className="mt-2 font-medium text-lg">
+                        {selectedWorkspace.binding.canonical_project
+                          ?.display_name ??
+                          selectedWorkspace.binding.canonical_id ??
+                          tRoot('unbound_label')}
+                      </div>
+                      <div className="mt-1 text-muted-foreground text-sm">
+                        {selectedWorkspace.binding.adapter
+                          ? formatCanonicalToken(
+                              selectedWorkspace.binding.adapter
+                            )
+                          : tRoot('unbound_label')}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                      <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                        {tRoot('last_changed_label')}
+                      </div>
+                      <div className="mt-2 font-medium text-lg">
+                        {formatAuditTime(selectedWorkspace.last_changed_at)}
+                      </div>
+                      <div className="mt-1 text-muted-foreground text-sm">
+                        {selectedWorkspace.last_actor_user_id ?? '—'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-6 xl:grid-cols-[0.72fr_0.28fr]">
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <div className="font-medium">{tRoot('bind_title')}</div>
+                        <div className="text-muted-foreground text-sm">
+                          {tRoot('bind_description')}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-2">
+                        <Label>{tRoot('canonical_id_label')}</Label>
+                        <Select
+                          value={bindingForm.canonicalId || '__unbound__'}
+                          onValueChange={(value) =>
+                            setBindingForm((current) => ({
+                              ...current,
+                              canonicalId: value === '__unbound__' ? '' : value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__unbound__">
+                              {tRoot('unbound_label')}
+                            </SelectItem>
+                            {selectableProjects.map((project) => (
+                              <SelectItem key={project.id} value={project.id}>
+                                {project.display_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid gap-2">
+                        <Label>{tRoot('workspace_id_label')}</Label>
+                        <Input value={selectedWorkspace.id} disabled />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                        <div className="mb-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                          {tRoot('binding_preview_label')}
+                        </div>
+                        <div className="space-y-2">
+                          <div className="font-medium">
+                            {currentBindingProject?.display_name ??
+                              tRoot('unbound_label')}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <WorkspaceStatusBadge
+                              enabled={Boolean(bindingForm.canonicalId)}
+                            />
+                            {currentBindingProject?.adapter ? (
+                              <Badge
+                                variant="secondary"
+                                className="rounded-full"
+                              >
+                                {formatCanonicalToken(
+                                  currentBindingProject.adapter
+                                )}
+                              </Badge>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button
+                        className="w-full"
+                        disabled={bindDisabled}
+                        onClick={() => bindMutation.mutate()}
+                      >
+                        {tRoot('save_action')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        disabled={unbindDisabled}
+                        onClick={() =>
+                          setBindingForm((current) => ({
+                            ...current,
+                            canonicalId: '',
+                          }))
+                        }
+                      >
+                        {tRoot('unbind_action')}
+                      </Button>
+                    </div>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
 
-          <Card className="border-border/70 bg-card/80">
+          <Card className="border-border/70 bg-card/95 shadow-none">
             <CardHeader>
-              <CardTitle>{strings.recentAuditsTitle}</CardTitle>
-              <CardDescription>{strings.auditFeedDescription}</CardDescription>
+              <CardTitle>{tRoot('recent_audits_title')}</CardTitle>
+              <CardDescription>
+                {tRoot('audit_feed_description')}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              {initialAudits.length === 0 ? (
+              {selectedWorkspaceAudits.length === 0 ? (
                 <EmptyPanel
-                  title={strings.noAuditsTitle}
-                  description={strings.noAuditsDescription}
+                  title={tRoot('no_audits_title')}
+                  description={tRoot('no_audits_description')}
                 />
               ) : (
                 <div className="space-y-3">
-                  {initialAudits.map((audit) => (
+                  {selectedWorkspaceAudits.map((audit) => (
                     <div
                       key={audit.id}
                       className="rounded-xl border border-border/70 bg-background/40 p-4"
@@ -566,18 +763,16 @@ export function RootExternalProjectsAdminClient({
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="secondary" className="rounded-full">
                               {audit.next_canonical_id
-                                ? strings.bindAction
-                                : strings.unbindAction}
+                                ? tRoot('bind_action')
+                                : tRoot('unbind_action')}
                             </Badge>
                             <span className="font-medium">
-                              {audit.destination_ws_id}
+                              {audit.previous_canonical_id ??
+                                tRoot('unbound_label')}
+                              {' -> '}
+                              {audit.next_canonical_id ??
+                                tRoot('unbound_label')}
                             </span>
-                          </div>
-                          <div className="text-muted-foreground text-sm">
-                            {audit.previous_canonical_id ??
-                              strings.unboundLabel}{' '}
-                            {'->'}{' '}
-                            {audit.next_canonical_id ?? strings.unboundLabel}
                           </div>
                           <div className="text-muted-foreground text-xs">
                             {audit.source_ws_id}
@@ -598,46 +793,58 @@ export function RootExternalProjectsAdminClient({
             </CardContent>
           </Card>
         </div>
+      </div>
 
-        <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
-          <Card className="border-border/70 bg-card/80">
-            <CardHeader>
-              <CardTitle>{strings.actionPanelTitle}</CardTitle>
-              <CardDescription>
-                {strings.actionPanelDescription}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+      <Card className="border-border/70 bg-card/95 shadow-none">
+        <CardHeader className="gap-4 lg:flex lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-1">
+            <CardTitle>{tRoot('registry_title')}</CardTitle>
+            <CardDescription>{tRoot('registry_description')}</CardDescription>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label>{tRoot('root_search_placeholder')}</Label>
+              <Input
+                value={projectSearchQuery}
+                onChange={(event) => setProjectSearchQuery(event.target.value)}
+                placeholder={tRoot('root_search_placeholder')}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>{tRoot('adapter_label')}</Label>
+              <Select value={adapterFilter} onValueChange={setAdapterFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    {tRoot('all_adapters_label')}
+                  </SelectItem>
+                  {EXTERNAL_PROJECT_ADAPTER_OPTIONS.map((adapter) => (
+                    <SelectItem key={adapter} value={adapter}>
+                      {formatCanonicalToken(adapter)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-6 xl:grid-cols-[0.38fr_0.62fr]">
+            <div className="rounded-[1.6rem] border border-border/70 bg-background/70 p-5">
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <div className="font-medium">{strings.createTitle}</div>
+                  <div className="font-medium">{tRoot('create_title')}</div>
                   <div className="text-muted-foreground text-sm">
-                    {strings.createDescription}
+                    {tRoot('create_description')}
                   </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="canonical-id">
-                      {strings.canonicalIdLabel}
-                    </Label>
+                    <Label>{tRoot('display_name_label')}</Label>
                     <Input
-                      id="canonical-id"
-                      value={createForm.id}
-                      onChange={(event) =>
-                        setCreateForm((current) => ({
-                          ...current,
-                          id: event.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="display-name">
-                      {strings.displayNameLabel}
-                    </Label>
-                    <Input
-                      id="display-name"
                       value={createForm.displayName}
                       onChange={(event) =>
                         setCreateForm((current) => ({
@@ -647,11 +854,22 @@ export function RootExternalProjectsAdminClient({
                       }
                     />
                   </div>
-                </div>
 
-                <div className="grid gap-4 md:grid-cols-[0.55fr_0.45fr]">
                   <div className="grid gap-2">
-                    <Label>{strings.adapterLabel}</Label>
+                    <Label>{tRoot('canonical_id_label')}</Label>
+                    <Input
+                      value={createForm.id}
+                      onChange={(event) =>
+                        setCreateForm((current) => ({
+                          ...current,
+                          id: event.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>{tRoot('adapter_label')}</Label>
                     <Select
                       value={createForm.adapter}
                       onValueChange={(value) =>
@@ -677,196 +895,89 @@ export function RootExternalProjectsAdminClient({
                     </Select>
                   </div>
 
-                  <div className="rounded-xl border border-border/80 border-dashed bg-background/40 p-4">
-                    <div className="mb-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                      {strings.recommendedCollectionsLabel}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {DEFAULT_EXTERNAL_PROJECT_COLLECTIONS[
-                        createForm.adapter
-                      ].map((collection) => (
-                        <Badge
-                          key={collection}
-                          variant="secondary"
-                          className="rounded-full"
-                        >
-                          {formatCanonicalToken(collection)}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor="delivery-profile">
-                      {strings.deliveryProfileLabel}
-                    </Label>
-                    <span className="text-muted-foreground text-xs">
-                      {strings.deliveryProfileHint}
-                    </span>
-                  </div>
-                  <Textarea
-                    id="delivery-profile"
-                    rows={7}
-                    value={createForm.deliveryProfile}
-                    onChange={(event) =>
-                      setCreateForm((current) => ({
-                        ...current,
-                        deliveryProfile: event.target.value,
-                      }))
-                    }
-                    className={
-                      createForm.deliveryProfile.trim() &&
-                      createPayloadJson === null
-                        ? 'border-destructive/70 focus-visible:ring-destructive/30'
-                        : undefined
-                    }
-                  />
-                  {createForm.deliveryProfile.trim() &&
-                  createPayloadJson === null ? (
-                    <p className="text-destructive text-xs">
-                      {strings.invalidJsonLabel}
-                    </p>
-                  ) : null}
-                </div>
-
-                <Button
-                  onClick={() => createProjectMutation.mutate()}
-                  disabled={createDisabled}
-                  className="w-full"
-                >
-                  {strings.createAction}
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <div className="font-medium">{strings.bindTitle}</div>
-                  <div className="text-muted-foreground text-sm">
-                    {strings.bindDescription}
-                  </div>
-                </div>
-
-                <div className="grid gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="workspace-id">
-                      {strings.workspaceIdLabel}
-                    </Label>
-                    <Input
-                      id="workspace-id"
-                      value={bindingForm.workspaceId}
+                    <div className="flex items-center justify-between gap-3">
+                      <Label>{tRoot('delivery_profile_label')}</Label>
+                      <span className="text-muted-foreground text-xs">
+                        {tRoot('delivery_profile_hint')}
+                      </span>
+                    </div>
+                    <Textarea
+                      rows={8}
+                      value={createForm.deliveryProfile}
                       onChange={(event) =>
-                        setBindingForm((current) => ({
+                        setCreateForm((current) => ({
                           ...current,
-                          workspaceId: event.target.value,
+                          deliveryProfile: event.target.value,
                         }))
+                      }
+                      className={
+                        createForm.deliveryProfile.trim() &&
+                        createPayloadJson === null
+                          ? 'border-destructive/70 focus-visible:ring-destructive/30'
+                          : undefined
                       }
                     />
+                    {createForm.deliveryProfile.trim() &&
+                    createPayloadJson === null ? (
+                      <p className="text-destructive text-xs">
+                        {tRoot('invalid_json_label')}
+                      </p>
+                    ) : null}
                   </div>
-                  <div className="grid gap-2">
-                    <Label>{strings.canonicalIdLabel}</Label>
-                    <Select
-                      value={bindingForm.canonicalId || '__none__'}
-                      onValueChange={(value) =>
-                        setBindingForm((current) => ({
-                          ...current,
-                          canonicalId: value === '__none__' ? '' : value,
-                        }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">
-                          {strings.unboundLabel}
-                        </SelectItem>
-                        {initialProjects.map((project) => (
-                          <SelectItem key={project.id} value={project.id}>
-                            {project.display_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
 
-                <div className="flex flex-wrap gap-3">
                   <Button
-                    onClick={() => bindMutation.mutate()}
-                    disabled={bindDisabled}
+                    disabled={createDisabled}
+                    onClick={() => createProjectMutation.mutate()}
                   >
-                    {bindingForm.canonicalId
-                      ? strings.bindAction
-                      : strings.unbindAction}
+                    {tRoot('create_action')}
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      setBindingForm((current) => ({
-                        ...current,
-                        canonicalId: '',
-                      }))
-                    }
-                    disabled={bindMutation.isPending}
-                  >
-                    {strings.unbindAction}
-                  </Button>
-                </div>
-
-                <div className="rounded-xl border border-border/70 bg-background/40 p-4">
-                  <div className="mb-3 text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                    {strings.bindingPreviewLabel}
-                  </div>
-                  {selectedBindingProject ? (
-                    <div className="space-y-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge
-                          variant={
-                            selectedBindingProject.is_active
-                              ? 'default'
-                              : 'outline'
-                          }
-                          className="rounded-full"
-                        >
-                          {selectedBindingProject.is_active
-                            ? strings.activeLabel
-                            : strings.inactiveLabel}
-                        </Badge>
-                        <span className="font-medium">
-                          {selectedBindingProject.display_name}
-                        </span>
-                      </div>
-                      <div className="text-muted-foreground text-sm">
-                        {selectedBindingProject.id} ·{' '}
-                        {formatCanonicalToken(selectedBindingProject.adapter)}
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedBindingProject.allowed_collections.map(
-                          (collection) => (
-                            <Badge
-                              key={collection}
-                              variant="secondary"
-                              className="rounded-full"
-                            >
-                              {formatCanonicalToken(collection)}
-                            </Badge>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-sm">
-                      {strings.noProjectsDescription}
-                    </p>
-                  )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="text-muted-foreground text-sm">
+                {filteredProjects.length} {tRoot('results_label')}
+              </div>
+
+              {filteredProjects.length === 0 ? (
+                <EmptyPanel
+                  title={tRoot('search_empty_title')}
+                  description={tRoot('search_empty_description')}
+                />
+              ) : (
+                <div className="space-y-4">
+                  {filteredProjects.map((project) => (
+                    <ProjectRegistryCard
+                      key={project.id}
+                      project={project}
+                      onPrepareBinding={() => {
+                        if (!selectedWorkspace) {
+                          return;
+                        }
+
+                        setBindingForm({
+                          canonicalId: project.id,
+                          workspaceId: selectedWorkspace.id,
+                        });
+                      }}
+                      onSave={(displayName, isActive, deliveryProfile) =>
+                        updateProjectMutation.mutate({
+                          deliveryProfile,
+                          displayName,
+                          id: project.id,
+                          isActive,
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

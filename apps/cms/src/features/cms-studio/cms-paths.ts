@@ -1,0 +1,39 @@
+function stripTrailingSlash(path: string) {
+  return path.replace(/\/$/, '') || '/';
+}
+
+export function getCmsWorkspaceBasePath(pathname: string) {
+  return stripTrailingSlash(
+    pathname
+      .replace(/\/library\/entries\/[^/]+$/, '')
+      .replace(/\/library\/collections\/[^/]+$/, '')
+      .replace(/\/library$/, '')
+      .replace(/\/preview$/, '')
+      .replace(/\/projects$/, '')
+      .replace(/\/settings$/, '')
+  );
+}
+
+export function getCmsLibraryPath(pathname: string) {
+  return `${getCmsWorkspaceBasePath(pathname)}/library`;
+}
+
+export function getCmsCollectionPath(pathname: string, collectionId: string) {
+  return `${getCmsWorkspaceBasePath(pathname)}/library/collections/${collectionId}`;
+}
+
+export function getCmsEntryPath(pathname: string, entryId: string) {
+  return `${getCmsWorkspaceBasePath(pathname)}/library/entries/${entryId}`;
+}
+
+export function getCmsPreviewPath(pathname: string) {
+  return `${getCmsWorkspaceBasePath(pathname)}/preview`;
+}
+
+export function getCmsProjectsPath(pathname: string) {
+  return `${getCmsWorkspaceBasePath(pathname)}/projects`;
+}
+
+export function getCmsSettingsPath(pathname: string) {
+  return `${getCmsWorkspaceBasePath(pathname)}/settings`;
+}

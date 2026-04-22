@@ -111,6 +111,7 @@ export {
   getWorkspaceExternalProjectSummary,
   importWorkspaceExternalProjectContent,
   listCanonicalExternalProjects,
+  listExternalProjectWorkspaceBindings,
   listWorkspaceExternalProjectBindingAudits,
   listWorkspaceExternalProjectCollections,
   listWorkspaceExternalProjectEntries,
@@ -203,7 +204,12 @@ export {
   type SubmitReportResponse,
   submitReport,
 } from './reports';
-export { listRoleMembers, listWorkspaceRoles } from './roles';
+export {
+  addRoleMembers,
+  listRoleMembers,
+  listWorkspaceRoles,
+  removeRoleMember,
+} from './roles';
 export {
   checkWorkspacePermission,
   getPostsFilterOptions,
@@ -325,7 +331,10 @@ export {
 } from './workspace-user-audit';
 export {
   getWorkspace,
+  inviteWorkspaceMembers,
   listCmsWorkspaces,
+  listEnhancedWorkspaceMembers,
   listWorkspaceMembers,
   listWorkspaces,
+  removeWorkspaceMember,
 } from './workspaces';

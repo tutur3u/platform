@@ -243,12 +243,18 @@ function findInvalidKeys(sourceContent, targetContent, ignore) {
     }
 
     const targetValue = targetContent[key];
-    const sourceType = Array.isArray(sourceValue)
-      ? 'array'
-      : typeof sourceValue;
-    const targetType = Array.isArray(targetValue)
-      ? 'array'
-      : typeof targetValue;
+    const sourceType =
+      sourceValue === null
+        ? 'null'
+        : Array.isArray(sourceValue)
+          ? 'array'
+          : typeof sourceValue;
+    const targetType =
+      targetValue === null
+        ? 'null'
+        : Array.isArray(targetValue)
+          ? 'array'
+          : typeof targetValue;
 
     if (sourceType !== targetType) {
       invalid.push({
@@ -259,6 +265,10 @@ function findInvalidKeys(sourceContent, targetContent, ignore) {
     }
 
     if (sourceType !== 'string') {
+      invalid.push({
+        key,
+        message: `Expected a non-null string translation but received "${sourceType}"`,
+      });
       continue;
     }
 

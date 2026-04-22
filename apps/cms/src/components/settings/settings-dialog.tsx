@@ -53,9 +53,7 @@ export function SettingsDialog({
           name: 'cms_general',
           label: t('common.overview'),
           icon: PanelLeft,
-          description: t(
-            'workspace-settings-layout.external_projects_registry'
-          ),
+          description: t('external-projects.settings.description'),
           keywords: ['CMS', 'Content', 'Publishing'],
         },
       ],
@@ -107,9 +105,7 @@ export function SettingsDialog({
             <div className="grid gap-6">
               <SettingItemTab
                 title={t('common.workspace')}
-                description={t(
-                  'workspace-settings-layout.external_projects_registry'
-                )}
+                description={t('external-projects.settings.description')}
               >
                 <span className="text-muted-foreground text-sm">
                   {workspace.name || t('common.unnamed')}

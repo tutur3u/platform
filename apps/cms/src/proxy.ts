@@ -244,7 +244,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         }
 
         const fallbackUrl = new URL(
-          `${localePrefix}${isRootAdmin ? '/internal/admin' : '/no-access'}`,
+          `${localePrefix}${isRootAdmin ? '/internal/projects' : '/no-access'}`,
           req.nextUrl
         );
         const fallbackRedirect = NextResponse.redirect(fallbackUrl);

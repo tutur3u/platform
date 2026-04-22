@@ -52,6 +52,26 @@ function extractKeyPaths(obj, prefix = '') {
   return keys;
 }
 
+function extractInvalidLeafPaths(obj, prefix = '') {
+  const keys = [];
+
+  for (const key of Object.keys(obj)) {
+    const fullKey = prefix ? `${prefix}.${key}` : key;
+    const value = obj[key];
+
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      keys.push(...extractInvalidLeafPaths(value, fullKey));
+      continue;
+    }
+
+    if (value === null) {
+      keys.push(fullKey);
+    }
+  }
+
+  return keys;
+}
+
 /**
  * Check key parity between two JSON files
  * @param {string} dir - Directory containing the translation files
@@ -75,6 +95,8 @@ function checkKeyParity(dir) {
 
     const enKeys = new Set(extractKeyPaths(enContent));
     const viKeys = new Set(extractKeyPaths(viContent));
+    const invalidInEn = extractInvalidLeafPaths(enContent);
+    const invalidInVi = extractInvalidLeafPaths(viContent);
 
     // Keys in en.json but not in vi.json
     const missingInVi = [...enKeys].filter((key) => !viKeys.has(key)).sort();
@@ -84,6 +106,8 @@ function checkKeyParity(dir) {
 
     return {
       dir,
+      invalidInEn,
+      invalidInVi,
       missingInVi,
       missingInEn,
       error: null,
@@ -143,8 +167,10 @@ function main() {
 
     const hasMissingInVi = result.missingInVi.length > 0;
     const hasMissingInEn = result.missingInEn.length > 0;
+    const hasInvalidInEn = result.invalidInEn.length > 0;
+    const hasInvalidInVi = result.invalidInVi.length > 0;
 
-    if (hasMissingInVi || hasMissingInEn) {
+    if (hasMissingInVi || hasMissingInEn || hasInvalidInEn || hasInvalidInVi) {
       console.error(`❌ ${dir}:`);
 
       if (hasMissingInVi) {
@@ -161,6 +187,20 @@ function main() {
         );
         console.error(formatMissingKeys(result.missingInEn));
         totalMissingInEn += result.missingInEn.length;
+      }
+
+      if (hasInvalidInEn) {
+        console.error(
+          `\n   Invalid leaf values in en.json (${result.invalidInEn.length} keys):`
+        );
+        console.error(formatMissingKeys(result.invalidInEn));
+      }
+
+      if (hasInvalidInVi) {
+        console.error(
+          `\n   Invalid leaf values in vi.json (${result.invalidInVi.length} keys):`
+        );
+        console.error(formatMissingKeys(result.invalidInVi));
       }
 
       console.error('');

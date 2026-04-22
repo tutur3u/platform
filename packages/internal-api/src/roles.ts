@@ -41,3 +41,39 @@ export async function listRoleMembers(
 
   return payload;
 }
+
+export async function addRoleMembers(
+  workspaceId: string,
+  roleId: string,
+  memberIds: string[],
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles/${encodePathSegment(roleId)}/members`,
+    {
+      body: JSON.stringify({ memberIds }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function removeRoleMember(
+  workspaceId: string,
+  roleId: string,
+  userId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles/${encodePathSegment(roleId)}/members/${encodePathSegment(userId)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
+    }
+  );
+}

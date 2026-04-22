@@ -31,8 +31,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return generateCommonMetadata({
     config: {
       description: {
-        en: 'Manage external-project content, preview delivery, and control workspace publishing from a dedicated CMS.',
-        vi: 'Quản lý nội dung dự án ngoài nền tảng, xem trước nội dung phân phối và điều khiển xuất bản từ một CMS chuyên dụng.',
+        en: 'Manage Tuturuuu CMS content, preview delivery, and control workspace publishing from a dedicated editorial workspace.',
+        vi: 'Quản lý nội dung Tuturuuu CMS, xem trước phân phối và điều khiển xuất bản workspace từ một không gian biên tập chuyên dụng.',
       },
       name: siteConfig.name,
       url: siteConfig.url,

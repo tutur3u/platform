@@ -1,38 +1,42 @@
 ---
 title: 'CMS'
-description: 'Dedicated content management app for EPM-enabled workspaces.'
+description: 'Dedicated Tuturuuu CMS app for workspace content operations and root-level project linking.'
 updatedAt: '2026-04-22'
 ---
 
 ## Overview
 
-`apps/cms` is the dedicated home for EPM authoring.
+`apps/cms` is the dedicated home for Tuturuuu CMS.
 
-- It owns the CMS UI, routing, workspace picker, and `/internal/admin` registry surface.
-- It is intentionally a satellite frontend, not an API owner.
-- All CMS and EPM API traffic still goes through `apps/web`.
+- It owns the CMS UI, routing, workspace picker, and root-level `/{wsId}/projects` linking console.
+- It remains a satellite frontend. Protected APIs still live in `apps/web`.
+- All CMS `/api/*` traffic is forwarded to `apps/web`.
 
 ## Routing
 
-- `/{wsId}`: CMS home
-- `/{wsId}/content`: content index
-- `/{wsId}/content/{entryId}`: entry editor
-- `/{wsId}/collections/{collectionId}`: collection details
-- `/{wsId}/preview`: preview and publish surface
-- `/internal/admin`: root admin registry and workspace enablement
+- `/{wsId}`: overview
+- `/{wsId}/library`: content library
+- `/{wsId}/library/entries/{entryId}`: entry detail
+- `/{wsId}/library/collections/{collectionId}`: collection detail
+- `/{wsId}/preview`: delivered-content preview
+- `/{wsId}/settings`: CMS settings, imports, and workspace member management
+- `/internal/projects`: root workspace canonical project registry and workspace linking
+
+The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` CMS routes are removed. New entry points should link directly to the CMS-native route map above.
 
 ## Access Model
 
-- Only workspaces with EPM enabled can appear in the CMS workspace picker.
-- A workspace must also satisfy the existing EPM permissions to open the CMS workspace routes.
-- Only platform admins can open `/internal/admin`.
-- Only platform admins can enable or disable EPM access for a workspace.
+- Only workspaces with CMS access enabled appear in the CMS workspace picker.
+- A workspace must still satisfy the existing external-project permissions to open CMS workspace routes.
+- Only platform admins can open `/internal/projects`.
+- Workspace member and role management is available inside `/{wsId}/settings`, but still respects the existing `manage_workspace_members` and `manage_workspace_roles` permissions.
 
 ## API Ownership
 
 - `apps/cms` rewrites `/api/:path*` to `apps/web`.
 - New CMS backend behavior should be added in `apps/web`, then exposed through `packages/internal-api`.
-- This keeps proxy behavior, bot protection, and infrastructure controls centralized.
+- The root linking console reads the workspace-indexed binding summary from `GET /api/v1/admin/external-project-bindings`.
+- Backend naming stays on `external-project*` contracts even though the product surface is branded as Tuturuuu CMS.
 
 ## Local Development
 

@@ -1,3 +1,4 @@
+import type { User as PrimitiveUser } from './primitives/User';
 import type { Database, Tables } from './supabase';
 import type { JSONContent } from './tiptap';
 
@@ -77,6 +78,20 @@ export type InternalApiWorkspaceMember = Pick<
 > & {
   user_id?: string;
   is_creator?: boolean;
+};
+export type InternalApiWorkspaceMemberRole = {
+  id: string;
+  name: string;
+  permissions: Array<{ permission: string; enabled: boolean }>;
+};
+export type InternalApiWorkspaceDefaultPermission = {
+  permission: string;
+  enabled: boolean;
+};
+export type InternalApiEnhancedWorkspaceMember = PrimitiveUser & {
+  is_creator: boolean;
+  roles: InternalApiWorkspaceMemberRole[];
+  default_permissions: InternalApiWorkspaceDefaultPermission[];
 };
 export type WorkspacePromotion = Tables<'workspace_promotions'>;
 export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
@@ -431,6 +446,15 @@ export type WorkspaceExternalProjectBinding = {
   canonical_project: CanonicalExternalProject | null;
   adapter: ExternalProjectAdapterKind | null;
 };
+export type ExternalProjectWorkspaceBindingSummary =
+  InternalApiWorkspaceSummary & {
+    binding: WorkspaceExternalProjectBinding;
+    last_actor_user_id: string | null;
+    last_audit_id: string | null;
+    last_changed_at: string | null;
+    last_next_canonical_id: string | null;
+    last_previous_canonical_id: string | null;
+  };
 
 export type ExternalProjectStudioAsset = ExternalProjectAsset & {
   asset_url: string | null;
