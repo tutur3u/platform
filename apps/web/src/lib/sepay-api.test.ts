@@ -91,6 +91,30 @@ describe('sepay api', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('does not fetch more bank-account pages than the configured maximum', async () => {
+    const fetchMock = vi.fn<typeof fetch>();
+
+    for (let page = 0; page < 101; page += 1) {
+      fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            data: Array.from({ length: 100 }, (_, index) => ({
+              id: String(page * 100 + index + 1),
+            })),
+          }),
+          { status: 200 }
+        )
+      );
+    }
+
+    global.fetch = fetchMock;
+
+    const accounts = await listSepayBankAccounts({ accessToken: 'token' });
+
+    expect(accounts).toHaveLength(10_000);
+    expect(fetchMock).toHaveBeenCalledTimes(100);
+  });
+
   it('rejects non-numeric SePay bank account ids before webhook creation', async () => {
     await expect(
       createSepayWebhook({

@@ -76,6 +76,7 @@ function hasMatchingFallbackPayload(input: {
 }
 
 async function findExistingWebhookEvent(input: {
+  allowStaleFallbackMatch?: boolean;
   payload: NormalizedSepayPayload;
   sbAdmin: TypedSupabaseClient;
   walletId: string;
@@ -106,7 +107,7 @@ async function findExistingWebhookEvent(input: {
     Date.now() - FALLBACK_DEDUPE_WINDOW_MS
   ).toISOString();
 
-  const { data, error } = await input.sbAdmin
+  let query = input.sbAdmin
     .from('sepay_webhook_events')
     .select('id, status, created_transaction_id, payload, received_at')
     .eq('ws_id', input.wsId)
@@ -114,10 +115,15 @@ async function findExistingWebhookEvent(input: {
     .eq('reference_code', input.payload.referenceCode)
     .eq('transfer_type', input.payload.transferType)
     .eq('transfer_amount', input.payload.transferAmount)
-    .gt('received_at', recentIso)
     .is('sepay_event_id', null)
     .order('received_at', { ascending: false })
     .limit(10);
+
+  if (!input.allowStaleFallbackMatch) {
+    query = query.gt('received_at', recentIso);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error('Failed to lookup SePay event by fallback key');
@@ -211,6 +217,7 @@ async function markStoredTransactionProcessed(input: {
 }
 
 async function prepareWebhookEvent(input: {
+  allowStaleFallbackMatch?: boolean;
   endpointId: string;
   payload: NormalizedSepayPayload;
   sbAdmin: TypedSupabaseClient;
@@ -413,6 +420,7 @@ export async function POST(request: Request, { params }: Params) {
       if (insertEventError.code === '23505') {
         try {
           const preparedEvent = await prepareWebhookEvent({
+            allowStaleFallbackMatch: true,
             endpointId: endpoint.id,
             payload,
             sbAdmin,

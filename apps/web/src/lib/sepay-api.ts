@@ -225,6 +225,12 @@ export async function listSepayBankAccounts(input: { accessToken: string }) {
   let sinceId: string | null = null;
 
   while (true) {
+    if (pageCount >= SEPAY_BANK_ACCOUNT_MAX_PAGES) {
+      break;
+    }
+
+    pageCount += 1;
+
     const url = new URL(`${getSepayApiBaseUrl()}/bank-accounts`);
     url.searchParams.set('limit', String(SEPAY_BANK_ACCOUNT_PAGE_LIMIT));
 
@@ -280,14 +286,12 @@ export async function listSepayBankAccounts(input: { accessToken: string }) {
     if (
       pageAccounts.length < SEPAY_BANK_ACCOUNT_PAGE_LIMIT ||
       !nextSinceId ||
-      visitedSinceIds.has(nextSinceId) ||
-      pageCount >= SEPAY_BANK_ACCOUNT_MAX_PAGES
+      visitedSinceIds.has(nextSinceId)
     ) {
       break;
     }
 
     visitedSinceIds.add(nextSinceId);
-    pageCount += 1;
     sinceId = nextSinceId;
   }
 

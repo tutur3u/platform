@@ -34,7 +34,7 @@ export async function POST(request: Request, { params }: Params) {
     console.error('Failed to disconnect SePay integration:', disconnectError);
     return NextResponse.json(
       {
-        error: disconnectError.message ?? String(disconnectError),
+        error: 'DISCONNECT_SEPAY_INTEGRATION_FAILED',
         message: 'Failed to disconnect SePay integration',
         success: false,
       },
