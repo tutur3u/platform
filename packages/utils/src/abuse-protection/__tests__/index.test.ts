@@ -2,6 +2,7 @@
  * Unit tests for OTP Abuse Protection System
  */
 
+import { beforeEach } from 'node:test';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   ABUSE_THRESHOLDS,
@@ -15,6 +16,10 @@ import {
 } from '../index';
 
 describe('abuse-protection', () => {
+  beforeEach(() => {
+    process.env.UPSTASH_REDIS_REST_URL = 'http://localhost:8079';
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'example_token';
+  });
   afterEach(() => {
     vi.useRealTimers();
   });
