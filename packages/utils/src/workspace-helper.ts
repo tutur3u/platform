@@ -586,6 +586,16 @@ export async function getPermissions({
     return null;
   }
 
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: resolvedWorkspaceId,
+    userId: user.id,
+    supabase,
+  });
+
+  if (!membership.ok) {
+    return null;
+  }
+
   const permissionsQuery = sbAdmin
     .from('workspace_role_members')
     .select('workspace_roles!inner(workspace_role_permissions(permission))')
@@ -873,9 +883,10 @@ export async function normalizeWorkspaceId(
 
     const { data: workspace, error } = await sb
       .from('workspaces')
-      .select('id, workspace_members!inner(user_id)')
+      .select('id, workspace_members!inner(user_id, type)')
       .eq('personal', true)
       .eq('workspace_members.user_id', user.id)
+      .eq('workspace_members.type', 'MEMBER')
       .maybeSingle();
 
     if (error || !workspace) {

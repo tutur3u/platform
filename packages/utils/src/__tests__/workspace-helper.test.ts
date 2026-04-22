@@ -11,6 +11,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 import {
+  getPermissions,
   getWorkspace,
   getWorkspaces,
   normalizeWorkspaceId,
@@ -215,13 +216,73 @@ describe('normalizeWorkspaceId', () => {
     expect(getUserMock).toHaveBeenCalledTimes(1);
     expect(fromMock).toHaveBeenCalledWith('workspaces');
     expect(query.select).toHaveBeenCalledWith(
-      'id, workspace_members!inner(user_id)'
+      'id, workspace_members!inner(user_id, type)'
     );
     expect(query.eq).toHaveBeenCalledWith('personal', true);
     expect(query.eq).toHaveBeenCalledWith(
       'workspace_members.user_id',
       'user-1'
     );
+    expect(query.eq).toHaveBeenCalledWith('workspace_members.type', 'MEMBER');
+  });
+});
+
+describe('getPermissions membership type gate', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns null when caller membership is GUEST', async () => {
+    const membershipQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn(),
+    };
+
+    membershipQuery.select.mockReturnValue(membershipQuery);
+    membershipQuery.eq.mockReturnValue(membershipQuery);
+    membershipQuery.maybeSingle.mockResolvedValue({
+      data: { type: 'GUEST' },
+      error: null,
+    });
+
+    const workspacesQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn(),
+    };
+
+    workspacesQuery.select.mockReturnValue(workspacesQuery);
+    workspacesQuery.eq.mockReturnValue(workspacesQuery);
+    workspacesQuery.maybeSingle.mockResolvedValue({
+      data: { id: '11111111-1111-4111-8111-111111111111' },
+      error: null,
+    });
+
+    mockCreateClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: 'user-1', email: 'user@example.com' } },
+        }),
+      },
+      from: vi.fn((table: string) => {
+        if (table === 'workspace_members') return membershipQuery;
+        if (table === 'workspaces') return workspacesQuery;
+        throw new Error(`Unexpected table lookup: ${table}`);
+      }),
+    });
+
+    mockCreateAdminClient.mockResolvedValue({
+      from: vi.fn(() => {
+        throw new Error('Admin client should not be called for GUEST caller');
+      }),
+    });
+
+    const permissions = await getPermissions({
+      wsId: '11111111-1111-4111-8111-111111111111',
+    });
+
+    expect(permissions).toBeNull();
   });
 });
 
