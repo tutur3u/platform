@@ -25,6 +25,7 @@ import {
 } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import type { WorkspaceMember } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import {
   DropdownMenuContent,
@@ -36,12 +37,17 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import type { BoardConfig } from '@tuturuuu/utils/task-helper';
 import { mapEstimationPoints } from '../../../../shared/estimation-mapping';
 import { TaskResourceSearchField } from '../../../../shared/task-resource-search-field';
+import type {
+  KanbanFilteredLabel,
+  KanbanFilteredProject,
+} from '../data/use-filtered-resources';
 
 interface BulkActionsMenuProps {
   workspace: Workspace;
-  boardConfig: any;
+  boardConfig: BoardConfig | null | undefined;
   columns: TaskList[];
   bulkWorking: boolean;
   estimationOptions: number[];
@@ -51,9 +57,9 @@ interface BulkActionsMenuProps {
     assignees: Set<string>;
   };
   filtered: {
-    labels: any[];
-    projects: any[];
-    members: any[];
+    labels: KanbanFilteredLabel[];
+    projects: KanbanFilteredProject[];
+    members: WorkspaceMember[];
   };
   search: {
     labelQuery: string;
@@ -442,7 +448,7 @@ export function BulkActionsMenu({
           ) : (
             <div className="max-h-50 overflow-auto">
               <div className="flex flex-col gap-1 p-1">
-                {filtered.projects.slice(0, 50).map((project: any) => {
+                {filtered.projects.slice(0, 50).map((project) => {
                   const isApplied = appliedSets.projects.has(project.id);
                   return (
                     <DropdownMenuItem
@@ -600,7 +606,7 @@ export function BulkActionsMenu({
             ) : (
               <div className="max-h-37.5 overflow-auto">
                 <div className="flex flex-col gap-1 p-1">
-                  {filtered.members.slice(0, 50).map((member: any) => {
+                  {filtered.members.slice(0, 50).map((member) => {
                     const isApplied = appliedSets.assignees.has(member.id);
                     return (
                       <DropdownMenuItem

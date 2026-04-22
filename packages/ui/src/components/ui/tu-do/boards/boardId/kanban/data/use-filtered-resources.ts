@@ -1,5 +1,6 @@
 'use client';
 
+import type { WorkspaceMember } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { useMemo } from 'react';
 import {
   labelNameMatchesQuery,
@@ -7,15 +8,24 @@ import {
   projectNameMatchesQuery,
 } from '../../../../shared/task-resource-search-filters';
 
+/** Minimal shape for bulk label lists (matches useBulkResources labels). */
+export type KanbanFilteredLabel = { id: string; name: string; color: string };
+
+/** Minimal shape for bulk project lists (matches useBulkResources projects). */
+export type KanbanFilteredProject = {
+  id: string;
+  name: string | null | undefined;
+};
+
 export function useFilteredResources({
   workspaceLabels,
   workspaceProjects,
   workspaceMembers,
   search,
 }: {
-  workspaceLabels: any[];
-  workspaceProjects: any[];
-  workspaceMembers: any[];
+  workspaceLabels: KanbanFilteredLabel[];
+  workspaceProjects: KanbanFilteredProject[];
+  workspaceMembers: WorkspaceMember[];
   search: {
     labelQuery: string;
     projectQuery: string;
@@ -29,13 +39,13 @@ export function useFilteredResources({
   }, [workspaceLabels, search.labelQuery]);
 
   const filteredProjects = useMemo(() => {
-    return workspaceProjects.filter((project: any) =>
+    return workspaceProjects.filter((project) =>
       projectNameMatchesQuery(project.name, search.projectQuery)
     );
   }, [workspaceProjects, search.projectQuery]);
 
   const filteredMembers = useMemo(() => {
-    return workspaceMembers.filter((member: any) =>
+    return workspaceMembers.filter((member) =>
       memberMatchesSearchQuery(member, search.assigneeQuery)
     );
   }, [workspaceMembers, search.assigneeQuery]);
