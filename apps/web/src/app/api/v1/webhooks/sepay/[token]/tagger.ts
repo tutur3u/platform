@@ -2,6 +2,7 @@ import { google } from '@ai-sdk/google';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { generateObject } from 'ai';
 import { z } from 'zod';
+import { runSepayAiEnrichment } from './ai-billing';
 import type { NormalizedSepayPayload } from './schemas';
 
 type SepayAdminClient = TypedSupabaseClient;
@@ -45,36 +46,52 @@ export async function classifyTagIds(input: {
     };
   }
 
-  try {
-    const classification = await generateObject({
-      abortSignal: AbortSignal.timeout(TAGGER_TIMEOUT_MS),
-      model: google(TAGGER_MODEL),
-      output: 'object',
-      schema: taggerResultSchema,
-      prompt: [
-        'Select the most relevant transaction tags from the candidate list for this transaction.',
-        'Choose zero or more tag IDs from the list. Only select tags that are highly relevant.',
-        'Favor semantic meaning in content, description, code, and reference code.',
-        '',
-        `Direction: ${input.payload.transferType === 'in' ? 'income' : 'expense'}`,
-        `Amount: ${input.payload.transferAmount}`,
-        `Gateway: ${input.payload.gateway ?? ''}`,
-        `Content: ${input.payload.content ?? ''}`,
-        `Description: ${input.payload.description ?? ''}`,
-        `Code: ${input.payload.code ?? ''}`,
-        `Reference Code: ${input.payload.referenceCode ?? ''}`,
-        '',
-        `Candidates: ${JSON.stringify(
-          candidateTags.map((tag) => ({
-            id: tag.id,
-            name: tag.name,
-            color: tag.color,
-            description: tag.description,
-          }))
-        )}`,
-      ].join('\n'),
-    });
+  const classification = await runSepayAiEnrichment({
+    execute: (abortSignal) =>
+      generateObject({
+        abortSignal,
+        model: google(TAGGER_MODEL),
+        output: 'object',
+        schema: taggerResultSchema,
+        prompt: [
+          'Select the most relevant transaction tags from the candidate list for this transaction.',
+          'Choose zero or more tag IDs from the list. Only select tags that are highly relevant.',
+          'Favor semantic meaning in content, description, code, and reference code.',
+          '',
+          `Direction: ${input.payload.transferType === 'in' ? 'income' : 'expense'}`,
+          `Amount: ${input.payload.transferAmount}`,
+          `Gateway: ${input.payload.gateway ?? ''}`,
+          `Content: ${input.payload.content ?? ''}`,
+          `Description: ${input.payload.description ?? ''}`,
+          `Code: ${input.payload.code ?? ''}`,
+          `Reference Code: ${input.payload.referenceCode ?? ''}`,
+          '',
+          `Candidates: ${JSON.stringify(
+            candidateTags.map((tag) => ({
+              color: tag.color,
+              description: tag.description,
+              id: tag.id,
+              name: tag.name,
+            }))
+          )}`,
+        ].join('\n'),
+      }),
+    kind: 'tagger',
+    modelId: TAGGER_MODEL,
+    payload: input.payload,
+    sbAdmin: input.sbAdmin,
+    timeoutMs: TAGGER_TIMEOUT_MS,
+    wsId: input.wsId,
+  });
 
+  if (!classification) {
+    return {
+      tagIds: [],
+      reasons: [],
+    };
+  }
+
+  try {
     const pickedTagIds = classification.object.tagIds;
     const pickedReasons = classification.object.reasons;
     const candidateTagIds = new Set(candidateTags.map((tag) => tag.id));

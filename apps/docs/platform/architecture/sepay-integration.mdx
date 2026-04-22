@@ -57,6 +57,9 @@ and the created `wallet_transactions.id` when processing succeeds.
   duplicates.
 - Auto-classification failures must not block ingestion; the route falls back to
   an uncategorized category.
+- SePay AI enrichers reserve fixed workspace-scoped AI credits before each
+  classifier/tagger model call and release the reservation on failure, so
+  webhook retries do not leak credits or block on long model latency.
 
 ## Operational Notes
 

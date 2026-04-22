@@ -2,6 +2,7 @@ import { google } from '@ai-sdk/google';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { generateObject } from 'ai';
 import { z } from 'zod';
+import { runSepayAiEnrichment } from './ai-billing';
 import type { NormalizedSepayPayload } from './schemas';
 
 type SepayAdminClient = TypedSupabaseClient;
@@ -100,36 +101,53 @@ export async function classifyCategoryId(input: {
     };
   }
 
-  try {
-    const classification = await generateObject({
-      abortSignal: AbortSignal.timeout(CLASSIFIER_TIMEOUT_MS),
-      model: google(CLASSIFIER_MODEL),
-      output: 'object',
-      schema: classifierResultSchema,
-      prompt: [
-        'Select the best matching transaction category from the candidate list.',
-        'Choose only one category ID from the list and provide confidence from 0 to 1.',
-        'Favor semantic meaning in content, description, code, and reference code.',
-        '',
-        `Direction: ${input.payload.transferType === 'in' ? 'income' : 'expense'}`,
-        `Amount: ${input.payload.transferAmount}`,
-        `Gateway: ${input.payload.gateway ?? ''}`,
-        `Content: ${input.payload.content ?? ''}`,
-        `Description: ${input.payload.description ?? ''}`,
-        `Code: ${input.payload.code ?? ''}`,
-        `Reference Code: ${input.payload.referenceCode ?? ''}`,
-        '',
-        `Candidates: ${JSON.stringify(
-          candidateCategories.map((category) => ({
-            id: category.id,
-            name: category.name,
-            icon: category.icon,
-            color: category.color,
-          }))
-        )}`,
-      ].join('\n'),
-    });
+  const classification = await runSepayAiEnrichment({
+    execute: (abortSignal) =>
+      generateObject({
+        abortSignal,
+        model: google(CLASSIFIER_MODEL),
+        output: 'object',
+        schema: classifierResultSchema,
+        prompt: [
+          'Select the best matching transaction category from the candidate list.',
+          'Choose only one category ID from the list and provide confidence from 0 to 1.',
+          'Favor semantic meaning in content, description, code, and reference code.',
+          '',
+          `Direction: ${input.payload.transferType === 'in' ? 'income' : 'expense'}`,
+          `Amount: ${input.payload.transferAmount}`,
+          `Gateway: ${input.payload.gateway ?? ''}`,
+          `Content: ${input.payload.content ?? ''}`,
+          `Description: ${input.payload.description ?? ''}`,
+          `Code: ${input.payload.code ?? ''}`,
+          `Reference Code: ${input.payload.referenceCode ?? ''}`,
+          '',
+          `Candidates: ${JSON.stringify(
+            candidateCategories.map((category) => ({
+              color: category.color,
+              icon: category.icon,
+              id: category.id,
+              name: category.name,
+            }))
+          )}`,
+        ].join('\n'),
+      }),
+    kind: 'classifier',
+    modelId: CLASSIFIER_MODEL,
+    payload: input.payload,
+    sbAdmin: input.sbAdmin,
+    timeoutMs: CLASSIFIER_TIMEOUT_MS,
+    wsId: input.wsId,
+  });
 
+  if (!classification) {
+    return {
+      categoryId: fallbackCategoryId,
+      confidence: 0,
+      reason: 'Classifier failed, used fallback category.',
+    };
+  }
+
+  try {
     const pickedCategoryId = classification.object.categoryId;
     const pickedConfidence = classification.object.confidence;
     const pickedReason = classification.object.reason;
