@@ -61,7 +61,10 @@ export async function GET(req: NextRequest, { params }: Params) {
     });
 
     if (memberCheck.error === 'membership_lookup_failed') {
-      console.error('Failed to verify workspace membership:', memberCheck.error);
+      console.error(
+        'Failed to verify workspace membership:',
+        memberCheck.error
+      );
       return NextResponse.json(
         { error: 'Failed to verify workspace access' },
         { status: 500 }
