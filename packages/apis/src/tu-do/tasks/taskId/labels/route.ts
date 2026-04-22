@@ -4,7 +4,10 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -63,21 +66,20 @@ async function verifyWorkspaceMembership(
   userId: string,
   supabase: TypedSupabaseClient
 ) {
-  const { data: membership, error: membershipError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', userId)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: userId,
+    supabase: supabase,
+  });
 
-  if (membershipError) {
+  if (membership.error === 'membership_lookup_failed') {
     return {
       error: 'Failed to verify workspace membership',
       status: 500,
     } as const;
   }
 
-  if (!membership) {
+  if (!membership.ok) {
     return { error: 'Forbidden', status: 403 } as const;
   }
 

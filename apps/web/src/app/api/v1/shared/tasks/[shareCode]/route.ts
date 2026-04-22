@@ -7,6 +7,7 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -113,12 +114,11 @@ export async function GET(
     }
 
     if (wsId) {
-      const { data: memberCheck } = await adminClient
-        .from('workspace_members')
-        .select('user_id')
-        .eq('ws_id', wsId)
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const memberCheck = await verifyWorkspaceMembershipType({
+        wsId: wsId,
+        userId: user.id,
+        supabase: adminClient,
+      });
 
       isWorkspaceMember = Boolean(memberCheck);
     }
@@ -431,14 +431,20 @@ export async function PATCH(
 
     let isWorkspaceMember = false;
     if (wsId) {
-      const { data: memberCheck } = await adminClient
-        .from('workspace_members')
-        .select('user_id')
-        .eq('ws_id', wsId)
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const membership = await verifyWorkspaceMembershipType({
+        wsId,
+        userId: user.id,
+        supabase: adminClient,
+      });
 
-      isWorkspaceMember = Boolean(memberCheck);
+      if (membership.error === 'membership_lookup_failed') {
+        return NextResponse.json(
+          { error: 'Failed to verify workspace access' },
+          { status: 500 }
+        );
+      }
+
+      isWorkspaceMember = membership.ok;
     }
 
     if (!isWorkspaceMember) {

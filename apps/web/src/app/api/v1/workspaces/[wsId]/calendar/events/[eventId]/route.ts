@@ -9,7 +9,10 @@ import {
   MAX_NAME_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { upsertHabitSkip } from '@/lib/calendar/habit-skips';
@@ -54,14 +57,13 @@ async function authorizeWorkspaceCalendarEventAccess(
     };
   }
 
-  const { data: membership, error: membershipError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: user.id,
+    supabase: supabase,
+  });
 
-  if (membershipError) {
+  if (membership.error === 'membership_lookup_failed') {
     return {
       error: NextResponse.json(
         { error: 'Failed to verify workspace membership' },
@@ -70,7 +72,7 @@ async function authorizeWorkspaceCalendarEventAccess(
     };
   }
 
-  if (!membership) {
+  if (!membership.ok) {
     return {
       error: NextResponse.json(
         { error: 'Workspace access denied' },

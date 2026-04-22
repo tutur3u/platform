@@ -1,5 +1,6 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 
 /**
  * Re-export Supabase's User type for backward compatibility.
@@ -16,7 +17,7 @@ export type CheckE2EEResult =
   | {
       authorized: false;
       user: AuthUser;
-      reason: 'not_a_member' | 'no_permission';
+      reason: 'not_a_member' | 'no_permission' | 'membership_lookup_failed';
     };
 
 /**
@@ -44,14 +45,21 @@ export async function checkE2EEPermission(
   }
 
   // Check if user is a member of this workspace
-  const { data: member } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const member = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: user.id,
+    supabase: supabase,
+  });
 
-  if (!member) {
+  if (member.error === 'membership_lookup_failed') {
+    return {
+      authorized: false,
+      user,
+      reason: 'membership_lookup_failed',
+    };
+  }
+
+  if (!member.ok) {
     return { authorized: false, user, reason: 'not_a_member' };
   }
 

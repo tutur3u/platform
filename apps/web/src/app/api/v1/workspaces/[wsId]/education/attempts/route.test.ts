@@ -112,11 +112,16 @@ vi.mock('@/lib/api-auth', () => ({
       ),
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  normalizeWorkspaceId: (
-    ...args: Parameters<typeof mocks.normalizeWorkspaceId>
-  ) => mocks.normalizeWorkspaceId(...args),
-}));
+vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@tuturuuu/utils/workspace-helper')>();
+  return {
+    ...actual,
+    normalizeWorkspaceId: (
+      ...args: Parameters<typeof mocks.normalizeWorkspaceId>
+    ) => mocks.normalizeWorkspaceId(...args),
+  };
+});
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
@@ -163,7 +168,7 @@ describe('education attempts list route', () => {
 
   it('returns attempts payload for authorized members', async () => {
     mocks.membershipMaybeSingle.mockResolvedValue({
-      data: { user_id: 'user-1' },
+      data: { type: 'MEMBER' as const },
       error: null,
     });
 

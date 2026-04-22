@@ -51,10 +51,15 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: vi.fn(() => Promise.resolve(mocks.sessionSupabase)),
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: mocks.getPermissions,
-  normalizeWorkspaceId: mocks.normalizeWorkspaceId,
-}));
+vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@tuturuuu/utils/workspace-helper')>();
+  return {
+    ...actual,
+    getPermissions: mocks.getPermissions,
+    normalizeWorkspaceId: mocks.normalizeWorkspaceId,
+  };
+});
 
 vi.mock('@/lib/workspace-helper', () => ({
   getWorkspaceConfig: mocks.getWorkspaceConfig,
@@ -78,7 +83,7 @@ describe('workspace setting config route', () => {
     });
 
     mocks.memberMaybeSingle.mockResolvedValue({
-      data: { user_id: 'user-1' },
+      data: { type: 'MEMBER' as const },
       error: null,
     });
 

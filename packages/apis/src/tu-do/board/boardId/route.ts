@@ -3,7 +3,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -38,21 +41,20 @@ export async function PUT(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data: member, error: memberError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const member = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: user.id,
+    supabase,
+  });
 
-  if (memberError) {
+  if (member.error === 'membership_lookup_failed') {
     return NextResponse.json(
       { message: 'Failed to verify workspace access' },
       { status: 500 }
     );
   }
 
-  if (!member) {
+  if (!member.ok) {
     return NextResponse.json(
       { message: "You don't have access to this workspace" },
       { status: 403 }
@@ -115,21 +117,20 @@ export async function DELETE(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data: member, error: memberError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const member = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: user.id,
+    supabase,
+  });
 
-  if (memberError) {
+  if (member.error === 'membership_lookup_failed') {
     return NextResponse.json(
       { message: 'Failed to verify workspace access' },
       { status: 500 }
     );
   }
 
-  if (!member) {
+  if (!member.ok) {
     return NextResponse.json(
       { message: "You don't have access to this workspace" },
       { status: 403 }

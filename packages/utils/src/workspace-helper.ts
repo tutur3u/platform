@@ -33,6 +33,22 @@ export class WorkspaceAccessError extends Error {
   }
 }
 
+export type WorkspaceMemberType = 'MEMBER' | 'GUEST';
+
+/** Use `'ANY'` when any workspace_members row (MEMBER or GUEST) should count as access. */
+export type WorkspaceMembershipRequiredType = WorkspaceMemberType | 'ANY';
+
+export type WorkspaceMembershipCheckError =
+  | 'membership_lookup_failed'
+  | 'membership_missing'
+  | 'membership_type_mismatch';
+
+export interface WorkspaceMembershipCheckResult {
+  ok: boolean;
+  error?: WorkspaceMembershipCheckError;
+  membershipType?: WorkspaceMemberType;
+}
+
 export class WorkspaceRedirectRequiredError extends Error {
   public readonly redirectTo: string;
 
@@ -430,15 +446,13 @@ export async function enforceRootWorkspaceAdmin(
 
   if (!user) throw new WorkspaceAuthError();
 
-  // Check if user is a member of root workspace (membership implies admin)
-  const { error } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', ROOT_WORKSPACE_ID)
-    .eq('user_id', user.id)
-    .single();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: ROOT_WORKSPACE_ID,
+    userId: user.id,
+    supabase,
+  });
 
-  if (error) {
+  if (membership.error === 'membership_lookup_failed' || !membership.ok) {
     if (options.redirectTo) {
       throw new WorkspaceRedirectRequiredError(options.redirectTo);
     }
@@ -573,6 +587,16 @@ export async function getPermissions({
     return null;
   }
 
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: resolvedWorkspaceId,
+    userId: user.id,
+    supabase,
+  });
+
+  if (!membership.ok) {
+    return null;
+  }
+
   const permissionsQuery = sbAdmin
     .from('workspace_role_members')
     .select('workspace_roles!inner(workspace_role_permissions(permission))')
@@ -657,6 +681,55 @@ export async function getPermissions({
   return { permissions, containsPermission, withoutPermission };
 }
 
+export async function verifyWorkspaceMembershipType({
+  requiredType = 'MEMBER',
+  supabase,
+  userId,
+  wsId,
+}: {
+  wsId: string;
+  userId: string;
+  supabase: TypedSupabaseClient;
+  requiredType?: WorkspaceMembershipRequiredType;
+}): Promise<WorkspaceMembershipCheckResult> {
+  const { data: membership, error } = await supabase
+    .from('workspace_members')
+    .select('type')
+    .eq('ws_id', wsId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) {
+    return { ok: false, error: 'membership_lookup_failed' };
+  }
+
+  if (!membership) {
+    return { ok: false, error: 'membership_missing' };
+  }
+
+  const membershipType = membership.type;
+
+  if (requiredType === 'ANY') {
+    return {
+      ok: true,
+      membershipType,
+    };
+  }
+
+  if (membershipType !== requiredType) {
+    return {
+      ok: false,
+      error: 'membership_type_mismatch',
+      membershipType,
+    };
+  }
+
+  return {
+    ok: true,
+    membershipType,
+  };
+}
+
 export interface GetWorkspaceUserOptions {
   /**
    * If true (default), automatically creates a missing workspace_user_linked_users entry
@@ -703,16 +776,14 @@ export async function getWorkspaceUser(
     return null;
   }
 
-  // Check if user is a workspace member first
-  const { data: membership } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('user_id', userId)
-    .eq('ws_id', resolvedWorkspaceId)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: resolvedWorkspaceId,
+    userId,
+    supabase,
+    requiredType: 'MEMBER',
+  });
 
-  // Not a member, can't create a link
-  if (!membership) {
+  if (!membership.ok) {
     console.error(
       'User is not a workspace member, cannot create workspace user link:',
       { userId, wsId: resolvedWorkspaceId }
@@ -818,9 +889,10 @@ export async function normalizeWorkspaceId(
 
     const { data: workspace, error } = await sb
       .from('workspaces')
-      .select('id, workspace_members!inner(user_id)')
+      .select('id, workspace_members!inner(user_id, type)')
       .eq('personal', true)
       .eq('workspace_members.user_id', user.id)
+      .eq('workspace_members.type', 'MEMBER')
       .maybeSingle();
 
     if (error || !workspace) {

@@ -1,74 +1,91 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
+import { NextResponse } from 'next/server';
+import { WORKSPACE_MEMBERSHIP_LOOKUP_FAILED_MESSAGE } from '../../../../../lib/workspace-membership-http';
+
+export type ChangelogPermissionDenial =
+  | 'unauthenticated'
+  | 'membership_lookup_failed'
+  | 'forbidden';
+
+export type CheckChangelogPermissionResult =
+  | { authorized: true; user: SupabaseUser }
+  | {
+      authorized: false;
+      user: SupabaseUser | null;
+      denial: ChangelogPermissionDenial;
+    };
 
 /**
  * Check if the current user has the manage_changelog permission.
  *
- * This checks:
- * 1. If the user is the creator of the root workspace (has all permissions)
- * 2. If the user has manage_changelog permission via their assigned roles
- * 3. If the user has manage_changelog via workspace default permissions
+ * Uses `verifyWorkspaceMembershipType` to distinguish DB lookup errors from
+ * real authorization denials, then `getPermissions` for the permission union.
  */
-export async function checkChangelogPermission(supabase: TypedSupabaseClient) {
+export async function checkChangelogPermission(
+  supabase: TypedSupabaseClient
+): Promise<CheckChangelogPermissionResult> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { authorized: false, user: null };
+    return { authorized: false, user: null, denial: 'unauthenticated' };
   }
 
-  // Check if user is the creator of root workspace (has all permissions)
-  const { data: workspaceData } = await supabase
-    .from('workspaces')
-    .select('creator_id')
-    .eq('id', ROOT_WORKSPACE_ID)
-    .single();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: ROOT_WORKSPACE_ID,
+    userId: user.id,
+    supabase,
+  });
 
-  if (workspaceData?.creator_id === user.id) {
-    return { authorized: true, user };
+  if (membership.error === 'membership_lookup_failed') {
+    return { authorized: false, user, denial: 'membership_lookup_failed' };
   }
 
-  // Check if user has manage_changelog permission via roles
-  const { data: rolePermission } = await supabase
-    .from('workspace_role_members')
-    .select(
-      'workspace_roles!inner(workspace_role_permissions!inner(permission))'
-    )
-    .eq('user_id', user.id)
-    .eq('workspace_roles.ws_id', ROOT_WORKSPACE_ID)
-    .eq(
-      'workspace_roles.workspace_role_permissions.permission',
-      'manage_changelog'
-    )
-    .eq('workspace_roles.workspace_role_permissions.enabled', true)
-    .maybeSingle();
+  const permissions = await getPermissions({ wsId: ROOT_WORKSPACE_ID });
 
-  if (rolePermission) {
-    return { authorized: true, user };
+  if (!permissions?.containsPermission('manage_changelog')) {
+    return { authorized: false, user, denial: 'forbidden' };
   }
 
-  // Check if user has manage_changelog via default permissions
-  const { data: memberCheck } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', ROOT_WORKSPACE_ID)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  return { authorized: true, user };
+}
 
-  if (memberCheck) {
-    const { data: defaultPermission } = await supabase
-      .from('workspace_default_permissions')
-      .select('permission')
-      .eq('ws_id', ROOT_WORKSPACE_ID)
-      .eq('permission', 'manage_changelog')
-      .eq('enabled', true)
-      .maybeSingle();
+/**
+ * When authorization failed, maps `denial` to the correct HTTP status (including
+ * 500 for membership DB lookup failures).
+ */
+/** Call only after `changelogPermissionDeniedResponse` returned null. */
+export function authorizedChangelogUser(
+  result: CheckChangelogPermissionResult
+): SupabaseUser {
+  if (!result.authorized) {
+    throw new Error('authorizedChangelogUser: permission was not granted');
+  }
+  return result.user;
+}
 
-    if (defaultPermission) {
-      return { authorized: true, user };
-    }
+export function changelogPermissionDeniedResponse(
+  result: CheckChangelogPermissionResult
+): NextResponse | null {
+  if (result.authorized) return null;
+
+  if (result.denial === 'membership_lookup_failed') {
+    return NextResponse.json(
+      { error: WORKSPACE_MEMBERSHIP_LOOKUP_FAILED_MESSAGE },
+      { status: 500 }
+    );
   }
 
-  return { authorized: false, user };
+  const hasUser = result.user !== null;
+  return NextResponse.json(
+    { message: hasUser ? 'Forbidden' : 'Unauthorized' },
+    { status: hasUser ? 403 : 401 }
+  );
 }

@@ -7,6 +7,7 @@ import { canUseRequestedFinanceWalletOnCreate } from '@tuturuuu/utils/finance';
 import {
   getPermissions,
   getWorkspaceConfig,
+  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -170,14 +171,13 @@ export async function POST(req: Request, { params }: Params) {
   // If not found, try to auto-repair the link
   if (!wsUser?.virtual_user_id) {
     // Check if user is a workspace member first
-    const { data: membership } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .eq('ws_id', resolvedWsId)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: resolvedWsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json(
         { message: 'User is not a member of this workspace' },
         { status: 403 }

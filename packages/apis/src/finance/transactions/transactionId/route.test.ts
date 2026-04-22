@@ -107,6 +107,9 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: (...args: Parameters<typeof mocks.getPermissions>) =>
     mocks.getPermissions(...args),
+  verifyWorkspaceMembershipType: vi.fn(() =>
+    Promise.resolve({ ok: true, membershipType: 'MEMBER' as const })
+  ),
 }));
 
 describe('transaction detail route', () => {

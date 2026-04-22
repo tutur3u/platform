@@ -2,7 +2,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -35,21 +38,20 @@ export async function GET(
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace access
-    const { data: memberCheck, error: memberCheckError } = await supabase
-      .from('workspace_members')
-      .select('id:user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (memberCheckError) {
+    if (memberCheck.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }
@@ -62,22 +64,20 @@ export async function GET(
 
     // If targeting another user, verify they're in the same workspace
     if (targetUserId && targetUserId !== user.id) {
-      const { data: targetUserCheck, error: targetUserCheckError } =
-        await supabase
-          .from('workspace_members')
-          .select('id:user_id')
-          .eq('ws_id', normalizedWsId)
-          .eq('user_id', targetUserId)
-          .maybeSingle();
+      const targetMembership = await verifyWorkspaceMembershipType({
+        wsId: normalizedWsId,
+        userId: targetUserId,
+        supabase,
+      });
 
-      if (targetUserCheckError) {
+      if (targetMembership.error === 'membership_lookup_failed') {
         return NextResponse.json(
           { error: 'Failed to verify target user workspace membership' },
           { status: 500 }
         );
       }
 
-      if (!targetUserCheck) {
+      if (!targetMembership.ok) {
         return NextResponse.json(
           { error: 'Target user not found in workspace' },
           { status: 404 }
@@ -132,21 +132,20 @@ export async function POST(
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace access
-    const { data: memberCheck, error: memberCheckError } = await supabase
-      .from('workspace_members')
-      .select('id:user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (memberCheckError) {
+    if (memberCheck.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }

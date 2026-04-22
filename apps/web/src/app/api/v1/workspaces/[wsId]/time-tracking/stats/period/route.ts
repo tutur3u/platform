@@ -10,6 +10,7 @@ import { sanitizeSearchQuery } from '@tuturuuu/utils/search-helper';
 import {
   getPermissions,
   normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -112,21 +113,20 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
       // Verify workspace access
-      const { data: memberCheck, error: memberCheckError } = await supabase
-        .from('workspace_members')
-        .select('id:user_id')
-        .eq('ws_id', normalizedWsId)
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const memberCheck = await verifyWorkspaceMembershipType({
+        wsId: normalizedWsId,
+        userId: user.id,
+        supabase: supabase,
+      });
 
-      if (memberCheckError) {
+      if (memberCheck.error === 'membership_lookup_failed') {
         return NextResponse.json(
           { error: 'Failed to verify workspace access' },
           { status: 500 }
         );
       }
 
-      if (!memberCheck) {
+      if (!memberCheck.ok) {
         return NextResponse.json(
           { error: 'Workspace access denied' },
           { status: 403 }
@@ -194,22 +194,20 @@ export const GET = withSessionAuth<{ wsId: string }>(
           );
         }
 
-        const { data: targetUserCheck, error: targetUserCheckError } =
-          await supabase
-            .from('workspace_members')
-            .select('id:user_id')
-            .eq('ws_id', normalizedWsId)
-            .eq('user_id', targetUserId)
-            .maybeSingle();
+        const targetMembership = await verifyWorkspaceMembershipType({
+          wsId: normalizedWsId,
+          userId: targetUserId,
+          supabase,
+        });
 
-        if (targetUserCheckError) {
+        if (targetMembership.error === 'membership_lookup_failed') {
           return NextResponse.json(
             { error: 'Failed to verify target user access' },
             { status: 500 }
           );
         }
 
-        if (!targetUserCheck) {
+        if (!targetMembership.ok) {
           return NextResponse.json(
             { error: 'Target user not found in workspace' },
             { status: 404 }

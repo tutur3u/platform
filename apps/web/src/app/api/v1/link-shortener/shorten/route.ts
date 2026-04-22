@@ -7,6 +7,7 @@ import {
   MAX_NAME_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -96,14 +97,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: workspaceMember } = await supabase
-      .from('workspace_members')
-      .select('*')
-      .eq('ws_id', wsId)
-      .eq('user_id', user?.id)
-      .single();
+    const workspaceMember = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (!workspaceMember) {
+    if (workspaceMember.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!workspaceMember.ok) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

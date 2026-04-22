@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_SHORT_TEXT_LENGTH } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -41,21 +42,20 @@ export async function GET(
   }
 
   // Verify user has access to this workspace
-  const { data: member, error: memberError } = await supabase
-    .from('workspace_members')
-    .select('id:user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .single();
+  const member = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: user.id,
+    supabase,
+  });
 
-  if (memberError) {
+  if (member.error === 'membership_lookup_failed') {
     return NextResponse.json(
       { error: 'Failed to verify workspace access' },
       { status: 500 }
     );
   }
 
-  if (!member) {
+  if (!member.ok) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

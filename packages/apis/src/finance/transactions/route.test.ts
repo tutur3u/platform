@@ -107,6 +107,9 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
     mocks.getPermissions(...args),
   getWorkspaceConfig: (...args: Parameters<typeof mocks.getWorkspaceConfig>) =>
     mocks.getWorkspaceConfig(...args),
+  verifyWorkspaceMembershipType: vi.fn(() =>
+    Promise.resolve({ ok: true, membershipType: 'MEMBER' as const })
+  ),
 }));
 
 describe('transactions route', () => {

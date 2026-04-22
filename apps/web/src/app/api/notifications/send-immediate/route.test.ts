@@ -108,7 +108,7 @@ describe('send-immediate route', () => {
       ws_id: string;
     };
   }>;
-  let workspaceMembership: { user_id: string } | null;
+  let workspaceMembership: { type: 'MEMBER' } | null;
   let blockedEmails: Set<string>;
   let users: Array<{
     display_name: string;
@@ -170,7 +170,7 @@ describe('send-immediate route', () => {
         },
       },
     ];
-    workspaceMembership = { user_id: 'user-1' };
+    workspaceMembership = { type: 'MEMBER' };
     users = [
       {
         display_name: 'User One',

@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SyncLog } from '@tuturuuu/ui/legacy/calendar/settings/types';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 
 interface SyncMetrics {
   totalSyncs24h: number;
@@ -173,15 +174,19 @@ export async function getSyncLogs(
     return { logs: [], totalCount: 0, hasMore: false };
   }
 
-  // Check workspace access
-  const { data: workspaceMemberships, error: membershipError } = await supabase
-    .from('workspace_members')
-    .select('ws_id')
-    .eq('user_id', user.id)
-    .eq('ws_id', wsId);
+  const membership = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: user.id,
+    supabase,
+  });
 
-  if (membershipError || !workspaceMemberships?.length) {
-    console.error('No workspace access:', membershipError);
+  if (membership.error === 'membership_lookup_failed') {
+    console.error('Membership lookup failed for calendar sync logs');
+    return { logs: [], totalCount: 0, hasMore: false };
+  }
+
+  if (!membership.ok) {
+    console.error('No workspace access');
     return { logs: [], totalCount: 0, hasMore: false };
   }
 

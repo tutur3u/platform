@@ -20,7 +20,7 @@ const mocks = vi.hoisted(() => {
           select: vi.fn(() => ({
             eq: vi.fn(() => ({
               eq: vi.fn(() => ({
-                single: workspaceMemberSingle,
+                maybeSingle: workspaceMemberSingle,
               })),
             })),
           })),
@@ -103,7 +103,7 @@ describe('time tracking request update route', () => {
       error: null,
     });
     mocks.workspaceMemberSingle.mockResolvedValue({
-      data: { id: 'user-1' },
+      data: { type: 'MEMBER' as const },
       error: null,
     });
     mocks.adminRequestSingle.mockResolvedValue({

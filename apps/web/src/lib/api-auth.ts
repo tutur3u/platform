@@ -12,6 +12,7 @@ import {
 } from '@tuturuuu/utils/abuse-protection/backend-rate-limit';
 import { hasAuthenticatedApiSession } from '@tuturuuu/utils/api-proxy-guard';
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, type RateLimitConfig } from './rate-limit';
 
@@ -87,14 +88,13 @@ export async function authorize(
     };
   }
 
-  const { data: memberCheck, error: memberError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .single();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: user.id,
+    supabase,
+  });
 
-  if (memberError) {
+  if (membership.error === 'membership_lookup_failed') {
     return {
       user: null,
       error: NextResponse.json(
@@ -104,7 +104,7 @@ export async function authorize(
     };
   }
 
-  if (!memberCheck) {
+  if (!membership.ok) {
     return {
       user: null,
       error: NextResponse.json(

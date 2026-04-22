@@ -6,6 +6,7 @@ import {
   MAX_SEARCH_LENGTH,
   ROOT_WORKSPACE_ID,
 } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -23,14 +24,22 @@ async function requireRootAdmin() {
     };
   }
 
-  const { error: memberError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', ROOT_WORKSPACE_ID)
-    .eq('user_id', user.id)
-    .single();
+  const member = await verifyWorkspaceMembershipType({
+    wsId: ROOT_WORKSPACE_ID,
+    userId: user.id,
+    supabase,
+  });
 
-  if (memberError) {
+  if (member.error === 'membership_lookup_failed') {
+    return {
+      error: NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      ),
+    };
+  }
+
+  if (!member.ok) {
     return {
       error: NextResponse.json(
         { error: 'Root workspace admin required' },

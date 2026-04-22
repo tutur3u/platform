@@ -9,6 +9,7 @@ import {
 import {
   getPermissions,
   normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -84,22 +85,21 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (membershipError) {
-      console.error('Membership lookup failed:', membershipError);
+    if (membership.error === 'membership_lookup_failed') {
+      console.error('Membership lookup failed:', membership.error);
       return NextResponse.json(
         { error: 'Membership lookup failed' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -169,21 +169,20 @@ async function updateProject(
     }
 
     // Verify user has access to workspace
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (membershipError) {
+    if (membership.error === 'membership_lookup_failed') {
       return NextResponse.json(
-        { error: membershipError.message || 'Membership lookup failed' },
+        { error: 'Membership lookup failed' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -262,24 +261,20 @@ async function updateProject(
 
     // If lead_id is being set, verify the user belongs to the workspace
     if (validatedData.lead_id !== undefined && validatedData.lead_id !== null) {
-      const { data: leadMembership, error: leadMembershipError } =
-        await supabase
-          .from('workspace_members')
-          .select('user_id')
-          .eq('ws_id', wsId)
-          .eq('user_id', validatedData.lead_id)
-          .maybeSingle();
+      const leadMembership = await verifyWorkspaceMembershipType({
+        wsId,
+        userId: validatedData.lead_id,
+        supabase,
+      });
 
-      if (leadMembershipError) {
+      if (leadMembership.error === 'membership_lookup_failed') {
         return NextResponse.json(
-          {
-            error: leadMembershipError.message || 'Membership lookup failed',
-          },
+          { error: 'Membership lookup failed' },
           { status: 500 }
         );
       }
 
-      if (!leadMembership) {
+      if (!leadMembership.ok) {
         return NextResponse.json(
           { error: 'Lead user is not a member of this workspace' },
           { status: 400 }
@@ -404,21 +399,20 @@ export async function DELETE(
     }
 
     // Verify user has access to workspace
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (membershipError) {
+    if (membership.error === 'membership_lookup_failed') {
       return NextResponse.json(
-        { error: membershipError.message || 'Membership lookup failed' },
+        { error: 'Membership lookup failed' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

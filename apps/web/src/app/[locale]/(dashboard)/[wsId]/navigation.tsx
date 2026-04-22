@@ -104,6 +104,7 @@ import {
   getPermissions,
   getSecret,
   getSecrets,
+  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -148,20 +149,19 @@ export async function WorkspaceNavigationLinks({
 
   // Parallelize user-dependent queries
   const [
-    rootMemberData,
+    rootMembership,
     workspacePermissions,
     platformUserRole,
     userInvoiceVisibilityConfig,
     workspaceInvoiceVisibilityConfig,
   ] = await Promise.all([
     user
-      ? supabase
-          .from('workspace_members')
-          .select('user_id')
-          .eq('ws_id', ROOT_WORKSPACE_ID)
-          .eq('user_id', user.id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
+      ? verifyWorkspaceMembershipType({
+          wsId: ROOT_WORKSPACE_ID,
+          userId: user.id,
+          supabase,
+        })
+      : Promise.resolve(null),
     getPermissions({ wsId: resolvedWorkspaceId }),
     user
       ? supabase
@@ -192,7 +192,7 @@ export async function WorkspaceNavigationLinks({
   const { withoutPermission } = workspacePermissions;
 
   // Get root permissions only if user is a root member
-  const withoutRootPermission = rootMemberData.data
+  const withoutRootPermission = rootMembership?.ok
     ? ((await getPermissions({ wsId: ROOT_WORKSPACE_ID }))?.withoutPermission ??
       (() => true))
     : () => true;

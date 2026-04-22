@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -57,22 +58,21 @@ export async function GET(req: Request) {
 
     // If workspace is specified, verify membership
     if (wsId) {
-      const { data: membership, error: membershipError } = await supabase
-        .from('workspace_members')
-        .select('user_id')
-        .eq('ws_id', wsId)
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const membership = await verifyWorkspaceMembershipType({
+        wsId: wsId,
+        userId: user.id,
+        supabase: supabase,
+      });
 
-      if (membershipError) {
-        console.error('Error checking workspace membership:', membershipError);
+      if (membership.error === 'membership_lookup_failed') {
+        console.error('Error checking workspace membership:', membership.error);
         return NextResponse.json(
           { error: 'Failed to verify workspace access' },
           { status: 500 }
         );
       }
 
-      if (!membership) {
+      if (!membership.ok) {
         return NextResponse.json(
           { error: 'Access denied to workspace' },
           { status: 403 }

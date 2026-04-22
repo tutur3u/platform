@@ -14,6 +14,7 @@ import type {
   HabitTrackerStreakAction,
   HabitTrackerStreakActionInput,
 } from '@tuturuuu/types/primitives/HabitTracker';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import {
   habitTrackerEntryInputSchema,
   habitTrackerInputSchema,
@@ -528,22 +529,21 @@ export async function verifyWorkspaceMembership(
   wsId: string,
   userId: string
 ) {
-  const { data, error } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', userId)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId,
+    userId,
+    supabase,
+  });
 
-  if (error) {
+  if (membership.error === 'membership_lookup_failed') {
     throw new HabitTrackerError('Failed to verify workspace membership', 500);
   }
 
-  if (!data) {
+  if (!membership.ok) {
     throw new HabitTrackerError('Workspace access denied', 403);
   }
 
-  return data;
+  return membership;
 }
 
 export async function listHabitTrackerMembers(

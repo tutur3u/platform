@@ -23,9 +23,10 @@ It evaluates permissions in this order:
 
 1. Authenticate the current user with a request-scoped or cookie-scoped Supabase client.
 2. Normalize the incoming workspace identifier so `personal` and `internal` become real workspace IDs.
-3. Load role-derived permissions from `workspace_role_members -> workspace_roles -> workspace_role_permissions`.
-4. Load workspace-wide defaults from `workspace_default_permissions`.
-5. Load the workspace creator and treat that user as an implicit superuser.
+3. Enforce caller membership type with `verifyWorkspaceMembershipType(...)` (default `MEMBER`).
+4. Load role-derived permissions from `workspace_role_members -> workspace_roles -> workspace_role_permissions`.
+5. Load workspace-wide defaults from `workspace_default_permissions`.
+6. Load the workspace creator and treat that user as an implicit superuser.
 
 If the user is the workspace creator, `getPermissions()` returns the full permission catalog from `packages/utils/src/permissions.tsx`.
 
@@ -114,6 +115,28 @@ Use this when the operation is about the current signed-in user or the route doe
 Many workspace-scoped routes first convert the route param into a canonical workspace ID with `normalizeWorkspaceId(wsId, supabase)` and then verify membership.
 
 This is the baseline for routes that accept `personal` or `internal` in the URL but must query by UUID in the database.
+
+For non-permission routes that still require protected workspace access, use `verifyWorkspaceMembershipType(...)` from `packages/utils/src/workspace-helper.ts` and keep the default `requiredType` (`MEMBER`).
+
+```ts
+const membership = await verifyWorkspaceMembershipType({
+  wsId: normalizedWsId,
+  userId: user.id,
+  supabase,
+});
+
+if (membership.error === 'membership_lookup_failed') {
+  return NextResponse.json({ message: 'Failed to verify workspace access' }, { status: 500 });
+}
+
+if (!membership.ok) {
+  return NextResponse.json({ message: "You don't have access to this workspace" }, { status: 403 });
+}
+```
+
+`workspace_members` now supports `MEMBER` and `GUEST`. If a route is not explicitly guest-capable, it should require `MEMBER` and avoid ad-hoc `.from('workspace_members')` checks that only validate row existence.
+
+`normalizeWorkspaceId('personal', ...)` also enforces MEMBER membership on the personal-workspace join path by filtering `workspace_members.type = 'MEMBER'`.
 
 ### 3. Membership + explicit permission gate
 

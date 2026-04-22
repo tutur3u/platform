@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import {
   assignSeatToMember,
@@ -88,14 +89,20 @@ export async function POST(request: Request, { params }: Params) {
     pendingInvite?.type ?? pendingEmailInvite?.type ?? 'MEMBER';
 
   // Make acceptance idempotent for stale invites or partially completed flows.
-  const { data: existingMember } = await sbAdmin
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const existingMember = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: user.id,
+    supabase: sbAdmin,
+  });
 
-  if (existingMember) {
+  if (existingMember.error === 'membership_lookup_failed') {
+    return NextResponse.json(
+      { error: 'Failed to verify workspace membership' },
+      { status: 500 }
+    );
+  }
+
+  if (existingMember.ok) {
     await sbAdmin
       .from('workspace_invites')
       .delete()

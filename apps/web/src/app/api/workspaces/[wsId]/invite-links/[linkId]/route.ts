@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import * as z from 'zod';
 import { normalizeInviteLinkDetails } from '@/lib/workspace-invite-links';
@@ -30,23 +31,20 @@ export async function GET(req: Request, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify user is a member of the workspace
-    const { data: member, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const member = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (membershipError) {
-      console.error('Failed to verify workspace membership:', membershipError);
+    if (member.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!member) {
+    if (!member.ok) {
       return NextResponse.json(
         { error: 'You are not a member of this workspace' },
         { status: 403 }
@@ -122,14 +120,20 @@ export async function PATCH(req: Request, { params }: Params) {
     }
 
     // Verify user is a member of the workspace
-    const { data: member } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const member = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (!member) {
+    if (member.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!member.ok) {
       return NextResponse.json(
         { error: 'You are not a member of this workspace' },
         { status: 403 }
@@ -242,15 +246,20 @@ export async function DELETE(req: Request, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify user is a member of the workspace
-    const { data: member } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const member = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (!member) {
+    if (member.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!member.ok) {
       return NextResponse.json(
         { error: 'You are not a member of this workspace' },
         { status: 403 }

@@ -1,5 +1,7 @@
 import type { SendEmailResult } from '@tuturuuu/email-service';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { isEmailBlacklisted } from '@/lib/email-blacklist';
 
 export const NOTIFICATION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -125,20 +127,20 @@ async function hasWorkspaceMembership(
     return cachedMembership;
   }
 
-  const { data: membership, error } = await sbAdmin
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', notification.ws_id)
-    .eq('user_id', notification.user_id)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: notification.ws_id,
+    userId: notification.user_id,
+    supabase: sbAdmin as TypedSupabaseClient,
+    requiredType: 'MEMBER',
+  });
 
-  if (error) {
+  if (membership.error === 'membership_lookup_failed') {
     throw new Error(
-      `Failed to verify workspace membership for notification ${notification.id}: ${error.message}`
+      `Failed to verify workspace membership for notification ${notification.id}`
     );
   }
 
-  const isMember = Boolean(membership);
+  const isMember = membership.ok;
   membershipCache?.set(cacheKey, isMember);
   return isMember;
 }

@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -39,15 +40,13 @@ export default async function MeetingDetailPage({
 
   const supabase = await createClient();
 
-  // Verify workspace access
-  const { data: memberCheck } = await supabase
-    .from('workspace_members')
-    .select('id:user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .single();
+  const memberCheck = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: user.id,
+    supabase,
+  });
 
-  if (!memberCheck) {
+  if (!memberCheck.ok) {
     redirect('/onboarding');
   }
 

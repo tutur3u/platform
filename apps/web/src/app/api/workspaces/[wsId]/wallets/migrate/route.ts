@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -24,14 +25,20 @@ export async function PUT(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data: membership } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', id)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: id,
+    userId: user.id,
+    supabase: supabase,
+  });
 
-  if (!membership) {
+  if (membership.error === 'membership_lookup_failed') {
+    return NextResponse.json(
+      { error: 'Failed to verify workspace membership' },
+      { status: 500 }
+    );
+  }
+
+  if (!membership.ok) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 

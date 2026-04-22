@@ -6,6 +6,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { fetchWorkspaces as _fetchWorkspaces } from '@tuturuuu/ui/lib/workspace-actions';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 import { syncSubscriptionToDatabase } from '@/utils/polar-subscription-helper';
 import { createFreeSubscription } from '@/utils/subscription-helper';
@@ -22,15 +23,15 @@ export async function setupWorkspace(wsId: string) {
 
   if (!user) throw new Error('Unauthorized');
 
-  // Verify membership
-  const { data: membership, error: memberError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: user.id,
+    supabase,
+  });
 
-  if (memberError || !membership) throw new Error('Unauthorized');
+  if (membership.error === 'membership_lookup_failed' || !membership.ok) {
+    throw new Error('Unauthorized');
+  }
 
   const isPolarConfigured =
     !!process.env.POLAR_WEBHOOK_SECRET && !!process.env.POLAR_ACCESS_TOKEN;

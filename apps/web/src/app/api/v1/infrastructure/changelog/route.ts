@@ -6,7 +6,11 @@ import {
 } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { checkChangelogPermission } from './utils';
+import {
+  authorizedChangelogUser,
+  changelogPermissionDeniedResponse,
+  checkChangelogPermission,
+} from './utils';
 
 const CreateChangelogSchema = z.object({
   title: z.string().min(1).max(MAX_NAME_LENGTH),
@@ -87,13 +91,10 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const supabase = await createClient();
 
-  const { authorized, user } = await checkChangelogPermission(supabase);
-  if (!authorized) {
-    return NextResponse.json(
-      { message: user ? 'Forbidden' : 'Unauthorized' },
-      { status: user ? 403 : 401 }
-    );
-  }
+  const perm = await checkChangelogPermission(supabase);
+  const authError = changelogPermissionDeniedResponse(perm);
+  if (authError) return authError;
+  const user = authorizedChangelogUser(perm);
 
   try {
     const body = await req.json();
@@ -110,7 +111,7 @@ export async function POST(req: Request) {
       .insert({
         ...validatedData,
         slug: normalizedSlug,
-        creator_id: user!.id,
+        creator_id: user.id,
       })
       .select()
       .single();

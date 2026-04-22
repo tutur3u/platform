@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { z } from 'zod';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
@@ -38,35 +39,31 @@ export async function getWorkspaceRouteContext(
     };
   }
 
-  const [
-    { data: memberCheck },
-    { data: canManageForms },
-    { data: canViewAnalytics },
-  ] = await Promise.all([
-    adminClient
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', parsedWsId.data)
-      .eq('user_id', user.id)
-      .maybeSingle(),
-    supabase.rpc('has_workspace_permission', {
-      p_user_id: user.id,
-      p_ws_id: parsedWsId.data,
-      p_permission: 'manage_forms',
-    }),
-    supabase.rpc('has_workspace_permission', {
-      p_user_id: user.id,
-      p_ws_id: parsedWsId.data,
-      p_permission: 'view_form_analytics',
-    }),
-  ]);
+  const [membership, { data: canManageForms }, { data: canViewAnalytics }] =
+    await Promise.all([
+      verifyWorkspaceMembershipType({
+        wsId: parsedWsId.data,
+        userId: user.id,
+        supabase: adminClient,
+      }),
+      supabase.rpc('has_workspace_permission', {
+        p_user_id: user.id,
+        p_ws_id: parsedWsId.data,
+        p_permission: 'manage_forms',
+      }),
+      supabase.rpc('has_workspace_permission', {
+        p_user_id: user.id,
+        p_ws_id: parsedWsId.data,
+        p_permission: 'view_form_analytics',
+      }),
+    ]);
 
   return {
     supabase,
     adminClient,
     user,
     wsId: parsedWsId.data,
-    isMember: !!memberCheck,
+    isMember: membership.ok,
     canManageForms: !!canManageForms,
     canViewAnalytics: !!canViewAnalytics,
   };

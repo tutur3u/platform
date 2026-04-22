@@ -4,13 +4,28 @@ const mocks = vi.hoisted(() => ({
   getAccessibleWallet: vi.fn(),
 }));
 
-vi.mock('../wallet-access', async () => {
-  const actual = await vi.importActual<typeof import('../wallet-access.js')>(
-    '../wallet-access.js'
-  );
-
+vi.mock('../wallet-access', () => {
   return {
-    ...actual,
+    flattenWalletCreditData: <T extends Record<string, unknown>>(wallet: T) => {
+      const { credit_wallets, ...walletBase } = wallet as T & {
+        credit_wallets?: {
+          limit: number;
+          statement_date: number;
+          payment_date: number;
+        } | null;
+      };
+
+      return {
+        ...walletBase,
+        ...(credit_wallets
+          ? {
+              limit: credit_wallets.limit,
+              statement_date: credit_wallets.statement_date,
+              payment_date: credit_wallets.payment_date,
+            }
+          : {}),
+      };
+    },
     getAccessibleWallet: (
       ...args: Parameters<typeof mocks.getAccessibleWallet>
     ) => mocks.getAccessibleWallet(...args),

@@ -84,7 +84,7 @@ describe('chat file-urls route', () => {
       '00000000-0000-0000-0000-000000000001'
     );
     mocks.membershipMaybeSingle.mockResolvedValue({
-      data: { user_id: 'user-1' },
+      data: { type: 'MEMBER' as const },
       error: null,
     });
     mocks.list.mockResolvedValue({
@@ -160,7 +160,7 @@ describe('chat file-urls route', () => {
       '00000000-0000-0000-0000-000000000001'
     );
     mocks.membershipMaybeSingle.mockResolvedValue({
-      data: { user_id: 'user-1' },
+      data: { type: 'MEMBER' as const },
       error: null,
     });
     mocks.list.mockResolvedValue({

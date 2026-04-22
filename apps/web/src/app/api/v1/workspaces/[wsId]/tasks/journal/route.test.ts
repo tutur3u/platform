@@ -120,10 +120,15 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: vi.fn(() => Promise.resolve(userClient)),
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  normalizeWorkspaceId: (...args: Parameters<typeof normalizeWorkspaceId>) =>
-    normalizeWorkspaceId(...args),
-}));
+vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@tuturuuu/utils/workspace-helper')>();
+  return {
+    ...actual,
+    normalizeWorkspaceId: (...args: Parameters<typeof normalizeWorkspaceId>) =>
+      normalizeWorkspaceId(...args),
+  };
+});
 
 vi.mock('@tuturuuu/ai/credits/resolve-plan-model', () => ({
   PlanModelResolutionError: class PlanModelResolutionError extends Error {
@@ -238,7 +243,7 @@ describe('task journal route', () => {
       error: null,
     });
     workspaceMemberMaybeSingle.mockResolvedValue({
-      data: { user_id: 'user-1' },
+      data: { type: 'MEMBER' as const },
       error: null,
     });
     listMaybeSingle.mockResolvedValue({
@@ -341,7 +346,7 @@ describe('task journal route', () => {
       error: null,
     });
     workspaceMemberMaybeSingle.mockResolvedValue({
-      data: { user_id: 'user-1' },
+      data: { type: 'MEMBER' as const },
       error: null,
     });
     listMaybeSingle.mockResolvedValue({
@@ -427,7 +432,7 @@ describe('task journal route', () => {
       error: null,
     });
     workspaceMemberMaybeSingle.mockResolvedValue({
-      data: { user_id: 'user-1' },
+      data: { type: 'MEMBER' as const },
       error: null,
     });
     listMaybeSingle.mockResolvedValue({
