@@ -1,7 +1,11 @@
 'use client';
 
 import { useMemo } from 'react';
-import { normalizeBoardText } from '../../board-text-utils';
+import {
+  labelNameMatchesQuery,
+  memberMatchesSearchQuery,
+  projectNameMatchesQuery,
+} from '../../../../shared/task-resource-search-filters';
 
 export function useFilteredResources({
   workspaceLabels,
@@ -19,33 +23,20 @@ export function useFilteredResources({
   };
 }) {
   const filteredLabels = useMemo(() => {
-    return workspaceLabels.filter(
-      (label) =>
-        !search.labelQuery ||
-        normalizeBoardText(label.name).includes(
-          normalizeBoardText(search.labelQuery)
-        )
+    return workspaceLabels.filter((label) =>
+      labelNameMatchesQuery(label.name, search.labelQuery)
     );
   }, [workspaceLabels, search.labelQuery]);
 
   const filteredProjects = useMemo(() => {
-    return workspaceProjects.filter(
-      (project: any) =>
-        !search.projectQuery ||
-        normalizeBoardText(project.name).includes(
-          normalizeBoardText(search.projectQuery)
-        )
+    return workspaceProjects.filter((project: any) =>
+      projectNameMatchesQuery(project.name, search.projectQuery)
     );
   }, [workspaceProjects, search.projectQuery]);
 
   const filteredMembers = useMemo(() => {
-    return workspaceMembers.filter(
-      (member: any) =>
-        !search.assigneeQuery ||
-        member.display_name
-          ?.toLowerCase()
-          .includes(search.assigneeQuery.toLowerCase()) ||
-        member.email?.toLowerCase().includes(search.assigneeQuery.toLowerCase())
+    return workspaceMembers.filter((member: any) =>
+      memberMatchesSearchQuery(member, search.assigneeQuery)
     );
   }, [workspaceMembers, search.assigneeQuery]);
 

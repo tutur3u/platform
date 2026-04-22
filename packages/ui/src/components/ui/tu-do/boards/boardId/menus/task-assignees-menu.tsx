@@ -1,4 +1,4 @@
-import { Check, Loader2, Search, UserStar, UserX } from '@tuturuuu/icons';
+import { Check, Loader2, UserStar, UserX } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import {
   DropdownMenuItem,
@@ -6,9 +6,10 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo, useState } from 'react';
+import { TaskResourceSearchField } from '../../../shared/task-resource-search-field';
+import { memberMatchesSearchQuery } from '../../../shared/task-resource-search-filters';
 
 interface Member {
   id: string;
@@ -85,12 +86,8 @@ export function TaskAssigneesMenu({
     };
   }, [availableMembers, taskAssignees]);
 
-  // Filter members based on search
-  const filteredMembers = allMembers.filter(
-    (member) =>
-      !searchQuery ||
-      member.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredMembers = allMembers.filter((member) =>
+    memberMatchesSearchQuery(member, searchQuery)
   );
 
   return (
@@ -100,20 +97,11 @@ export function TaskAssigneesMenu({
         {t.assignees}
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="w-80 p-0">
-        {/* Search Input */}
-        <div className="border-b p-2">
-          <div className="relative">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={t.searchMembers}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.stopPropagation()}
-              onPointerDownCapture={(e) => e.stopPropagation()}
-              className="h-8 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
-            />
-          </div>
-        </div>
+        <TaskResourceSearchField
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder={t.searchMembers}
+        />
 
         {/* Members List */}
         {isLoading ? (

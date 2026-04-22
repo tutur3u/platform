@@ -52,6 +52,12 @@ import {
 import { LabelChip } from '../label-chip';
 import type { SchedulingSettings } from '../task-edit-dialog/hooks/use-task-mutations';
 import type { WorkspaceTaskLabel } from '../task-edit-dialog/types';
+import { TaskResourceSearchField } from '../task-resource-search-field';
+import {
+  labelNameMatchesQuery,
+  memberMatchesSearchQuery,
+  projectNameMatchesQuery,
+} from '../task-resource-search-filters';
 import { UserAvatar } from '../user-avatar';
 import { translateTaskListNameForDisplay } from '../utils/translate-task-list-display-name';
 import { TaskListSelector } from './components/task-list-selector';
@@ -357,6 +363,60 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
   const [isProjectsPopoverOpen, setIsProjectsPopoverOpen] = useState(false);
   const [isAssigneesPopoverOpen, setIsAssigneesPopoverOpen] = useState(false);
   const [isSchedulingPopoverOpen, setIsSchedulingPopoverOpen] = useState(false);
+  const [labelSearchQuery, setLabelSearchQuery] = useState('');
+  const [projectSearchQuery, setProjectSearchQuery] = useState('');
+  const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
+
+  const unselectedAvailableLabels = useMemo(
+    () =>
+      availableLabels.filter(
+        (l) => !selectedLabels.some((sl) => sl.id === l.id)
+      ),
+    [availableLabels, selectedLabels]
+  );
+  const filteredUnselectedLabels = useMemo(
+    () =>
+      unselectedAvailableLabels.filter((l) =>
+        labelNameMatchesQuery(l.name, labelSearchQuery)
+      ),
+    [unselectedAvailableLabels, labelSearchQuery]
+  );
+
+  const unselectedTaskProjects = useMemo(
+    () =>
+      taskProjects.filter(
+        (p) => !selectedProjects.some((sp) => sp.id === p.id)
+      ),
+    [taskProjects, selectedProjects]
+  );
+  const filteredUnselectedProjects = useMemo(
+    () =>
+      unselectedTaskProjects.filter((p) =>
+        projectNameMatchesQuery(p.name, projectSearchQuery)
+      ),
+    [unselectedTaskProjects, projectSearchQuery]
+  );
+
+  const unselectedWorkspaceMembers = useMemo(
+    () =>
+      workspaceMembers.filter(
+        (m) =>
+          !selectedAssignees.some(
+            (a) => (a.id || a.user_id) === (m.user_id || m.id)
+          )
+      ),
+    [workspaceMembers, selectedAssignees]
+  );
+  const filteredUnselectedMembers = useMemo(
+    () =>
+      unselectedWorkspaceMembers.filter((m) =>
+        memberMatchesSearchQuery(
+          { display_name: m.display_name, email: m.email },
+          assigneeSearchQuery
+        )
+      ),
+    [unselectedWorkspaceMembers, assigneeSearchQuery]
+  );
 
   // Track last saved settings locally (updates after successful save)
   const [lastSavedSettings, setLastSavedSettings] = useState<
@@ -1079,7 +1139,10 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
             {/* Labels Badge */}
             <Popover
               open={isLabelsPopoverOpen}
-              onOpenChange={setIsLabelsPopoverOpen}
+              onOpenChange={(open) => {
+                setIsLabelsPopoverOpen(open);
+                if (!open) setLabelSearchQuery('');
+              }}
             >
               <PopoverTrigger asChild>
                 <button
@@ -1157,16 +1220,24 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         </div>
                       </div>
                     )}
+                    <TaskResourceSearchField
+                      value={labelSearchQuery}
+                      onChange={setLabelSearchQuery}
+                      placeholder={t('common.search_labels')}
+                    />
                     <div
                       className="max-h-60 overflow-y-auto overscroll-contain"
                       onWheel={(e) => e.stopPropagation()}
                     >
                       <div className="p-1">
-                        {availableLabels
-                          .filter(
-                            (l) => !selectedLabels.some((sl) => sl.id === l.id)
-                          )
-                          .map((label) => (
+                        {labelSearchQuery &&
+                        unselectedAvailableLabels.length > 0 &&
+                        filteredUnselectedLabels.length === 0 ? (
+                          <div className="px-2 py-4 text-center text-muted-foreground text-xs">
+                            {t('common.no_labels_found')}
+                          </div>
+                        ) : (
+                          filteredUnselectedLabels.map((label) => (
                             <button
                               key={label.id}
                               type="button"
@@ -1179,7 +1250,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                 className="h-6 px-2 text-xs"
                               />
                             </button>
-                          ))}
+                          ))
+                        )}
                       </div>
                     </div>
                     <div className="border-t p-2">
@@ -1205,7 +1277,10 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
             {!isDraftMode && (
               <Popover
                 open={isProjectsPopoverOpen}
-                onOpenChange={setIsProjectsPopoverOpen}
+                onOpenChange={(open) => {
+                  setIsProjectsPopoverOpen(open);
+                  if (!open) setProjectSearchQuery('');
+                }}
               >
                 <PopoverTrigger asChild>
                   <button
@@ -1273,17 +1348,24 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           </div>
                         </div>
                       )}
+                      <TaskResourceSearchField
+                        value={projectSearchQuery}
+                        onChange={setProjectSearchQuery}
+                        placeholder={t('common.search_projects')}
+                      />
                       <div
                         className="max-h-60 overflow-y-auto overscroll-contain"
                         onWheel={(e) => e.stopPropagation()}
                       >
                         <div className="p-1">
-                          {taskProjects
-                            .filter(
-                              (p) =>
-                                !selectedProjects.some((sp) => sp.id === p.id)
-                            )
-                            .map((project) => (
+                          {projectSearchQuery &&
+                          unselectedTaskProjects.length > 0 &&
+                          filteredUnselectedProjects.length === 0 ? (
+                            <div className="px-2 py-4 text-center text-muted-foreground text-xs">
+                              {t('common.no_projects_found')}
+                            </div>
+                          ) : (
+                            filteredUnselectedProjects.map((project) => (
                               <button
                                 key={project.id}
                                 type="button"
@@ -1295,7 +1377,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                   {project.name}
                                 </span>
                               </button>
-                            ))}
+                            ))
+                          )}
                         </div>
                       </div>
                       <div className="border-t p-2">
@@ -1322,7 +1405,10 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
             {!isPersonalWorkspace && (
               <Popover
                 open={isAssigneesPopoverOpen}
-                onOpenChange={setIsAssigneesPopoverOpen}
+                onOpenChange={(open) => {
+                  setIsAssigneesPopoverOpen(open);
+                  if (!open) setAssigneeSearchQuery('');
+                }}
               >
                 <PopoverTrigger asChild>
                   <button
@@ -1384,20 +1470,24 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           </div>
                         </div>
                       )}
+                      <TaskResourceSearchField
+                        value={assigneeSearchQuery}
+                        onChange={setAssigneeSearchQuery}
+                        placeholder={t('common.search_members')}
+                      />
                       <div
                         className="max-h-60 overflow-y-auto overscroll-contain"
                         onWheel={(e) => e.stopPropagation()}
                       >
                         <div className="p-1">
-                          {workspaceMembers
-                            .filter(
-                              (m) =>
-                                !selectedAssignees.some(
-                                  (a) =>
-                                    (a.id || a.user_id) === (m.user_id || m.id)
-                                )
-                            )
-                            .map((member, index) => (
+                          {assigneeSearchQuery &&
+                          unselectedWorkspaceMembers.length > 0 &&
+                          filteredUnselectedMembers.length === 0 ? (
+                            <div className="px-2 py-4 text-center text-muted-foreground text-xs">
+                              {t('common.no_members_found')}
+                            </div>
+                          ) : (
+                            filteredUnselectedMembers.map((member, index) => (
                               <button
                                 key={
                                   member.user_id ||
@@ -1419,7 +1509,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                 </span>
                                 <Plus className="h-4 w-4 shrink-0" />
                               </button>
-                            ))}
+                            ))
+                          )}
                         </div>
                       </div>
                     </>
