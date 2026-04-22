@@ -1501,6 +1501,178 @@
     "unblocked_by": "Unblocked By",
     "updated_at": "Updated At"
   },
+  "blue-green-monitoring": {
+    "actions": {
+      "retry": "Retry"
+    },
+    "alerts": {
+      "failed_description": "The dashboard could not refresh the latest blue/green telemetry snapshot.",
+      "failed_title": "Monitoring is unavailable",
+      "mount_missing_description": "The web container cannot see the watcher runtime directory. Mount ./tmp/docker-web into the app container to expose local rollout telemetry.",
+      "mount_missing_title": "Runtime mount missing",
+      "snapshot_missing_description": "The watcher runtime directory is mounted, but no live status snapshot is present yet. Start the watcher or wait for its first polling cycle.",
+      "snapshot_missing_title": "Waiting for watcher snapshot",
+      "watcher_degraded_missing": "The monitoring runtime path is not mounted inside this web container, so the watcher cannot be observed from the dashboard.",
+      "watcher_degraded_offline": "No recent watcher heartbeat was found. The dashboard is showing the last persisted snapshot, if any.",
+      "watcher_degraded_stale": "The watcher heartbeat is stale. Polling is likely delayed or the watcher is retrying after a failure.",
+      "watcher_degraded_title": "Watcher needs attention"
+    },
+    "chart": {
+      "average_rpm": "Average RPM",
+      "build_minutes": "Build Minutes",
+      "container_pressure": "Container Pressure",
+      "cpu": "CPU",
+      "deploy_request_velocity": "Deployment Request Velocity",
+      "memory": "Memory",
+      "peak_rpm": "Peak RPM",
+      "request_velocity": "Request Velocity",
+      "requests": "Requests",
+      "rollout_story": "Rollout Story",
+      "rx": "RX",
+      "tx": "TX"
+    },
+    "colors": {
+      "blue": "Blue",
+      "green": "Green"
+    },
+    "deployment_status": {
+      "active": "Active",
+      "building": "Building",
+      "deploying": "Deploying",
+      "ended": "Ended",
+      "failed": "Failed",
+      "successful": "Successful",
+      "unknown": "Unknown"
+    },
+    "description": "Watch the blue/green watcher, rollout cadence, request flow, and container load from a single operator dashboard.",
+    "empty": {
+      "containers": "No live container metrics are available yet.",
+      "deployments": "No deployment history is available yet.",
+      "events": "No watcher events have been recorded yet.",
+      "ledger": "Deployment history will appear here after the first rollout.",
+      "logs": "Watcher logs will appear here as the poller pulls, builds, and deploys.",
+      "logs_scoped": "No watcher logs matched the selected deployment scope yet.",
+      "requests": "Recent request logs will appear after the proxy starts draining traffic.",
+      "velocity": "Request velocity appears after successful deployments collect traffic."
+    },
+    "hero": {
+      "active_route": "{color} currently serving traffic",
+      "branch": "Tracked Branch",
+      "commit": "Latest Commit",
+      "description": "A visual control room for the same blue/green signals that the terminal watcher prints, with more persistent context for operators.",
+      "last_snapshot": "Last Snapshot",
+      "title": "Blue/Green Control Room"
+    },
+    "ledger": {
+      "avg_rpm": "Avg RPM",
+      "build_time": "Build Time",
+      "errors": "Errors",
+      "no_commit_subject": "No commit summary captured",
+      "peak_rpm": "Peak RPM",
+      "requests": "Requests",
+      "title": "Deployment Ledger"
+    },
+    "logs": {
+      "description": "Latest persisted watcher logs, filterable by deployment stamp or commit so recovery and rollout failures are easier to inspect.",
+      "entries": "entries",
+      "scope_all": "All Deployments"
+    },
+    "panels": {
+      "cadence": "Watcher Cadence",
+      "containers": "Containers",
+      "deployments": "Deployments",
+      "events": "Events",
+      "latest_logs": "Latest Logs",
+      "logs": "Logs",
+      "recent_requests": "Recent Requests",
+      "requests": "Requests",
+      "rollout_now": "Rollout Now",
+      "runtime": "Runtime",
+      "signal_feed": "Signal Feed",
+      "time_windows": "Daily, Weekly, Monthly, Yearly",
+      "topology": "Topology",
+      "traffic": "Traffic",
+      "watcher": "Watcher"
+    },
+    "periods": {
+      "daily": "Daily",
+      "monthly": "Monthly",
+      "weekly": "Weekly",
+      "yearly": "Yearly"
+    },
+    "requests": {
+      "internal": "Internal Probe"
+    },
+    "rollout": {
+      "avg_latency": "Avg Latency",
+      "commit": "Commit",
+      "description": "Track the newest build, deployment phase, and recovery state before it settles into the historical ledger.",
+      "failure_title": "Latest rollout failure",
+      "idle_title": "Watcher is tracking the branch",
+      "in_progress_meta": "Live rollout telemetry",
+      "last_change": "Last Change",
+      "last_result": "Last Result",
+      "phase_time": "Phase Time",
+      "requests": "Requests",
+      "route": "Target Route"
+    },
+    "runtime": {
+      "activated_at": "Activated At",
+      "active_color": "Active Color",
+      "deployment_stamp": "Deployment Stamp",
+      "live_colors": "Live Colors",
+      "runtime_state": "Runtime State",
+      "standby_color": "Standby Color"
+    },
+    "runtime_badges": {
+      "active": "Live Traffic",
+      "standby": "Warm Standby"
+    },
+    "runtime_states": {
+      "degraded": "Degraded",
+      "idle": "Idle",
+      "serving": "Serving",
+      "unknown": "Unknown"
+    },
+    "states": {
+      "none": "None"
+    },
+    "stats": {
+      "active_color": "Active Color",
+      "avg_build": "Average Build",
+      "avg_latency": "Avg Latency",
+      "cpu": "CPU",
+      "current_rpm": "Current RPM",
+      "deployments_touched": "Deployments Touched",
+      "log_retention": "Persisted request log retention",
+      "mean_rollout": "Mean rollout time",
+      "memory": "Memory",
+      "network": "Network",
+      "persisted_logs": "Persisted Logs",
+      "requests_per_minute": "Requests per minute",
+      "served_requests": "Served requests",
+      "total_container_cpu": "Total container CPU",
+      "total_container_memory": "Total container memory",
+      "total_requests": "Total Requests",
+      "watcher": "Watcher"
+    },
+    "title": "Blue/Green Monitoring",
+    "watcher": {
+      "args": "Watcher Args",
+      "branch": "Branch",
+      "interval": "Interval",
+      "last_check": "Last Check",
+      "last_result": "Last Result",
+      "next_check": "Next Check",
+      "upstream": "Upstream"
+    },
+    "watcher_health": {
+      "live": "Live",
+      "missing": "Missing",
+      "offline": "Offline",
+      "stale": "Stale"
+    }
+  },
   "branding": {
     "colorCopied": "Copied {color} to clipboard",
     "colors": {
@@ -5427,6 +5599,8 @@
     "invited-to-join": "You've been invited to join",
     "invited-you": "invited you",
     "join-agreement": "By joining, you agree to be part of this workspace and follow its guidelines",
+    "join-as-guest-hint": "You will join as a guest with limited access.",
+    "join-as-member-hint": "You will join as a full member with workspace access.",
     "join-error-toast": "Failed to join workspace",
     "join-success-toast": "Successfully joined workspace!",
     "join-workspace": "Join Workspace",
@@ -12920,6 +13094,9 @@
     "max-uses-description": "Leave empty for unlimited uses",
     "max-uses-placeholder": "Leave empty for unlimited",
     "members-joined": "Members Joined",
+    "membership-short-guest": "Guest",
+    "membership-short-member": "Member",
+    "membership-type-description": "People who join through this link receive this access level.",
     "never": "Never",
     "no-links": "No invite links yet",
     "no-links-description": "Create your first invite link to start inviting members to your workspace.",
@@ -13152,6 +13329,7 @@
     "from_role": "From role",
     "from_roles": "From roles",
     "granted_by": "Granted by",
+    "guest_badge": "Guest",
     "has_been_removed": "has been removed from this workspace",
     "has_been_revoked": "has been revoked",
     "has_been_sent": "has been sent",
@@ -13167,8 +13345,16 @@
     "invitation-failed-description": "There was an error sending the invitation. Please try again.",
     "invitation-sent": "Invitation sent",
     "invitation-sent-description": "An invitation has been sent to {email}.",
+    "invite_dialog_description": "Send an email invitation. Choose whether they join as a full member or a guest.",
+    "invite_dialog_title": "Invite to workspace",
+    "invite_email_label": "Email",
     "invite_member": "Invite member",
     "invite_member_disabled": "Invite member disabled",
+    "invite_membership_guest": "Guest — limited access",
+    "invite_membership_label": "Access",
+    "invite_membership_member": "Member — full workspace access",
+    "invite_no_permission": "You do not have permission to invite members.",
+    "invite_submit": "Send invitation",
     "invited": "Invited",
     "invited_members": "Invited",
     "invited_on": "Invited on",

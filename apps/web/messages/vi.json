@@ -1501,6 +1501,178 @@
     "unblocked_by": "Người bỏ chặn",
     "updated_at": "Ngày cập nhật"
   },
+  "blue-green-monitoring": {
+    "actions": {
+      "retry": "Thử lại"
+    },
+    "alerts": {
+      "failed_description": "Bảng điều khiển không thể tải lại ảnh chụp telemetry blue/green mới nhất.",
+      "failed_title": "Giám sát hiện không khả dụng",
+      "mount_missing_description": "Container web không nhìn thấy thư mục runtime của watcher. Hãy mount ./tmp/docker-web vào container ứng dụng để hiển thị telemetry rollout cục bộ.",
+      "mount_missing_title": "Thiếu runtime mount",
+      "snapshot_missing_description": "Thư mục runtime của watcher đã được mount nhưng chưa có file trạng thái trực tiếp. Hãy khởi động watcher hoặc chờ chu kỳ thăm dò đầu tiên.",
+      "snapshot_missing_title": "Đang chờ snapshot của watcher",
+      "watcher_degraded_missing": "Đường dẫn runtime giám sát chưa được mount trong container web này, nên dashboard không thể quan sát watcher.",
+      "watcher_degraded_offline": "Không tìm thấy heartbeat gần đây của watcher. Dashboard đang hiển thị snapshot đã lưu gần nhất nếu có.",
+      "watcher_degraded_stale": "Heartbeat của watcher đã cũ. Có thể tiến trình đang chậm nhịp hoặc đang retry sau lỗi.",
+      "watcher_degraded_title": "Watcher cần được chú ý"
+    },
+    "chart": {
+      "average_rpm": "RPM trung bình",
+      "build_minutes": "Phút build",
+      "container_pressure": "Áp lực container",
+      "cpu": "CPU",
+      "deploy_request_velocity": "Tốc Độ Request Theo Bản Triển Khai",
+      "memory": "Bộ nhớ",
+      "peak_rpm": "RPM đỉnh",
+      "request_velocity": "Tốc độ request",
+      "requests": "Request",
+      "rollout_story": "Diễn biến rollout",
+      "rx": "RX",
+      "tx": "TX"
+    },
+    "colors": {
+      "blue": "Xanh dương",
+      "green": "Xanh lá"
+    },
+    "deployment_status": {
+      "active": "Đang hoạt động",
+      "building": "Đang build",
+      "deploying": "Đang triển khai",
+      "ended": "Đã kết thúc",
+      "failed": "Thất bại",
+      "successful": "Thành công",
+      "unknown": "Không xác định"
+    },
+    "description": "Theo dõi watcher blue/green, nhịp rollout, lưu lượng request và tải container từ một dashboard vận hành duy nhất.",
+    "empty": {
+      "containers": "Chưa có số liệu container trực tiếp.",
+      "deployments": "Chưa có lịch sử triển khai.",
+      "events": "Chưa ghi nhận sự kiện nào từ watcher.",
+      "ledger": "Lịch sử triển khai sẽ xuất hiện tại đây sau lần rollout đầu tiên.",
+      "logs": "Nhật ký watcher sẽ xuất hiện tại đây khi tiến trình poll, build và deploy.",
+      "logs_scoped": "Chưa có nhật ký watcher nào khớp với phạm vi triển khai đã chọn.",
+      "requests": "Nhật ký request gần đây sẽ xuất hiện sau khi proxy bắt đầu drain lưu lượng.",
+      "velocity": "Tốc độ request sẽ xuất hiện sau khi các lần triển khai thành công bắt đầu phục vụ lưu lượng."
+    },
+    "hero": {
+      "active_route": "{color} hiện đang phục vụ lưu lượng",
+      "branch": "Nhánh đang theo dõi",
+      "commit": "Commit mới nhất",
+      "description": "Phòng điều khiển trực quan cho cùng các tín hiệu blue/green mà watcher trên terminal hiển thị, nhưng có thêm bối cảnh bền vững hơn cho operator.",
+      "last_snapshot": "Snapshot gần nhất",
+      "title": "Phòng Điều Khiển Blue/Green"
+    },
+    "ledger": {
+      "avg_rpm": "RPM TB",
+      "build_time": "Thời gian build",
+      "errors": "Lỗi",
+      "no_commit_subject": "Không có tóm tắt commit",
+      "peak_rpm": "RPM đỉnh",
+      "requests": "Request",
+      "title": "Sổ Theo Dõi Triển Khai"
+    },
+    "logs": {
+      "description": "Nhật ký watcher đã lưu gần nhất, có thể lọc theo deployment stamp hoặc commit để dễ kiểm tra các lần phục hồi và rollout lỗi.",
+      "entries": "bản ghi",
+      "scope_all": "Tất Cả Triển Khai"
+    },
+    "panels": {
+      "cadence": "Nhịp Của Watcher",
+      "containers": "Container",
+      "deployments": "Triển khai",
+      "events": "Sự kiện",
+      "latest_logs": "Nhật Ký Mới Nhất",
+      "logs": "Nhật ký",
+      "recent_requests": "Request Gần Đây",
+      "requests": "Request",
+      "rollout_now": "Rollout Hiện Tại",
+      "runtime": "Runtime",
+      "signal_feed": "Luồng tín hiệu",
+      "time_windows": "Theo Ngày, Tuần, Tháng, Năm",
+      "topology": "Tô-pô",
+      "traffic": "Lưu lượng",
+      "watcher": "Watcher"
+    },
+    "periods": {
+      "daily": "Ngày",
+      "monthly": "Tháng",
+      "weekly": "Tuần",
+      "yearly": "Năm"
+    },
+    "requests": {
+      "internal": "Probe Nội Bộ"
+    },
+    "rollout": {
+      "avg_latency": "Độ Trễ TB",
+      "commit": "Commit",
+      "description": "Theo dõi bản build mới nhất, pha triển khai và trạng thái phục hồi trước khi nó đi vào sổ lịch sử.",
+      "failure_title": "Lỗi rollout mới nhất",
+      "idle_title": "Watcher đang theo dõi nhánh",
+      "in_progress_meta": "Telemetry rollout trực tiếp",
+      "last_change": "Thay đổi gần nhất",
+      "last_result": "Kết quả gần nhất",
+      "phase_time": "Thời gian pha",
+      "requests": "Request",
+      "route": "Tuyến mục tiêu"
+    },
+    "runtime": {
+      "activated_at": "Kích hoạt lúc",
+      "active_color": "Màu đang hoạt động",
+      "deployment_stamp": "Dấu triển khai",
+      "live_colors": "Màu đang chạy",
+      "runtime_state": "Trạng thái runtime",
+      "standby_color": "Màu dự phòng"
+    },
+    "runtime_badges": {
+      "active": "Lưu lượng trực tiếp",
+      "standby": "Dự phòng nóng"
+    },
+    "runtime_states": {
+      "degraded": "Suy giảm",
+      "idle": "Nhàn rỗi",
+      "serving": "Đang phục vụ",
+      "unknown": "Không xác định"
+    },
+    "states": {
+      "none": "Không có"
+    },
+    "stats": {
+      "active_color": "Màu hoạt động",
+      "avg_build": "Build trung bình",
+      "avg_latency": "Độ Trễ TB",
+      "cpu": "CPU",
+      "current_rpm": "RPM hiện tại",
+      "deployments_touched": "Số Bản Triển Khai Liên Quan",
+      "log_retention": "Dung lượng lưu giữ nhật ký request",
+      "mean_rollout": "Thời gian rollout trung bình",
+      "memory": "Bộ nhớ",
+      "network": "Mạng",
+      "persisted_logs": "Nhật Ký Đã Lưu",
+      "requests_per_minute": "Request mỗi phút",
+      "served_requests": "Request đã phục vụ",
+      "total_container_cpu": "Tổng CPU container",
+      "total_container_memory": "Tổng bộ nhớ container",
+      "total_requests": "Tổng request",
+      "watcher": "Watcher"
+    },
+    "title": "Giám Sát Blue/Green",
+    "watcher": {
+      "args": "Tham số watcher",
+      "branch": "Nhánh",
+      "interval": "Khoảng quét",
+      "last_check": "Lần kiểm tra gần nhất",
+      "last_result": "Kết quả gần nhất",
+      "next_check": "Lần kiểm tra tiếp theo",
+      "upstream": "Upstream"
+    },
+    "watcher_health": {
+      "live": "Đang hoạt động",
+      "missing": "Thiếu",
+      "offline": "Ngoại tuyến",
+      "stale": "Cũ"
+    }
+  },
   "branding": {
     "colorCopied": "Đã sao chép mã màu {color}",
     "colors": {
@@ -5427,6 +5599,8 @@
     "invited-to-join": "Bạn đã được mời tham gia",
     "invited-you": "đã mời bạn",
     "join-agreement": "Bằng việc tham gia, bạn đồng ý trở thành thành viên của không gian làm việc này và tuân thủ các quy định của nó",
+    "join-as-guest-hint": "Bạn sẽ tham gia với tư cách khách với quyền truy cập hạn chế.",
+    "join-as-member-hint": "Bạn sẽ tham gia với tư cách thành viên đầy đủ.",
     "join-error-toast": "Không thể tham gia không gian làm việc",
     "join-success-toast": "Tham gia không gian làm việc thành công!",
     "join-workspace": "Tham Gia Không Gian Làm Việc",
@@ -12920,6 +13094,9 @@
     "max-uses-description": "Để trống để không giới hạn",
     "max-uses-placeholder": "Để trống để không giới hạn",
     "members-joined": "Thành viên đã tham gia",
+    "membership-short-guest": "Khách",
+    "membership-short-member": "Thành viên",
+    "membership-type-description": "Người tham gia qua liên kết này sẽ nhận mức truy cập này.",
     "never": "Không bao giờ",
     "no-links": "Chưa có liên kết mời",
     "no-links-description": "Tạo liên kết mời đầu tiên của bạn để bắt đầu mời thành viên vào không gian làm việc.",
@@ -13152,6 +13329,7 @@
     "from_role": "Từ vai trò",
     "from_roles": "Từ vai trò",
     "granted_by": "Được cấp bởi",
+    "guest_badge": "Khách",
     "has_been_removed": "đã bị xóa khỏi không gian làm việc này",
     "has_been_revoked": "đã bị thu hồi",
     "has_been_sent": "đã được gửi",
@@ -13167,8 +13345,16 @@
     "invitation-failed-description": "Đã xảy ra lỗi khi gửi lời mời. Vui lòng thử lại.",
     "invitation-sent": "Lời mời đã được gửi",
     "invitation-sent-description": "Lời mời đã được gửi đến {email}.",
+    "invite_dialog_description": "Gửi lời mời qua email. Chọn họ tham gia với tư cách thành viên đầy đủ hoặc khách.",
+    "invite_dialog_title": "Mời vào không gian làm việc",
+    "invite_email_label": "Email",
     "invite_member": "Mời thành viên",
     "invite_member_disabled": "Đã tắt lời mời",
+    "invite_membership_guest": "Khách — quyền hạn chế",
+    "invite_membership_label": "Quyền truy cập",
+    "invite_membership_member": "Thành viên — truy cập đầy đủ không gian làm việc",
+    "invite_no_permission": "Bạn không có quyền mời thành viên.",
+    "invite_submit": "Gửi lời mời",
     "invited": "Đã mời",
     "invited_members": "Đã mời",
     "invited_on": "Được mời vào",

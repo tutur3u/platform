@@ -1,3 +1,7 @@
+import type { Database } from '@tuturuuu/types/db';
+
+type WorkspaceMemberType = Database['public']['Enums']['workspace_member_type'];
+
 export interface Workspace {
   id: string;
   name: string;
@@ -17,6 +21,8 @@ export interface WorkspaceInfo {
   memberCount: number;
   seatLimitReached?: boolean;
   seatStatus?: SeatStatus;
+  /** Membership level for this invite link (MEMBER vs GUEST) */
+  memberType?: WorkspaceMemberType;
 }
 
 export interface ValidateInviteResult {

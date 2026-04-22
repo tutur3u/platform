@@ -4,6 +4,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { memberTypeFromInviteStatsRow } from '@/lib/workspace-invite-links';
 import {
   assignSeatToMember,
   revokeSeatFromMember,
@@ -108,6 +109,9 @@ export async function GET(_: Request, { params }: Params) {
         memberCount: memberCount || 0,
         seatLimitReached: !seatCheck.allowed,
         seatStatus: seatCheck.status,
+        memberType: memberTypeFromInviteStatsRow(
+          inviteLink as unknown as Record<string, unknown>
+        ),
       },
       { status: 200 }
     );
@@ -216,11 +220,16 @@ export async function POST(_: Request, { params }: Params) {
 
     // Add user to workspace first - this will fail if they're already a member (unique constraint)
     // ws_id is already validated above to exist
+    const memberTypeForRow = memberTypeFromInviteStatsRow(
+      inviteLink as unknown as Record<string, unknown>
+    );
+
     const { error: memberError } = await sbAdmin
       .from('workspace_members')
       .insert({
         ws_id: wsId,
         user_id: user.id,
+        type: memberTypeForRow,
       });
 
     if (memberError) {

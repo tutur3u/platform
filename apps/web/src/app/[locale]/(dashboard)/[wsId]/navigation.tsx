@@ -1298,6 +1298,11 @@ export async function WorkspaceNavigationLinks({
               icon: <Radio className="h-5 w-5" />,
             },
             {
+              title: t('infrastructure-tabs.monitoring'),
+              href: `/${personalOrWsId}/infrastructure/monitoring`,
+              icon: <Cctv className="h-5 w-5" />,
+            },
+            {
               title: t('infrastructure-tabs.ai_credits'),
               href: `/${personalOrWsId}/infrastructure/ai-credits`,
               icon: <CreditCard className="h-5 w-5" />,

@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { memberTypeFromInviteStatsRow } from '@/lib/workspace-invite-links';
 import { enforceSeatLimit } from '@/utils/seat-limits';
 import type { ValidateInviteResult, Workspace, WorkspaceInfo } from './types';
 
@@ -121,7 +122,7 @@ export async function validateInvite(
 
     const { data: inviteStats, error: inviteStatsError } = await sbAdmin
       .from('workspace_invite_links_with_stats')
-      .select('is_expired, is_full')
+      .select('is_expired, is_full, member_type')
       .eq('code', code)
       .maybeSingle();
 
@@ -163,6 +164,9 @@ export async function validateInvite(
       workspace,
       memberCount: seatCheck.status.memberCount,
       seatLimitReached: !seatCheck.allowed,
+      memberType: memberTypeFromInviteStatsRow(
+        inviteStats as unknown as Record<string, unknown>
+      ),
       seatStatus: {
         currentSeats: seatCheck.status.memberCount,
         maxSeats: seatCheck.status.isSeatBased

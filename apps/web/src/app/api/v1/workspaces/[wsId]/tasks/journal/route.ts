@@ -27,6 +27,7 @@ import {
   MAX_SHORT_TEXT_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { generateObject, NoObjectGeneratedError } from 'ai';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -524,14 +525,15 @@ export async function POST(
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
-    const { wsId } = await params;
-    const supabase = await createClient();
+    const { wsId: rawWsId } = await params;
+    const supabase = await createClient(req);
 
     const authResult = await getAuthorizedUser(supabase);
     if (authResult.kind === 'error') {
       return NextResponse.json(authResult.body, { status: authResult.status });
     }
     const user = authResult.user;
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const rawBody = await req.json();
     const bodyResult = parseRequestBody(rawBody);
@@ -574,34 +576,51 @@ export async function POST(
     if (wsAccess.kind === 'error') {
       return NextResponse.json(wsAccess.body, { status: wsAccess.status });
     }
+    const sbAdmin = await createAdminClient();
 
-    let resolvedModelId: string;
-    try {
-      const resolvedModel = await resolvePlanModel({
-        capability: 'language',
-        wsId,
-      });
-      resolvedModelId = resolvedModel.modelId;
-    } catch (error) {
-      if (error instanceof PlanModelResolutionError) {
-        const status = error.code === 'NO_ALLOCATION' ? 503 : 500;
+    let listCheck: { id: string; name: string | null } | null = null;
+    if (listId) {
+      const listResult = await getListIfProvided(sbAdmin, listId, wsId);
+      if (listResult.kind === 'error') {
+        return NextResponse.json(listResult.body, {
+          status: listResult.status,
+        });
+      }
+      listCheck = listResult.list;
+    }
+
+    const providedTasks = normalizeProvidedTasks(tasks);
+    const shouldInvokeAI = !providedTasks || previewOnly;
+    const { timezoneContext, clientIsoTimestamp, localTimeDescription } =
+      computeTimeContext(clientTimezone, clientTimestamp);
+
+    let resolvedModelId: string | null = null;
+    let creditCheck: CreditCheckResult | null = null;
+    let systemPrompt: string | null = null;
+
+    if (shouldInvokeAI) {
+      try {
+        const resolvedModel = await resolvePlanModel({
+          capability: 'language',
+          wsId,
+        });
+        resolvedModelId = resolvedModel.modelId;
+      } catch (error) {
+        if (error instanceof PlanModelResolutionError) {
+          const status = error.code === 'NO_ALLOCATION' ? 503 : 500;
+          return NextResponse.json(
+            { error: error.message, code: error.code },
+            { status }
+          );
+        }
+
+        console.error('Failed to resolve task journal model:', error);
         return NextResponse.json(
-          { error: error.message, code: error.code },
-          { status }
+          { error: 'Failed to resolve AI model for task journal.' },
+          { status: 500 }
         );
       }
 
-      console.error('Failed to resolve task journal model:', error);
-      return NextResponse.json(
-        { error: 'Failed to resolve AI model for task journal.' },
-        { status: 500 }
-      );
-    }
-
-    // Pre-flight AI credit check
-    let creditCheck: CreditCheckResult | null = null;
-    const shouldInvokeAIEarly = !tasks?.length || previewOnly;
-    if (shouldInvokeAIEarly) {
       const result = await checkAiCredits(
         wsId,
         resolvedModelId,
@@ -620,31 +639,16 @@ export async function POST(
           { status: 403 }
         );
       }
+
+      systemPrompt = buildSystemPrompt(
+        generateDescriptions,
+        generatePriority,
+        generateLabels,
+        localTimeDescription,
+        timezoneContext,
+        clientIsoTimestamp
+      );
     }
-
-    let listCheck: { id: string; name: string | null } | null = null;
-    if (listId) {
-      const listResult = await getListIfProvided(supabase, listId, wsId);
-      if (listResult.kind === 'error') {
-        return NextResponse.json(listResult.body, {
-          status: listResult.status,
-        });
-      }
-      listCheck = listResult.list;
-    }
-
-    const { timezoneContext, clientIsoTimestamp, localTimeDescription } =
-      computeTimeContext(clientTimezone, clientTimestamp);
-    const systemPrompt = buildSystemPrompt(
-      generateDescriptions,
-      generatePriority,
-      generateLabels,
-      localTimeDescription,
-      timezoneContext,
-      clientIsoTimestamp
-    );
-
-    const providedTasks = normalizeProvidedTasks(tasks);
 
     let aiTasks:
       | {
@@ -655,17 +659,14 @@ export async function POST(
         }[]
       | null = null;
 
-    const shouldInvokeAI = !providedTasks || previewOnly;
-
     if (shouldInvokeAI) {
       try {
         // Apply credit-budget cap on maxOutputTokens (defense-in-depth)
         let cappedMaxOutput = creditCheck?.maxOutputTokens ?? null;
         if (creditCheck) {
-          const sbAdmin = await createAdminClient();
           cappedMaxOutput = await capMaxOutputTokensByCredits(
             sbAdmin,
-            resolvedModelId,
+            resolvedModelId!,
             creditCheck.maxOutputTokens,
             creditCheck.remainingCredits
           );
@@ -681,8 +682,8 @@ export async function POST(
         }
 
         const result = await generateAiTasks(
-          resolvedModelId,
-          systemPrompt,
+          resolvedModelId!,
+          systemPrompt!,
           trimmedEntry,
           cappedMaxOutput
         );
@@ -693,7 +694,7 @@ export async function POST(
           deductAiCredits({
             wsId,
             userId: user.id,
-            modelId: resolvedModelId,
+            modelId: resolvedModelId!,
             inputTokens: result.usage.inputTokens ?? 0,
             outputTokens: result.usage.outputTokens ?? 0,
             reasoningTokens:
@@ -715,7 +716,7 @@ export async function POST(
             deductAiCredits({
               wsId,
               userId: user.id,
-              modelId: resolvedModelId,
+              modelId: resolvedModelId!,
               inputTokens: failedUsage.inputTokens ?? 0,
               outputTokens: failedUsage.outputTokens ?? 0,
               reasoningTokens: failedUsage.reasoningTokens ?? 0,
@@ -771,7 +772,7 @@ export async function POST(
       );
     }
 
-    const labelMapResult = await loadLabelNameMap(supabase, wsId);
+    const labelMapResult = await loadLabelNameMap(sbAdmin, wsId);
     if (labelMapResult.kind === 'error') {
       return NextResponse.json(labelMapResult.body, {
         status: labelMapResult.status,
@@ -780,7 +781,7 @@ export async function POST(
     const labelNameMap = labelMapResult.labelNameMap;
 
     // Load valid project IDs for the workspace and validate before insertion
-    const projectIdsResult = await loadWorkspaceProjectIds(supabase, wsId);
+    const projectIdsResult = await loadWorkspaceProjectIds(sbAdmin, wsId);
     if (projectIdsResult.kind === 'error') {
       return NextResponse.json(projectIdsResult.body, {
         status: projectIdsResult.status,
@@ -834,7 +835,7 @@ export async function POST(
       const labelName = toTitleCase(label.name.trim());
       const color = pickLabelColor(labelNameMap.size);
 
-      const { data: createdLabel, error: createLabelError } = await supabase
+      const { data: createdLabel, error: createLabelError } = await sbAdmin
         .from('workspace_task_labels')
         .insert({
           name: labelName,
@@ -865,6 +866,7 @@ export async function POST(
     const tasksToInsert = candidateTasks.map((task) => ({
       name: task.title,
       description: task.description || null,
+      creator_id: user.id,
       list_id: listCheck.id,
       priority: task.priority,
       end_date: task.dueDate,
@@ -872,7 +874,7 @@ export async function POST(
       created_at: nowIso,
     }));
 
-    const { data: insertedTasks, error: insertError } = await supabase
+    const { data: insertedTasks, error: insertError } = await sbAdmin
       .from('tasks')
       .insert(tasksToInsert)
       .select(
@@ -948,7 +950,7 @@ export async function POST(
     }
 
     if (labelAssignments.length) {
-      const { error: labelInsertError } = await supabase
+      const { error: labelInsertError } = await sbAdmin
         .from('task_labels')
         .insert(labelAssignments);
 
@@ -982,7 +984,7 @@ export async function POST(
     }
 
     if (projectAssignments.length) {
-      const { error: projectInsertError } = await supabase
+      const { error: projectInsertError } = await sbAdmin
         .from('task_project_tasks')
         .insert(projectAssignments);
 
@@ -1001,7 +1003,7 @@ export async function POST(
         }))
       );
 
-      const { error: assigneeInsertError } = await supabase
+      const { error: assigneeInsertError } = await sbAdmin
         .from('task_assignees')
         .insert(assigneeAssignments);
 

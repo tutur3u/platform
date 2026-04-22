@@ -8,6 +8,7 @@ class AssistantLiveStageCard extends StatelessWidget {
   const AssistantLiveStageCard({
     required this.liveState,
     required this.cameraController,
+    required this.onOpenLiveMode,
     required this.onRetry,
     required this.onDisconnect,
     required this.onCameraToggle,
@@ -16,6 +17,7 @@ class AssistantLiveStageCard extends StatelessWidget {
 
   final AssistantLiveState liveState;
   final CameraController? cameraController;
+  final Future<void> Function() onOpenLiveMode;
   final Future<void> Function() onRetry;
   final Future<void> Function() onDisconnect;
   final Future<void> Function() onCameraToggle;
@@ -89,11 +91,16 @@ class AssistantLiveStageCard extends StatelessWidget {
             ),
           if (liveState.status == AssistantLiveConnectionStatus.error)
             _CompactLiveAction(
-              tooltip: context.l10n.assistantLiveConnect,
+              tooltip: context.l10n.assistantLiveRetryAction,
               icon: Icons.refresh_rounded,
               onPressed: onRetry,
             )
           else ...[
+            _CompactLiveAction(
+              tooltip: context.l10n.assistantLiveOpenMode,
+              icon: Icons.graphic_eq_rounded,
+              onPressed: onOpenLiveMode,
+            ),
             _CompactLiveAction(
               tooltip: liveState.isCameraActive
                   ? context.l10n.assistantLiveHideCamera

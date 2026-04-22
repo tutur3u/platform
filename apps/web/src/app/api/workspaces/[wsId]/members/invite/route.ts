@@ -2,7 +2,9 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { MAX_EMAIL_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { canCreateInvitation } from '@/utils/seat-limits';
 
 interface Params {
@@ -10,6 +12,11 @@ interface Params {
     wsId: string;
   }>;
 }
+
+const InviteMemberSchema = z.object({
+  email: z.email().max(MAX_EMAIL_LENGTH),
+  memberType: z.enum(['MEMBER', 'GUEST']).optional().default('MEMBER'),
+});
 
 // Helper to trigger immediate notification processing
 async function triggerImmediateNotification() {
@@ -59,7 +66,19 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { email } = await req.json();
+  let payload: z.infer<typeof InviteMemberSchema>;
+
+  try {
+    const rawPayload = await req.json();
+    payload = InviteMemberSchema.parse(rawPayload);
+  } catch {
+    return NextResponse.json(
+      { message: 'Invalid request body. Expected { email, memberType? }' },
+      { status: 400 }
+    );
+  }
+
+  const { email, memberType } = payload;
 
   if (!email) {
     return NextResponse.json(
@@ -89,6 +108,7 @@ export async function POST(req: Request, { params }: Params) {
     ws_id: wsId,
     email: email.toLowerCase(),
     invited_by: user?.id,
+    type: memberType,
   });
 
   if (error) {

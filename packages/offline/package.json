@@ -27,7 +27,7 @@
     "next": "^16.2.4",
     "react": "^19.2.5",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.5"
   },
   "exports": {
     "./worker": "./src/worker/index.ts",

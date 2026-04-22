@@ -104,14 +104,22 @@ The basic structure is:
 
 Tuturuuu uses the following branch types:
 
-| Type      | Description             | Example                         |
-| --------- | ----------------------- | ------------------------------- |
-| `main`    | Main development branch | `main`                          |
-| `feature` | For new features        | `feature/user-dashboard`        |
-| `bugfix`  | For bug fixes           | `bugfix/login-error`            |
-| `hotfix`  | For urgent fixes        | `hotfix/security-vulnerability` |
-| `release` | For preparing releases  | `release/v1.2.0`                |
-| `chore`   | For maintenance tasks   | `chore/update-dependencies`     |
+| Type         | Description                            | Example                         |
+| ------------ | -------------------------------------- | ------------------------------- |
+| `main`       | Main development branch                | `main`                          |
+| `feature`    | For new features                       | `feature/user-dashboard`        |
+| `feat`       | Short feature prefix also accepted     | `feat/invite-link-permissions`  |
+| `fix`        | Short bug-fix prefix also accepted     | `fix/invite-membership-check`   |
+| `bugfix`     | For bug fixes                          | `bugfix/login-error`            |
+| `hotfix`     | For urgent fixes                       | `hotfix/security-vulnerability` |
+| `release`    | For preparing releases                 | `release/v1.2.0`                |
+| `chore`      | For maintenance tasks                  | `chore/update-dependencies`     |
+| `docs`       | For documentation-only work            | `docs/git-conventions-refresh`  |
+| `style`      | For formatting or stylistic cleanups   | `style/biome-pass`              |
+| `refactor`   | For internal code restructuring        | `refactor/task-query-shell`     |
+| `perf`       | For performance-focused changes        | `perf/workspace-user-search`    |
+| `dependabot` | Automated dependency update branches   | `dependabot/npm_and_yarn/next`  |
+| `claude`     | AI-assisted scratch or experimental PR | `claude/rate-limit-audit`       |
 
 ### Naming Rules
 
@@ -124,12 +132,27 @@ Tuturuuu uses the following branch types:
 
 ```
 feature/workspace-sharing
-bugfix/file-upload-error
-hotfix/auth-vulnerability
+feat/public-course-sharing
+fix/file-upload-error
+bugfix/auth-vulnerability
 release/v2.5.0
 chore/update-react-18
+docs/git-conventions-refresh
 feature/issue-123-user-profile
 ```
+
+### Merge Commit Exception
+
+Authored commits should follow Conventional Commits. The common exception is a
+Git-generated merge commit when syncing a long-lived branch, for example:
+
+```bash
+Merge branch 'main' into feat-stuying-platform
+```
+
+Keep that merge summary when the goal is to preserve the branch's merge history.
+Use a conventional commit message again for the next authored commit after the
+merge.
 
 ## How These Conventions Improve Our Workflow
 
@@ -224,10 +247,10 @@ jobs:
       - name: Check branch name
         run: |
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          if ! [[ $BRANCH_NAME =~ ^(feature|bugfix|hotfix|release|chore)/.+ ]]; then
+          if ! [[ $BRANCH_NAME =~ ^(feature|feat|fix|bugfix|hotfix|release|chore|docs|style|refactor|perf|dependabot|claude)/.+ ]]; then
             echo "❌ Branch name '$BRANCH_NAME' doesn't follow the conventional branch format."
             echo "Branch name should be in format: type/description"
-            echo "Allowed types: feature, bugfix, hotfix, release, chore"
+            echo "Allowed types: feature, feat, fix, bugfix, hotfix, release, chore, docs, style, refactor, perf, dependabot, claude"
             exit 1
           else
             echo "✅ Branch name follows convention: $BRANCH_NAME"

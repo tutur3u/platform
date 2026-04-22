@@ -166,16 +166,17 @@ export default function MyTasksContent({
         isPersonal={isPersonal}
         workspacesData={state.workspacesData}
         selectedWorkspaceId={state.selectedWorkspaceId}
-        onWorkspaceChange={state.setSelectedWorkspaceId}
+        onWorkspaceChange={state.handleWorkspaceSelectionChange}
         boardsData={state.boardsData}
         boardsLoading={state.boardsLoading}
         selectedBoardId={state.selectedBoardId}
-        onBoardChange={state.setSelectedBoardId}
+        onBoardChange={state.handleBoardSelectionChange}
         availableLists={state.availableLists}
         selectedListId={state.selectedListId}
         onListChange={state.setSelectedListId}
         taskCreatorMode={state.taskCreatorMode}
         aiFlowStep={state.aiFlowStep}
+        isSubmitting={state.createTasksMutation.isPending}
         onConfirm={state.handleBoardSelectorConfirm}
         onCreateBoard={(name) => {
           state.setNewBoardName(name);

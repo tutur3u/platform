@@ -16,6 +16,7 @@ interface Params {
 const CreateInviteLinkSchema = z.object({
   maxUses: z.number().int().positive().optional().nullable(),
   expiresAt: z.iso.datetime().optional().nullable(),
+  memberType: z.enum(['MEMBER', 'GUEST']).optional(),
 });
 
 // POST - Create a new invite link
@@ -102,7 +103,8 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    const { maxUses, expiresAt } = validation.data;
+    const { maxUses, expiresAt, memberType } = validation.data;
+    const linkMemberType = memberType ?? 'MEMBER';
 
     // Use insert-retry strategy to handle unique code generation
     const maxAttempts = 10;
@@ -120,6 +122,7 @@ export async function POST(req: Request, { params }: Params) {
           creator_id: user.id,
           max_uses: maxUses,
           expires_at: expiresAt,
+          type: linkMemberType,
         })
         .select()
         .single();
