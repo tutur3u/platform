@@ -425,6 +425,15 @@ with check (
     select 1
     from "public"."workspace_guests" wg
     where wg.id = "workspace_guest_permissions"."guest_id"
+      and (
+        "workspace_guest_permissions"."resource_id" is null
+        or exists (
+          select 1
+          from "public"."workspace_user_groups" wug
+          where wug.id = "workspace_guest_permissions"."resource_id"
+            and wug.ws_id = wg.ws_id
+        )
+      )
       and wg.ws_id in (
         select wrp.ws_id
         from workspace_role_members wrm
