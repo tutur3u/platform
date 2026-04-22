@@ -11,7 +11,6 @@ This guide helps you validate the end-to-end SePay flow in the current backend i
 - Required environment variables are configured for `apps/web`:
   - `SEPAY_OAUTH_CLIENT_ID`
   - `SEPAY_OAUTH_CLIENT_SECRET`
-  - `SEPAY_OAUTH_STATE_SECRET`
   - `SEPAY_OAUTH_TOKEN_ENCRYPTION_SECRET`
   - `SEPAY_WEBHOOK_API_KEY` (or `SEPAY_WEBHOOK_SECRET`)
   - `WEB_APP_URL` (or `NEXT_PUBLIC_WEB_APP_URL` / `NEXT_PUBLIC_APP_URL`)
@@ -33,15 +32,24 @@ do update set value = excluded.value;
 
 ## 3) OAuth connect flow
 
-1. Call OAuth start:
+1. Start OAuth from the same browser session that will receive the callback.
+
+Browser flow:
+
+```text
+Open /api/v1/workspaces/<WS_ID>/integrations/sepay/oauth/start in an authenticated browser session, then follow the returned authorizeUrl.
+```
+
+CLI flow with cookie jar:
 
 ```bash
 curl -X POST \
   "http://localhost:7803/api/v1/workspaces/<WS_ID>/integrations/sepay/oauth/start" \
-  -H "Authorization: Bearer <YOUR_APP_TOKEN>"
+  -H "Authorization: Bearer <YOUR_APP_TOKEN>" \
+  -c /tmp/sepay-oauth.cookies
 ```
 
-2. From response, open `authorizeUrl` in browser.
+2. Open `authorizeUrl` in the same browser session, or replay the callback with the saved cookie jar from step 1.
 3. Complete SePay consent screen.
 4. Verify callback response from:
    - `GET /api/v1/workspaces/<WS_ID>/integrations/sepay/oauth/callback?code=...&state=...`
@@ -180,7 +188,7 @@ Expected:
 ## 11) Quick troubleshooting
 
 - OAuth start fails: check OAuth env vars and app origin vars.
-- OAuth callback fails with state: verify `SEPAY_OAUTH_STATE_SECRET` and no stale state.
+- OAuth callback fails with state: ensure the callback runs in the same browser session (or cookie jar) that called the start endpoint, then retry from a fresh start URL.
 - Provisioning fails: ensure SePay account has at least one bank account and webhook scopes are granted.
 - Webhook unauthorized: ensure SePay sender uses `Authorization: Bearer <SEPAY_WEBHOOK_API_KEY>`.
 - No transactions inserted: inspect `sepay_webhook_events.failure_reason` first.

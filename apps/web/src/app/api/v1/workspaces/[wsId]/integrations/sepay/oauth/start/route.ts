@@ -3,6 +3,8 @@ import {
   buildSepayOauthAuthorizeUrl,
   createSepayOauthState,
   getSepayOauthEnv,
+  getSepayOauthStateCookieName,
+  getSepayOauthStateMaxAgeSeconds,
 } from '@/lib/sepay-oauth';
 import { buildSepayOauthCallbackUrl } from '../../service';
 import { requireSepayAccess, requireSepayFeatureEnabled } from '../../shared';
@@ -27,7 +29,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const env = getSepayOauthEnv();
-  if (!env.authorizeUrl || !env.clientId || !env.stateSecret) {
+  if (!env.authorizeUrl || !env.clientId) {
     return NextResponse.json(
       { message: 'SePay OAuth is not configured' },
       { status: 500 }
@@ -35,10 +37,8 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const callbackUrl = buildSepayOauthCallbackUrl(access.wsId);
-  const oauthState = createSepayOauthState({
-    secret: env.stateSecret,
-    wsId: access.wsId,
-  });
+  const callbackPath = new URL(callbackUrl).pathname;
+  const oauthState = createSepayOauthState();
   const authorizeUrl = buildSepayOauthAuthorizeUrl({
     authorizeUrl: env.authorizeUrl,
     clientId: env.clientId,
@@ -47,10 +47,24 @@ export async function POST(request: Request, { params }: Params) {
     state: oauthState.state,
   });
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     authorizeUrl,
     callbackUrl,
     expiresAt: oauthState.expiresAt,
     state: oauthState.state,
   });
+
+  response.cookies.set(
+    getSepayOauthStateCookieName(access.wsId),
+    oauthState.state,
+    {
+      httpOnly: true,
+      maxAge: getSepayOauthStateMaxAgeSeconds(),
+      path: callbackPath,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    }
+  );
+
+  return response;
 }

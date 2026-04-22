@@ -2,42 +2,37 @@ import { describe, expect, it } from 'vitest';
 import {
   buildSepayOauthAuthorizeUrl,
   createSepayOauthState,
+  getSepayOauthStateCookieName,
   verifySepayOauthState,
 } from './sepay-oauth';
 
 describe('sepay oauth helpers', () => {
-  it('creates and verifies a signed oauth state', () => {
-    const { state } = createSepayOauthState({
-      secret: 'state-secret',
-      wsId: '11111111-1111-1111-1111-111111111111',
-    });
+  it('creates and verifies an opaque oauth state token', () => {
+    const { state } = createSepayOauthState();
 
     const verification = verifySepayOauthState({
-      secret: 'state-secret',
+      expectedState: state,
       state,
     });
 
-    expect(verification).toMatchObject({
-      ok: true,
-      wsId: '11111111-1111-1111-1111-111111111111',
-    });
+    expect(verification).toEqual({ ok: true });
   });
 
-  it('rejects tampered oauth state signatures', () => {
-    const { state } = createSepayOauthState({
-      secret: 'state-secret',
-      wsId: '11111111-1111-1111-1111-111111111111',
-    });
-
-    const [payload] = state.split('.');
-    const tamperedState = `${payload}.tampered`;
+  it('rejects mismatched oauth state tokens', () => {
+    const { state } = createSepayOauthState();
 
     const verification = verifySepayOauthState({
-      secret: 'state-secret',
-      state: tamperedState,
+      expectedState: state,
+      state: 'tampered',
     });
 
     expect(verification).toEqual({ ok: false });
+  });
+
+  it('creates a workspace-scoped cookie name for oauth state', () => {
+    expect(
+      getSepayOauthStateCookieName('11111111-1111-1111-1111-111111111111')
+    ).toMatch(/^sepay_oauth_state_/u);
   });
 
   it('builds authorize url with required query params', () => {

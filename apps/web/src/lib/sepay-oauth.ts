@@ -1,30 +1,7 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 
 const DEFAULT_STATE_TTL_MS = 10 * 60 * 1000;
-
-type SepayOauthStatePayload = {
-  exp: number;
-  nonce: string;
-  wsId: string;
-};
-
-function base64UrlEncode(value: string): string {
-  return Buffer.from(value, 'utf8').toString('base64url');
-}
-
-function base64UrlDecode(value: string): string | null {
-  try {
-    return Buffer.from(value, 'base64url').toString('utf8');
-  } catch {
-    return null;
-  }
-}
-
-function signStatePayload(encodedPayload: string, secret: string): string {
-  return createHmac('sha256', secret)
-    .update(encodedPayload)
-    .digest('base64url');
-}
+const SEPAY_OAUTH_STATE_COOKIE_PREFIX = 'sepay_oauth_state_';
 
 function safeEquals(left: string, right: string): boolean {
   const leftBuffer = Buffer.from(left);
@@ -43,77 +20,42 @@ export function getSepayOauthEnv() {
       process.env.SEPAY_OAUTH_AUTHORIZE_URL ??
       'https://my.sepay.vn/oauth/authorize',
     clientId: process.env.SEPAY_OAUTH_CLIENT_ID ?? null,
-    stateSecret: process.env.SEPAY_OAUTH_STATE_SECRET ?? null,
   };
 }
 
-export function createSepayOauthState(input: {
-  secret: string;
-  ttlMs?: number;
-  wsId: string;
-}) {
-  const now = Date.now();
-  const ttlMs = input.ttlMs ?? DEFAULT_STATE_TTL_MS;
-  const payload: SepayOauthStatePayload = {
-    exp: now + ttlMs,
-    nonce: randomBytes(12).toString('hex'),
-    wsId: input.wsId,
-  };
+export function getSepayOauthStateCookieName(wsId: string) {
+  const suffix = Buffer.from(wsId, 'utf8').toString('base64url');
+  return `${SEPAY_OAUTH_STATE_COOKIE_PREFIX}${suffix}`;
+}
 
-  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
-  const signature = signStatePayload(encodedPayload, input.secret);
+export function getSepayOauthStateMaxAgeSeconds(ttlMs?: number) {
+  return Math.max(1, Math.ceil((ttlMs ?? DEFAULT_STATE_TTL_MS) / 1000));
+}
+
+export function createSepayOauthState(input?: { ttlMs?: number }) {
+  const now = Date.now();
+  const ttlMs = input?.ttlMs ?? DEFAULT_STATE_TTL_MS;
+  const exp = now + ttlMs;
 
   return {
-    expiresAt: new Date(payload.exp).toISOString(),
-    state: `${encodedPayload}.${signature}`,
+    expiresAt: new Date(exp).toISOString(),
+    state: randomBytes(32).toString('base64url'),
   };
 }
 
 export function verifySepayOauthState(input: {
-  secret: string;
+  expectedState: string | null | undefined;
   state: string;
 }) {
-  const parts = input.state.split('.');
-  if (parts.length !== 2) {
+  if (!input.expectedState) {
     return { ok: false as const };
   }
 
-  const encodedPayload = parts[0];
-  const providedSignature = parts[1];
-
-  if (!encodedPayload || !providedSignature) {
+  if (!safeEquals(input.state, input.expectedState)) {
     return { ok: false as const };
   }
 
-  const expectedSignature = signStatePayload(encodedPayload, input.secret);
-  if (!safeEquals(providedSignature, expectedSignature)) {
-    return { ok: false as const };
-  }
-
-  const decoded = base64UrlDecode(encodedPayload);
-  if (!decoded) {
-    return { ok: false as const };
-  }
-
-  let parsed: SepayOauthStatePayload;
-  try {
-    parsed = JSON.parse(decoded) as SepayOauthStatePayload;
-  } catch {
-    return { ok: false as const };
-  }
-
-  if (!parsed.wsId || typeof parsed.wsId !== 'string') {
-    return { ok: false as const };
-  }
-
-  if (!Number.isFinite(parsed.exp) || parsed.exp <= Date.now()) {
-    return { ok: false as const };
-  }
-
-  return {
-    ok: true as const,
-    wsId: parsed.wsId,
-  };
+  return { ok: true as const };
 }
 
 export function buildSepayOauthAuthorizeUrl(input: {

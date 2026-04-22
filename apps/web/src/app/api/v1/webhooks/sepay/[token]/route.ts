@@ -10,10 +10,10 @@ import {
 } from '@/lib/sepay';
 import { classifyCategoryId } from './classifier';
 import { resolveEndpointByToken } from './endpoint';
-import { classifyTagIds } from './tagger';
 import { buildTransactionDescription, markEventFailed } from './event';
 import { normalizeSepayPayload, sepayRawPayloadSchema } from './schemas';
 import { ensureSystemVirtualUser } from './system-user';
+import { classifyTagIds } from './tagger';
 import { resolveOrCreateWallet } from './wallet';
 
 interface Params {
