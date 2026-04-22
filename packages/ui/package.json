@@ -108,7 +108,7 @@
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.5",
     "react-dropzone": "^15.0.0",
-    "react-hook-form": "^7.72.1",
+    "react-hook-form": "^7.73.1",
     "react-markdown": "^10.1.0",
     "react-papaparse": "^4.4.0",
     "react-pdf": "^10.4.1",
@@ -129,7 +129,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.2",
+    "@tailwindcss/postcss": "^4.2.3",
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-query": "^5.99.2",
     "@tanstack/react-table": "^8.21.3",
@@ -150,10 +150,10 @@
     "jsdom": "^29.0.2",
     "postcss": "^8.5.10",
     "postcss-load-config": "^6.0.1",
-    "tailwindcss": "^4.2.2",
+    "tailwindcss": "^4.2.3",
     "typescript": "^6.0.3",
     "uuid": "^14.0.0",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.5"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.99.2",

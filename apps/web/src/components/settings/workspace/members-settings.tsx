@@ -62,6 +62,7 @@ interface Props {
  * Enhanced member type with roles and permissions
  */
 export type MemberWithPermissions = User & {
+  workspace_member_type?: 'MEMBER' | 'GUEST' | null;
   is_creator?: boolean;
   roles?: Array<{
     id: string;
@@ -300,6 +301,11 @@ export default function MembersSettings({
                         <Badge className="h-5 gap-1 border-dynamic-yellow/50 bg-dynamic-yellow/10 px-1.5 text-dynamic-yellow text-xs">
                           <Crown className="h-3 w-3" />
                           {t('creator_badge')}
+                        </Badge>
+                      )}
+                      {member.workspace_member_type === 'GUEST' && (
+                        <Badge className="h-5 border-foreground/20 bg-foreground/5 px-1.5 text-foreground/80 text-xs">
+                          {t('guest_badge')}
                         </Badge>
                       )}
                       {member.roles?.map((role) => (

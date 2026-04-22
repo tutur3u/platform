@@ -1179,6 +1179,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveListen => 'Open mic';
 
   @override
+  String get assistantLiveModelBadge => 'Gemini 3.1 Flash Live';
+
+  @override
   String get assistantLiveMute => 'Mute mic';
 
   @override
@@ -1186,6 +1189,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantLiveNoMessagesTitle => 'Your live assistant is ready';
+
+  @override
+  String get assistantLiveOpenMode => 'Open live mode';
 
   @override
   String get assistantLivePermissionDenied => 'Camera or microphone access is blocked. Enable permissions to use the full live mode.';
@@ -1197,6 +1203,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantLiveShowCamera => 'Show camera';
+
+  @override
+  String get assistantLiveRetryAction => 'Retry live session';
+
+  @override
+  String get assistantLiveReturnToChat => 'Return to chat';
+
+  @override
+  String get assistantLiveStageAssistantReady => 'Waiting for the next reply';
+
+  @override
+  String get assistantLiveStageAssistantSpeaking => 'Voice response is streaming';
+
+  @override
+  String get assistantLiveStageYouListening => 'Your microphone is live';
+
+  @override
+  String get assistantLiveStageYouMuted => 'Tap the mic to speak again';
 
   @override
   String get assistantLiveStatusAvailable => 'Available';
@@ -1232,7 +1256,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveTierRequired => 'Live voice is available on PLUS and above.';
 
   @override
+  String get assistantLiveTranscriptEmpty => 'Start talking or type from the keyboard action below. Live drafts and synced turns will appear here.';
+
+  @override
+  String get assistantLiveTranscriptTitle => 'Live transcript';
+
+  @override
   String get assistantLiveTitle => 'Live assistant';
+
+  @override
+  String get assistantLiveTypeMessage => 'Type';
 
   @override
   String get assistantLiveInfoAccessHeading => 'Current access';

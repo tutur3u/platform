@@ -156,6 +156,15 @@ export {
   updateWorkspaceHabitTrackerEntry,
 } from './habit-trackers';
 export {
+  type BlueGreenMonitoringContainerResource,
+  type BlueGreenMonitoringDeployment,
+  type BlueGreenMonitoringEvent,
+  type BlueGreenMonitoringPeriodMetric,
+  type BlueGreenMonitoringRequestLog,
+  type BlueGreenMonitoringSnapshot,
+  type BlueGreenMonitoringStatus,
+  type BlueGreenMonitoringWatcherHealth,
+  getBlueGreenMonitoringSnapshot,
   type InfrastructurePushAppFlavor,
   type InfrastructurePushDeliveryKind,
   type InfrastructurePushPlatform,

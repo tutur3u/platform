@@ -1179,6 +1179,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveListen => 'Bật micro';
 
   @override
+  String get assistantLiveModelBadge => 'Gemini 3.1 Flash Live';
+
+  @override
   String get assistantLiveMute => 'Tắt micro';
 
   @override
@@ -1186,6 +1189,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantLiveNoMessagesTitle => 'Trợ lý trực tiếp đã sẵn sàng';
+
+  @override
+  String get assistantLiveOpenMode => 'Mở chế độ trực tiếp';
 
   @override
   String get assistantLivePermissionDenied => 'Camera hoặc micro đang bị chặn. Hãy cấp quyền để dùng đầy đủ chế độ trực tiếp.';
@@ -1197,6 +1203,24 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantLiveShowCamera => 'Hiện camera';
+
+  @override
+  String get assistantLiveRetryAction => 'Thử lại phiên trực tiếp';
+
+  @override
+  String get assistantLiveReturnToChat => 'Quay lại chat';
+
+  @override
+  String get assistantLiveStageAssistantReady => 'Đang chờ phản hồi tiếp theo';
+
+  @override
+  String get assistantLiveStageAssistantSpeaking => 'Đang phát phản hồi bằng giọng nói';
+
+  @override
+  String get assistantLiveStageYouListening => 'Micro của bạn đang hoạt động';
+
+  @override
+  String get assistantLiveStageYouMuted => 'Chạm vào micro để nói tiếp';
 
   @override
   String get assistantLiveStatusAvailable => 'Sẵn sàng';
@@ -1232,7 +1256,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveTierRequired => 'Giọng nói trực tiếp chỉ có từ gói PLUS trở lên.';
 
   @override
+  String get assistantLiveTranscriptEmpty => 'Hãy bắt đầu nói hoặc dùng nút bàn phím bên dưới để gõ. Bản nháp trực tiếp và các lượt đã đồng bộ sẽ xuất hiện ở đây.';
+
+  @override
+  String get assistantLiveTranscriptTitle => 'Bản ghi trực tiếp';
+
+  @override
   String get assistantLiveTitle => 'Trợ lý trực tiếp';
+
+  @override
+  String get assistantLiveTypeMessage => 'Gõ';
 
   @override
   String get assistantLiveInfoAccessHeading => 'Quyền truy cập hiện tại';

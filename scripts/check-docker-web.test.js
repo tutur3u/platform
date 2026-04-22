@@ -6,6 +6,7 @@ const path = require('node:path');
 
 const {
   ROOT_DIR,
+  WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
   WEB_PROD_COMPOSE_FILE_PATH,
@@ -18,6 +19,7 @@ const {
   validateDockerCompose,
   validateDockerProdCompose,
   validateDockerfile,
+  validateWatcherDockerfile,
 } = require('./check-docker-web.js');
 
 test('listWorkspacePackageJsonPaths discovers current workspace manifests', () => {
@@ -189,6 +191,55 @@ test('validateDockerProdCompose reports missing blue-green proxy wiring', () => 
   );
 });
 
+test('validateDockerProdCompose reports missing watcher container wiring', () => {
+  const composeContent = fs
+    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
+    .replace('      - /var/run/docker.sock:/var/run/docker.sock\n', '');
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(errors.join('\n'), /\/var\/run\/docker\.sock/);
+});
+
+test('validateDockerProdCompose reports missing watcher host workspace wiring', () => {
+  const composeContent = fs
+    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
+    .replace('      - .:' + '${' + 'PLATFORM_HOST_WORKSPACE_DIR' + '}\n', '');
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(errors.join('\n'), /PLATFORM_HOST_WORKSPACE_DIR/);
+});
+
+test('validateDockerProdCompose reports missing monitoring runtime mount', () => {
+  const composeContent = fs
+    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
+    .replace('    - ./tmp/docker-web:/app/runtime/docker-web:ro\n', '');
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(
+    errors.join('\n'),
+    /\.\/tmp\/docker-web:\/app\/runtime\/docker-web:ro/
+  );
+});
+
+test('validateDockerProdCompose reports missing monitoring env wiring', () => {
+  const composeContent = fs
+    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
+    .replace(
+      '    - PLATFORM_BLUE_GREEN_MONITORING_DIR=/app/runtime/docker-web\n',
+      ''
+    );
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(
+    errors.join('\n'),
+    /PLATFORM_BLUE_GREEN_MONITORING_DIR=\/app\/runtime\/docker-web/
+  );
+});
+
 test('validateDockerProdCompose reports a drifted proxy healthcheck path', () => {
   const composeContent = fs
     .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
@@ -202,6 +253,28 @@ test('validateDockerProdCompose reports a drifted proxy healthcheck path', () =>
   );
 });
 
+test('validateWatcherDockerfile accepts the current watcher Dockerfile', () => {
+  const dockerfileContent = fs.readFileSync(WATCHER_DOCKERFILE_PATH, 'utf8');
+
+  assert.deepEqual(validateWatcherDockerfile(dockerfileContent), []);
+});
+
+test('validateWatcherDockerfile reports missing docker cli tooling', () => {
+  const dockerfileContent = fs
+    .readFileSync(WATCHER_DOCKERFILE_PATH, 'utf8')
+    .replace(
+      'RUN apk add --no-cache docker-cli docker-cli-buildx docker-cli-compose git openssh-client\n',
+      ''
+    );
+
+  const errors = validateWatcherDockerfile(dockerfileContent);
+
+  assert.match(
+    errors.join('\n'),
+    /docker-cli docker-cli-buildx docker-cli-compose git openssh-client/
+  );
+});
+
 test('checkDockerWebSetup passes for the current repository', () => {
   assert.deepEqual(checkDockerWebSetup({ rootDir: ROOT_DIR }), []);
 });
@@ -212,10 +285,22 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
   );
 
   try {
-    fs.mkdirSync(path.join(tempDir, 'apps', 'web'), { recursive: true });
+    fs.mkdirSync(path.join(tempDir, 'apps', 'web', 'docker'), {
+      recursive: true,
+    });
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'web', 'Dockerfile'),
       'FROM scratch AS deps\n'
+    );
+    fs.writeFileSync(
+      path.join(
+        tempDir,
+        'apps',
+        'web',
+        'docker',
+        'blue-green-watcher.Dockerfile'
+      ),
+      'FROM scratch\n'
     );
     fs.writeFileSync(
       path.join(tempDir, 'docker-compose.web.yml'),

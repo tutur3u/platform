@@ -2383,6 +2383,12 @@ abstract class AppLocalizations {
   /// **'Open mic'**
   String get assistantLiveListen;
 
+  /// No description provided for @assistantLiveModelBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Gemini 3.1 Flash Live'**
+  String get assistantLiveModelBadge;
+
   /// No description provided for @assistantLiveMute.
   ///
   /// In en, this message translates to:
@@ -2401,6 +2407,12 @@ abstract class AppLocalizations {
   /// **'Your live assistant is ready'**
   String get assistantLiveNoMessagesTitle;
 
+  /// No description provided for @assistantLiveOpenMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Open live mode'**
+  String get assistantLiveOpenMode;
+
   /// No description provided for @assistantLivePermissionDenied.
   ///
   /// In en, this message translates to:
@@ -2418,6 +2430,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show camera'**
   String get assistantLiveShowCamera;
+
+  /// No description provided for @assistantLiveRetryAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry live session'**
+  String get assistantLiveRetryAction;
+
+  /// No description provided for @assistantLiveReturnToChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to chat'**
+  String get assistantLiveReturnToChat;
+
+  /// No description provided for @assistantLiveStageAssistantReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the next reply'**
+  String get assistantLiveStageAssistantReady;
+
+  /// No description provided for @assistantLiveStageAssistantSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice response is streaming'**
+  String get assistantLiveStageAssistantSpeaking;
+
+  /// No description provided for @assistantLiveStageYouListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Your microphone is live'**
+  String get assistantLiveStageYouListening;
+
+  /// No description provided for @assistantLiveStageYouMuted.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the mic to speak again'**
+  String get assistantLiveStageYouMuted;
 
   /// No description provided for @assistantLiveStatusAvailable.
   ///
@@ -2485,11 +2533,29 @@ abstract class AppLocalizations {
   /// **'Live voice is available on PLUS and above.'**
   String get assistantLiveTierRequired;
 
+  /// No description provided for @assistantLiveTranscriptEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Start talking or type from the keyboard action below. Live drafts and synced turns will appear here.'**
+  String get assistantLiveTranscriptEmpty;
+
+  /// No description provided for @assistantLiveTranscriptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live transcript'**
+  String get assistantLiveTranscriptTitle;
+
   /// No description provided for @assistantLiveTitle.
   ///
   /// In en, this message translates to:
   /// **'Live assistant'**
   String get assistantLiveTitle;
+
+  /// No description provided for @assistantLiveTypeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get assistantLiveTypeMessage;
 
   /// No description provided for @assistantLiveInfoAccessHeading.
   ///

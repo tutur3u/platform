@@ -7,10 +7,16 @@ const readline = require('node:readline');
 
 const {
   readBlueGreenActiveColor,
+  readBlueGreenDeploymentStamp,
   refreshBlueGreenProxyIfRunning,
   runBlueGreenStandbyRefreshWorkflow,
 } = require('./docker-web/blue-green.js');
-const { getComposeEnvironment, WEB_ENV_FILE } = require('./docker-web/env.js');
+const {
+  ensureProductionRedisToken,
+  ensureWebEnvFile,
+  getComposeEnvironment,
+  WEB_ENV_FILE,
+} = require('./docker-web/env.js');
 const {
   getComposeCommandArgs,
   getComposeFile,
@@ -19,8 +25,11 @@ const {
 } = require('./docker-web/compose.js');
 const {
   ROOT_DIR,
+  WATCH_ARGS_FILE,
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
+  WATCH_LOG_FILE,
+  WATCH_PENDING_DEPLOY_FILE,
   WATCH_RUNTIME_DIR,
   WATCH_STATUS_FILE,
   getWatchPaths,
@@ -35,22 +44,40 @@ const {
   readDeploymentHistory,
   writeDeploymentHistory,
 } = require('./watch-blue-green/history.js');
+const {
+  enrichDeploymentsWithTelemetry,
+  parseProxyLogEntries,
+  readTelemetrySummary,
+  summarizeRequestRate,
+  syncProxyTrafficStore,
+} = require('./watch-blue-green/telemetry.js');
+const {
+  appendWatcherLogEntry,
+  createWatcherLogEntry,
+  readWatcherLogEntries,
+} = require('./watch-blue-green/logs.js');
 const DEFAULT_INTERVAL_MS = 1_000;
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
+const DEFAULT_GIT_FAILURE_BACKOFF_MS = 60_000;
 const DEFAULT_STANDBY_REFRESH_AFTER_MS = 15 * 60_000;
 const DEFAULT_LOCK_CONFLICT_ACTION = 'fail';
+const MAX_GIT_FAILURE_BACKOFF_MS = 15 * 60_000;
 const DEFAULT_REPLACE_WATCHER_TIMEOUT_MS = 5_000;
+const CONTAINER_SELF_RESTART_EXIT_CODE = 75;
 const MAX_EVENTS = 8;
 const DISPLAY_DEPLOYMENTS = 3;
 const BLUE_GREEN_COLORS = ['blue', 'green'];
 const PROD_COMPOSE_FILE = getComposeFile('prod');
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
-const INTERNAL_PROXY_METRIC_EXCLUDE_PATHS = new Set([
-  '/api/health',
-  '/__platform/drain-status',
-]);
+const BLUE_GREEN_WATCHER_SERVICE = 'web-blue-green-watcher';
+const HOST_WORKSPACE_DIR_ENV = 'PLATFORM_HOST_WORKSPACE_DIR';
 const SELF_WATCHED_FILES = [path.relative(ROOT_DIR, __filename)];
+const CONTAINER_REFRESH_WATCHED_FILES = [
+  'apps/web/docker/blue-green-watcher-entrypoint.js',
+  'apps/web/docker/blue-green-watcher.Dockerfile',
+];
 const WATCH_PENDING_DEPLOY_ENV = 'WATCHER_PENDING_BLUE_GREEN_DEPLOY';
+const WATCHER_CONTAINER_ENV = 'PLATFORM_BLUE_GREEN_WATCHER_CONTAINER';
 const ANSI = {
   blue: '\x1b[34m',
   bold: '\x1b[1m',
@@ -137,13 +164,169 @@ function getWatcherComposeEnv({
   fsImpl = fs,
   rootDir = ROOT_DIR,
 } = {}) {
-  return getComposeEnvironment({
-    baseEnv,
+  return {
+    ...getComposeEnvironment({
+      baseEnv,
+      envFilePath,
+      fsImpl,
+      rootDir,
+      withRedis: true,
+    }),
+    [HOST_WORKSPACE_DIR_ENV]: rootDir,
+  };
+}
+
+function writeWatchArgsFile(
+  argv,
+  { fsImpl = fs, paths = getWatchPaths() } = {}
+) {
+  fsImpl.mkdirSync(paths.runtimeDir, { recursive: true });
+  fsImpl.writeFileSync(paths.argsFile, JSON.stringify(argv, null, 2), 'utf8');
+}
+
+function readWatchArgsFile({ fsImpl = fs, paths = getWatchPaths() } = {}) {
+  if (!fsImpl.existsSync(paths.argsFile)) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(fsImpl.readFileSync(paths.argsFile, 'utf8'));
+    return Array.isArray(parsed) &&
+      parsed.every((value) => typeof value === 'string')
+      ? parsed
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function clearContainerManagedWatcherState({
+  fsImpl = fs,
+  paths = getWatchPaths(),
+} = {}) {
+  fsImpl.rmSync(paths.lockFile, { force: true });
+  fsImpl.rmSync(paths.statusFile, { force: true });
+}
+
+async function startBlueGreenWatcherContainer(
+  argv,
+  {
+    env = process.env,
+    envFilePath = WEB_ENV_FILE,
+    fsImpl = fs,
+    rootDir = ROOT_DIR,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  parseArgs(argv);
+
+  await runChecked('docker', ['compose', 'version'], {
+    env,
+    fsImpl,
+    runCommand: run,
+    stdio: 'ignore',
+  });
+
+  ensureWebEnvFile(fsImpl, envFilePath);
+  ensureProductionRedisToken(
+    {
+      composeGlobalArgs: ['--profile', 'redis'],
+      mode: 'prod',
+    },
+    env,
+    (composeGlobalArgs, profileName) => composeGlobalArgs.includes(profileName),
+    {
+      fsImpl,
+      rootDir,
+    }
+  );
+
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
     envFilePath,
     fsImpl,
     rootDir,
-    withRedis: true,
   });
+
+  clearContainerManagedWatcherState({
+    fsImpl,
+    paths: getWatchPaths(rootDir),
+  });
+  writeWatchArgsFile(argv, {
+    fsImpl,
+    paths: getWatchPaths(rootDir),
+  });
+
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      PROD_COMPOSE_FILE,
+      ['--profile', 'redis'],
+      'up',
+      '--build',
+      '--detach',
+      '--force-recreate',
+      '--remove-orphans',
+      BLUE_GREEN_WATCHER_SERVICE
+    ),
+    {
+      env: composeEnv,
+      fsImpl,
+      runCommand: run,
+    }
+  );
+}
+
+async function streamBlueGreenWatcherLogs({
+  env = process.env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+  const result = await run(
+    'docker',
+    getComposeCommandArgs(
+      PROD_COMPOSE_FILE,
+      ['--profile', 'redis'],
+      'logs',
+      '--follow',
+      '--tail',
+      '100',
+      BLUE_GREEN_WATCHER_SERVICE
+    ),
+    {
+      env: composeEnv,
+      fsImpl,
+    }
+  );
+
+  if (
+    result.signal &&
+    (result.signal === 'SIGINT' || result.signal === 'SIGTERM')
+  ) {
+    return;
+  }
+
+  if (result.code !== 0) {
+    const detail = result.stderr?.trim() || result.stdout?.trim();
+    throw new Error(
+      detail
+        ? `Unable to stream watcher logs.\n${detail}`
+        : 'Unable to stream watcher logs.'
+    );
+  }
+}
+
+async function runWatcherCommand(argv = process.argv.slice(2), options = {}) {
+  await startBlueGreenWatcherContainer(argv, options);
+  await streamBlueGreenWatcherLogs(options);
 }
 
 function sleep(ms) {
@@ -356,6 +539,8 @@ function summarizeResult(result) {
       return colorize('yellow', 'Dirty worktree, waiting');
     case 'diverged':
       return colorize('yellow', 'Branch diverged, waiting');
+    case 'git-failed':
+      return colorize('yellow', 'Git failed, retrying');
     case 'restarting':
       return colorize('magenta', 'Restarting watcher');
     case 'standby-refresh-failed':
@@ -1006,6 +1191,63 @@ function hasPendingDeployRequest(env = process.env) {
   return env[WATCH_PENDING_DEPLOY_ENV] === '1';
 }
 
+function readPendingDeployRequest(paths = getWatchPaths(), fsImpl = fs) {
+  if (!fsImpl.existsSync(paths.pendingDeployFile)) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(
+      fsImpl.readFileSync(paths.pendingDeployFile, 'utf8')
+    );
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePendingDeployRequest(
+  request,
+  { fsImpl = fs, paths = getWatchPaths() } = {}
+) {
+  fsImpl.mkdirSync(paths.runtimeDir, { recursive: true });
+  fsImpl.writeFileSync(
+    paths.pendingDeployFile,
+    JSON.stringify(request, null, 2),
+    'utf8'
+  );
+}
+
+function clearPendingDeployRequest({
+  fsImpl = fs,
+  paths = getWatchPaths(),
+} = {}) {
+  fsImpl.rmSync(paths.pendingDeployFile, { force: true });
+}
+
+function hasPersistedPendingDeployRequest(
+  env = process.env,
+  { fsImpl = fs, paths = getWatchPaths() } = {}
+) {
+  return (
+    hasPendingDeployRequest(env) ||
+    readPendingDeployRequest(paths, fsImpl) != null
+  );
+}
+
+function getLatestSuccessfulDeploymentCommitHash(deployments = []) {
+  const latestSuccessfulDeployment = deployments.find(
+    (entry) =>
+      entry?.status === 'successful' &&
+      typeof entry.commitHash === 'string' &&
+      entry.commitHash.length > 0
+  );
+
+  return latestSuccessfulDeployment?.commitHash ?? null;
+}
+
 function createWatchUi(initialState = {}, options = {}) {
   const stdout = options.stdout ?? process.stdout;
   const stderr = options.stderr ?? process.stderr;
@@ -1016,6 +1258,7 @@ function createWatchUi(initialState = {}, options = {}) {
   const clearIntervalImpl = options.clearIntervalImpl ?? clearInterval;
   const isTTY = options.isTTY ?? Boolean(stdout.isTTY);
   const maxEvents = options.maxEvents ?? MAX_EVENTS;
+  const onEvent = options.onEvent ?? null;
   const state = {
     deployments: [],
     events: [],
@@ -1063,14 +1306,13 @@ function createWatchUi(initialState = {}, options = {}) {
   }
 
   function pushEvent(level, message) {
-    state.events = [
-      {
-        level,
-        message,
-        time: now(),
-      },
-      ...state.events,
-    ].slice(0, maxEvents);
+    const event = {
+      level,
+      message,
+      time: now(),
+    };
+    state.events = [event, ...state.events].slice(0, maxEvents);
+    onEvent?.(event, state);
 
     if (!isTTY) {
       const writer = level === 'error' ? stderr : stdout;
@@ -1281,17 +1523,19 @@ function serializeWatchStatus(
   state,
   { now = Date.now(), processImpl = process } = {}
 ) {
+  const { logs: _logs, ...serializableState } = state;
+
   return {
-    ...state,
+    ...serializableState,
     lastResult:
-      state.lastResult == null
+      serializableState.lastResult == null
         ? null
         : {
-            ...state.lastResult,
+            ...serializableState.lastResult,
             error:
-              state.lastResult.error instanceof Error
-                ? state.lastResult.error.message
-                : (state.lastResult.error ?? null),
+              serializableState.lastResult.error instanceof Error
+                ? serializableState.lastResult.error.message
+                : (serializableState.lastResult.error ?? null),
           },
     ownerPid: processImpl.pid,
     updatedAt: now,
@@ -1448,13 +1692,74 @@ async function getRevision(ref, { env, runCommand: run = runCommand } = {}) {
   return gitStdout(['rev-parse', ref], { env, runCommand: run });
 }
 
-async function hasDirtyWorktree({ env, runCommand: run = runCommand } = {}) {
-  const status = await gitStdout(['status', '--porcelain'], {
+function isRecoverableGitCommandError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return /Command failed \(\d+\): git\b/.test(message);
+}
+
+function getGitFailureBackoffMs(
+  failureCount,
+  {
+    baseMs = DEFAULT_GIT_FAILURE_BACKOFF_MS,
+    maxMs = MAX_GIT_FAILURE_BACKOFF_MS,
+  } = {}
+) {
+  if (!Number.isFinite(failureCount) || failureCount <= 0) {
+    return baseMs;
+  }
+
+  return Math.min(maxMs, baseMs * 2 ** Math.max(0, failureCount - 1));
+}
+
+function parseDirtyWorktreePaths(statusOutput) {
+  return statusOutput
+    .split('\n')
+    .map((line) => line.trimEnd())
+    .filter(Boolean)
+    .flatMap((line) => {
+      const pathSpec = line.slice(3).trim();
+
+      if (!pathSpec) {
+        return [];
+      }
+
+      if (!pathSpec.includes(' -> ')) {
+        return [pathSpec];
+      }
+
+      return pathSpec
+        .split(' -> ')
+        .map((value) => value.trim())
+        .filter(Boolean);
+    });
+}
+
+async function listDirtyWorktreePaths({
+  env,
+  runCommand: run = runCommand,
+} = {}) {
+  const result = await runChecked('git', ['status', '--porcelain'], {
+    env,
+    runCommand: run,
+    stdio: 'pipe',
+  });
+  const status = result.stdout.replace(/\s+$/, '');
+
+  return parseDirtyWorktreePaths(status);
+}
+
+async function hasDirtyWorktree({
+  env,
+  ignoredPaths = [],
+  runCommand: run = runCommand,
+} = {}) {
+  const dirtyPaths = await listDirtyWorktreePaths({
     env,
     runCommand: run,
   });
+  const ignored = new Set(ignoredPaths);
 
-  return status.length > 0;
+  return dirtyPaths.some((value) => !ignored.has(value));
 }
 
 async function fetchTrackedBranch(
@@ -1522,6 +1827,20 @@ async function runBlueGreenDeploy({
   });
 }
 
+async function runBunUpgradeAndInstall({
+  env,
+  runCommand: run = runCommand,
+} = {}) {
+  await runChecked('bun', ['upgrade'], {
+    env,
+    runCommand: run,
+  });
+  await runChecked('bun', ['i'], {
+    env,
+    runCommand: run,
+  });
+}
+
 async function runBlueGreenStandbyRefresh({
   env,
   envFilePath = WEB_ENV_FILE,
@@ -1582,6 +1901,7 @@ async function runPendingDeployAfterRestart({
   });
   const deployFinishedAt = now();
   const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+  const deploymentStamp = readBlueGreenDeploymentStamp(paths.blueGreen, fsImpl);
   const history = appendDeploymentHistory(
     {
       activatedAt: deployFinishedAt,
@@ -1590,6 +1910,7 @@ async function runPendingDeployAfterRestart({
       commitHash: latestCommit.hash,
       commitShortHash: latestCommit.shortHash,
       commitSubject: latestCommit.subject,
+      deploymentStamp,
       finishedAt: deployFinishedAt,
       startedAt: deployStartedAt,
       status: 'successful',
@@ -2114,91 +2435,6 @@ async function collectDockerResources(
   }
 }
 
-function parseProxyLogEntries(output) {
-  return output
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const timestampMatch = line.match(/^(\d{4}-\d{2}-\d{2}T\S+)\s+(.*)$/);
-
-      if (!timestampMatch) {
-        return null;
-      }
-
-      const [, isoTime, message] = timestampMatch;
-      const time = Date.parse(isoTime);
-      const requestMatch = message.match(
-        /"([A-Z]+)\s+([^"\s]+)\s+HTTP\/[0-9.]+"/
-      );
-
-      if (!Number.isFinite(time) || !requestMatch) {
-        return null;
-      }
-
-      return {
-        path: requestMatch[2],
-        time,
-      };
-    })
-    .filter(Boolean);
-}
-
-function summarizeRequestRate(entries, startTime, endTime) {
-  if (
-    !Number.isFinite(startTime) ||
-    !Number.isFinite(endTime) ||
-    endTime <= startTime
-  ) {
-    return {
-      averageRequestsPerMinute: 0,
-      dailyAverageRequests: 0,
-      dailyPeakRequests: 0,
-      dailyRequestCount: 0,
-      peakRequestsPerMinute: 0,
-      requestCount: 0,
-    };
-  }
-
-  const minuteBucketCounts = new Map();
-  const dayBucketCounts = new Map();
-  let requestCount = 0;
-
-  for (const entry of entries) {
-    if (INTERNAL_PROXY_METRIC_EXCLUDE_PATHS.has(entry.path)) {
-      continue;
-    }
-
-    if (entry.time < startTime || entry.time >= endTime) {
-      continue;
-    }
-
-    requestCount += 1;
-    const minuteBucket = Math.floor(entry.time / 60_000);
-    const dayBucket = Math.floor(entry.time / 86_400_000);
-    minuteBucketCounts.set(
-      minuteBucket,
-      (minuteBucketCounts.get(minuteBucket) ?? 0) + 1
-    );
-    dayBucketCounts.set(dayBucket, (dayBucketCounts.get(dayBucket) ?? 0) + 1);
-  }
-
-  const durationMinutes = Math.max((endTime - startTime) / 60_000, 1 / 60);
-  const durationDays = Math.max((endTime - startTime) / 86_400_000, 1 / 86_400);
-  const finalDayBucket = Math.floor(
-    Math.max(startTime, endTime - 1) / 86_400_000
-  );
-
-  return {
-    averageRequestsPerMinute: requestCount / durationMinutes,
-    dailyAverageRequests: requestCount / durationDays,
-    dailyPeakRequests: Math.max(0, ...dayBucketCounts.values()),
-    dailyRequestCount: dayBucketCounts.get(finalDayBucket) ?? 0,
-    peakRequestsPerMinute: Math.max(0, ...minuteBucketCounts.values()),
-    requestCount,
-  };
-}
-
 async function collectDeploymentTraffic(
   deployments,
   {
@@ -2206,6 +2442,7 @@ async function collectDeploymentTraffic(
     envFilePath = WEB_ENV_FILE,
     fsImpl = fs,
     now = Date.now(),
+    paths = getWatchPaths(),
     rootDir = ROOT_DIR,
     runCommand: run = runCommand,
   } = {}
@@ -2213,21 +2450,15 @@ async function collectDeploymentTraffic(
   const successfulDeployments = deployments.filter(
     (entry) => entry.status === 'successful' && entry.activatedAt
   );
+  const telemetrySummary = readTelemetrySummary(paths, fsImpl);
 
-  if (successfulDeployments.length === 0) {
-    return deployments.map((entry) => ({
-      ...entry,
-      averageRequestsPerMinute: null,
-      dailyAverageRequests: null,
-      dailyPeakRequests: null,
-      dailyRequestCount: null,
-      lifetimeMs:
-        entry.status === 'successful' && entry.activatedAt
-          ? Math.max(0, (entry.endedAt ?? now) - entry.activatedAt)
-          : null,
-      peakRequestsPerMinute: null,
-      requestCount: null,
-    }));
+  if (
+    successfulDeployments.length === 0 &&
+    (telemetrySummary?.totalLogEntries ?? 0) === 0
+  ) {
+    return enrichDeploymentsWithTelemetry(deployments, telemetrySummary, {
+      now,
+    });
   }
 
   try {
@@ -2241,94 +2472,29 @@ async function collectDeploymentTraffic(
         runCommand: run,
       }
     );
-
-    if (!containerId) {
-      return deployments.map((entry) => ({
-        ...entry,
-        averageRequestsPerMinute: null,
-        dailyAverageRequests: null,
-        dailyPeakRequests: null,
-        dailyRequestCount: null,
-        lifetimeMs:
-          entry.status === 'successful' && entry.activatedAt
-            ? Math.max(0, (entry.endedAt ?? now) - entry.activatedAt)
-            : null,
-        peakRequestsPerMinute: null,
-        requestCount: null,
-      }));
+    if (successfulDeployments.length > 0 || containerId) {
+      await syncProxyTrafficStore(deployments, {
+        containerId,
+        env,
+        fsImpl,
+        now,
+        paths,
+        runChecked,
+        runCommand: run,
+      });
     }
 
-    const earliestActivatedAt = Math.min(
-      ...successfulDeployments.map((entry) => entry.activatedAt)
+    return enrichDeploymentsWithTelemetry(
+      deployments,
+      readTelemetrySummary(paths, fsImpl),
+      { now }
     );
-    const result = await runChecked(
-      'docker',
-      [
-        'logs',
-        '--timestamps',
-        '--since',
-        new Date(earliestActivatedAt).toISOString(),
-        containerId,
-      ],
-      {
-        env,
-        runCommand: run,
-        stdio: 'pipe',
-      }
-    );
-    const entries = parseProxyLogEntries(result.stdout);
-
-    return deployments.map((deployment) => {
-      const lifetimeMs =
-        deployment.status === 'successful' && deployment.activatedAt
-          ? Math.max(0, (deployment.endedAt ?? now) - deployment.activatedAt)
-          : null;
-
-      if (deployment.status !== 'successful' || !deployment.activatedAt) {
-        return {
-          ...deployment,
-          averageRequestsPerMinute: null,
-          dailyAverageRequests: null,
-          dailyPeakRequests: null,
-          dailyRequestCount: null,
-          lifetimeMs,
-          peakRequestsPerMinute: null,
-          requestCount: null,
-        };
-      }
-
-      const endTime = deployment.endedAt ?? now;
-      const rateSummary = summarizeRequestRate(
-        entries,
-        deployment.activatedAt,
-        endTime
-      );
-
-      return {
-        ...deployment,
-        averageRequestsPerMinute: rateSummary.averageRequestsPerMinute,
-        dailyAverageRequests: rateSummary.dailyAverageRequests,
-        dailyPeakRequests: rateSummary.dailyPeakRequests,
-        dailyRequestCount: rateSummary.dailyRequestCount,
-        lifetimeMs,
-        peakRequestsPerMinute: rateSummary.peakRequestsPerMinute,
-        requestCount: rateSummary.requestCount,
-      };
-    });
   } catch {
-    return deployments.map((entry) => ({
-      ...entry,
-      averageRequestsPerMinute: null,
-      dailyAverageRequests: null,
-      dailyPeakRequests: null,
-      dailyRequestCount: null,
-      lifetimeMs:
-        entry.status === 'successful' && entry.activatedAt
-          ? Math.max(0, (entry.endedAt ?? now) - entry.activatedAt)
-          : null,
-      peakRequestsPerMinute: null,
-      requestCount: null,
-    }));
+    return enrichDeploymentsWithTelemetry(
+      deployments,
+      readTelemetrySummary(paths, fsImpl),
+      { now }
+    );
   }
 }
 
@@ -2471,7 +2637,13 @@ async function runDeployWatchIteration(
     );
   }
 
-  if (await hasDirtyWorktree({ env, runCommand: run })) {
+  const hasBlockingDirtyWorktree = await hasDirtyWorktree({
+    env,
+    ignoredPaths: ['bun.lock'],
+    runCommand: run,
+  });
+
+  if (hasBlockingDirtyWorktree) {
     log.warn?.(
       `Skipping poll because the worktree has uncommitted changes on ${target.branch}.`
     );
@@ -2481,291 +2653,505 @@ async function runDeployWatchIteration(
     });
   }
 
-  await fetchTrackedBranch(target, { env, runCommand: run });
+  try {
+    await fetchTrackedBranch(target, { env, runCommand: run });
 
-  const localHead = await getRevision('HEAD', { env, runCommand: run });
-  const upstreamHead = await getRevision(target.upstreamRef, {
-    env,
-    runCommand: run,
-  });
-
-  if (localHead === upstreamHead) {
-    const latestCommit = await getCommitMetadata('HEAD', {
-      env,
-      runCommand: run,
-    });
-    const runtimeSnapshot = await attachRuntime({
-      checkedAt,
-      latestCommit,
-      status: 'up-to-date',
-    });
-    const standbyRefreshCandidate = getStandbyRefreshCandidate(
-      runtimeSnapshot,
-      latestCommit,
-      {
-        now: checkedAt,
-      }
-    );
-
-    if (!standbyRefreshCandidate) {
-      return runtimeSnapshot;
-    }
-
-    log.info?.(
-      `Refreshing standby ${standbyRefreshCandidate.standbyColor} to ${latestCommit.shortHash} after the 15 minute stale window.`
-    );
-
-    const refreshStartedAt = now();
-    onDeploymentStart({
-      checkedAt,
-      latestCommit,
-      pendingDeployment: createPendingDeploymentEntry({
-        activeColor: standbyRefreshCandidate.standbyColor,
-        deploymentKind: 'standby-refresh',
-        latestCommit,
-        startedAt: refreshStartedAt,
-        status: 'building',
-      }),
-    });
-
-    try {
-      await runBlueGreenStandbyRefresh({
-        env,
-        envFilePath,
-        fsImpl,
-        rootDir,
-        runCommand: run,
-      });
-
-      const refreshFinishedAt = now();
-      const history = appendDeploymentHistory(
-        {
-          activatedAt: refreshFinishedAt,
-          activeColor: standbyRefreshCandidate.standbyColor,
-          buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
-          commitHash: latestCommit.hash,
-          commitShortHash: latestCommit.shortHash,
-          commitSubject: latestCommit.subject,
-          deploymentKind: 'standby-refresh',
-          finishedAt: refreshFinishedAt,
-          startedAt: refreshStartedAt,
-          status: 'successful',
-        },
-        {
-          fsImpl,
-          paths,
-        }
-      );
-
-      log.info?.(
-        `Standby ${standbyRefreshCandidate.standbyColor} now matches ${latestCommit.shortHash}.`
-      );
-
-      return attachRuntime(
-        {
-          checkedAt,
-          latestCommit,
-          status: 'standby-refreshed',
-        },
-        history
-      );
-    } catch (error) {
-      const refreshFinishedAt = now();
-      const history = appendDeploymentHistory(
-        {
-          activeColor: standbyRefreshCandidate.standbyColor,
-          buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
-          commitHash: latestCommit.hash,
-          commitShortHash: latestCommit.shortHash,
-          commitSubject: latestCommit.subject,
-          deploymentKind: 'standby-refresh',
-          finishedAt: refreshFinishedAt,
-          startedAt: refreshStartedAt,
-          status: 'failed',
-        },
-        {
-          fsImpl,
-          paths,
-        }
-      );
-
-      log.error?.(
-        `Standby ${standbyRefreshCandidate.standbyColor} refresh failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
-      );
-
-      return attachRuntime(
-        {
-          checkedAt,
-          error,
-          latestCommit,
-          status: 'standby-refresh-failed',
-        },
-        history
-      );
-    }
-  }
-
-  if (await isAncestor(localHead, upstreamHead, { env, runCommand: run })) {
-    await pullTrackedBranch(target, { env, runCommand: run });
-
-    const updatedHead = await getRevision('HEAD', { env, runCommand: run });
-
-    if (updatedHead === localHead) {
-      return attachRuntime({
-        checkedAt,
-        latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
-        status: 'up-to-date',
-      });
-    }
-
-    const restartRequired = await hasWatchedScriptChanges(
-      localHead,
-      updatedHead,
-      {
-        env,
-        runCommand: run,
-      }
-    );
-    const latestCommit = await getCommitMetadata('HEAD', {
+    const localHead = await getRevision('HEAD', { env, runCommand: run });
+    const upstreamHead = await getRevision(target.upstreamRef, {
       env,
       runCommand: run,
     });
 
-    log.info?.(
-      `Pulled ${target.branch} from ${localHead.slice(
-        0,
-        12
-      )} to ${updatedHead.slice(0, 12)}.`
-    );
+    if (localHead === upstreamHead) {
+      const latestCommit = await getCommitMetadata('HEAD', {
+        env,
+        runCommand: run,
+      });
+      const latestDeployedCommitHash = getLatestSuccessfulDeploymentCommitHash(
+        readDeploymentHistory(paths, fsImpl)
+      );
 
-    const deployStartedAt = now();
-    onDeploymentStart({
-      checkedAt,
-      latestCommit,
-      pendingDeployment: createPendingDeploymentEntry({
-        latestCommit,
-        startedAt: deployStartedAt,
-        status: 'deploying',
-      }),
-    });
-
-    try {
-      if (restartRequired) {
+      if (
+        latestDeployedCommitHash &&
+        latestCommit.hash &&
+        latestCommit.hash !== latestDeployedCommitHash
+      ) {
         log.warn?.(
-          'Watcher script changed in the pulled revision. Restarting watcher before deployment.'
+          `Latest successful deployment is ${latestDeployedCommitHash ? latestDeployedCommitHash.slice(0, 12) : 'missing'}. Rebuilding ${latestCommit.shortHash} to reconcile runtime drift.`
+        );
+        log.info?.(
+          `Refreshing Bun runtime and dependencies for ${latestCommit.shortHash} before reconciliation deploy.`
         );
 
-        return attachRuntime({
+        await runBunUpgradeAndInstall({
+          env,
+          runCommand: run,
+        });
+
+        const deployStartedAt = now();
+        onDeploymentStart({
           checkedAt,
           latestCommit,
-          newHead: updatedHead,
-          oldHead: localHead,
-          restartRequired,
-          status: 'restarting',
+          pendingDeployment: createPendingDeploymentEntry({
+            deploymentKind: 'reconcile',
+            latestCommit,
+            startedAt: deployStartedAt,
+            status: 'building',
+          }),
+        });
+
+        try {
+          await runBlueGreenDeploy({
+            deployCommand,
+            env,
+            runCommand: run,
+          });
+
+          const deployFinishedAt = now();
+          const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+          const deploymentStamp = readBlueGreenDeploymentStamp(
+            paths.blueGreen,
+            fsImpl
+          );
+          const history = appendDeploymentHistory(
+            {
+              activatedAt: deployFinishedAt,
+              activeColor,
+              buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              commitSubject: latestCommit.subject,
+              deploymentKind: 'reconcile',
+              deploymentStamp,
+              finishedAt: deployFinishedAt,
+              startedAt: deployStartedAt,
+              status: 'successful',
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
+
+          log.info?.(
+            `Blue/green reconciliation deployment completed for ${latestCommit.shortHash}.`
+          );
+
+          return attachRuntime(
+            {
+              checkedAt,
+              latestCommit,
+              reconciledFromCommitHash: latestDeployedCommitHash,
+              status: 'deployed',
+            },
+            history
+          );
+        } catch (error) {
+          const deployFinishedAt = now();
+          const history = appendDeploymentHistory(
+            {
+              buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              commitSubject: latestCommit.subject,
+              deploymentKind: 'reconcile',
+              finishedAt: deployFinishedAt,
+              startedAt: deployStartedAt,
+              status: 'failed',
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
+
+          log.error?.(
+            `Blue/green reconciliation deployment failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+          );
+
+          return attachRuntime(
+            {
+              checkedAt,
+              error,
+              latestCommit,
+              reconciledFromCommitHash: latestDeployedCommitHash,
+              status: 'deploy-failed',
+            },
+            history
+          );
+        }
+      }
+
+      const runtimeSnapshot = await attachRuntime({
+        checkedAt,
+        latestCommit,
+        status: 'up-to-date',
+      });
+      const standbyRefreshCandidate = getStandbyRefreshCandidate(
+        runtimeSnapshot,
+        latestCommit,
+        {
+          now: checkedAt,
+        }
+      );
+
+      if (!standbyRefreshCandidate) {
+        return runtimeSnapshot;
+      }
+
+      log.info?.(
+        `Refreshing standby ${standbyRefreshCandidate.standbyColor} to ${latestCommit.shortHash} after the 15 minute stale window.`
+      );
+
+      const refreshStartedAt = now();
+      onDeploymentStart({
+        checkedAt,
+        latestCommit,
+        pendingDeployment: createPendingDeploymentEntry({
+          activeColor: standbyRefreshCandidate.standbyColor,
+          deploymentKind: 'standby-refresh',
+          latestCommit,
+          startedAt: refreshStartedAt,
+          status: 'building',
+        }),
+      });
+
+      try {
+        await runBlueGreenStandbyRefresh({
+          env,
+          envFilePath,
+          fsImpl,
+          rootDir,
+          runCommand: run,
+        });
+
+        const refreshFinishedAt = now();
+        const deploymentStamp = readBlueGreenDeploymentStamp(
+          paths.blueGreen,
+          fsImpl
+        );
+        const history = appendDeploymentHistory(
+          {
+            activatedAt: refreshFinishedAt,
+            activeColor: standbyRefreshCandidate.standbyColor,
+            buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            deploymentKind: 'standby-refresh',
+            deploymentStamp,
+            finishedAt: refreshFinishedAt,
+            startedAt: refreshStartedAt,
+            status: 'successful',
+          },
+          {
+            fsImpl,
+            paths,
+          }
+        );
+
+        log.info?.(
+          `Standby ${standbyRefreshCandidate.standbyColor} now matches ${latestCommit.shortHash}.`
+        );
+
+        return attachRuntime(
+          {
+            checkedAt,
+            latestCommit,
+            status: 'standby-refreshed',
+          },
+          history
+        );
+      } catch (error) {
+        const refreshFinishedAt = now();
+        const history = appendDeploymentHistory(
+          {
+            activeColor: standbyRefreshCandidate.standbyColor,
+            buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            deploymentKind: 'standby-refresh',
+            finishedAt: refreshFinishedAt,
+            startedAt: refreshStartedAt,
+            status: 'failed',
+          },
+          {
+            fsImpl,
+            paths,
+          }
+        );
+
+        log.error?.(
+          `Standby ${standbyRefreshCandidate.standbyColor} refresh failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+        );
+
+        return attachRuntime(
+          {
+            checkedAt,
+            error,
+            latestCommit,
+            status: 'standby-refresh-failed',
+          },
+          history
+        );
+      }
+    }
+
+    if (await isAncestor(localHead, upstreamHead, { env, runCommand: run })) {
+      await pullTrackedBranch(target, { env, runCommand: run });
+
+      const updatedHead = await getRevision('HEAD', { env, runCommand: run });
+
+      if (updatedHead === localHead) {
+        return attachRuntime({
+          checkedAt,
+          latestCommit: await getCommitMetadata('HEAD', {
+            env,
+            runCommand: run,
+          }),
+          status: 'up-to-date',
         });
       }
 
-      log.info?.(
-        `Starting blue/green deployment for ${updatedHead.slice(0, 12)}.`
+      const containerRefreshRequired = await hasWatchedScriptChanges(
+        localHead,
+        updatedHead,
+        {
+          env,
+          relativePaths: CONTAINER_REFRESH_WATCHED_FILES,
+          runCommand: run,
+        }
       );
-
-      await runBlueGreenDeploy({
-        deployCommand,
+      const restartRequired = await hasWatchedScriptChanges(
+        localHead,
+        updatedHead,
+        {
+          env,
+          runCommand: run,
+        }
+      );
+      const latestCommit = await getCommitMetadata('HEAD', {
         env,
         runCommand: run,
       });
 
-      const deployFinishedAt = now();
-      const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
-      const history = appendDeploymentHistory(
-        {
-          activatedAt: deployFinishedAt,
-          activeColor,
-          buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
-          commitHash: latestCommit.hash,
-          commitShortHash: latestCommit.shortHash,
-          commitSubject: latestCommit.subject,
-          finishedAt: deployFinishedAt,
-          startedAt: deployStartedAt,
-          status: 'successful',
-        },
-        {
-          fsImpl,
-          paths,
-        }
+      log.info?.(
+        `Pulled ${target.branch} from ${localHead.slice(
+          0,
+          12
+        )} to ${updatedHead.slice(0, 12)}.`
       );
 
       log.info?.(
-        `Blue/green deployment completed for ${updatedHead.slice(0, 12)}.`
+        `Refreshing Bun runtime and dependencies for ${updatedHead.slice(0, 12)}.`
       );
 
-      return attachRuntime(
-        {
-          checkedAt,
+      await runBunUpgradeAndInstall({
+        env,
+        runCommand: run,
+      });
+
+      const deployStartedAt = now();
+      onDeploymentStart({
+        checkedAt,
+        latestCommit,
+        pendingDeployment: createPendingDeploymentEntry({
           latestCommit,
-          newHead: updatedHead,
-          oldHead: localHead,
-          restartRequired: false,
-          status: 'deployed',
-        },
-        history
-      );
-    } catch (error) {
-      const deployFinishedAt = now();
-      const history = appendDeploymentHistory(
-        {
-          buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
-          commitHash: latestCommit.hash,
-          commitShortHash: latestCommit.shortHash,
-          commitSubject: latestCommit.subject,
-          finishedAt: deployFinishedAt,
           startedAt: deployStartedAt,
-          status: 'failed',
-        },
-        {
-          fsImpl,
-          paths,
+          status: 'deploying',
+        }),
+      });
+
+      try {
+        if (containerRefreshRequired) {
+          writePendingDeployRequest(
+            {
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              reason: 'container-refresh',
+              requestedAt: new Date(checkedAt).toISOString(),
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
+          log.warn?.(
+            'Watcher container runtime changed in the pulled revision. Recreating the watcher container before deployment.'
+          );
+
+          return attachRuntime({
+            checkedAt,
+            containerRefreshRequired,
+            latestCommit,
+            newHead: updatedHead,
+            oldHead: localHead,
+            restartRequired: false,
+            status: 'restarting',
+          });
         }
-      );
 
-      log.error?.(
-        `Blue/green deployment failed for ${updatedHead.slice(0, 12)}: ${error instanceof Error ? error.message : String(error)}`
-      );
+        if (restartRequired) {
+          writePendingDeployRequest(
+            {
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              reason: 'process-restart',
+              requestedAt: new Date(checkedAt).toISOString(),
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
+          log.warn?.(
+            'Watcher script changed in the pulled revision. Restarting watcher before deployment.'
+          );
 
-      return attachRuntime(
-        {
-          checkedAt,
-          error,
-          latestCommit,
-          newHead: updatedHead,
-          oldHead: localHead,
-          restartRequired: false,
-          status: 'deploy-failed',
-        },
-        history
-      );
+          return attachRuntime({
+            checkedAt,
+            latestCommit,
+            newHead: updatedHead,
+            oldHead: localHead,
+            containerRefreshRequired: false,
+            restartRequired,
+            status: 'restarting',
+          });
+        }
+
+        log.info?.(
+          `Starting blue/green deployment for ${updatedHead.slice(0, 12)}.`
+        );
+
+        await runBlueGreenDeploy({
+          deployCommand,
+          env,
+          runCommand: run,
+        });
+
+        const deployFinishedAt = now();
+        const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+        const deploymentStamp = readBlueGreenDeploymentStamp(
+          paths.blueGreen,
+          fsImpl
+        );
+        const history = appendDeploymentHistory(
+          {
+            activatedAt: deployFinishedAt,
+            activeColor,
+            buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            deploymentStamp,
+            finishedAt: deployFinishedAt,
+            startedAt: deployStartedAt,
+            status: 'successful',
+          },
+          {
+            fsImpl,
+            paths,
+          }
+        );
+
+        log.info?.(
+          `Blue/green deployment completed for ${updatedHead.slice(0, 12)}.`
+        );
+
+        return attachRuntime(
+          {
+            checkedAt,
+            containerRefreshRequired: false,
+            latestCommit,
+            newHead: updatedHead,
+            oldHead: localHead,
+            restartRequired: false,
+            status: 'deployed',
+          },
+          history
+        );
+      } catch (error) {
+        const deployFinishedAt = now();
+        const history = appendDeploymentHistory(
+          {
+            buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            finishedAt: deployFinishedAt,
+            startedAt: deployStartedAt,
+            status: 'failed',
+          },
+          {
+            fsImpl,
+            paths,
+          }
+        );
+
+        log.error?.(
+          `Blue/green deployment failed for ${updatedHead.slice(0, 12)}: ${error instanceof Error ? error.message : String(error)}`
+        );
+
+        return attachRuntime(
+          {
+            checkedAt,
+            containerRefreshRequired: false,
+            error,
+            latestCommit,
+            newHead: updatedHead,
+            oldHead: localHead,
+            restartRequired: false,
+            status: 'deploy-failed',
+          },
+          history
+        );
+      }
     }
-  }
 
-  if (await isAncestor(upstreamHead, localHead, { env, runCommand: run })) {
+    if (await isAncestor(upstreamHead, localHead, { env, runCommand: run })) {
+      log.warn?.(
+        `Local branch ${target.branch} is ahead of ${target.upstreamRef}; skipping auto-pull.`
+      );
+      return attachRuntime({
+        checkedAt,
+        latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
+        status: 'ahead',
+      });
+    }
+
     log.warn?.(
-      `Local branch ${target.branch} is ahead of ${target.upstreamRef}; skipping auto-pull.`
+      `Local branch ${target.branch} diverged from ${target.upstreamRef}; skipping auto-pull.`
     );
     return attachRuntime({
       checkedAt,
       latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
-      status: 'ahead',
+      status: 'diverged',
+    });
+  } catch (error) {
+    if (!isRecoverableGitCommandError(error)) {
+      throw error;
+    }
+
+    log.warn?.(
+      `Git polling failed on ${target.branch}: ${error instanceof Error ? error.message : String(error)}`
+    );
+
+    let latestCommit = null;
+    try {
+      latestCommit = await getCommitMetadata('HEAD', {
+        env,
+        runCommand: run,
+      });
+    } catch {}
+
+    return attachRuntime({
+      checkedAt,
+      error,
+      latestCommit,
+      status: 'git-failed',
     });
   }
-
-  log.warn?.(
-    `Local branch ${target.branch} diverged from ${target.upstreamRef}; skipping auto-pull.`
-  );
-  return attachRuntime({
-    checkedAt,
-    latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
-    status: 'diverged',
-  });
 }
 
 async function runDeployWatchLoop(
@@ -2788,11 +3174,13 @@ async function runDeployWatchLoop(
     sleepImpl = sleep,
   } = {}
 ) {
+  let consecutiveGitFailures = 0;
+
   while (true) {
     const startedAt = now();
     onIterationStart(startedAt);
 
-    const result = await runDeployWatchIteration(target, {
+    const iterationResult = await runDeployWatchIteration(target, {
       deployCommand,
       env,
       envFilePath,
@@ -2804,14 +3192,30 @@ async function runDeployWatchLoop(
       rootDir,
       runCommand: run,
     });
+    const isGitFailure = iterationResult.status === 'git-failed';
+    consecutiveGitFailures = isGitFailure ? consecutiveGitFailures + 1 : 0;
+    const sleepMs = isGitFailure
+      ? getGitFailureBackoffMs(consecutiveGitFailures)
+      : intervalMs;
+    const result = {
+      ...iterationResult,
+      gitFailureCount: isGitFailure ? consecutiveGitFailures : 0,
+      sleepMs,
+    };
+
+    if (isGitFailure) {
+      log.warn?.(
+        `Retrying Git poll in ${formatDuration(sleepMs)} after ${result.gitFailureCount} consecutive failure${result.gitFailureCount === 1 ? '' : 's'}.`
+      );
+    }
 
     onIterationResult(result);
 
-    if (once || result.restartRequired) {
+    if (once || result.containerRefreshRequired || result.restartRequired) {
       return result;
     }
 
-    await sleepImpl(intervalMs);
+    await sleepImpl(sleepMs);
   }
 }
 
@@ -2844,6 +3248,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
         currentBlueGreen: initialRuntimeSnapshot.currentBlueGreen,
         dockerResources: initialRuntimeSnapshot.dockerResources,
         deployments: initialRuntimeSnapshot.deployments,
+        logs: readWatcherLogEntries(paths, fsImpl),
         intervalMs: parsed.intervalMs,
         lastDeployAt: initialDeploymentSummary.lastDeployAt,
         lastDeployStatus: initialDeploymentSummary.lastDeployStatus,
@@ -2851,6 +3256,16 @@ async function main(argv = process.argv.slice(2), options = {}) {
         startedAt: Date.now(),
       },
       {
+        onEvent: (event, state) => {
+          const nextLogs = appendWatcherLogEntry(
+            createWatcherLogEntry(event, state),
+            {
+              fsImpl,
+              paths,
+            }
+          );
+          state.logs = nextLogs;
+        },
         onStateChange: (state) => {
           writeWatchStatus(state, {
             fsImpl,
@@ -2969,109 +3384,132 @@ async function main(argv = process.argv.slice(2), options = {}) {
       handleTermination('SIGTERM');
     });
 
-    if (hasPendingDeployRequest(env)) {
-      const pendingStartedAt =
-        typeof options.now === 'function' ? options.now() : Date.now();
-      const buildingDeployment = createPendingDeploymentEntry({
-        latestCommit,
-        startedAt: pendingStartedAt,
-        status: 'building',
-      });
-      const buildingDeployments = prependPendingDeployment(
-        ui.state.deployments,
-        buildingDeployment
+    if (
+      hasPersistedPendingDeployRequest(env, {
+        fsImpl,
+        paths,
+      })
+    ) {
+      const latestDeployedCommitHash = getLatestSuccessfulDeploymentCommitHash(
+        readDeploymentHistory(paths, fsImpl)
       );
-      const buildingSummary = getLatestDeploymentSummary(buildingDeployments);
 
-      ui.update({
-        dockerResources: ui.state.dockerResources,
-        deployments: buildingDeployments,
-        lastDeployAt: buildingSummary.lastDeployAt,
-        lastDeployStatus: buildingSummary.lastDeployStatus,
-        nextCheckAt: null,
-      });
-
-      try {
-        const pendingResult = await runPendingDeployAfterRestart({
-          deployCommand: options.deployCommand ?? DEFAULT_DEPLOY_COMMAND,
-          env,
-          envFilePath,
+      if (latestCommit.hash && latestCommit.hash === latestDeployedCommitHash) {
+        clearPendingDeployRequest({
           fsImpl,
-          latestCommit,
-          log: ui,
-          now: options.now ?? (() => Date.now()),
           paths,
-          rootDir,
-          runCommand: run,
-        });
-        const runtimeSnapshot = await loadRuntimeSnapshot({
-          env,
-          envFilePath,
-          fsImpl,
-          now: typeof options.now === 'function' ? options.now() : Date.now(),
-          paths,
-          rootDir,
-          runCommand: run,
-          history: pendingResult.history,
-        });
-        const latestDeploymentSummary = getLatestDeploymentSummary(
-          runtimeSnapshot.deployments
-        );
-
-        ui.update({
-          currentBlueGreen: runtimeSnapshot.currentBlueGreen,
-          dockerResources: runtimeSnapshot.dockerResources,
-          deployments: runtimeSnapshot.deployments,
-          lastDeployAt: latestDeploymentSummary.lastDeployAt,
-          lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
-          lastResult: { status: 'deployed' },
-          nextCheckAt: Date.now() + parsed.intervalMs,
         });
         ui.info(
-          `Blue/green deployment completed for ${latestCommit.shortHash}.`
+          `Recovered watcher is already serving ${latestCommit.shortHash}; skipping the pending deploy handoff.`
         );
-      } catch (error) {
-        const deployFinishedAt =
+      } else {
+        const pendingStartedAt =
           typeof options.now === 'function' ? options.now() : Date.now();
-        const history = appendDeploymentHistory(
-          {
-            buildDurationMs: Math.max(0, deployFinishedAt - pendingStartedAt),
-            commitHash: latestCommit.hash,
-            commitShortHash: latestCommit.shortHash,
-            commitSubject: latestCommit.subject,
-            finishedAt: deployFinishedAt,
-            startedAt: pendingStartedAt,
-            status: 'failed',
-          },
-          {
-            fsImpl,
-            paths,
-          }
-        );
-        const runtimeSnapshot = await loadRuntimeSnapshot({
-          env,
-          envFilePath,
-          fsImpl,
-          now: deployFinishedAt,
-          paths,
-          rootDir,
-          runCommand: run,
-          history,
+        const buildingDeployment = createPendingDeploymentEntry({
+          latestCommit,
+          startedAt: pendingStartedAt,
+          status: 'building',
         });
-        const latestDeploymentSummary = getLatestDeploymentSummary(
-          runtimeSnapshot.deployments
+        const buildingDeployments = prependPendingDeployment(
+          ui.state.deployments,
+          buildingDeployment
         );
+        const buildingSummary = getLatestDeploymentSummary(buildingDeployments);
 
         ui.update({
-          currentBlueGreen: runtimeSnapshot.currentBlueGreen,
-          dockerResources: runtimeSnapshot.dockerResources,
-          deployments: runtimeSnapshot.deployments,
-          lastDeployAt: latestDeploymentSummary.lastDeployAt,
-          lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
-          lastResult: { error, status: 'deploy-failed' },
-          nextCheckAt: Date.now() + parsed.intervalMs,
+          dockerResources: ui.state.dockerResources,
+          deployments: buildingDeployments,
+          lastDeployAt: buildingSummary.lastDeployAt,
+          lastDeployStatus: buildingSummary.lastDeployStatus,
+          nextCheckAt: null,
         });
-        throw error;
+
+        try {
+          const pendingResult = await runPendingDeployAfterRestart({
+            deployCommand: options.deployCommand ?? DEFAULT_DEPLOY_COMMAND,
+            env,
+            envFilePath,
+            fsImpl,
+            latestCommit,
+            log: ui,
+            now: options.now ?? (() => Date.now()),
+            paths,
+            rootDir,
+            runCommand: run,
+          });
+          const runtimeSnapshot = await loadRuntimeSnapshot({
+            env,
+            envFilePath,
+            fsImpl,
+            now: typeof options.now === 'function' ? options.now() : Date.now(),
+            paths,
+            rootDir,
+            runCommand: run,
+            history: pendingResult.history,
+          });
+          const latestDeploymentSummary = getLatestDeploymentSummary(
+            runtimeSnapshot.deployments
+          );
+
+          ui.update({
+            currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+            dockerResources: runtimeSnapshot.dockerResources,
+            deployments: runtimeSnapshot.deployments,
+            lastDeployAt: latestDeploymentSummary.lastDeployAt,
+            lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
+            lastResult: { status: 'deployed' },
+            nextCheckAt: Date.now() + parsed.intervalMs,
+          });
+          clearPendingDeployRequest({
+            fsImpl,
+            paths,
+          });
+          ui.info(
+            `Blue/green deployment completed for ${latestCommit.shortHash}.`
+          );
+        } catch (error) {
+          const deployFinishedAt =
+            typeof options.now === 'function' ? options.now() : Date.now();
+          const history = appendDeploymentHistory(
+            {
+              buildDurationMs: Math.max(0, deployFinishedAt - pendingStartedAt),
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              commitSubject: latestCommit.subject,
+              finishedAt: deployFinishedAt,
+              startedAt: pendingStartedAt,
+              status: 'failed',
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
+          const runtimeSnapshot = await loadRuntimeSnapshot({
+            env,
+            envFilePath,
+            fsImpl,
+            now: deployFinishedAt,
+            paths,
+            rootDir,
+            runCommand: run,
+            history,
+          });
+          const latestDeploymentSummary = getLatestDeploymentSummary(
+            runtimeSnapshot.deployments
+          );
+
+          ui.update({
+            currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+            dockerResources: runtimeSnapshot.dockerResources,
+            deployments: runtimeSnapshot.deployments,
+            lastDeployAt: latestDeploymentSummary.lastDeployAt,
+            lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
+            lastResult: { error, status: 'deploy-failed' },
+            nextCheckAt: Date.now() + parsed.intervalMs,
+          });
+          throw error;
+        }
       }
     }
 
@@ -3142,7 +3580,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
           nextCheckAt:
             iterationResult.restartRequired || parsed.once
               ? null
-              : Date.now() + parsed.intervalMs,
+              : Date.now() + (iterationResult.sleepMs ?? parsed.intervalMs),
         });
       },
       onIterationStart: (startedAt) => {
@@ -3159,6 +3597,15 @@ async function main(argv = process.argv.slice(2), options = {}) {
 
     if (result?.restartRequired) {
       cleanup();
+      if (env[WATCHER_CONTAINER_ENV] === '1') {
+        ui.info(
+          'Watcher script changed. Restarting the containerized watcher process.'
+        );
+        ui.close();
+        processImpl.exit?.(CONTAINER_SELF_RESTART_EXIT_CODE);
+        return;
+      }
+
       await spawnReplacementWatcher({
         argv: options.restartArgv ?? process.argv.slice(1),
         cwd: rootDir,
@@ -3169,6 +3616,30 @@ async function main(argv = process.argv.slice(2), options = {}) {
         execPath: options.execPath ?? process.execPath,
         spawnImpl: options.spawnImpl ?? spawn,
       });
+      ui.close();
+      return;
+    }
+
+    if (result?.containerRefreshRequired) {
+      cleanup();
+      if (env[WATCHER_CONTAINER_ENV] === '1') {
+        ui.info(
+          'Critical watcher container files changed. Recreating the containerized watcher service.'
+        );
+        ui.close();
+        await startBlueGreenWatcherContainer(
+          options.restartArgv ?? process.argv.slice(2),
+          {
+            env,
+            envFilePath,
+            fsImpl,
+            rootDir,
+            runCommand: options.runCommand ?? runCommand,
+          }
+        );
+        return;
+      }
+
       ui.close();
       return;
     }
@@ -3185,26 +3656,40 @@ async function main(argv = process.argv.slice(2), options = {}) {
 }
 
 if (require.main === module) {
-  void main();
+  const entrypoint =
+    process.env[WATCHER_CONTAINER_ENV] === '1' ? main : runWatcherCommand;
+  void entrypoint();
 }
 
 module.exports = {
   BLUE_GREEN_PROXY_SERVICE,
+  BLUE_GREEN_WATCHER_SERVICE,
+  CONTAINER_SELF_RESTART_EXIT_CODE,
   DEFAULT_DEPLOY_COMMAND,
+  DEFAULT_GIT_FAILURE_BACKOFF_MS,
   DEFAULT_INTERVAL_MS,
   DISPLAY_DEPLOYMENTS,
+  MAX_GIT_FAILURE_BACKOFF_MS,
   MAX_DEPLOYMENTS,
   MAX_EVENTS,
+  CONTAINER_REFRESH_WATCHED_FILES,
+  HOST_WORKSPACE_DIR_ENV,
   SELF_WATCHED_FILES,
+  WATCH_ARGS_FILE,
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
+  WATCH_LOG_FILE,
+  WATCH_PENDING_DEPLOY_FILE,
   WATCH_PENDING_DEPLOY_ENV,
   WATCH_RUNTIME_DIR,
   WATCH_STATUS_FILE,
+  WATCHER_CONTAINER_ENV,
   acquireWatchLock,
   appendDeploymentHistory,
   buildDashboardView,
   clearWatchStatus,
+  clearContainerManagedWatcherState,
+  clearPendingDeployRequest,
   collectDeploymentTraffic,
   createWatchUi,
   fetchTrackedBranch,
@@ -3213,7 +3698,9 @@ module.exports = {
   formatDuration,
   formatRelativeTime,
   formatRequestsPerMinute,
+  getGitFailureBackoffMs,
   getLatestDeploymentSummary,
+  getLatestSuccessfulDeploymentCommitHash,
   getCommitMetadata,
   getCurrentBranch,
   getProdComposeServiceContainerId,
@@ -3222,7 +3709,9 @@ module.exports = {
   getWatcherComposeEnv,
   getWatchPaths,
   hasDirtyWorktree,
+  listDirtyWorktreePaths,
   hasWatchedScriptChanges,
+  isRecoverableGitCommandError,
   isAncestor,
   isProcessAlive,
   listChangedFilesBetweenRevisions,
@@ -3235,25 +3724,34 @@ module.exports = {
   prependPendingDeployment,
   pullTrackedBranch,
   readDeploymentHistory,
+  readPendingDeployRequest,
+  readWatchArgsFile,
   readWatchLock,
   readWatchStatus,
   releaseWatchLock,
   resolveCurrentBlueGreenStatus,
   resolveLockedBranchTarget,
+  runBunUpgradeAndInstall,
   runBlueGreenDeploy,
   runPendingDeployAfterRestart,
   runDeployWatchIteration,
   runDeployWatchLoop,
+  runWatcherCommand,
   sleep,
   spawnReplacementWatcher,
+  startBlueGreenWatcherContainer,
   stripAnsi,
   summarizeRequestRate,
+  streamBlueGreenWatcherLogs,
   terminateExistingWatcher,
   createPendingDeploymentEntry,
   createQuietRunCommand,
+  hasPersistedPendingDeployRequest,
   summarizeBlueGreenRuntime,
   summarizeResult,
   waitForProcessExit,
+  writeWatchArgsFile,
+  writePendingDeployRequest,
   writeWatchStatus,
   writeDeploymentHistory,
 };

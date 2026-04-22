@@ -6,43 +6,66 @@ const path = require('node:path');
 
 const {
   BLUE_GREEN_PROXY_SERVICE,
+  BLUE_GREEN_WATCHER_SERVICE,
+  CONTAINER_REFRESH_WATCHED_FILES,
+  CONTAINER_SELF_RESTART_EXIT_CODE,
   DEFAULT_DEPLOY_COMMAND,
+  DEFAULT_GIT_FAILURE_BACKOFF_MS,
   DEFAULT_INTERVAL_MS,
   DISPLAY_DEPLOYMENTS,
-  MAX_DEPLOYMENTS,
+  HOST_WORKSPACE_DIR_ENV,
+  MAX_GIT_FAILURE_BACKOFF_MS,
   SELF_WATCHED_FILES,
+  WATCH_ARGS_FILE,
   WATCH_PENDING_DEPLOY_ENV,
+  WATCHER_CONTAINER_ENV,
   acquireWatchLock,
   appendDeploymentHistory,
   buildDashboardView,
+  clearContainerManagedWatcherState,
   collectDeploymentTraffic,
   createQuietRunCommand,
   createWatchUi,
   formatCountdown,
   formatRelativeTime,
   formatRequestsPerMinute,
+  getGitFailureBackoffMs,
+  getWatcherComposeEnv,
   getWatchPaths,
+  isRecoverableGitCommandError,
   isProcessAlive,
+  listDirtyWorktreePaths,
   parseArgs,
   parseProxyLogEntries,
   parseUpstreamRef,
   readDeploymentHistory,
+  readWatchArgsFile,
   readWatchLock,
+  readPendingDeployRequest,
   releaseWatchLock,
   resolveCurrentBlueGreenStatus,
+  runBunUpgradeAndInstall,
   runPendingDeployAfterRestart,
   runDeployWatchIteration,
   runDeployWatchLoop,
+  runWatcherCommand,
+  startBlueGreenWatcherContainer,
+  streamBlueGreenWatcherLogs,
   main,
   spawnReplacementWatcher,
   stripAnsi,
   summarizeRequestRate,
   getLatestDeploymentSummary,
   writeDeploymentHistory,
+  writeWatchArgsFile,
   loadRuntimeSnapshot,
   mirrorExistingWatchSession,
   readWatchStatus,
   terminateExistingWatcher,
+  clearPendingDeployRequest,
+  getLatestSuccessfulDeploymentCommitHash,
+  hasPersistedPendingDeployRequest,
+  writePendingDeployRequest,
   writeWatchStatus,
 } = require('./watch-blue-green-deploy.js');
 
@@ -73,6 +96,14 @@ function createRunCommandMock(responses) {
 
 function prodComposePsKey(serviceName) {
   return `docker compose -f ${PROD_COMPOSE_FILE} ps -q ${serviceName}`;
+}
+
+function prodComposeWatcherUpKey() {
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --force-recreate --remove-orphans ${BLUE_GREEN_WATCHER_SERVICE}`;
+}
+
+function prodComposeWatcherLogsKey() {
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis logs --follow --tail 100 ${BLUE_GREEN_WATCHER_SERVICE}`;
 }
 
 test('parseArgs uses a 1s interval by default and accepts --once', () => {
@@ -131,6 +162,58 @@ test('formatRelativeTime clamps tiny future drift so the dashboard does not flic
     '5.0s'
   );
   assert.equal(formatRequestsPerMinute(2.5), '2.5 rpm');
+});
+
+test('listDirtyWorktreePaths expands rename records and keeps bun.lock visible', async () => {
+  assert.deepEqual(
+    await listDirtyWorktreePaths({
+      runCommand: createRunCommandMock(
+        new Map([
+          [
+            'git status --porcelain',
+            createResult(
+              ' M bun.lock\nR  old-name.js -> new-name.js\n?? apps/web/tmp.txt\n'
+            ),
+          ],
+        ])
+      ),
+    }),
+    ['bun.lock', 'old-name.js', 'new-name.js', 'apps/web/tmp.txt']
+  );
+});
+
+test('runBunUpgradeAndInstall runs bun upgrade before bun i', async () => {
+  const calls = [];
+
+  await runBunUpgradeAndInstall({
+    runCommand: async (command, args) => {
+      calls.push(`${command} ${args.join(' ')}`);
+      return createResult('');
+    },
+  });
+
+  assert.deepEqual(calls, ['bun upgrade', 'bun i']);
+});
+
+test('getGitFailureBackoffMs starts at one minute and caps exponential retries', () => {
+  assert.equal(getGitFailureBackoffMs(1), DEFAULT_GIT_FAILURE_BACKOFF_MS);
+  assert.equal(getGitFailureBackoffMs(2), DEFAULT_GIT_FAILURE_BACKOFF_MS * 2);
+  assert.equal(getGitFailureBackoffMs(99), MAX_GIT_FAILURE_BACKOFF_MS);
+});
+
+test('isRecoverableGitCommandError only retries wrapped git command failures', () => {
+  assert.equal(
+    isRecoverableGitCommandError(
+      new Error('Command failed (1): git fetch origin main\nnetwork timeout')
+    ),
+    true
+  );
+  assert.equal(
+    isRecoverableGitCommandError(
+      new Error('Current branch changed from main to release.')
+    ),
+    false
+  );
 });
 
 test('buildDashboardView shows blue/green runtime and the top 3 prioritized deployments', () => {
@@ -785,7 +868,7 @@ test('isProcessAlive handles missing and inaccessible processes safely', () => {
   );
 });
 
-test('appendDeploymentHistory closes the prior active deployment and keeps only the last 5 entries', () => {
+test('appendDeploymentHistory closes the prior active deployment and preserves retained history ordering', () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-history-'));
   const paths = getWatchPaths(tempDir);
 
@@ -886,7 +969,7 @@ test('appendDeploymentHistory closes the prior active deployment and keeps only 
 
     const history = readDeploymentHistory(paths, fs);
 
-    assert.equal(history.length, MAX_DEPLOYMENTS);
+    assert.equal(history.length, 6);
     assert.equal(history[0].commitShortHash, 'f6');
     assert.equal(history[1].commitShortHash, 'e5');
     assert.equal(history[2].commitShortHash, 'd4');
@@ -1021,6 +1104,30 @@ test('parseProxyLogEntries keeps only access lines and collectDeploymentTraffic 
   assert.equal(enriched[0].lifetimeMs, 30 * 60 * 1_000);
 });
 
+test('parseProxyLogEntries understands structured nginx JSON access logs', () => {
+  const parsed = parseProxyLogEntries(
+    '2026-04-18T11:05:00.000000000Z {"time":"2026-04-18T11:05:00+00:00","host":"platform.test","method":"GET","path":"/ops?tab=traffic","status":200,"requestTime":0.245,"upstreamAddr":"172.18.0.4:7803","deploymentStamp":"deploy-2026-04-18T11-00-00Z","deploymentColor":"green"}'
+  );
+
+  assert.deepEqual(parsed, [
+    {
+      deploymentColor: 'green',
+      deploymentStamp: 'deploy-2026-04-18T11-00-00Z',
+      host: 'platform.test',
+      isInternal: false,
+      method: 'GET',
+      path: '/ops?tab=traffic',
+      rawLine:
+        '2026-04-18T11:05:00.000000000Z {"time":"2026-04-18T11:05:00+00:00","host":"platform.test","method":"GET","path":"/ops?tab=traffic","status":200,"requestTime":0.245,"upstreamAddr":"172.18.0.4:7803","deploymentStamp":"deploy-2026-04-18T11-00-00Z","deploymentColor":"green"}',
+      requestTimeMs: 245,
+      sourceFormat: 'json',
+      status: 200,
+      time: Date.parse('2026-04-18T11:05:00.000000000Z'),
+      upstreamAddress: '172.18.0.4:7803',
+    },
+  ]);
+});
+
 test('summarizeRequestRate computes total, per-minute, and per-day traffic stats', () => {
   const startTime = Date.parse('2026-04-18T00:00:00.000Z');
   const endTime = Date.parse('2026-04-20T00:00:00.000Z');
@@ -1045,6 +1152,7 @@ test('summarizeRequestRate computes total, per-minute, and per-day traffic stats
     dailyAverageRequests: 2.5,
     dailyPeakRequests: 3,
     dailyRequestCount: 3,
+    errorCount: 0,
     peakRequestsPerMinute: 2,
     requestCount: 5,
   });
@@ -1496,7 +1604,68 @@ test('runDeployWatchIteration skips dirty worktrees before fetch and still repor
       'git status --porcelain',
       prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
       `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`,
+      prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
+      `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`,
     ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeployWatchIteration reports git fetch failures without killing the watcher state', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-git-fail-'));
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        envFilePath,
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        now: () => 1234,
+        paths,
+        rootDir: tempDir,
+        runCommand: createRunCommandMock(
+          new Map([
+            ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
+            ['git status --porcelain', createResult('')],
+            [
+              'git fetch origin main',
+              createResult('', {
+                code: 1,
+                stderr: 'fatal: unable to access origin/main',
+              }),
+            ],
+            [
+              'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
+              createResult(
+                'aaa111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n'
+              ),
+            ],
+            [prodComposePsKey(BLUE_GREEN_PROXY_SERVICE), createResult('')],
+          ])
+        ),
+      }
+    );
+
+    assert.equal(result.status, 'git-failed');
+    assert.equal(result.latestCommit?.shortHash, 'aaa111');
+    assert.match(result.error.message, /git fetch origin main/);
+    assert.equal(result.currentBlueGreen.state, 'idle');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -1540,6 +1709,21 @@ test('runDeployWatchIteration restarts before deployment when the watcher script
     if (key === 'git pull --ff-only origin main') {
       pullCompleted = true;
       return createResult('Updating aaa111..bbb222\n');
+    }
+
+    if (key === 'bun upgrade') {
+      return createResult('');
+    }
+
+    if (key === 'bun i') {
+      return createResult('');
+    }
+
+    if (
+      key ===
+      `git diff --name-only aaa111 bbb222 -- ${CONTAINER_REFRESH_WATCHED_FILES.join(' ')}`
+    ) {
+      return createResult('');
     }
 
     if (
@@ -1636,6 +1820,21 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
       return createResult('Updating aaa111..bbb222\n');
     }
 
+    if (key === 'bun upgrade') {
+      return createResult('');
+    }
+
+    if (key === 'bun i') {
+      return createResult('');
+    }
+
+    if (
+      key ===
+      `git diff --name-only aaa111 bbb222 -- ${CONTAINER_REFRESH_WATCHED_FILES.join(' ')}`
+    ) {
+      return createResult('');
+    }
+
     if (
       key ===
       `git diff --name-only aaa111 bbb222 -- ${SELF_WATCHED_FILES.join(' ')}`
@@ -1687,6 +1886,79 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
   assert.equal(pendingStates[0].pendingDeployment.status, 'deploying');
   assert.equal(pendingStates[0].pendingDeployment.commitShortHash, 'bbb222');
   assert.equal(result.status, 'deployed');
+});
+
+test('runDeployWatchIteration keeps polling when bun.lock is the only dirty file', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-bun-lock-'));
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    calls.push(key);
+
+    if (key === 'git rev-parse --abbrev-ref HEAD') {
+      return createResult('main\n');
+    }
+
+    if (key === 'git status --porcelain') {
+      return createResult(' M bun.lock\n');
+    }
+
+    if (key === 'git fetch origin main') {
+      return createResult('');
+    }
+
+    if (key === 'git rev-parse HEAD') {
+      return createResult('aaa111\n');
+    }
+
+    if (key === 'git rev-parse origin/main') {
+      return createResult('aaa111\n');
+    }
+
+    if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+      return createResult(
+        'aaa111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n'
+      );
+    }
+
+    if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+      return createResult('');
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        envFilePath,
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        paths,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(result.status, 'up-to-date');
+    assert.ok(calls.includes('git fetch origin main'));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('runDeployWatchIteration refreshes a stale standby deployment after 15 minutes', async () => {
@@ -1875,6 +2147,62 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
+});
+
+test('runDeployWatchLoop backs off for git failures instead of exiting immediately', async () => {
+  const sleepCalls = [];
+  const iterationResults = [];
+  const sentinel = new Error('stop-after-first-retry');
+
+  await assert.rejects(
+    () =>
+      runDeployWatchLoop(
+        {
+          branch: 'main',
+          remote: 'origin',
+          upstreamBranch: 'main',
+          upstreamRef: 'origin/main',
+        },
+        {
+          log: { error() {}, info() {}, warn() {} },
+          onIterationResult: (value) => {
+            iterationResults.push(value);
+          },
+          onIterationStart() {},
+          runCommand: createRunCommandMock(
+            new Map([
+              ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
+              ['git status --porcelain', createResult('')],
+              [
+                'git fetch origin main',
+                createResult('', {
+                  code: 1,
+                  stderr: 'fatal: unable to access origin/main',
+                }),
+              ],
+              [
+                'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
+                createResult(
+                  'aaa111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n'
+                ),
+              ],
+              [prodComposePsKey(BLUE_GREEN_PROXY_SERVICE), createResult('')],
+            ])
+          ),
+          sleepImpl: async (ms) => {
+            sleepCalls.push(ms);
+            throw sentinel;
+          },
+        }
+      ),
+    sentinel
+  );
+
+  assert.deepEqual(sleepCalls, [DEFAULT_GIT_FAILURE_BACKOFF_MS]);
+  assert.equal(iterationResults.length, 1);
+  assert.equal(iterationResults[0].status, 'git-failed');
+  assert.equal(iterationResults[0].gitFailureCount, 1);
+  assert.equal(iterationResults[0].sleepMs, DEFAULT_GIT_FAILURE_BACKOFF_MS);
 });
 
 test('runPendingDeployAfterRestart refreshes the live proxy before running blue/green deploy', async () => {
@@ -2112,6 +2440,646 @@ test('spawnReplacementWatcher relaunches the watcher with inherited args', async
   ]);
 });
 
+test('writeWatchArgsFile persists argv for the watcher container entrypoint', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-args-'));
+
+  try {
+    const paths = getWatchPaths(tempDir);
+    writeWatchArgsFile(['--interval-ms', '5000'], {
+      fsImpl: fs,
+      paths,
+    });
+
+    assert.equal(
+      paths.argsFile,
+      path.join(
+        tempDir,
+        'tmp',
+        'docker-web',
+        'watch',
+        'blue-green-auto-deploy.args.json'
+      )
+    );
+    assert.equal(paths.argsFile.endsWith(path.basename(WATCH_ARGS_FILE)), true);
+    assert.deepEqual(readWatchArgsFile({ fsImpl: fs, paths }), [
+      '--interval-ms',
+      '5000',
+    ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('startBlueGreenWatcherContainer writes watcher args and recreates the compose service', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-container-'));
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+  const envs = [];
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.mkdirSync(paths.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      paths.lockFile,
+      JSON.stringify({ branch: 'main', pid: 18 }, null, 2),
+      'utf8'
+    );
+    fs.writeFileSync(
+      paths.statusFile,
+      JSON.stringify({ ownerPid: 18, status: 'healthy' }, null, 2),
+      'utf8'
+    );
+
+    await startBlueGreenWatcherContainer(['--interval-ms', '5000'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push(`${command} ${args.join(' ')}`);
+        envs.push(options.env ?? null);
+        return createResult('');
+      },
+    });
+
+    assert.deepEqual(calls, [
+      'docker compose version',
+      prodComposeWatcherUpKey(),
+    ]);
+    assert.deepEqual(
+      JSON.parse(
+        fs.readFileSync(
+          path.join(
+            tempDir,
+            'tmp',
+            'docker-web',
+            'watch',
+            'blue-green-auto-deploy.args.json'
+          ),
+          'utf8'
+        )
+      ),
+      ['--interval-ms', '5000']
+    );
+    assert.equal(fs.existsSync(paths.lockFile), false);
+    assert.equal(fs.existsSync(paths.statusFile), false);
+    assert.equal(envs[1][HOST_WORKSPACE_DIR_ENV], tempDir);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getWatcherComposeEnv injects the mirrored host workspace path', () => {
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: { PATH: 'test-path' },
+    rootDir: '/tmp/platform-worktree',
+  });
+
+  assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], '/tmp/platform-worktree');
+});
+
+test('clearContainerManagedWatcherState removes persisted lock and status files', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-state-clear-'));
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    fs.mkdirSync(paths.runtimeDir, { recursive: true });
+    fs.writeFileSync(paths.lockFile, '{}', 'utf8');
+    fs.writeFileSync(paths.statusFile, '{}', 'utf8');
+
+    clearContainerManagedWatcherState({ fsImpl: fs, paths });
+
+    assert.equal(fs.existsSync(paths.lockFile), false);
+    assert.equal(fs.existsSync(paths.statusFile), false);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('pending deploy requests persist across restarts and can be cleared explicitly', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-pending-file-'));
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    writePendingDeployRequest(
+      {
+        commitHash: 'bbb222222222222222222',
+        commitShortHash: 'bbb222',
+        reason: 'process-restart',
+      },
+      { fsImpl: fs, paths }
+    );
+
+    assert.equal(
+      hasPersistedPendingDeployRequest(
+        {},
+        {
+          fsImpl: fs,
+          paths,
+        }
+      ),
+      true
+    );
+    assert.deepEqual(readPendingDeployRequest(paths, fs), {
+      commitHash: 'bbb222222222222222222',
+      commitShortHash: 'bbb222',
+      reason: 'process-restart',
+    });
+
+    clearPendingDeployRequest({ fsImpl: fs, paths });
+
+    assert.equal(readPendingDeployRequest(paths, fs), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('streamBlueGreenWatcherLogs follows the watcher service output', async () => {
+  const calls = [];
+
+  await streamBlueGreenWatcherLogs({
+    env: {
+      PATH: process.env.PATH,
+      NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:8001',
+      SUPABASE_SERVER_URL: 'http://localhost:8001',
+      UPSTASH_REDIS_REST_TOKEN: 'token',
+      UPSTASH_REDIS_REST_URL: 'http://serverless-redis-http:80',
+    },
+    fsImpl: {
+      existsSync() {
+        return true;
+      },
+      readFileSync() {
+        return '';
+      },
+    },
+    runCommand: async (command, args) => {
+      calls.push(`${command} ${args.join(' ')}`);
+      return createResult('');
+    },
+  });
+
+  assert.deepEqual(calls, [prodComposeWatcherLogsKey()]);
+});
+
+test('runWatcherCommand boots the watcher container before tailing logs', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-command-'));
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    await runWatcherCommand(['--once'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        calls.push(`${command} ${args.join(' ')}`);
+        return createResult('');
+      },
+    });
+
+    assert.deepEqual(calls, [
+      'docker compose version',
+      prodComposeWatcherUpKey(),
+      prodComposeWatcherLogsKey(),
+    ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getLatestSuccessfulDeploymentCommitHash returns the newest successful commit', () => {
+  assert.equal(
+    getLatestSuccessfulDeploymentCommitHash([
+      {
+        commitHash: null,
+        status: 'deploying',
+      },
+      {
+        commitHash: 'bbb222222222222222222',
+        status: 'successful',
+      },
+      {
+        commitHash: 'aaa111111111111111111',
+        status: 'successful',
+      },
+    ]),
+    'bbb222222222222222222'
+  );
+});
+
+test('main deploys the latest fetched revision after recovery when the last successful build is stale', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-pending-deploy-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const uiState = {};
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: 500,
+          activeColor: 'green',
+          commitHash: 'aaa111111111111111111',
+          commitShortHash: 'aaa111',
+          commitSubject: 'Old deployed revision',
+          finishedAt: 500,
+          startedAt: 100,
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+    writePendingDeployRequest(
+      {
+        commitHash: 'bbb222222222222222222',
+        commitShortHash: 'bbb222',
+        reason: 'process-restart',
+      },
+      { fsImpl: fs, paths }
+    );
+
+    await main(['--once'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      now: (() => {
+        const values = [1000, 2000, 5000, 6000];
+        return () => values.shift() ?? 6000;
+      })(),
+      processImpl: {
+        argv: ['node', 'scripts/watch-blue-green-deploy.js'],
+        exit() {},
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('proxy-123\n');
+        }
+
+        if (key === prodComposePsKey('web-green')) {
+          return createResult('green-123\n');
+        }
+
+        if (key === prodComposePsKey('web-blue')) {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -t`
+        ) {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload`
+        ) {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`
+        ) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult('main\n');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref --symbolic-full-name @{u}') {
+          return createResult('origin/main\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return createResult(
+            'bbb222222222222222222\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:59:00.000Z\n'
+          );
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git fetch origin main') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse HEAD') {
+          return createResult('bbb222\n');
+        }
+
+        if (key === 'git rev-parse origin/main') {
+          return createResult('bbb222\n');
+        }
+
+        if (
+          key ===
+          `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+        ) {
+          return createResult('');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error() {},
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn() {},
+      },
+    });
+
+    assert.ok(
+      calls.includes(
+        `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+      )
+    );
+    assert.equal(readPendingDeployRequest(paths, fs), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('main skips recovery deploys when the latest successful build already matches HEAD', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-pending-skip-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const uiState = {};
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: 500,
+          activeColor: 'green',
+          commitHash: 'bbb222222222222222222',
+          commitShortHash: 'bbb222',
+          commitSubject: 'Latest deployed revision',
+          finishedAt: 500,
+          startedAt: 100,
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+    writePendingDeployRequest(
+      {
+        commitHash: 'bbb222222222222222222',
+        commitShortHash: 'bbb222',
+        reason: 'process-restart',
+      },
+      { fsImpl: fs, paths }
+    );
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    await main(['--once'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      processImpl: {
+        argv: ['node', 'scripts/watch-blue-green-deploy.js'],
+        exit() {},
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult('main\n');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref --symbolic-full-name @{u}') {
+          return createResult('origin/main\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return createResult(
+            'bbb222222222222222222\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:59:00.000Z\n'
+          );
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git fetch origin main') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse HEAD') {
+          return createResult('bbb222\n');
+        }
+
+        if (key === 'git rev-parse origin/main') {
+          return createResult('bbb222\n');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error() {},
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn() {},
+      },
+    });
+
+    assert.equal(
+      calls.includes(
+        `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+      ),
+      false
+    );
+    assert.equal(readPendingDeployRequest(paths, fs), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('main reconciles HEAD when git is current but the latest successful deployment is stale', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-reconcile-head-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const uiState = {};
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: 500,
+          activeColor: 'blue',
+          commitHash: 'aaa111111111111111111',
+          commitShortHash: 'aaa111',
+          commitSubject: 'Older deployed revision',
+          finishedAt: 500,
+          startedAt: 100,
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    await main(['--once'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      processImpl: {
+        argv: ['node', 'scripts/watch-blue-green-deploy.js'],
+        exit() {},
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult('main\n');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref --symbolic-full-name @{u}') {
+          return createResult('origin/main\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return createResult(
+            'bbb222222222222222222\nbbb222\nReconcile runtime with latest head\n2026-04-18T10:59:00.000Z\n'
+          );
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git fetch origin main') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse HEAD') {
+          return createResult('bbb222\n');
+        }
+
+        if (key === 'git rev-parse origin/main') {
+          return createResult('bbb222\n');
+        }
+
+        if (key === 'bun upgrade' || key === 'bun i') {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+        ) {
+          return createResult('');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error() {},
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn() {},
+      },
+    });
+
+    assert.ok(
+      calls.includes(
+        `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+      )
+    );
+    assert.ok(calls.includes('bun upgrade'));
+    assert.ok(calls.includes('bun i'));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('main restarts the watcher with a pending deploy handoff env when the watcher script changed', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-main-restart-'));
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
@@ -2189,6 +3157,21 @@ test('main restarts the watcher with a pending deploy handoff env when the watch
           return createResult('Updating aaa111..bbb222\n');
         }
 
+        if (key === 'bun upgrade') {
+          return createResult('');
+        }
+
+        if (key === 'bun i') {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `git diff --name-only aaa111 bbb222 -- ${CONTAINER_REFRESH_WATCHED_FILES.join(' ')}`
+        ) {
+          return createResult('');
+        }
+
         if (
           key ===
           `git diff --name-only aaa111 bbb222 -- ${SELF_WATCHED_FILES.join(' ')}`
@@ -2226,6 +3209,272 @@ test('main restarts the watcher with a pending deploy handoff env when the watch
 
     assert.equal(spawnCalls.length, 1);
     assert.equal(spawnCalls[0].options.env[WATCH_PENDING_DEPLOY_ENV], '1');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('main exits with the container restart code when the watcher script changes inside the watcher container', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-container-restart-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const exits = [];
+  const uiState = {};
+  let pullCompleted = false;
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    await main([], {
+      env: {
+        PATH: process.env.PATH,
+        [WATCHER_CONTAINER_ENV]: '1',
+      },
+      envFilePath,
+      fsImpl: fs,
+      processImpl: {
+        argv: ['bun', 'scripts/watch-blue-green-deploy.js'],
+        exit(code) {
+          exits.push(code);
+        },
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult('main\n');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref --symbolic-full-name @{u}') {
+          return createResult('origin/main\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return pullCompleted
+            ? createResult(
+                'bbb222222222222222222\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:59:00.000Z\n'
+              )
+            : createResult(
+                'aaa111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n'
+              );
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git fetch origin main') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse HEAD') {
+          return createResult(pullCompleted ? 'bbb222\n' : 'aaa111\n');
+        }
+
+        if (key === 'git rev-parse origin/main') {
+          return createResult('bbb222\n');
+        }
+
+        if (key === 'git merge-base --is-ancestor aaa111 bbb222') {
+          return createResult('');
+        }
+
+        if (key === 'git pull --ff-only origin main') {
+          pullCompleted = true;
+          return createResult('Updating aaa111..bbb222\n');
+        }
+
+        if (key === 'bun upgrade') {
+          return createResult('');
+        }
+
+        if (key === 'bun i') {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `git diff --name-only aaa111 bbb222 -- ${CONTAINER_REFRESH_WATCHED_FILES.join(' ')}`
+        ) {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `git diff --name-only aaa111 bbb222 -- ${SELF_WATCHED_FILES.join(' ')}`
+        ) {
+          return createResult(`${SELF_WATCHED_FILES[0]}\n`);
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error() {},
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn() {},
+      },
+    });
+
+    assert.deepEqual(exits, [CONTAINER_SELF_RESTART_EXIT_CODE]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('main recreates the watcher container when critical watcher runtime files change inside the watcher container', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-container-refresh-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+  const uiState = {};
+  let pullCompleted = false;
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    await main([], {
+      env: {
+        PATH: process.env.PATH,
+        [WATCHER_CONTAINER_ENV]: '1',
+      },
+      envFilePath,
+      fsImpl: fs,
+      processImpl: {
+        argv: ['bun', 'scripts/watch-blue-green-deploy.js'],
+        exit() {
+          throw new Error(
+            'main should recreate the container instead of exiting'
+          );
+        },
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult('main\n');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref --symbolic-full-name @{u}') {
+          return createResult('origin/main\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return pullCompleted
+            ? createResult(
+                'bbb222222222222222222\nbbb222\nRefresh watcher image runtime\n2026-04-18T10:59:00.000Z\n'
+              )
+            : createResult(
+                'aaa111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n'
+              );
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git fetch origin main') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse HEAD') {
+          return createResult(pullCompleted ? 'bbb222\n' : 'aaa111\n');
+        }
+
+        if (key === 'git rev-parse origin/main') {
+          return createResult('bbb222\n');
+        }
+
+        if (key === 'git merge-base --is-ancestor aaa111 bbb222') {
+          return createResult('');
+        }
+
+        if (key === 'git pull --ff-only origin main') {
+          pullCompleted = true;
+          return createResult('Updating aaa111..bbb222\n');
+        }
+
+        if (key === 'bun upgrade') {
+          return createResult('');
+        }
+
+        if (key === 'bun i') {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `git diff --name-only aaa111 bbb222 -- ${CONTAINER_REFRESH_WATCHED_FILES.join(' ')}`
+        ) {
+          return createResult(`${CONTAINER_REFRESH_WATCHED_FILES[0]}\n`);
+        }
+
+        if (
+          key ===
+          `git diff --name-only aaa111 bbb222 -- ${SELF_WATCHED_FILES.join(' ')}`
+        ) {
+          return createResult('');
+        }
+
+        if (key === 'docker compose version') {
+          return createResult('');
+        }
+
+        if (key === prodComposeWatcherUpKey()) {
+          return createResult('');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error() {},
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn() {},
+      },
+    });
+
+    assert.ok(calls.includes('docker compose version'));
+    assert.ok(calls.includes(prodComposeWatcherUpKey()));
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
