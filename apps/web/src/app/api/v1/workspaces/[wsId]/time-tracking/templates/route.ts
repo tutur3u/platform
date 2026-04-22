@@ -27,7 +27,7 @@ export async function GET(
       supabase: supabase,
     });
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }

@@ -17,7 +17,7 @@ export async function assertWorkspaceApiKeysAccess(
     supabase: supabase,
   });
 
-  if (!workspaceMember) {
+  if (!workspaceMember.ok) {
     return NextResponse.json(
       { message: "You don't have access to this workspace" },
       { status: 403 }

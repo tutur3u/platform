@@ -95,7 +95,7 @@ export async function POST(request: Request, { params }: Params) {
     supabase: sbAdmin,
   });
 
-  if (existingMember) {
+  if (existingMember.ok) {
     await sbAdmin
       .from('workspace_invites')
       .delete()

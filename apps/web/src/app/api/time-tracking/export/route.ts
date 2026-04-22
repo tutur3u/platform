@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       supabase: supabase,
     });
 
-    if (!workspaceMember) {
+    if (!workspaceMember.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }

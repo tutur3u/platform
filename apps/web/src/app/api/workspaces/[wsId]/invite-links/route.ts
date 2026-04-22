@@ -41,7 +41,7 @@ export async function POST(req: Request, { params }: Params) {
       supabase: supabase,
     });
 
-    if (!member) {
+    if (!member.ok) {
       return NextResponse.json(
         { error: 'You are not a member of this workspace' },
         { status: 403 }

@@ -49,7 +49,7 @@ export async function GET(
       supabase: supabase,
     });
 
-    if (!workspaceMember) {
+    if (!workspaceMember.ok) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 

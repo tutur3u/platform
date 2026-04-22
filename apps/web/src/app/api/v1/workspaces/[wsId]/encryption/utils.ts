@@ -51,7 +51,7 @@ export async function checkE2EEPermission(
     supabase: supabase,
   });
 
-  if (!member) {
+  if (!member.ok) {
     return { authorized: false, user, reason: 'not_a_member' };
   }
 

@@ -51,7 +51,7 @@ export async function GET(_: Request, { params }: Params) {
     supabase: supabase,
   });
 
-  if (!member) {
+  if (!member.ok) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 

@@ -74,7 +74,7 @@ export async function POST(
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }

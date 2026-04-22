@@ -68,7 +68,7 @@ export async function POST(
       supabase: supabase,
     });
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 

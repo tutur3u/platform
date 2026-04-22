@@ -31,7 +31,7 @@ export async function PUT(req: Request, { params }: Params) {
     supabase: supabase,
   });
 
-  if (!membership) {
+  if (!membership.ok) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 

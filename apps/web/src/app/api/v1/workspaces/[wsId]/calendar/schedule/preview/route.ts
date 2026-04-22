@@ -72,7 +72,7 @@ export async function POST(
       supabase: supabase,
     });
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }

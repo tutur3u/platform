@@ -38,7 +38,7 @@ export async function DELETE(
       supabase: supabase,
     });
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

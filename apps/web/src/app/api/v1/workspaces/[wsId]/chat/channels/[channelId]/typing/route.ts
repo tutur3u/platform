@@ -25,7 +25,7 @@ async function requireWorkspaceUser(request: Request, wsId: string) {
     userId: user.id,
     supabase: supabase,
   });
-  if (!membership) {
+  if (!membership.ok) {
     return {
       error: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
     };

@@ -89,7 +89,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       supabase: supabase,
     });
 
-    if (!workspaceMember) {
+    if (!workspaceMember.ok) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 

@@ -40,7 +40,7 @@ export async function GET(
       supabase: supabase,
     });
 
-    if (!workspaceMember) {
+    if (!workspaceMember.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

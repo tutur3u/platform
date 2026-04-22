@@ -55,7 +55,7 @@ async function verifyAccess(wsId: string, draftId: string) {
     supabase: supabase,
   });
 
-  if (!membership) {
+  if (!membership.ok) {
     return { error: 'Forbidden', status: 403, supabase, user };
   }
 
