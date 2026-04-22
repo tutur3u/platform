@@ -46,8 +46,17 @@ export default function AvatarCard({
           backgroundClassName
         )}
       >
-        <Avatar className={cn('h-full w-full rounded-none after:border-none', avatarClassName)}>
-          <AvatarImage src={avatar} alt={name} className="rounded-none object-cover" />
+        <Avatar
+          className={cn(
+            'h-full w-full rounded-none after:border-none',
+            avatarClassName
+          )}
+        >
+          <AvatarImage
+            src={avatar}
+            alt={name}
+            className="rounded-none object-cover"
+          />
           <AvatarFallback
             className={cn(
               'rounded-none bg-transparent font-black text-2xl text-white',
