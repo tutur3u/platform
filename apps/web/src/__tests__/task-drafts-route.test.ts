@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => {
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
-                single: membershipSingle,
+                maybeSingle: membershipSingle,
               }),
             }),
           }),
@@ -73,7 +73,7 @@ describe('task drafts route', () => {
       error: null,
     });
     mocks.membershipSingle.mockResolvedValue({
-      data: { ws_id: 'ws-1' },
+      data: { type: 'MEMBER' as const },
       error: null,
     });
     mocks.taskDraftsOrder.mockResolvedValue({

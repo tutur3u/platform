@@ -61,12 +61,17 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: vi.fn(),
-  normalizeWorkspaceId: (
-    ...args: Parameters<typeof mocks.normalizeWorkspaceId>
-  ) => mocks.normalizeWorkspaceId(...args),
-}));
+vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@tuturuuu/utils/workspace-helper')>();
+  return {
+    ...actual,
+    getPermissions: vi.fn(),
+    normalizeWorkspaceId: (
+      ...args: Parameters<typeof mocks.normalizeWorkspaceId>
+    ) => mocks.normalizeWorkspaceId(...args),
+  };
+});
 
 describe('time tracking period stats route', () => {
   beforeEach(() => {
@@ -75,7 +80,7 @@ describe('time tracking period stats route', () => {
 
     mocks.normalizeWorkspaceId.mockResolvedValue('ws-1');
     mocks.maybeSingle.mockResolvedValue({
-      data: { id: 'user-1' },
+      data: { type: 'MEMBER' as const },
       error: null,
     });
     mocks.rpc.mockResolvedValue({

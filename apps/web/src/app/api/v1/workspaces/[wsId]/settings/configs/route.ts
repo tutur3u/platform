@@ -67,7 +67,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }

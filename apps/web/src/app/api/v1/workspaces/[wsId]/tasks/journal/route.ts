@@ -244,7 +244,15 @@ async function ensureWorkspaceAccess(
     supabase: supabase,
   });
 
-  if (!memberCheck) {
+  if (memberCheck.error === 'membership_lookup_failed') {
+    return {
+      kind: 'error' as const,
+      status: 500 as const,
+      body: { error: 'Failed to verify workspace access' },
+    };
+  }
+
+  if (!memberCheck.ok) {
     return {
       kind: 'error' as const,
       status: 403 as const,

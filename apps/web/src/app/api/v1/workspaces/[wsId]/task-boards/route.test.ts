@@ -27,13 +27,18 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     createAdminClientMock(...args),
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: (...args: Parameters<typeof getPermissionsMock>) =>
-    getPermissionsMock(...args),
-  normalizeWorkspaceId: (
-    ...args: Parameters<typeof normalizeWorkspaceIdMock>
-  ) => normalizeWorkspaceIdMock(...args),
-}));
+vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@tuturuuu/utils/workspace-helper')>();
+  return {
+    ...actual,
+    getPermissions: (...args: Parameters<typeof getPermissionsMock>) =>
+      getPermissionsMock(...args),
+    normalizeWorkspaceId: (
+      ...args: Parameters<typeof normalizeWorkspaceIdMock>
+    ) => normalizeWorkspaceIdMock(...args),
+  };
+});
 
 import { GET } from './route';
 
@@ -61,7 +66,7 @@ describe('task boards route GET', () => {
       .mockReturnValueOnce({ eq: workspaceMembersEqMock })
       .mockReturnValueOnce({ maybeSingle: workspaceMembersMaybeSingleMock });
     workspaceMembersMaybeSingleMock.mockResolvedValue({
-      data: { user_id: '00000000-0000-4000-8000-000000000999' },
+      data: { type: 'MEMBER' as const },
       error: null,
     });
 

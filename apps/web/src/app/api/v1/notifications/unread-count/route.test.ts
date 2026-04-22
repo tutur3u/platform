@@ -115,7 +115,7 @@ describe('notifications unread-count route', () => {
     await expect(response.json()).resolves.toEqual({
       error: 'Access denied to workspace',
     });
-    expect(mocks.membershipSelectMock).toHaveBeenCalledWith('user_id');
+    expect(mocks.membershipSelectMock).toHaveBeenCalledWith('type');
     expect(mocks.membershipEqWsIdMock).toHaveBeenCalledWith(
       'ws_id',
       '841a71e7-2015-47e5-8f23-0d85f6c456eb'
@@ -138,7 +138,7 @@ describe('notifications unread-count route', () => {
     });
     mocks.membershipMaybeSingleMock.mockResolvedValue({
       data: {
-        user_id: 'user-1',
+        type: 'MEMBER',
       },
       error: null,
     });
