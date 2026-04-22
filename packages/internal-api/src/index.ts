@@ -111,6 +111,7 @@ export {
   getWorkspaceExternalProjectSummary,
   importWorkspaceExternalProjectContent,
   listCanonicalExternalProjects,
+  listWorkspaceExternalProjectBindingAudits,
   listWorkspaceExternalProjectCollections,
   listWorkspaceExternalProjectEntries,
   publishWorkspaceExternalProjectEntry,
@@ -324,6 +325,7 @@ export {
 } from './workspace-user-audit';
 export {
   getWorkspace,
+  listCmsWorkspaces,
   listWorkspaceMembers,
   listWorkspaces,
 } from './workspaces';

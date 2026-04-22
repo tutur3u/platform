@@ -18,6 +18,7 @@ const path = require('node:path');
 const TRANSLATION_DIRS = [
   'apps/web/messages',
   'apps/calendar/messages',
+  'apps/cms/messages',
   'apps/finance/messages',
   'apps/nova/messages',
   'apps/rewise/messages',

@@ -109,6 +109,7 @@ export function WorkspaceSelect({
   additionalFormFields,
   showTierBadges = true,
   createWorkspaceDescription,
+  resolveNextPathname,
 }: {
   t: any;
   wsId: string;
@@ -119,6 +120,10 @@ export function WorkspaceSelect({
   additionalFormFields?: ReactNode;
   showTierBadges?: boolean;
   createWorkspaceDescription?: ReactNode;
+  resolveNextPathname?: (context: {
+    currentPathname: string;
+    nextSlug: string;
+  }) => string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -313,7 +318,12 @@ export function WorkspaceSelect({
   }[];
 
   const onValueChange = (nextSlug: string) => {
-    let newPathname = pathname?.replace(/^\/[^/]+/, `/${nextSlug}`);
+    let newPathname = pathname
+      ? (resolveNextPathname?.({
+          currentPathname: pathname,
+          nextSlug,
+        }) ?? pathname.replace(/^\/[^/]+/, `/${nextSlug}`))
+      : undefined;
     if (newPathname) {
       // Regex to match a UUID at the end of the string, with or without dashes
       const uuidRegex =

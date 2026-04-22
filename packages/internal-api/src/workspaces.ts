@@ -16,6 +16,13 @@ export async function listWorkspaces(options?: InternalApiClientOptions) {
   });
 }
 
+export async function listCmsWorkspaces(options?: InternalApiClientOptions) {
+  const client = getInternalApiClient(options);
+  return client.json<InternalApiWorkspaceSummary[]>('/api/v1/cms/workspaces', {
+    cache: 'no-store',
+  });
+}
+
 export async function getWorkspace(
   workspaceId: string,
   options?: InternalApiClientOptions

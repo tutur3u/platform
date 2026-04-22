@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { getCmsUrl } from '@/lib/cms-url';
 
 interface Props {
   params: Promise<{
@@ -8,5 +9,5 @@ interface Props {
 
 export default async function ExternalProjectsLegacyPage({ params }: Props) {
   const { wsId } = await params;
-  redirect(`/${wsId}/epm`);
+  redirect(getCmsUrl(`/${wsId}/content`));
 }

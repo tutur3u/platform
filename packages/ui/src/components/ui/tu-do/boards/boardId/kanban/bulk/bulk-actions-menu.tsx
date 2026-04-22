@@ -25,7 +25,6 @@ import {
 } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import type { WorkspaceMember } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import {
   DropdownMenuContent,
@@ -35,9 +34,10 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import type { WorkspaceMember } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
 import type { BoardConfig } from '@tuturuuu/utils/task-helper';
+import { useTranslations } from 'next-intl';
 import { mapEstimationPoints } from '../../../../shared/estimation-mapping';
 import { TaskResourceSearchField } from '../../../../shared/task-resource-search-field';
 import type {

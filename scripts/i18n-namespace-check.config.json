@@ -3,6 +3,7 @@
   "apps/web": ["certificates"],
   "apps/tasks": ["certificates"],
   "apps/calendar": ["certificates", "ws-board-templates"],
+  "apps/cms": ["certificates"],
   "apps/finance": ["certificates", "ws-board-templates"],
   "apps/meet": [
     "certificates",
@@ -57,6 +58,7 @@
       "ws-task-boards.*",
       "ws-tasks.*"
     ],
+    "apps/cms": ["settings.calendar.*", "ws-polls.*"],
     "apps/finance": [
       "calendar.*",
       "settings.*",

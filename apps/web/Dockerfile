@@ -13,6 +13,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY package.json bun.lock turbo.json ./
 COPY scripts/install-git-hooks.js ./scripts/install-git-hooks.js
 COPY apps/calendar/package.json ./apps/calendar/package.json
+COPY apps/cms/package.json ./apps/cms/package.json
 COPY apps/database/package.json ./apps/database/package.json
 COPY apps/external/package.json ./apps/external/package.json
 COPY apps/finance/package.json ./apps/finance/package.json

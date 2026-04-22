@@ -95,6 +95,7 @@
               {
                 "group": "Applications",
                 "pages": [
+                  "platform/applications/cms",
                   "platform/applications/nova",
                   "platform/applications/tasks"
                 ]

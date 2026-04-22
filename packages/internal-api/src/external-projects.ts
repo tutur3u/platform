@@ -11,6 +11,7 @@ import type {
   ExternalProjectSummary,
   Json,
   WorkspaceExternalProjectBinding,
+  WorkspaceExternalProjectBindingAudit,
 } from '@tuturuuu/types';
 import {
   encodePathSegment,
@@ -200,6 +201,18 @@ export async function updateWorkspaceExternalProjectBinding(
         'Content-Type': 'application/json',
       },
       method: 'PATCH',
+    }
+  );
+}
+
+export async function listWorkspaceExternalProjectBindingAudits(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceExternalProjectBindingAudit[]>(
+    '/api/v1/admin/external-project-audits',
+    {
+      cache: 'no-store',
     }
   );
 }
