@@ -6,7 +6,8 @@
  */
 
 import { createHash } from 'node:crypto';
-import { getUpstashRestRedisClient } from '../upstash-rest';
+import type { Redis } from '@upstash/redis';
+import { getUpstashRestRedisClient, hasUpstashRestEnv } from '../upstash-rest';
 import { generateRandomUUID } from '../uuid-helper';
 import {
   ABUSE_THRESHOLDS,
@@ -23,6 +24,35 @@ export * from './types';
 
 // In-memory fallback store
 const memoryStore = new Map<string, { count: number; expiresAt: number }>();
+
+// Redis client singleton (lazy initialized)
+let redisClient: Redis | null = null;
+let redisInitialized = false;
+
+/**
+ * Initialize Redis client from Upstash environment variables
+ */
+async function getRedisClient(): Promise<Redis | null> {
+  if (redisInitialized) return redisClient;
+
+  try {
+    if (!hasUpstashRestEnv()) {
+      console.warn(
+        '[Abuse Protection] Redis not configured - falling back to memory'
+      );
+      redisInitialized = true;
+      return null;
+    }
+
+    redisClient = await getUpstashRestRedisClient();
+    redisInitialized = true;
+    return redisClient;
+  } catch (error) {
+    console.warn('[Abuse Protection] Redis unavailable:', error);
+    redisInitialized = true;
+    return null;
+  }
+}
 
 /**
  * Validate IP address format
@@ -97,18 +127,20 @@ async function incrementCounter(
   key: string,
   windowMs: number
 ): Promise<{ count: number; ttl: number }> {
-  try {
-    const redis = getUpstashRestRedisClient();
+  const redis = await getRedisClient();
 
-    const count = await redis.incr(key);
-    if (count === 1) {
-      await redis.expire(key, Math.ceil(windowMs / 1000));
+  if (redis) {
+    try {
+      const count = await redis.incr(key);
+      if (count === 1) {
+        await redis.expire(key, Math.ceil(windowMs / 1000));
+      }
+      const ttl = await redis.ttl(key);
+      return { count, ttl: ttl > 0 ? ttl : Math.ceil(windowMs / 1000) };
+    } catch (error) {
+      console.error('[Abuse Protection] Redis error:', error);
+      // Fall through to memory
     }
-    const ttl = await redis.ttl(key);
-    return { count, ttl: ttl > 0 ? ttl : Math.ceil(windowMs / 1000) };
-  } catch (error) {
-    console.error('[Abuse Protection] Redis error:', error);
-    // Fall through to memory
   }
 
   // Memory fallback
@@ -131,14 +163,15 @@ async function incrementCounter(
  * Get counter value from Redis or memory
  */
 async function getCounter(key: string): Promise<number> {
-  try {
-    const redis = getUpstashRestRedisClient();
+  const redis = await getRedisClient();
 
-    const count = await redis.get<number>(key);
-    return count || 0;
-  } catch (error) {
-    console.error('[Abuse Protection] Redis error:', error);
-    // Fall through to memory
+  if (redis) {
+    try {
+      const count = await redis.get<number>(key);
+      return count || 0;
+    } catch {
+      // Fall through to memory
+    }
   }
 
   const existing = memoryStore.get(key);
@@ -152,14 +185,15 @@ async function getCounter(key: string): Promise<number> {
  * Delete keys from Redis or memory
  */
 async function deleteKeys(...keys: string[]): Promise<void> {
-  try {
-    const redis = getUpstashRestRedisClient();
+  const redis = await getRedisClient();
 
-    await redis.del(...keys);
-    return;
-  } catch (error) {
-    console.error('[Abuse Protection] Redis error:', error);
-    // Fall through to memory
+  if (redis) {
+    try {
+      await redis.del(...keys);
+      return;
+    } catch {
+      // Fall through to memory
+    }
   }
 
   for (const key of keys) {
@@ -173,21 +207,27 @@ async function deleteKeys(...keys: string[]): Promise<void> {
 export async function isIPBlocked(
   ipAddress: string
 ): Promise<BlockInfo | null> {
-  const redis = getUpstashRestRedisClient();
+  try {
+    const redis = await getRedisClient();
+    if (!redis) return null;
 
-  const cached = await redis.get<string>(REDIS_KEYS.IP_BLOCKED(ipAddress));
-  if (!cached) return null;
+    const cached = await redis.get<string>(REDIS_KEYS.IP_BLOCKED(ipAddress));
+    if (!cached) return null;
 
-  const blockInfo = typeof cached === 'string' ? JSON.parse(cached) : cached;
-  if (new Date(blockInfo.expiresAt) <= new Date()) return null;
+    const blockInfo = typeof cached === 'string' ? JSON.parse(cached) : cached;
+    if (new Date(blockInfo.expiresAt) <= new Date()) return null;
 
-  return {
-    id: blockInfo.id,
-    blockLevel: blockInfo.level,
-    reason: blockInfo.reason,
-    expiresAt: new Date(blockInfo.expiresAt),
-    blockedAt: new Date(blockInfo.blockedAt),
-  };
+    return {
+      id: blockInfo.id,
+      blockLevel: blockInfo.level,
+      reason: blockInfo.reason,
+      expiresAt: new Date(blockInfo.expiresAt),
+      blockedAt: new Date(blockInfo.blockedAt),
+    };
+  } catch {
+    // Fail-open: if Redis is unavailable, allow request through
+    return null;
+  }
 }
 
 /**
@@ -198,17 +238,22 @@ export async function blockIP(
   reason: AbuseEventType
 ): Promise<void> {
   try {
-    const redis = getUpstashRestRedisClient();
+    const redis = await getRedisClient();
 
     // Get current block level
     let currentLevel = 0;
-    try {
-      const level = await redis.get<number>(
-        REDIS_KEYS.IP_BLOCK_LEVEL(ipAddress)
-      );
-      currentLevel = level || 0;
-    } catch (error) {
-      console.error('[Abuse Protection] Error fetching IP block level:', error);
+    if (redis) {
+      try {
+        const level = await redis.get<number>(
+          REDIS_KEYS.IP_BLOCK_LEVEL(ipAddress)
+        );
+        currentLevel = level || 0;
+      } catch (error) {
+        console.error(
+          '[Abuse Protection] Error fetching IP block level:',
+          error
+        );
+      }
     }
 
     // Calculate new block level (max 4)
@@ -221,22 +266,24 @@ export async function blockIP(
     const expiresAt = new Date(Date.now() + blockDuration * 1000);
 
     // Update Redis cache
-    await Promise.all([
-      redis.set(
-        REDIS_KEYS.IP_BLOCKED(ipAddress),
-        JSON.stringify({
-          id: generateRandomUUID(),
-          level: newLevel,
-          reason,
-          expiresAt: expiresAt.toISOString(),
-          blockedAt: new Date().toISOString(),
+    if (redis) {
+      await Promise.all([
+        redis.set(
+          REDIS_KEYS.IP_BLOCKED(ipAddress),
+          JSON.stringify({
+            id: generateRandomUUID(),
+            level: newLevel,
+            reason,
+            expiresAt: expiresAt.toISOString(),
+            blockedAt: new Date().toISOString(),
+          }),
+          { ex: blockDuration }
+        ),
+        redis.set(REDIS_KEYS.IP_BLOCK_LEVEL(ipAddress), newLevel, {
+          ex: WINDOW_MS.TWENTY_FOUR_HOURS / 1000,
         }),
-        { ex: blockDuration }
-      ),
-      redis.set(REDIS_KEYS.IP_BLOCK_LEVEL(ipAddress), newLevel, {
-        ex: WINDOW_MS.TWENTY_FOUR_HOURS / 1000,
-      }),
-    ]);
+      ]);
+    }
 
     console.log(
       `[Abuse Protection] Blocked IP ${ipAddress} at level ${newLevel} for ${blockDuration}s due to ${reason}`
@@ -254,11 +301,15 @@ export async function unblockIP(
   unblockingUserId: string
 ): Promise<boolean> {
   try {
+    const redis = await getRedisClient();
+
     // Clear Redis cache
-    await deleteKeys(
-      REDIS_KEYS.IP_BLOCKED(ipAddress),
-      REDIS_KEYS.IP_BLOCK_LEVEL(ipAddress)
-    );
+    if (redis) {
+      await deleteKeys(
+        REDIS_KEYS.IP_BLOCKED(ipAddress),
+        REDIS_KEYS.IP_BLOCK_LEVEL(ipAddress)
+      );
+    }
 
     console.log(
       `[Abuse Protection] Unblocked IP ${ipAddress} by user ${unblockingUserId}`
