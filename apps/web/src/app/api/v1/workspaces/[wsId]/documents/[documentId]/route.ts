@@ -5,6 +5,7 @@ import {
 import {
   getPermissions,
   normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -30,14 +31,13 @@ async function authorizeDocumentsRequest(request: Request, wsIdParam: string) {
     };
   }
 
-  const { data: membership, error: membershipError } = await supabase
-    .from('workspace_members')
-    .select('ws_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: user.id,
+    supabase: supabase,
+  });
 
-  if (membershipError) {
+  if (membership.error === 'membership_lookup_failed') {
     return {
       error: NextResponse.json(
         { message: 'Failed to verify workspace access' },
@@ -46,7 +46,7 @@ async function authorizeDocumentsRequest(request: Request, wsIdParam: string) {
     };
   }
 
-  if (!membership) {
+  if (!membership.ok) {
     return {
       error: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
     };

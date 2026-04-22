@@ -1,5 +1,6 @@
 import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { embed } from 'ai';
 import { NextResponse } from 'next/server';
 
@@ -28,14 +29,20 @@ export async function POST(_: Request, { params }: Params) {
     }
 
     // Check workspace membership
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (membershipError || !membership) {
+    if (membership.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { message: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership.ok) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 

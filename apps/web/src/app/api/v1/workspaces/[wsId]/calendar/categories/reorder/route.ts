@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 interface ReorderItem {
@@ -26,12 +27,11 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('id:user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
     if (!memberCheck) {
       return NextResponse.json(

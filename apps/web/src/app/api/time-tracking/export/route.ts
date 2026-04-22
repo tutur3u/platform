@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import {
@@ -46,12 +47,11 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('endDate') || '';
 
     // Validate workspace access
-    const { data: workspaceMember } = await supabase
-      .from('workspace_members')
-      .select('*')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const workspaceMember = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
     if (!workspaceMember) {
       return NextResponse.json(

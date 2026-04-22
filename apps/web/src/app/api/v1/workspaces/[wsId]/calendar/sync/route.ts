@@ -7,6 +7,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { performIncrementalActiveSync } from '@/lib/calendar/incremental-active-sync';
@@ -68,18 +69,17 @@ async function verifyWorkspaceAccess(
     return jsonError('Please sign in to sync calendars', 401);
   }
 
-  const { data: membership, error: membershipError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: user.id,
+    supabase: supabase,
+  });
 
-  if (membershipError) {
+  if (membership.error === 'membership_lookup_failed') {
     return jsonError('Failed to verify workspace access', 500);
   }
 
-  if (!membership) {
+  if (!membership.ok) {
     return jsonError("You don't have access to this workspace", 403);
   }
 

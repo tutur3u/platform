@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { nanoid } from 'nanoid';
 import { NextResponse } from 'next/server';
 import * as z from 'zod';
@@ -34,12 +35,11 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Verify user is a member of the workspace
-    const { data: member } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const member = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
     if (!member) {
       return NextResponse.json(
@@ -179,15 +179,20 @@ export async function GET(req: Request, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify user is a member of the workspace
-    const { data: member } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const member = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (!member) {
+    if (member.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!member.ok) {
       return NextResponse.json(
         { error: 'You are not a member of this workspace' },
         { status: 403 }

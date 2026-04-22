@@ -2,7 +2,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -59,14 +62,13 @@ export async function requireBoardAccess(request: Request, rawParams: unknown) {
     });
   }
 
-  const { data: memberCheck, error: memberError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', board.ws_id)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const memberCheck = await verifyWorkspaceMembershipType({
+    wsId: board.ws_id,
+    userId: user.id,
+    supabase: supabase,
+  });
 
-  if (memberError) {
+  if (memberCheck.error === 'membership_lookup_failed') {
     return {
       error: NextResponse.json(
         { error: 'Failed to verify workspace membership' },
@@ -75,7 +77,7 @@ export async function requireBoardAccess(request: Request, rawParams: unknown) {
     };
   }
 
-  if (!memberCheck) {
+  if (!memberCheck.ok) {
     return {
       error: NextResponse.json(
         { error: 'Workspace access denied' },

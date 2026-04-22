@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -14,13 +15,20 @@ export async function GET(_: Request, { params }: Params) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const { wsId } = await params;
-  const { data: wsAccess } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', session.data.session.user.id)
-    .maybeSingle();
-  if (!wsAccess) {
+  const membership = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: session.data.session.user.id,
+    supabase,
+  });
+
+  if (membership.error === 'membership_lookup_failed') {
+    return NextResponse.json(
+      { error: 'Failed to verify workspace access' },
+      { status: 500 }
+    );
+  }
+
+  if (!membership.ok) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
   const { data, error } = await supabase

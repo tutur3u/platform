@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 /**
@@ -10,12 +11,11 @@ export async function assertWorkspaceApiKeysAccess(
   userId: string,
   wsId: string
 ): Promise<NextResponse | null> {
-  const { data: workspaceMember } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', userId)
-    .maybeSingle();
+  const workspaceMember = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: userId,
+    supabase: supabase,
+  });
 
   if (!workspaceMember) {
     return NextResponse.json(

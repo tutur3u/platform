@@ -117,6 +117,9 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: (
     ...args: Parameters<typeof mocks.normalizeWorkspaceId>
   ) => mocks.normalizeWorkspaceId(...args),
+  verifyWorkspaceMembershipType: vi.fn(() =>
+    Promise.resolve({ ok: true, membershipType: 'MEMBER' as const })
+  ),
 }));
 
 describe('task bulk route', () => {

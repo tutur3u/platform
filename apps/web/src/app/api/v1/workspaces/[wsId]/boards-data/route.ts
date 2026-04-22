@@ -4,6 +4,7 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -27,12 +28,11 @@ export const GET = withSessionAuth<{ wsId: string }>(
       );
 
       // Verify workspace access
-      const { data: memberCheck } = await supabase
-        .from('workspace_members')
-        .select('user_id')
-        .eq('ws_id', wsId)
-        .eq('user_id', user.id)
-        .single();
+      const memberCheck = await verifyWorkspaceMembershipType({
+        wsId: wsId,
+        userId: user.id,
+        supabase: supabase,
+      });
 
       if (!memberCheck) {
         return NextResponse.json(

@@ -1,3 +1,4 @@
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -19,12 +20,11 @@ export const POST = withSessionAuth<BoardParams>(
       }
 
       // Verify workspace access
-      const { data: memberCheck } = await supabase
-        .from('workspace_members')
-        .select('user_id')
-        .eq('ws_id', wsId)
-        .eq('user_id', user.id)
-        .single();
+      const memberCheck = await verifyWorkspaceMembershipType({
+        wsId: wsId,
+        userId: user.id,
+        supabase: supabase,
+      });
 
       if (!memberCheck) {
         return NextResponse.json(

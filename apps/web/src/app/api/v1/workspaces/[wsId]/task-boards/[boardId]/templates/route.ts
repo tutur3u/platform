@@ -3,7 +3,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Json } from '@tuturuuu/types/supabase';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -101,17 +104,16 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     // Verify user has access to the workspace
-    const { data: memberCheck, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (membershipError) {
+    if (memberCheck.error === 'membership_lookup_failed') {
       console.error(
         'Error checking workspace membership when saving template:',
-        membershipError
+        memberCheck.error
       );
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
@@ -119,7 +121,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }

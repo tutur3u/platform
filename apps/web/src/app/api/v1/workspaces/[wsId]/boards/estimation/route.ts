@@ -2,7 +2,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 interface WorkspaceParams {
@@ -40,12 +43,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: workspaceMember } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const workspaceMember = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
     if (!workspaceMember) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });

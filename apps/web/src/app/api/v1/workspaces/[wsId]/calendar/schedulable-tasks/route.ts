@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TaskWithScheduling } from '@tuturuuu/types';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { fetchSchedulableTasksForWorkspace } from '@/lib/calendar/schedulable-tasks';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
@@ -39,21 +40,20 @@ export async function GET(
 
     const normalizedWsId = await normalizeWorkspaceId(wsId);
 
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (membershipError) {
+    if (membership.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace access' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

@@ -27,7 +27,10 @@ import {
   MAX_SHORT_TEXT_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { generateObject, NoObjectGeneratedError } from 'ai';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -235,12 +238,11 @@ async function ensureWorkspaceAccess(
   wsId: string,
   userId: string
 ) {
-  const { data: memberCheck } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', userId)
-    .maybeSingle();
+  const memberCheck = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: userId,
+    supabase: supabase,
+  });
 
   if (!memberCheck) {
     return {

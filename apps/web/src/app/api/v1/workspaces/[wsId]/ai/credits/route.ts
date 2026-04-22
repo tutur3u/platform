@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
@@ -48,12 +49,11 @@ export async function GET(
     const normalizedWsId = await normalizeWorkspaceId(wsId);
 
     // Workspace membership check
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
     if (!memberCheck) {
       return NextResponse.json(

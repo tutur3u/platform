@@ -6,7 +6,10 @@ import {
   MAX_COLOR_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -74,21 +77,20 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (membershipError) {
+    if (membership.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }

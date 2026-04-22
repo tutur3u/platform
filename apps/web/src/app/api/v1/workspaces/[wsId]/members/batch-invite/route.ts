@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_COLOR_LENGTH, MAX_EMAIL_LENGTH } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getEffectiveAvailableSeats } from '@/utils/seat-limits';
@@ -61,12 +62,11 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Verify user is a member of the workspace
-  const { data: membership } = await supabase
-    .from('workspace_members')
-    .select('ws_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: user.id,
+    supabase: supabase,
+  });
 
   if (!membership) {
     return NextResponse.json(

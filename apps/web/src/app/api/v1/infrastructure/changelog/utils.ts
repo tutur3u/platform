@@ -1,5 +1,6 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 
 /**
  * Check if the current user has the manage_changelog permission.
@@ -49,12 +50,11 @@ export async function checkChangelogPermission(supabase: TypedSupabaseClient) {
   }
 
   // Check if user has manage_changelog via default permissions
-  const { data: memberCheck } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', ROOT_WORKSPACE_ID)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const memberCheck = await verifyWorkspaceMembershipType({
+    wsId: ROOT_WORKSPACE_ID,
+    userId: user.id,
+    supabase: supabase,
+  });
 
   if (memberCheck) {
     const { data: defaultPermission } = await supabase

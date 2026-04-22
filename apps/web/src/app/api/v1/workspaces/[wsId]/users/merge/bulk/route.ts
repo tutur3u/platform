@@ -8,6 +8,7 @@ import { MAX_SHORT_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
   normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -61,12 +62,11 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: membership } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
     if (!membership) {
       return NextResponse.json(

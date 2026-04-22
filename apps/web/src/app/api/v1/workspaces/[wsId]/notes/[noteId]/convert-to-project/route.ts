@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -29,12 +30,11 @@ export async function POST(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

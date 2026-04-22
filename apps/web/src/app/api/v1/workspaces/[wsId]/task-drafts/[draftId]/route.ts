@@ -8,6 +8,7 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -48,12 +49,11 @@ async function verifyAccess(wsId: string, draftId: string) {
     return { error: 'Unauthorized', status: 401, supabase, user: null };
   }
 
-  const { data: membership } = await supabase
-    .from('workspace_members')
-    .select('ws_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .single();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: user.id,
+    supabase: supabase,
+  });
 
   if (!membership) {
     return { error: 'Forbidden', status: 403, supabase, user };

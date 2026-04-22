@@ -3,7 +3,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { embed } from 'ai';
 import { NextResponse } from 'next/server';
 
@@ -83,17 +86,16 @@ export async function POST(req: Request, { params }: Params) {
 
     const wsId = await normalizeWorkspaceId(id, supabase);
 
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (membershipError) {
+    if (membership.error === 'membership_lookup_failed') {
       console.error(
         'Error verifying workspace membership for task search:',
-        membershipError
+        membership.error
       );
       return NextResponse.json(
         { message: 'Failed to verify workspace membership' },
@@ -101,7 +103,7 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 

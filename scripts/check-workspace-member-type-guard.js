@@ -4,10 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
-const API_DIR_RELATIVE_PATHS = [
-  'apps/web/src/app/api',
-  'packages/apis/src',
-];
+const API_DIR_RELATIVE_PATHS = ['apps/web/src/app/api', 'packages/apis/src'];
 
 const CALLER_USER_PATTERNS = [
   'user.id',
@@ -48,9 +45,37 @@ function hasCallerMembershipCheck(source) {
     return false;
   }
 
-  return CALLER_USER_PATTERNS.some((pattern) =>
-    source.includes(`.eq('user_id', ${pattern})`)
-  );
+  const normalized = source.replace(/\s+/g, ' ');
+
+  return CALLER_USER_PATTERNS.some((pattern) => {
+    const userIdEq = `.eq('user_id', ${pattern})`;
+    if (!normalized.includes(userIdEq)) {
+      return false;
+    }
+
+    // Only flag SELECT queries (membership checks), not DELETE/INSERT/UPDATE.
+    // Find the position of the user_id eq and look backwards for the most
+    // recent from('workspace_members'). Between them there must be a .select(,
+    // and there must be no other .from( call in between (to avoid matching
+    // user_id eq on a different table in the same file).
+    let idx = normalized.indexOf(userIdEq);
+    while (idx !== -1) {
+      const before = normalized.slice(0, idx);
+      const fromIdx = before.lastIndexOf("from('workspace_members')");
+      if (fromIdx !== -1) {
+        const chain = before.slice(fromIdx);
+        // Ensure no other .from( appears between workspace_members and the user_id eq
+        const otherFromIdx = chain.indexOf('.from(');
+        const hasOtherFrom = otherFromIdx !== -1 && otherFromIdx > 0;
+        if (!hasOtherFrom && chain.includes('.select(')) {
+          return true;
+        }
+      }
+      idx = normalized.indexOf(userIdEq, idx + 1);
+    }
+
+    return false;
+  });
 }
 
 function hasMemberTypeEnforcement(source) {
@@ -63,7 +88,7 @@ function hasMemberTypeEnforcement(source) {
   return (
     normalized.includes(".eq('type', 'MEMBER')") ||
     normalized.includes('.eq("type", "MEMBER")') ||
-    normalized.includes(".eq('type', \"MEMBER\")") ||
+    normalized.includes('.eq(\'type\', "MEMBER")') ||
     normalized.includes('.eq("type", \'MEMBER\')')
   );
 }

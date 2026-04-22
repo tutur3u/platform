@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -100,22 +101,21 @@ export async function POST(
     }
 
     // Verify user has access to workspace
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (membershipError) {
-      console.error('Membership lookup failed:', membershipError);
+    if (membership.error === 'membership_lookup_failed') {
+      console.error('Membership lookup failed:', membership.error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -208,14 +208,20 @@ export async function GET(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (!membership) {
+    if (membership.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

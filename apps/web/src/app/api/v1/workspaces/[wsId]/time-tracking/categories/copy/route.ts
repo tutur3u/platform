@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
@@ -20,14 +21,20 @@ export async function POST(
     }
 
     // Verify workspace access for target workspace
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('id:user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (!memberCheck) {
+    if (memberCheck.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }
@@ -44,15 +51,20 @@ export async function POST(
       );
     }
 
-    // Verify access to source workspace
-    const { data: sourceMemberCheck } = await supabase
-      .from('workspace_members')
-      .select('id:user_id')
-      .eq('ws_id', sourceWorkspaceId)
-      .eq('user_id', user.id)
-      .single();
+    const sourceMemberCheck = await verifyWorkspaceMembershipType({
+      wsId: sourceWorkspaceId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (!sourceMemberCheck) {
+    if (sourceMemberCheck.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify source workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!sourceMemberCheck.ok) {
       return NextResponse.json(
         { error: 'Source workspace access denied' },
         { status: 403 }

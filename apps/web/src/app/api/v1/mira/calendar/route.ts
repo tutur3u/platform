@@ -8,6 +8,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { decryptEventsFromStorage } from '@/lib/workspace-encryption';
 
@@ -33,14 +34,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (membershipError || !membership) {
+    if (membership.error || !membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

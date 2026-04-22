@@ -1,7 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, Json } from '@tuturuuu/types';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -37,21 +40,20 @@ async function validateWorkspaceModuleAccess(
 ) {
   const normalizedWsId = await normalizeWorkspaceId(wsId, sessionSupabase);
 
-  const { data: membership, error: membershipError } = await sessionSupabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', normalizedWsId)
-    .eq('user_id', userId)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: normalizedWsId,
+    userId: userId,
+    supabase: sessionSupabase,
+  });
 
-  if (membershipError) {
+  if (membership.error === 'membership_lookup_failed') {
     return NextResponse.json(
       { message: 'Failed to verify workspace access' },
       { status: 500 }
     );
   }
 
-  if (!membership) {
+  if (!membership.ok) {
     return NextResponse.json(
       { message: "You don't have access to this workspace" },
       { status: 403 }

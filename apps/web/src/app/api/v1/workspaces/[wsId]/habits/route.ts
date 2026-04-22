@@ -10,7 +10,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { HabitInput } from '@tuturuuu/types/primitives/Habit';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import {
@@ -59,21 +62,20 @@ export async function GET(
     }
 
     // Verify workspace access
-    const { data: memberCheck, error: memberError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (memberError) {
+    if (memberCheck.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }
@@ -158,21 +160,20 @@ export async function POST(
     }
 
     // Verify workspace access
-    const { data: memberCheck, error: memberError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (memberError) {
+    if (memberCheck.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }

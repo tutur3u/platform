@@ -8,6 +8,7 @@ import {
   getMasterKey,
   isEncryptionEnabled,
 } from '@tuturuuu/utils/encryption';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { checkE2EEPermission, looksLikeEncryptedData } from '../utils';
 
@@ -44,12 +45,11 @@ export async function GET(_: Request, { params }: Params) {
   }
 
   // Check if user has access to this workspace (any member can view status)
-  const { data: member } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const member = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: user.id,
+    supabase: supabase,
+  });
 
   if (!member) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });

@@ -13,7 +13,10 @@ import {
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TablesUpdate } from '@tuturuuu/types';
 import type { Habit, HabitInput } from '@tuturuuu/types/primitives/Habit';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -38,12 +41,11 @@ async function verifyWorkspaceMembership(
   wsId: string,
   userId: string
 ) {
-  return await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', userId)
-    .maybeSingle();
+  return await verifyWorkspaceMembershipType({
+    wsId,
+    userId,
+    supabase,
+  });
 }
 
 export async function GET(
@@ -76,17 +78,20 @@ export async function GET(
 
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
-    const { data: membership, error: membershipError } =
-      await verifyWorkspaceMembership(supabase, normalizedWsId, user.id);
+    const membership = await verifyWorkspaceMembership(
+      supabase,
+      normalizedWsId,
+      user.id
+    );
 
-    if (membershipError) {
+    if (membership.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }
@@ -184,17 +189,20 @@ export async function PUT(
 
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
-    const { data: membership, error: membershipError } =
-      await verifyWorkspaceMembership(supabase, normalizedWsId, user.id);
+    const membership = await verifyWorkspaceMembership(
+      supabase,
+      normalizedWsId,
+      user.id
+    );
 
-    if (membershipError) {
+    if (membership.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }
@@ -520,17 +528,20 @@ export async function DELETE(
 
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
-    const { data: membership, error: membershipError } =
-      await verifyWorkspaceMembership(supabase, normalizedWsId, user.id);
+    const membership = await verifyWorkspaceMembership(
+      supabase,
+      normalizedWsId,
+      user.id
+    );
 
-    if (membershipError) {
+    if (membership.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }

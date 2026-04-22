@@ -5,6 +5,7 @@ import {
 import {
   getPermissions,
   normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -118,21 +119,20 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     // Verify user has access to the target workspace
-    const { data: memberCheck, error: memberCheckError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (memberCheckError) {
+    if (memberCheck.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace access' },
         { status: 500 }
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }

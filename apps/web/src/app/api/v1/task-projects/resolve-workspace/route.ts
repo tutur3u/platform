@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -48,17 +49,16 @@ export async function POST(request: Request) {
     }
 
     const hasWorkspaceAccess = async (workspaceId: string) => {
-      const { data: membership, error: membershipError } = await supabase
-        .from('workspace_members')
-        .select('ws_id')
-        .eq('ws_id', workspaceId)
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const membership = await verifyWorkspaceMembershipType({
+        wsId: workspaceId,
+        userId: user.id,
+        supabase: supabase,
+      });
 
-      if (membershipError) {
+      if (membership.error === 'membership_lookup_failed') {
         console.error(
           'Failed to verify workspace membership:',
-          membershipError
+          membership.error
         );
         throw new Error('WORKSPACE_MEMBERSHIP_LOOKUP_FAILED');
       }

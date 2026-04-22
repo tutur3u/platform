@@ -2,6 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import * as z from 'zod';
@@ -53,12 +54,11 @@ export async function PUT(
     }
 
     // Verify workspace access and permissions
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('id:user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
     if (!memberCheck) {
       return NextResponse.json(

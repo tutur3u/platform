@@ -6,6 +6,7 @@ import {
   MAX_LONG_TEXT_LENGTH,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -46,21 +47,20 @@ export async function POST(
     }
 
     // Verify user has access to workspace
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('ws_id', resolvedWorkspaceId)
-      .eq('user_id', user.id)
-      .single();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: resolvedWorkspaceId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (membershipError) {
+    if (membership.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace access' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -151,21 +151,20 @@ export async function GET(
     }
 
     // Verify user has access to workspace
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('ws_id', resolvedWorkspaceId)
-      .eq('user_id', user.id)
-      .single();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: resolvedWorkspaceId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (membershipError) {
+    if (membership.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace access' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -46,12 +47,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if user has access to the workspace
-    const { data: workspaceMember } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const workspaceMember = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
     if (!workspaceMember) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });

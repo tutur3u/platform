@@ -1,6 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json, TablesInsert, TablesUpdate } from '@tuturuuu/types';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type {
   HabitTracker,
   HabitTrackerCardSummary,
@@ -15,6 +14,7 @@ import type {
   HabitTrackerStreakAction,
   HabitTrackerStreakActionInput,
 } from '@tuturuuu/types/primitives/HabitTracker';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import {
   habitTrackerEntryInputSchema,
   habitTrackerInputSchema,

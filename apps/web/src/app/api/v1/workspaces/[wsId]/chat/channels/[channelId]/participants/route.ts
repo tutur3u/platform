@@ -2,7 +2,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -18,12 +21,11 @@ async function requireWorkspaceUser(request: Request, wsId: string) {
     };
   }
   const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const { data: membership } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', normalizedWsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: normalizedWsId,
+    userId: user.id,
+    supabase: supabase,
+  });
   if (!membership) {
     return {
       error: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
