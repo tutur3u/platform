@@ -221,13 +221,27 @@ export async function listSepayBankAccounts(input: { accessToken: string }) {
       url.searchParams.set('since_id', sinceId);
     }
 
-    let response: Response | null = null;
+    let response = await fetchSepay(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${input.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      method: 'GET',
+    });
 
     for (
       let attempt = 0;
-      attempt <= SEPAY_BANK_ACCOUNT_RATE_LIMIT_RETRIES;
+      response.status === 429 &&
+      attempt < SEPAY_BANK_ACCOUNT_RATE_LIMIT_RETRIES;
       attempt += 1
     ) {
+      await delay(
+        readRetryAfterMs(
+          response.headers.get('retry-after'),
+          1000 * (attempt + 1)
+        )
+      );
+
       response = await fetchSepay(url.toString(), {
         headers: {
           Authorization: `Bearer ${input.accessToken}`,
@@ -235,24 +249,6 @@ export async function listSepayBankAccounts(input: { accessToken: string }) {
         },
         method: 'GET',
       });
-
-      if (
-        response.status !== 429 ||
-        attempt === SEPAY_BANK_ACCOUNT_RATE_LIMIT_RETRIES
-      ) {
-        break;
-      }
-
-      await delay(
-        readRetryAfterMs(
-          response.headers.get('retry-after'),
-          1000 * (attempt + 1)
-        )
-      );
-    }
-
-    if (!response) {
-      throw new Error('Failed to list SePay bank accounts');
     }
 
     if (!response.ok) {
