@@ -19,7 +19,10 @@ import {
   reorderWorkspaceCourseModules,
   type UpsertWorkspaceCourseModulePayload,
 } from '@tuturuuu/internal-api';
-import type { WorkspaceCourse } from '@tuturuuu/types';
+import type {
+  WorkspaceCourseBuilderCourse,
+  WorkspaceCourseBuilderModule,
+} from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -42,26 +45,10 @@ import QuizSetForm from '../../../quiz-sets/form';
 import QuizForm from '../../../quizzes/form';
 import { ModuleContentEditor } from '../modules/[moduleId]/content/content-editor';
 
-interface BuilderModule {
-  content: unknown;
-  group_id: string | null;
-  created_at: string;
-  extra_content: unknown;
-  flashcard_count: number;
-  id: string;
-  is_public: boolean;
-  is_published: boolean;
-  name: string;
-  quiz_count: number;
-  quiz_set_count: number;
-  sort_key: number | null;
-  youtube_links: string[] | null;
-}
-
 interface CourseBuilderClientProps {
-  course: WorkspaceCourse;
+  course: WorkspaceCourseBuilderCourse;
   courseId: string;
-  modules: BuilderModule[];
+  modules: WorkspaceCourseBuilderModule[];
   resolvedWsId: string;
   routeWsId: string;
 }
@@ -94,11 +81,34 @@ export function CourseBuilderClient({
   const router = useRouter();
   const { toast } = useToast();
   const t = useTranslations();
-  const [modules, setModules] = useState<BuilderModule[]>(initialModules);
+  const [modules, setModules] =
+    useState<WorkspaceCourseBuilderModule[]>(initialModules);
   const [activeModuleId, setActiveModuleId] = useState<string | null>(
     initialModules[0]?.id ?? null
   );
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  const appendCreatedModule = (newModule: {
+    content: WorkspaceCourseBuilderModule['content'];
+    created_at: WorkspaceCourseBuilderModule['created_at'];
+    extra_content: WorkspaceCourseBuilderModule['extra_content'];
+    id: WorkspaceCourseBuilderModule['id'];
+    is_public: WorkspaceCourseBuilderModule['is_public'];
+    is_published: WorkspaceCourseBuilderModule['is_published'];
+    name: WorkspaceCourseBuilderModule['name'];
+    sort_key: WorkspaceCourseBuilderModule['sort_key'];
+    youtube_links: WorkspaceCourseBuilderModule['youtube_links'];
+  }) => {
+    const builderModule: WorkspaceCourseBuilderModule = {
+      ...newModule,
+      group_id: courseId,
+      flashcard_count: 0,
+      quiz_count: 0,
+      quiz_set_count: 0,
+    };
+    setModules((prev) => [...prev, builderModule]);
+    setActiveModuleId(newModule.id);
+  };
 
   const activeModule = useMemo(
     () => modules.find((module) => module.id === activeModuleId) ?? null,
@@ -124,15 +134,7 @@ export function CourseBuilderClient({
     },
     onSuccess: (newModule) => {
       if (newModule) {
-        const builderModule: BuilderModule = {
-          ...newModule,
-          group_id: courseId,
-          flashcard_count: 0,
-          quiz_count: 0,
-          quiz_set_count: 0,
-        };
-        setModules((prev) => [...prev, builderModule]);
-        setActiveModuleId(newModule.id);
+        appendCreatedModule(newModule);
       }
       toast({
         title: t('common.success'),
@@ -257,17 +259,7 @@ export function CourseBuilderClient({
                   <CourseModuleForm
                     wsId={resolvedWsId}
                     courseId={courseId}
-                    onCreated={(newModule) => {
-                      const builderModule: BuilderModule = {
-                        ...newModule,
-                        group_id: courseId,
-                        flashcard_count: 0,
-                        quiz_count: 0,
-                        quiz_set_count: 0,
-                      };
-                      setModules((prev) => [...prev, builderModule]);
-                      setActiveModuleId(newModule.id);
-                    }}
+                    onCreated={appendCreatedModule}
                   />
                 }
                 trigger={

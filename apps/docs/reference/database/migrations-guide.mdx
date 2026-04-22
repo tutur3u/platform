@@ -568,6 +568,27 @@ DROP POLICY "old_policy" ON workspace_tasks;
    bun sb:reset
    ```
 
+6. **Materialize replacement-table rows before rewiring child foreign keys**
+   ```sql
+   -- When replacing a parent table, copy or upsert the source rows first.
+   INSERT INTO workspace_user_groups (id, ws_id, name)
+   SELECT id, ws_id, name
+   FROM workspace_courses
+   ON CONFLICT (id) DO UPDATE
+   SET name = EXCLUDED.name;
+
+   -- Then backfill the child FK, validate it, and only afterwards drop the legacy column/table.
+   ALTER TABLE workspace_course_modules ADD COLUMN group_id uuid;
+
+   UPDATE workspace_course_modules
+   SET group_id = course_id
+   WHERE group_id IS NULL;
+
+   -- Verify the backfill before dropping or rewiring the legacy FK in a follow-up migration.
+   -- SELECT COUNT(*) FILTER (WHERE group_id IS NULL) AS unmigrated
+   -- FROM workspace_course_modules;
+   ```
+
 ### ❌ DON'T
 
 1. **Don't skip RLS**

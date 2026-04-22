@@ -1,13 +1,14 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const COURSE_ID = '33333333-3333-4333-8333-333333333333';
+
 const mocks = vi.hoisted(() => {
   const membershipMaybeSingle = vi.fn();
   const normalizeWorkspaceId = vi.fn();
   const courseMaybeSingle = vi.fn();
   const listModulesEq = vi.fn();
-  const updateEqId = vi.fn();
-  const updateEqCourse = vi.fn();
+  const rpc = vi.fn();
 
   const sessionSupabase = {
     from: vi.fn(() => ({
@@ -40,14 +41,12 @@ const mocks = vi.hoisted(() => {
           select: vi.fn(() => ({
             eq: listModulesEq,
           })),
-          update: vi.fn(() => ({
-            eq: updateEqId,
-          })),
         };
       }
 
       return { select: vi.fn() };
     }),
+    rpc,
   };
 
   return {
@@ -56,9 +55,8 @@ const mocks = vi.hoisted(() => {
     listModulesEq,
     membershipMaybeSingle,
     normalizeWorkspaceId,
+    rpc,
     sessionSupabase,
-    updateEqCourse,
-    updateEqId,
   };
 });
 
@@ -112,7 +110,7 @@ describe('module order route', () => {
       error: null,
     });
     mocks.courseMaybeSingle.mockResolvedValue({
-      data: { id: 'course-1' },
+      data: { id: '33333333-3333-4333-8333-333333333333' },
       error: null,
     });
     mocks.listModulesEq.mockResolvedValue({
@@ -122,10 +120,7 @@ describe('module order route', () => {
       ],
       error: null,
     });
-    mocks.updateEqCourse.mockResolvedValue({ data: null, error: null });
-    mocks.updateEqId.mockReturnValue({
-      eq: mocks.updateEqCourse,
-    });
+    mocks.rpc.mockResolvedValue({ data: null, error: null });
   });
 
   it('returns 400 when module ids are duplicated', async () => {
@@ -135,7 +130,7 @@ describe('module order route', () => {
 
     const response = await PATCH(
       new NextRequest(
-        'http://localhost/api/v1/workspaces/ws-1/courses/course-1/module-order',
+        `http://localhost/api/v1/workspaces/ws-1/courses/${COURSE_ID}/module-order`,
         {
           method: 'PATCH',
           body: JSON.stringify({
@@ -147,7 +142,7 @@ describe('module order route', () => {
         }
       ),
       {
-        params: Promise.resolve({ wsId: 'ws-1', courseId: 'course-1' }),
+        params: Promise.resolve({ wsId: 'ws-1', courseId: COURSE_ID }),
       }
     );
 
@@ -164,7 +159,7 @@ describe('module order route', () => {
 
     const response = await PATCH(
       new NextRequest(
-        'http://localhost/api/v1/workspaces/ws-1/courses/course-1/module-order',
+        `http://localhost/api/v1/workspaces/ws-1/courses/${COURSE_ID}/module-order`,
         {
           method: 'PATCH',
           body: JSON.stringify({
@@ -176,12 +171,18 @@ describe('module order route', () => {
         }
       ),
       {
-        params: Promise.resolve({ wsId: 'ws-1', courseId: 'course-1' }),
+        params: Promise.resolve({ wsId: 'ws-1', courseId: COURSE_ID }),
       }
     );
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ message: 'success' });
-    expect(mocks.updateEqId).toHaveBeenCalledTimes(2);
+    expect(mocks.rpc).toHaveBeenCalledWith('reorder_workspace_course_modules', {
+      p_group_id: COURSE_ID,
+      p_module_ids: [
+        '22222222-2222-4222-8222-222222222222',
+        '11111111-1111-4111-8111-111111111111',
+      ],
+    });
   });
 });

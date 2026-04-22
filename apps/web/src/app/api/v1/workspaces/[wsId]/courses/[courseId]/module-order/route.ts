@@ -11,6 +11,11 @@ const ModuleOrderSchema = z.object({
   moduleIds: z.array(z.guid()).min(1).max(500),
 });
 
+const RouteParamsSchema = z.object({
+  courseId: z.guid(),
+  wsId: z.string().min(1),
+});
+
 interface RouteParams {
   wsId: string;
   courseId: string;
@@ -18,7 +23,15 @@ interface RouteParams {
 
 export const PATCH = withSessionAuth(
   async (request, context, params: RouteParams | Promise<RouteParams>) => {
-    const { wsId, courseId } = await params;
+    const parsedParams = RouteParamsSchema.safeParse(await params);
+    if (!parsedParams.success) {
+      return NextResponse.json(
+        { message: 'Invalid route params', errors: parsedParams.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { wsId, courseId } = parsedParams.data;
     const normalizedWsId = await normalizeWorkspaceId(wsId, context.supabase);
 
     const membership = await verifyWorkspaceMembershipType({
@@ -41,7 +54,17 @@ export const PATCH = withSessionAuth(
       );
     }
 
-    const parsed = ModuleOrderSchema.safeParse(await request.json());
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { message: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    const parsed = ModuleOrderSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         { message: 'Invalid request body', errors: parsed.error.issues },
@@ -112,18 +135,15 @@ export const PATCH = withSessionAuth(
       );
     }
 
-    const updates = moduleIds.map((moduleId, index) =>
-      sbAdmin
-        .from('workspace_course_modules')
-        .update({ sort_key: index + 1 })
-        .eq('id', moduleId)
-        .eq('group_id', courseId)
+    const { error: reorderError } = await sbAdmin.rpc(
+      'reorder_workspace_course_modules',
+      {
+        p_group_id: courseId,
+        p_module_ids: moduleIds,
+      }
     );
 
-    const results = await Promise.all(updates);
-    const failedUpdate = results.find((result) => result.error);
-
-    if (failedUpdate?.error) {
+    if (reorderError) {
       return NextResponse.json(
         { message: 'Failed to persist module order' },
         { status: 500 }
