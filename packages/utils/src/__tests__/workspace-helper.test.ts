@@ -11,26 +11,30 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 import {
+  getPermissions,
   getWorkspace,
   getWorkspaces,
   normalizeWorkspaceId,
 } from '../workspace-helper';
 
 describe('workspace-helper tier lookup', () => {
+  const workspaceOneId = '11111111-1111-4111-8111-111111111111';
+  const workspaceTwoId = '22222222-2222-4222-8222-222222222222';
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('resolves a workspace tier through workspace_subscriptions without joining protected product tables', async () => {
     const workspaceQuery = createSingleWorkspaceQuery({
-      id: 'ws-1',
+      id: workspaceOneId,
       name: 'Workspace One',
       personal: false,
       workspace_members: [{ user_id: 'user-1' }],
     });
     const subscriptionQuery = createSubscriptionLookupQuery([
       {
-        ws_id: 'ws-1',
+        ws_id: workspaceOneId,
         created_at: '2026-03-10T00:00:00.000Z',
         status: 'active',
         workspace_subscription_products: { tier: 'PRO' },
@@ -47,9 +51,9 @@ describe('workspace-helper tier lookup', () => {
       createAdminClient({ subscriptionQuery })
     );
 
-    const workspace = await getWorkspace('ws-1');
+    const workspace = await getWorkspace(workspaceOneId);
 
-    expect(workspace?.id).toBe('ws-1');
+    expect(workspace?.id).toBe(workspaceOneId);
     expect(workspace?.joined).toBe(true);
     expect(workspace?.tier).toBe('PRO');
     expect(workspaceQuery.select).toHaveBeenCalledWith(
@@ -63,7 +67,7 @@ describe('workspace-helper tier lookup', () => {
   it('hydrates workspace list tiers from the subscription lookup query', async () => {
     const workspacesQuery = createWorkspacesQuery([
       {
-        id: 'ws-1',
+        id: workspaceOneId,
         name: 'Workspace One',
         avatar_url: null,
         logo_url: null,
@@ -72,7 +76,7 @@ describe('workspace-helper tier lookup', () => {
         workspace_members: [{ user_id: 'user-1' }],
       },
       {
-        id: 'ws-2',
+        id: workspaceTwoId,
         name: 'Workspace Two',
         avatar_url: null,
         logo_url: null,
@@ -83,13 +87,13 @@ describe('workspace-helper tier lookup', () => {
     ]);
     const subscriptionQuery = createSubscriptionLookupQuery([
       {
-        ws_id: 'ws-1',
+        ws_id: workspaceOneId,
         created_at: '2026-03-10T00:00:00.000Z',
         status: 'active',
         workspace_subscription_products: { tier: 'PLUS' },
       },
       {
-        ws_id: 'ws-2',
+        ws_id: workspaceTwoId,
         created_at: '2026-03-11T00:00:00.000Z',
         status: 'canceled',
         workspace_subscription_products: { tier: 'ENTERPRISE' },
@@ -109,16 +113,32 @@ describe('workspace-helper tier lookup', () => {
     const workspaces = await getWorkspaces();
 
     expect(workspaces).toEqual([
-      expect.objectContaining({ id: 'ws-1', tier: 'PLUS' }),
-      expect.objectContaining({ id: 'ws-2', tier: null }),
+      expect.objectContaining({ id: workspaceOneId, tier: 'PLUS' }),
+      expect.objectContaining({ id: workspaceTwoId, tier: null }),
     ]);
     expect(workspacesQuery.select).toHaveBeenCalledWith(
       'id, name, avatar_url, logo_url, personal, created_at, workspace_members!inner(user_id)'
     );
     expect(subscriptionQuery.in).toHaveBeenCalledWith('ws_id', [
-      'ws-1',
-      'ws-2',
+      workspaceOneId,
+      workspaceTwoId,
     ]);
+  });
+
+  it('returns null without querying when the workspace id is not a UUID or supported slug', async () => {
+    const fromMock = vi.fn();
+    const getUserMock = vi.fn();
+
+    mockCreateClient.mockResolvedValue({
+      auth: { getUser: getUserMock },
+      from: fromMock,
+    });
+
+    const workspace = await getWorkspace('traffic-advice');
+
+    expect(workspace).toBeNull();
+    expect(getUserMock).not.toHaveBeenCalled();
+    expect(fromMock).not.toHaveBeenCalled();
   });
 });
 
@@ -196,13 +216,73 @@ describe('normalizeWorkspaceId', () => {
     expect(getUserMock).toHaveBeenCalledTimes(1);
     expect(fromMock).toHaveBeenCalledWith('workspaces');
     expect(query.select).toHaveBeenCalledWith(
-      'id, workspace_members!inner(user_id)'
+      'id, workspace_members!inner(user_id, type)'
     );
     expect(query.eq).toHaveBeenCalledWith('personal', true);
     expect(query.eq).toHaveBeenCalledWith(
       'workspace_members.user_id',
       'user-1'
     );
+    expect(query.eq).toHaveBeenCalledWith('workspace_members.type', 'MEMBER');
+  });
+});
+
+describe('getPermissions membership type gate', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns null when caller membership is GUEST', async () => {
+    const membershipQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn(),
+    };
+
+    membershipQuery.select.mockReturnValue(membershipQuery);
+    membershipQuery.eq.mockReturnValue(membershipQuery);
+    membershipQuery.maybeSingle.mockResolvedValue({
+      data: { type: 'GUEST' },
+      error: null,
+    });
+
+    const workspacesQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn(),
+    };
+
+    workspacesQuery.select.mockReturnValue(workspacesQuery);
+    workspacesQuery.eq.mockReturnValue(workspacesQuery);
+    workspacesQuery.maybeSingle.mockResolvedValue({
+      data: { id: '11111111-1111-4111-8111-111111111111' },
+      error: null,
+    });
+
+    mockCreateClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: 'user-1', email: 'user@example.com' } },
+        }),
+      },
+      from: vi.fn((table: string) => {
+        if (table === 'workspace_members') return membershipQuery;
+        if (table === 'workspaces') return workspacesQuery;
+        throw new Error(`Unexpected table lookup: ${table}`);
+      }),
+    });
+
+    mockCreateAdminClient.mockResolvedValue({
+      from: vi.fn(() => {
+        throw new Error('Admin client should not be called for GUEST caller');
+      }),
+    });
+
+    const permissions = await getPermissions({
+      wsId: '11111111-1111-4111-8111-111111111111',
+    });
+
+    expect(permissions).toBeNull();
   });
 });
 

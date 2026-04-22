@@ -3,12 +3,11 @@
 import { Loader2 } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useOptionalWorkspacePresenceContext } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
-import { useTasksHref } from '@tuturuuu/ui/tu-do/tasks-route-context';
-import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
 import { TaskEditDialog } from './task-edit-dialog';
+import { buildWorkspaceTaskUrl } from './task-url';
 
 type TaskWithLocation = Task & {
   list?: {
@@ -40,7 +39,6 @@ export default function TaskDetailPage({
   currentUser,
 }: TaskDetailPageProps) {
   const wsPresence = useOptionalWorkspacePresenceContext();
-  const tasksHref = useTasksHref();
   const router = useRouter();
   const hasRedirectedRef = useRef(false);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -53,17 +51,20 @@ export default function TaskDetailPage({
 
     hasRedirectedRef.current = true;
     setIsNavigating(true);
-    const workspaceSlug = toWorkspaceSlug(wsId, {
-      personal: isPersonalWorkspace,
-    });
+    const boardUrl = buildWorkspaceTaskUrl({
+      boardId,
+      currentPathname: window.location.pathname,
+      taskId: task.id,
+      workspaceId: wsId,
+      isPersonalWorkspace,
+    }).replace(/\?task=.*$/u, '');
 
     if (window.history.length > 1) {
       router.back();
     } else {
-      const targetUrl = `/${workspaceSlug}${tasksHref(`/boards/${boardId}`)}`;
-      router.push(targetUrl);
+      router.push(boardUrl);
     }
-  }, [boardId, isPersonalWorkspace, router, tasksHref, wsId]);
+  }, [boardId, isPersonalWorkspace, router, task.id, wsId]);
 
   const handleUpdate = useCallback(() => {
     router.refresh();
@@ -76,12 +77,17 @@ export default function TaskDetailPage({
   const handleNavigateToTask = useCallback(
     async (nextTaskId: string) => {
       if (nextTaskId === task.id) return;
-      const workspaceSlug = toWorkspaceSlug(wsId, {
-        personal: isPersonalWorkspace,
-      });
-      router.push(`/${workspaceSlug}${tasksHref(`/${nextTaskId}`)}`);
+      router.push(
+        buildWorkspaceTaskUrl({
+          boardId,
+          currentPathname: window.location.pathname,
+          taskId: nextTaskId,
+          workspaceId: wsId,
+          isPersonalWorkspace,
+        })
+      );
     },
-    [isPersonalWorkspace, router, task.id, tasksHref, wsId]
+    [boardId, isPersonalWorkspace, router, task.id, wsId]
   );
 
   // Track presence for avatar display — on the kanban board page,
@@ -114,7 +120,13 @@ export default function TaskDetailPage({
     }
 
     dispatchRecentSidebarVisit({
-      href: window.location.pathname,
+      href: buildWorkspaceTaskUrl({
+        boardId,
+        currentPathname: window.location.pathname,
+        taskId: task.id,
+        workspaceId: wsId,
+        isPersonalWorkspace,
+      }),
       scopeWsId: wsId,
       snapshot: {
         badges,
@@ -122,7 +134,15 @@ export default function TaskDetailPage({
         title: task.name || '',
       },
     });
-  }, [task.list?.board?.name, task.list?.name, task.name, wsId]);
+  }, [
+    boardId,
+    isPersonalWorkspace,
+    task.id,
+    task.list?.board?.name,
+    task.list?.name,
+    task.name,
+    wsId,
+  ]);
 
   // Show loading state during navigation to prevent blank screen
   if (isNavigating) {

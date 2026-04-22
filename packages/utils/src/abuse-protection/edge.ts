@@ -6,22 +6,30 @@
  * Vercel Edge Runtime or Next.js proxy/middleware.
  */
 
-import { getUpstashRestRedisClient } from '../upstash-rest';
-import { REDIS_KEYS } from './constants';
+import {
+  getUpstashRestRedisClient,
+  type UpstashRestRedisClient,
+} from '../upstash-rest';
+import {
+  ABUSE_THRESHOLDS,
+  BLOCK_DURATIONS,
+  REDIS_KEYS,
+  WINDOW_MS,
+} from './constants';
 import type { BlockInfo } from './types';
 
-/**
- * Lazy-loaded Redis client for Edge Runtime.
- * Uses @upstash/redis REST API (no Node.js dependencies).
- * Typed with a minimal interface to avoid class compatibility issues across
- * different @upstash/redis resolution paths.
- */
-interface EdgeRedisClient {
-  get: <T = unknown>(key: string) => Promise<T | null>;
-}
-
-let edgeRedisClient: EdgeRedisClient | null = null;
+let edgeRedisClient: UpstashRestRedisClient | null = null;
 let edgeRedisInitialized = false;
+
+function parsePositiveIntEnv(name: string, fallback: number): number {
+  const rawValue = process.env[name];
+  if (!rawValue) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(rawValue, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
 
 async function getEdgeRedisClient() {
   if (edgeRedisInitialized) return edgeRedisClient;
@@ -65,6 +73,120 @@ export async function isIPBlockedEdge(
     // Fail-open: if Redis is unavailable, allow request through
     return null;
   }
+}
+
+export async function blockIPEdge(
+  ipAddress: string,
+  reason: BlockInfo['reason']
+): Promise<BlockInfo | null> {
+  try {
+    const redis = await getEdgeRedisClient();
+    if (!redis) return null;
+
+    const currentLevel =
+      (await redis.get<number>(REDIS_KEYS.IP_BLOCK_LEVEL(ipAddress))) || 0;
+    const newLevel = Math.min(currentLevel + 1, 4) as 1 | 2 | 3 | 4;
+    const blockDuration = BLOCK_DURATIONS[newLevel];
+    const blockedAt = new Date();
+    const expiresAt = new Date(blockedAt.getTime() + blockDuration * 1000);
+    const blockInfo = {
+      id: `edge:${ipAddress}:${blockedAt.getTime()}`,
+      blockLevel: newLevel,
+      reason,
+      blockedAt,
+      expiresAt,
+    } satisfies BlockInfo;
+
+    await Promise.all([
+      redis.set(
+        REDIS_KEYS.IP_BLOCKED(ipAddress),
+        JSON.stringify({
+          id: blockInfo.id,
+          level: blockInfo.blockLevel,
+          reason: blockInfo.reason,
+          expiresAt: blockInfo.expiresAt.toISOString(),
+          blockedAt: blockInfo.blockedAt.toISOString(),
+        }),
+        { ex: blockDuration }
+      ),
+      redis.set(REDIS_KEYS.IP_BLOCK_LEVEL(ipAddress), newLevel, {
+        ex: WINDOW_MS.TWENTY_FOUR_HOURS / 1000,
+      }),
+    ]);
+
+    return blockInfo;
+  } catch {
+    return null;
+  }
+}
+
+async function recordEdgeAbuseSignal(
+  ipAddress: string,
+  redisKey: string,
+  {
+    maxAttempts,
+    windowMs,
+  }: {
+    maxAttempts: number;
+    windowMs: number;
+  }
+): Promise<BlockInfo | null> {
+  try {
+    const redis = await getEdgeRedisClient();
+    if (!redis) return null;
+
+    const attempts = await redis.incr(redisKey);
+
+    if (attempts === 1) {
+      await redis.expire(redisKey, Math.ceil(windowMs / 1000));
+    }
+
+    if (attempts < maxAttempts) {
+      return null;
+    }
+
+    return blockIPEdge(ipAddress, 'api_abuse');
+  } catch {
+    return null;
+  }
+}
+
+export async function recordMalformedAuthCookieEdge(
+  ipAddress: string
+): Promise<BlockInfo | null> {
+  return recordEdgeAbuseSignal(
+    ipAddress,
+    REDIS_KEYS.API_MALFORMED_AUTH_COOKIE(ipAddress),
+    {
+      maxAttempts: parsePositiveIntEnv(
+        'EDGE_MALFORMED_AUTH_COOKIE_MAX',
+        ABUSE_THRESHOLDS.MALFORMED_AUTH_COOKIE_MAX
+      ),
+      windowMs: parsePositiveIntEnv(
+        'EDGE_MALFORMED_AUTH_COOKIE_WINDOW_MS',
+        ABUSE_THRESHOLDS.MALFORMED_AUTH_COOKIE_WINDOW_MS
+      ),
+    }
+  );
+}
+
+export async function recordSuspiciousApiRequestEdge(
+  ipAddress: string
+): Promise<BlockInfo | null> {
+  return recordEdgeAbuseSignal(
+    ipAddress,
+    REDIS_KEYS.API_SUSPICIOUS(ipAddress),
+    {
+      maxAttempts: parsePositiveIntEnv(
+        'EDGE_SUSPICIOUS_API_MAX',
+        ABUSE_THRESHOLDS.SUSPICIOUS_API_MAX
+      ),
+      windowMs: parsePositiveIntEnv(
+        'EDGE_SUSPICIOUS_API_WINDOW_MS',
+        ABUSE_THRESHOLDS.SUSPICIOUS_API_WINDOW_MS
+      ),
+    }
+  );
 }
 
 /**

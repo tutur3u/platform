@@ -6,8 +6,9 @@ import type { TablesUpdate } from '@tuturuuu/types';
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
-  MAX_NAME_LENGTH,
+  MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -21,7 +22,7 @@ const uuidString = z
   );
 
 const updateDraftSchema = z.object({
-  name: z.string().max(MAX_NAME_LENGTH).min(1).optional(),
+  name: z.string().max(MAX_TASK_NAME_LENGTH).min(1).optional(),
   description: z.string().max(MAX_LONG_TEXT_LENGTH).nullish(),
   priority: z.enum(['critical', 'high', 'normal', 'low']).nullish(),
   board_id: uuidString.nullish(),
@@ -48,14 +49,22 @@ async function verifyAccess(wsId: string, draftId: string) {
     return { error: 'Unauthorized', status: 401, supabase, user: null };
   }
 
-  const { data: membership } = await supabase
-    .from('workspace_members')
-    .select('ws_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .single();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: user.id,
+    supabase: supabase,
+  });
 
-  if (!membership) {
+  if (membership.error === 'membership_lookup_failed') {
+    return {
+      error: 'Failed to verify workspace membership',
+      status: 500,
+      supabase,
+      user: null,
+    };
+  }
+
+  if (!membership.ok) {
     return { error: 'Forbidden', status: 403, supabase, user };
   }
 

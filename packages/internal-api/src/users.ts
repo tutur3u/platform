@@ -19,8 +19,50 @@ export type CurrentUserProfileResponse = {
   default_workspace_id: string | null;
 };
 
+export type CurrentUserDefaultWorkspaceResponse = {
+  id: string;
+  name: string;
+  personal?: boolean | null;
+} | null;
+
+export interface WorkspaceAttendanceExportRecord {
+  date: string;
+  groupId: string;
+  groupName: string | null;
+  notes: string;
+  status: string;
+  userDisplayName: string | null;
+  userEmail: string | null;
+  userFullName: string | null;
+  userId: string;
+  userName: string;
+}
+
+export interface ListWorkspaceAttendanceExportResponse {
+  count: number;
+  data: WorkspaceAttendanceExportRecord[];
+  nextOffset?: number;
+}
+
 export type UpdateCurrentUserDefaultWorkspaceResponse = {
   success: boolean;
+};
+
+type CurrentUserAvatarUploadUrlResponse = {
+  uploadUrl: string;
+  publicUrl: string;
+};
+
+export type UploadCurrentUserAvatarResult = {
+  publicUrl: string;
+  finalizeOk: boolean;
+  finalizeError?: string;
+};
+
+export type UpdateCurrentUserProfilePayload = {
+  avatar_url?: string | null;
+  display_name?: string | null;
+  full_name?: string | null;
 };
 
 export interface CreateSupportInquiryPayload {
@@ -84,6 +126,18 @@ export async function getCurrentUserProfile(
   });
 }
 
+export async function getCurrentUserDefaultWorkspace(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CurrentUserDefaultWorkspaceResponse>(
+    '/api/v1/users/me/default-workspace',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function updateCurrentUserDefaultWorkspace(
   workspaceId: string | null,
   options?: InternalApiClientOptions
@@ -99,6 +153,88 @@ export async function updateCurrentUserDefaultWorkspace(
       body: JSON.stringify({ workspaceId }),
     }
   );
+}
+
+export async function createCurrentUserAvatarUploadUrl(
+  filename: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CurrentUserAvatarUploadUrlResponse>(
+    '/api/v1/users/me/avatar/upload-url',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ filename }),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateCurrentUserProfile(
+  payload: UpdateCurrentUserProfilePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CurrentUserProfileResponse>('/api/v1/users/me/profile', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+  });
+}
+
+export async function uploadCurrentUserAvatar(
+  file: File,
+  filename = file.name,
+  options?: InternalApiClientOptions
+): Promise<UploadCurrentUserAvatarResult> {
+  const client = getInternalApiClient(options);
+  const { uploadUrl, publicUrl } = await createCurrentUserAvatarUploadUrl(
+    filename,
+    options
+  );
+
+  const uploadResponse = await client.fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': file.type,
+    },
+    body: file,
+    cache: 'no-store',
+  });
+
+  if (!uploadResponse.ok) {
+    throw new Error('Failed to upload file');
+  }
+
+  try {
+    await updateCurrentUserProfile({ avatar_url: publicUrl }, options);
+    return { publicUrl, finalizeOk: true };
+  } catch (error) {
+    return {
+      publicUrl,
+      finalizeOk: false,
+      finalizeError:
+        error instanceof Error
+          ? error.message
+          : 'Failed to finalize avatar profile update',
+    };
+  }
+}
+
+export async function removeCurrentUserAvatar(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<void>('/api/v1/users/me/avatar', {
+    method: 'DELETE',
+    cache: 'no-store',
+  });
 }
 
 export async function getUserCalendarSettings(
@@ -128,6 +264,36 @@ export async function createSupportInquiry(
       },
       body: JSON.stringify(payload),
       cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceAttendanceExportRecords(
+  workspaceId: string,
+  {
+    endDate,
+    limit,
+    offset,
+    startDate,
+  }: {
+    endDate: string;
+    limit?: number;
+    offset?: number;
+    startDate: string;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ListWorkspaceAttendanceExportResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/attendance/export`,
+    {
+      cache: 'no-store',
+      query: {
+        endDate,
+        limit,
+        offset,
+        startDate,
+      },
     }
   );
 }

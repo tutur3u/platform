@@ -602,7 +602,7 @@ export async function CoursesStats({ wsId }: { wsId: string }) {
   }
 
   const { count } = await supabase
-    .from('workspace_courses')
+    .from('workspace_user_groups')
     .select('*', { count: 'exact', head: true })
     .eq('ws_id', wsId);
 

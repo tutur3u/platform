@@ -1,7 +1,7 @@
 'use client';
 
 import { type QueryClient, useMutation } from '@tanstack/react-query';
-import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
+import { bulkWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
@@ -17,34 +17,24 @@ export function useBulkClearLabels(
 ) {
   return useMutation({
     mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
-      for (const taskId of taskIds) {
-        try {
-          await updateWorkspaceTask(
-            wsId,
-            taskId,
-            { label_ids: [] },
-            apiOptions
-          );
-          successCount++;
-        } catch (error) {
-          failures.push({
-            taskId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
-      }
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: { type: 'clear_labels' },
+        },
+        apiOptions
+      );
 
-      if (successCount === 0 && taskIds.length > 0) {
+      if (result.successCount === 0 && taskIds.length > 0) {
         throw new Error(
           `Failed to clear labels from all ${taskIds.length} tasks`
         );
       }
 
-      return { count: successCount, taskIds, failures };
+      return { count: result.successCount, taskIds, failures: result.failures };
     },
     onMutate: async ({ taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -136,34 +126,24 @@ export function useBulkClearProjects(
 ) {
   return useMutation({
     mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
-      for (const taskId of taskIds) {
-        try {
-          await updateWorkspaceTask(
-            wsId,
-            taskId,
-            { project_ids: [] },
-            apiOptions
-          );
-          successCount++;
-        } catch (error) {
-          failures.push({
-            taskId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
-      }
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: { type: 'clear_projects' },
+        },
+        apiOptions
+      );
 
-      if (successCount === 0 && taskIds.length > 0) {
+      if (result.successCount === 0 && taskIds.length > 0) {
         throw new Error(
           `Failed to clear projects from all ${taskIds.length} tasks`
         );
       }
 
-      return { count: successCount, taskIds, failures };
+      return { count: result.successCount, taskIds, failures: result.failures };
     },
     onMutate: async ({ taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -255,34 +235,24 @@ export function useBulkClearAssignees(
 ) {
   return useMutation({
     mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
-      for (const taskId of taskIds) {
-        try {
-          await updateWorkspaceTask(
-            wsId,
-            taskId,
-            { assignee_ids: [] },
-            apiOptions
-          );
-          successCount++;
-        } catch (error) {
-          failures.push({
-            taskId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
-      }
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: { type: 'clear_assignees' },
+        },
+        apiOptions
+      );
 
-      if (successCount === 0 && taskIds.length > 0) {
+      if (result.successCount === 0 && taskIds.length > 0) {
         throw new Error(
           `Failed to clear assignees from all ${taskIds.length} tasks`
         );
       }
 
-      return { count: successCount, taskIds, failures };
+      return { count: result.successCount, taskIds, failures: result.failures };
     },
     onMutate: async ({ taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -376,32 +346,25 @@ export function useBulkDeleteTasks(
 ) {
   return useMutation({
     mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
-      for (const taskId of taskIds) {
-        try {
-          await updateWorkspaceTask(
-            wsId,
-            taskId,
-            { deleted: true },
-            apiOptions
-          );
-          successCount++;
-        } catch (error) {
-          failures.push({
-            taskId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
-      }
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: {
+            type: 'update_fields',
+            updates: { deleted: true },
+          },
+        },
+        apiOptions
+      );
 
-      if (successCount === 0) {
+      if (result.successCount === 0 && taskIds.length > 0) {
         throw new Error(`Failed to delete all ${taskIds.length} tasks`);
       }
 
-      return { count: successCount, taskIds, failures };
+      return { count: result.successCount, taskIds, failures: result.failures };
     },
     onMutate: async ({ taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });

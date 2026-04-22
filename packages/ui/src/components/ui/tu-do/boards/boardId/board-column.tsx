@@ -253,7 +253,7 @@ export function BoardColumn({
       ref={composedRef}
       style={style}
       className={cn(
-        'group flex h-full w-87.5 flex-col rounded-xl transition-all duration-200',
+        'group flex h-full w-87.5 max-w-[calc(100vw-1.5rem)] shrink-0 snap-start flex-col rounded-xl transition-all duration-200',
         'touch-none select-none',
         colorClass,
         isDragging &&
@@ -291,6 +291,7 @@ export function BoardColumn({
             listId={column.id}
             listName={column.name}
             listStatus={column.status}
+            listColor={column.color as SupportedColor}
             tasks={tasks}
             boardId={boardId}
             wsId={wsId}

@@ -83,6 +83,7 @@ import { useTaskProjectManagement } from '../../hooks/useTaskProjectManagement';
 import { useTaskDialogContext } from '../../providers/task-dialog-provider';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
+import { CreateListDialog } from '../../shared/create-list-dialog';
 import { formatRelationshipTaskIdentifier } from '../../shared/relationship-task-identifier';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
@@ -164,6 +165,7 @@ function TaskCardInner({
 
   const [isLoading, setIsLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isCreateListDialogOpen, setIsCreateListDialogOpen] = useState(false);
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [isInViewport, setIsInViewport] = useState(false);
@@ -266,6 +268,20 @@ function TaskCardInner({
       enabled: !!effectiveWorkspaceId && !isPersonalWorkspace,
     });
 
+  const relationshipSummary =
+    task.relationship_summary ??
+    ({
+      parent_task_id: null,
+      parent_task: null,
+      child_count: 0,
+      blocked_by_count: 0,
+      blocking_count: 0,
+      related_count: 0,
+    } as const);
+  const shouldLoadRelationshipPreview =
+    isInViewport &&
+    (isAnyRelationshipMenuOpen || relationshipSummary.blocked_by_count > 0);
+
   // Use task relationships hook for managing parent/child/blocking/related tasks
   const {
     parentTask,
@@ -288,19 +304,8 @@ function TaskCardInner({
     taskId: task.id,
     boardId,
     wsId: effectiveWorkspaceId,
-    enabled: isAnyRelationshipMenuOpen && isInViewport,
+    enabled: shouldLoadRelationshipPreview,
   });
-
-  const relationshipSummary =
-    task.relationship_summary ??
-    ({
-      parent_task_id: null,
-      parent_task: null,
-      child_count: 0,
-      blocked_by_count: 0,
-      blocking_count: 0,
-      related_count: 0,
-    } as const);
 
   const summaryParentTaskId = relationshipSummary.parent_task_id;
   const summaryParentTask = relationshipSummary.parent_task ?? null;
@@ -435,6 +440,33 @@ function TaskCardInner({
   const parentBadgeIdentifier = parentBadgeTask
     ? formatRelationshipTaskIdentifier(parentBadgeTask)
     : null;
+  const blockedByPreviewTasks = useMemo(() => {
+    if (!hasLoadedRelationships) {
+      return [];
+    }
+
+    return [...blockedByTasks]
+      .sort((left, right) => {
+        const leftCompleted = left.completed ? 1 : 0;
+        const rightCompleted = right.completed ? 1 : 0;
+        if (leftCompleted !== rightCompleted) {
+          return leftCompleted - rightCompleted;
+        }
+
+        return left.name.localeCompare(right.name);
+      })
+      .slice(0, 1);
+  }, [blockedByTasks, hasLoadedRelationships]);
+  const primaryBlockedByTask = blockedByPreviewTasks[0] ?? null;
+  const primaryBlockedByTaskIdentifier = primaryBlockedByTask
+    ? formatRelationshipTaskIdentifier(primaryBlockedByTask)
+    : null;
+  const blockedByOverflowCount = Math.max(
+    0,
+    blockedByCount - blockedByPreviewTasks.length
+  );
+  const showBlockedByCallout =
+    blockedByCount > 0 && !(task.closed_at || task.completed_at);
 
   // Fetch available task lists using React Query (same key as other components)
   const { data: availableLists = [] } = useQuery({
@@ -1016,27 +1048,6 @@ function TaskCardInner({
       });
     }
 
-    // Blocked indicator badge (this task is blocked by others)
-    if (blockedByCount > 0) {
-      badges.push({
-        id: 'blocked',
-        element: (
-          <Badge
-            key="blocked"
-            variant="secondary"
-            className="h-5 shrink-0 border border-dynamic-red/30 bg-dynamic-red/10 px-2 text-[10px] text-dynamic-red"
-            title={t('blocked_by_n_tasks', { count: blockedByCount })}
-            ref={(el) => {
-              if (el) badgeRefs.current.set('blocked', el as any);
-            }}
-          >
-            <Ban className="h-2.5 w-2.5" />
-            {t('blocked')}
-          </Badge>
-        ),
-      });
-    }
-
     // Blocking indicator badge (this task blocks others)
     if (blockingCount > 0) {
       badges.push({
@@ -1097,7 +1108,6 @@ function TaskCardInner({
     childTaskCount,
     hasLoadedRelationships,
     blockingCount,
-    blockedByCount,
     relatedTaskCount,
     t,
     parentBadgeIdentifier,
@@ -1157,6 +1167,10 @@ function TaskCardInner({
 
   const visibleBadges = taskBadges.slice(0, visibleBadgeCount);
   const hiddenBadges = taskBadges.slice(visibleBadgeCount);
+  const showBlockedByInlineWithCheckbox =
+    showBlockedByCallout && taskBadges.length === 0;
+  const showBlockedByUnderTitle =
+    showBlockedByCallout && !showBlockedByInlineWithCheckbox;
 
   // Get all tasks from query to subscribe to cache updates
   const { data: allTasksFromQuery } = useQuery({
@@ -1260,6 +1274,88 @@ function TaskCardInner({
     allTasksFromQuery,
   ]);
 
+  const blockedByCluster = (
+    <div className="relative overflow-hidden rounded-md border border-dynamic-red/16 bg-dynamic-red/[0.045] px-2 py-1.5">
+      <div className="absolute inset-y-1.5 left-1.5 w-0.75 rounded-full bg-dynamic-red/45" />
+      <div className="flex min-w-0 items-center justify-between gap-2 pl-3">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1 font-semibold text-[10px] text-dynamic-red uppercase tracking-[0.12em]">
+            <Ban className="h-3 w-3" />
+            <span>{t('blocked_by')}</span>
+          </div>
+          {!primaryBlockedByTask && (
+            <span className="truncate text-[11px] text-muted-foreground">
+              {t('blocked_by_help')}
+            </span>
+          )}
+        </div>
+        {primaryBlockedByTask && (
+          <div className="flex shrink-0 items-center gap-1">
+            <HoverCard openDelay={120}>
+              <HoverCardTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    'rounded-md border border-dynamic-red/18 bg-background/90 px-1.5 py-0.5 font-mono text-[9px] text-dynamic-red/85 uppercase transition-colors',
+                    'hover:border-dynamic-red/30 hover:bg-background'
+                  )}
+                  aria-label={t('blocked_by_n_tasks', {
+                    count: blockedByCount,
+                  })}
+                >
+                  {primaryBlockedByTaskIdentifier ?? t('blocked')}
+                </button>
+              </HoverCardTrigger>
+              <HoverCardContent
+                side="top"
+                align="end"
+                className="w-64 border-dynamic-red/20 bg-background/95 p-3 backdrop-blur-sm"
+              >
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-md border border-dynamic-red/18 bg-dynamic-red/8 px-1.5 py-0.5 font-mono text-[10px] text-dynamic-red uppercase">
+                      {primaryBlockedByTaskIdentifier ?? t('blocked')}
+                    </span>
+                    {primaryBlockedByTask.completed && (
+                      <Badge
+                        variant="secondary"
+                        className="h-5 border-dynamic-green/20 bg-dynamic-green/10 px-1.5 text-[10px] text-dynamic-green"
+                      >
+                        {t('done')}
+                      </Badge>
+                    )}
+                  </div>
+                  <div
+                    className={cn(
+                      'text-sm leading-snug',
+                      primaryBlockedByTask.completed &&
+                        'text-muted-foreground line-through'
+                    )}
+                  >
+                    {primaryBlockedByTask.name}
+                  </div>
+                  {primaryBlockedByTask.board_name && (
+                    <div className="text-[11px] text-muted-foreground">
+                      {primaryBlockedByTask.board_name}
+                    </div>
+                  )}
+                </div>
+              </HoverCardContent>
+            </HoverCard>
+            {blockedByOverflowCount > 0 && (
+              <Badge
+                variant="secondary"
+                className="h-5 border-dynamic-red/16 bg-dynamic-red/8 px-1.5 text-[10px] text-dynamic-red/80"
+              >
+                +{blockedByOverflowCount}
+              </Badge>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <Card
       data-id={task.id}
@@ -1294,6 +1390,7 @@ function TaskCardInner({
           : 'cursor-grab touch-none select-none active:cursor-grabbing',
         // Task list or priority-based styling
         getCardColorClasses(),
+        showBlockedByCallout && 'bg-dynamic-red/[0.03]',
         // When dragging OR undergoing optimistic update, make invisible but keep in layout
         (isDragging || optimisticUpdateInProgress?.has(task.id)) && 'opacity-0',
         isOverlay &&
@@ -1377,6 +1474,7 @@ function TaskCardInner({
               >
                 {task.name}
               </button>
+              {showBlockedByUnderTitle && blockedByCluster}
             </div>
           </div>
           {/* Actions menu only */}
@@ -1677,16 +1775,19 @@ function TaskCardInner({
                   )}
 
                   {/* Move Menu */}
-                  {availableLists.length > 1 && (
+                  {availableLists.length > 0 && effectiveWorkspaceId && (
                     <TaskMoveMenu
                       currentListId={task.list_id}
                       availableLists={availableLists}
                       isLoading={isLoading}
                       onMoveToList={handleMoveToList}
                       onMenuItemSelect={handleMenuItemSelect}
+                      onRequestOpenCreateDialog={() => {
+                        setMenuOpen(false);
+                        setIsCreateListDialogOpen(true);
+                      }}
                       translations={{
                         move: t('move'),
-                        noOtherListsAvailable: t('no_other_lists_available'),
                       }}
                     />
                   )}
@@ -1906,6 +2007,9 @@ function TaskCardInner({
               ref={containerRef}
               className="scrollbar-hide flex w-full items-center gap-1 overflow-auto whitespace-nowrap rounded-lg"
             >
+              {showBlockedByInlineWithCheckbox && (
+                <div className="min-w-0 flex-1">{blockedByCluster}</div>
+              )}
               {visibleBadges.map((badge) => badge.element)}
               {visibleBadges.length > 0 && hiddenBadges.length > 0 && (
                 <HoverCard openDelay={200}>
@@ -2032,6 +2136,18 @@ function TaskCardInner({
           deleting: t('deleting'),
         }}
       />
+      {effectiveWorkspaceId && (
+        <CreateListDialog
+          open={isCreateListDialogOpen}
+          onOpenChange={setIsCreateListDialogOpen}
+          boardId={boardId}
+          wsId={effectiveWorkspaceId}
+          initialStatus="active"
+          onSuccess={(listId) => {
+            handleMoveToList(listId);
+          }}
+        />
+      )}
       <TaskNewLabelDialog
         open={dialogState.newLabelDialogOpen}
         newLabelName={newLabelName}
@@ -2130,6 +2246,12 @@ export const TaskCard = React.memo(TaskCardInner, (prev, next) => {
   if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
   if (prev.boardId !== next.boardId) return false;
   if (prev.workspaceId !== next.workspaceId) return false;
+  // Check taskList color changes so cards re-render when list color changes
+  if (
+    prev.taskList?.color !== next.taskList?.color ||
+    prev.taskList?.status !== next.taskList?.status
+  )
+    return false;
   // Shallow compare task critical fields
   const a = prev.task;
   const b = next.task;

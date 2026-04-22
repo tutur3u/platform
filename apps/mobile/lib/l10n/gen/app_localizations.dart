@@ -127,11 +127,65 @@ abstract class AppLocalizations {
   /// **'Continue with email'**
   String get loginContinueWithEmail;
 
+  /// No description provided for @loginOtpInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit code we sent to your email.'**
+  String get loginOtpInstruction;
+
+  /// No description provided for @loginOtpRateLimitedInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your code below, or use password instead. Retry in {seconds}s.'**
+  String loginOtpRateLimitedInstruction(Object seconds);
+
+  /// No description provided for @loginResendOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend code'**
+  String get loginResendOtp;
+
+  /// No description provided for @loginRetryIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry in {seconds}s'**
+  String loginRetryIn(Object seconds);
+
+  /// No description provided for @loginRetryAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again in {seconds}s'**
+  String loginRetryAfter(Object seconds);
+
   /// No description provided for @loginSignIn.
   ///
   /// In en, this message translates to:
   /// **'Sign in'**
   String get loginSignIn;
+
+  /// No description provided for @loginSendOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Send code'**
+  String get loginSendOtp;
+
+  /// No description provided for @loginUseOtpInstead.
+  ///
+  /// In en, this message translates to:
+  /// **'Use email code instead'**
+  String get loginUseOtpInstead;
+
+  /// No description provided for @loginUsePasswordInstead.
+  ///
+  /// In en, this message translates to:
+  /// **'Use password instead'**
+  String get loginUsePasswordInstead;
+
+  /// No description provided for @loginVerifyOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify code'**
+  String get loginVerifyOtp;
 
   /// No description provided for @authContinueWithApple.
   ///
@@ -205,11 +259,191 @@ abstract class AppLocalizations {
   /// **'Unable to open Microsoft sign-in right now.'**
   String get authMicrosoftBrowserLaunchFailed;
 
+  /// No description provided for @authAddAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add account'**
+  String get authAddAccount;
+
+  /// No description provided for @authAddAccountDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with another account on this device.'**
+  String get authAddAccountDescription;
+
+  /// No description provided for @authAddAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start adding another account.'**
+  String get authAddAccountFailed;
+
+  /// No description provided for @authAddAccountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re adding another account to this device.'**
+  String get authAddAccountHint;
+
+  /// No description provided for @authAddAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add account'**
+  String get authAddAccountTitle;
+
   /// No description provided for @authLogOut.
   ///
   /// In en, this message translates to:
   /// **'Log out'**
   String get authLogOut;
+
+  /// No description provided for @authLogOutCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out current account'**
+  String get authLogOutCurrent;
+
+  /// No description provided for @authLogOutConfirmDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out from this device?'**
+  String get authLogOutConfirmDialogTitle;
+
+  /// No description provided for @authLogOutConfirmDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll switch to another saved account if one is available.'**
+  String get authLogOutConfirmDialogBody;
+
+  /// No description provided for @authLogOutCurrentConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out this account from this device? If another account exists, we will switch to it automatically.'**
+  String get authLogOutCurrentConfirm;
+
+  /// No description provided for @authLogOutCurrentDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out this account and switch to another saved account if available.'**
+  String get authLogOutCurrentDescription;
+
+  /// No description provided for @authLogOutCurrentFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t log out this account.'**
+  String get authLogOutCurrentFailed;
+
+  /// No description provided for @authLogOutCurrentSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged out current account.'**
+  String get authLogOutCurrentSuccess;
+
+  /// No description provided for @authNoStoredAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved accounts yet.'**
+  String get authNoStoredAccounts;
+
+  /// No description provided for @authSwitchAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch account'**
+  String get authSwitchAccount;
+
+  /// No description provided for @authSwitchAccountDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a saved account to continue.'**
+  String get authSwitchAccountDescription;
+
+  /// No description provided for @authSwitchAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t switch account.'**
+  String get authSwitchAccountFailed;
+
+  /// No description provided for @authSwitchAccountSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched account.'**
+  String get authSwitchAccountSuccess;
+
+  /// No description provided for @authManageAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage accounts'**
+  String get authManageAccounts;
+
+  /// No description provided for @authManageAccountsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add, remove, or log out accounts on this device.'**
+  String get authManageAccountsDescription;
+
+  /// No description provided for @authManageAccountsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No other saved accounts on this device.'**
+  String get authManageAccountsEmpty;
+
+  /// No description provided for @authCurrentAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Current account'**
+  String get authCurrentAccountTitle;
+
+  /// No description provided for @authCurrentAccountDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the account currently active on this device.'**
+  String get authCurrentAccountDescription;
+
+  /// No description provided for @authCurrentAccountBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'In use now'**
+  String get authCurrentAccountBadge;
+
+  /// No description provided for @authSavedAccountsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved accounts'**
+  String get authSavedAccountsTitle;
+
+  /// No description provided for @authSavedAccountsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage accounts stored on this device without changing the current one.'**
+  String get authSavedAccountsDescription;
+
+  /// No description provided for @authSavedAccountBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on device'**
+  String get authSavedAccountBadge;
+
+  /// No description provided for @authRemoveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove account'**
+  String get authRemoveAccount;
+
+  /// No description provided for @authRemoveAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from this device? You\'ll need to sign in again.'**
+  String authRemoveAccountConfirm(Object name);
+
+  /// No description provided for @authRemoveAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t remove this account.'**
+  String get authRemoveAccountFailed;
+
+  /// No description provided for @authRemoveAccountSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Account removed successfully.'**
+  String get authRemoveAccountSuccess;
 
   /// No description provided for @loginForgotPassword.
   ///
@@ -634,14 +868,26 @@ abstract class AppLocalizations {
   /// No description provided for @habitsOverviewLabel.
   ///
   /// In en, this message translates to:
-  /// **'Overview'**
+  /// **'Today'**
   String get habitsOverviewLabel;
+
+  /// No description provided for @habitsTodayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get habitsTodayLabel;
 
   /// No description provided for @habitsActivityLabel.
   ///
   /// In en, this message translates to:
   /// **'Activity'**
   String get habitsActivityLabel;
+
+  /// No description provided for @habitsLibraryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get habitsLibraryLabel;
 
   /// No description provided for @habitsActivityTitle.
   ///
@@ -654,6 +900,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Review the latest habit logs across every tracker in this workspace.'**
   String get habitsActivitySubtitle;
+
+  /// No description provided for @habitsLibraryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get habitsLibraryTitle;
+
+  /// No description provided for @habitsLibrarySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start from strong defaults for fitness, recovery, and disciplined daily routines.'**
+  String get habitsLibrarySubtitle;
 
   /// No description provided for @habitsLoadError.
   ///
@@ -985,6 +1243,36 @@ abstract class AppLocalizations {
   /// **'Select fields need at least one option'**
   String get habitsSelectOptionsRequired;
 
+  /// No description provided for @habitsComposerQuickCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick check'**
+  String get habitsComposerQuickCheck;
+
+  /// No description provided for @habitsComposerQuickIncrement.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick increment'**
+  String get habitsComposerQuickIncrement;
+
+  /// No description provided for @habitsComposerMeasurement.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurement'**
+  String get habitsComposerMeasurement;
+
+  /// No description provided for @habitsComposerWorkoutSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout'**
+  String get habitsComposerWorkoutSession;
+
+  /// No description provided for @habitsComposerAdvancedCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get habitsComposerAdvancedCustom;
+
   /// No description provided for @habitsFieldCardTitle.
   ///
   /// In en, this message translates to:
@@ -1099,6 +1387,18 @@ abstract class AppLocalizations {
   /// **'Log entry'**
   String get habitsLogEntryAction;
 
+  /// No description provided for @habitsLogMeasurementAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Log measurement'**
+  String get habitsLogMeasurementAction;
+
+  /// No description provided for @habitsLogSessionAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Log session'**
+  String get habitsLogSessionAction;
+
   /// No description provided for @habitsCompleteNow.
   ///
   /// In en, this message translates to:
@@ -1134,6 +1434,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save entry'**
   String get habitsSaveEntry;
+
+  /// No description provided for @habitsQuickCheckTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick check-in'**
+  String get habitsQuickCheckTitle;
+
+  /// No description provided for @habitsQuickCheckDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use one tap when this habit is simply done or not done.'**
+  String get habitsQuickCheckDescription;
+
+  /// No description provided for @habitsQuickIncrementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick increments'**
+  String get habitsQuickIncrementTitle;
+
+  /// No description provided for @habitsQuickIncrementDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust the running total with fast chips or enter a custom amount.'**
+  String get habitsQuickIncrementDescription;
+
+  /// No description provided for @habitsMeasurementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurement'**
+  String get habitsMeasurementTitle;
+
+  /// No description provided for @habitsMeasurementDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter one focused measurement and compare it to the latest check-in.'**
+  String get habitsMeasurementDescription;
+
+  /// No description provided for @habitsAdvancedComposerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom entry'**
+  String get habitsAdvancedComposerTitle;
+
+  /// No description provided for @habitsAdvancedComposerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a simple value entry for fully custom trackers.'**
+  String get habitsAdvancedComposerDescription;
+
+  /// No description provided for @habitsWorkoutSessionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout session'**
+  String get habitsWorkoutSessionTitle;
+
+  /// No description provided for @habitsWorkoutSessionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add one or more exercise blocks with sets, reps, and optional load.'**
+  String get habitsWorkoutSessionDescription;
+
+  /// No description provided for @habitsWorkoutBlocksRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one exercise block'**
+  String get habitsWorkoutBlocksRequired;
+
+  /// No description provided for @habitsWorkoutBlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise block'**
+  String get habitsWorkoutBlockTitle;
+
+  /// No description provided for @habitsWorkoutExerciseName.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise'**
+  String get habitsWorkoutExerciseName;
+
+  /// No description provided for @habitsWorkoutSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets'**
+  String get habitsWorkoutSets;
+
+  /// No description provided for @habitsWorkoutReps.
+  ///
+  /// In en, this message translates to:
+  /// **'Reps'**
+  String get habitsWorkoutReps;
+
+  /// No description provided for @habitsWorkoutWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get habitsWorkoutWeight;
+
+  /// No description provided for @habitsWorkoutTotalSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Total sets'**
+  String get habitsWorkoutTotalSets;
+
+  /// No description provided for @habitsWorkoutTotalReps.
+  ///
+  /// In en, this message translates to:
+  /// **'Total reps'**
+  String get habitsWorkoutTotalReps;
+
+  /// No description provided for @habitsWorkoutTotalVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Total volume'**
+  String get habitsWorkoutTotalVolume;
+
+  /// No description provided for @habitsAddExerciseBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Add exercise'**
+  String get habitsAddExerciseBlock;
+
+  /// No description provided for @habitsLatestValueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest: {value}'**
+  String habitsLatestValueLabel(String value);
 
   /// No description provided for @habitsMarkDone.
   ///
@@ -1308,6 +1734,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create a habit tracker first to start collecting activity.'**
   String get habitsActivityNoTrackers;
+
+  /// No description provided for @habitsLibraryStrengthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Strength'**
+  String get habitsLibraryStrengthTitle;
+
+  /// No description provided for @habitsLibraryStrengthSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavy sessions, structured lifts, and bodyweight output.'**
+  String get habitsLibraryStrengthSubtitle;
+
+  /// No description provided for @habitsLibraryHealthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Health'**
+  String get habitsLibraryHealthTitle;
+
+  /// No description provided for @habitsLibraryHealthSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurements and daily totals that keep your baseline visible.'**
+  String get habitsLibraryHealthSubtitle;
+
+  /// No description provided for @habitsLibraryRecoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get habitsLibraryRecoveryTitle;
+
+  /// No description provided for @habitsLibraryRecoverySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep, sauna, meditation, and reset rituals.'**
+  String get habitsLibraryRecoverySubtitle;
+
+  /// No description provided for @habitsLibraryDisciplineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discipline'**
+  String get habitsLibraryDisciplineTitle;
+
+  /// No description provided for @habitsLibraryDisciplineSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Simple yes-or-no commitments you want to see every day.'**
+  String get habitsLibraryDisciplineSubtitle;
+
+  /// No description provided for @habitsLibraryCustomizeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize your own'**
+  String get habitsLibraryCustomizeTitle;
+
+  /// No description provided for @habitsLibraryCustomizeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Start from a blank tracker when the preset library is close but not exact.'**
+  String get habitsLibraryCustomizeDescription;
+
+  /// No description provided for @habitsLibraryCustomizeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize'**
+  String get habitsLibraryCustomizeAction;
+
+  /// No description provided for @habitsLibraryGoalChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get habitsLibraryGoalChip;
+
+  /// No description provided for @habitsLibraryComposerChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Composer'**
+  String get habitsLibraryComposerChip;
 
   /// No description provided for @habitsStreakChip.
   ///
@@ -1879,6 +2383,12 @@ abstract class AppLocalizations {
   /// **'Open mic'**
   String get assistantLiveListen;
 
+  /// No description provided for @assistantLiveModelBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Gemini 3.1 Flash Live'**
+  String get assistantLiveModelBadge;
+
   /// No description provided for @assistantLiveMute.
   ///
   /// In en, this message translates to:
@@ -1897,6 +2407,12 @@ abstract class AppLocalizations {
   /// **'Your live assistant is ready'**
   String get assistantLiveNoMessagesTitle;
 
+  /// No description provided for @assistantLiveOpenMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Open live mode'**
+  String get assistantLiveOpenMode;
+
   /// No description provided for @assistantLivePermissionDenied.
   ///
   /// In en, this message translates to:
@@ -1914,6 +2430,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show camera'**
   String get assistantLiveShowCamera;
+
+  /// No description provided for @assistantLiveRetryAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry live session'**
+  String get assistantLiveRetryAction;
+
+  /// No description provided for @assistantLiveReturnToChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to chat'**
+  String get assistantLiveReturnToChat;
+
+  /// No description provided for @assistantLiveStageAssistantReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the next reply'**
+  String get assistantLiveStageAssistantReady;
+
+  /// No description provided for @assistantLiveStageAssistantSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice response is streaming'**
+  String get assistantLiveStageAssistantSpeaking;
+
+  /// No description provided for @assistantLiveStageYouListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Your microphone is live'**
+  String get assistantLiveStageYouListening;
+
+  /// No description provided for @assistantLiveStageYouMuted.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the mic to speak again'**
+  String get assistantLiveStageYouMuted;
 
   /// No description provided for @assistantLiveStatusAvailable.
   ///
@@ -1981,11 +2533,29 @@ abstract class AppLocalizations {
   /// **'Live voice is available on PLUS and above.'**
   String get assistantLiveTierRequired;
 
+  /// No description provided for @assistantLiveTranscriptEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Start talking or type from the keyboard action below. Live drafts and synced turns will appear here.'**
+  String get assistantLiveTranscriptEmpty;
+
+  /// No description provided for @assistantLiveTranscriptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live transcript'**
+  String get assistantLiveTranscriptTitle;
+
   /// No description provided for @assistantLiveTitle.
   ///
   /// In en, this message translates to:
   /// **'Live assistant'**
   String get assistantLiveTitle;
+
+  /// No description provided for @assistantLiveTypeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get assistantLiveTypeMessage;
 
   /// No description provided for @assistantLiveInfoAccessHeading.
   ///
@@ -3220,13 +3790,13 @@ abstract class AppLocalizations {
   /// No description provided for @taskBoardDetailToday.
   ///
   /// In en, this message translates to:
-  /// **'today'**
+  /// **'Today'**
   String get taskBoardDetailToday;
 
   /// No description provided for @taskBoardDetailTomorrow.
   ///
   /// In en, this message translates to:
-  /// **'tomorrow'**
+  /// **'Tomorrow'**
   String get taskBoardDetailTomorrow;
 
   /// No description provided for @taskBoardDetailYesterday.
@@ -3282,6 +3852,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Task restored.'**
   String get taskBoardDetailTaskRestored;
+
+  /// No description provided for @taskBoardDetailBulkActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulk actions'**
+  String get taskBoardDetailBulkActions;
+
+  /// No description provided for @taskBoardDetailBulkAllSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {count, plural, one{{count} task} other{{count} tasks}}.'**
+  String taskBoardDetailBulkAllSuccess(int count);
+
+  /// No description provided for @taskBoardDetailBulkClearAssignees.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear assignees'**
+  String get taskBoardDetailBulkClearAssignees;
+
+  /// No description provided for @taskBoardDetailBulkClearLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear labels'**
+  String get taskBoardDetailBulkClearLabels;
+
+  /// No description provided for @taskBoardDetailBulkClearProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear projects'**
+  String get taskBoardDetailBulkClearProjects;
+
+  /// No description provided for @taskBoardDetailBulkMarkClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as closed'**
+  String get taskBoardDetailBulkMarkClosed;
+
+  /// No description provided for @taskBoardDetailBulkMarkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as done'**
+  String get taskBoardDetailBulkMarkDone;
+
+  /// No description provided for @taskBoardDetailBulkMoveToBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to board'**
+  String get taskBoardDetailBulkMoveToBoard;
+
+  /// No description provided for @taskBoardDetailBulkPartialSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {success} tasks, {failed} failed.'**
+  String taskBoardDetailBulkPartialSuccess(int success, int failed);
+
+  /// No description provided for @taskBoardDetailEnterBulkSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select tasks'**
+  String get taskBoardDetailEnterBulkSelect;
+
+  /// No description provided for @taskBoardDetailExitBulkSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear selection'**
+  String get taskBoardDetailExitBulkSelect;
+
+  /// No description provided for @taskBoardDetailNoTasksSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks selected'**
+  String get taskBoardDetailNoTasksSelected;
+
+  /// No description provided for @taskBoardDetailNextWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Next week'**
+  String get taskBoardDetailNextWeek;
+
+  /// No description provided for @taskBoardDetailQuickActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick actions'**
+  String get taskBoardDetailQuickActions;
+
+  /// No description provided for @taskBoardDetailProperties.
+  ///
+  /// In en, this message translates to:
+  /// **'Properties'**
+  String get taskBoardDetailProperties;
+
+  /// No description provided for @taskBoardDetailMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Move'**
+  String get taskBoardDetailMove;
+
+  /// No description provided for @taskBoardDetailSetDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Set due date'**
+  String get taskBoardDetailSetDueDate;
+
+  /// No description provided for @taskBoardDetailSetEstimation.
+  ///
+  /// In en, this message translates to:
+  /// **'Set estimation'**
+  String get taskBoardDetailSetEstimation;
+
+  /// No description provided for @taskBoardDetailPriorityNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No priority'**
+  String get taskBoardDetailPriorityNone;
 
   /// No description provided for @taskBoardDetailRecycleBin.
   ///
@@ -3390,6 +4074,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No other lists available for moving this task.'**
   String get taskBoardDetailNoMoveTargets;
+
+  /// No description provided for @taskBoardDetailRemoveDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove due date'**
+  String get taskBoardDetailRemoveDueDate;
+
+  /// No description provided for @taskBoardDetailSelectAllFiltered.
+  ///
+  /// In en, this message translates to:
+  /// **'Select visible'**
+  String get taskBoardDetailSelectAllFiltered;
+
+  /// No description provided for @taskBoardDetailSetCustomDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Set custom date'**
+  String get taskBoardDetailSetCustomDate;
+
+  /// No description provided for @taskBoardDetailThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get taskBoardDetailThisWeek;
 
   /// No description provided for @taskBoardDetailBoardActions.
   ///
@@ -7987,6 +8695,12 @@ abstract class AppLocalizations {
   /// **'Request threshold updated.'**
   String get timerRequestsThresholdUpdated;
 
+  /// No description provided for @timerRequestsOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open this request right now.'**
+  String get timerRequestsOpenFailed;
+
   /// No description provided for @timerRequestRevertToApproved.
   ///
   /// In en, this message translates to:
@@ -8794,7 +9508,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsMobileVersionsTileDescription.
   ///
   /// In en, this message translates to:
-  /// **'Manage the effective and minimum versions enforced by the mobile app.'**
+  /// **'Manage the effective and minimum versions enforced by the mobile app and OTP rollout controls.'**
   String get settingsMobileVersionsTileDescription;
 
   /// No description provided for @settingsMobileVersionsTitle.
@@ -8806,7 +9520,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsMobileVersionsPageDescription.
   ///
   /// In en, this message translates to:
-  /// **'Manage the effective and minimum app versions enforced by the mobile app before users can continue.'**
+  /// **'Manage the effective and minimum app versions enforced by the mobile app before users can continue, plus OTP rollout controls for mobile and web.'**
   String get settingsMobileVersionsPageDescription;
 
   /// No description provided for @settingsMobileVersionsIosTitle.
@@ -8832,6 +9546,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set the Play Store threshold and update prompt for Android users.'**
   String get settingsMobileVersionsAndroidDescription;
+
+  /// No description provided for @settingsMobileVersionsOtpEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable OTP login'**
+  String get settingsMobileVersionsOtpEnabled;
+
+  /// No description provided for @settingsMobileVersionsIosOtpDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow iOS app logins to use email verification codes.'**
+  String get settingsMobileVersionsIosOtpDescription;
+
+  /// No description provided for @settingsMobileVersionsAndroidOtpDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Android app logins to use email verification codes.'**
+  String get settingsMobileVersionsAndroidOtpDescription;
+
+  /// No description provided for @settingsMobileVersionsWebOtpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Web OTP'**
+  String get settingsMobileVersionsWebOtpTitle;
+
+  /// No description provided for @settingsMobileVersionsWebOtpDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow the marketing web login to use email verification-code sign-in.'**
+  String get settingsMobileVersionsWebOtpDescription;
 
   /// No description provided for @settingsMobileVersionsEffectiveVersion.
   ///
@@ -9541,11 +10285,17 @@ abstract class AppLocalizations {
   /// **'Couldn\'t update this invite right now'**
   String get notificationsInviteActionError;
 
-  /// No description provided for @notificationsOpenAction.
+  /// No description provided for @notificationsOpenTaskAction.
   ///
   /// In en, this message translates to:
   /// **'Open task'**
-  String get notificationsOpenAction;
+  String get notificationsOpenTaskAction;
+
+  /// No description provided for @notificationsOpenRequestAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Open request'**
+  String get notificationsOpenRequestAction;
 
   /// No description provided for @notificationsOpenUnsupported.
   ///
@@ -10038,6 +10788,480 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Role saved.'**
   String get settingsWorkspaceRolesSaved;
+
+  /// No description provided for @settingsWorkspaceSecretsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Secrets'**
+  String get settingsWorkspaceSecretsTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage workspace secrets and storage rollout.'**
+  String get settingsWorkspaceSecretsSubtitle;
+
+  /// No description provided for @settingsWorkspaceSecretsAccessDeniedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Access required'**
+  String get settingsWorkspaceSecretsAccessDeniedTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsAccessDeniedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'You need the manage workspace secrets permission in the internal workspace to open this page.'**
+  String get settingsWorkspaceSecretsAccessDeniedDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsWorkspaceRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace required'**
+  String get settingsWorkspaceSecretsWorkspaceRequiredTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsWorkspaceRequiredDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a workspace before opening secrets management.'**
+  String get settingsWorkspaceSecretsWorkspaceRequiredDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsPageDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage secrets and storage rollout for {workspaceName}.'**
+  String settingsWorkspaceSecretsPageDescription(String workspaceName);
+
+  /// No description provided for @settingsWorkspaceSecretsTotalSecrets.
+  ///
+  /// In en, this message translates to:
+  /// **'All secrets'**
+  String get settingsWorkspaceSecretsTotalSecrets;
+
+  /// No description provided for @settingsWorkspaceSecretsVisibleSecrets.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible'**
+  String get settingsWorkspaceSecretsVisibleSecrets;
+
+  /// No description provided for @settingsWorkspaceSecretsActiveBackend.
+  ///
+  /// In en, this message translates to:
+  /// **'Active backend'**
+  String get settingsWorkspaceSecretsActiveBackend;
+
+  /// No description provided for @settingsWorkspaceSecretsCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create secret'**
+  String get settingsWorkspaceSecretsCreate;
+
+  /// No description provided for @settingsWorkspaceSecretsRolloutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage rollout'**
+  String get settingsWorkspaceSecretsRolloutTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsRolloutDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect the current Drive backend, confirm required provider secrets, and migrate files between providers when needed.'**
+  String get settingsWorkspaceSecretsRolloutDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsProviderSecrets.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider secrets'**
+  String get settingsWorkspaceSecretsProviderSecrets;
+
+  /// No description provided for @settingsWorkspaceSecretsZipAutomation.
+  ///
+  /// In en, this message translates to:
+  /// **'ZIP automation'**
+  String get settingsWorkspaceSecretsZipAutomation;
+
+  /// No description provided for @settingsWorkspaceSecretsStateEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get settingsWorkspaceSecretsStateEnabled;
+
+  /// No description provided for @settingsWorkspaceSecretsAutoExtractBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs proxy secrets'**
+  String get settingsWorkspaceSecretsAutoExtractBlocked;
+
+  /// No description provided for @settingsWorkspaceSecretsStateDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get settingsWorkspaceSecretsStateDisabled;
+
+  /// No description provided for @settingsWorkspaceSecretsSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get settingsWorkspaceSecretsSelected;
+
+  /// No description provided for @settingsWorkspaceSecretsRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended'**
+  String get settingsWorkspaceSecretsRecommended;
+
+  /// No description provided for @settingsWorkspaceSecretsObjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Objects'**
+  String get settingsWorkspaceSecretsObjects;
+
+  /// No description provided for @settingsWorkspaceSecretsInventory.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory'**
+  String get settingsWorkspaceSecretsInventory;
+
+  /// No description provided for @settingsWorkspaceSecretsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get settingsWorkspaceSecretsUnavailable;
+
+  /// No description provided for @settingsWorkspaceSecretsReadyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This backend is ready to receive Drive files.'**
+  String get settingsWorkspaceSecretsReadyMessage;
+
+  /// No description provided for @settingsWorkspaceSecretsMissingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the required secrets before routing Drive traffic here.'**
+  String get settingsWorkspaceSecretsMissingMessage;
+
+  /// No description provided for @settingsWorkspaceSecretsMigrating.
+  ///
+  /// In en, this message translates to:
+  /// **'Migrating...'**
+  String get settingsWorkspaceSecretsMigrating;
+
+  /// No description provided for @settingsWorkspaceSecretsCopyInto.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy into {provider}'**
+  String settingsWorkspaceSecretsCopyInto(String provider);
+
+  /// No description provided for @settingsWorkspaceSecretsAutoExtractTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto extract'**
+  String get settingsWorkspaceSecretsAutoExtractTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsAutoExtractDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Track whether automatic ZIP extraction is enabled and whether the proxy credentials are ready.'**
+  String get settingsWorkspaceSecretsAutoExtractDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsAutoExtractSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get settingsWorkspaceSecretsAutoExtractSwitch;
+
+  /// No description provided for @settingsWorkspaceSecretsAutoExtractProxyUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy URL'**
+  String get settingsWorkspaceSecretsAutoExtractProxyUrl;
+
+  /// No description provided for @settingsWorkspaceSecretsAutoExtractProxyToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared token'**
+  String get settingsWorkspaceSecretsAutoExtractProxyToken;
+
+  /// No description provided for @settingsWorkspaceSecretsStatePresent.
+  ///
+  /// In en, this message translates to:
+  /// **'Present'**
+  String get settingsWorkspaceSecretsStatePresent;
+
+  /// No description provided for @settingsWorkspaceSecretsStateMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing'**
+  String get settingsWorkspaceSecretsStateMissing;
+
+  /// No description provided for @settingsWorkspaceSecretsProviderSecretsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider secrets'**
+  String get settingsWorkspaceSecretsProviderSecretsTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsProviderSecretsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit the secrets that define which storage provider Drive uses for this workspace.'**
+  String get settingsWorkspaceSecretsProviderSecretsDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsProxySecretsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ZIP proxy secrets'**
+  String get settingsWorkspaceSecretsProxySecretsTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsProxySecretsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure the optional secrets used by the ZIP extraction proxy.'**
+  String get settingsWorkspaceSecretsProxySecretsDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveStorageProviderDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Selects the Drive backend for this workspace. Use \"supabase\" for the current path or \"r2\" to route Drive through Cloudflare R2.'**
+  String get settingsWorkspaceSecretsDriveStorageProviderDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveR2BucketDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare R2 bucket name used for Drive objects when the provider is set to \"r2\".'**
+  String get settingsWorkspaceSecretsDriveR2BucketDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveR2EndpointDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'S3-compatible R2 endpoint, for example https://<account-id>.r2.cloudflarestorage.com.'**
+  String get settingsWorkspaceSecretsDriveR2EndpointDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveR2AccessKeyIdDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Access key ID for the Cloudflare R2 token used by the server-side Drive adapter.'**
+  String get settingsWorkspaceSecretsDriveR2AccessKeyIdDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveR2SecretAccessKeyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret access key for the Cloudflare R2 token used by the server-side Drive adapter.'**
+  String get settingsWorkspaceSecretsDriveR2SecretAccessKeyDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveAutoExtractZipDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enables automatic ZIP extraction after uploads. Disabled by default.'**
+  String get settingsWorkspaceSecretsDriveAutoExtractZipDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveAutoExtractProxyUrlDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTPS URL for the self-hosted ZIP extraction proxy. Only used when auto extraction is enabled.'**
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyUrlDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsDriveAutoExtractProxyTokenDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared bearer token used to authenticate requests to the ZIP extraction proxy.'**
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyTokenDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsNoValue.
+  ///
+  /// In en, this message translates to:
+  /// **'No value'**
+  String get settingsWorkspaceSecretsNoValue;
+
+  /// No description provided for @settingsWorkspaceSecretsConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Configured'**
+  String get settingsWorkspaceSecretsConfigured;
+
+  /// No description provided for @settingsWorkspaceSecretsMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing'**
+  String get settingsWorkspaceSecretsMissing;
+
+  /// No description provided for @settingsWorkspaceSecretsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get settingsWorkspaceSecretsRequired;
+
+  /// No description provided for @settingsWorkspaceSecretsOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get settingsWorkspaceSecretsOptional;
+
+  /// No description provided for @settingsWorkspaceSecretsAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get settingsWorkspaceSecretsAdd;
+
+  /// No description provided for @settingsWorkspaceSecretsListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Secrets list'**
+  String get settingsWorkspaceSecretsListTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsListDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Search, edit, and remove workspace secrets. Boolean values can be toggled inline.'**
+  String get settingsWorkspaceSecretsListDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search secrets'**
+  String get settingsWorkspaceSecretsSearchPlaceholder;
+
+  /// No description provided for @settingsWorkspaceSecretsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No secrets found'**
+  String get settingsWorkspaceSecretsEmptyTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a secret or adjust the search query to see matching entries.'**
+  String get settingsWorkspaceSecretsEmptyDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get settingsWorkspaceSecretsEdit;
+
+  /// No description provided for @settingsWorkspaceSecretsDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get settingsWorkspaceSecretsDeleteTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String settingsWorkspaceSecretsDeleteMessage(String name);
+
+  /// No description provided for @settingsWorkspaceSecretsDeleteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret deleted.'**
+  String get settingsWorkspaceSecretsDeleteSuccess;
+
+  /// No description provided for @settingsWorkspaceSecretsNameField.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get settingsWorkspaceSecretsNameField;
+
+  /// No description provided for @settingsWorkspaceSecretsNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'SECRET_NAME'**
+  String get settingsWorkspaceSecretsNamePlaceholder;
+
+  /// No description provided for @settingsWorkspaceSecretsValueField.
+  ///
+  /// In en, this message translates to:
+  /// **'Value'**
+  String get settingsWorkspaceSecretsValueField;
+
+  /// No description provided for @settingsWorkspaceSecretsValuePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret value'**
+  String get settingsWorkspaceSecretsValuePlaceholder;
+
+  /// No description provided for @settingsWorkspaceSecretsEditorDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the secret name and value used by this workspace.'**
+  String get settingsWorkspaceSecretsEditorDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get settingsWorkspaceSecretsSaving;
+
+  /// No description provided for @settingsWorkspaceSecretsSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save secret'**
+  String get settingsWorkspaceSecretsSave;
+
+  /// No description provided for @settingsWorkspaceSecretsNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a secret name.'**
+  String get settingsWorkspaceSecretsNameRequired;
+
+  /// No description provided for @settingsWorkspaceSecretsValueRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a secret value.'**
+  String get settingsWorkspaceSecretsValueRequired;
+
+  /// No description provided for @settingsWorkspaceSecretsSaveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret saved.'**
+  String get settingsWorkspaceSecretsSaveSuccess;
+
+  /// No description provided for @settingsWorkspaceSecretsSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save secret.'**
+  String get settingsWorkspaceSecretsSaveError;
+
+  /// No description provided for @settingsWorkspaceSecretsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load workspace secrets.'**
+  String get settingsWorkspaceSecretsLoadError;
+
+  /// No description provided for @settingsWorkspaceSecretsMigrationSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied {filesCopied} files into {provider}.'**
+  String settingsWorkspaceSecretsMigrationSuccess(int filesCopied, String provider);
+
+  /// No description provided for @settingsWorkspaceSecretsMigrationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to migrate workspace storage.'**
+  String get settingsWorkspaceSecretsMigrationError;
+
+  /// No description provided for @settingsWorkspaceSecretsProviderSupabaseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Supabase'**
+  String get settingsWorkspaceSecretsProviderSupabaseTitle;
+
+  /// No description provided for @settingsWorkspaceSecretsProviderSupabaseDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The current built-in Drive storage backend.'**
+  String get settingsWorkspaceSecretsProviderSupabaseDescription;
+
+  /// No description provided for @settingsWorkspaceSecretsProviderR2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare R2'**
+  String get settingsWorkspaceSecretsProviderR2Title;
+
+  /// No description provided for @settingsWorkspaceSecretsProviderR2Description.
+  ///
+  /// In en, this message translates to:
+  /// **'An S3-compatible backend for external Drive storage.'**
+  String get settingsWorkspaceSecretsProviderR2Description;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

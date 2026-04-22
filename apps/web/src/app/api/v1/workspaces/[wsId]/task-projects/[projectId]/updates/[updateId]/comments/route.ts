@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -35,14 +36,20 @@ export async function POST(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (!membership) {
+    if (membership.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -137,15 +144,20 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify user has access to workspace
-    const { data: membership } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (!membership) {
+    if (membership.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

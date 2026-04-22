@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -125,14 +126,20 @@ export async function GET(_req: Request, { params }: Params) {
     const resolvedWsId = resolveWorkspaceId(wsId);
 
     // Check if user is a workspace member
-    const { data: membership, error: memberError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', resolvedWsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: resolvedWsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (memberError || !membership) {
+    if (membership.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership.ok) {
       return NextResponse.json(
         { error: 'Not a workspace member' },
         { status: 403 }

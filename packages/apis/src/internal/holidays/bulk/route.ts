@@ -6,6 +6,7 @@
 
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -33,14 +34,13 @@ async function isAdmin(): Promise<boolean> {
 
   if (!user) return false;
 
-  const { data } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', ROOT_WORKSPACE_ID)
-    .eq('user_id', user.id)
-    .single();
+  const member = await verifyWorkspaceMembershipType({
+    wsId: ROOT_WORKSPACE_ID,
+    userId: user.id,
+    supabase,
+  });
 
-  return !!data;
+  return member.ok;
 }
 
 /**

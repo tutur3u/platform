@@ -20,6 +20,8 @@ out
 target
 build
 dist
+tmp
+temp
 .swc
 .vercel
 .zshrc

@@ -1,0 +1,121 @@
+---
+title: 'GitHub Actions Runbook'
+description: 'How the repository’s automation is organized, gated, and operated.'
+updatedAt: '2026-04-22'
+---
+
+GitHub Actions is the primary automation plane for Tuturuuu.
+
+## Workflow Gatekeeping
+
+Every major workflow can be disabled centrally through
+`tuturuuu.ts`.
+
+The reusable workflow
+`ci-check.yml`
+reads that config and emits `should_run`, which downstream jobs use before doing
+real work.
+
+## Main Workflow Groups
+
+### Hosted web deployments
+
+- `vercel-preview-platform.yaml`
+- `vercel-preview-calendar.yaml`
+- `vercel-preview-cms.yaml`
+- `vercel-preview-finance.yaml`
+- `vercel-preview-meet.yaml`
+- `vercel-preview-nova.yaml`
+- `vercel-preview-rewise.yaml`
+- `vercel-preview-shortener.yaml`
+- `vercel-preview-tasks.yaml`
+- `vercel-preview-track.yaml`
+- Matching `vercel-production-*.yaml` workflows for production
+
+CMS uses the same Vercel pattern as the other satellite apps:
+
+- preview workflow: `vercel-preview-cms.yaml`
+- production workflow: `vercel-production-cms.yaml`
+- project secret: `VERCEL_CMS_PROJECT_ID`
+
+These workflows:
+
+- install Bun and Node 24
+- install dependencies
+- build selected shared workspace dependencies
+- run `vercel pull`
+- run `vercel build`
+- deploy prebuilt artifacts
+- skip work when a newer commit already exists on the target branch
+
+### Database automation
+
+- `supabase-staging.yaml`
+- `supabase-production.yaml`
+- `supabase-types.yaml`
+
+These cover staging schema promotion, production schema promotion, and generated
+type verification.
+
+### Docker automation
+
+- `docker-setup-check.yaml`
+
+This is the workflow to watch whenever Docker files, compose files, or Docker helper
+scripts change.
+
+### Quality and security
+
+- `type-check.yaml`
+- `turbo-unit-tests.yaml`
+- `biome-check.yaml`
+- `codeql.yml`
+- `codecov.yaml`
+- `i18n-check.yaml`
+- `check-migrations.yml`
+- `check-migration-timestamps.yml`
+- `branch-name-check.yaml`
+
+### Other delivery surfaces
+
+- `discord-modal-deploy.yml`
+- `mobile-build-android.yaml`
+- `mobile-build-ios.yaml`
+- `mobile-build-macos.yaml`
+- `mobile-build-windows.yaml`
+- `release-*.yaml` package publishing workflows
+
+## Operational Rules
+
+### Manual dispatch
+
+Use `workflow_dispatch` when:
+
+- you need to rerun a deployment intentionally
+- you need to promote a migration outside the normal trigger timing
+- you need to recover from a failed but otherwise understood automation path
+
+### Newer-commit guards
+
+Vercel workflows intentionally skip if the branch already has a newer commit than the
+current run. A skipped deployment may be correct rather than broken.
+
+### Prerequisite guards
+
+- `supabase-staging.yaml` requires a successful staging preview trigger unless manually dispatched.
+- `supabase-production.yaml` checks both the latest production Vercel result and the latest staging migration result before running.
+
+## Fast Triage Checklist
+
+1. Check whether `ci-check.yml` disabled the workflow through `tuturuuu.ts`.
+2. Check whether the workflow was skipped because a newer commit exists.
+3. Check path filters to confirm the workflow should have triggered.
+4. For database workflows, inspect the prerequisite evaluation job before the deploy job.
+5. For Docker changes, verify `docker-setup-check.yaml` specifically.
+
+## When You Add New Automation
+
+1. Add the workflow file under `.github/workflows/`.
+2. Add its key to `tuturuuu.ts` unless you intentionally want it always on by default.
+3. Document the workflow in `apps/docs`.
+4. If it changes a docs-visible page, add that page to `apps/docs/docs.json`.

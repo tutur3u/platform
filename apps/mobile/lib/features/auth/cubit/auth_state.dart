@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:mobile/data/models/auth_action_result.dart';
+import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 const _sentinel = Object();
@@ -25,6 +26,9 @@ class AuthState extends Equatable {
     this.error,
     this.errorCode,
     this.isLoading = false,
+    this.accounts = const <StoredAuthAccount>[],
+    this.activeAccountId,
+    this.isAddAccountFlow = false,
   });
 
   const AuthState.unknown() : this._();
@@ -43,6 +47,9 @@ class AuthState extends Equatable {
   final String? error;
   final AuthErrorCode? errorCode;
   final bool isLoading;
+  final List<StoredAuthAccount> accounts;
+  final String? activeAccountId;
+  final bool isAddAccountFlow;
 
   AuthState copyWith({
     AuthStatus? status,
@@ -50,6 +57,9 @@ class AuthState extends Equatable {
     Object? error = _sentinel,
     Object? errorCode = _sentinel,
     bool? isLoading,
+    List<StoredAuthAccount>? accounts,
+    Object? activeAccountId = _sentinel,
+    bool? isAddAccountFlow,
   }) => AuthState._(
     status: status ?? this.status,
     user: user ?? this.user,
@@ -58,8 +68,22 @@ class AuthState extends Equatable {
         ? this.errorCode
         : errorCode as AuthErrorCode?,
     isLoading: isLoading ?? this.isLoading,
+    accounts: accounts ?? this.accounts,
+    activeAccountId: activeAccountId == _sentinel
+        ? this.activeAccountId
+        : activeAccountId as String?,
+    isAddAccountFlow: isAddAccountFlow ?? this.isAddAccountFlow,
   );
 
   @override
-  List<Object?> get props => [status, user?.id, error, errorCode, isLoading];
+  List<Object?> get props => [
+    status,
+    user?.id,
+    error,
+    errorCode,
+    isLoading,
+    accounts,
+    activeAccountId,
+    isAddAccountFlow,
+  ];
 }

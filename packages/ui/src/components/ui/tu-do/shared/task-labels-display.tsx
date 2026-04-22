@@ -6,13 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTheme } from 'next-themes';
 import { computeAccessibleLabelStyles } from '../utils/label-colors';
-
-interface TaskLabel {
-  id: string;
-  name: string;
-  color: string;
-  created_at: string;
-}
+import type { TaskLabel } from './label-chip';
 
 interface TaskLabelsDisplayProps {
   labels: TaskLabel[] | undefined | null;

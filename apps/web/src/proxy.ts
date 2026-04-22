@@ -3,11 +3,22 @@ import {
   createCentralizedAuthProxy,
   propagateAuthCookies,
 } from '@tuturuuu/auth/proxy';
+import { getMalformedSupabaseAuthCookieNames } from '@tuturuuu/supabase/next/proxy';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import {
+  extractIPFromRequest,
+  isIPBlockedEdge,
+  recordMalformedAuthCookieEdge,
+  recordSuspiciousApiRequestEdge,
+} from '@tuturuuu/utils/abuse-protection/edge';
+import {
+  guardApiProxyRequest,
+  hasAuthenticatedApiSession,
+  isTrustedProxyBypassRequest,
+} from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -29,6 +40,7 @@ const ONBOARDING_BYPASS_PATHS = [
   '/logout',
   '/account/delete',
   '/verify',
+  '/~recover-browser-state',
   '/reset-password',
   '/mfa',
   ...PUBLIC_PATHS,
@@ -36,10 +48,44 @@ const ONBOARDING_BYPASS_PATHS = [
 
 const isDev = process.env.NODE_ENV !== 'production';
 
-const WEB_APP_URL = isDev ? `http://localhost:${PORT}` : 'https://tuturuuu.com';
+function resolveConfiguredOrigin(value?: string) {
+  if (!value) {
+    return null;
+  }
+
+  const [firstValue] = value
+    .split(/[,\n]/u)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  if (!firstValue) {
+    return null;
+  }
+
+  const normalized = /^[a-z]+:\/\//iu.test(firstValue)
+    ? firstValue
+    : `https://${firstValue}`;
+
+  try {
+    return new URL(normalized).origin;
+  } catch {
+    return null;
+  }
+}
+
+const WEB_APP_URL = isDev
+  ? `http://localhost:${PORT}`
+  : resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
+    resolveConfiguredOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
+    resolveConfiguredOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
+    resolveConfiguredOrigin(process.env.COOLIFY_URL) ||
+    resolveConfiguredOrigin(process.env.COOLIFY_FQDN) ||
+    'https://tuturuuu.com';
 const OFFLINE_FALLBACK_PATH = '/~offline';
+const BROWSER_STATE_RECOVERY_PATH = '/~recover-browser-state';
 const RESERVED_ROOT_SEGMENT_PREFIX = '~';
 const RESERVED_ROOT_NOT_FOUND_PATH = '/__reserved-root-not-found__';
+const BLOCKED_ROOT_SEGMENT_PREFIX = '.';
 const EMAIL_ROUTE_WORKSPACE_PATTERN =
   /^\/api\/v1\/workspaces\/([^/]+)\/(?:mail\/send|users\/[^/]+\/follow-up|user-groups\/[^/]+\/group-checks\/[^/]+\/email)(?:\/|$)/;
 const EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES = [
@@ -53,6 +99,26 @@ const EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES = [
   'EMAIL_RATE_LIMIT_IP_MINUTE',
   'EMAIL_RATE_LIMIT_IP_HOUR',
 ] as const;
+const SUSPICIOUS_QUERY_LENGTH_MAX = parsePositiveIntEnv(
+  'PROXY_SUSPICIOUS_QUERY_LENGTH_MAX',
+  1024
+);
+const SUSPICIOUS_QUERY_PARAMS_MAX = parsePositiveIntEnv(
+  'PROXY_SUSPICIOUS_QUERY_PARAMS_MAX',
+  24
+);
+const SCANNER_PATH_PATTERN =
+  /(wp-admin|wp-login\.php|xmlrpc\.php|phpmyadmin|adminer|\.env|\.git|boaform|server-status|cgi-bin|vendor\/phpunit|actuator|jenkins|hudson|\/shell|\/debug)/i;
+
+function parsePositiveIntEnv(name: string, fallback: number): number {
+  const rawValue = process.env[name];
+  if (!rawValue) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(rawValue, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
 
 async function hasWorkspaceEmailRateLimitOverrides(
   pathname: string
@@ -92,6 +158,234 @@ async function hasWorkspaceEmailRateLimitOverrides(
     );
     return false;
   }
+}
+
+function looksLikeSupabaseJwt(token: string): boolean {
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return false;
+  }
+
+  return parts.every(
+    (part) => /^[A-Za-z0-9_-]+$/.test(part) && part.length > 0
+  );
+}
+
+function looksLikeWorkspaceApiKey(token: string): boolean {
+  return /^ttr_[A-Za-z0-9_-]+$/.test(token);
+}
+
+function hasLikelyAuthenticatedApiCredential(req: NextRequest): boolean {
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) {
+    return false;
+  }
+
+  const trimmedHeader = authHeader.trim();
+  if (looksLikeWorkspaceApiKey(trimmedHeader)) {
+    return true;
+  }
+
+  if (!trimmedHeader.toLowerCase().startsWith('bearer ')) {
+    return false;
+  }
+
+  const token = trimmedHeader.slice(7).trim();
+  return looksLikeSupabaseJwt(token) || looksLikeWorkspaceApiKey(token);
+}
+
+function hasMalformedAuthorizationHeader(req: NextRequest): boolean {
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) {
+    return false;
+  }
+
+  const trimmedHeader = authHeader.trim();
+  if (looksLikeWorkspaceApiKey(trimmedHeader)) {
+    return false;
+  }
+
+  if (!trimmedHeader.toLowerCase().startsWith('bearer ')) {
+    return true;
+  }
+
+  const token = trimmedHeader.slice(7).trim();
+  return token.length === 0 || /\s/.test(token);
+}
+
+function buildProxyBlockResponse(
+  status: 400 | 401 | 429,
+  reason:
+    | 'ip-already-blocked'
+    | 'malformed-auth-header'
+    | 'malformed-supabase-auth-cookie'
+    | 'suspicious-anonymous-request',
+  retryAfter?: number
+) {
+  const body =
+    status === 429
+      ? { error: 'Too Many Requests', message: 'Rate limit exceeded' }
+      : status === 401
+        ? { error: 'Unauthorized' }
+        : { error: 'Bad Request' };
+
+  return NextResponse.json(body, {
+    status,
+    headers: {
+      'Cache-Control': 'no-store',
+      ...(retryAfter ? { 'Retry-After': `${retryAfter}` } : {}),
+      'X-Proxy-Block-Reason': reason,
+    },
+  });
+}
+
+function applyExpiredCookies(response: NextResponse, cookieNames: string[]) {
+  for (const cookieName of cookieNames) {
+    response.cookies.set(cookieName, '', {
+      expires: new Date(0),
+      maxAge: 0,
+      path: '/',
+    });
+  }
+}
+
+async function blockMalformedApiAuthCookieRequest(
+  req: NextRequest
+): Promise<NextResponse | null> {
+  if (
+    hasLikelyAuthenticatedApiCredential(req) ||
+    isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers)
+  ) {
+    return null;
+  }
+
+  const malformedCookieNames = getMalformedSupabaseAuthCookieNames(
+    req.cookies.getAll(),
+    process.env.NEXT_PUBLIC_SUPABASE_URL
+  );
+
+  if (malformedCookieNames.length === 0) {
+    return null;
+  }
+
+  const ipAddress = extractIPFromRequest(req.headers);
+  const existingBlock =
+    ipAddress === 'unknown' ? null : await isIPBlockedEdge(ipAddress);
+
+  if (existingBlock) {
+    const retryAfter = Math.max(
+      1,
+      Math.ceil((existingBlock.expiresAt.getTime() - Date.now()) / 1000)
+    );
+    const response = buildProxyBlockResponse(
+      429,
+      'ip-already-blocked',
+      retryAfter
+    );
+    applyExpiredCookies(response, malformedCookieNames);
+    return response;
+  }
+
+  const newBlock =
+    ipAddress === 'unknown'
+      ? null
+      : await recordMalformedAuthCookieEdge(ipAddress);
+
+  if (newBlock) {
+    const retryAfter = Math.max(
+      1,
+      Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
+    );
+    const response = buildProxyBlockResponse(
+      429,
+      'ip-already-blocked',
+      retryAfter
+    );
+    applyExpiredCookies(response, malformedCookieNames);
+    return response;
+  }
+
+  const response = buildProxyBlockResponse(
+    401,
+    'malformed-supabase-auth-cookie'
+  );
+  applyExpiredCookies(response, malformedCookieNames);
+  return response;
+}
+
+function getSuspiciousAnonymousApiSignal(req: NextRequest): {
+  reason: 'malformed-auth-header' | 'suspicious-anonymous-request';
+  status: 400 | 401;
+} | null {
+  if (
+    isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) ||
+    hasAuthenticatedApiSession(req)
+  ) {
+    return null;
+  }
+
+  if (hasMalformedAuthorizationHeader(req)) {
+    return {
+      reason: 'malformed-auth-header',
+      status: 401,
+    };
+  }
+
+  if ((req.headers.get('user-agent') ?? '').trim().length === 0) {
+    return {
+      reason: 'suspicious-anonymous-request',
+      status: 400,
+    };
+  }
+
+  if (
+    req.nextUrl.search.length > SUSPICIOUS_QUERY_LENGTH_MAX ||
+    req.nextUrl.searchParams.size > SUSPICIOUS_QUERY_PARAMS_MAX ||
+    SCANNER_PATH_PATTERN.test(req.nextUrl.pathname)
+  ) {
+    return {
+      reason: 'suspicious-anonymous-request',
+      status: 400,
+    };
+  }
+
+  return null;
+}
+
+async function blockSuspiciousAnonymousApiRequest(
+  req: NextRequest
+): Promise<NextResponse | null> {
+  const signal = getSuspiciousAnonymousApiSignal(req);
+  if (!signal) {
+    return null;
+  }
+
+  const ipAddress = extractIPFromRequest(req.headers);
+  const existingBlock =
+    ipAddress === 'unknown' ? null : await isIPBlockedEdge(ipAddress);
+
+  if (existingBlock) {
+    const retryAfter = Math.max(
+      1,
+      Math.ceil((existingBlock.expiresAt.getTime() - Date.now()) / 1000)
+    );
+    return buildProxyBlockResponse(429, 'ip-already-blocked', retryAfter);
+  }
+
+  const newBlock =
+    ipAddress === 'unknown'
+      ? null
+      : await recordSuspiciousApiRequestEdge(ipAddress);
+
+  if (newBlock) {
+    const retryAfter = Math.max(
+      1,
+      Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
+    );
+    return buildProxyBlockResponse(429, 'ip-already-blocked', retryAfter);
+  }
+
+  return buildProxyBlockResponse(signal.status, signal.reason);
 }
 
 /**
@@ -242,8 +536,34 @@ const authProxy = createCentralizedAuthProxy({
   skipApiRoutes: true,
 });
 
+function getRootDynamicSegment(pathname: string): string | null {
+  const segments = pathname.split('/').filter(Boolean);
+
+  if (segments.length === 0) {
+    return null;
+  }
+
+  if (supportedLocales.includes((segments[0] ?? '') as Locale)) {
+    return segments[1] ?? null;
+  }
+
+  return segments[0] ?? null;
+}
+
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
+    const malformedAuthCookieResponse =
+      await blockMalformedApiAuthCookieRequest(req);
+    if (malformedAuthCookieResponse) {
+      return malformedAuthCookieResponse;
+    }
+
+    const suspiciousAnonymousApiResponse =
+      await blockSuspiciousAnonymousApiRequest(req);
+    if (suspiciousAnonymousApiResponse) {
+      return suspiciousAnonymousApiResponse;
+    }
+
     if (await hasWorkspaceEmailRateLimitOverrides(req.nextUrl.pathname)) {
       return NextResponse.next();
     }
@@ -252,6 +572,28 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       prefixBase: 'proxy:web:api',
     });
     if (guardResponse) {
+      if (
+        guardResponse.status === 429 &&
+        guardResponse.headers.get('X-Proxy-Block-Reason') ===
+          'route-rate-limit' &&
+        !isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) &&
+        !hasAuthenticatedApiSession(req)
+      ) {
+        const ipAddress = extractIPFromRequest(req.headers);
+        const newBlock =
+          ipAddress === 'unknown'
+            ? null
+            : await recordSuspiciousApiRequestEdge(ipAddress);
+
+        if (newBlock) {
+          const retryAfter = Math.max(
+            1,
+            Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
+          );
+          return buildProxyBlockResponse(429, 'ip-already-blocked', retryAfter);
+        }
+      }
+
       return guardResponse;
     }
 
@@ -541,9 +883,20 @@ const handleReservedRootRoute = (req: NextRequest): NextResponse | null => {
   const { pathname } = req.nextUrl;
   const segments = pathname.split('/').filter(Boolean);
   const localizedReservedSegment = segments[1];
+  const rootDynamicSegment = getRootDynamicSegment(pathname);
 
   if (pathname === OFFLINE_FALLBACK_PATH) {
     return NextResponse.next();
+  }
+
+  if (pathname === BROWSER_STATE_RECOVERY_PATH) {
+    return NextResponse.next();
+  }
+
+  if (rootDynamicSegment?.startsWith(BLOCKED_ROOT_SEGMENT_PREFIX)) {
+    return NextResponse.rewrite(
+      new URL(RESERVED_ROOT_NOT_FOUND_PATH, req.nextUrl)
+    );
   }
 
   if (segments[0]?.startsWith(RESERVED_ROOT_SEGMENT_PREFIX)) {
@@ -559,7 +912,9 @@ const handleReservedRootRoute = (req: NextRequest): NextResponse | null => {
     const canonicalReservedPath =
       localizedReservedSegment === OFFLINE_FALLBACK_PATH.slice(1)
         ? OFFLINE_FALLBACK_PATH
-        : `/${segments.slice(1).join('/')}`;
+        : localizedReservedSegment === BROWSER_STATE_RECOVERY_PATH.slice(1)
+          ? BROWSER_STATE_RECOVERY_PATH
+          : `/${segments.slice(1).join('/')}`;
     const redirectUrl = new URL(canonicalReservedPath, req.nextUrl);
     redirectUrl.search = req.nextUrl.search;
     return NextResponse.redirect(redirectUrl);

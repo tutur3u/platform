@@ -1,3 +1,5 @@
+import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -59,17 +61,16 @@ export const POST = withSessionAuth(
         );
       }
 
-      const { data: membership, error: membershipError } = await supabase
-        .from('workspace_members')
-        .select('user_id')
-        .eq('ws_id', wsId)
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const membership = await verifyWorkspaceMembershipType({
+        wsId: wsId,
+        userId: user.id,
+        supabase: supabase,
+      });
 
-      if (membershipError) {
+      if (membership.error === 'membership_lookup_failed') {
         console.error(
           'Error validating workspace membership for upload-url:',
-          membershipError
+          membership.error
         );
         return NextResponse.json(
           { message: 'Failed to verify workspace access' },
@@ -77,7 +78,7 @@ export const POST = withSessionAuth(
         );
       }
 
-      if (!membership) {
+      if (!membership.ok) {
         return NextResponse.json(
           { message: "You don't have access to this workspace" },
           { status: 403 }
@@ -113,8 +114,11 @@ export const POST = withSessionAuth(
         ? `${wsId}/chats/ai/resources/${chatId}/${timestampedName}`
         : `${wsId}/chats/ai/resources/temp/${user.id}/${timestampedName}`;
 
+      // Membership checks stay request-scoped; storage signed-upload creation uses admin.
+      const storageAdmin = await createDynamicAdminClient();
+
       // Generate signed upload URL (valid for 120 seconds)
-      const { data, error } = await supabase.storage
+      const { data, error } = await storageAdmin.storage
         .from('workspaces')
         .createSignedUploadUrl(storagePath, { upsert: true });
 

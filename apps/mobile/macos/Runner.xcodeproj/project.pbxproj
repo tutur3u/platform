@@ -269,6 +269,7 @@
 				ABDABAB564244482F7EF70DC /* FlutterFire: "flutterfire upload-crashlytics-symbols" */,
 				E197904BF0F1404701FAD009 /* [CP] Embed Pods Frameworks */,
 				562A45F8A51D1E895E327A58 /* FlutterFire: "flutterfire bundle-service-file" */,
+				29475625AF6904400AB15B4A /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -352,6 +353,23 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		29475625AF6904400AB15B4A /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		2F25BD32501C3C0D241166CD /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;

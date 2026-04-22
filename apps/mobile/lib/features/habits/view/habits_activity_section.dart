@@ -54,7 +54,7 @@ class HabitsActivitySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (state.activityStatus == HabitsStatus.loading)
+        if (state.isActivityRefreshing)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: ClipRRect(

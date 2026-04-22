@@ -3,7 +3,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types/supabase';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -58,21 +61,20 @@ export async function PATCH(
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace access
-    const { data: memberCheck, error: memberCheckError } = await supabase
-      .from('workspace_members')
-      .select('id:user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (memberCheckError) {
+    if (memberCheck.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }
@@ -225,21 +227,20 @@ export async function DELETE(
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace access
-    const { data: memberCheck, error: memberCheckError } = await supabase
-      .from('workspace_members')
-      .select('id:user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (memberCheckError) {
+    if (memberCheck.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }

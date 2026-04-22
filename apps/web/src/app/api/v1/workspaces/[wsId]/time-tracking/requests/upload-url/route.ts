@@ -8,6 +8,7 @@
 
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -51,14 +52,20 @@ export const POST = withSessionAuth(
     const normalizedWsId = await normalizeWorkspaceId(wsId);
 
     // Verify workspace membership
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (!memberCheck) {
+    if (memberCheck.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }

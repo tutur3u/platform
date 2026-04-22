@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
@@ -1097,6 +1098,7 @@ class _InventoryTextInputCard extends StatelessWidget {
       icon: Icons.edit_note_rounded,
       errorText: errorText,
       child: shad.TextField(
+        contextMenuBuilder: platformTextContextMenuBuilder(),
         key: fieldKey,
         controller: controller,
         keyboardType: keyboardType,
@@ -1126,6 +1128,7 @@ class _InventoryTextAreaCard extends StatelessWidget {
       label,
       icon: Icons.notes_rounded,
       child: shad.TextArea(
+        contextMenuBuilder: platformTextContextMenuBuilder(),
         controller: controller,
         placeholder: Text(placeholder),
         initialHeight: 96,

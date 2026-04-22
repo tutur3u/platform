@@ -12,7 +12,6 @@ import {
   ChevronDown,
   Clock,
   Flag,
-  ListTodo,
   Loader2,
   Minus,
   Pen,
@@ -50,9 +49,22 @@ import {
   buildEstimationIndices,
   mapEstimationPoints,
 } from '../estimation-mapping';
+import { LabelChip } from '../label-chip';
 import type { SchedulingSettings } from '../task-edit-dialog/hooks/use-task-mutations';
 import type { WorkspaceTaskLabel } from '../task-edit-dialog/types';
+import { TaskResourceSearchField } from '../task-resource-search-field';
+import {
+  labelNameMatchesQuery,
+  memberMatchesSearchQuery,
+  projectNameMatchesQuery,
+} from '../task-resource-search-filters';
 import { UserAvatar } from '../user-avatar';
+import { translateTaskListNameForDisplay } from '../utils/translate-task-list-display-name';
+import { TaskListSelector } from './components/task-list-selector';
+import {
+  getTaskListTriggerIcon,
+  getTaskListTriggerSurfaceClass,
+} from './components/task-list-trigger-styles';
 
 // Scheduled calendar event type
 export interface ScheduledCalendarEvent {
@@ -69,6 +81,7 @@ export interface ScheduledCalendarEvent {
 interface TaskPropertiesSectionProps {
   // IDs
   wsId: string;
+  boardId: string;
   taskId?: string;
   // State
   priority: TaskPriority | null;
@@ -260,9 +273,8 @@ function DurationInput({
 
 export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
   const {
-    // wsId and taskId are passed for potential future use
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    wsId: _wsId,
+    wsId,
+    boardId,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     taskId: _taskId,
     priority,
@@ -317,17 +329,29 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
 
   const t = useTranslations();
 
-  // Translate standard list names (To Do, In Progress, Done, Closed)
-  const translateListName = (name: string): string => {
-    const normalized = name.toLowerCase().replace(/\s+/g, '');
-    const translations: Record<string, string> = {
-      todo: t('common.list_name_to_do'),
-      inprogress: t('common.list_name_in_progress'),
+  const selectedListForSummary = useMemo(
+    () =>
+      selectedListId
+        ? availableLists?.find((l) => l.id === selectedListId)
+        : undefined,
+    [availableLists, selectedListId]
+  );
+
+  const listNameLabels = useMemo(
+    () => ({
+      toDo: t('common.list_name_to_do'),
+      inProgress: t('common.list_name_in_progress'),
       done: t('common.list_name_done'),
       closed: t('common.list_name_closed'),
-    };
-    return translations[normalized] ?? name;
-  };
+      documents: t('common.documents'),
+    }),
+    [t]
+  );
+
+  const ListSummaryTriggerIcon = getTaskListTriggerIcon(selectedListForSummary);
+  const listSummarySurfaceClass = getTaskListTriggerSurfaceClass(
+    selectedListForSummary
+  );
 
   const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
@@ -338,8 +362,61 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
   const [isLabelsPopoverOpen, setIsLabelsPopoverOpen] = useState(false);
   const [isProjectsPopoverOpen, setIsProjectsPopoverOpen] = useState(false);
   const [isAssigneesPopoverOpen, setIsAssigneesPopoverOpen] = useState(false);
-  const [isListPopoverOpen, setIsListPopoverOpen] = useState(false);
   const [isSchedulingPopoverOpen, setIsSchedulingPopoverOpen] = useState(false);
+  const [labelSearchQuery, setLabelSearchQuery] = useState('');
+  const [projectSearchQuery, setProjectSearchQuery] = useState('');
+  const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
+
+  const unselectedAvailableLabels = useMemo(
+    () =>
+      availableLabels.filter(
+        (l) => !selectedLabels.some((sl) => sl.id === l.id)
+      ),
+    [availableLabels, selectedLabels]
+  );
+  const filteredUnselectedLabels = useMemo(
+    () =>
+      unselectedAvailableLabels.filter((l) =>
+        labelNameMatchesQuery(l.name, labelSearchQuery)
+      ),
+    [unselectedAvailableLabels, labelSearchQuery]
+  );
+
+  const unselectedTaskProjects = useMemo(
+    () =>
+      taskProjects.filter(
+        (p) => !selectedProjects.some((sp) => sp.id === p.id)
+      ),
+    [taskProjects, selectedProjects]
+  );
+  const filteredUnselectedProjects = useMemo(
+    () =>
+      unselectedTaskProjects.filter((p) =>
+        projectNameMatchesQuery(p.name, projectSearchQuery)
+      ),
+    [unselectedTaskProjects, projectSearchQuery]
+  );
+
+  const unselectedWorkspaceMembers = useMemo(
+    () =>
+      workspaceMembers.filter(
+        (m) =>
+          !selectedAssignees.some(
+            (a) => (a.id || a.user_id) === (m.user_id || m.id)
+          )
+      ),
+    [workspaceMembers, selectedAssignees]
+  );
+  const filteredUnselectedMembers = useMemo(
+    () =>
+      unselectedWorkspaceMembers.filter((m) =>
+        memberMatchesSearchQuery(
+          { display_name: m.display_name, email: m.email },
+          assigneeSearchQuery
+        )
+      ),
+    [unselectedWorkspaceMembers, assigneeSearchQuery]
+  );
 
   // Track last saved settings locally (updates after successful save)
   const [lastSavedSettings, setLastSavedSettings] = useState<
@@ -628,17 +705,19 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               {selectedListId && (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-green/30 bg-dynamic-green/15 px-2 font-medium text-[10px] text-dynamic-green"
+                  className={cn(
+                    'h-5 shrink-0 gap-1 border px-2 font-medium text-[10px]',
+                    listSummarySurfaceClass ??
+                      'border-border bg-muted/50 text-muted-foreground'
+                  )}
                 >
-                  <ListTodo className="h-2.5 w-2.5" />
-                  {(() => {
-                    const listName = availableLists?.find(
-                      (l) => l.id === selectedListId
-                    )?.name;
-                    return listName
-                      ? translateListName(listName)
-                      : t('ws-task-boards.dialog.field.list');
-                  })()}
+                  <ListSummaryTriggerIcon className="h-2.5 w-2.5" />
+                  {selectedListForSummary
+                    ? translateTaskListNameForDisplay(
+                        selectedListForSummary.name,
+                        listNameLabels
+                      )
+                    : t('ws-task-boards.dialog.field.list')}
                 </Badge>
               )}
               {(startDate || endDate) && (
@@ -824,75 +903,14 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               </PopoverContent>
             </Popover>
 
-            {/* List Badge */}
-            <Popover
-              open={isListPopoverOpen}
-              onOpenChange={setIsListPopoverOpen}
-            >
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  disabled={disabled}
-                  className={cn(
-                    'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
-                    selectedListId
-                      ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green hover:border-dynamic-green/50 hover:bg-dynamic-green/20'
-                      : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
-                    disabled && 'cursor-not-allowed opacity-50'
-                  )}
-                >
-                  <ListTodo className="h-3.5 w-3.5" />
-                  <span>
-                    {selectedListId
-                      ? (() => {
-                          const listName = availableLists?.find(
-                            (l) => l.id === selectedListId
-                          )?.name;
-                          return listName
-                            ? translateListName(listName)
-                            : t('ws-task-boards.dialog.field.list');
-                        })()
-                      : t('ws-task-boards.dialog.field.list')}
-                  </span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-64 p-0">
-                {!availableLists || availableLists.length === 0 ? (
-                  <div className="p-4 text-center text-muted-foreground text-sm">
-                    {t('ws-task-boards.dialog.no_lists_found')}
-                  </div>
-                ) : (
-                  <div
-                    className="max-h-60 overflow-y-auto overscroll-contain"
-                    onWheel={(e) => e.stopPropagation()}
-                  >
-                    <div className="p-1">
-                      {availableLists.map((list) => (
-                        <button
-                          key={list.id}
-                          type="button"
-                          onClick={() => {
-                            onListChange(list.id);
-                            setIsListPopoverOpen(false);
-                          }}
-                          className={cn(
-                            'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted',
-                            selectedListId === list.id && 'bg-muted font-medium'
-                          )}
-                        >
-                          <span className="flex-1">
-                            {translateListName(list.name)}
-                          </span>
-                          {selectedListId === list.id && (
-                            <Check className="h-4 w-4 shrink-0 text-primary" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
+            <TaskListSelector
+              wsId={wsId}
+              boardId={boardId}
+              selectedListId={selectedListId}
+              availableLists={availableLists}
+              disabled={disabled}
+              onListChange={onListChange}
+            />
 
             {/* Dates Badge */}
             <Popover
@@ -1121,7 +1139,10 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
             {/* Labels Badge */}
             <Popover
               open={isLabelsPopoverOpen}
-              onOpenChange={setIsLabelsPopoverOpen}
+              onOpenChange={(open) => {
+                setIsLabelsPopoverOpen(open);
+                if (!open) setLabelSearchQuery('');
+              }}
             >
               <PopoverTrigger asChild>
                 <button
@@ -1199,36 +1220,38 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         </div>
                       </div>
                     )}
+                    <TaskResourceSearchField
+                      value={labelSearchQuery}
+                      onChange={setLabelSearchQuery}
+                      placeholder={t('common.search_labels')}
+                    />
                     <div
                       className="max-h-60 overflow-y-auto overscroll-contain"
                       onWheel={(e) => e.stopPropagation()}
                     >
                       <div className="p-1">
-                        {availableLabels
-                          .filter(
-                            (l) => !selectedLabels.some((sl) => sl.id === l.id)
-                          )
-                          .map((label) => {
-                            const styles = computeAccessibleLabelStyles(
-                              label.color
-                            );
-                            return (
-                              <button
-                                key={label.id}
-                                type="button"
-                                onClick={() => onLabelToggle(label)}
-                                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
-                              >
-                                <span
-                                  className="h-3 w-3 shrink-0 rounded-full"
-                                  style={{
-                                    backgroundColor: styles?.bg || '#ccc',
-                                  }}
-                                />
-                                <span className="flex-1">{label.name}</span>
-                              </button>
-                            );
-                          })}
+                        {labelSearchQuery &&
+                        unselectedAvailableLabels.length > 0 &&
+                        filteredUnselectedLabels.length === 0 ? (
+                          <div className="px-2 py-4 text-center text-muted-foreground text-xs">
+                            {t('common.no_labels_found')}
+                          </div>
+                        ) : (
+                          filteredUnselectedLabels.map((label) => (
+                            <button
+                              key={label.id}
+                              type="button"
+                              onClick={() => onLabelToggle(label)}
+                              className="flex w-full items-center rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted"
+                            >
+                              <LabelChip
+                                label={label}
+                                showIcon={false}
+                                className="h-6 px-2 text-xs"
+                              />
+                            </button>
+                          ))
+                        )}
                       </div>
                     </div>
                     <div className="border-t p-2">
@@ -1254,7 +1277,10 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
             {!isDraftMode && (
               <Popover
                 open={isProjectsPopoverOpen}
-                onOpenChange={setIsProjectsPopoverOpen}
+                onOpenChange={(open) => {
+                  setIsProjectsPopoverOpen(open);
+                  if (!open) setProjectSearchQuery('');
+                }}
               >
                 <PopoverTrigger asChild>
                   <button
@@ -1322,17 +1348,24 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           </div>
                         </div>
                       )}
+                      <TaskResourceSearchField
+                        value={projectSearchQuery}
+                        onChange={setProjectSearchQuery}
+                        placeholder={t('common.search_projects')}
+                      />
                       <div
                         className="max-h-60 overflow-y-auto overscroll-contain"
                         onWheel={(e) => e.stopPropagation()}
                       >
                         <div className="p-1">
-                          {taskProjects
-                            .filter(
-                              (p) =>
-                                !selectedProjects.some((sp) => sp.id === p.id)
-                            )
-                            .map((project) => (
+                          {projectSearchQuery &&
+                          unselectedTaskProjects.length > 0 &&
+                          filteredUnselectedProjects.length === 0 ? (
+                            <div className="px-2 py-4 text-center text-muted-foreground text-xs">
+                              {t('common.no_projects_found')}
+                            </div>
+                          ) : (
+                            filteredUnselectedProjects.map((project) => (
                               <button
                                 key={project.id}
                                 type="button"
@@ -1344,7 +1377,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                   {project.name}
                                 </span>
                               </button>
-                            ))}
+                            ))
+                          )}
                         </div>
                       </div>
                       <div className="border-t p-2">
@@ -1371,7 +1405,10 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
             {!isPersonalWorkspace && (
               <Popover
                 open={isAssigneesPopoverOpen}
-                onOpenChange={setIsAssigneesPopoverOpen}
+                onOpenChange={(open) => {
+                  setIsAssigneesPopoverOpen(open);
+                  if (!open) setAssigneeSearchQuery('');
+                }}
               >
                 <PopoverTrigger asChild>
                   <button
@@ -1433,20 +1470,24 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           </div>
                         </div>
                       )}
+                      <TaskResourceSearchField
+                        value={assigneeSearchQuery}
+                        onChange={setAssigneeSearchQuery}
+                        placeholder={t('common.search_members')}
+                      />
                       <div
                         className="max-h-60 overflow-y-auto overscroll-contain"
                         onWheel={(e) => e.stopPropagation()}
                       >
                         <div className="p-1">
-                          {workspaceMembers
-                            .filter(
-                              (m) =>
-                                !selectedAssignees.some(
-                                  (a) =>
-                                    (a.id || a.user_id) === (m.user_id || m.id)
-                                )
-                            )
-                            .map((member, index) => (
+                          {assigneeSearchQuery &&
+                          unselectedWorkspaceMembers.length > 0 &&
+                          filteredUnselectedMembers.length === 0 ? (
+                            <div className="px-2 py-4 text-center text-muted-foreground text-xs">
+                              {t('common.no_members_found')}
+                            </div>
+                          ) : (
+                            filteredUnselectedMembers.map((member, index) => (
                               <button
                                 key={
                                   member.user_id ||
@@ -1468,7 +1509,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                 </span>
                                 <Plus className="h-4 w-4 shrink-0" />
                               </button>
-                            ))}
+                            ))
+                          )}
                         </div>
                       </div>
                     </>

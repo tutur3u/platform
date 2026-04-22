@@ -1,9 +1,10 @@
 import { ListTodo } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import QuizForm from '../../../../../quizzes/form';
 import AIQuizzes from './client-ai';
 import ClientQuizzes from './client-quizzes';
@@ -22,7 +23,8 @@ interface Props {
 }
 
 export default async function ModuleQuizzesPage({ params }: Props) {
-  const { wsId, moduleId } = await params;
+  const { wsId: routeWsId, moduleId } = await params;
+  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
   const t = await getTranslations();
   const quizzes = await getQuizzes(moduleId);
 
@@ -41,19 +43,23 @@ export default async function ModuleQuizzesPage({ params }: Props) {
         singularTitle={t('ws-quizzes.singular')}
         createTitle={t('ws-quizzes.create')}
         createDescription={t('ws-quizzes.create_description')}
-        form={<QuizForm wsId={wsId} moduleId={moduleId} />}
+        form={<QuizForm wsId={resolvedWsId} moduleId={moduleId} />}
       />
 
       <div className="grid gap-4 md:grid-cols-2">
         {quizzes && quizzes.length > 0 && (
           <>
-            <ClientQuizzes wsId={wsId} moduleId={moduleId} quizzes={quizzes} />
+            <ClientQuizzes
+              wsId={resolvedWsId}
+              moduleId={moduleId}
+              quizzes={quizzes}
+            />
             <Separator className="col-span-full my-2" />
           </>
         )}
 
         <div className="col-span-full">
-          <AIQuizzes wsId={wsId} moduleId={moduleId} />
+          <AIQuizzes wsId={resolvedWsId} moduleId={moduleId} />
         </div>
       </div>
     </div>
@@ -61,7 +67,7 @@ export default async function ModuleQuizzesPage({ params }: Props) {
 }
 
 const getQuizzes = async (moduleId: string) => {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase
     .from('course_module_quizzes')

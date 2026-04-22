@@ -57,6 +57,7 @@ describe('mobile-version-policy', () => {
     expect(result.status).toBe('supported');
     expect(result.shouldUpdate).toBe(false);
     expect(result.requiresUpdate).toBe(false);
+    expect(result.otpEnabled).toBe(false);
   });
 
   it('returns update-required when the app is below minimum version', () => {
@@ -75,6 +76,7 @@ describe('mobile-version-policy', () => {
     expect(result.status).toBe('update-required');
     expect(result.shouldUpdate).toBe(true);
     expect(result.requiresUpdate).toBe(true);
+    expect(result.otpEnabled).toBe(false);
   });
 
   it('returns update-recommended when the app is below effective version but above minimum', () => {
@@ -85,6 +87,7 @@ describe('mobile-version-policy', () => {
         android: {
           effectiveVersion: '1.3.0',
           minimumVersion: '1.1.0',
+          otpEnabled: true,
           storeUrl: 'https://play.google.com/store/apps/details?id=example.app',
         },
       }),
@@ -93,5 +96,19 @@ describe('mobile-version-policy', () => {
     expect(result.status).toBe('update-recommended');
     expect(result.shouldUpdate).toBe(true);
     expect(result.requiresUpdate).toBe(false);
+    expect(result.otpEnabled).toBe(true);
+  });
+
+  it('normalizes OTP rollout booleans from config payloads', () => {
+    const result = normalizeMobileVersionPolicies({
+      ios: {
+        otpEnabled: 'true',
+      },
+      webOtpEnabled: '1',
+    });
+
+    expect(result.ios.otpEnabled).toBe(true);
+    expect(result.android.otpEnabled).toBe(false);
+    expect(result.webOtpEnabled).toBe(true);
   });
 });

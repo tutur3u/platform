@@ -1,10 +1,11 @@
 import { Goal, Sparkles } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import { ModuleContentEditor } from './content-editor';
 
 export const metadata: Metadata = {
@@ -21,16 +22,17 @@ interface Props {
 }
 
 export default async function ModuleContentPage({ params }: Props) {
-  const { wsId, courseId, moduleId } = await params;
+  const { wsId: routeWsId, courseId, moduleId } = await params;
+  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
   const t = await getTranslations();
 
   const getContent = async (courseId: string, moduleId: string) => {
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
     const { data, error } = await supabase
       .from('workspace_course_modules')
       .select('content')
       .eq('id', moduleId)
-      .eq('course_id', courseId);
+      .eq('group_id', courseId);
 
     if (error) {
       console.error(error);
@@ -61,7 +63,7 @@ export default async function ModuleContentPage({ params }: Props) {
         showSecondaryTrigger
       />
       <ModuleContentEditor
-        wsId={wsId}
+        wsId={resolvedWsId}
         courseId={courseId}
         moduleId={moduleId}
         content={content}

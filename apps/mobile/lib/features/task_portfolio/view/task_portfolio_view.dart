@@ -11,6 +11,8 @@ import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/task_portfolio/cubit/task_portfolio_cubit.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_actions.dart';
@@ -52,6 +54,14 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
     taskRepository: _taskRepository,
   );
 
+  AuthCubit? _authCubitOrNull() {
+    try {
+      return context.read<AuthCubit?>();
+    } on Object {
+      return null;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -66,24 +76,57 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (!_permissionsController.shouldReloadForWorkspace(wsId)) return;
+    final userId = _authCubitOrNull()?.state.user?.id;
+    if (!_permissionsController.shouldReloadForWorkspace(
+      wsId,
+      userId: userId,
+    )) {
+      return;
+    }
 
-    _permissionsController.primeCachedPermission(wsId);
+    _permissionsController.primeCachedPermission(wsId, userId: userId);
     unawaited(_loadPermissions());
   }
 
   @override
   Widget build(BuildContext context) {
+    final authCubit = _authCubitOrNull();
     return shad.Scaffold(
-      child: BlocListener<WorkspaceCubit, WorkspaceState>(
-        listenWhen: (prev, curr) =>
-            prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-        listener: (context, state) {
-          final wsId = state.currentWorkspace?.id;
-          if (wsId != null) {
-            unawaited(context.read<TaskPortfolioCubit>().load(wsId));
-          }
-        },
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<WorkspaceCubit, WorkspaceState>(
+            listenWhen: (prev, curr) =>
+                prev.currentWorkspace?.id != curr.currentWorkspace?.id,
+            listener: (context, state) {
+              final wsId = state.currentWorkspace?.id;
+              if (wsId != null) {
+                unawaited(context.read<TaskPortfolioCubit>().load(wsId));
+              }
+              unawaited(_loadPermissions());
+            },
+          ),
+          if (authCubit != null)
+            BlocListener<AuthCubit, AuthState>(
+              bloc: authCubit,
+              listenWhen: (prev, curr) => prev.user?.id != curr.user?.id,
+              listener: (context, state) {
+                final wsId = context
+                    .read<WorkspaceCubit>()
+                    .state
+                    .currentWorkspace
+                    ?.id;
+                if (wsId != null) {
+                  unawaited(
+                    context.read<TaskPortfolioCubit>().load(
+                      wsId,
+                      forceRefresh: true,
+                    ),
+                  );
+                }
+                unawaited(_loadPermissions());
+              },
+            ),
+        ],
         child: Stack(
           children: [
             _buildContent(context),
@@ -262,9 +305,14 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
 
   Future<void> _loadPermissions() async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final userId = _authCubitOrNull()?.state.user?.id;
+    _permissionsController.primeCachedPermission(wsId, userId: userId);
     if (!mounted) return;
 
-    final loadFuture = _permissionsController.loadPermissions(wsId: wsId);
+    final loadFuture = _permissionsController.loadPermissions(
+      wsId: wsId,
+      userId: userId,
+    );
     setState(() {});
     await loadFuture;
     if (!mounted) return;

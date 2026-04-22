@@ -7,8 +7,8 @@
  * and displays a summary at the end.
  *
  * Usage:
- *   node scripts/check.js [--table] [--timing] [--details] [--run-all]
- *   bun check [--table] [--timing] [--details] [--run-all]
+ *   node scripts/check.js [--table] [--timing] [--details] [--run-all] [--force-now]
+ *   bun check [--table] [--timing] [--details] [--run-all] [--force-now]
  *
  * Exit codes:
  *   0 - All checks passed
@@ -29,8 +29,12 @@ const useTable = process.argv.includes('--table');
 const showTiming = process.argv.includes('--timing');
 const showDetails = process.argv.includes('--details');
 const runAll = process.argv.includes('--run-all');
+const forceNow = process.argv.includes('--force-now');
 const failFast = !runAll;
 const failFastRequiredChecks = new Set(['tests', 'type-check']);
+let activeCheckProcess = null;
+let activeQueueHandle = null;
+let shutdownSignalHandled = false;
 
 /**
  * Strip ANSI escape codes from a string
@@ -320,6 +324,33 @@ function isProcessActive(pid, killImpl = process.kill) {
   }
 }
 
+function signalProcess(pid, signal = 'SIGTERM', killImpl = process.kill) {
+  if (!Number.isInteger(pid) || pid <= 0) {
+    return false;
+  }
+
+  try {
+    killImpl(pid, signal);
+    return true;
+  } catch (error) {
+    if (error.code === 'ESRCH') {
+      return false;
+    }
+
+    throw error;
+  }
+}
+
+function formatSignalError(pid, signal, error) {
+  const detail =
+    error?.code === 'EPERM'
+      ? 'permission denied'
+      : error?.message || 'unknown error';
+  return new Error(
+    `Failed to send ${signal} to bun check pid ${pid}: ${detail}`
+  );
+}
+
 function getCheckQueuePaths(rootDir = ROOT_DIR, options = {}) {
   const fsImpl = options.fsImpl ?? fs;
   const queueRoot = options.queueRoot ?? CHECK_QUEUE_ROOT;
@@ -439,7 +470,105 @@ function releaseCheckQueueLock(handle, options = {}) {
   }
 }
 
+function listTrackedCheckProcesses(paths, options = {}) {
+  const fsImpl = options.fsImpl ?? fs;
+  const isPidActive = options.isPidActive ?? isProcessActive;
+  const trackedProcesses = new Map();
+
+  pruneStaleLock(paths, { fsImpl, isPidActive });
+
+  const owner = readJsonFile(paths.lockMetaPath, fsImpl);
+  const ownerPid = Number(owner?.pid);
+  if (owner && isPidActive(ownerPid)) {
+    trackedProcesses.set(ownerPid, {
+      pid: ownerPid,
+      source: 'lock',
+      ticketId: owner.ticketId || 'lock-owner',
+    });
+  }
+
+  for (const ticket of listActiveTickets(paths, { fsImpl, isPidActive })) {
+    trackedProcesses.set(ticket.pid, {
+      pid: ticket.pid,
+      source: 'ticket',
+      ticketId: ticket.ticketId,
+    });
+  }
+
+  return [...trackedProcesses.values()];
+}
+
+async function forceClearCheckQueue(options = {}) {
+  const fsImpl = options.fsImpl ?? fs;
+  const stdoutWriter =
+    options.stdoutWriter ?? ((str) => process.stdout.write(str));
+  const killImpl = options.killImpl ?? process.kill;
+  const isPidActive = options.isPidActive ?? isProcessActive;
+  const sleepImpl = options.sleepImpl ?? sleep;
+  const currentPid = options.pid ?? process.pid;
+  const forceGraceMs = options.forceGraceMs ?? 1500;
+  const forceKillSignal = options.forceKillSignal ?? 'SIGKILL';
+  const paths = getCheckQueuePaths(options.rootDir ?? ROOT_DIR, {
+    fsImpl,
+    queueRoot: options.queueRoot,
+  });
+
+  const trackedProcesses = listTrackedCheckProcesses(paths, {
+    fsImpl,
+    isPidActive,
+  }).filter((entry) => entry.pid !== currentPid);
+
+  if (trackedProcesses.length === 0) {
+    return;
+  }
+
+  stdoutWriter(
+    `${colors.yellow}${colors.bold}Force stopping ${trackedProcesses.length} earlier bun check invocation${trackedProcesses.length === 1 ? '' : 's'}...${colors.reset}\n`
+  );
+
+  for (const processInfo of trackedProcesses) {
+    try {
+      signalProcess(processInfo.pid, 'SIGTERM', killImpl);
+    } catch (error) {
+      throw formatSignalError(processInfo.pid, 'SIGTERM', error);
+    }
+  }
+
+  const waitUntil = Date.now() + forceGraceMs;
+  while (
+    trackedProcesses.some((processInfo) => isPidActive(processInfo.pid)) &&
+    Date.now() < waitUntil
+  ) {
+    await sleepImpl(Math.min(CHECK_QUEUE_POLL_MS, forceGraceMs));
+  }
+
+  const stubbornProcesses = trackedProcesses.filter((processInfo) =>
+    isPidActive(processInfo.pid)
+  );
+
+  if (stubbornProcesses.length > 0) {
+    stdoutWriter(
+      `${colors.yellow}Escalating to ${forceKillSignal} for ${stubbornProcesses.length} bun check invocation${stubbornProcesses.length === 1 ? '' : 's'}...${colors.reset}\n`
+    );
+
+    for (const processInfo of stubbornProcesses) {
+      try {
+        signalProcess(processInfo.pid, forceKillSignal, killImpl);
+      } catch (error) {
+        throw formatSignalError(processInfo.pid, forceKillSignal, error);
+      }
+    }
+  }
+
+  pruneStaleLock(paths, { fsImpl, isPidActive });
+  listActiveTickets(paths, { fsImpl, isPidActive });
+}
+
 async function acquireCheckQueueLock(options = {}) {
+  if (options.forceNow) {
+    await forceClearCheckQueue(options);
+  }
+
   const fsImpl = options.fsImpl ?? fs;
   const stdoutWriter =
     options.stdoutWriter ?? ((str) => process.stdout.write(str));
@@ -539,6 +668,7 @@ function runCheck(check, options = {}) {
         CHECK_DETAILS: showDetails ? '1' : '0',
       },
     });
+    activeCheckProcess = proc;
 
     proc.stdout.on('data', (data) => {
       const str = data.toString();
@@ -557,6 +687,7 @@ function runCheck(check, options = {}) {
     });
 
     proc.on('close', (code) => {
+      activeCheckProcess = null;
       const duration = Date.now() - startTime;
       if (!streamOutput && options.forceBuffered !== true && code !== 0) {
         const failureOutput = check.formatFailureOutput
@@ -586,6 +717,7 @@ function runCheck(check, options = {}) {
     });
 
     proc.on('error', (err) => {
+      activeCheckProcess = null;
       resolve({
         duration: Date.now() - startTime,
         name: check.name,
@@ -597,6 +729,39 @@ function runCheck(check, options = {}) {
     });
   });
 }
+
+function getSignalExitCode(signal) {
+  const signalNumber = os.constants.signals?.[signal];
+  return typeof signalNumber === 'number' ? 128 + signalNumber : 1;
+}
+
+function handleShutdownSignal(signal) {
+  if (shutdownSignalHandled) {
+    return;
+  }
+
+  shutdownSignalHandled = true;
+
+  if (activeCheckProcess) {
+    try {
+      activeCheckProcess.kill(signal);
+    } catch (error) {
+      if (error.code !== 'ESRCH') {
+        throw error;
+      }
+    }
+  }
+
+  if (activeQueueHandle) {
+    activeQueueHandle.release();
+    activeQueueHandle = null;
+  }
+
+  process.exit(getSignalExitCode(signal));
+}
+
+process.on('SIGINT', () => handleShutdownSignal('SIGINT'));
+process.on('SIGTERM', () => handleShutdownSignal('SIGTERM'));
 
 /**
  * Format duration in human-readable form
@@ -744,7 +909,11 @@ function printSummary(results, options = {}) {
  * Main function
  */
 async function main(options = {}) {
-  const queueHandle = await acquireCheckQueueLock(options);
+  const queueHandle = await acquireCheckQueueLock({
+    ...options,
+    forceNow: options.forceNow ?? forceNow,
+  });
+  activeQueueHandle = queueHandle;
 
   try {
     console.log(
@@ -811,6 +980,7 @@ async function main(options = {}) {
     return allPassed ? 0 : 1;
   } finally {
     queueHandle.release();
+    activeQueueHandle = null;
   }
 }
 
@@ -828,9 +998,13 @@ if (require.main === module) {
 module.exports = {
   acquireCheckQueueLock,
   checks,
+  forceClearCheckQueue,
+  formatSignalError,
   getCheckQueuePaths,
   isProcessActive,
+  listTrackedCheckProcesses,
   main,
   releaseCheckQueueLock,
   runCheck,
+  signalProcess,
 };

@@ -50,50 +50,61 @@ export function ImageCropper({
   const createCroppedImageFromFile = useCallback(
     async (file: File, pixelCrop: Area): Promise<Blob> => {
       const imageData = URL.createObjectURL(file);
+      const revokeImageData = () => URL.revokeObjectURL(imageData);
 
       return new Promise((resolve, reject) => {
         const img = new Image();
 
         img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
+          try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
 
-          if (!ctx) {
-            reject(new Error('Could not get canvas context'));
-            return;
+            if (!ctx) {
+              revokeImageData();
+              reject(new Error('Could not get canvas context'));
+              return;
+            }
+
+            // Set canvas size to the crop size
+            canvas.width = pixelCrop.width;
+            canvas.height = pixelCrop.height;
+
+            // Draw the cropped image
+            ctx.drawImage(
+              img,
+              pixelCrop.x,
+              pixelCrop.y,
+              pixelCrop.width,
+              pixelCrop.height,
+              0,
+              0,
+              pixelCrop.width,
+              pixelCrop.height
+            );
+
+            canvas.toBlob(
+              (blob) => {
+                revokeImageData();
+                if (blob) {
+                  resolve(blob);
+                } else {
+                  reject(new Error('Canvas toBlob failed'));
+                }
+              },
+              'image/jpeg',
+              0.8 // 80% quality
+            );
+          } catch (error) {
+            revokeImageData();
+            reject(
+              error instanceof Error ? error : new Error('Failed to crop image')
+            );
           }
-
-          // Set canvas size to the crop size
-          canvas.width = pixelCrop.width;
-          canvas.height = pixelCrop.height;
-
-          // Draw the cropped image
-          ctx.drawImage(
-            img,
-            pixelCrop.x,
-            pixelCrop.y,
-            pixelCrop.width,
-            pixelCrop.height,
-            0,
-            0,
-            pixelCrop.width,
-            pixelCrop.height
-          );
-
-          canvas.toBlob(
-            (blob) => {
-              if (blob) {
-                resolve(blob);
-              } else {
-                reject(new Error('Canvas toBlob failed'));
-              }
-            },
-            'image/jpeg',
-            0.8 // 80% quality
-          );
         };
 
         img.onerror = (error) => {
+          revokeImageData();
           console.error('Image load error:', error);
           reject(new Error('Failed to load image from imageData'));
         };

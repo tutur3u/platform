@@ -1,0 +1,566 @@
+---
+title: 'Web Docker Deployment'
+description: 'Run the web app in Docker for development, production, and blue/green self-hosted rollout.'
+updatedAt: '2026-04-21'
+---
+
+This is the operational guide for the Docker-based `apps/web` runtime.
+
+## Files That Define The Stack
+
+- `apps/web/Dockerfile`
+- `apps/web/docker/blue-green-watcher.Dockerfile`
+- `docker-compose.web.yml`
+- `docker-compose.web.prod.yml`
+- `scripts/docker-web.js`
+- `scripts/check-docker-web.js`
+
+## Supported Commands
+
+| Command | Purpose |
+| --- | --- |
+| `bun dev:web:docker` | Run the web dev workflow inside Docker |
+| `bun devx:web:docker` | Explicitly start local Supabase, then the Docker dev workflow |
+| `bun devrs:web:docker` | Explicitly start and reset local Supabase, then the Docker dev workflow |
+| `bun dev:web:docker:down` | Stop the Docker dev workflow |
+| `bun serve:web:docker` | Build and run the production web image in-place |
+| `bun serve:web:docker:bg` | Blue/green production deploy with health-checked cutover |
+| `bun serve:web:docker:bg:watch` | Recreate the watcher container, then tail its live logs while it polls the tracked branch and auto-runs blue/green after a successful fast-forward pull |
+| `bun serve:web:docker:down` | Stop the production Docker stack |
+| `bun serve:web:docker:bg:down` | Stop the blue/green stack and clear local runtime state |
+| `bun check:docker` | Validate Dockerfile and compose parity rules |
+
+## Flags And Implicit Mappings
+
+| Flag | Meaning |
+| --- | --- |
+| `--without-redis` | Disable the bundled Redis profile and skip Docker-injected Redis env |
+| `--with-supabase` | Start local Supabase before the Docker web flow |
+| `--reset-supabase` | Start and reset local Supabase before the Docker web flow |
+| `--mode prod` | Use the production compose file instead of the dev stack |
+| `--strategy blue-green` | Use blue/green production deployment instead of in-place replacement |
+| `--profile redis` | Explicitly enable the Redis profile when calling the helper directly |
+| `--build-memory 4g` | Run builds through a capped Buildx builder with a memory ceiling |
+| `--build-cpus 2` | Run builds through a capped Buildx builder with an approximate CPU limit |
+| `--build-max-parallelism 2` | Limit concurrent BuildKit solve steps for lower build pressure |
+| `--build-builder-name platform-web-capped-builder` | Override the throttled Buildx builder name |
+| `--resume-if-running` | If another watcher PID already holds the lock, mirror its live dashboard instead of failing |
+| `--replace-existing` | If another watcher PID already holds the lock, stop it and take over |
+| `--if-locked &lt;fail|resume|replace&gt;` | Explicit lock-conflict policy for the watcher |
+
+| Command | Implicit flags |
+| --- | --- |
+| `bun dev:web:docker` | none |
+| `bun devx:web:docker` | `--with-supabase` |
+| `bun devrs:web:docker` | `--reset-supabase` |
+| `bun serve:web:docker` | `--mode prod` |
+| `bun serve:web:docker:bg` | `--mode prod --strategy blue-green` |
+| `bun dev:web:docker -- --without-redis` | `--without-redis` |
+
+## Runtime Requirements
+
+- `apps/web/.env.local` must exist for both the build secret and the runtime env file.
+- Docker BuildKit must be available. The helper sets `COMPOSE_DOCKER_CLI_BUILD=1` and `DOCKER_BUILDKIT=1`.
+- The Docker web flow does not start local Supabase unless you explicitly choose `bun devx:web:docker` or `bun devrs:web:docker`.
+- By default the Docker container uses the Supabase URL already configured in `apps/web/.env.local`, which should stay pointed at the cloud project for normal Tuturuuu work.
+- If that configured URL explicitly points at host-run local Supabase, the helper rewrites the server-side Supabase URL to `host.docker.internal` while leaving `NEXT_PUBLIC_SUPABASE_URL` alone for browsers.
+- Dockerized web commands auto-enable the local Redis companion stack and inject `UPSTASH_REDIS_REST_URL` plus a generated `UPSTASH_REDIS_REST_TOKEN` into the web container.
+
+## Coolify
+
+Coolify can provide enough default deployment metadata for Tuturuuu's Dockerfile
+setup to derive the app origin even when you do not manually define the usual
+app URL variables.
+
+- During Dockerfile builds, `scripts/build-web-docker.js` now derives missing
+  `WEB_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`, and `NEXT_PUBLIC_APP_URL` values
+  from Coolify's `COOLIFY_URL` or `COOLIFY_FQDN` defaults before running
+  `bun run build:web`.
+- During production container startup, `apps/web/docker/prod-entrypoint.js`
+  applies the same Coolify fallback so server-side runtime code sees the same
+  derived values.
+- The runtime URL resolvers used by the web proxy, internal API client, and
+  drive export/auto-extract flows also fall back to `COOLIFY_URL` and
+  `COOLIFY_FQDN`.
+
+Recommended setup in Coolify:
+
+- Still set explicit Tuturuuu env like `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, and any email
+  or storage secrets yourself.
+- You can omit `WEB_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`, and
+  `NEXT_PUBLIC_APP_URL` if Coolify already injects `COOLIFY_URL` or
+  `COOLIFY_FQDN` for the deployment.
+- If you need one specific canonical domain while Coolify exposes multiple
+  domains, set the Tuturuuu app URL variables explicitly instead of relying on
+  the automatic fallback.
+
+## Development Mode
+
+Development mode exists to preserve the normal root script contract while moving the
+web runtime into containers.
+
+- Container-managed `node_modules` are isolated from the host.
+- Package-local `node_modules` and `dist` directories are also isolated so host installs do not shadow container artifacts.
+- A host `bun install` is not required just to boot the Dockerized web stack.
+
+## Production Mode
+
+The production compose file uses the `runner` target from `apps/web/Dockerfile`.
+
+### In-Place
+
+```bash
+bun serve:web:docker
+```
+
+Use this when a short restart is acceptable.
+
+### Blue/Green
+
+```bash
+bun serve:web:docker:bg
+```
+
+Blue/green deploy does this:
+
+1. Reads the last active color from `tmp/docker-web/prod/active-color`.
+2. Ignores that state if the corresponding container no longer exists.
+3. Stops and removes the old inactive-color container, then builds and starts
+   its fresh replacement.
+4. Waits for the new container healthcheck to pass.
+5. Keeps the stable `web-proxy` container running in place during ordinary
+   promotions instead of re-running `compose up` against the public `:7803`
+   listener.
+6. Validates the generated nginx config with `nginx -t`, then reloads nginx
+   inside that existing proxy only after the new color is healthy.
+7. Immediately verifies the proxy can serve the internal
+   `/__platform/drain-status` endpoint through the newly promoted color before
+   marking the new color active. This avoids false deployment failures from
+   public API middleware or rate limits.
+8. Polls an internal drain-status endpoint on the old color and waits until it
+   has no in-flight HTTP work left before demoting it to standby. This keeps
+   long-running server actions, route handlers, and other open requests from
+   being cut off mid-flight.
+9. Falls back to the short fixed drain window only when the old image predates
+   the drain-status endpoint and cannot report its active requests yet.
+10. Keeps the demoted color online as a warm nginx backup target instead of
+    removing it immediately, so stale keepalive workers and Cloudflare Tunnel
+    connections can still fail over cleanly during the post-promotion window.
+11. If the demoted standby color is still on the previous revision after 15
+    minutes, the watcher automatically rebuilds that stale standby in place so
+    both colors converge on the latest checked-out code without flipping the
+    active port or promoting traffic again.
+
+The stable nginx proxy also raises its request-header buffer limits so larger
+session/auth cookies do not fail at the proxy layer with `400 Request Header Or
+Cookie Too Large` before the active web container sees the request. It now also
+raises its upstream response-header buffers (`proxy_buffer_size`,
+`proxy_buffers`, and `proxy_busy_buffers_size`) so larger Supabase auth
+responses with multiple `Set-Cookie` headers do not fail with `upstream sent too
+big header while reading response header from upstream`. The proxy uses Docker
+DNS re-resolution plus a shorter keepalive timeout so promotions are less
+likely to produce transient `502 Host Error` responses for existing Cloudflare
+Tunnel connections, while the previous color remains alive as a warm standby.
+The proxy keeps both blue and green in the nginx upstream group during steady
+state, with the active color as the primary upstream and the standby color as a
+backup. The runtime DNS resolver is defined at the nginx include/http scope,
+not just inside `server`, so Docker service-name resolution continues to work
+for the blue/green upstream block at reload time.
+Both the production web image healthcheck and the `web-proxy` compose
+healthcheck now use the internal `/__platform/drain-status` endpoint too, so
+raw `bun serve:web:docker:bg` waits on the same non-rate-limited readiness path
+as the blue/green promotion gate.
+
+Every blue/green deployment also stamps the runtime with
+`PLATFORM_DEPLOYMENT_STAMP` and `PLATFORM_BLUE_GREEN_COLOR`. Those values are
+surfaced through both nginx response headers and the web process itself, and
+the web layout appends the deployment stamp to the service-worker URL with
+`updateViaCache: 'none'` so new deployments push browsers toward the latest
+worker instead of lingering on stale cached state.
+
+The local runtime state lives in:
+
+- `tmp/docker-web/prod/active-color`
+- `tmp/docker-web/prod/deployment-stamp`
+- `tmp/docker-web/prod/nginx.conf`
+
+These files are intentionally local-only and safe to regenerate.
+
+## Auto-Deploy Watcher
+
+`bun serve:web:docker:bg:watch` locks the current branch/upstream at startup,
+polls every second, fast-forwards when GitHub has a newer commit, and runs the
+blue/green deploy flow automatically.
+
+Additional behavior:
+
+- If the watcher script itself changed in the pulled revision, the current
+  watcher process restarts first and the replacement process performs the
+  deploy.
+- If blue/green is already live and the standby color remains on an older
+  revision for 15 minutes, the watcher rebuilds only the standby color in
+  place. The active color remains primary for new traffic the whole time.
+- That standby catch-up path also stops and removes the stale standby
+  container before rebuilding it, so health checks target the fresh
+  replacement container rather than an outdated standby instance.
+- Standby catch-up rebuilds reuse the current deployment stamp so the warm
+  backup matches the latest deployment state instead of serving an older build
+  if nginx needs to fail over.
+- The watcher dashboard surfaces the top 3 most relevant deployments from the
+  recent history, prioritizing in-progress rollouts first, then the live
+  promoted color, then the warm standby. Direct manual
+  `bun serve:web:docker:bg` runs are written into that same history too.
+
+## Build Resource Caps
+
+When build and serve run on the same machine, use the Docker web helper's
+Buildx throttling options instead of letting BuildKit consume the full host.
+
+Example:
+
+```bash
+bun serve:web:docker:bg -- --build-memory 4g --build-cpus 2 --build-max-parallelism 2
+```
+
+Current root-script defaults:
+
+- `bun serve:web:docker` defaults to `--build-memory 16g --build-cpus 8`
+- `bun serve:web:docker:bg` defaults to `--build-memory 16g --build-cpus 8`
+
+You can still override those defaults per run by appending your own flags after
+`--`, for example:
+
+```bash
+bun serve:web:docker:bg -- --build-memory 8g --build-cpus 4 --build-max-parallelism 2
+```
+
+Equivalent environment variables:
+
+- `DOCKER_WEB_BUILD_MEMORY=4g`
+- `DOCKER_WEB_BUILD_CPUS=2`
+- `DOCKER_WEB_BUILD_MAX_PARALLELISM=2`
+- `DOCKER_WEB_BUILD_BUILDER_NAME=platform-web-capped-builder`
+
+How it works:
+
+- The helper creates or reuses a dedicated `docker-container` Buildx builder
+  instead of the default daemon-bound builder.
+- `DOCKER_WEB_BUILD_MEMORY` caps the BuildKit container's memory budget.
+- `DOCKER_WEB_BUILD_CPUS` is converted to Docker CPU quota settings for the
+  BuildKit container.
+- `DOCKER_WEB_BUILD_MAX_PARALLELISM` writes a BuildKit config that limits
+  concurrent solve steps, which is often the most effective way to reduce
+  CPU spikes on smaller machines.
+
+Operational notes:
+
+- These caps affect image builds, not the runtime `apps/web` container after it
+  has started.
+- If no build caps are configured, the helper continues using Docker's default
+  builder behavior.
+- A lower parallelism setting usually trades build speed for host stability.
+
+## Redis Profile
+
+Redis is enabled by default in both dev and production-style Docker web stacks.
+
+The helper persists the generated token in:
+
+- `tmp/docker-web/redis-token`
+
+and injects these values into `apps/web` automatically:
+
+- `UPSTASH_REDIS_REST_URL=http://serverless-redis-http:80`
+- `UPSTASH_REDIS_REST_TOKEN=&lt;generated local token&gt;`
+
+If you intentionally want the memory-only fallback, opt out:
+
+```bash
+bun dev:web:docker -- --without-redis
+```
+
+That opt-out disables both the bundled Redis companion services and the
+Docker-injected `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
+variables, so `apps/web` falls back to its non-Redis behavior cleanly.
+
+## Auto-Pull Blue/Green Watcher
+
+For simple self-hosted boxes that deploy directly from a Git branch, the repo
+also provides a long-running auto-deploy watcher:
+
+```bash
+bun serve:web:docker:bg:watch
+```
+
+That command now bootstraps Docker instead of running the watcher loop as a
+host PID. Each invocation:
+
+1. Writes the forwarded watcher CLI args to `tmp/docker-web/watch/blue-green-auto-deploy.args.json`.
+2. Rebuilds and force-recreates the dedicated `web-blue-green-watcher` service.
+3. Tails that container's live logs so the terminal still shows the watcher dashboard.
+
+The watcher container mounts:
+
+- the repo worktree at `/workspace`
+- the same repo again at the real host checkout path via
+  `PLATFORM_HOST_WORKSPACE_DIR`, so host Docker bind mounts resolve against
+  the host filesystem when the watcher shells into `docker compose ...`
+- `/var/run/docker.sock` so it can manage the blue/green compose stack itself
+- the shared Bun install cache volume
+- a dedicated watcher `node_modules` volume so `bun i` stays container-local
+
+Behavior:
+
+1. Locks the current local branch and tracked upstream at startup.
+2. Writes a PID-backed lock file at `tmp/docker-web/watch/blue-green-auto-deploy.lock`.
+3. Renders a live terminal dashboard with the locked branch, tracked upstream,
+   latest local commit, relative commit age, last check time, next poll time,
+   current blue/green runtime state, and recent watcher events.
+4. Polls the tracked upstream every `1000ms` by default.
+5. Auto-clears and redraws the dashboard in place on each state change when
+   attached to a TTY.
+6. Runs the Git and deploy subprocesses quietly so the dashboard is not
+   disrupted by `git fetch`, `git pull`, or Docker build output during normal
+   watcher operation.
+7. Skips pulls if the worktree is dirty.
+8. Uses `git pull --ff-only` only when the local branch is strictly behind the
+   locked upstream.
+9. Runs `bun upgrade` and then `bun i` automatically after every successful
+   fast-forward pull so the host Bun runtime and installed dependencies match
+   the fetched revision before the deploy handoff continues.
+10. Treats a worktree that is dirty only because of `bun.lock` as watchable, so
+    host-side install churn does not stop subsequent polling cycles.
+11. Runs `bun serve:web:docker:bg` automatically after a successful fast-forward
+   pull.
+12. If `scripts/watch-blue-green-deploy.js` itself changed in the pulled
+   revision, the current watcher does not deploy from the old process. It
+   releases its lock, spawns a replacement watcher with the same CLI args, and
+   exits first.
+13. The replacement watcher refreshes the live `web-proxy` nginx config and
+   workers in place if blue/green is already serving traffic, verifies proxy
+   routing through `/__platform/drain-status`, and only then starts the new
+   blue/green build/promotion.
+14. Retries recoverable Git command failures instead of exiting. The first retry
+    waits 1 minute, then the watcher backs off exponentially on consecutive Git
+    failures up to a 15 minute ceiling.
+15. Stops immediately if the checked-out branch changes while the watcher is
+    running.
+16. If another watcher already owns the lock, a new invocation can fail with
+    guidance, mirror the active watcher with `--resume-if-running`, or replace
+    it with `--replace-existing`.
+
+Operational notes for the containerized watcher:
+
+- Re-running `bun serve:web:docker:bg:watch` intentionally recreates the
+  watcher container so it picks up local repo changes, new CLI args, and
+  watcher-image updates in one path.
+- Git fetch/pull credentials now need to be usable inside the watcher
+  container because the watcher no longer runs directly on the host.
+- The watcher image lives at `apps/web/docker/blue-green-watcher.Dockerfile`.
+- Its entrypoint wrapper relaunches the watcher in-place when
+  `scripts/watch-blue-green-deploy.js` requests a self-restart after pulling a
+  new watcher revision.
+- `bun serve:web:docker:bg:down` also stops the watcher service because it is
+  part of the production compose stack now.
+
+Dashboard details:
+
+- Shows the current active blue/green color when `web-proxy` is serving live
+  traffic.
+- Docker resource rows use the running containers directly as a fallback when
+  `docker compose ps` cannot inspect the prod stack because of env
+  interpolation issues, so watcher metrics can still appear on an already-live
+  deployment.
+- Docker stats are read with an explicit field format instead of Docker's
+  version-dependent JSON object shape, which avoids bogus `0` CPU/memory
+  readings when the watcher is running against a different Docker release.
+- The watcher parser also normalizes locale-style decimal commas from
+  `docker stats`, so hosts that emit values like `0,10%` or `24,0MiB` no
+  longer collapse into zeroed metrics.
+- Host dependency refreshes can rewrite `bun.lock`; the watcher now ignores
+  that file as a sole dirty-worktree signal so polling continues after the
+  automatic `bun upgrade` / `bun i` step.
+- Recoverable Git poll failures stay visible in the dashboard as a retrying
+  watcher state instead of terminating the process, and the next-check timer
+  reflects the active backoff delay.
+- Normal promotions keep the long-lived `web-proxy` container and bound port
+  stable, which avoids transient listener drops for upstreams such as
+  Cloudflare Tunnel that are connected to `:7803`.
+- Persists recent deployment history, including manual
+  `bun serve:web:docker:bg` runs, and renders the top 3 most operationally
+  relevant entries as stacked terminal cards that favor vertical scanability
+  over very wide lines.
+- Each deployment card now uses a stronger header with status/color badges plus
+  grouped metric bands, so active traffic state, rollout intent, and
+  request-rate data are easier to scan while multiple cards are stacked.
+- As soon as a new commit starts rolling out, the recent deployment section
+  shows it immediately as `DEPLOYING` instead of waiting for the rollout to
+  finish.
+- Each deployment block includes:
+  - deploy status (`ACTIVE`, `ENDED`, or `FAILED`)
+  - build time
+  - activation/finish time
+  - deployment lifetime while it served traffic
+  - total requests served during that deployment window
+  - average requests per minute
+  - peak requests per minute
+  - `day`: requests served on the current day for the active deployment, or the
+    final active day for an ended deployment
+  - `davg`: average requests per day across that deployment's serving lifetime
+  - `dpeak`: busiest single-day request count across that deployment's serving
+    lifetime
+- The live blue/green summary uses the same traffic metrics as the deployment
+  history cards, with consistent color coding for build/lifetime/traffic/age
+  metrics so the dashboard is easier to scan quickly.
+- A dedicated Docker resources row summarizes aggregate CPU, memory, and
+  network usage across the live blue/green containers, followed by a
+  per-container row for `proxy`, `green`, and `blue` when those services are
+  running. This is sampled from `docker stats --no-stream`, so it stays local
+  to the host and is appropriate for self-hosted operator monitoring.
+- Request counters now come from a persisted local proxy-log drain under
+  `tmp/docker-web/watch/blue-green-request-telemetry.*`, not from one-off
+  `docker logs` scrapes in the dashboard. The watcher continuously drains
+  structured `web-proxy` access logs into a local ledger, so request metrics
+  survive watcher restarts and do not require any external analytics service.
+- Internal proxy health checks for `/api/health` and
+  `/__platform/drain-status` are excluded from the request totals so the
+  numbers reflect real served traffic more closely.
+- The proxy now emits structured JSON access logs that include the upstream
+  deployment stamp and blue/green color. That lets the watcher link requests
+  back to the correct deployment instead of only estimating by time window.
+- The watcher retains up to 10,000 deployment history entries and up to
+  100,000,000 recent drained request-log records on disk, with rolling
+  daily/weekly/monthly/yearly metric buckets plus a recent-request excerpt for
+  the monitoring dashboard.
+- The watcher also persists a separate latest-log ledger under
+  `tmp/docker-web/watch/blue-green-auto-deploy.logs.json`, which captures the
+  high-level poll/pull/build/deploy watcher messages with deployment stamps and
+  commit hashes when available. The infrastructure dashboard uses that ledger
+  for a deployment-scoped latest-log view without needing live `docker logs`
+  access.
+- The watcher uses the same Docker runtime env resolution as the real deploy
+  flow, so blue/green status probes still work when the Redis profile is part
+  of the production compose file.
+- The active watcher also persists a live status snapshot under
+  `tmp/docker-web/watch/`, which is what `--resume-if-running` uses to mirror
+  the dashboard without taking over the PID lock.
+- The infrastructure dashboard at
+  `/{ROOT_WORKSPACE_ID}/infrastructure/monitoring` reads the same watcher
+  status snapshot and renders it as a Next.js control room with rollout,
+  request-rate, container-resource, and event-feed views.
+- Production `web`, `web-blue`, and `web-green` containers mount
+  `./tmp/docker-web` read-only at `/app/runtime/docker-web` and use
+  `PLATFORM_BLUE_GREEN_MONITORING_DIR` to find the watcher snapshot. Keep that
+  mount/env pair in sync if the runtime path changes, or the dashboard will
+  degrade to an empty offline state even while blue/green deployments still
+  work.
+- The watcher image must also include both the Docker Compose and Buildx CLI
+  plugins (`docker-cli-compose` and `docker-cli-buildx` on Alpine) because the
+  rollout handoff shells into `docker compose ...`, and capped production
+  builds create/use a dedicated Buildx builder from inside the watcher
+  container.
+- When the watcher drives Docker Desktop through `/var/run/docker.sock`, it
+  must run the deploy handoff from the mirrored host-path mount, not a
+  container-only path like `/workspace`. Otherwise Docker Desktop rejects bind
+  mounts such as `./tmp/docker-web/prod/nginx.conf` with "mounts denied"
+  because `/workspace/...` is not a real shared host path.
+- Starting `bun serve:web:docker:bg:watch` now clears the persisted watcher
+  lock/status snapshot before the watcher service is force-recreated, so a
+  stale lock from the previous container cannot block the replacement watcher.
+- If the watcher pulls a revision that changes its own Dockerfile or baked
+  entrypoint, it now rebuilds and recreates the `web-blue-green-watcher`
+  service automatically before handing off to the next deployment cycle.
+- Recovery handoffs now persist a pending-deploy request under
+  `tmp/docker-web/watch/` and reconcile it against the latest successful
+  deployment history entry on startup. If `HEAD` is newer than the last
+  successful built/deployed commit after a watcher restart or container
+  recreate, the watcher builds the current `HEAD` before settling back into
+  normal polling.
+- The same reconciliation now also runs during steady-state polling: if Git is
+  already up to date but the latest successful deployment record still points
+  at an older commit, the watcher rebuilds/deploys the current `HEAD` instead
+  of incorrectly reporting `up-to-date`.
+
+## Browser-State 502 Recovery
+
+If some normal browsers still return Cloudflare `502 Host Error` while
+incognito works, treat it as stale client state or an auth-cookie/header-size
+problem before assuming the tunnel itself is broken.
+
+How to recognize each failure mode:
+
+- `upstream sent too big header while reading response header from upstream`
+  means nginx response-header buffers were too small for the auth response.
+- `web-green could not be resolved` or `web-blue could not be resolved` means a
+  stale nginx worker or keepalive connection still tried to reach a color that
+  no longer existed. The current warm-standby model is designed to avoid that.
+- A browser that fails only in regular mode but works in incognito usually has
+  stale Supabase auth cookies, stale service-worker state, or both.
+
+Recovery path:
+
+- Send affected users to `https://tuturuuu.com/~recover-browser-state`.
+- That route is public and bypasses auth/onboarding middleware.
+- It responds with `Clear-Site-Data: "cache", "cookies", "storage",
+  "executionContexts"` and explicitly expires all Supabase auth cookie variants
+  for the current host before redirecting the browser back to
+  `/login?browserStateReset=1`.
+
+Operational signals:
+
+- Inspect `X-Platform-Deployment-Stamp`, `X-Platform-Blue-Green-Primary`, and
+  `X-Platform-Blue-Green-Color` response headers to confirm which rollout is
+  currently serving a request.
+- If the recovery URL fixes the issue for a user, the likely root cause was
+  stale browser state rather than an active deploy outage.
+- If recovery does not help and proxy logs still show `too big header`, focus
+  on auth redirect size or additional cookie bloat.
+
+Operational notes:
+
+- This is intended for clean deployment clones on a server, not for active
+  developer worktrees.
+- If the local branch is ahead of or diverged from the tracked upstream, the
+  watcher logs and skips the pull instead of forcing a merge or reset.
+- The self-restart path only triggers when the watcher script itself changed in
+  the fetched revision; normal app-code deploys keep the current watcher
+  process alive.
+- During that self-restart path, nginx keeps the assigned proxy port up the
+  whole time because the replacement watcher refreshes the existing proxy
+  container in place before it starts the new build.
+- The watcher inherits the default blue/green build caps from
+  `bun serve:web:docker:bg`, so the current defaults still apply during
+  auto-deploys.
+- Deployment history is watcher-managed. Manual blue/green rollouts still show
+  up in the live runtime status if the stack is active, but they do not
+  backfill the watcher’s last-3 deployment list unless they were performed
+  through the watcher itself.
+
+## Validation And CI
+
+`docker-setup-check.yaml` now validates all of the following:
+
+- `node scripts/check-docker-web.js`
+- `node --test scripts/check-docker-web.test.js scripts/docker-web.test.js`
+- `docker compose -f docker-compose.web.yml config`
+- `docker compose -f docker-compose.web.yml --profile redis config`
+- `docker compose -f docker-compose.web.prod.yml config`
+- `docker compose -f docker-compose.web.prod.yml --profile redis config`
+- `docker build --target dev -f apps/web/Dockerfile .`
+- `docker build --target runner --secret id=web_env,src=apps/web/.env.local -f apps/web/Dockerfile .`
+
+That means Docker CI now covers both the dev image and the real production path.
+
+When `scripts/check-docker-web.js` or similar root validators need to assert a
+literal Dockerfile template placeholder like `${process.env.PORT || 7803}`,
+prefer a regex or another explicitly escaped matcher instead of a plain string
+literal. Biome treats raw `${...}` text inside normal strings as
+`lint/suspicious/noTemplateCurlyInString`, which can break CI even when the
+runtime behavior is unchanged.
+
+## Operator Notes
+
+- Do not paste `docker compose config` output into chat or tickets; it expands env values.
+- If you need rebuild-before-restart on a server, use `bun serve:web:docker:bg`.
+- If a blue/green deploy is interrupted, rerunning the same command from the intended commit is the normal recovery path.

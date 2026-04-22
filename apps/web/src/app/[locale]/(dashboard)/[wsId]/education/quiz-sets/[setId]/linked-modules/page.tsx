@@ -1,10 +1,11 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceCourseModule } from '@tuturuuu/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
+import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import { getWorkspaceCourseModuleColumns } from './columns';
 import { QuizsetModuleLinker } from './linker';
 
@@ -35,15 +36,19 @@ export default async function WorkspaceCoursesPage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { wsId, setId } = await params;
+  const { wsId: routeWsId, setId } = await params;
+  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
 
-  const { data: allModules } = await getModules(wsId, await searchParams);
+  const { data: allModules } = await getModules(
+    resolvedWsId,
+    await searchParams
+  );
   const { data, count } = await getData(setId, await searchParams);
 
   const modules = data.map((m) => ({
     ...m,
-    ws_id: wsId,
-    href: `/${wsId}/education/courses/${m.course_id}/modules/${m.id}`,
+    ws_id: resolvedWsId,
+    href: `/${routeWsId}/education/courses/${m.group_id}/modules/${m.id}`,
   }));
 
   return (
@@ -56,7 +61,7 @@ export default async function WorkspaceCoursesPage({
         createDescription={t('ws-course-modules.create_description')}
         action={
           <QuizsetModuleLinker
-            wsId={wsId}
+            wsId={resolvedWsId}
             setId={setId}
             data={allModules.map((m) => ({
               ...m,
@@ -69,7 +74,7 @@ export default async function WorkspaceCoursesPage({
       <CustomDataTable
         data={modules}
         columnGenerator={getWorkspaceCourseModuleColumns}
-        extraData={{ wsId, setId }}
+        extraData={{ wsId: resolvedWsId, setId }}
         namespace="course-data-table"
         count={count}
         defaultVisibility={{
@@ -90,12 +95,12 @@ async function getData(
     retry = true,
   }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
 ) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const queryBuilder = supabase
     .from('course_module_quiz_sets')
     .select(
-      'id:module_id, ...workspace_course_modules(course_id, name, is_public, is_published)',
+      'id:module_id, ...workspace_course_modules(group_id, name, is_public, is_published)',
       {
         count: 'exact',
       }
@@ -134,17 +139,17 @@ async function getModules(
     retry = true,
   }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
 ) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const queryBuilder = supabase
     .from('workspace_course_modules')
     .select(
-      'id, name, is_public, is_published, workspace_courses!inner(ws_id)',
+      'id, name, is_public, is_published, workspace_user_groups!inner(ws_id)',
       {
         count: 'exact',
       }
     )
-    .eq('workspace_courses.ws_id', wsId)
+    .eq('workspace_user_groups.ws_id', wsId)
     .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);

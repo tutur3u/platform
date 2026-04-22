@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
+import 'package:mobile/features/assistant/data/assistant_live_config.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_status_badge.dart';
@@ -115,6 +116,16 @@ class AssistantLiveInfoSheetBody extends StatelessWidget {
                   liveUiState.creditSource == AssistantCreditSource.personal
                       ? l10n.assistantSourcePersonal
                       : l10n.assistantSourceWorkspace,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _InfoTile(
+                label: l10n.assistantModelLabel,
+                trailing: Text(
+                  assistantLiveModelLabel,
                   style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),

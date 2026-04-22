@@ -1,0 +1,47 @@
+---
+title: 'CMS'
+description: 'Dedicated content management app for EPM-enabled workspaces.'
+updatedAt: '2026-04-22'
+---
+
+## Overview
+
+`apps/cms` is the dedicated home for EPM authoring.
+
+- It owns the CMS UI, routing, workspace picker, and `/internal/admin` registry surface.
+- It is intentionally a satellite frontend, not an API owner.
+- All CMS and EPM API traffic still goes through `apps/web`.
+
+## Routing
+
+- `/{wsId}`: CMS home
+- `/{wsId}/content`: content index
+- `/{wsId}/content/{entryId}`: entry editor
+- `/{wsId}/collections/{collectionId}`: collection details
+- `/{wsId}/preview`: preview and publish surface
+- `/internal/admin`: root admin registry and workspace enablement
+
+## Access Model
+
+- Only workspaces with EPM enabled can appear in the CMS workspace picker.
+- A workspace must also satisfy the existing EPM permissions to open the CMS workspace routes.
+- Only platform admins can open `/internal/admin`.
+- Only platform admins can enable or disable EPM access for a workspace.
+
+## API Ownership
+
+- `apps/cms` rewrites `/api/:path*` to `apps/web`.
+- New CMS backend behavior should be added in `apps/web`, then exposed through `packages/internal-api`.
+- This keeps proxy behavior, bot protection, and infrastructure controls centralized.
+
+## Local Development
+
+- Use `bun dev:cms` to run the CMS app with the shared packages and `apps/web`.
+- Use `bun devx:cms` or `bun devrs:cms` when you also need a reset local Supabase environment.
+
+## CI/CD
+
+- Preview deployments run through `.github/workflows/vercel-preview-cms.yaml`.
+- Production deployments run through `.github/workflows/vercel-production-cms.yaml`.
+- Both workflows are gated through `ci-check.yml` and the `tuturuuu.ts` workflow allowlist.
+- The Vercel project must be configured through the `VERCEL_CMS_PROJECT_ID` repository secret.

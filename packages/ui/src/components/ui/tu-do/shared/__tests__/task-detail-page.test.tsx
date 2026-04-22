@@ -119,7 +119,7 @@ describe('TaskDetailPage', () => {
     });
 
     expect(mockDispatchRecentSidebarVisit).toHaveBeenCalledWith({
-      href: '/workspace-1/tasks/task-1',
+      href: '/workspace-1/tasks/boards/board-1?task=task-1',
       scopeWsId: 'workspace-1',
       snapshot: {
         badges: [
@@ -149,7 +149,7 @@ describe('TaskDetailPage', () => {
     });
   });
 
-  it('pushes the dedicated route when navigating to another task from relationships', async () => {
+  it('pushes the canonical board task route when navigating to another task from relationships', async () => {
     render(
       <TaskDetailPage
         task={mockTask}
@@ -162,7 +162,9 @@ describe('TaskDetailPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open Related' }));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/workspace-1/tasks/task-2');
+      expect(mockPush).toHaveBeenCalledWith(
+        '/workspace-1/tasks/boards/board-1?task=task-2'
+      );
     });
   });
 });

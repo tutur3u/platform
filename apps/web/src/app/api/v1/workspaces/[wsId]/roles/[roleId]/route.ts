@@ -1,5 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { TablesUpdate, WorkspaceRole } from '@tuturuuu/types';
+import type {
+  Database,
+  TablesInsert,
+  TablesUpdate,
+  WorkspaceRole,
+} from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -8,6 +13,9 @@ interface Params {
     roleId: string;
   }>;
 }
+
+type WorkspaceRolePermissionValue =
+  Database['public']['Enums']['workspace_role_permission'];
 
 export async function GET(req: Request, { params }: Params) {
   const supabase = await createClient(req);
@@ -55,12 +63,14 @@ export async function PUT(req: Request, { params }: Params) {
     .eq('id', id);
 
   const permissionsQuery = supabase.from('workspace_role_permissions').upsert(
-    permissions.map((permission) => ({
-      ws_id: wsId,
-      role_id: id,
-      permission: permission.id,
-      enabled: permission.enabled,
-    }))
+    permissions.map(
+      (permission): TablesInsert<'workspace_role_permissions'> => ({
+        ws_id: wsId,
+        role_id: id,
+        permission: permission.id as WorkspaceRolePermissionValue,
+        enabled: permission.enabled,
+      })
+    )
   );
 
   const [roleRes, permissionsRes] = await Promise.all([

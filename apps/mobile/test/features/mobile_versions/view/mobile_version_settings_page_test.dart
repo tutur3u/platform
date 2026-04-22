@@ -97,6 +97,7 @@ void main() {
         ios: MobilePlatformVersionPolicy(
           effectiveVersion: '1.4.0',
           minimumVersion: '1.2.0',
+          otpEnabled: true,
           storeUrl: 'https://apps.apple.com/app/id1',
         ),
         android: MobilePlatformVersionPolicy(
@@ -104,6 +105,7 @@ void main() {
           minimumVersion: '1.1.0',
           storeUrl: 'https://play.google.com/store/apps/details?id=example.app',
         ),
+        webOtpEnabled: true,
       );
 
       when(() => workspaceCubit.state).thenReturn(state);
@@ -160,6 +162,7 @@ void main() {
             ios: MobilePlatformVersionPolicy(
               effectiveVersion: '1.5.0',
               minimumVersion: '1.2.0',
+              otpEnabled: true,
               storeUrl: 'https://apps.apple.com/app/id1',
             ),
             android: MobilePlatformVersionPolicy(
@@ -168,6 +171,7 @@ void main() {
               storeUrl:
                   'https://play.google.com/store/apps/details?id=example.app',
             ),
+            webOtpEnabled: true,
           ),
         ),
       ).called(1);

@@ -3,4 +3,41 @@ title: 'AI Chat'
 description: 'Talk to an AI-powered assistant that understands your workspace and helps you get things done, faster and easier.'
 ---
 
-<Warning>This page is under construction.</Warning>
+## Mobile live mode
+
+The mobile assistant now has two distinct interaction modes:
+
+- Standard chat is the default assistant surface. Typed turns continue to use the normal text-model selection in the mobile shell.
+- Live mode is a dedicated fullscreen Gemini Live experience. It is entered from the assistant mic control or the assistant chrome action and binds the session to `gemini-3.1-flash-live-preview`.
+
+### What fullscreen live mode does
+
+- Immediately switches the assistant route into a live-first surface instead of silently preparing a background session.
+- Auto-starts the microphone when the user enters live mode, so the transition feels responsive.
+- Shows large voice-activity blobs for both the user and the assistant, plus a live transcript lane for drafts and synced turns.
+- Shows the current live-session status detail inline in the fullscreen header, plus a contextual status panel with recovery actions for reconnecting and failure states.
+- Keeps voice, camera, and typed turns inside the same assistant thread, so persisted live turns still appear in the standard chat history after leaving fullscreen live mode.
+
+### Model split
+
+- Mobile typed chat keeps the normal text-model path managed by `AssistantChatCubit` and the workspace-selected shell model.
+- Mobile live mode always uses Gemini 3.1 Flash Live. Restoring a live-backed chat must not overwrite the normal text-model selection.
+
+### Backend dependencies
+
+The mobile app still uses the existing internal APIs for Live sessions:
+
+- `/api/v1/assistant/live/token`
+- `/api/v1/live/session`
+- `/api/v1/live/tools/execute`
+- `/api/v1/assistant/live/turns`
+
+These routes mint constrained ephemeral Gemini Live tokens, persist resumable session handles, execute synchronous tool calls, and sync completed live turns back into the chat thread.
+
+### Verification
+
+For mobile-only live-mode changes, the required verification path is:
+
+1. Update both ARB files when live-mode copy changes.
+2. Run `flutter gen-l10n`.
+3. Run `bun check:mobile`.

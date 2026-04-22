@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
+import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -153,28 +155,32 @@ class HabitsScopeControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SegmentedButton<HabitTrackerScope>(
-      segments: [
-        ButtonSegment(
-          value: HabitTrackerScope.self,
-          label: Text(context.l10n.habitsScopeSelf),
-        ),
-        ButtonSegment(
-          value: HabitTrackerScope.team,
-          label: Text(context.l10n.habitsScopeTeam),
-        ),
-        ButtonSegment(
-          value: HabitTrackerScope.member,
-          label: Text(context.l10n.habitsScopeMember),
-        ),
-      ],
-      selected: {selectedScope},
-      onSelectionChanged: (selection) {
-        final value = selection.firstOrNull;
-        if (value != null) {
-          unawaited(onScopeSelected(value));
-        }
-      },
+    return FinancePanel(
+      padding: const EdgeInsets.all(10),
+      radius: 22,
+      child: SegmentedButton<HabitTrackerScope>(
+        segments: [
+          ButtonSegment(
+            value: HabitTrackerScope.self,
+            label: Text(context.l10n.habitsScopeSelf),
+          ),
+          ButtonSegment(
+            value: HabitTrackerScope.team,
+            label: Text(context.l10n.habitsScopeTeam),
+          ),
+          ButtonSegment(
+            value: HabitTrackerScope.member,
+            label: Text(context.l10n.habitsScopeMember),
+          ),
+        ],
+        selected: {selectedScope},
+        onSelectionChanged: (selection) {
+          final value = selection.firstOrNull;
+          if (value != null) {
+            unawaited(onScopeSelected(value));
+          }
+        },
+      ),
     );
   }
 }
@@ -193,19 +199,23 @@ class HabitsMemberPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      initialValue: selectedMemberId,
-      items: members
-          .map(
-            (member) => DropdownMenuItem<String>(
-              value: member.userId,
-              child: Text(member.label),
-            ),
-          )
-          .toList(growable: false),
-      onChanged: (value) => unawaited(onChanged(value)),
-      decoration: InputDecoration(
-        labelText: context.l10n.habitsMemberPickerLabel,
+    return FinancePanel(
+      padding: const EdgeInsets.all(14),
+      radius: 22,
+      child: DropdownButtonFormField<String>(
+        initialValue: selectedMemberId,
+        items: members
+            .map(
+              (member) => DropdownMenuItem<String>(
+                value: member.userId,
+                child: Text(member.label),
+              ),
+            )
+            .toList(growable: false),
+        onChanged: (value) => unawaited(onChanged(value)),
+        decoration: InputDecoration(
+          labelText: context.l10n.habitsMemberPickerLabel,
+        ),
       ),
     );
   }
@@ -230,10 +240,12 @@ class HabitsSearchField extends StatelessWidget {
       switchInCurve: Curves.easeOutCubic,
       switchOutCurve: Curves.easeInCubic,
       child: isVisible
-          ? Padding(
+          ? FinancePanel(
               key: const ValueKey('habits-search-visible'),
-              padding: EdgeInsets.zero,
+              padding: const EdgeInsets.all(12),
+              radius: 22,
               child: shad.TextField(
+                contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: controller,
                 hintText: context.l10n.habitsSearchHint,
                 onChanged: onChanged,
@@ -254,12 +266,8 @@ class HabitsEmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return FinancePanel(
       padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.black12),
-      ),
       child: Column(
         children: [
           const Icon(Icons.repeat_rounded, size: 44),

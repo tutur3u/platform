@@ -415,6 +415,11 @@ export function useMyTasksState({
       .sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
   }, [selectedBoardId, boardsData]);
 
+  const hasValidSelectedList = useMemo(
+    () => availableLists.some((list: any) => list.id === selectedListId),
+    [availableLists, selectedListId]
+  );
+
   // Track previous workspace to detect actual changes (not dialog-open noise)
   const prevWorkspaceIdRef = useRef(selectedWorkspaceId);
 
@@ -471,6 +476,17 @@ export function useMyTasksState({
       }
     }
   }, [selectedBoardId, availableLists, selectedListId]);
+
+  const handleWorkspaceSelectionChange = useCallback((workspaceId: string) => {
+    setSelectedWorkspaceId(workspaceId);
+    setSelectedBoardId('');
+    setSelectedListId('');
+  }, []);
+
+  const handleBoardSelectionChange = useCallback((boardId: string) => {
+    setSelectedBoardId(boardId);
+    setSelectedListId('');
+  }, []);
 
   // Preview mutation
   const previewMutation = useMutation<
@@ -597,6 +613,9 @@ export function useMyTasksState({
     },
     onSuccess: () => {
       toast.success(t('ws-tasks.tasks_created_successfully'));
+      setAiFlowStep('idle');
+      setConfirmedTasks([]);
+      setBoardSelectorOpen(false);
       setPreviewOpen(false);
       setLastResult(null);
       setPreviewEntry(null);
@@ -608,6 +627,9 @@ export function useMyTasksState({
       queryClient.invalidateQueries({ queryKey: [AI_CREDITS_QUERY_KEY] });
     },
     onError: (error: Error) => {
+      setAiFlowStep('selecting-destination');
+      setBoardSelectorOpen(true);
+      setCommandBarInput((previewEntry ?? pendingTaskTitle).trim());
       toast.error(error.message || t('ws-tasks.errors.failed_create_tasks'));
     },
   });
@@ -717,10 +739,12 @@ export function useMyTasksState({
   };
 
   const handleBoardSelectorConfirm = async () => {
-    setBoardSelectorOpen(false);
-
     // Coming from AI review flow — create tasks with confirmed data
     if (aiFlowStep === 'selecting-destination' && confirmedTasks.length > 0) {
+      if (!selectedBoardId || !hasValidSelectedList) {
+        return;
+      }
+
       let timestampMoment = dayjs().tz(clientTimezone);
       if (!timestampMoment.isValid()) {
         timestampMoment = dayjs();
@@ -740,11 +764,10 @@ export function useMyTasksState({
         clientTimezone,
         clientTimestamp: timestampMoment.toISOString(),
       });
-
-      setAiFlowStep('idle');
-      setConfirmedTasks([]);
       return;
     }
+
+    setBoardSelectorOpen(false);
 
     if (pendingTaskTitle && taskCreatorMode === 'ai') {
       handleGenerateAI(pendingTaskTitle);
@@ -853,8 +876,10 @@ export function useMyTasksState({
     setBoardSelectorOpen,
     selectedWorkspaceId,
     setSelectedWorkspaceId,
+    handleWorkspaceSelectionChange,
     selectedBoardId,
     setSelectedBoardId,
+    handleBoardSelectionChange,
     selectedListId,
     setSelectedListId,
     newBoardDialogOpen,
@@ -915,6 +940,7 @@ export function useMyTasksState({
     workspaceMembers,
     boardConfig,
     availableLists,
+    hasValidSelectedList,
     selectedDestination,
     availableLabels: workspaceLabels,
     availableProjects: workspaceProjects,

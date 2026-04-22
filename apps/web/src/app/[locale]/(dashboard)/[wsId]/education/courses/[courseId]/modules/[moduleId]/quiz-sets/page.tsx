@@ -1,10 +1,11 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceQuizSet } from '@tuturuuu/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
+import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import { getQuizSetColumns } from './columns';
 import CourseModuleForm from './form';
 
@@ -36,14 +37,15 @@ export default async function WorkspaceCoursesPage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { wsId, courseId, moduleId } = await params;
+  const { wsId: routeWsId, courseId, moduleId } = await params;
+  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
 
   const { data, count } = await getData(moduleId, await searchParams);
 
   const quizSets = data.map((m) => ({
     ...m,
-    ws_id: wsId,
-    href: `/${wsId}/quiz-sets/${m.id}`,
+    ws_id: resolvedWsId,
+    href: `/${routeWsId}/education/quiz-sets/${m.id}`,
   }));
 
   return (
@@ -53,13 +55,13 @@ export default async function WorkspaceCoursesPage({
         singularTitle={t('ws-quiz-sets.singular')}
         createTitle={t('ws-quiz-sets.create')}
         createDescription={t('ws-quiz-sets.create_description')}
-        form={<CourseModuleForm wsId={wsId} moduleId={moduleId} />}
+        form={<CourseModuleForm wsId={resolvedWsId} moduleId={moduleId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
         data={quizSets}
         columnGenerator={getQuizSetColumns}
-        extraData={{ wsId, courseId, moduleId }}
+        extraData={{ wsId: resolvedWsId, courseId, moduleId }}
         namespace="course-data-table"
         count={count}
         defaultVisibility={{
@@ -80,7 +82,7 @@ async function getData(
     retry = true,
   }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
 ) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const queryBuilder = supabase
     .from('course_module_quiz_sets')

@@ -50,10 +50,14 @@ export function generateStaticParams() {
 
 export default async function RootLayout({ children, params }: Props) {
   const { locale } = await params;
+  const deploymentStamp =
+    process.env.PLATFORM_DEPLOYMENT_STAMP?.trim() || 'local';
+  const serviceWorkerUrl = `/serwist/sw.js?v=${encodeURIComponent(deploymentStamp)}`;
+  const isVercelDeployment =
+    process.env.VERCEL === '1' || Boolean(process.env.VERCEL_URL);
 
   // Ensure that the incoming `locale` is valid
   if (!routing.locales.includes(locale as Locale)) {
-    console.error('Invalid locale:', locale);
     notFound();
   }
 
@@ -68,9 +72,16 @@ export default async function RootLayout({ children, params }: Props) {
           font.className
         )}
       >
-        <SerwistProvider>
-          <VercelAnalytics />
-          <VercelInsights />
+        <SerwistProvider
+          options={{ updateViaCache: 'none' }}
+          swUrl={serviceWorkerUrl}
+        >
+          {isVercelDeployment ? (
+            <>
+              <VercelAnalytics />
+              <VercelInsights />
+            </>
+          ) : null}
           <Suspense>
             <NuqsAdapter>
               <Providers>{children}</Providers>

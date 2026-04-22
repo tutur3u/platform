@@ -1,6 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TaskWithScheduling } from '@tuturuuu/types';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -112,14 +113,20 @@ export const GET = withSessionAuth<{ taskId: string }>(
       }
 
       // Verify user can access the task's workspace (task may belong to a different workspace)
-      const { data: memberCheck } = await supabase
-        .from('workspace_members')
-        .select('user_id')
-        .eq('ws_id', taskWsId)
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const memberCheck = await verifyWorkspaceMembershipType({
+        wsId: taskWsId,
+        userId: user.id,
+        supabase: supabase,
+      });
 
-      if (!memberCheck) {
+      if (memberCheck.error === 'membership_lookup_failed') {
+        return NextResponse.json(
+          { error: 'Failed to verify workspace access' },
+          { status: 500 }
+        );
+      }
+
+      if (!memberCheck.ok) {
         return NextResponse.json({ error: 'Task not found' }, { status: 404 });
       }
 
@@ -291,14 +298,20 @@ export const POST = withSessionAuth<{ taskId: string }>(
         return NextResponse.json({ error: 'Task not found' }, { status: 404 });
       }
 
-      const { data: memberCheck } = await supabase
-        .from('workspace_members')
-        .select('user_id')
-        .eq('ws_id', taskWsId)
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const memberCheck = await verifyWorkspaceMembershipType({
+        wsId: taskWsId,
+        userId: user.id,
+        supabase,
+      });
 
-      if (!memberCheck) {
+      if (memberCheck.error === 'membership_lookup_failed') {
+        return NextResponse.json(
+          { error: 'Failed to verify workspace access' },
+          { status: 500 }
+        );
+      }
+
+      if (!memberCheck.ok) {
         return NextResponse.json({ error: 'Task not found' }, { status: 404 });
       }
 

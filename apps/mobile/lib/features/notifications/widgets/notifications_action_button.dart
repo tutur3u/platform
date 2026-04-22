@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -18,6 +20,7 @@ bool shouldShowNotificationsActionForLocation(String matchedLocation) {
       matchedLocation == Routes.assistant ||
       matchedLocation == Routes.apps ||
       matchedLocation == Routes.profileRoot ||
+      matchedLocation == Routes.profileAccounts ||
       matchedLocation == Routes.tasks ||
       matchedLocation == Routes.taskBoards ||
       matchedLocation == Routes.taskEstimates ||
@@ -35,6 +38,7 @@ bool shouldShowNotificationsActionForLocation(String matchedLocation) {
       matchedLocation == Routes.timerRequests ||
       matchedLocation == Routes.settings ||
       matchedLocation == Routes.settingsWorkspace ||
+      matchedLocation == Routes.settingsWorkspaceSecrets ||
       matchedLocation == Routes.settingsMobileVersions;
 }
 
@@ -85,6 +89,14 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
 
   String? _lastWorkspaceId;
   bool get _ownsRepository => widget.notificationsRepository == null;
+
+  AuthCubit? _authCubitOrNull() {
+    try {
+      return context.read<AuthCubit?>();
+    } on Object {
+      return null;
+    }
+  }
 
   @override
   void initState() {
@@ -148,13 +160,9 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _notificationsCubit,
-      child: BlocListener<WorkspaceCubit, WorkspaceState>(
-        listenWhen: (previous, current) =>
-            previous.currentWorkspace?.id != current.currentWorkspace?.id,
-        listener: (context, state) => _syncWorkspace(state.currentWorkspace),
-        child: BlocBuilder<NotificationsCubit, NotificationsState>(
+    final authCubit = _authCubitOrNull();
+    final notificationsButton =
+        BlocBuilder<NotificationsCubit, NotificationsState>(
           builder: (context, state) {
             final unreadCount = state.unreadCount;
 
@@ -195,7 +203,25 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
               ),
             );
           },
-        ),
+        );
+
+    return BlocProvider.value(
+      value: _notificationsCubit,
+      child: BlocListener<WorkspaceCubit, WorkspaceState>(
+        listenWhen: (previous, current) =>
+            previous.currentWorkspace?.id != current.currentWorkspace?.id,
+        listener: (context, state) => _syncWorkspace(state.currentWorkspace),
+        child: authCubit == null
+            ? notificationsButton
+            : BlocListener<AuthCubit, AuthState>(
+                bloc: authCubit,
+                listenWhen: (previous, current) =>
+                    previous.user?.id != current.user?.id,
+                listener: (context, state) {
+                  unawaited(_notificationsCubit.refreshUnreadCount());
+                },
+                child: notificationsButton,
+              ),
       ),
     );
   }

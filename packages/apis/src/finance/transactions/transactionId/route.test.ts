@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => {
   const verifyWorkspaceSingle = vi.fn();
   const confidentialSingle = vi.fn();
   const linkedTransactionMaybeSingle = vi.fn();
+  const walletMaybeSingle = vi.fn();
   const transactionTagsIn = vi.fn();
   const deleteEq = vi.fn();
   const updateEq = vi.fn();
@@ -23,6 +24,18 @@ const mocks = vi.hoisted(() => {
 
   const adminSupabase = {
     from: vi.fn((table: string) => {
+      if (table === 'workspace_wallets') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                maybeSingle: walletMaybeSingle,
+              })),
+            })),
+          })),
+        };
+      }
+
       if (table === 'wallet_transaction_tags') {
         return {
           select: vi.fn(() => ({
@@ -82,6 +95,7 @@ const mocks = vi.hoisted(() => {
     transactionTagsIn,
     updateEq,
     verifyWorkspaceSingle,
+    walletMaybeSingle,
   };
 });
 
@@ -93,11 +107,19 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: (...args: Parameters<typeof mocks.getPermissions>) =>
     mocks.getPermissions(...args),
+  verifyWorkspaceMembershipType: vi.fn(() =>
+    Promise.resolve({ ok: true, membershipType: 'MEMBER' as const })
+  ),
 }));
 
 describe('transaction detail route', () => {
   const firstTagId = '11111111-1111-4111-8111-111111111111';
   const secondTagId = '22222222-2222-4222-8222-222222222222';
+  const withPermissions = (granted: string[]) => ({
+    withoutPermission: vi.fn(
+      (permission: string) => !granted.includes(permission)
+    ),
+  });
 
   beforeEach(() => {
     vi.resetModules();
@@ -131,7 +153,16 @@ describe('transaction detail route', () => {
       error: null,
     });
     mocks.linkedTransactionMaybeSingle.mockResolvedValue({
-      data: null,
+      data: {
+        id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+        wallet_id: 'wallet-1',
+      },
+      error: null,
+    });
+    mocks.walletMaybeSingle.mockResolvedValue({
+      data: {
+        id: 'wallet-2',
+      },
       error: null,
     });
     mocks.transactionRpc.mockResolvedValue({
@@ -277,5 +308,36 @@ describe('transaction detail route', () => {
       },
     ]);
     expect(mocks.sessionSupabase.from).not.toHaveBeenCalled();
+  });
+
+  it('does not allow create-only wallet permission to reassign an existing transaction wallet', async () => {
+    const { PUT } = await import('./route.js');
+
+    mocks.getPermissions.mockResolvedValue(
+      withPermissions(['update_transactions', 'set_finance_wallets_on_create'])
+    );
+
+    const response = await PUT(
+      new Request('http://localhost/api/workspaces/ws-1/transactions/tx-1', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          origin_wallet_id: 'f457f457-4444-4555-8666-111111111111',
+        }),
+      }),
+      {
+        params: Promise.resolve({
+          transactionId: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Insufficient permissions to change the wallet for transactions',
+    });
   });
 });

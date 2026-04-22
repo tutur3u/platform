@@ -84,6 +84,17 @@ export type PrefetchedPostCheck = Pick<
 
 export type PrefetchedSentEmail = Pick<EmailHistoryEntry, 'id' | 'created_at'>;
 
+export type PrefetchedSentEmailAudit = {
+  created_at: string;
+  html_content: string | null;
+  id: string;
+  sender_platform_user_id: string | null;
+  sent_at: string | null;
+  source_email: string;
+  source_name: string;
+  subject: string;
+};
+
 export type PostSendContext = {
   post: PrefetchedPost;
   recipient: {
@@ -96,6 +107,7 @@ export type PostSendContext = {
 };
 
 export type BatchPrefetch = {
+  existingSentEmailAudits: Map<string, PrefetchedSentEmailAudit>;
   posts: Map<PostEmailQueueRow['post_id'], PrefetchedPost | null>;
   checks: Map<string, PrefetchedPostCheck>;
   existingSentEmails: Map<string, PrefetchedSentEmail>;
@@ -201,6 +213,20 @@ export type PrefetchCheckRow = Pick<
 export type PrefetchSentEmailRow = Pick<
   EmailHistoryEntry,
   'id' | 'post_id' | 'receiver_id' | 'created_at'
+>;
+
+export type PrefetchSentEmailAuditRow = Pick<
+  Database['public']['Tables']['email_audit']['Row'],
+  | 'created_at'
+  | 'entity_id'
+  | 'html_content'
+  | 'id'
+  | 'sent_at'
+  | 'source_email'
+  | 'source_name'
+  | 'subject'
+  | 'to_addresses'
+  | 'user_id'
 >;
 
 export type QueueClaimUpdate = Pick<

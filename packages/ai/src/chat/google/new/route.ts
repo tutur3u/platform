@@ -1,5 +1,10 @@
 import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
+import {
+  cascadeBackendRateLimitToProxyBan,
+  isBackendRateLimitError,
+} from '@tuturuuu/utils/abuse-protection/backend-rate-limit';
 import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 
@@ -8,6 +13,54 @@ const AI_PROMPT = '\n\nAssistant:';
 
 /** Always use a lightweight model for title generation */
 const TITLE_MODEL = 'gemini-3.1-flash-lite-preview';
+
+async function buildRateLimitResponse(
+  req: Request,
+  {
+    source,
+    userId,
+  }: {
+    source: 'auth' | 'database';
+    userId?: string | null;
+  }
+) {
+  const ipAddress = extractIPFromHeaders(req.headers);
+  const blockInfo = await cascadeBackendRateLimitToProxyBan({
+    endpoint: new URL(req.url).pathname,
+    ipAddress,
+    source,
+    userId,
+  });
+  const retryAfter = blockInfo
+    ? Math.max(
+        1,
+        Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
+      )
+    : 60;
+
+  return NextResponse.json(
+    { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+    {
+      status: 429,
+      headers: {
+        'Retry-After': `${retryAfter}`,
+      },
+    }
+  );
+}
+
+function getErrorMessage(error: unknown): string {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return error.message;
+  }
+
+  return 'Internal server error.';
+}
 
 export function createPOST(
   _options: {
@@ -31,7 +84,12 @@ export function createPOST(
 
       const {
         data: { user },
+        error: authError,
       } = await supabase.auth.getUser();
+
+      if (isBackendRateLimitError(authError)) {
+        return buildRateLimitResponse(req, { source: 'auth' });
+      }
 
       if (!user) return NextResponse.json('Unauthorized', { status: 401 });
 
@@ -99,8 +157,15 @@ export function createPOST(
         .single();
 
       if (chatError) {
+        if (isBackendRateLimitError(chatError)) {
+          return buildRateLimitResponse(req, {
+            source: 'database',
+            userId: user.id,
+          });
+        }
+
         console.log(chatError);
-        return NextResponse.json(chatError.message, { status: 500 });
+        return NextResponse.json(getErrorMessage(chatError), { status: 500 });
       }
 
       const { error: msgError } = await supabase.rpc('insert_ai_chat_message', {
@@ -110,8 +175,15 @@ export function createPOST(
       });
 
       if (msgError) {
+        if (isBackendRateLimitError(msgError)) {
+          return buildRateLimitResponse(req, {
+            source: 'database',
+            userId: user.id,
+          });
+        }
+
         console.log(msgError);
-        return NextResponse.json(msgError.message, { status: 500 });
+        return NextResponse.json(getErrorMessage(msgError), { status: 500 });
       }
 
       return NextResponse.json({ id: chat.id, title }, { status: 200 });

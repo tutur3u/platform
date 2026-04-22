@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import { updateWorkspaceCourseModule } from '@tuturuuu/internal-api/education';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -23,21 +24,20 @@ export function ModuleContentEditor({
   const [post, setPost] = useState<JSONContent | null>(content || null);
   const t = useTranslations();
 
+  const saveMutation = useMutation({
+    mutationFn: async (nextContent: JSONContent | null) =>
+      updateWorkspaceCourseModule(wsId, moduleId, {
+        group_id: courseId,
+        content: nextContent,
+      }),
+    onError: () => {
+      toast.error(t('common.error_saving_content'));
+    },
+  });
+
   const onChange = (content: JSONContent | null) => {
     setPost(content);
-    saveContentToDB(content);
-  };
-
-  const saveContentToDB = async (content: JSONContent | null) => {
-    try {
-      await updateWorkspaceCourseModule(wsId, moduleId, {
-        course_id: courseId,
-        content,
-      });
-    } catch (error) {
-      console.log(error);
-      toast.error(t('common.error_saving_content'));
-    }
+    saveMutation.mutate(content);
   };
 
   const titlePlaceholder = t('common.whats_the_title');

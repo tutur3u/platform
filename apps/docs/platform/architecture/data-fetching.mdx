@@ -376,6 +376,18 @@ Use stable array query keys:
 ['tasks']
 ```
 
+### Thin Server Gate + Client Query Shell
+
+For dense dashboard surfaces that need URL-driven filtering, pagination, and frequent background refreshes, prefer a **thin server gate** plus a **client query shell**:
+
+1. Keep the route page server-side only for auth, permission checks, redirects, and metadata.
+2. Move interactive data loading into client hooks backed by TanStack Query.
+3. Back those hooks with workspace-scoped Internal API helpers instead of ad hoc `fetch('/api/...')` calls.
+4. Store queryable UI state such as `page`, `pageSize`, `q`, `sortBy`, and `path` in `nuqs`.
+5. Invalidate query keys after mutations instead of relying on `router.refresh()`.
+
+This pattern is now the default for file-explorer style dashboard pages such as Drive, where the user expects immediate client-side updates while the server still owns authorization.
+
 ### Optimistic Updates
 
 ```tsx

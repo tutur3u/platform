@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -15,7 +16,6 @@ import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
-
 part 'mobile_version_settings_page_logic.dart';
 part 'mobile_version_settings_page_widgets.dart';
 
@@ -47,6 +47,9 @@ class _MobileVersionSettingsPageState extends State<MobileVersionSettingsPage> {
   final _androidEffectiveController = TextEditingController();
   final _androidMinimumController = TextEditingController();
   final _androidStoreUrlController = TextEditingController();
+  bool _androidOtpEnabled = false;
+  bool _iosOtpEnabled = false;
+  bool _webOtpEnabled = false;
 
   late final MobileVersionPolicyRepository _policyRepository;
   late final WorkspacePermissionsRepository _permissionsRepository;
@@ -165,6 +168,9 @@ class _MobileVersionSettingsPageState extends State<MobileVersionSettingsPage> {
                       platform: _MobilePlatform.ios,
                       effectiveController: _iosEffectiveController,
                       minimumController: _iosMinimumController,
+                      otpEnabled: _iosOtpEnabled,
+                      onOtpEnabledChanged: (value) =>
+                          _updateState(() => _iosOtpEnabled = value),
                       storeUrlController: _iosStoreUrlController,
                       validationErrors: _validationErrors,
                     ),
@@ -172,8 +178,16 @@ class _MobileVersionSettingsPageState extends State<MobileVersionSettingsPage> {
                       platform: _MobilePlatform.android,
                       effectiveController: _androidEffectiveController,
                       minimumController: _androidMinimumController,
+                      otpEnabled: _androidOtpEnabled,
+                      onOtpEnabledChanged: (value) =>
+                          _updateState(() => _androidOtpEnabled = value),
                       storeUrlController: _androidStoreUrlController,
                       validationErrors: _validationErrors,
+                    ),
+                    webCard: _WebOtpCard(
+                      enabled: _webOtpEnabled,
+                      onChanged: (value) =>
+                          _updateState(() => _webOtpEnabled = value),
                     ),
                   ),
                   const shad.Gap(20),

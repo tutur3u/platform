@@ -70,13 +70,13 @@ export function KanbanColumns({
   return (
     <div
       ref={boardRef}
-      className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full gap-2 overflow-x-auto"
+      className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth"
     >
       <SortableContext
         items={columnsId}
         strategy={horizontalListSortingStrategy}
       >
-        <div className="flex h-full gap-2 p-2">
+        <div className="flex h-full min-w-max items-start gap-3 px-3 py-2">
           {columns.map((list) => {
             // Filter tasks for this list
             let listTasks = tasks.filter((task) => task.list_id === list.id);

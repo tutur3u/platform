@@ -9,6 +9,7 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
@@ -34,6 +35,10 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TransactionCategoriesPage extends StatelessWidget {
   const TransactionCategoriesPage({super.key});
+
+  static void clearCaches() {
+    _TransactionCategoriesViewState.clearMemoryCaches();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +67,11 @@ class _TransactionCategoriesViewState
   static const _tagsCacheTag = 'finance:tags';
   static final Map<String, _CategoryCacheEntry> _categoriesCache = {};
   static final Map<String, _TagCacheEntry> _tagsCache = {};
+
+  static void clearMemoryCaches() {
+    _categoriesCache.clear();
+    _tagsCache.clear();
+  }
 
   List<TransactionCategory> _categories = const [];
   List<FinanceTag> _tags = const [];
@@ -100,6 +110,8 @@ class _TransactionCategoriesViewState
       locale: currentCacheLocaleTag(),
     );
   }
+
+  String _memoryCacheKey(String wsId) => userScopedCacheKey(wsId);
 
   void _seedFromCache() {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -557,7 +569,7 @@ class _TransactionCategoriesViewState
       wsId,
       forceRefresh: forceRefresh,
     );
-    final cached = _categoriesCache[wsId];
+    final cached = _categoriesCache[_memoryCacheKey(wsId)];
     final diskCached = await CacheStore.instance
         .read<List<TransactionCategory>>(
           key: _categoriesStoreKey(wsId),
@@ -601,7 +613,7 @@ class _TransactionCategoriesViewState
           !_isWorkspaceRequestCurrent(wsId)) {
         return;
       }
-      _categoriesCache[wsId] = _CategoryCacheEntry(
+      _categoriesCache[_memoryCacheKey(wsId)] = _CategoryCacheEntry(
         categories: categories,
         fetchedAt: DateTime.now(),
       );
@@ -659,7 +671,7 @@ class _TransactionCategoriesViewState
       wsId,
       forceRefresh: forceRefresh,
     );
-    final cached = _tagsCache[wsId];
+    final cached = _tagsCache[_memoryCacheKey(wsId)];
     final diskCached = await CacheStore.instance.read<List<FinanceTag>>(
       key: _tagsStoreKey(wsId),
       decode: _decodeTags,
@@ -702,7 +714,7 @@ class _TransactionCategoriesViewState
           !_isWorkspaceRequestCurrent(wsId)) {
         return;
       }
-      _tagsCache[wsId] = _TagCacheEntry(
+      _tagsCache[_memoryCacheKey(wsId)] = _TagCacheEntry(
         tags: tags,
         fetchedAt: DateTime.now(),
       );
@@ -1873,6 +1885,7 @@ class _TaxonomyTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         shad.TextField(
+          contextMenuBuilder: platformTextContextMenuBuilder(),
           controller: controller,
           placeholder: Text(placeholder),
           autofocus: autofocus,
@@ -1901,6 +1914,7 @@ class _TaxonomyTextArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return shad.TextArea(
+      contextMenuBuilder: platformTextContextMenuBuilder(),
       controller: controller,
       placeholder: Text(placeholder),
       initialHeight: 96,

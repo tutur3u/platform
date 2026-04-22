@@ -278,7 +278,6 @@ void main() {
     );
     await pumpUi(tester);
 
-    expect(find.text('Activity'), findsOneWidget);
     expect(find.text('Alex'), findsOneWidget);
     expect(find.text('Glasses'), findsOneWidget);
     expect(find.text('2 glass'), findsOneWidget);

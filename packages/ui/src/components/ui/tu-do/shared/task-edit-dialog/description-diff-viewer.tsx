@@ -1630,6 +1630,7 @@ function MediaPreviewDialog({
               title={label}
               className="aspect-video h-auto w-full max-w-4xl rounded-lg shadow-lg"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
             />
           )}

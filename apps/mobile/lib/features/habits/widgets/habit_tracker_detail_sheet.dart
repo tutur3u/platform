@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
+import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -14,6 +15,7 @@ class HabitTrackerDetailSheet extends StatelessWidget {
   const HabitTrackerDetailSheet({
     required this.detailStatus,
     required this.detailError,
+    required this.isDetailRefreshing,
     required this.isSubmittingEntry,
     required this.isSubmittingStreakAction,
     required this.isArchivingTracker,
@@ -31,6 +33,7 @@ class HabitTrackerDetailSheet extends StatelessWidget {
   final HabitTrackerDetailResponse? detail;
   final HabitsStatus detailStatus;
   final String? detailError;
+  final bool isDetailRefreshing;
   final bool isSubmittingEntry;
   final bool isSubmittingStreakAction;
   final bool isArchivingTracker;
@@ -97,6 +100,15 @@ class HabitTrackerDetailSheet extends StatelessWidget {
                             onEditTracker: onEditTracker,
                             onArchiveTracker: () => _confirmArchive(context),
                           ),
+                          if (isDetailRefreshing) ...[
+                            const SizedBox(height: 12),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(999),
+                              child: const LinearProgressIndicator(
+                                minHeight: 4,
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 16),
                           TabBar(tabs: tabs),
                           const SizedBox(height: 12),
@@ -166,74 +178,112 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = habitTrackerColor(context, detail.tracker.color);
-    final tint = habitTrackerTint(context, detail.tracker.color);
+    final currentValue = detail.currentMember?.currentPeriodTotal ?? 0;
+    final primaryField = primaryFieldForTracker(detail.tracker);
+    final latestValue =
+        detail.currentMember?.latestValues?[detail.tracker.primaryMetricKey] ??
+        detail.currentMember?.latestValue;
+    final latestValueLabel = latestValue == null
+        ? formatCompactNumber(currentValue)
+        : formatFieldValue(primaryField, latestValue);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                color: tint,
+    return FinancePanel(
+      padding: const EdgeInsets.all(20),
+      backgroundColor: accent.withValues(alpha: 0.08),
+      borderColor: accent.withValues(alpha: 0.24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  color: accent.withValues(alpha: 0.14),
+                ),
+                child: Icon(
+                  habitTrackerIcon(detail.tracker.icon),
+                  color: accent,
+                ),
               ),
-              child: Icon(habitTrackerIcon(detail.tracker.icon), color: accent),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    detail.tracker.name,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      detail.tracker.name,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(detail.tracker.description ?? ''),
-                ],
+                    const SizedBox(height: 4),
+                    Text(detail.tracker.description ?? ''),
+                  ],
+                ),
               ),
-            ),
-            IconButton(
-              onPressed: () {
-                if (context.isCompact) {
-                  unawaited(shad.closeOverlay<void>(context));
-                  return;
-                }
-                unawaited(Navigator.of(context).maybePop());
-              },
-              icon: const Icon(Icons.close),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            shad.PrimaryButton(
-              onPressed: () {
-                unawaited(onLogEntry());
-              },
-              child: Text(context.l10n.habitsLogEntryAction),
-            ),
-            shad.OutlineButton(
-              onPressed: () {
-                unawaited(onEditTracker());
-              },
-              child: Text(context.l10n.habitsEditTrackerAction),
-            ),
-            shad.DestructiveButton(
-              onPressed: isArchivingTracker ? null : onArchiveTracker,
-              child: Text(context.l10n.habitsArchiveTrackerAction),
-            ),
-          ],
-        ),
-      ],
+              IconButton(
+                onPressed: () {
+                  if (context.isCompact) {
+                    unawaited(shad.closeOverlay<void>(context));
+                    return;
+                  }
+                  unawaited(Navigator.of(context).maybePop());
+                },
+                icon: const Icon(Icons.close),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FinanceStatChip(
+                label: context.l10n.habitsSummaryVolume,
+                value: latestValueLabel,
+                tint: accent,
+              ),
+              FinanceStatChip(
+                label: context.l10n.habitsCurrentStreak,
+                value: '${detail.currentMember?.streak.currentStreak ?? 0}',
+                tint: accent,
+              ),
+              FinanceStatChip(
+                label: context.l10n.habitsSummaryTargetsMet,
+                value:
+                    '${formatCompactNumber(currentValue)} / ${formatCompactNumber(detail.tracker.targetValue)}',
+                tint: accent,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              shad.PrimaryButton(
+                onPressed: () {
+                  unawaited(onLogEntry());
+                },
+                child: Text(context.l10n.habitsLogEntryAction),
+              ),
+              shad.OutlineButton(
+                onPressed: () {
+                  unawaited(onEditTracker());
+                },
+                child: Text(context.l10n.habitsEditTrackerAction),
+              ),
+              shad.DestructiveButton(
+                onPressed: isArchivingTracker ? null : onArchiveTracker,
+                child: Text(context.l10n.habitsArchiveTrackerAction),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -448,12 +498,8 @@ class _EntriesTab extends StatelessWidget {
     return ListView.separated(
       itemBuilder: (context, index) {
         final entry = detail.entries[index];
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
-          ),
+        final exerciseBlocks = entry.values['exercise_blocks'];
+        return FinancePanel(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -486,6 +532,52 @@ class _EntriesTab extends StatelessWidget {
                     '${formatFieldValue(field, entry.values[field.key])}',
                   ),
                 ),
+              if (exerciseBlocks is List<HabitTrackerExerciseBlock> &&
+                  exerciseBlocks.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                ...exerciseBlocks.map(
+                  (block) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Builder(
+                      builder: (context) {
+                        final weightLabel = block.weight == null
+                            ? ''
+                            : ' • ${formatCompactNumber(block.weight!)} '
+                                  '${block.unit ?? ''}';
+
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surface.withValues(alpha: 0.82),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                block.exerciseName,
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${block.sets} x ${block.reps}$weightLabel',
+                              ),
+                              if (block.notes?.trim().isNotEmpty == true) ...[
+                                const SizedBox(height: 4),
+                                Text(block.notes!.trim()),
+                              ],
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
               if (entry.note?.trim().isNotEmpty == true) ...[
                 const SizedBox(height: 8),
                 Text(entry.note!.trim()),

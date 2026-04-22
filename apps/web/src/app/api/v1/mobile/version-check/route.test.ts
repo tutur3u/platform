@@ -33,6 +33,7 @@ describe('mobile version-check route', () => {
       currentVersion: '1.2.3',
       effectiveVersion: null,
       minimumVersion: null,
+      otpEnabled: false,
       storeUrl: null,
       status: 'supported',
       shouldUpdate: false,
@@ -47,6 +48,7 @@ describe('mobile version-check route', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
+      otpEnabled: false,
       status: 'supported',
       shouldUpdate: false,
       requiresUpdate: false,
@@ -60,6 +62,7 @@ describe('mobile version-check route', () => {
       currentVersion: '1.2.0',
       effectiveVersion: '1.3.0',
       minimumVersion: '1.1.0',
+      otpEnabled: true,
       storeUrl: 'https://play.google.com/store/apps/details?id=example.app',
       status: 'update-recommended',
       shouldUpdate: true,
@@ -74,6 +77,7 @@ describe('mobile version-check route', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
+      otpEnabled: true,
       status: 'update-recommended',
       shouldUpdate: true,
       requiresUpdate: false,
@@ -87,6 +91,7 @@ describe('mobile version-check route', () => {
       currentVersion: '1.0.0',
       effectiveVersion: '1.3.0',
       minimumVersion: '1.1.0',
+      otpEnabled: false,
       storeUrl: 'https://play.google.com/store/apps/details?id=example.app',
       status: 'update-required',
       shouldUpdate: true,

@@ -45,6 +45,7 @@ import {
 } from './tracker-shared';
 
 const DEFAULT_TEMPLATE = HABIT_TRACKER_TEMPLATES[0]!;
+const DEFAULT_TEMPLATE_ID = DEFAULT_TEMPLATE.id;
 
 function createFieldDraft(
   field: HabitTrackerInput['input_schema'][number]
@@ -71,6 +72,10 @@ function buildInputFromTracker(tracker?: HabitTracker): HabitTrackerInput {
       primary_metric_key: tracker.primary_metric_key,
       quick_add_values: tracker.quick_add_values,
       recovery_window_periods: tracker.recovery_window_periods,
+      use_case: tracker.use_case,
+      template_category: tracker.template_category,
+      composer_mode: tracker.composer_mode,
+      composer_config: tracker.composer_config ?? {},
       start_date: tracker.start_date,
       target_operator: tracker.target_operator,
       target_period: tracker.target_period,
@@ -93,6 +98,10 @@ function buildInputFromTracker(tracker?: HabitTracker): HabitTrackerInput {
     primary_metric_key: template.primary_metric_key,
     quick_add_values: template.quick_add_values,
     recovery_window_periods: template.recovery_window_periods,
+    use_case: template.use_case,
+    template_category: template.template_category,
+    composer_mode: template.composer_mode,
+    composer_config: template.composer_config ?? {},
     start_date: new Date().toISOString().slice(0, 10),
     target_operator: template.target_operator,
     target_period: template.target_period,
@@ -128,7 +137,7 @@ export default function TrackerFormDialog({
   );
   const [quickAddInput, setQuickAddInput] = useState('');
   const [selectedTemplateId, setSelectedTemplateId] = useState(
-    tracker ? 'custom' : 'water'
+    tracker ? 'custom' : DEFAULT_TEMPLATE_ID
   );
 
   useEffect(() => {
@@ -137,7 +146,7 @@ export default function TrackerFormDialog({
     setDraft(nextDraft);
     setFields(buildFieldDrafts(nextDraft));
     setQuickAddInput('');
-    setSelectedTemplateId(tracker ? 'custom' : 'water');
+    setSelectedTemplateId(tracker ? 'custom' : DEFAULT_TEMPLATE_ID);
   }, [tracker]);
 
   const primaryField =
@@ -164,6 +173,10 @@ export default function TrackerFormDialog({
       primary_metric_key: template.primary_metric_key,
       quick_add_values: template.quick_add_values,
       recovery_window_periods: template.recovery_window_periods,
+      use_case: template.use_case,
+      template_category: template.template_category,
+      composer_mode: template.composer_mode,
+      composer_config: template.composer_config ?? {},
       target_operator: template.target_operator,
       target_period: template.target_period,
       target_value: template.target_value,

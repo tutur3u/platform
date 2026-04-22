@@ -99,13 +99,16 @@ describe('infrastructure mobile-versions route', () => {
       ios: {
         effectiveVersion: '1.2.0',
         minimumVersion: '1.1.0',
+        otpEnabled: true,
         storeUrl: 'https://apps.apple.com/app/id1',
       },
       android: {
         effectiveVersion: '1.2.0',
         minimumVersion: '1.1.0',
+        otpEnabled: false,
         storeUrl: 'https://play.google.com/store/apps/details?id=example.app',
       },
+      webOtpEnabled: true,
     });
 
     const request = createTestRequest();
@@ -113,8 +116,9 @@ describe('infrastructure mobile-versions route', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
-      ios: { effectiveVersion: '1.2.0' },
-      android: { minimumVersion: '1.1.0' },
+      ios: { effectiveVersion: '1.2.0', otpEnabled: true },
+      android: { minimumVersion: '1.1.0', otpEnabled: false },
+      webOtpEnabled: true,
     });
   });
 
@@ -140,13 +144,16 @@ describe('infrastructure mobile-versions route', () => {
         ios: {
           effectiveVersion: '1.2.0',
           minimumVersion: '1.1.0',
+          otpEnabled: true,
           storeUrl: 'https://apps.apple.com/app/id1',
         },
         android: {
           effectiveVersion: '1.2.0',
           minimumVersion: '1.1.0',
+          otpEnabled: false,
           storeUrl: 'https://play.google.com/store/apps/details?id=example.app',
         },
+        webOtpEnabled: true,
       }),
     });
 

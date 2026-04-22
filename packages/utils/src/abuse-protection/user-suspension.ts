@@ -142,7 +142,7 @@ export async function checkUserSuspension(
 export async function suspendUser(
   userId: string,
   reason: string,
-  suspendedBy: string,
+  suspendedBy: string | null,
   expiresAt?: Date
 ): Promise<boolean> {
   try {

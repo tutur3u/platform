@@ -6,6 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { shouldLockFinanceWalletSelectionOnCreate } from '@tuturuuu/utils/finance';
 import { formatCurrency } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -46,6 +47,8 @@ interface Props {
   downloadImageAfterCreate?: boolean;
   defaultWalletId?: string;
   defaultCurrency?: 'VND' | 'USD';
+  canChangeFinanceWallets?: boolean;
+  canSetFinanceWalletsOnCreate?: boolean;
 }
 
 export function StandardInvoice({
@@ -55,6 +58,8 @@ export function StandardInvoice({
   downloadImageAfterCreate = false,
   defaultWalletId,
   defaultCurrency = 'USD',
+  canChangeFinanceWallets = true,
+  canSetFinanceWalletsOnCreate = true,
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
@@ -125,6 +130,11 @@ export function StandardInvoice({
   const [selectedWalletId, setSelectedWalletId] = useState<string>(
     defaultWalletId || ''
   );
+  const isWalletSelectionLocked = shouldLockFinanceWalletSelectionOnCreate({
+    defaultWalletId,
+    canChangeFinanceWallets,
+    canSetFinanceWalletsOnCreate,
+  });
 
   useEffect(() => {
     if (defaultWalletId) {
@@ -478,6 +488,7 @@ export function StandardInvoice({
                   selectedCategoryId={selectedCategoryId}
                   onWalletChange={setSelectedWalletId}
                   onCategoryChange={setSelectedCategoryId}
+                  walletDisabled={isWalletSelectionLocked}
                   showPromotion
                   currency={defaultCurrency}
                   promotionsAllowed={promotionsAllowed}

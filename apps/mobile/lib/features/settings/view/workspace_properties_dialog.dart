@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart' hide Divider;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/workspace_repository.dart';
@@ -311,6 +312,7 @@ class _WorkspacePropertiesDialogState
             ],
             const shad.Gap(16),
             shad.TextField(
+              contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _nameController,
               enabled: !_isSaving,
               placeholder: Text(l10n.settingsWorkspaceNameHint),

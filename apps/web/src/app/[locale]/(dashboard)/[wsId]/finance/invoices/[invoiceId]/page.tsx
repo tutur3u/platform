@@ -35,6 +35,9 @@ export default async function WorkspaceInvoiceDetailsPage({ params }: Props) {
         if (withoutPermission('view_invoices')) notFound();
 
         const canUpdateInvoices = containsPermission('update_invoices');
+        const canChangeFinanceWallets = containsPermission(
+          'change_finance_wallets'
+        );
         const currency =
           (await getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY')) || 'USD';
 
@@ -44,6 +47,7 @@ export default async function WorkspaceInvoiceDetailsPage({ params }: Props) {
             locale={locale}
             invoiceId={invoiceId}
             canUpdateInvoices={canUpdateInvoices}
+            canChangeFinanceWallets={canChangeFinanceWallets}
             currency={currency}
           />
         );

@@ -6,6 +6,7 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import bcrypt from 'bcrypt';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -61,14 +62,20 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     // Verify user is a member of the workspace
-    const { data: workspaceMember } = await supabase
-      .from('workspace_members')
-      .select('*')
-      .eq('ws_id', link.ws_id)
-      .eq('user_id', user.id)
-      .single();
+    const workspaceMember = await verifyWorkspaceMembershipType({
+      wsId: link.ws_id,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (!workspaceMember) {
+    if (workspaceMember.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!workspaceMember.ok) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -190,15 +197,20 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Link not found' }, { status: 404 });
     }
 
-    // Verify user is a member of the workspace
-    const { data: workspaceMember } = await supabase
-      .from('workspace_members')
-      .select('*')
-      .eq('ws_id', link.ws_id)
-      .eq('user_id', user.id)
-      .single();
+    const workspaceMember = await verifyWorkspaceMembershipType({
+      wsId: link.ws_id,
+      userId: user.id,
+      supabase,
+    });
 
-    if (!workspaceMember) {
+    if (workspaceMember.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!workspaceMember.ok) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

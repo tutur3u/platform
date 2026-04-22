@@ -14,5 +14,5 @@ interface Props {
 }
 
 export default async function Page({ params }: Props) {
-  return <TaskDetailServerPage params={params} />;
+  return <TaskDetailServerPage params={params} routePrefix="" />;
 }

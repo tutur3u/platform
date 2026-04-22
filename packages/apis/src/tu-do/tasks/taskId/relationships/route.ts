@@ -8,7 +8,10 @@ import type {
   RelatedTaskInfo,
   TaskRelationshipsResponse,
 } from '@tuturuuu/types/primitives/TaskRelationship';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -115,21 +118,20 @@ export async function GET(
     const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
     const taskId = parsedParams.data.taskId;
 
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (membershipError) {
+    if (membership.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -324,21 +326,20 @@ export async function POST(
     const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
     const taskId = parsedParams.data.taskId;
 
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (membershipError) {
+    if (membership.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -457,21 +458,20 @@ export async function DELETE(
     const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
     const taskId = parsedParams.data.taskId;
 
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (membershipError) {
+    if (membership.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

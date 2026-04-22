@@ -1,14 +1,13 @@
 import type { JSONContent } from '@tiptap/react';
+import type { TaskLabel as DbTaskLabel } from '@tuturuuu/types/db';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useCallback, useMemo, useState } from 'react';
 
-interface WorkspaceTaskLabel {
-  id: string;
-  name: string;
-  color: string;
-  created_at: string;
-}
+type WorkspaceTaskLabel = Pick<
+  DbTaskLabel,
+  'id' | 'name' | 'color' | 'created_at'
+>;
 
 interface TaskFormState {
   name: string;
@@ -19,8 +18,8 @@ interface TaskFormState {
   selectedListId: string;
   estimationPoints: number | null | undefined;
   selectedLabels: WorkspaceTaskLabel[];
-  selectedAssignees: any[];
-  selectedProjects: any[];
+  selectedAssignees: NonNullable<Task['assignees']>;
+  selectedProjects: NonNullable<Task['projects']>;
 }
 
 interface UseTaskFormStateProps {
@@ -78,12 +77,12 @@ export function useTaskFormState({
   const [selectedLabels, setSelectedLabels] = useState<WorkspaceTaskLabel[]>(
     task?.labels || []
   );
-  const [selectedAssignees, setSelectedAssignees] = useState<any[]>(
-    task?.assignees || []
-  );
-  const [selectedProjects, setSelectedProjects] = useState<any[]>(
-    task?.projects || []
-  );
+  const [selectedAssignees, setSelectedAssignees] = useState<
+    NonNullable<Task['assignees']>
+  >(task?.assignees || []);
+  const [selectedProjects, setSelectedProjects] = useState<
+    NonNullable<Task['projects']>
+  >(task?.projects || []);
 
   // Build initial snapshot for change detection
   const initialSnapshot = useMemo(() => {

@@ -1,5 +1,10 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
+import {
+  createWorkspaceQuizSet,
+  updateWorkspaceQuizSet,
+} from '@tuturuuu/internal-api';
 import type { WorkspaceQuizSet } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -54,33 +59,27 @@ export default function CourseModuleForm({
   const isValid = form.formState.isValid;
   const isSubmitting = form.formState.isSubmitting;
 
-  const disabled = !isDirty || !isValid || isSubmitting;
-
-  const onSubmit = async (data: z.infer<typeof FormSchema>) => {
-    try {
-      const res = await fetch(
-        data.id
-          ? `/api/v1/workspaces/${wsId}/quiz-sets/${data.id}`
-          : `/api/v1/workspaces/${wsId}/quiz-sets`,
-        {
-          method: data.id ? 'PUT' : 'POST',
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (res.ok) {
-        onFinish?.(data);
-        router.refresh();
-      } else {
-        const data = await res.json();
-        toast({
-          title: `Failed to ${data.id ? 'edit' : 'create'} course module`,
-          description: data.message,
-        });
+  const saveMutation = useMutation({
+    mutationFn: async (payload: z.infer<typeof FormSchema>) => {
+      if (payload.id) {
+        await updateWorkspaceQuizSet(wsId, payload.id, payload);
+        return;
       }
+      await createWorkspaceQuizSet(wsId, payload);
+    },
+  });
+
+  const disabled =
+    !isDirty || !isValid || isSubmitting || saveMutation.isPending;
+
+  const onSubmit = async (payload: z.infer<typeof FormSchema>) => {
+    try {
+      await saveMutation.mutateAsync(payload);
+      onFinish?.(payload);
+      router.refresh();
     } catch (error) {
       toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} course module`,
+        title: `Failed to ${payload.id ? 'edit' : 'create'} quiz set`,
         description: error instanceof Error ? error.message : String(error),
       });
     }

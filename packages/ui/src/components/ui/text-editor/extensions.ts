@@ -37,6 +37,8 @@ interface EditorExtensionsOptions {
   collaborationUser?: { name: string; color: string };
   onImageUpload?: (file: File) => Promise<string>;
   onVideoUpload?: (file: File) => Promise<string>;
+  getOnImageUpload?: () => ((file: File) => Promise<string>) | undefined;
+  getOnVideoUpload?: () => ((file: File) => Promise<string>) | undefined;
   /** Translations for mention chip dialogs */
   mentionTranslations?: {
     delete_task?: string;
@@ -69,6 +71,8 @@ export function getEditorExtensions({
   collaborationUser,
   onImageUpload,
   onVideoUpload,
+  getOnImageUpload,
+  getOnVideoUpload,
   mentionTranslations,
   readOnly = false,
 }: EditorExtensionsOptions = {}): Extensions {
@@ -201,7 +205,12 @@ export function getEditorExtensions({
           'relative border-r border-dynamic-border px-4 py-3 last:border-r-0 [&>p]:my-0 hover:bg-dynamic-surface/50 focus:bg-dynamic-surface/70 focus:outline-none focus:ring-2 focus:ring-dynamic-blue/50 focus:ring-inset',
       },
     }),
-    CustomImage({ onImageUpload }),
+    CustomImage({
+      onImageUpload,
+      onVideoUpload,
+      getOnImageUpload,
+      getOnVideoUpload,
+    }),
     Video({ onVideoUpload }).configure({
       HTMLAttributes: {
         class: 'rounded-md my-4',
@@ -214,6 +223,7 @@ export function getEditorExtensions({
       height: 360,
       HTMLAttributes: {
         class: 'rounded-md my-4',
+        referrerpolicy: 'strict-origin-when-cross-origin',
       },
     }),
   ];

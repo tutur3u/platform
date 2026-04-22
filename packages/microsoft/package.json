@@ -13,14 +13,14 @@
     "type-check": "tsgo --project tsconfig.typecheck.json"
   },
   "dependencies": {
-    "@azure/msal-node": "^5.1.2",
+    "@azure/msal-node": "^5.1.4",
     "@microsoft/microsoft-graph-client": "^3.0.7"
   },
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.5.2",
-    "typescript": "^6.0.2"
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.3"
   },
-  "packageManager": "bun@1.3.11"
+  "packageManager": "bun@1.3.13"
 }

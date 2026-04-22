@@ -1,6 +1,6 @@
 {
   "name": "tuturuuu",
-  "version": "0.1.7",
+  "version": "0.2.2",
   "description": "Official TypeScript/JavaScript SDK for the Tuturuuu platform",
   "license": "MIT",
   "author": "Tuturuuu",
@@ -15,54 +15,52 @@
   },
   "keywords": ["tuturuuu", "sdk", "api"],
   "main": "./dist/index.js",
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "bun": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "bun": "./dist/index.js",
       "import": "./dist/index.js",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./storage": {
-      "types": "./src/storage.ts",
-      "bun": "./src/storage.ts",
+      "types": "./dist/storage.d.ts",
+      "bun": "./dist/storage.js",
       "import": "./dist/storage.js",
       "require": "./dist/storage.js",
       "default": "./dist/storage.js"
     },
     "./types": {
-      "types": "./src/types.ts",
-      "bun": "./src/types.ts",
+      "types": "./dist/types.d.ts",
+      "bun": "./dist/types.js",
       "import": "./dist/types.js",
       "require": "./dist/types.js",
       "default": "./dist/types.js"
     },
     "./errors": {
-      "types": "./src/errors.ts",
-      "bun": "./src/errors.ts",
+      "types": "./dist/errors.d.ts",
+      "bun": "./dist/errors.js",
       "import": "./dist/errors.js",
       "require": "./dist/errors.js",
       "default": "./dist/errors.js"
     },
     "./external-projects": {
-      "types": "./src/external-projects.ts",
-      "bun": "./src/external-projects.ts",
+      "types": "./dist/external-projects.d.ts",
+      "bun": "./dist/external-projects.js",
       "import": "./dist/external-projects.js",
       "require": "./dist/external-projects.js",
       "default": "./dist/external-projects.js"
+    },
+    "./epm": {
+      "types": "./dist/epm.d.ts",
+      "bun": "./dist/epm.js",
+      "import": "./dist/epm.js",
+      "require": "./dist/epm.js",
+      "default": "./dist/epm.js"
     }
   },
-  "files": [
-    "dist",
-    "src/external-projects.ts",
-    "src/index.ts",
-    "src/storage.ts",
-    "src/types.ts",
-    "src/errors.ts",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist", "README.md", "LICENSE"],
   "publishConfig": {
     "access": "public"
   },
@@ -82,12 +80,12 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.5.2",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.3"
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
   },
   "engines": {
     "node": ">=18.0.0"
   },
-  "packageManager": "bun@1.3.11"
+  "packageManager": "bun@1.3.13"
 }

@@ -4,7 +4,10 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
@@ -68,21 +71,20 @@ export async function POST(
     }
 
     // Verify workspace access
-    const { data: memberCheck, error: memberError } = await supabase
-      .from('workspace_members')
-      .select('id:user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (memberError) {
+    if (memberCheck.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace access' },
         { status: 500 }
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }
@@ -218,21 +220,20 @@ export async function GET(
     }
 
     // Verify workspace access
-    const { data: memberCheck, error: memberError } = await supabase
-      .from('workspace_members')
-      .select('id:user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (memberError) {
+    if (memberCheck.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace access' },
         { status: 500 }
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }
@@ -254,6 +255,7 @@ export async function GET(
     const status = url.searchParams.get('status') || 'pending'; // 'pending', 'approved', 'rejected'
     const userId = url.searchParams.get('userId'); // Optional: filter by user
     const normalizedUserId = userId?.trim();
+    const requestId = url.searchParams.get('requestId')?.trim();
 
     if (
       !canManageAllRequests &&
@@ -300,6 +302,9 @@ export async function GET(
     // Filter by user if specified
     if (effectiveUserId) {
       countQuery = countQuery.eq('user_id', effectiveUserId);
+    }
+    if (requestId) {
+      countQuery = countQuery.eq('id', requestId);
     }
 
     // Execute count query with explicit error handling
@@ -366,6 +371,9 @@ export async function GET(
     // Filter by user if specified
     if (effectiveUserId) {
       query = query.eq('user_id', effectiveUserId);
+    }
+    if (requestId) {
+      query = query.eq('id', requestId);
     }
 
     // Apply pagination and ordering

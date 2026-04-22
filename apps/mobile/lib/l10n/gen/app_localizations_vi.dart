@@ -27,7 +27,40 @@ class AppLocalizationsVi extends AppLocalizations {
   String get loginContinueWithEmail => 'Tiếp tục với email';
 
   @override
+  String get loginOtpInstruction => 'Nhập mã 6 chữ số chúng tôi đã gửi đến email của bạn.';
+
+  @override
+  String loginOtpRateLimitedInstruction(Object seconds) {
+    return 'Nhập mã bên dưới hoặc dùng mật khẩu thay thế. Thử lại sau $seconds giây.';
+  }
+
+  @override
+  String get loginResendOtp => 'Gửi lại mã';
+
+  @override
+  String loginRetryIn(Object seconds) {
+    return 'Thử lại sau $seconds giây';
+  }
+
+  @override
+  String loginRetryAfter(Object seconds) {
+    return 'Thử lại sau $seconds giây';
+  }
+
+  @override
   String get loginSignIn => 'Đăng nhập';
+
+  @override
+  String get loginSendOtp => 'Gửi mã';
+
+  @override
+  String get loginUseOtpInstead => 'Dùng mã email thay thế';
+
+  @override
+  String get loginUsePasswordInstead => 'Dùng mật khẩu thay thế';
+
+  @override
+  String get loginVerifyOtp => 'Xác minh mã';
 
   @override
   String get authContinueWithApple => 'Tiếp tục với Apple';
@@ -66,7 +99,99 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authMicrosoftBrowserLaunchFailed => 'Không thể mở đăng nhập Microsoft lúc này.';
 
   @override
+  String get authAddAccount => 'Thêm tài khoản';
+
+  @override
+  String get authAddAccountDescription => 'Đăng nhập bằng tài khoản khác trên thiết bị này.';
+
+  @override
+  String get authAddAccountFailed => 'Không thể bắt đầu thêm một tài khoản khác.';
+
+  @override
+  String get authAddAccountHint => 'Bạn đang thêm một tài khoản khác vào thiết bị này.';
+
+  @override
+  String get authAddAccountTitle => 'Thêm tài khoản';
+
+  @override
   String get authLogOut => 'Đăng xuất';
+
+  @override
+  String get authLogOutCurrent => 'Đăng xuất tài khoản hiện tại';
+
+  @override
+  String get authLogOutConfirmDialogTitle => 'Đăng xuất khỏi thiết bị này?';
+
+  @override
+  String get authLogOutConfirmDialogBody => 'Nếu có tài khoản đã lưu, ứng dụng sẽ chuyển sang tài khoản đó.';
+
+  @override
+  String get authLogOutCurrentConfirm => 'Đăng xuất tài khoản này khỏi thiết bị? Nếu có tài khoản khác, ứng dụng sẽ tự động chuyển sang tài khoản đó.';
+
+  @override
+  String get authLogOutCurrentDescription => 'Đăng xuất tài khoản này và tự động chuyển sang tài khoản đã lưu khác nếu có.';
+
+  @override
+  String get authLogOutCurrentFailed => 'Không thể đăng xuất tài khoản này.';
+
+  @override
+  String get authLogOutCurrentSuccess => 'Đã đăng xuất tài khoản hiện tại.';
+
+  @override
+  String get authNoStoredAccounts => 'Chưa có tài khoản nào được lưu.';
+
+  @override
+  String get authSwitchAccount => 'Chuyển tài khoản';
+
+  @override
+  String get authSwitchAccountDescription => 'Chọn một tài khoản đã lưu để tiếp tục.';
+
+  @override
+  String get authSwitchAccountFailed => 'Không thể chuyển tài khoản.';
+
+  @override
+  String get authSwitchAccountSuccess => 'Đã chuyển tài khoản.';
+
+  @override
+  String get authManageAccounts => 'Quản lý tài khoản';
+
+  @override
+  String get authManageAccountsDescription => 'Thêm, xóa hoặc đăng xuất các tài khoản trên thiết bị này.';
+
+  @override
+  String get authManageAccountsEmpty => 'Không còn tài khoản nào khác được lưu trên thiết bị này.';
+
+  @override
+  String get authCurrentAccountTitle => 'Tài khoản hiện tại';
+
+  @override
+  String get authCurrentAccountDescription => 'Đây là tài khoản đang được sử dụng trên thiết bị này.';
+
+  @override
+  String get authCurrentAccountBadge => 'Đang sử dụng';
+
+  @override
+  String get authSavedAccountsTitle => 'Tài khoản đã lưu';
+
+  @override
+  String get authSavedAccountsDescription => 'Quản lý các tài khoản được lưu trên thiết bị này mà không đổi tài khoản hiện tại.';
+
+  @override
+  String get authSavedAccountBadge => 'Đã lưu trên thiết bị';
+
+  @override
+  String get authRemoveAccount => 'Xóa tài khoản';
+
+  @override
+  String authRemoveAccountConfirm(Object name) {
+    return 'Xóa $name khỏi thiết bị này? Bạn sẽ cần đăng nhập lại.';
+  }
+
+  @override
+  String get authRemoveAccountFailed => 'Không thể xóa tài khoản này.';
+
+  @override
+  String get authRemoveAccountSuccess => 'Đã xóa tài khoản thành công.';
 
   @override
   String get loginForgotPassword => 'Quên mật khẩu?';
@@ -279,16 +404,28 @@ class AppLocalizationsVi extends AppLocalizations {
   String get habitsTitle => 'Thói quen';
 
   @override
-  String get habitsOverviewLabel => 'Tổng quan';
+  String get habitsOverviewLabel => 'Hôm nay';
+
+  @override
+  String get habitsTodayLabel => 'Hôm nay';
 
   @override
   String get habitsActivityLabel => 'Hoạt động';
+
+  @override
+  String get habitsLibraryLabel => 'Thư viện';
 
   @override
   String get habitsActivityTitle => 'Hoạt động';
 
   @override
   String get habitsActivitySubtitle => 'Xem các lượt ghi nhận thói quen mới nhất trên mọi bộ theo dõi trong không gian làm việc này.';
+
+  @override
+  String get habitsLibraryTitle => 'Thư viện';
+
+  @override
+  String get habitsLibrarySubtitle => 'Bắt đầu với các mẫu mạnh cho tập luyện, hồi phục và kỷ luật hằng ngày.';
 
   @override
   String get habitsLoadError => 'Không thể tải thói quen lúc này';
@@ -456,6 +593,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get habitsSelectOptionsRequired => 'Trường chọn phải có ít nhất một tùy chọn';
 
   @override
+  String get habitsComposerQuickCheck => 'Đánh dấu nhanh';
+
+  @override
+  String get habitsComposerQuickIncrement => 'Cộng nhanh';
+
+  @override
+  String get habitsComposerMeasurement => 'Đo lường';
+
+  @override
+  String get habitsComposerWorkoutSession => 'Buổi tập';
+
+  @override
+  String get habitsComposerAdvancedCustom => 'Tùy chỉnh';
+
+  @override
   String habitsFieldCardTitle(int count) {
     return 'Trường $count';
   }
@@ -515,6 +667,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get habitsLogEntryAction => 'Ghi nhận';
 
   @override
+  String get habitsLogMeasurementAction => 'Ghi đo lường';
+
+  @override
+  String get habitsLogSessionAction => 'Ghi buổi tập';
+
+  @override
   String get habitsCompleteNow => 'Hoàn thành ngay';
 
   @override
@@ -531,6 +689,71 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get habitsSaveEntry => 'Lưu lượt nhập';
+
+  @override
+  String get habitsQuickCheckTitle => 'Đánh dấu nhanh';
+
+  @override
+  String get habitsQuickCheckDescription => 'Dùng một chạm khi thói quen này chỉ cần hoàn thành hoặc chưa hoàn thành.';
+
+  @override
+  String get habitsQuickIncrementTitle => 'Tăng nhanh';
+
+  @override
+  String get habitsQuickIncrementDescription => 'Điều chỉnh tổng hiện tại bằng các chip nhanh hoặc nhập số tùy chỉnh.';
+
+  @override
+  String get habitsMeasurementTitle => 'Đo lường';
+
+  @override
+  String get habitsMeasurementDescription => 'Nhập một chỉ số chính và so với lần ghi gần nhất.';
+
+  @override
+  String get habitsAdvancedComposerTitle => 'Lượt nhập tùy chỉnh';
+
+  @override
+  String get habitsAdvancedComposerDescription => 'Dùng ô nhập giá trị đơn giản cho các bộ theo dõi tùy chỉnh.';
+
+  @override
+  String get habitsWorkoutSessionTitle => 'Buổi tập';
+
+  @override
+  String get habitsWorkoutSessionDescription => 'Thêm một hoặc nhiều khối bài tập với số hiệp, số rep và mức tạ tùy chọn.';
+
+  @override
+  String get habitsWorkoutBlocksRequired => 'Hãy thêm ít nhất một khối bài tập';
+
+  @override
+  String get habitsWorkoutBlockTitle => 'Khối bài tập';
+
+  @override
+  String get habitsWorkoutExerciseName => 'Bài tập';
+
+  @override
+  String get habitsWorkoutSets => 'Hiệp';
+
+  @override
+  String get habitsWorkoutReps => 'Rep';
+
+  @override
+  String get habitsWorkoutWeight => 'Mức tạ';
+
+  @override
+  String get habitsWorkoutTotalSets => 'Tổng hiệp';
+
+  @override
+  String get habitsWorkoutTotalReps => 'Tổng rep';
+
+  @override
+  String get habitsWorkoutTotalVolume => 'Tổng khối lượng';
+
+  @override
+  String get habitsAddExerciseBlock => 'Thêm bài tập';
+
+  @override
+  String habitsLatestValueLabel(String value) {
+    return 'Gần nhất: $value';
+  }
 
   @override
   String get habitsMarkDone => 'Đánh dấu hoàn thành';
@@ -620,6 +843,45 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get habitsActivityNoTrackers => 'Hãy tạo bộ theo dõi thói quen trước để bắt đầu thu thập hoạt động.';
+
+  @override
+  String get habitsLibraryStrengthTitle => 'Sức mạnh';
+
+  @override
+  String get habitsLibraryStrengthSubtitle => 'Buổi tập nặng, bài lift có cấu trúc và bài bodyweight.';
+
+  @override
+  String get habitsLibraryHealthTitle => 'Sức khỏe';
+
+  @override
+  String get habitsLibraryHealthSubtitle => 'Đo lường và tổng hằng ngày để thấy nền tảng của bạn.';
+
+  @override
+  String get habitsLibraryRecoveryTitle => 'Hồi phục';
+
+  @override
+  String get habitsLibraryRecoverySubtitle => 'Ngủ, sauna, thiền và các nghi thức nạp lại năng lượng.';
+
+  @override
+  String get habitsLibraryDisciplineTitle => 'Kỷ luật';
+
+  @override
+  String get habitsLibraryDisciplineSubtitle => 'Những cam kết có hoặc không mà bạn muốn thấy mỗi ngày.';
+
+  @override
+  String get habitsLibraryCustomizeTitle => 'Tự tùy chỉnh';
+
+  @override
+  String get habitsLibraryCustomizeDescription => 'Bắt đầu với bộ theo dõi trống khi thư viện mẫu vẫn chưa đúng ý.';
+
+  @override
+  String get habitsLibraryCustomizeAction => 'Tùy chỉnh';
+
+  @override
+  String get habitsLibraryGoalChip => 'Mục tiêu';
+
+  @override
+  String get habitsLibraryComposerChip => 'Trình nhập';
 
   @override
   String habitsStreakChip(int count) {
@@ -917,6 +1179,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveListen => 'Bật micro';
 
   @override
+  String get assistantLiveModelBadge => 'Gemini 3.1 Flash Live';
+
+  @override
   String get assistantLiveMute => 'Tắt micro';
 
   @override
@@ -924,6 +1189,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantLiveNoMessagesTitle => 'Trợ lý trực tiếp đã sẵn sàng';
+
+  @override
+  String get assistantLiveOpenMode => 'Mở chế độ trực tiếp';
 
   @override
   String get assistantLivePermissionDenied => 'Camera hoặc micro đang bị chặn. Hãy cấp quyền để dùng đầy đủ chế độ trực tiếp.';
@@ -935,6 +1203,24 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantLiveShowCamera => 'Hiện camera';
+
+  @override
+  String get assistantLiveRetryAction => 'Thử lại phiên trực tiếp';
+
+  @override
+  String get assistantLiveReturnToChat => 'Quay lại chat';
+
+  @override
+  String get assistantLiveStageAssistantReady => 'Đang chờ phản hồi tiếp theo';
+
+  @override
+  String get assistantLiveStageAssistantSpeaking => 'Đang phát phản hồi bằng giọng nói';
+
+  @override
+  String get assistantLiveStageYouListening => 'Micro của bạn đang hoạt động';
+
+  @override
+  String get assistantLiveStageYouMuted => 'Chạm vào micro để nói tiếp';
 
   @override
   String get assistantLiveStatusAvailable => 'Sẵn sàng';
@@ -970,7 +1256,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveTierRequired => 'Giọng nói trực tiếp chỉ có từ gói PLUS trở lên.';
 
   @override
+  String get assistantLiveTranscriptEmpty => 'Hãy bắt đầu nói hoặc dùng nút bàn phím bên dưới để gõ. Bản nháp trực tiếp và các lượt đã đồng bộ sẽ xuất hiện ở đây.';
+
+  @override
+  String get assistantLiveTranscriptTitle => 'Bản ghi trực tiếp';
+
+  @override
   String get assistantLiveTitle => 'Trợ lý trực tiếp';
+
+  @override
+  String get assistantLiveTypeMessage => 'Gõ';
 
   @override
   String get assistantLiveInfoAccessHeading => 'Quyền truy cập hiện tại';
@@ -1673,6 +1968,67 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailTaskRestored => 'Đã khôi phục công việc.';
 
   @override
+  String get taskBoardDetailBulkActions => 'Thao tác hàng loạt';
+
+  @override
+  String taskBoardDetailBulkAllSuccess(int count) {
+    return 'Đã cập nhật $count công việc.';
+  }
+
+  @override
+  String get taskBoardDetailBulkClearAssignees => 'Xóa tất cả người được giao';
+
+  @override
+  String get taskBoardDetailBulkClearLabels => 'Xóa tất cả nhãn';
+
+  @override
+  String get taskBoardDetailBulkClearProjects => 'Xóa tất cả dự án';
+
+  @override
+  String get taskBoardDetailBulkMarkClosed => 'Đánh dấu đã đóng';
+
+  @override
+  String get taskBoardDetailBulkMarkDone => 'Đánh dấu hoàn thành';
+
+  @override
+  String get taskBoardDetailBulkMoveToBoard => 'Chuyển sang bảng khác';
+
+  @override
+  String taskBoardDetailBulkPartialSuccess(int success, int failed) {
+    return 'Đã cập nhật $success công việc, $failed thất bại.';
+  }
+
+  @override
+  String get taskBoardDetailEnterBulkSelect => 'Chọn công việc';
+
+  @override
+  String get taskBoardDetailExitBulkSelect => 'Bỏ chọn';
+
+  @override
+  String get taskBoardDetailNoTasksSelected => 'Chưa chọn công việc nào';
+
+  @override
+  String get taskBoardDetailNextWeek => 'tuần sau';
+
+  @override
+  String get taskBoardDetailQuickActions => 'Thao tác nhanh';
+
+  @override
+  String get taskBoardDetailProperties => 'Thuộc tính';
+
+  @override
+  String get taskBoardDetailMove => 'Di chuyển';
+
+  @override
+  String get taskBoardDetailSetDueDate => 'Đặt ngày hết hạn';
+
+  @override
+  String get taskBoardDetailSetEstimation => 'Đặt điểm ước lượng';
+
+  @override
+  String get taskBoardDetailPriorityNone => 'Không ưu tiên';
+
+  @override
   String get taskBoardDetailRecycleBin => 'Thùng rác';
 
   @override
@@ -1741,6 +2097,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailNoMoveTargets => 'Không có danh sách khác để di chuyển công việc này.';
+
+  @override
+  String get taskBoardDetailRemoveDueDate => 'Xóa ngày hết hạn';
+
+  @override
+  String get taskBoardDetailSelectAllFiltered => 'Chọn hiển thị';
+
+  @override
+  String get taskBoardDetailSetCustomDate => 'Đặt ngày tùy chỉnh';
+
+  @override
+  String get taskBoardDetailThisWeek => 'tuần này';
 
   @override
   String get taskBoardDetailBoardActions => 'Thao tác bảng';
@@ -4159,6 +4527,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerRequestsThresholdUpdated => 'Đã cập nhật ngưỡng yêu cầu.';
 
   @override
+  String get timerRequestsOpenFailed => 'Không thể mở yêu cầu này lúc này.';
+
+  @override
   String get timerRequestRevertToApproved => 'Hoàn tác về Đã duyệt';
 
   @override
@@ -4581,13 +4952,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsMobileVersions => 'Phiên bản di động';
 
   @override
-  String get settingsMobileVersionsTileDescription => 'Quản lý phiên bản hiệu lực và tối thiểu mà ứng dụng di động sẽ áp dụng.';
+  String get settingsMobileVersionsTileDescription => 'Quản lý phiên bản hiệu lực, tối thiểu và cờ triển khai OTP cho ứng dụng di động.';
 
   @override
   String get settingsMobileVersionsTitle => 'Phiên bản di động';
 
   @override
-  String get settingsMobileVersionsPageDescription => 'Quản lý phiên bản hiệu lực và tối thiểu mà ứng dụng di động sẽ áp dụng trước khi người dùng có thể tiếp tục.';
+  String get settingsMobileVersionsPageDescription => 'Quản lý phiên bản hiệu lực và tối thiểu mà ứng dụng di động sẽ áp dụng trước khi người dùng có thể tiếp tục, cùng với cờ triển khai OTP cho di động và web.';
 
   @override
   String get settingsMobileVersionsIosTitle => 'iOS';
@@ -4600,6 +4971,21 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsMobileVersionsAndroidDescription => 'Đặt ngưỡng Play Store và lời nhắc cập nhật cho người dùng Android.';
+
+  @override
+  String get settingsMobileVersionsOtpEnabled => 'Bật đăng nhập OTP';
+
+  @override
+  String get settingsMobileVersionsIosOtpDescription => 'Cho phép đăng nhập ứng dụng iOS bằng mã xác thực email.';
+
+  @override
+  String get settingsMobileVersionsAndroidOtpDescription => 'Cho phép đăng nhập ứng dụng Android bằng mã xác thực email.';
+
+  @override
+  String get settingsMobileVersionsWebOtpTitle => 'OTP Web';
+
+  @override
+  String get settingsMobileVersionsWebOtpDescription => 'Cho phép trang đăng nhập web marketing dùng đăng nhập bằng mã xác thực email.';
 
   @override
   String get settingsMobileVersionsEffectiveVersion => 'Phiên bản hiệu lực';
@@ -4962,7 +5348,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get notificationsInviteActionError => 'Không thể cập nhật lời mời lúc này';
 
   @override
-  String get notificationsOpenAction => 'Mở công việc';
+  String get notificationsOpenTaskAction => 'Mở công việc';
+
+  @override
+  String get notificationsOpenRequestAction => 'Mở yêu cầu';
 
   @override
   String get notificationsOpenUnsupported => 'Thông báo này chưa thể mở trên mobile';
@@ -5225,4 +5614,249 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsWorkspaceRolesSaved => 'Đã lưu vai trò.';
+
+  @override
+  String get settingsWorkspaceSecretsTitle => 'Bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsSubtitle => 'Quản lý bí mật của không gian làm việc và lộ trình lưu trữ.';
+
+  @override
+  String get settingsWorkspaceSecretsAccessDeniedTitle => 'Cần quyền truy cập';
+
+  @override
+  String get settingsWorkspaceSecretsAccessDeniedDescription => 'Bạn cần quyền quản lý bí mật không gian làm việc trong không gian nội bộ để mở trang này.';
+
+  @override
+  String get settingsWorkspaceSecretsWorkspaceRequiredTitle => 'Cần chọn không gian làm việc';
+
+  @override
+  String get settingsWorkspaceSecretsWorkspaceRequiredDescription => 'Hãy chọn một không gian làm việc trước khi mở trang quản lý bí mật.';
+
+  @override
+  String settingsWorkspaceSecretsPageDescription(String workspaceName) {
+    return 'Quản lý bí mật và lộ trình lưu trữ cho $workspaceName.';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsTotalSecrets => 'Tất cả bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsVisibleSecrets => 'Đang hiển thị';
+
+  @override
+  String get settingsWorkspaceSecretsActiveBackend => 'Backend đang dùng';
+
+  @override
+  String get settingsWorkspaceSecretsCreate => 'Tạo bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsRolloutTitle => 'Lộ trình lưu trữ';
+
+  @override
+  String get settingsWorkspaceSecretsRolloutDescription => 'Kiểm tra backend Drive hiện tại, xác nhận các bí mật nhà cung cấp cần thiết và di chuyển tệp giữa các backend khi cần.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecrets => 'Bí mật nhà cung cấp';
+
+  @override
+  String get settingsWorkspaceSecretsZipAutomation => 'Tự động giải nén ZIP';
+
+  @override
+  String get settingsWorkspaceSecretsStateEnabled => 'Đã bật';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractBlocked => 'Thiếu bí mật proxy';
+
+  @override
+  String get settingsWorkspaceSecretsStateDisabled => 'Đã tắt';
+
+  @override
+  String get settingsWorkspaceSecretsSelected => 'Đang chọn';
+
+  @override
+  String get settingsWorkspaceSecretsRecommended => 'Khuyến nghị';
+
+  @override
+  String get settingsWorkspaceSecretsObjects => 'Đối tượng';
+
+  @override
+  String get settingsWorkspaceSecretsInventory => 'Dung lượng';
+
+  @override
+  String get settingsWorkspaceSecretsUnavailable => 'Không khả dụng';
+
+  @override
+  String get settingsWorkspaceSecretsReadyMessage => 'Backend này đã sẵn sàng nhận tệp Drive.';
+
+  @override
+  String get settingsWorkspaceSecretsMissingMessage => 'Hãy thêm các bí mật cần thiết trước khi chuyển luồng Drive sang đây.';
+
+  @override
+  String get settingsWorkspaceSecretsMigrating => 'Đang di chuyển...';
+
+  @override
+  String settingsWorkspaceSecretsCopyInto(String provider) {
+    return 'Sao chép vào $provider';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractTitle => 'Tự động giải nén';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractDescription => 'Theo dõi việc tự động giải nén ZIP đã bật chưa và bí mật proxy đã sẵn sàng hay chưa.';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractSwitch => 'Công tắc';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractProxyUrl => 'URL proxy';
+
+  @override
+  String get settingsWorkspaceSecretsAutoExtractProxyToken => 'Token dùng chung';
+
+  @override
+  String get settingsWorkspaceSecretsStatePresent => 'Đã có';
+
+  @override
+  String get settingsWorkspaceSecretsStateMissing => 'Thiếu';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecretsTitle => 'Bí mật nhà cung cấp';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSecretsDescription => 'Chỉnh sửa các bí mật xác định nhà cung cấp lưu trữ Drive của không gian làm việc này.';
+
+  @override
+  String get settingsWorkspaceSecretsProxySecretsTitle => 'Bí mật proxy ZIP';
+
+  @override
+  String get settingsWorkspaceSecretsProxySecretsDescription => 'Cấu hình các bí mật tùy chọn dùng cho proxy giải nén ZIP.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveStorageProviderDescription => 'Chọn backend Drive cho không gian làm việc này. Dùng \"supabase\" cho đường dẫn hiện tại hoặc \"r2\" để chuyển Drive sang Cloudflare R2.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2BucketDescription => 'Tên bucket Cloudflare R2 dùng cho các đối tượng Drive khi nhà cung cấp là \"r2\".';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2EndpointDescription => 'Endpoint R2 tương thích S3, ví dụ https://<account-id>.r2.cloudflarestorage.com.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2AccessKeyIdDescription => 'Access key ID của token Cloudflare R2 dùng bởi adapter Drive phía máy chủ.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveR2SecretAccessKeyDescription => 'Secret access key của token Cloudflare R2 dùng bởi adapter Drive phía máy chủ.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractZipDescription => 'Bật tự động giải nén ZIP sau khi tải lên. Mặc định là tắt.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyUrlDescription => 'URL HTTPS của proxy giải nén ZIP tự lưu trữ. Chỉ dùng khi bật tự động giải nén.';
+
+  @override
+  String get settingsWorkspaceSecretsDriveAutoExtractProxyTokenDescription => 'Bearer token dùng chung để xác thực yêu cầu tới proxy giải nén ZIP.';
+
+  @override
+  String get settingsWorkspaceSecretsNoValue => 'Chưa có giá trị';
+
+  @override
+  String get settingsWorkspaceSecretsConfigured => 'Đã cấu hình';
+
+  @override
+  String get settingsWorkspaceSecretsMissing => 'Thiếu';
+
+  @override
+  String get settingsWorkspaceSecretsRequired => 'Bắt buộc';
+
+  @override
+  String get settingsWorkspaceSecretsOptional => 'Tùy chọn';
+
+  @override
+  String get settingsWorkspaceSecretsAdd => 'Thêm';
+
+  @override
+  String get settingsWorkspaceSecretsListTitle => 'Danh sách bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsListDescription => 'Tìm kiếm, sửa và xóa bí mật của không gian làm việc. Giá trị boolean có thể bật tắt trực tiếp.';
+
+  @override
+  String get settingsWorkspaceSecretsSearchPlaceholder => 'Tìm bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsEmptyTitle => 'Không tìm thấy bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsEmptyDescription => 'Tạo một bí mật mới hoặc thay đổi từ khóa tìm kiếm để xem mục phù hợp.';
+
+  @override
+  String get settingsWorkspaceSecretsEdit => 'Sửa';
+
+  @override
+  String get settingsWorkspaceSecretsDeleteTitle => 'Xóa';
+
+  @override
+  String settingsWorkspaceSecretsDeleteMessage(String name) {
+    return 'Xóa $name?';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsDeleteSuccess => 'Đã xóa bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsNameField => 'Tên';
+
+  @override
+  String get settingsWorkspaceSecretsNamePlaceholder => 'SECRET_NAME';
+
+  @override
+  String get settingsWorkspaceSecretsValueField => 'Giá trị';
+
+  @override
+  String get settingsWorkspaceSecretsValuePlaceholder => 'Giá trị bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsEditorDescription => 'Cập nhật tên và giá trị bí mật được dùng trong không gian làm việc này.';
+
+  @override
+  String get settingsWorkspaceSecretsSaving => 'Đang lưu...';
+
+  @override
+  String get settingsWorkspaceSecretsSave => 'Lưu bí mật';
+
+  @override
+  String get settingsWorkspaceSecretsNameRequired => 'Hãy nhập tên bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsValueRequired => 'Hãy nhập giá trị bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsSaveSuccess => 'Đã lưu bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsSaveError => 'Không thể lưu bí mật.';
+
+  @override
+  String get settingsWorkspaceSecretsLoadError => 'Không thể tải bí mật của không gian làm việc.';
+
+  @override
+  String settingsWorkspaceSecretsMigrationSuccess(int filesCopied, String provider) {
+    return 'Đã sao chép $filesCopied tệp vào $provider.';
+  }
+
+  @override
+  String get settingsWorkspaceSecretsMigrationError => 'Không thể di chuyển lưu trữ của không gian làm việc.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSupabaseTitle => 'Supabase';
+
+  @override
+  String get settingsWorkspaceSecretsProviderSupabaseDescription => 'Backend lưu trữ Drive tích hợp sẵn hiện tại.';
+
+  @override
+  String get settingsWorkspaceSecretsProviderR2Title => 'Cloudflare R2';
+
+  @override
+  String get settingsWorkspaceSecretsProviderR2Description => 'Backend tương thích S3 cho lưu trữ Drive bên ngoài.';
 }

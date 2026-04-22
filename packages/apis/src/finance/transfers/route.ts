@@ -3,8 +3,14 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import {
+  canReassignFinanceWallet,
+  canUseRequestedFinanceWalletOnCreate,
+} from '@tuturuuu/utils/finance';
+import {
   getPermissions,
+  getWorkspaceConfig,
   normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -184,6 +190,57 @@ export async function PUT(req: Request, { params }: Params) {
     return NextResponse.json(
       { message: 'Transfer not found' },
       { status: 404 }
+    );
+  }
+
+  const { data: existingTransferTransactions, error: existingTransferError } =
+    await sbAdmin
+      .from('wallet_transactions')
+      .select('id, wallet_id')
+      .in('id', pairTransactionIds);
+
+  if (
+    existingTransferError ||
+    !existingTransferTransactions ||
+    existingTransferTransactions.length !== 2
+  ) {
+    return NextResponse.json(
+      { message: 'Transfer transactions not found' },
+      { status: 404 }
+    );
+  }
+
+  const existingOriginTransaction = existingTransferTransactions.find(
+    (transaction) => transaction.id === data.origin_transaction_id
+  );
+  const existingDestinationTransaction = existingTransferTransactions.find(
+    (transaction) => transaction.id === data.destination_transaction_id
+  );
+
+  if (!existingOriginTransaction || !existingDestinationTransaction) {
+    return NextResponse.json(
+      { message: 'Transfer transactions not found' },
+      { status: 404 }
+    );
+  }
+
+  if (
+    !canReassignFinanceWallet({
+      permissions,
+      currentWalletId: existingOriginTransaction.wallet_id,
+      requestedWalletId: data.origin_wallet_id,
+    }) ||
+    !canReassignFinanceWallet({
+      permissions,
+      currentWalletId: existingDestinationTransaction.wallet_id,
+      requestedWalletId: data.destination_wallet_id,
+    })
+  ) {
+    return NextResponse.json(
+      {
+        message: 'Insufficient permissions to change wallets for transfers',
+      },
+      { status: 403 }
     );
   }
 
@@ -379,6 +436,11 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
+  const defaultWalletId = await getWorkspaceConfig(
+    normalizedWsId,
+    'default_wallet_id'
+  );
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -397,14 +459,13 @@ export async function POST(req: Request, { params }: Params) {
 
   if (!wsUser?.virtual_user_id) {
     // Auto-repair link if missing
-    const { data: membership } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .eq('ws_id', normalizedWsId)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json(
         { message: 'User is not a member of this workspace' },
         { status: 403 }
@@ -451,6 +512,22 @@ export async function POST(req: Request, { params }: Params) {
     typeof data.taken_at === 'string'
       ? new Date(data.taken_at).toISOString()
       : data.taken_at.toISOString();
+
+  if (
+    !canUseRequestedFinanceWalletOnCreate({
+      permissions,
+      defaultWalletId,
+      requestedWalletId: data.origin_wallet_id,
+    })
+  ) {
+    return NextResponse.json(
+      {
+        message:
+          'Insufficient permissions to override the default wallet for new transactions',
+      },
+      { status: 403 }
+    );
+  }
 
   // Validate both wallets belong to this workspace
   const { data: wallets, error: walletsErr } = await sbAdmin

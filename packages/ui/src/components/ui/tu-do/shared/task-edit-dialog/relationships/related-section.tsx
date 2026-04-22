@@ -29,11 +29,11 @@ export function RelatedSection({
   }, [taskId, relatedTasks]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       {/* Related tasks list */}
       {relatedTasks.length > 0 && (
-        <ScrollArea className="max-h-[150px]">
-          <div className="space-y-1">
+        <ScrollArea className="h-[150px]">
+          <div className="space-y-1 pr-2">
             {relatedTasks.map((task) => (
               <ClickableTaskItem
                 key={task.id}

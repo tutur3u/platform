@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TablesUpdate } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { z } from 'zod';
@@ -60,14 +61,20 @@ export async function GET(
     }
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (!memberCheck) {
+    if (memberCheck.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }
@@ -273,15 +280,20 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify workspace access
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (!memberCheck) {
+    if (memberCheck.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }
@@ -458,15 +470,20 @@ export async function DELETE(
       return NextResponse.json({ error: 'Invalid link ID' }, { status: 400 });
     }
 
-    // Verify workspace access
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (!memberCheck) {
+    if (memberCheck.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }

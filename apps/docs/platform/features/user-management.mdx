@@ -2,3 +2,35 @@
 title: 'User Management'
 description: 'A central place to manage users, groups, and information about them.'
 ---
+
+## Post Email Delivery Recovery
+
+The post email queue now treats provider-accepted delivery as durable once it is written to `email_audit`. The `sent_emails` table is still the primary history surface for the product UI, but queue retries must not resend a post email just because the follow-up `sent_emails` insert or `user_group_post_checks.email_id` link failed.
+
+### Recovery Rules
+
+- `email_audit` is created before a send and updated to `sent` immediately after provider success.
+- Batch processing checks both `sent_emails` and matching `email_audit` entries for the same post-recipient pair before sending.
+- If an audit record proves the email was already sent, the worker marks the queue row as `sent` and backfills `sent_emails` opportunistically instead of resending.
+- If provider delivery succeeds but local `sent_emails` persistence fails, the queue row still transitions to `sent` with a warning in `last_error` so the system does not retry the message.
+
+### Claiming Strategy
+
+- The queue worker should only claim rows that it can start in the current processing slice.
+- Avoid front-claiming the whole `sendLimit`; stranded `processing` rows interact badly with stale cleanup and can create duplicate delivery attempts after requeue.
+
+## Attendance Exports
+
+The workspace attendance page now supports exporting attendance for everyone across a selected date range.
+
+### Behavior
+
+- The export is inclusive: records on both the start date and end date are included.
+- Exports are workspace-wide and include all recorded attendance rows across groups in the selected period.
+- The UI builds the file client-side, but the data source remains the authenticated internal API route at `/api/v1/workspaces/:wsId/users/attendance/export`.
+
+### Implementation Notes
+
+- Keep range filtering on the persisted `user_group_attendance.date` string values with `gte(startDate)` and `lte(endDate)` to avoid timezone drift.
+- Page the API response for large exports instead of assuming a single Supabase page will return every matching row.
+- Excel and CSV generation should stay in the client so the page can reuse localized column labels and progress feedback.

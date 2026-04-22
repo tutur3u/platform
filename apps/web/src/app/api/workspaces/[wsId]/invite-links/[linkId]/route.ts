@@ -1,6 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import * as z from 'zod';
+import { normalizeInviteLinkDetails } from '@/lib/workspace-invite-links';
 
 interface Params {
   params: Promise<{
@@ -12,6 +14,7 @@ interface Params {
 const UpdateInviteLinkSchema = z.object({
   maxUses: z.number().int().positive().optional().nullable(),
   expiresAt: z.string().datetime().optional().nullable(),
+  memberType: z.enum(['MEMBER', 'GUEST']).optional(),
 });
 
 // GET - Get invite link details including users who joined via this link
@@ -28,15 +31,20 @@ export async function GET(req: Request, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify user is a member of the workspace
-    const { data: member } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const member = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (!member) {
+    if (member.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!member.ok) {
       return NextResponse.json(
         { error: 'You are not a member of this workspace' },
         { status: 403 }
@@ -82,10 +90,10 @@ export async function GET(req: Request, { params }: Params) {
     }
 
     return NextResponse.json(
-      {
+      normalizeInviteLinkDetails({
         ...inviteLink,
         uses: uses || [],
-      },
+      }),
       { status: 200 }
     );
   } catch (error) {
@@ -112,14 +120,20 @@ export async function PATCH(req: Request, { params }: Params) {
     }
 
     // Verify user is a member of the workspace
-    const { data: member } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const member = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (!member) {
+    if (member.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!member.ok) {
       return NextResponse.json(
         { error: 'You are not a member of this workspace' },
         { status: 403 }
@@ -186,7 +200,7 @@ export async function PATCH(req: Request, { params }: Params) {
       );
     }
 
-    const { maxUses, expiresAt } = validation.data;
+    const { maxUses, expiresAt, memberType } = validation.data;
 
     // Update the invite link using user-scoped client (RLS enforced)
     const { data: updatedLink, error: updateError } = await supabase
@@ -194,6 +208,7 @@ export async function PATCH(req: Request, { params }: Params) {
       .update({
         max_uses: maxUses,
         expires_at: expiresAt,
+        ...(memberType !== undefined ? { type: memberType } : {}),
       })
       .eq('id', linkId)
       .select()
@@ -231,15 +246,20 @@ export async function DELETE(req: Request, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify user is a member of the workspace
-    const { data: member } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const member = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (!member) {
+    if (member.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!member.ok) {
       return NextResponse.json(
         { error: 'You are not a member of this workspace' },
         { status: 403 }

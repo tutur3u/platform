@@ -17,6 +17,7 @@ import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_live_audio_player.dart';
 import 'package:mobile/features/assistant/data/assistant_live_camera_service.dart';
+import 'package:mobile/features/assistant/data/assistant_live_config.dart';
 import 'package:mobile/features/assistant/data/assistant_live_recorder.dart';
 import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
@@ -30,6 +31,7 @@ import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
 import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
@@ -83,7 +85,7 @@ class _AssistantPageState extends State<AssistantPage> {
     onSoulRefreshRequested: _shellCubit.refreshSoul,
     onImmersiveModeChanged: _shellCubit.setImmersiveMode,
     onChatRestored: (modelId) async {
-      if (modelId == null) {
+      if (modelId == null || assistantLiveModelMatches(modelId)) {
         return;
       }
       final current = _shellCubit.state.availableModels.where(
@@ -228,6 +230,10 @@ class _AssistantPageState extends State<AssistantPage> {
                             .select<AssistantChromeCubit, bool>(
                               (cubit) => cubit.state.isFullscreen,
                             );
+                        final isLiveMode = context
+                            .select<AssistantChromeCubit, bool>(
+                              (cubit) => cubit.state.isLiveMode,
+                            );
                         final liveCameraController =
                             _liveCubit.cameraController;
                         final isVisibleLiveSession = _isVisibleLiveSession(
@@ -242,6 +248,8 @@ class _AssistantPageState extends State<AssistantPage> {
                             MediaQuery.viewInsetsOf(context).bottom > 0;
                         final hasLiveAccess = _hasLiveAccess(shellState);
                         final isPersonalWorkspace = currentWorkspace.personal;
+                        const scrollDismissBehavior =
+                            ScrollViewKeyboardDismissBehavior.onDrag;
                         final scrollToBottomLabel =
                             context.l10n.assistantScrollToBottomAction;
                         final scrollToBottomFab = _AssistantScrollToBottomFab(
@@ -264,16 +272,19 @@ class _AssistantPageState extends State<AssistantPage> {
                           isVisibleLiveSession: isVisibleLiveSession,
                           showBlockedReason: false,
                         );
-                        final showLiveStrip = liveUiState.showExpandedStageCard;
+                        final showLiveStrip =
+                            !isLiveMode && liveUiState.showExpandedStageCard;
                         _maybeResetEmptyStateScroll(
                           workspaceId: currentWorkspace.id,
                           chatId: chatState.chat?.id ?? chatState.storedChatId,
                           hasTranscript: hasTranscript,
-                          showLiveStrip: showLiveStrip,
+                          showLiveStrip: showLiveStrip || isLiveMode,
                         );
-                        _syncComposerVisibilityForBuild(
-                          keyboardVisible: keyboardVisible,
-                        );
+                        if (!isLiveMode) {
+                          _syncComposerVisibilityForBuild(
+                            keyboardVisible: keyboardVisible,
+                          );
+                        }
 
                         return shad.Scaffold(
                           resizeToAvoidBottomInset: false,
@@ -289,260 +300,266 @@ class _AssistantPageState extends State<AssistantPage> {
                                 onTap: _dismissKeyboard,
                                 child: Stack(
                                   children: [
-                                    Stack(
-                                      children: [
-                                        CustomScrollView(
-                                          controller: _scrollController,
-                                          keyboardDismissBehavior:
-                                              ScrollViewKeyboardDismissBehavior
-                                                  .onDrag,
-                                          physics: _assistantScrollPhysics,
-                                          slivers: [
-                                            SliverPadding(
-                                              padding: EdgeInsets.fromLTRB(
-                                                _horizontalPadding(context),
-                                                12,
-                                                _horizontalPadding(context),
-                                                _composerReservedSpace(
-                                                  context,
-                                                  isFullscreen: isFullscreen,
-                                                  hasAttachments: chatState
-                                                      .composerAttachments
-                                                      .isNotEmpty,
-                                                  isComposerVisible:
-                                                      _isComposerVisible,
+                                    if (isLiveMode)
+                                      _buildLiveModeView(
+                                        currentWorkspace.id,
+                                        chatState,
+                                        liveState,
+                                        liveUiState,
+                                        shellState,
+                                        liveCameraController,
+                                      )
+                                    else ...[
+                                      Stack(
+                                        children: [
+                                          CustomScrollView(
+                                            controller: _scrollController,
+                                            keyboardDismissBehavior:
+                                                scrollDismissBehavior,
+                                            physics: _assistantScrollPhysics,
+                                            slivers: [
+                                              SliverPadding(
+                                                padding: EdgeInsets.fromLTRB(
+                                                  _horizontalPadding(context),
+                                                  12,
+                                                  _horizontalPadding(context),
+                                                  _composerReservedSpace(
+                                                    context,
+                                                    isFullscreen: isFullscreen,
+                                                    hasAttachments: chatState
+                                                        .composerAttachments
+                                                        .isNotEmpty,
+                                                    isComposerVisible:
+                                                        _isComposerVisible,
+                                                  ),
                                                 ),
-                                              ),
-                                              sliver: SliverList.list(
-                                                children: [
-                                                  if (showLiveStrip) ...[
-                                                    _buildLiveStageCard(
-                                                      currentWorkspace.id,
-                                                      chatState,
-                                                      liveState,
-                                                      liveCameraController,
-                                                    ),
-                                                    const SizedBox(height: 12),
+                                                sliver: SliverList.list(
+                                                  children: [
+                                                    if (showLiveStrip) ...[
+                                                      _buildLiveStageCard(
+                                                        currentWorkspace.id,
+                                                        chatState,
+                                                        liveState,
+                                                        liveCameraController,
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 12,
+                                                      ),
+                                                    ],
+                                                    if (hasTranscript)
+                                                      _buildTranscriptSection(
+                                                        chatState,
+                                                        liveState,
+                                                        shellState,
+                                                      )
+                                                    else
+                                                      AssistantStarterPrompts(
+                                                        onPromptSelected:
+                                                            _applyStarterPrompt,
+                                                        replayToken:
+                                                            widget.replayToken,
+                                                      ),
                                                   ],
-                                                  if (hasTranscript)
-                                                    _buildTranscriptSection(
-                                                      chatState,
-                                                      liveState,
-                                                      shellState,
-                                                    )
-                                                  else
-                                                    AssistantStarterPrompts(
-                                                      onPromptSelected:
-                                                          _applyStarterPrompt,
-                                                      replayToken:
-                                                          widget.replayToken,
-                                                    ),
-                                                ],
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        if (chatState.status ==
-                                            AssistantChatStatus.restoring)
-                                          Positioned.fill(
-                                            child: AbsorbPointer(
-                                              child: ColoredBox(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .surface
-                                                    .withValues(alpha: 0.72),
-                                                child: const Center(
-                                                  child: NovaLoadingIndicator(),
+                                            ],
+                                          ),
+                                          if (chatState.status ==
+                                              AssistantChatStatus.restoring)
+                                            Positioned.fill(
+                                              child: AbsorbPointer(
+                                                child: ColoredBox(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .surface
+                                                      .withValues(alpha: 0.72),
+                                                  child: const Center(
+                                                    child:
+                                                        NovaLoadingIndicator(),
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                      ],
-                                    ),
-                                    Positioned(
-                                      left: 0,
-                                      right: 0,
-                                      bottom: 0,
-                                      child: IgnorePointer(
-                                        ignoring: !_isComposerVisible,
-                                        child: AnimatedSlide(
-                                          duration: const Duration(
-                                            milliseconds: 180,
-                                          ),
-                                          curve: Curves.easeOutCubic,
-                                          offset: _isComposerVisible
-                                              ? Offset.zero
-                                              : const Offset(0, 1),
-                                          child: AnimatedOpacity(
-                                            duration: const Duration(
-                                              milliseconds: 160,
-                                            ),
-                                            curve: Curves.easeOutCubic,
-                                            opacity: _isComposerVisible ? 1 : 0,
-                                            child: StaggeredEntrance(
-                                              replayKey:
-                                                  'assistant-composer-'
-                                                  '${currentWorkspace.id}-'
-                                                  '${widget.replayToken}',
-                                              delay: const Duration(
-                                                milliseconds: 220,
-                                              ),
-                                              offset: const Offset(0, 0.12),
-                                              child: AssistantComposerDock(
-                                                chatState: chatState,
-                                                liveState: liveState,
-                                                liveUiState: liveUiState,
-                                                creditSource:
-                                                    shellState.creditSource,
-                                                isFullscreen: isFullscreen,
-                                                bottomInset: isFullscreen
-                                                    ? MediaQuery.paddingOf(
-                                                        context,
-                                                      ).bottom
-                                                    : 0,
-                                                isPersonalWorkspace:
-                                                    isPersonalWorkspace,
-                                                thinkingMode:
-                                                    shellState.thinkingMode,
-                                                onOpenCreditSourceSheet: () =>
-                                                    _showCreditSourceSheet(
-                                                      context,
-                                                      shellState: shellState,
-                                                      isPersonalWorkspace:
-                                                          isPersonalWorkspace,
-                                                    ),
-                                                onThinkingModeChanged:
-                                                    _shellCubit.setThinkingMode,
-                                                controller: _inputController,
-                                                focusNode: _inputFocusNode,
-                                                onOpenAttachments: () =>
-                                                    _showAttachmentSheet(
-                                                      context,
-                                                      currentWorkspace.id,
-                                                    ),
-                                                onToggleFullscreen: () =>
-                                                    _toggleFullscreen(
-                                                      !isFullscreen,
-                                                    ),
-                                                onMicrophoneTap: () =>
-                                                    _handleMicrophoneTap(
-                                                      currentWorkspace.id,
-                                                      shellState,
-                                                      chatState,
-                                                      liveState,
-                                                    ),
-                                                onSend: () => _handleSend(
-                                                  currentWorkspace.id,
-                                                  shellState,
-                                                  chatState,
-                                                  liveState,
-                                                ),
-                                                onRemoveAttachment:
-                                                    removeComposerAttachment,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
+                                        ],
                                       ),
-                                    ),
-                                    Positioned(
-                                      right:
-                                          _assistantFabSideOffset +
-                                          MediaQuery.paddingOf(context).right,
-                                      bottom:
-                                          _assistantFabBottomOffset +
-                                          (isFullscreen
-                                              ? MediaQuery.paddingOf(
-                                                  context,
-                                                ).bottom
-                                              : 0),
-                                      child: IgnorePointer(
-                                        ignoring: _isComposerVisible,
-                                        child: AnimatedSlide(
-                                          duration: const Duration(
-                                            milliseconds: 180,
-                                          ),
-                                          curve: Curves.easeOutCubic,
-                                          offset: _isComposerVisible
-                                              ? const Offset(0, 1)
-                                              : Offset.zero,
-                                          child: AnimatedOpacity(
-                                            duration: const Duration(
-                                              milliseconds: 160,
-                                            ),
-                                            curve: Curves.easeOutCubic,
-                                            opacity: _isComposerVisible ? 0 : 1,
-                                            child: _AssistantComposerFab(
-                                              label: context
-                                                  .l10n
-                                                  .assistantAskPlaceholder,
-                                              onPressed:
-                                                  _restoreComposerAndFocus,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    if (hasTranscript)
                                       Positioned(
                                         left: 0,
                                         right: 0,
+                                        bottom: 0,
+                                        child: IgnorePointer(
+                                          ignoring: !_isComposerVisible,
+                                          child: AnimatedSlide(
+                                            duration: const Duration(
+                                              milliseconds: 180,
+                                            ),
+                                            curve: Curves.easeOutCubic,
+                                            offset: _isComposerVisible
+                                                ? Offset.zero
+                                                : const Offset(0, 1),
+                                            child: AnimatedOpacity(
+                                              duration: const Duration(
+                                                milliseconds: 160,
+                                              ),
+                                              curve: Curves.easeOutCubic,
+                                              opacity: _isComposerVisible
+                                                  ? 1
+                                                  : 0,
+                                              child: StaggeredEntrance(
+                                                replayKey:
+                                                    'assistant-composer-'
+                                                    '${currentWorkspace.id}-'
+                                                    '${widget.replayToken}',
+                                                delay: const Duration(
+                                                  milliseconds: 220,
+                                                ),
+                                                offset: const Offset(0, 0.12),
+                                                child: AssistantComposerDock(
+                                                  chatState: chatState,
+                                                  liveState: liveState,
+                                                  liveUiState: liveUiState,
+                                                  creditSource:
+                                                      shellState.creditSource,
+                                                  isFullscreen: isFullscreen,
+                                                  bottomInset: isFullscreen
+                                                      ? MediaQuery.paddingOf(
+                                                          context,
+                                                        ).bottom
+                                                      : 0,
+                                                  isPersonalWorkspace:
+                                                      isPersonalWorkspace,
+                                                  thinkingMode:
+                                                      shellState.thinkingMode,
+                                                  onOpenCreditSourceSheet: () =>
+                                                      _showCreditSourceSheet(
+                                                        context,
+                                                        shellState: shellState,
+                                                        isPersonalWorkspace:
+                                                            isPersonalWorkspace,
+                                                      ),
+                                                  onThinkingModeChanged:
+                                                      _shellCubit
+                                                          .setThinkingMode,
+                                                  controller: _inputController,
+                                                  focusNode: _inputFocusNode,
+                                                  onOpenAttachments: () =>
+                                                      _showAttachmentSheet(
+                                                        context,
+                                                        currentWorkspace.id,
+                                                      ),
+                                                  onToggleFullscreen: () =>
+                                                      _toggleFullscreen(
+                                                        !isFullscreen,
+                                                      ),
+                                                  onMicrophoneTap: () =>
+                                                      _handleMicrophoneTap(
+                                                        currentWorkspace.id,
+                                                        shellState,
+                                                        chatState,
+                                                        liveState,
+                                                      ),
+                                                  onSend: () => _handleSend(
+                                                    currentWorkspace.id,
+                                                    shellState,
+                                                    chatState,
+                                                    liveState,
+                                                  ),
+                                                  onRemoveAttachment:
+                                                      removeComposerAttachment,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        right:
+                                            _assistantFabSideOffset +
+                                            MediaQuery.paddingOf(context).right,
                                         bottom:
-                                            (_isComposerVisible ? 112 : 16) +
+                                            _assistantFabBottomOffset +
                                             (isFullscreen
                                                 ? MediaQuery.paddingOf(
                                                     context,
                                                   ).bottom
                                                 : 0),
                                         child: IgnorePointer(
-                                          ignoring: !_showScrollToBottomFab,
-                                          child: Center(
-                                            child: AnimatedSlide(
+                                          ignoring: _isComposerVisible,
+                                          child: AnimatedSlide(
+                                            duration: const Duration(
+                                              milliseconds: 180,
+                                            ),
+                                            curve: Curves.easeOutCubic,
+                                            offset: _isComposerVisible
+                                                ? const Offset(0, 1)
+                                                : Offset.zero,
+                                            child: AnimatedOpacity(
                                               duration: const Duration(
-                                                milliseconds: 180,
+                                                milliseconds: 160,
                                               ),
                                               curve: Curves.easeOutCubic,
-                                              offset: _showScrollToBottomFab
-                                                  ? Offset.zero
-                                                  : const Offset(0, 1),
-                                              child: AnimatedOpacity(
-                                                duration: const Duration(
-                                                  milliseconds: 160,
-                                                ),
-                                                curve: Curves.easeOutCubic,
-                                                opacity: _showScrollToBottomFab
-                                                    ? 1
-                                                    : 0,
-                                                child: scrollToBottomFab,
+                                              opacity: _isComposerVisible
+                                                  ? 0
+                                                  : 1,
+                                              child: _AssistantComposerFab(
+                                                label: context
+                                                    .l10n
+                                                    .assistantAskPlaceholder,
+                                                onPressed:
+                                                    _restoreComposerAndFocus,
                                               ),
                                             ),
                                           ),
                                         ),
                                       ),
+                                      if (hasTranscript)
+                                        Positioned(
+                                          left: 0,
+                                          right: 0,
+                                          bottom:
+                                              (_isComposerVisible ? 112 : 16) +
+                                              (isFullscreen
+                                                  ? MediaQuery.paddingOf(
+                                                      context,
+                                                    ).bottom
+                                                  : 0),
+                                          child: IgnorePointer(
+                                            ignoring: !_showScrollToBottomFab,
+                                            child: Center(
+                                              child: AnimatedSlide(
+                                                duration: const Duration(
+                                                  milliseconds: 180,
+                                                ),
+                                                curve: Curves.easeOutCubic,
+                                                offset: _showScrollToBottomFab
+                                                    ? Offset.zero
+                                                    : const Offset(0, 1),
+                                                child: AnimatedOpacity(
+                                                  duration: const Duration(
+                                                    milliseconds: 160,
+                                                  ),
+                                                  curve: Curves.easeOutCubic,
+                                                  opacity:
+                                                      _showScrollToBottomFab
+                                                      ? 1
+                                                      : 0,
+                                                  child: scrollToBottomFab,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                     ShellChromeActions(
                                       ownerId: 'assistant-root',
                                       locations: const {Routes.assistant},
-                                      actions: [
-                                        ShellActionSpec(
-                                          id: 'assistant-history',
-                                          icon: Icons.history_rounded,
-                                          callbackToken:
-                                              '${identityHashCode(this)}:'
-                                              '${currentWorkspace.id}:'
-                                              '${widget.replayToken}',
-                                          tooltip: context
-                                              .l10n
-                                              .assistantHistoryTitle,
-                                          onPressed: () {
-                                            unawaited(
-                                              _showHistorySheet(
-                                                context,
-                                                currentWorkspace.id,
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ],
+                                      actions: _buildChromeActions(
+                                        context,
+                                        wsId: currentWorkspace.id,
+                                        shellState: shellState,
+                                        chatState: chatState,
+                                        liveState: liveState,
+                                        isLiveMode: isLiveMode,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -573,6 +590,9 @@ class _AssistantPageState extends State<AssistantPage> {
     _isComposerVisible = false;
     _showScrollToBottomFab = false;
     _composerVisibilityAnchorOffset = null;
+    if (mounted) {
+      context.read<AssistantChromeCubit>().exitLiveMode();
+    }
     unawaited(_liveCubit.disconnect());
     unawaited(_shellCubit.loadWorkspace(workspace));
     _shellCubit.setImmersiveMode(false);
@@ -998,6 +1018,33 @@ class _AssistantPageState extends State<AssistantPage> {
     );
   }
 
+  Widget _buildLiveModeView(
+    String wsId,
+    AssistantChatState chatState,
+    AssistantLiveState liveState,
+    AssistantLiveUiState liveUiState,
+    AssistantShellState shellState,
+    CameraController? liveCameraController,
+  ) {
+    return AssistantLiveModeView(
+      chatState: chatState,
+      liveState: liveState,
+      liveUiState: liveUiState,
+      assistantName: shellState.soul.name,
+      cameraController: liveCameraController,
+      scrollController: _scrollController,
+      onClose: _exitLiveMode,
+      onRetry: () => _handleLiveRetry(wsId, chatState),
+      onToggleMicrophone: () => _handleLiveMicrophoneToggle(wsId, chatState),
+      onToggleCamera: _liveCubit.toggleCamera,
+      onDisconnect: () async {
+        await _liveCubit.disconnect(clearSession: true);
+        await _exitLiveMode();
+      },
+      onOpenTextEntry: _openChatComposerFromLiveMode,
+    );
+  }
+
   Widget _buildLiveStageCard(
     String wsId,
     AssistantChatState chatState,
@@ -1007,6 +1054,11 @@ class _AssistantPageState extends State<AssistantPage> {
     return AssistantLiveStageCard(
       liveState: liveState,
       cameraController: liveCameraController,
+      onOpenLiveMode: () => _enterLiveMode(
+        wsId: wsId,
+        activeChatId: chatState.chat?.id ?? chatState.storedChatId,
+        autoStartMicrophone: false,
+      ),
       onRetry: () => _handleLiveRetry(wsId, chatState),
       onDisconnect: () => _liveCubit.disconnect(clearSession: true),
       onCameraToggle: _liveCubit.toggleCamera,
@@ -1035,18 +1087,11 @@ class _AssistantPageState extends State<AssistantPage> {
       return;
     }
 
-    final activeChatId = chatState.chat?.id ?? chatState.storedChatId;
-    final isVisibleLiveSession = _isVisibleLiveSession(chatState, liveState);
-
-    if (!isVisibleLiveSession || liveState.status.isDisconnectedOrErrored) {
-      await _liveCubit.prepareSession(wsId: wsId, chatId: activeChatId);
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    await _liveCubit.toggleMicrophone();
+    await _enterLiveMode(
+      wsId: wsId,
+      activeChatId: chatState.chat?.id ?? chatState.storedChatId,
+      autoStartMicrophone: true,
+    );
   }
 
   Future<void> _showLiveInfoSheet(
@@ -1073,6 +1118,120 @@ class _AssistantPageState extends State<AssistantPage> {
       chatId: chatState.chat?.id ?? chatState.storedChatId,
       reconnect: _liveCubit.state.chatId != null,
     );
+  }
+
+  Future<void> _handleLiveMicrophoneToggle(
+    String wsId,
+    AssistantChatState chatState,
+  ) async {
+    if (_liveCubit.state.isMicrophoneActive) {
+      await _liveCubit.toggleMicrophone();
+      return;
+    }
+    await _enterLiveMode(
+      wsId: wsId,
+      activeChatId: chatState.chat?.id ?? chatState.storedChatId,
+      autoStartMicrophone: true,
+    );
+  }
+
+  Future<void> _enterLiveMode({
+    required String wsId,
+    required String? activeChatId,
+    required bool autoStartMicrophone,
+  }) async {
+    _dismissKeyboard();
+    context.read<AssistantChromeCubit>().enterLiveMode();
+
+    final liveState = _liveCubit.state;
+    final isVisibleLiveSession = _isVisibleLiveSession(
+      _chatCubit.state,
+      liveState,
+    );
+    if (!isVisibleLiveSession || liveState.status.isDisconnectedOrErrored) {
+      await _liveCubit.prepareSession(
+        wsId: wsId,
+        chatId: activeChatId,
+        model: assistantLiveModelId,
+      );
+    }
+
+    if (!mounted ||
+        _liveCubit.state.status == AssistantLiveConnectionStatus.error ||
+        !autoStartMicrophone) {
+      return;
+    }
+
+    if (!_liveCubit.state.isMicrophoneActive) {
+      await _liveCubit.toggleMicrophone();
+    }
+  }
+
+  Future<void> _exitLiveMode() async {
+    if (_liveCubit.state.isMicrophoneActive) {
+      await _liveCubit.toggleMicrophone();
+    }
+    if (_liveCubit.state.isCameraActive) {
+      await _liveCubit.toggleCamera();
+    }
+    if (!mounted) {
+      return;
+    }
+    context.read<AssistantChromeCubit>().exitLiveMode();
+  }
+
+  Future<void> _openChatComposerFromLiveMode() async {
+    await _exitLiveMode();
+    if (!mounted) {
+      return;
+    }
+    _restoreComposerAndFocus();
+  }
+
+  List<ShellActionSpec> _buildChromeActions(
+    BuildContext context, {
+    required String wsId,
+    required AssistantShellState shellState,
+    required AssistantChatState chatState,
+    required AssistantLiveState liveState,
+    required bool isLiveMode,
+  }) {
+    final actions = <ShellActionSpec>[
+      ShellActionSpec(
+        id: 'assistant-live-mode',
+        icon: isLiveMode
+            ? Icons.hearing_disabled_rounded
+            : Icons.graphic_eq_rounded,
+        callbackToken:
+            '${identityHashCode(this)}:live:$wsId:${liveState.status.name}',
+        tooltip: isLiveMode
+            ? context.l10n.assistantLiveReturnToChat
+            : context.l10n.assistantLiveConnect,
+        highlighted: isLiveMode,
+        onPressed: () {
+          unawaited(
+            isLiveMode
+                ? _exitLiveMode()
+                : _handleMicrophoneTap(wsId, shellState, chatState, liveState),
+          );
+        },
+      ),
+    ];
+    if (!isLiveMode) {
+      actions.add(
+        ShellActionSpec(
+          id: 'assistant-history',
+          icon: Icons.history_rounded,
+          callbackToken:
+              '${identityHashCode(this)}:$wsId:${widget.replayToken}',
+          tooltip: context.l10n.assistantHistoryTitle,
+          onPressed: () {
+            unawaited(_showHistorySheet(context, wsId));
+          },
+        ),
+      );
+    }
+    return actions;
   }
 
   bool _hasLiveAccess(AssistantShellState shellState) {

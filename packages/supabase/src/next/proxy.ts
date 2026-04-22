@@ -2,8 +2,14 @@ import { createServerClient } from '@supabase/ssr';
 import type { Database } from '@tuturuuu/types';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import {
+  getMalformedSupabaseAuthCookieNames,
+  sanitizeSupabaseAuthCookies,
+} from './auth-cookie-sanitizer';
 import { checkEnvVariables } from './common';
 import type { SupabaseJwtPayload } from './user';
+
+export { getMalformedSupabaseAuthCookieNames };
 
 export async function updateSession(request: NextRequest): Promise<{
   res: NextResponse;
@@ -18,7 +24,14 @@ export async function updateSession(request: NextRequest): Promise<{
     const supabase = createServerClient<Database>(url, key, {
       cookies: {
         getAll() {
-          return request.cookies.getAll();
+          return sanitizeSupabaseAuthCookies(
+            request.cookies.getAll(),
+            url,
+            (name, options) => {
+              request.cookies.set(name, '');
+              supabaseResponse.cookies.set(name, '', options);
+            }
+          );
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => {

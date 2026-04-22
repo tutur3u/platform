@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Copy, Link2, Plus, Trash2, Users2 } from '@tuturuuu/icons';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -24,44 +23,26 @@ import {
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
-
-interface User {
-  id: string;
-  display_name: string | null;
-  avatar_url: string | null;
-  handle: string | null;
-}
-
-interface InviteLinkUse {
-  id: string;
-  user_id: string;
-  joined_at: string;
-  users: User;
-}
-
-interface InviteLink {
-  id: string;
-  ws_id: string;
-  code: string;
-  creator_id: string;
-  max_uses: number | null;
-  expires_at: string | null;
-  created_at: string;
-  current_uses: number;
-  is_expired: boolean;
-  is_full: boolean;
-}
-
-interface InviteLinkDetails extends InviteLink {
-  uses?: InviteLinkUse[];
-}
+import {
+  type InviteLinkDetails,
+  type InviteLinkSummary,
+  mapInviteLinkRowFromApi,
+  normalizeInviteLinkDetails,
+} from '@/lib/workspace-invite-links';
+import { InviteLinkMembersDialog } from './invite-link-members-dialog';
 
 interface Props {
   wsId: string;
@@ -71,11 +52,13 @@ interface Props {
 const CreateLinkSchema = z.object({
   maxUses: z.coerce.number().int().positive().optional().nullable(),
   expiresAt: z.string().optional().nullable(),
+  memberType: z.enum(['MEMBER', 'GUEST']),
 });
 
 export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
   const router = useRouter();
   const t = useTranslations();
+  const tMembers = useTranslations('ws-members');
   const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
@@ -89,32 +72,47 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
     defaultValues: {
       maxUses: null,
       expiresAt: null,
+      memberType: 'MEMBER' as const,
     },
   });
 
   // Fetch links with useQuery
-  const { data: links = [], isLoading: loading } = useQuery<InviteLink[]>({
+  const { data: links = [], isLoading: loading } = useQuery<
+    InviteLinkSummary[]
+  >({
     queryKey: ['workspace', wsId, 'invite-links'],
     queryFn: async () => {
-      const res = await fetch(`/api/workspaces/${wsId}/invite-links`);
+      const res = await fetch(`/api/workspaces/${wsId}/invite-links`, {
+        cache: 'no-store',
+      });
       if (!res.ok) throw new Error('Failed to fetch invite links');
-      return res.json();
+      const raw = (await res.json()) as Record<string, unknown>[];
+      return Array.isArray(raw)
+        ? raw.map((row) => mapInviteLinkRowFromApi(row))
+        : [];
     },
   });
 
   // Fetch link details with useQuery
-  const { data: viewingLink, isLoading: loadingDetails } =
-    useQuery<InviteLinkDetails>({
-      queryKey: ['workspace', wsId, 'invite-links', viewingLinkId],
-      queryFn: async () => {
-        const res = await fetch(
-          `/api/workspaces/${wsId}/invite-links/${viewingLinkId}`
-        );
-        if (!res.ok) throw new Error('Failed to fetch invite link details');
-        return res.json();
-      },
-      enabled: !!viewingLinkId && viewDialogOpen,
-    });
+  const {
+    data: viewingLink,
+    isLoading: loadingDetails,
+    isError: isViewingLinkError,
+    refetch: refetchViewingLink,
+  } = useQuery<InviteLinkDetails>({
+    queryKey: ['workspace', wsId, 'invite-links', viewingLinkId],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/workspaces/${wsId}/invite-links/${viewingLinkId}`,
+        {
+          cache: 'no-store',
+        }
+      );
+      if (!res.ok) throw new Error('Failed to fetch invite link details');
+      return normalizeInviteLinkDetails(await res.json());
+    },
+    enabled: !!viewingLinkId && viewDialogOpen,
+  });
 
   // Create mutation
   const createMutation = useMutation({
@@ -127,6 +125,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
           expiresAt: values.expiresAt
             ? new Date(values.expiresAt).toISOString()
             : null,
+          memberType: values.memberType,
         }),
       });
 
@@ -223,7 +222,14 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
     setViewDialogOpen(true);
   };
 
-  const getStatusBadge = (link: InviteLink) => {
+  const handleViewDialogOpenChange = (open: boolean) => {
+    setViewDialogOpen(open);
+    if (!open) {
+      setViewingLinkId(null);
+    }
+  };
+
+  const getStatusBadge = (link: InviteLinkSummary) => {
     if (link.is_expired) {
       return (
         <span className="rounded-full bg-dynamic-red/10 px-2 py-1 font-medium text-dynamic-red text-xs">
@@ -287,6 +293,40 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
                     onSubmit={form.handleSubmit(handleCreateLink)}
                     className="space-y-4"
                   >
+                    <FormField
+                      control={form.control}
+                      name="memberType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            {tMembers('invite_membership_label')}
+                          </FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="MEMBER">
+                                {tMembers('invite_membership_member')}
+                              </SelectItem>
+                              <SelectItem value="GUEST">
+                                {tMembers('invite_membership_guest')}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            {t('ws-invite-links.membership-type-description')}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                     <FormField
                       control={form.control}
                       name="maxUses"
@@ -386,24 +426,37 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
                 {/* Header with status */}
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {getStatusBadge(link)}
+                      <span
+                        className={`rounded-full px-2 py-1 font-medium text-xs ${
+                          link.memberType === 'GUEST'
+                            ? 'bg-dynamic-orange/10 text-dynamic-orange'
+                            : 'bg-dynamic-blue/10 text-dynamic-blue'
+                        }`}
+                      >
+                        {link.memberType === 'GUEST'
+                          ? t('ws-invite-links.membership-short-guest')
+                          : t('ws-invite-links.membership-short-member')}
+                      </span>
                     </div>
                   </div>
 
                   {/* Action buttons */}
                   <div className="flex items-center gap-1">
-                    {link.current_uses > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openLinkDetails(link.id)}
-                        title={t('ws-invite-links.view-users')}
-                        className="h-8 w-8 p-0 hover:bg-dynamic-blue/10"
-                      >
-                        <Users2 className="h-4 w-4 text-dynamic-blue" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openLinkDetails(link.id)}
+                      title={t('ws-invite-links.view-users')}
+                      aria-label={t('ws-invite-links.view-users')}
+                      className="h-8 gap-1 rounded-full px-2 hover:bg-dynamic-blue/10"
+                    >
+                      <Users2 className="h-4 w-4 text-dynamic-blue" />
+                      <span className="font-medium text-xs">
+                        {link.current_uses}
+                      </span>
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -496,141 +549,16 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
         </div>
       )}
 
-      {/* View Users Dialog - Enhanced */}
-      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-blue to-dynamic-purple">
-                <Users2 className="h-4 w-4 text-background" />
-              </div>
-              {t('ws-invite-links.users-joined-title')}
-            </DialogTitle>
-            <DialogDescription>
-              {t('ws-invite-links.users-joined-description')}
-            </DialogDescription>
-          </DialogHeader>
-
-          {loadingDetails ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex flex-col items-center gap-3">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-foreground/20 border-t-foreground" />
-                <p className="text-foreground/60 text-sm">
-                  {t('common.loading')}
-                </p>
-              </div>
-            </div>
-          ) : viewingLink ? (
-            <div className="space-y-6">
-              {/* Link Info Card */}
-              <div className="rounded-xl border border-border bg-linear-to-br from-foreground/[0.02] to-foreground/[0.05] p-5">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-1">
-                    <p className="text-foreground/60 text-xs uppercase tracking-wide">
-                      {t('ws-invite-links.link-code')}
-                    </p>
-                    <code className="block rounded-md bg-background px-3 py-2 font-mono text-sm shadow-sm">
-                      {viewingLink.code}
-                    </code>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-foreground/60 text-xs uppercase tracking-wide">
-                      {t('ws-invite-links.total-uses')}
-                    </p>
-                    <p className="rounded-md bg-background px-3 py-2 font-medium text-sm shadow-sm">
-                      {viewingLink.current_uses}
-                      {viewingLink.max_uses
-                        ? `/${viewingLink.max_uses}`
-                        : ' / ∞'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Users List */}
-              {viewingLink.uses && viewingLink.uses.length > 0 ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-foreground text-sm">
-                      {t('ws-invite-links.members-joined')}
-                    </h4>
-                    <span className="rounded-full bg-dynamic-blue/10 px-3 py-1 font-medium text-dynamic-blue text-xs">
-                      {viewingLink.uses.length}{' '}
-                      {viewingLink.uses.length === 1 ? 'member' : 'members'}
-                    </span>
-                  </div>
-                  <ScrollArea className="h-[350px] rounded-xl border border-border">
-                    <div className="divide-y divide-border">
-                      {viewingLink.uses.map((use) => (
-                        <div
-                          key={use.id}
-                          className="group flex items-center justify-between p-4 transition-colors hover:bg-foreground/5"
-                        >
-                          <div className="flex items-center gap-4">
-                            <Avatar className="h-11 w-11 ring-2 ring-border ring-offset-2 ring-offset-background transition-all group-hover:ring-dynamic-blue/30">
-                              <AvatarImage
-                                src={use.users.avatar_url || undefined}
-                                alt={
-                                  use.users.display_name ||
-                                  use.users.handle ||
-                                  'User'
-                                }
-                              />
-                              <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-background">
-                                {(
-                                  use.users.display_name ||
-                                  use.users.handle ||
-                                  'U'
-                                )
-                                  .charAt(0)
-                                  .toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="space-y-0.5">
-                              <p className="font-medium text-foreground text-sm">
-                                {use.users.display_name ||
-                                  use.users.handle ||
-                                  'Unknown User'}
-                              </p>
-                              {use.users.handle && use.users.display_name && (
-                                <p className="text-foreground/60 text-xs">
-                                  @{use.users.handle}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium text-foreground text-sm">
-                              {moment(use.joined_at).fromNow()}
-                            </p>
-                            <p className="text-foreground/50 text-xs">
-                              {moment(use.joined_at).format(
-                                'MMM D, YYYY • h:mm A'
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </div>
-              ) : (
-                <div className="rounded-xl border border-foreground/20 border-dashed bg-foreground/[0.02] p-12 text-center">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-dynamic-purple/10 to-dynamic-blue/10">
-                    <Users2 className="h-8 w-8 text-foreground/40" />
-                  </div>
-                  <h4 className="mb-2 font-semibold text-base text-foreground">
-                    No members yet
-                  </h4>
-                  <p className="text-foreground/60 text-sm">
-                    {t('ws-invite-links.no-users-joined')}
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+      <InviteLinkMembersDialog
+        open={viewDialogOpen}
+        onOpenChange={handleViewDialogOpenChange}
+        inviteLink={viewingLink}
+        isLoading={loadingDetails}
+        isError={isViewingLinkError}
+        onRetry={() => {
+          void refetchViewingLink();
+        }}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog

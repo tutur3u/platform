@@ -3,7 +3,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -60,22 +63,21 @@ export async function PATCH(
     }
 
     // Verify user has access to workspace
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (membershipError) {
-      console.error('Membership lookup failed:', membershipError);
+    if (membership.error === 'membership_lookup_failed') {
+      console.error('Membership lookup failed:', membership.error);
       return NextResponse.json(
         { error: 'Internal Server Error' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -211,22 +213,21 @@ export async function DELETE(
     }
 
     // Verify user has access to workspace
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (membershipError) {
-      console.error('Membership lookup failed:', membershipError);
+    if (membership.error === 'membership_lookup_failed') {
+      console.error('Membership lookup failed:', membership.error);
       return NextResponse.json(
         { error: 'Internal Server Error' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

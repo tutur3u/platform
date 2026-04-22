@@ -263,6 +263,7 @@ export default function GroupMemberActions({
             <DialogDescription>
               {t('ws-user-group-details.select_and_submit', {
                 groupActionLabel: activeAction ? actionLabel(activeAction) : '',
+                groupName: t('ws-user-group-details.current_group_name'),
               })}
             </DialogDescription>
           </DialogHeader>

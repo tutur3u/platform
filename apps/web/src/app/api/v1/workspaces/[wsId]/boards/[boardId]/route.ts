@@ -1,5 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -19,13 +22,12 @@ async function verifyWorkspaceAccess(
   wsId: string,
   userId: string
 ) {
-  const { data } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', userId)
-    .single();
-  return !!data;
+  const member = await verifyWorkspaceMembershipType({
+    wsId,
+    userId,
+    supabase,
+  });
+  return member.ok;
 }
 
 // DELETE handler for permanent deletion

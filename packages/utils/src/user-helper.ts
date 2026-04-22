@@ -7,6 +7,7 @@ import type { User, UserPrivateDetails } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 
 import { resolveWorkspaceId } from './constants';
+import { verifyWorkspaceMembershipType } from './workspace-helper';
 
 export async function getCurrentSupabaseUser() {
   const supabase = await createClient();
@@ -82,16 +83,14 @@ export async function getCurrentWorkspaceUser(
   // If not found and auto-repair is disabled, return null
   if (!autoRepair) return null;
 
-  // Auto-repair: Check if user is a workspace member first
-  const { data: membership } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('user_id', user.id)
-    .eq('ws_id', resolvedWsId)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: resolvedWsId,
+    userId: user.id,
+    supabase,
+    requiredType: 'MEMBER',
+  });
 
-  // Not a member, can't create a link
-  if (!membership) return null;
+  if (!membership.ok) return null;
 
   // Try to repair the missing link using the RPC function
   try {

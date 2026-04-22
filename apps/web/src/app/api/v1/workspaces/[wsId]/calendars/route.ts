@@ -11,6 +11,7 @@ import {
   MAX_SEARCH_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
@@ -84,15 +85,14 @@ async function authorizeWorkspaceRequest(
     };
   }
 
-  const { data: membership, error: membershipError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', normalizedWsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: normalizedWsId,
+    userId: user.id,
+    supabase: supabase,
+  });
 
-  if (membershipError) {
-    console.error('Workspace membership lookup failed:', membershipError);
+  if (membership.error === 'membership_lookup_failed') {
+    console.error('Workspace membership lookup failed:', membership.error);
     return {
       context: null,
       response: NextResponse.json(
@@ -102,7 +102,7 @@ async function authorizeWorkspaceRequest(
     };
   }
 
-  if (!membership) {
+  if (!membership.ok) {
     return {
       context: null,
       response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),

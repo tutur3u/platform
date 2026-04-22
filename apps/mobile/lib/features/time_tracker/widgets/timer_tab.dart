@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, TextButton, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
@@ -102,6 +103,7 @@ class _TimerTabState extends State<TimerTab> {
                   key: const shad.FormKey<String>(#sessionTitle),
                   label: Text(l10n.timerSessionTitle),
                   child: shad.TextField(
+                    contextMenuBuilder: platformTextContextMenuBuilder(),
                     onChanged: cubit.setTitle,
                   ),
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
@@ -95,6 +96,7 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
                 Text(context.l10n.taskLabelsName),
                 const shad.Gap(4),
                 shad.TextField(
+                  contextMenuBuilder: platformTextContextMenuBuilder(),
                   controller: _nameController,
                   hintText: context.l10n.taskLabelsName,
                   autofocus: true,
@@ -131,6 +133,7 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
                     const shad.Gap(8),
                     Expanded(
                       child: shad.TextField(
+                        contextMenuBuilder: platformTextContextMenuBuilder(),
                         controller: _colorController,
                         hintText: kDefaultTaskLabelColor,
                         onChanged: (_) {

@@ -120,6 +120,7 @@ class _NotificationsViewState extends State<NotificationsView> {
           itemBuilder: (notification) => _NotificationTile(
             notification: notification,
             isPending: state.isPending(notification.id),
+            openLabel: _openActionLabel(context, notification),
             onToggleRead: () => unawaited(
               context.read<NotificationsCubit>().toggleRead(
                 notification,
@@ -288,9 +289,47 @@ class _NotificationsViewState extends State<NotificationsView> {
   }
 
   bool _canOpenNotification(AppNotification notification) {
-    return notification.entityType == 'task' &&
-        (notification.entityId?.isNotEmpty ?? false) &&
-        (notification.boardId?.isNotEmpty ?? false);
+    final entityId = notification.entityId;
+    if (entityId == null || entityId.isEmpty) {
+      return false;
+    }
+
+    return switch (notification.entityType) {
+      'task' => notification.boardId?.isNotEmpty ?? false,
+      'time_tracking_request' => true,
+      _ => false,
+    };
+  }
+
+  String? _openActionLabel(
+    BuildContext context,
+    AppNotification notification,
+  ) {
+    return switch (notification.entityType) {
+      'task' => context.l10n.notificationsOpenTaskAction,
+      'time_tracking_request' => context.l10n.notificationsOpenRequestAction,
+      _ => null,
+    };
+  }
+
+  String? _routeForNotification(AppNotification notification) {
+    final entityId = notification.entityId;
+    if (entityId == null || entityId.isEmpty) {
+      return null;
+    }
+
+    return switch (notification.entityType) {
+      'task' =>
+        notification.boardId == null || notification.boardId!.isEmpty
+            ? null
+            : '${Routes.taskBoardDetailPath(notification.boardId!)}'
+                  '?taskId=$entityId',
+      'time_tracking_request' => Routes.timerRequestsPath(
+        requestId: entityId,
+        status: 'all',
+      ),
+      _ => null,
+    };
   }
 
   Future<void> _archiveAll(BuildContext context) async {
@@ -357,9 +396,8 @@ class _NotificationsViewState extends State<NotificationsView> {
     BuildContext context,
     AppNotification notification,
   ) async {
-    final entityId = notification.entityId;
-    final boardId = notification.boardId;
-    if (entityId == null || boardId == null) {
+    final route = _routeForNotification(notification);
+    if (route == null) {
       return;
     }
 
@@ -388,9 +426,7 @@ class _NotificationsViewState extends State<NotificationsView> {
       return;
     }
 
-    widget.parentContext.go(
-      '${Routes.taskBoardDetailPath(boardId)}?taskId=$entityId',
-    );
+    widget.parentContext.go(route);
   }
 
   void _showToast(
@@ -672,6 +708,7 @@ class _NotificationTile extends StatelessWidget {
   const _NotificationTile({
     required this.notification,
     required this.isPending,
+    required this.openLabel,
     required this.onToggleRead,
     this.onAcceptInvite,
     this.onDeclineInvite,
@@ -680,6 +717,7 @@ class _NotificationTile extends StatelessWidget {
 
   final AppNotification notification;
   final bool isPending;
+  final String? openLabel;
   final VoidCallback onToggleRead;
   final VoidCallback? onAcceptInvite;
   final VoidCallback? onDeclineInvite;
@@ -788,10 +826,10 @@ class _NotificationTile extends StatelessWidget {
                           ),
                         ],
                       ),
-                    ] else if (onOpen != null) ...[
+                    ] else if (onOpen != null && openLabel != null) ...[
                       const shad.Gap(8),
                       Text(
-                        context.l10n.notificationsOpenAction,
+                        openLabel!,
                         style: theme.typography.xSmall.copyWith(
                           color: colorScheme.primary,
                           fontWeight: FontWeight.w700,

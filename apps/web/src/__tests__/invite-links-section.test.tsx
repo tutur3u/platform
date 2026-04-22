@@ -9,7 +9,8 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
+  useTranslations: (namespace?: string) => (key: string) =>
+    namespace ? `${namespace}.${key}` : key,
 }));
 
 vi.mock('@tuturuuu/ui/sonner', () => ({
@@ -33,11 +34,13 @@ describe('InviteLinksSection', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (global as any).fetch = vi.fn();
+    globalThis.fetch = vi.fn() as unknown as typeof fetch;
   });
 
   it('renders loading initially', () => {
-    (global as any).fetch = vi.fn(() => new Promise(() => {}));
+    globalThis.fetch = vi.fn(
+      () => new Promise(() => {})
+    ) as unknown as typeof fetch;
     render(<InviteLinksSection wsId={wsId} canManageMembers={true} />, {
       wrapper: createWrapper(),
     });
@@ -57,10 +60,11 @@ describe('InviteLinksSection', () => {
         current_uses: 2,
         is_expired: false,
         is_full: false,
+        type: 'MEMBER',
       },
     ];
 
-    (global as any).fetch = vi.fn().mockImplementation((url: string) => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/invite-links')) {
         return Promise.resolve({
           ok: true,
@@ -68,7 +72,7 @@ describe('InviteLinksSection', () => {
         });
       }
       return Promise.reject(new Error('Unknown URL'));
-    });
+    }) as unknown as typeof fetch;
 
     render(<InviteLinksSection wsId={wsId} canManageMembers={true} />, {
       wrapper: createWrapper(),
@@ -79,12 +83,12 @@ describe('InviteLinksSection', () => {
   });
 
   it('renders empty state when no links', async () => {
-    (global as any).fetch = vi.fn().mockImplementation(() =>
+    globalThis.fetch = vi.fn().mockImplementation(() =>
       Promise.resolve({
         ok: true,
         json: async () => [],
       })
-    );
+    ) as unknown as typeof fetch;
 
     render(<InviteLinksSection wsId={wsId} canManageMembers={true} />, {
       wrapper: createWrapper(),

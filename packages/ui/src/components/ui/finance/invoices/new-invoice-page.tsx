@@ -22,9 +22,15 @@ import { SubscriptionInvoice } from './subscription-invoice';
 
 interface Props {
   wsId: string;
+  canChangeFinanceWallets?: boolean;
+  canSetFinanceWalletsOnCreate?: boolean;
 }
 
-export default function NewInvoicePage({ wsId }: Props) {
+export default function NewInvoicePage({
+  wsId,
+  canChangeFinanceWallets = true,
+  canSetFinanceWalletsOnCreate = true,
+}: Props) {
   const t = useTranslations();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -182,6 +188,8 @@ export default function NewInvoicePage({ wsId }: Props) {
             wsId={wsId}
             defaultWalletId={defaultWalletId ?? undefined}
             defaultCurrency={defaultCurrency ?? undefined}
+            canChangeFinanceWallets={canChangeFinanceWallets}
+            canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
             createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}
             downloadImageAfterCreate={downloadImageAfterCreate}
@@ -194,6 +202,8 @@ export default function NewInvoicePage({ wsId }: Props) {
             defaultWalletId={defaultWalletId ?? undefined}
             defaultCategoryId={defaultCategoryId ?? undefined}
             defaultCurrency={defaultCurrency ?? undefined}
+            canChangeFinanceWallets={canChangeFinanceWallets}
+            canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
             createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}
             downloadImageAfterCreate={downloadImageAfterCreate}

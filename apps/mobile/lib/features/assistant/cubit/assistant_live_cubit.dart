@@ -9,6 +9,7 @@ import 'package:image/image.dart' as img;
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/data/assistant_live_audio_player.dart';
 import 'package:mobile/features/assistant/data/assistant_live_camera_service.dart';
+import 'package:mobile/features/assistant/data/assistant_live_config.dart';
 import 'package:mobile/features/assistant/data/assistant_live_recorder.dart';
 import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
@@ -52,6 +53,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   int _requestVersion = 0;
   bool _manualDisconnect = false;
   bool _reconnectScheduled = false;
+  Timer? _assistantSpeakingTimer;
 
   String? _currentTurnId;
   String _currentTypedInput = '';
@@ -90,7 +92,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       final envelope = await _repository.fetchLiveToken(
         wsId: wsId,
         chatId: chatId ?? state.chatId,
-        model: model ?? state.model,
+        model: model ?? state.model ?? assistantLiveModelId,
       );
       if (_isStale(requestVersion)) {
         return;
@@ -145,6 +147,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
           sessionHandle: sessionHandle,
           status: AssistantLiveConnectionStatus.connected,
           clearError: true,
+          assistantAudioLevel: 0,
+          isAssistantSpeaking: false,
         ),
       );
     } on ApiException catch (error) {
@@ -326,6 +330,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     await _stopInputs();
     await _socket.disconnect();
     await _audioPlayer.clear();
+    _clearAssistantActivity();
 
     final wsId = state.workspaceId;
     final scopeKey = state.scopeKey;
@@ -344,6 +349,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         sessionHandle: clearSession ? null : state.sessionHandle,
         isInterrupted: false,
         audioLevel: 0,
+        assistantAudioLevel: 0,
+        isAssistantSpeaking: false,
         clearError: true,
       ),
     );
@@ -359,7 +366,11 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         insightCards: const [],
       ),
     );
-    await prepareSession(wsId: wsId, forceFresh: true);
+    await prepareSession(
+      wsId: wsId,
+      model: assistantLiveModelId,
+      forceFresh: true,
+    );
   }
 
   Future<void> retry() async {
@@ -418,6 +429,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         _scheduleReconnect();
       case AssistantLiveSocketTextDelta(:final text):
         _ensureActiveTurn();
+        _markAssistantActivity(textOnly: true);
         _currentAssistantText = _mergeProgressiveText(
           _currentAssistantText,
           text,
@@ -451,11 +463,14 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
           );
         }
       case AssistantLiveSocketAudioChunk(:final bytes):
+        _markAssistantActivity(chunkBytes: bytes);
         await _audioPlayer.play(bytes);
       case AssistantLiveSocketInterrupted():
         await _audioPlayer.clear();
+        _clearAssistantActivity();
         emit(state.copyWith(isInterrupted: true));
       case AssistantLiveSocketTurnCompleted():
+        _clearAssistantActivity();
         await _finalizeTurn();
       case AssistantLiveSocketGoAway(:final timeLeft):
         emit(
@@ -693,6 +708,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         isMicrophoneActive: false,
         isCameraActive: false,
         audioLevel: 0,
+        assistantAudioLevel: 0,
+        isAssistantSpeaking: false,
       ),
     );
   }
@@ -810,6 +827,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         assistantTranscript: '',
         isInterrupted: false,
         isPersisting: false,
+        assistantAudioLevel: 0,
+        isAssistantSpeaking: false,
       ),
     );
   }
@@ -824,6 +843,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         status: AssistantLiveConnectionStatus.error,
         error: message,
         isPersisting: false,
+        assistantAudioLevel: 0,
+        isAssistantSpeaking: false,
       ),
     );
     if (!preserveDrafts) {
@@ -834,6 +855,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   @override
   Future<void> close() async {
     _manualDisconnect = true;
+    _assistantSpeakingTimer?.cancel();
     await _socketSubscription?.cancel();
     await _stopInputs();
     await _socket.disconnect();
@@ -842,5 +864,50 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     await _cameraService.dispose();
     _socket.dispose();
     return super.close();
+  }
+
+  void _markAssistantActivity({
+    Uint8List? chunkBytes,
+    bool textOnly = false,
+  }) {
+    if (isClosed) {
+      return;
+    }
+
+    _assistantSpeakingTimer?.cancel();
+    final level = textOnly
+        ? 0.22
+        : ((chunkBytes?.lengthInBytes ?? 0) / 12000).clamp(0.26, 1.0);
+    emit(
+      state.copyWith(
+        assistantAudioLevel: level,
+        isAssistantSpeaking: true,
+      ),
+    );
+    _assistantSpeakingTimer = Timer(const Duration(milliseconds: 240), () {
+      if (isClosed) {
+        return;
+      }
+      emit(
+        state.copyWith(
+          assistantAudioLevel: 0,
+          isAssistantSpeaking: false,
+        ),
+      );
+    });
+  }
+
+  void _clearAssistantActivity() {
+    _assistantSpeakingTimer?.cancel();
+    _assistantSpeakingTimer = null;
+    if (isClosed) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        assistantAudioLevel: 0,
+        isAssistantSpeaking: false,
+      ),
+    );
   }
 }

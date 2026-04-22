@@ -13,6 +13,10 @@ import { RECENT_SIDEBAR_VISIT_EVENT } from '../recent-sidebar-events';
 import { TaskDialogManager } from '../task-dialog-manager';
 import { REQUEST_OPEN_TASK_EVENT } from '../task-open-events';
 
+const { mockSearchParams } = vi.hoisted(() => ({
+  mockSearchParams: new URLSearchParams(),
+}));
+
 // Mock Next.js navigation (no longer needs useRouter/usePathname for URL manipulation)
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -24,7 +28,7 @@ vi.mock('next/navigation', () => ({
     prefetch: vi.fn(),
   }),
   usePathname: () => '/workspace-1/tasks',
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => mockSearchParams,
   useParams: () => ({ wsId: 'workspace-1' }),
 }));
 
@@ -226,6 +230,9 @@ let replaceStateSpy: ReturnType<typeof vi.spyOn>;
 const fetchMock = vi.fn();
 
 beforeEach(() => {
+  mockSearchParams.forEach((_, key) => {
+    mockSearchParams.delete(key);
+  });
   pushStateSpy = vi.spyOn(window.history, 'pushState');
   replaceStateSpy = vi.spyOn(window.history, 'replaceState');
   mockGetCurrentUserProfile.mockResolvedValue({
@@ -431,8 +438,34 @@ describe('TaskDialogManager', () => {
       expect(pushStateSpy).toHaveBeenCalledWith(
         expect.objectContaining({ __fakeTaskUrl: true }),
         '',
-        '/workspace-1/tasks/task-1'
+        '/workspace-1/tasks/boards/board-1?task=task-1'
       );
+    });
+  });
+
+  it('auto-opens the canonical task deep link from the current workspace', async () => {
+    mockSearchParams.set('task', 'task-2');
+
+    const { getByTestId } = render(
+      <Wrapper>
+        <TaskDialogManager wsId="workspace-1" />
+      </Wrapper>
+    );
+
+    await waitFor(() => {
+      expect(mockGetWorkspaceTask).toHaveBeenCalledWith(
+        'workspace-1',
+        'task-2',
+        expect.any(Object)
+      );
+    });
+
+    await waitFor(() => {
+      expect(getByTestId('task-edit-dialog')).toHaveAttribute(
+        'data-open',
+        'true'
+      );
+      expect(getByTestId('task-name')).toHaveTextContent('Related Task');
     });
   });
 
@@ -483,7 +516,7 @@ describe('TaskDialogManager', () => {
     }>;
 
     expect(event.detail).toMatchObject({
-      href: '/workspace-1/tasks/task-1',
+      href: '/workspace-1/tasks/boards/board-1?task=task-1',
       scopeWsId: 'workspace-1',
       snapshot: {
         badges: [
@@ -522,6 +555,24 @@ describe('TaskDialogManager', () => {
       expect(
         document.querySelector('[data-testid="task-name"]')
       ).toHaveTextContent('Test Task');
+    });
+  });
+
+  it('opens a task from the canonical task query parameter', async () => {
+    mockSearchParams.set('task', 'task-42');
+
+    render(
+      <Wrapper>
+        <TaskDialogManager wsId="workspace-1" />
+      </Wrapper>
+    );
+
+    await waitFor(() => {
+      expect(mockGetWorkspaceTask).toHaveBeenCalledWith(
+        'workspace-1',
+        'task-42',
+        expect.any(Object)
+      );
     });
   });
 

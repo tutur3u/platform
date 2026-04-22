@@ -1,110 +1,15 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceCourseModule } from '@tuturuuu/types';
-import { CourseModuleForm } from '@tuturuuu/ui/custom/education/modules/course-module-form';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
-import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
-import { getWorkspaceCourseModuleColumns } from './columns';
-
-export const metadata: Metadata = {
-  title: 'Course Details',
-  description:
-    'Manage Course Details in the Courses area of your Tuturuuu workspace.',
-};
-
-interface SearchParams {
-  q?: string;
-  page?: string;
-  pageSize?: string;
-  includedTags?: string | string[];
-  excludedTags?: string | string[];
-}
+import { permanentRedirect } from 'next/navigation';
 
 interface Props {
   params: Promise<{
-    wsId: string;
     courseId: string;
+    wsId: string;
   }>;
-  searchParams: Promise<SearchParams>;
 }
 
-export default async function WorkspaceCoursesPage({
+export default async function WorkspaceCourseLegacyRedirectPage({
   params,
-  searchParams,
 }: Props) {
-  const t = await getTranslations();
-  const { wsId, courseId } = await params;
-
-  const { data, count } = await getData(courseId, await searchParams);
-
-  const modules = data.map((m) => ({
-    ...m,
-    ws_id: wsId,
-    href: `/${wsId}/education/courses/${courseId}/modules/${m.id}`,
-  }));
-
-  return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-course-modules.plural')}
-        singularTitle={t('ws-course-modules.singular')}
-        description={t('ws-course-modules.description')}
-        createTitle={t('ws-course-modules.create')}
-        createDescription={t('ws-course-modules.create_description')}
-        form={<CourseModuleForm wsId={wsId} courseId={courseId} />}
-      />
-      <Separator className="my-4" />
-      <CustomDataTable
-        data={modules}
-        columnGenerator={getWorkspaceCourseModuleColumns}
-        extraData={{ wsId, courseId }}
-        namespace="course-data-table"
-        count={count}
-        defaultVisibility={{
-          id: false,
-          created_at: false,
-        }}
-      />
-    </>
-  );
-}
-
-async function getData(
-  courseId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-    retry = true,
-  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
-) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_course_modules')
-    .select('*', {
-      count: 'exact',
-    })
-    .eq('course_id', courseId)
-    .order('name');
-
-  if (q) queryBuilder.ilike('name', `%${q}%`);
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
-
-  const { data, error, count } = await queryBuilder;
-  if (error) {
-    if (!retry) throw error;
-    return getData(courseId, { q, pageSize, retry: false });
-  }
-
-  return { data, count } as { data: WorkspaceCourseModule[]; count: number };
+  const { courseId, wsId } = await params;
+  permanentRedirect(`/${wsId}/education/courses/${courseId}/builder`);
 }

@@ -45,6 +45,7 @@ import {
   UserPlus,
   Users,
   UserX,
+  Wallet,
 } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { PermissionId } from '@tuturuuu/types';
@@ -715,6 +716,24 @@ export const permissionGroups = ({
             icon: <ChartBar />,
             title: t('ws-roles.view_finance_stats'),
             description: t('ws-roles.view_finance_stats_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'set_finance_wallets_on_create',
+            icon: <Wallet />,
+            title: t('ws-roles.set_finance_wallets_on_create'),
+            description: t(
+              'ws-roles.set_finance_wallets_on_create_description'
+            ),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'change_finance_wallets',
+            icon: <CreditCard />,
+            title: t('ws-roles.change_finance_wallets'),
+            description: t('ws-roles.change_finance_wallets_description'),
             disableOnProduction: false,
             disabled: false,
           },

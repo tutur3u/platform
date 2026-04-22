@@ -2,17 +2,25 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   CanonicalExternalProject,
+  ExternalProjectAttentionItem,
+  ExternalProjectBulkUpdatePayload,
+  ExternalProjectCollection,
   ExternalProjectDeliveryCollection,
   ExternalProjectDeliveryPayload,
   ExternalProjectEntry,
+  ExternalProjectEntryStatus,
   ExternalProjectImportReport,
   ExternalProjectLoadingData,
   ExternalProjectStudioData,
+  ExternalProjectSummary,
+  ImageTransformOptions,
   Json,
   WorkspaceExternalProjectBinding,
   YoolaExternalProjectArtworkLoadingItem,
   YoolaExternalProjectLoreCapsuleLoadingItem,
+  YoolaExternalProjectSectionLoadingItem,
 } from '@tuturuuu/types';
+import { deleteWorkspaceStorageObjectByPath } from '../workspace-storage-provider';
 import { externalProjectAdapterFixtures } from './fixtures';
 
 type AdminDb = TypedSupabaseClient;
@@ -42,6 +50,35 @@ function asStringArray(value: unknown): string[] {
     : [];
 }
 
+function normalizeStringArray(value: unknown): string[] {
+  return [
+    ...new Set(
+      asStringArray(value)
+        .map((item) => item.trim())
+        .filter(Boolean)
+    ),
+  ];
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function formatAttentionDate(value: string | null) {
+  if (!value) {
+    return 'No schedule';
+  }
+
+  return new Date(value).toLocaleString('en-US', {
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    month: 'short',
+  });
+}
+
 function findMarkdownBlockMarkdown(entry: {
   blocks: Array<{
     block_type: string;
@@ -57,19 +94,64 @@ function findMarkdownBlockMarkdown(entry: {
   return asString(asJsonObject(markdownBlock?.content).markdown);
 }
 
+function findAssetCaption(
+  asset:
+    | {
+        metadata: Json;
+      }
+    | null
+    | undefined
+) {
+  return asString(asJsonObject(asset?.metadata).caption);
+}
+
 function buildDeliveryAssetUrl(
   workspaceId: string,
   asset: {
     id: string;
     source_url: string | null;
+  },
+  options?: {
+    transform?: ImageTransformOptions;
   }
 ) {
   if (asset.source_url) {
     return asset.source_url;
   }
 
-  return `/api/v1/workspaces/${workspaceId}/external-projects/assets/${asset.id}`;
+  const searchParams = new URLSearchParams();
+
+  if (options?.transform?.width !== undefined) {
+    searchParams.set('width', options.transform.width.toString());
+  }
+
+  if (options?.transform?.height !== undefined) {
+    searchParams.set('height', options.transform.height.toString());
+  }
+
+  if (options?.transform?.resize) {
+    searchParams.set('resize', options.transform.resize);
+  }
+
+  if (options?.transform?.quality !== undefined) {
+    searchParams.set('quality', options.transform.quality.toString());
+  }
+
+  if (options?.transform?.format) {
+    searchParams.set('format', options.transform.format);
+  }
+
+  const queryString = searchParams.toString();
+
+  return `/api/v1/workspaces/${workspaceId}/external-projects/assets/${asset.id}${queryString ? `?${queryString}` : ''}`;
 }
+
+const EPM_IMAGE_PREVIEW_TRANSFORM = {
+  width: 1600,
+  height: 1600,
+  quality: 82,
+  resize: 'cover',
+} satisfies ImageTransformOptions;
 
 function buildYoolaLoadingData(
   collections: ExternalProjectDeliveryCollection[]
@@ -94,6 +176,7 @@ function buildYoolaLoadingData(
       altText: leadAsset?.alt_text ?? null,
       assetId: leadAsset?.id ?? null,
       assetUrl: leadAsset?.assetUrl ?? null,
+      caption: findAssetCaption(leadAsset),
       category: asString(profile.category),
       entryId: entry.id,
       height: asNullableNumber(profile.height),
@@ -126,18 +209,38 @@ function buildYoolaLoadingData(
     return {
       artworkAssetUrl: artworkEntry?.assetUrl ?? null,
       artworkEntryId: artworkEntry?.entryId ?? null,
+      bodyMarkdown: findMarkdownBlockMarkdown(entry),
       channel: asString(profile.channel),
       date: asString(profile.date),
       entryId: entry.id,
       excerptMarkdown: findMarkdownBlockMarkdown(entry),
+      metadata: asJsonObject(entry.metadata),
+      profileData: profile,
       slug: entry.slug,
       status: asString(profile.status),
+      subtitle: entry.subtitle,
       summary: entry.summary,
       tags: asStringArray(profile.tags),
       teaser: asString(profile.teaser),
       title: entry.title,
     } satisfies YoolaExternalProjectLoreCapsuleLoadingItem;
   });
+
+  const singletonSections = Object.fromEntries(
+    (singletonCollection?.entries ?? []).map((entry) => [
+      entry.slug,
+      {
+        bodyMarkdown: findMarkdownBlockMarkdown(entry),
+        entryId: entry.id,
+        metadata: asJsonObject(entry.metadata),
+        profileData: asJsonObject(entry.profile_data),
+        slug: entry.slug,
+        subtitle: entry.subtitle,
+        summary: entry.summary,
+        title: entry.title,
+      } satisfies YoolaExternalProjectSectionLoadingItem,
+    ])
+  );
 
   const artworksByCategory = artworks.reduce<
     Record<string, YoolaExternalProjectArtworkLoadingItem[]>
@@ -147,23 +250,21 @@ function buildYoolaLoadingData(
     accumulator[category].push(artwork);
     return accumulator;
   }, {});
-
-  const singletonSections = Object.fromEntries(
-    (singletonCollection?.entries ?? []).map((entry) => [
-      entry.slug,
-      {
-        bodyMarkdown: findMarkdownBlockMarkdown(entry),
-        entryId: entry.id,
-        slug: entry.slug,
-        summary: entry.summary,
-        title: entry.title,
-      },
-    ])
+  const gallerySectionProfileData = asJsonObject(
+    singletonSections.gallery?.profileData ?? null
+  );
+  const availableArtworkCategories = new Set(
+    Object.keys(artworksByCategory).map((category) => category.toLowerCase())
+  );
+  const configuredArtworkCategories = normalizeStringArray(
+    gallerySectionProfileData.categoryOptions
+  ).filter((category) =>
+    availableArtworkCategories.has(category.toLowerCase())
   );
 
   return {
     adapter: 'yoola',
-    artworkCategories: Object.keys(artworksByCategory),
+    artworkCategories: configuredArtworkCategories,
     artworks,
     artworksByCategory,
     featuredArtwork: artworks[0] ?? null,
@@ -366,11 +467,17 @@ export async function getWorkspaceExternalProjectStudioData(
   ]);
   const assets = rawAssets.map((asset) => {
     const assetUrl = buildDeliveryAssetUrl(workspaceId, asset);
+    const previewUrl =
+      asset.asset_type === 'image'
+        ? buildDeliveryAssetUrl(workspaceId, asset, {
+            transform: EPM_IMAGE_PREVIEW_TRANSFORM,
+          })
+        : assetUrl;
 
     return {
       ...asset,
       asset_url: assetUrl,
-      preview_url: assetUrl,
+      preview_url: previewUrl,
     };
   });
   const collectionsPayload: ExternalProjectDeliveryCollection[] =
@@ -410,6 +517,192 @@ export async function getWorkspaceExternalProjectStudioData(
     ),
     publishEvents,
   };
+}
+
+function buildExternalProjectAttentionItem(
+  entry: ExternalProjectEntry,
+  collection: ExternalProjectCollection | null,
+  detail: string,
+  kind: ExternalProjectAttentionItem['kind']
+): ExternalProjectAttentionItem {
+  return {
+    collectionId: entry.collection_id,
+    collectionTitle: collection?.title ?? 'Unknown collection',
+    detail,
+    entryId: entry.id,
+    kind,
+    scheduledFor: entry.scheduled_for ?? null,
+    slug: entry.slug,
+    status: entry.status,
+    summary: entry.summary,
+    title: entry.title,
+  };
+}
+
+function buildExternalProjectSummary({
+  adapter,
+  canonicalProjectId,
+  studio,
+  workspaceId,
+}: {
+  adapter: WorkspaceExternalProjectBinding['adapter'];
+  canonicalProjectId: string | null;
+  studio: ExternalProjectStudioData;
+  workspaceId: string;
+}): ExternalProjectSummary {
+  const collectionById = new Map(
+    studio.collections.map((collection) => [collection.id, collection])
+  );
+  const now = new Date();
+  const scheduledCutoff = addDays(now, 7);
+  const latestImport = studio.importJobs[0]?.created_at ?? null;
+
+  const counts = {
+    archived: studio.entries.filter((entry) => entry.status === 'archived')
+      .length,
+    collections: studio.collections.length,
+    drafts: studio.entries.filter((entry) => entry.status === 'draft').length,
+    entries: studio.entries.length,
+    published: studio.entries.filter((entry) => entry.status === 'published')
+      .length,
+    scheduled: studio.entries.filter((entry) => entry.status === 'scheduled')
+      .length,
+  };
+
+  const collections = studio.collections.map((collection) => {
+    const collectionEntries = studio.entries.filter(
+      (entry) => entry.collection_id === collection.id
+    );
+
+    return {
+      archivedEntries: collectionEntries.filter(
+        (entry) => entry.status === 'archived'
+      ).length,
+      draftEntries: collectionEntries.filter(
+        (entry) => entry.status === 'draft'
+      ).length,
+      id: collection.id,
+      isEnabled: collection.is_enabled,
+      publishedEntries: collectionEntries.filter(
+        (entry) => entry.status === 'published'
+      ).length,
+      scheduledEntries: collectionEntries.filter(
+        (entry) => entry.status === 'scheduled'
+      ).length,
+      slug: collection.slug,
+      title: collection.title,
+      totalEntries: collectionEntries.length,
+    };
+  });
+
+  const scheduledSoon = studio.entries
+    .filter(
+      (entry) =>
+        entry.status === 'scheduled' &&
+        entry.scheduled_for &&
+        new Date(entry.scheduled_for) <= scheduledCutoff
+    )
+    .sort((a, b) =>
+      (a.scheduled_for ?? '').localeCompare(b.scheduled_for ?? '')
+    )
+    .slice(0, 6)
+    .map((entry) =>
+      buildExternalProjectAttentionItem(
+        entry,
+        collectionById.get(entry.collection_id) ?? null,
+        `Scheduled for ${formatAttentionDate(entry.scheduled_for ?? null)}`,
+        'scheduled_soon'
+      )
+    );
+
+  const draftsMissingMedia = studio.entries
+    .filter((entry) => entry.status !== 'archived')
+    .filter(
+      (entry) =>
+        !studio.assets.some(
+          (asset) => asset.entry_id === entry.id && asset.asset_type === 'image'
+        )
+    )
+    .slice(0, 6)
+    .map((entry) =>
+      buildExternalProjectAttentionItem(
+        entry,
+        collectionById.get(entry.collection_id) ?? null,
+        'Missing a primary image asset',
+        'missing_media'
+      )
+    );
+
+  const recentlyImportedUnpublished = studio.entries
+    .filter((entry) => entry.status !== 'published')
+    .filter((entry) => {
+      if (!latestImport) {
+        return false;
+      }
+
+      return new Date(entry.created_at) >= new Date(latestImport);
+    })
+    .slice(0, 6)
+    .map((entry) =>
+      buildExternalProjectAttentionItem(
+        entry,
+        collectionById.get(entry.collection_id) ?? null,
+        'Imported recently but still not published',
+        'recently_imported_unpublished'
+      )
+    );
+
+  const archivedBacklog = studio.entries
+    .filter((entry) => entry.status === 'archived')
+    .slice(0, 6)
+    .map((entry) =>
+      buildExternalProjectAttentionItem(
+        entry,
+        collectionById.get(entry.collection_id) ?? null,
+        'Archived and available for recovery or cleanup',
+        'archived_backlog'
+      )
+    );
+
+  return {
+    adapter,
+    canonicalProjectId,
+    collections,
+    counts,
+    queues: {
+      archivedBacklog,
+      draftsMissingMedia,
+      recentlyImportedUnpublished,
+      scheduledSoon,
+    },
+    recentActivity: {
+      importJobs: studio.importJobs.slice(0, 5),
+      publishEvents: studio.publishEvents.slice(0, 5),
+    },
+    workspaceId,
+  };
+}
+
+export async function getWorkspaceExternalProjectSummary(
+  {
+    adapter,
+    canonicalProjectId,
+    workspaceId,
+  }: {
+    adapter: WorkspaceExternalProjectBinding['adapter'];
+    canonicalProjectId: string | null;
+    workspaceId: string;
+  },
+  db?: AdminDb
+): Promise<ExternalProjectSummary> {
+  const studio = await getWorkspaceExternalProjectStudioData(workspaceId, db);
+
+  return buildExternalProjectSummary({
+    adapter,
+    canonicalProjectId,
+    studio,
+    workspaceId,
+  });
 }
 
 export async function createCanonicalExternalProject(
@@ -546,6 +839,113 @@ export async function updateWorkspaceExternalProjectCollection(
   return data;
 }
 
+async function deleteWorkspaceExternalProjectAssetStoragePaths(
+  admin: AdminDb,
+  workspaceId: string,
+  entryIds: string[]
+) {
+  if (entryIds.length === 0) {
+    return;
+  }
+
+  const { data: relatedAssets, error: relatedAssetsError } = await admin
+    .from('workspace_external_project_assets')
+    .select('storage_path')
+    .eq('ws_id', workspaceId)
+    .in('entry_id', entryIds);
+
+  if (relatedAssetsError) {
+    throw new Error(relatedAssetsError.message);
+  }
+
+  const storagePaths = Array.from(
+    new Set(
+      (relatedAssets ?? [])
+        .map((asset) => asset.storage_path)
+        .filter((value): value is string => typeof value === 'string')
+    )
+  );
+
+  await Promise.all(
+    storagePaths.map((storagePath) =>
+      deleteWorkspaceStorageObjectByPath(workspaceId, storagePath)
+    )
+  );
+}
+
+export async function deleteWorkspaceExternalProjectCollection(
+  collectionId: string,
+  payload: {
+    workspaceId: string;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const { workspaceId } = payload;
+
+  const { data: relatedEntries, error: relatedEntriesError } = await admin
+    .from('workspace_external_project_entries')
+    .select('id')
+    .eq('ws_id', workspaceId)
+    .eq('collection_id', collectionId);
+
+  if (relatedEntriesError) {
+    throw new Error(relatedEntriesError.message);
+  }
+
+  const relatedEntryIds = (relatedEntries ?? []).map((entry) => entry.id);
+
+  if (relatedEntryIds.length > 0) {
+    await deleteWorkspaceExternalProjectAssetStoragePaths(
+      admin,
+      workspaceId,
+      relatedEntryIds
+    );
+
+    const { error: deleteAssetsError } = await admin
+      .from('workspace_external_project_assets')
+      .delete()
+      .eq('ws_id', workspaceId)
+      .in('entry_id', relatedEntryIds);
+
+    if (deleteAssetsError) {
+      throw new Error(deleteAssetsError.message);
+    }
+
+    const { error: deleteBlocksError } = await admin
+      .from('workspace_external_project_blocks')
+      .delete()
+      .eq('ws_id', workspaceId)
+      .in('entry_id', relatedEntryIds);
+
+    if (deleteBlocksError) {
+      throw new Error(deleteBlocksError.message);
+    }
+
+    const { error: deleteEntriesError } = await admin
+      .from('workspace_external_project_entries')
+      .delete()
+      .eq('ws_id', workspaceId)
+      .eq('collection_id', collectionId);
+
+    if (deleteEntriesError) {
+      throw new Error(deleteEntriesError.message);
+    }
+  }
+
+  const { error } = await admin
+    .from('workspace_external_project_collections')
+    .delete()
+    .eq('ws_id', workspaceId)
+    .eq('id', collectionId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return { id: collectionId };
+}
+
 type UpsertBlockPayload = {
   block_type: string;
   content: Json;
@@ -616,6 +1016,7 @@ type UpsertEntryPayload = {
   collection_id: string;
   metadata: Json;
   profile_data: Json;
+  scheduled_for?: string | null;
   slug: string;
   status: ExternalProjectEntry['status'];
   subtitle?: string | null;
@@ -682,6 +1083,298 @@ export async function updateWorkspaceExternalProjectEntry(
   }
 
   return data;
+}
+
+export async function deleteWorkspaceExternalProjectEntry(
+  entryId: string,
+  payload: {
+    workspaceId: string;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const { workspaceId } = payload;
+
+  await deleteWorkspaceExternalProjectAssetStoragePaths(admin, workspaceId, [
+    entryId,
+  ]);
+
+  const { error: deleteAssetsError } = await admin
+    .from('workspace_external_project_assets')
+    .delete()
+    .eq('ws_id', workspaceId)
+    .eq('entry_id', entryId);
+
+  if (deleteAssetsError) {
+    throw new Error(deleteAssetsError.message);
+  }
+
+  const { error: deleteBlocksError } = await admin
+    .from('workspace_external_project_blocks')
+    .delete()
+    .eq('ws_id', workspaceId)
+    .eq('entry_id', entryId);
+
+  if (deleteBlocksError) {
+    throw new Error(deleteBlocksError.message);
+  }
+
+  const { error } = await admin
+    .from('workspace_external_project_entries')
+    .delete()
+    .eq('ws_id', workspaceId)
+    .eq('id', entryId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return { id: entryId };
+}
+
+async function buildDuplicateEntrySlug(
+  admin: AdminDb,
+  workspaceId: string,
+  seed: string
+) {
+  const normalizedSeed = `${seed}-copy`
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 96);
+
+  const { data, error } = await admin
+    .from('workspace_external_project_entries')
+    .select('slug')
+    .eq('ws_id', workspaceId)
+    .ilike('slug', `${normalizedSeed}%`);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const existing = new Set((data ?? []).map((entry) => entry.slug));
+  if (!existing.has(normalizedSeed)) {
+    return normalizedSeed;
+  }
+
+  let suffix = 2;
+  while (existing.has(`${normalizedSeed}-${suffix}`)) {
+    suffix += 1;
+  }
+
+  return `${normalizedSeed}-${suffix}`;
+}
+
+export async function duplicateWorkspaceExternalProjectEntry(
+  {
+    actorId,
+    entryId,
+    workspaceId,
+  }: {
+    actorId: string;
+    entryId: string;
+    workspaceId: string;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const { data: sourceEntry, error: sourceEntryError } = await admin
+    .from('workspace_external_project_entries')
+    .select('*')
+    .eq('id', entryId)
+    .eq('ws_id', workspaceId)
+    .single();
+
+  if (sourceEntryError) {
+    throw new Error(sourceEntryError.message);
+  }
+
+  const nextSlug = await buildDuplicateEntrySlug(
+    admin,
+    workspaceId,
+    sourceEntry.slug
+  );
+
+  const { data: duplicatedEntry, error: duplicateError } = await admin
+    .from('workspace_external_project_entries')
+    .insert({
+      collection_id: sourceEntry.collection_id,
+      created_by: actorId,
+      metadata: sourceEntry.metadata,
+      profile_data: sourceEntry.profile_data,
+      published_at: null,
+      scheduled_for: null,
+      slug: nextSlug,
+      status: 'draft',
+      subtitle: sourceEntry.subtitle,
+      summary: sourceEntry.summary,
+      title: `${sourceEntry.title} Copy`,
+      updated_by: actorId,
+      ws_id: workspaceId,
+    })
+    .select('*')
+    .single();
+
+  if (duplicateError) {
+    throw new Error(duplicateError.message);
+  }
+
+  const [sourceBlocks, sourceAssets] = await Promise.all([
+    listWorkspaceExternalProjectBlocksByEntryIds(workspaceId, [entryId], admin),
+    listWorkspaceExternalProjectAssetsByEntryIds(workspaceId, [entryId], admin),
+  ]);
+
+  const blockIdMap = new Map<string, string>();
+  if (sourceBlocks.length > 0) {
+    const { data: duplicatedBlocks, error: blockError } = await admin
+      .from('workspace_external_project_blocks')
+      .insert(
+        sourceBlocks.map((block) => ({
+          block_type: block.block_type,
+          content: block.content,
+          created_by: actorId,
+          entry_id: duplicatedEntry.id,
+          sort_order: block.sort_order,
+          title: block.title,
+          updated_by: actorId,
+          ws_id: workspaceId,
+        }))
+      )
+      .select('*');
+
+    if (blockError) {
+      throw new Error(blockError.message);
+    }
+
+    for (const [index, block] of sourceBlocks.entries()) {
+      const duplicatedBlock = duplicatedBlocks?.[index];
+      if (duplicatedBlock) {
+        blockIdMap.set(block.id, duplicatedBlock.id);
+      }
+    }
+  }
+
+  if (sourceAssets.length > 0) {
+    const { error: assetError } = await admin
+      .from('workspace_external_project_assets')
+      .insert(
+        sourceAssets.map((asset) => ({
+          alt_text: asset.alt_text,
+          asset_type: asset.asset_type,
+          block_id: asset.block_id
+            ? (blockIdMap.get(asset.block_id) ?? null)
+            : null,
+          created_by: actorId,
+          entry_id: duplicatedEntry.id,
+          metadata: asset.metadata,
+          sort_order: asset.sort_order,
+          source_url: asset.source_url,
+          storage_path: asset.storage_path,
+          updated_by: actorId,
+          ws_id: workspaceId,
+        }))
+      );
+
+    if (assetError) {
+      throw new Error(assetError.message);
+    }
+  }
+
+  return duplicatedEntry;
+}
+
+export async function bulkUpdateWorkspaceExternalProjectEntries(
+  {
+    actorId,
+    binding,
+    payload,
+    workspaceId,
+  }: {
+    actorId: string;
+    binding: WorkspaceExternalProjectBinding;
+    payload: ExternalProjectBulkUpdatePayload;
+    workspaceId: string;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const entryIds = Array.from(new Set(payload.entryIds));
+
+  if (entryIds.length === 0) {
+    return [];
+  }
+
+  if (payload.action === 'publish' || payload.action === 'unpublish') {
+    return Promise.all(
+      entryIds.map((entryId) =>
+        publishWorkspaceExternalProjectEntry(
+          {
+            actorId,
+            binding,
+            entryId,
+            eventKind: payload.action === 'publish' ? 'publish' : 'unpublish',
+            visibilityScope:
+              payload.action === 'publish' ? 'public' : 'preview',
+            workspaceId,
+          },
+          admin
+        )
+      )
+    );
+  }
+
+  let nextStatus: ExternalProjectEntryStatus;
+  let scheduledFor: string | null | undefined;
+  let publishedAt: string | null | undefined;
+
+  switch (payload.action) {
+    case 'archive':
+      nextStatus = 'archived';
+      scheduledFor = null;
+      publishedAt = null;
+      break;
+    case 'restore-draft':
+      nextStatus = 'draft';
+      scheduledFor = null;
+      publishedAt = null;
+      break;
+    case 'schedule':
+      nextStatus = 'scheduled';
+      scheduledFor = payload.scheduledFor ?? null;
+      publishedAt = null;
+      break;
+    case 'set-status':
+      nextStatus = payload.status ?? 'draft';
+      scheduledFor =
+        nextStatus === 'scheduled' ? (payload.scheduledFor ?? null) : null;
+      publishedAt =
+        nextStatus === 'published' ? new Date().toISOString() : null;
+      break;
+    default:
+      nextStatus = 'draft';
+      scheduledFor = null;
+      publishedAt = null;
+  }
+
+  const { data, error } = await admin
+    .from('workspace_external_project_entries')
+    .update({
+      published_at: publishedAt,
+      scheduled_for: scheduledFor,
+      status: nextStatus,
+      updated_by: actorId,
+    })
+    .eq('ws_id', workspaceId)
+    .in('id', entryIds)
+    .select('*');
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data ?? [];
 }
 
 type UpsertAssetPayload = {
@@ -755,6 +1448,29 @@ export async function updateWorkspaceExternalProjectAsset(
   }
 
   return data;
+}
+
+export async function deleteWorkspaceExternalProjectAsset(
+  assetId: string,
+  payload: {
+    workspaceId: string;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const { workspaceId } = payload;
+
+  const { error } = await admin
+    .from('workspace_external_project_assets')
+    .delete()
+    .eq('ws_id', workspaceId)
+    .eq('id', assetId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return { id: assetId };
 }
 
 export async function publishWorkspaceExternalProjectEntry(

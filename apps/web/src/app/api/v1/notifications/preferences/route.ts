@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -85,22 +86,21 @@ export async function GET(request: NextRequest) {
 
     // Verify user has access to workspace using admin client to bypass RLS
     const supabaseAdmin = await createAdminClient();
-    const { data: membership, error: membershipError } = await supabaseAdmin
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabaseAdmin,
+    });
 
-    if (membershipError) {
-      console.error('Membership check error:', membershipError);
+    if (membership.error === 'membership_lookup_failed') {
+      console.error('Membership check error:', membership.error);
       return NextResponse.json(
         { error: 'Failed to verify workspace access' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json(
         { error: 'Access denied to workspace' },
         { status: 403 }
@@ -165,22 +165,21 @@ export async function PUT(request: Request) {
 
     // Verify user has access to workspace using admin client to bypass RLS
     const supabaseAdmin = await createAdminClient();
-    const { data: membership, error: membershipError } = await supabaseAdmin
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase: supabaseAdmin,
+    });
 
-    if (membershipError) {
-      console.error('Membership check error:', membershipError);
+    if (membership.error === 'membership_lookup_failed') {
+      console.error('Membership check error:', membership.error);
       return NextResponse.json(
         { error: 'Failed to verify workspace access' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json(
         { error: 'Access denied to workspace' },
         { status: 403 }

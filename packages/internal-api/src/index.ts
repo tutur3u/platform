@@ -5,6 +5,18 @@ export {
   updateAiChat,
 } from './ai';
 export {
+  getOtpSettings,
+  type InternalOtpClient,
+  type InternalOtpPlatform,
+  type OtpSettingsResponse,
+  type SendOtpPayload,
+  type SendOtpResponse,
+  sendOtpWithInternalApi,
+  type VerifyOtpPayload,
+  type VerifyOtpResponse,
+  verifyOtpWithInternalApi,
+} from './auth';
+export {
   applyWorkspaceCalendarSchedule,
   createWorkspaceCalendarEvent,
   createWorkspaceHabitSkip,
@@ -51,25 +63,55 @@ export {
   resolveInternalApiUrl,
   withForwardedInternalApiAuth,
 } from './client';
+export type {
+  CreateWorkspaceQuizPayload,
+  UpsertWorkspaceCourseModulePayload,
+  UpsertWorkspaceCoursePayload,
+  UpsertWorkspaceFlashcardPayload,
+  UpsertWorkspaceQuizPayload,
+  UpsertWorkspaceQuizSetPayload,
+  WorkspaceEducationAttemptListQuery,
+} from './education';
 export {
+  createWorkspaceCourse,
+  createWorkspaceCourseModule,
+  createWorkspaceFlashcard,
+  createWorkspaceQuiz,
+  createWorkspaceQuizSet,
+  deleteWorkspaceCourse,
   deleteWorkspaceCourseModule,
   deleteWorkspaceFlashcard,
   deleteWorkspaceQuiz,
+  deleteWorkspaceQuizSet,
+  getWorkspaceEducationAttemptDetail,
   linkQuizSetModules,
+  listWorkspaceEducationAttempts,
+  reorderWorkspaceCourseModules,
   unlinkQuizSetModule,
+  updateWorkspaceCourse,
   updateWorkspaceCourseModule,
+  updateWorkspaceFlashcard,
+  updateWorkspaceQuiz,
+  updateWorkspaceQuizSet,
 } from './education';
 export {
+  bulkUpdateWorkspaceExternalProjectEntries,
   createCanonicalExternalProject,
   createWorkspaceExternalProjectAsset,
   createWorkspaceExternalProjectAssetUploadUrl,
   createWorkspaceExternalProjectBlock,
   createWorkspaceExternalProjectCollection,
   createWorkspaceExternalProjectEntry,
+  deleteWorkspaceExternalProjectAsset,
+  deleteWorkspaceExternalProjectCollection,
+  deleteWorkspaceExternalProjectEntry,
+  duplicateWorkspaceExternalProjectEntry,
   getWorkspaceExternalProjectDelivery,
   getWorkspaceExternalProjectStudio,
+  getWorkspaceExternalProjectSummary,
   importWorkspaceExternalProjectContent,
   listCanonicalExternalProjects,
+  listWorkspaceExternalProjectBindingAudits,
   listWorkspaceExternalProjectCollections,
   listWorkspaceExternalProjectEntries,
   publishWorkspaceExternalProjectEntry,
@@ -115,12 +157,24 @@ export {
   updateWorkspaceHabitTrackerEntry,
 } from './habit-trackers';
 export {
+  type BlueGreenMonitoringContainerResource,
+  type BlueGreenMonitoringDeployment,
+  type BlueGreenMonitoringEvent,
+  type BlueGreenMonitoringPeriodMetric,
+  type BlueGreenMonitoringRequestLog,
+  type BlueGreenMonitoringSnapshot,
+  type BlueGreenMonitoringStatus,
+  type BlueGreenMonitoringWatcherHealth,
+  getBlueGreenMonitoringSnapshot,
   type InfrastructurePushAppFlavor,
   type InfrastructurePushDeliveryKind,
   type InfrastructurePushPlatform,
+  type MobilePlatformVersionPolicyPayload,
+  type MobileVersionPoliciesPayload,
   type SendInfrastructurePushTestPayload,
   type SendInfrastructurePushTestResponse,
   sendInfrastructurePushTest,
+  updateMobileVersionPolicies,
 } from './infrastructure';
 export {
   listInquiryMediaUrls,
@@ -166,12 +220,15 @@ export {
   deleteWorkspaceStorageObject,
   deleteWorkspaceStorageObjects,
   exportWorkspaceStorageLinks,
+  getWorkspaceStorageAnalytics,
   listWorkspaceStorageObjects,
   migrateWorkspaceStorage,
   renameWorkspaceStorageObject,
   uploadWorkspaceStorageFile,
   uploadWorkspaceTaskFile,
+  type WorkspaceStorageAnalyticsResponse,
   type WorkspaceStorageExportLinksResponse,
+  type WorkspaceStorageListResponse,
 } from './storage';
 export {
   addWorkspaceTaskLabel,
@@ -226,12 +283,18 @@ export {
   updateWorkspaceBreakType,
 } from './time-tracking';
 export {
+  createCurrentUserAvatarUploadUrl,
   createSupportInquiry,
+  getCurrentUserDefaultWorkspace,
   getCurrentUserProfile,
   getUserCalendarSettings,
   getUserConfig,
+  listWorkspaceAttendanceExportRecords,
+  removeCurrentUserAvatar,
   updateCurrentUserDefaultWorkspace,
+  updateCurrentUserProfile,
   updateUserConfig,
+  uploadCurrentUserAvatar,
 } from './users';
 export {
   createWorkspaceUserFeedback,
@@ -262,6 +325,7 @@ export {
 } from './workspace-user-audit';
 export {
   getWorkspace,
+  listCmsWorkspaces,
   listWorkspaceMembers,
   listWorkspaces,
 } from './workspaces';

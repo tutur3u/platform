@@ -30,6 +30,9 @@ class _TaskBoardKanbanView extends StatelessWidget {
     required this.onRetryLoad,
     required this.onTaskTap,
     required this.onTaskMove,
+    required this.isBulkSelectMode,
+    required this.selectedTaskIds,
+    required this.onToggleTaskSelection,
     required this.onCreateTask,
     required this.onEditList,
   });
@@ -53,6 +56,9 @@ class _TaskBoardKanbanView extends StatelessWidget {
   final Future<void> Function(String listId, int pageSizeHint) onRetryLoad;
   final Future<void> Function(TaskBoardTask task) onTaskTap;
   final Future<void> Function(TaskBoardTask task) onTaskMove;
+  final bool isBulkSelectMode;
+  final Set<String> selectedTaskIds;
+  final void Function(TaskBoardTask task) onToggleTaskSelection;
   final Future<void> Function(String? listId) onCreateTask;
   final Future<void> Function(TaskBoardList list) onEditList;
 
@@ -159,6 +165,9 @@ class _TaskBoardKanbanView extends StatelessWidget {
                     : () => unawaited(onLoadMore(list.id, pageSizeHint)),
                 onTaskTap: (task) => unawaited(onTaskTap(task)),
                 onTaskMove: (task) => unawaited(onTaskMove(task)),
+                isBulkSelectMode: isBulkSelectMode,
+                selectedTaskIds: selectedTaskIds,
+                onToggleTaskSelection: onToggleTaskSelection,
                 onCreateTask: () => unawaited(onCreateTask(list.id)),
                 onEditList: () => unawaited(onEditList(list)),
               );
@@ -311,15 +320,37 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               previous.searchQuery != current.searchQuery ||
               previous.filters != current.filters ||
               previous.loadingListIds != current.loadingListIds ||
+              previous.isBulkSelectMode != current.isBulkSelectMode ||
+              previous.selectedTaskIds != current.selectedTaskIds ||
               previous.taskDescriptionSearchIndex !=
                   current.taskDescriptionSearchIndex,
           builder: (context, state) {
             final detail = state.board;
             final boardRoute = Routes.taskBoardDetailPath(widget.boardId);
+            final selectedCount = state.selectedTaskIds.length;
             final shellActionRegistration = ShellChromeActions(
               ownerId: 'task-board-detail-${widget.boardId}',
               locations: {boardRoute},
               actions: [
+                ShellActionSpec(
+                  id: 'task-board-detail-bulk-select',
+                  icon: state.isBulkSelectMode
+                      ? Icons.checklist
+                      : Icons.checklist_rtl,
+                  tooltip: state.isBulkSelectMode
+                      ? context.l10n.taskBoardDetailExitBulkSelect
+                      : context.l10n.taskBoardDetailEnterBulkSelect,
+                  highlighted: state.isBulkSelectMode,
+                  enabled: detail != null,
+                  onPressed: () {
+                    final cubit = context.read<TaskBoardDetailCubit>();
+                    if (state.isBulkSelectMode) {
+                      cubit.exitBulkSelectMode();
+                    } else {
+                      cubit.enterBulkSelectMode();
+                    }
+                  },
+                ),
                 ShellActionSpec(
                   id: 'task-board-detail-search',
                   icon: Icons.search,
@@ -352,6 +383,15 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                   enabled: detail != null,
                   onPressed: () => unawaited(_showBoardActionsSheet(context)),
                 ),
+                if (state.isBulkSelectMode)
+                  ShellActionSpec(
+                    id: 'task-board-detail-bulk-actions',
+                    icon: Icons.tune,
+                    tooltip: context.l10n.taskBoardDetailBulkActions,
+                    highlighted: selectedCount > 0,
+                    enabled: detail != null,
+                    onPressed: () => unawaited(_openBulkActionsSheet(context)),
+                  ),
               ],
             );
             final shellMiniNavRegistration = ShellMiniNav(
@@ -518,12 +558,17 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                               bottomPadding: bottomPadding,
                               scrollController: _listScrollController,
                               onTaskTap: (task) =>
-                                  _openTaskDetails(context, task, sortedLists),
+                                  _handleTaskTap(context, task, sortedLists),
                               onTaskMove: (task) => _openMoveTaskPicker(
                                 context,
                                 task,
                                 sortedLists,
                               ),
+                              isBulkSelectMode: state.isBulkSelectMode,
+                              selectedTaskIds: state.selectedTaskIds,
+                              onToggleTaskSelection: (task) => context
+                                  .read<TaskBoardDetailCubit>()
+                                  .toggleBulkTaskSelection(task.id),
                               onLoadMore: () {
                                 // Load more tasks for all lists that have more
                                 for (final list in sortedLists) {
@@ -573,9 +618,14 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                                   pageSizeHint: pageSizeHint,
                                 ),
                             onTaskTap: (task) =>
-                                _openTaskDetails(context, task, sortedLists),
+                                _handleTaskTap(context, task, sortedLists),
                             onTaskMove: (task) =>
                                 _openMoveTaskPicker(context, task, sortedLists),
+                            isBulkSelectMode: state.isBulkSelectMode,
+                            selectedTaskIds: state.selectedTaskIds,
+                            onToggleTaskSelection: (task) => context
+                                .read<TaskBoardDetailCubit>()
+                                .toggleBulkTaskSelection(task.id),
                             onCreateTask: (listId) => _openTaskCreateSheet(
                               context,
                               lists: sortedLists,
@@ -612,27 +662,53 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                   ),
                 ),
                 SpeedDialFab(
-                  label: context.l10n.taskBoardDetailCreateTask,
-                  icon: Icons.add,
-                  actions: [
-                    FabAction(
-                      icon: Icons.add_task,
-                      label: context.l10n.taskBoardDetailCreateTask,
-                      onPressed: () => unawaited(
-                        _openTaskCreateSheet(
-                          context,
-                          lists: sortedLists,
-                          defaultListId: sortedLists.first.id,
-                        ),
-                      ),
-                    ),
-                    FabAction(
-                      icon: Icons.playlist_add,
-                      label: context.l10n.taskBoardDetailCreateList,
-                      onPressed: () =>
-                          unawaited(_openCreateListDialog(context)),
-                    ),
-                  ],
+                  label: state.isBulkSelectMode
+                      ? context.l10n.taskBoardDetailBulkActions
+                      : context.l10n.taskBoardDetailCreateTask,
+                  icon: state.isBulkSelectMode ? Icons.checklist : Icons.add,
+                  actions: state.isBulkSelectMode
+                      ? [
+                          FabAction(
+                            icon: Icons.tune,
+                            label: context.l10n.taskBoardDetailBulkActions,
+                            onPressed: () =>
+                                unawaited(_openBulkActionsSheet(context)),
+                          ),
+                          FabAction(
+                            icon: Icons.select_all,
+                            label:
+                                context.l10n.taskBoardDetailSelectAllFiltered,
+                            onPressed: () => context
+                                .read<TaskBoardDetailCubit>()
+                                .selectAllFilteredTasks(),
+                          ),
+                          FabAction(
+                            icon: Icons.close,
+                            label: context.l10n.taskBoardDetailExitBulkSelect,
+                            onPressed: () => context
+                                .read<TaskBoardDetailCubit>()
+                                .exitBulkSelectMode(),
+                          ),
+                        ]
+                      : [
+                          FabAction(
+                            icon: Icons.add_task,
+                            label: context.l10n.taskBoardDetailCreateTask,
+                            onPressed: () => unawaited(
+                              _openTaskCreateSheet(
+                                context,
+                                lists: sortedLists,
+                                defaultListId: sortedLists.first.id,
+                              ),
+                            ),
+                          ),
+                          FabAction(
+                            icon: Icons.playlist_add,
+                            label: context.l10n.taskBoardDetailCreateList,
+                            onPressed: () =>
+                                unawaited(_openCreateListDialog(context)),
+                          ),
+                        ],
                 ),
               ],
             );
@@ -767,6 +843,36 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     );
   }
 
+  Future<void> _handleTaskTap(
+    BuildContext context,
+    TaskBoardTask task,
+    List<TaskBoardList> lists,
+  ) async {
+    final cubit = context.read<TaskBoardDetailCubit>();
+    if (cubit.state.isBulkSelectMode) {
+      cubit.toggleBulkTaskSelection(task.id);
+      return;
+    }
+    await _openTaskDetails(context, task, lists);
+  }
+
+  Future<void> _openBulkActionsSheet(BuildContext context) async {
+    final cubit = context.read<TaskBoardDetailCubit>();
+    if (!cubit.state.isBulkSelectMode) {
+      cubit.enterBulkSelectMode();
+    }
+
+    await showAdaptiveDrawer(
+      context: context,
+      builder: (drawerContext) => BlocProvider.value(
+        value: cubit,
+        child: _TaskBoardBulkActionsDrawer(
+          onClose: () => unawaited(dismissAdaptiveDrawerOverlay(drawerContext)),
+        ),
+      ),
+    );
+  }
+
   Future<void> _openTaskCreateSheet(
     BuildContext context, {
     required List<TaskBoardList> lists,
@@ -830,6 +936,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                     ),
                     const shad.Gap(12),
                     shad.TextField(
+                      contextMenuBuilder: platformTextContextMenuBuilder(),
                       controller: _searchController,
                       hintText: context.l10n.taskBoardDetailSearchPlaceholder,
                       onChanged: (value) {

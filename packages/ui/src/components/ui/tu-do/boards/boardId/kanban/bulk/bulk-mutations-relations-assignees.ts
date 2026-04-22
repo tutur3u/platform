@@ -1,7 +1,7 @@
 'use client';
 
 import { type QueryClient, useMutation } from '@tanstack/react-query';
-import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
+import { bulkWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
@@ -38,12 +38,9 @@ export function useBulkAddAssignee(
       assigneeId: string;
       taskIds: string[];
     }) => {
-      let successCount = 0;
-      const succeededTaskIds: string[] = [];
-      const failedTaskIds: string[] = [];
-      const failures: Array<{ taskId: string; error: string }> = [];
-      const updatedAssigneesByTaskId = new Map<string, Task['assignees']>();
       const apiOptions = getInternalApiOptions();
+      const taskRecordsById = new Map<string, Task>();
+      const updatedAssigneesByTaskId = new Map<string, Task['assignees']>();
 
       for (const taskId of taskIds) {
         try {
@@ -55,16 +52,10 @@ export function useBulkAddAssignee(
           );
 
           if (!taskRecord) {
-            throw new Error('Task not found');
+            continue;
           }
 
-          const currentAssigneeIds = (taskRecord.assignees || [])
-            .map((assignee) => assignee.id)
-            .filter((id): id is string => !!id);
-
-          const nextAssigneeIds = [
-            ...new Set([...currentAssigneeIds, assigneeId]),
-          ];
+          taskRecordsById.set(taskId, taskRecord);
 
           const resolvedMember = resolveMember(assigneeId);
           const optimisticAssignee = {
@@ -76,50 +67,62 @@ export function useBulkAddAssignee(
             email: resolvedMember?.email || '',
             avatar_url: resolvedMember?.avatar_url ?? undefined,
           };
+
           const fallbackAssignees = taskRecord.assignees?.some(
             (assignee) => assignee.id === assigneeId
           )
             ? (taskRecord.assignees ?? [])
             : [...(taskRecord.assignees ?? []), optimisticAssignee];
 
-          const { task: updatedTask } = await updateWorkspaceTask(
-            wsId,
-            taskId,
-            { assignee_ids: nextAssigneeIds },
-            apiOptions
-          );
-          updatedAssigneesByTaskId.set(
-            taskId,
-            updatedTask?.assignees ?? fallbackAssignees
-          );
-          succeededTaskIds.push(taskId);
-          successCount++;
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : 'Unknown error';
-          if (!message.toLowerCase().includes('duplicate')) {
-            failedTaskIds.push(taskId);
-            failures.push({ taskId, error: message });
-          } else {
-            succeededTaskIds.push(taskId);
-            successCount++;
-          }
+          updatedAssigneesByTaskId.set(taskId, fallbackAssignees);
+        } catch {
+          // Continue; optimistic state still covers UI.
         }
       }
 
-      if (successCount === 0) {
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: {
+            type: 'add_assignee',
+            assigneeId,
+          },
+        },
+        apiOptions
+      );
+
+      if (result.successCount === 0) {
         throw new Error(
           `Failed to add assignee to all ${taskIds.length} tasks`
         );
       }
 
+      for (const taskId of result.succeededTaskIds) {
+        const taskRecord = taskRecordsById.get(taskId);
+        if (!taskRecord) {
+          continue;
+        }
+
+        const fallbackAssignees =
+          updatedAssigneesByTaskId.get(taskId) ?? taskRecord.assignees ?? [];
+        updatedAssigneesByTaskId.set(taskId, fallbackAssignees);
+      }
+
+      const succeededTaskIdSet = new Set(result.succeededTaskIds);
+      for (const taskId of [...updatedAssigneesByTaskId.keys()]) {
+        if (!succeededTaskIdSet.has(taskId)) {
+          updatedAssigneesByTaskId.delete(taskId);
+        }
+      }
+
       return {
-        count: successCount,
+        count: result.successCount,
         assigneeId,
         taskIds,
-        failures,
-        succeededTaskIds,
-        failedTaskIds,
+        failures: result.failures,
+        succeededTaskIds: result.succeededTaskIds,
+        failedTaskIds: result.failures.map((failure) => failure.taskId),
         updatedAssigneesByTaskId,
       };
     },
@@ -178,6 +181,7 @@ export function useBulkAddAssignee(
           }
         );
       }
+
       console.error('Bulk add assignee failed', error);
       toast.error(
         i18n?.failedAddAssignee() ?? 'Failed to add assignee to selected tasks'
@@ -274,45 +278,24 @@ export function useBulkRemoveAssignee(
       assigneeId: string;
       taskIds: string[];
     }) => {
-      let successCount = 0;
-      const succeededTaskIds: string[] = [];
-      const failedTaskIds: string[] = [];
-      const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
-      for (const taskId of taskIds) {
-        try {
-          const taskRecord = await getTaskForRelationMutation(
-            queryClient,
-            boardId,
-            wsId,
-            taskId
-          );
+      const result = await bulkWorkspaceTasks(
+        wsId,
+        {
+          taskIds,
+          operation: {
+            type: 'remove_assignee',
+            assigneeId,
+          },
+        },
+        apiOptions
+      );
 
-          if (!taskRecord) {
-            throw new Error('Task not found');
-          }
-
-          const nextAssigneeIds = (taskRecord.assignees || [])
-            .map((assignee) => assignee.id)
-            .filter((id): id is string => !!id && id !== assigneeId);
-
-          await updateWorkspaceTask(
-            wsId,
-            taskId,
-            { assignee_ids: nextAssigneeIds },
-            apiOptions
-          );
-          succeededTaskIds.push(taskId);
-          successCount++;
-        } catch (error) {
-          failedTaskIds.push(taskId);
-          failures.push({
-            taskId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
-      }
+      const successCount = result.successCount;
+      const succeededTaskIds = [...result.succeededTaskIds];
+      const failures = [...result.failures];
+      const failedTaskIds = failures.map((failure) => failure.taskId);
 
       if (successCount === 0) {
         throw new Error(
@@ -381,6 +364,7 @@ export function useBulkRemoveAssignee(
           }
         );
       }
+
       console.error('Bulk remove assignee failed', error);
       toast.error(
         i18n?.failedRemoveAssignee() ??

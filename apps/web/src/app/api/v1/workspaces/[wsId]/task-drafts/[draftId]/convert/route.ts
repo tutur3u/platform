@@ -5,7 +5,10 @@ import {
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, TaskDraft } from '@tuturuuu/types';
 import { createTask } from '@tuturuuu/utils/task-helper';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -93,17 +96,16 @@ export async function POST(
     const wsId = await normalizeWorkspaceId(rawWsId, supabase);
     const sbAdmin = await createAdminClient();
 
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (membershipError) {
+    if (membership.error === 'membership_lookup_failed') {
       console.error(
         'Failed to verify workspace membership for draft conversion:',
-        membershipError
+        membership.error
       );
       return NextResponse.json(
         { error: 'Internal server error' },
@@ -111,7 +113,7 @@ export async function POST(
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

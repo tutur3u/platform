@@ -102,6 +102,7 @@ describe('workspace members invite route', () => {
       ws_id: 'ws-1',
       email: 'member@example.com',
       invited_by: 'user-1',
+      type: 'MEMBER',
     });
   });
 });

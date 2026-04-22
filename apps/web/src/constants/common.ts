@@ -21,6 +21,10 @@ export const API_URL =
 export const PROD_API_URL = 'https://tuturuuu.com/api';
 
 export const PROD_BASE_URL = 'https://tuturuuu.com';
+export const CMS_APP_URL =
+  process.env.CMS_APP_URL ||
+  process.env.NEXT_PUBLIC_CMS_APP_URL ||
+  (PROD_MODE ? 'https://cms.tuturuuu.com' : 'http://localhost:7811');
 
 export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
 export const THEME_COOKIE_NAME = 'NEXT_THEME';

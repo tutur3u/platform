@@ -15,11 +15,11 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "bun@1.3.11",
+  "packageManager": "bun@1.3.13",
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.5.2",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.3"
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
   }
 }

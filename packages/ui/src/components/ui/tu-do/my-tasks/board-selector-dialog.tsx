@@ -43,6 +43,7 @@ interface BoardSelectorDialogProps {
   onListChange: (id: string) => void;
   taskCreatorMode: 'simple' | 'ai' | null;
   aiFlowStep?: 'idle' | 'reviewing' | 'selecting-destination';
+  isSubmitting?: boolean;
   onConfirm: () => void;
   onCreateBoard: (name: string) => void;
   onCreateList: (name: string) => void;
@@ -65,6 +66,7 @@ export function BoardSelectorDialog({
   onListChange,
   taskCreatorMode,
   aiFlowStep,
+  isSubmitting = false,
   onConfirm,
   onCreateBoard,
   onCreateList,
@@ -73,6 +75,9 @@ export function BoardSelectorDialog({
   const t = useTranslations();
 
   const contentRef = useRef<HTMLDivElement>(null);
+  const hasValidSelectedList = availableLists.some(
+    (list: any) => list.id === selectedListId
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -95,12 +100,12 @@ export function BoardSelectorDialog({
         }
       }
       // Cmd/Ctrl+Enter always submits; plain Enter submits from non-input elements
-      if (selectedListId) {
+      if (hasValidSelectedList) {
         e.preventDefault();
         onConfirm();
       }
     },
-    [selectedListId, onConfirm, submitShortcut]
+    [hasValidSelectedList, onConfirm, submitShortcut]
   );
 
   return (
@@ -177,7 +182,7 @@ export function BoardSelectorDialog({
               selected={selectedBoardId}
               onChange={(value) => onBoardChange(value as string)}
               onCreate={onCreateBoard}
-              disabled={boardsLoading}
+              disabled={boardsLoading || isSubmitting}
               className="w-full"
             />
           </div>
@@ -203,17 +208,24 @@ export function BoardSelectorDialog({
               selected={selectedListId}
               onChange={(value) => onListChange(value as string)}
               onCreate={onCreateList}
-              disabled={!selectedBoardId}
+              disabled={!selectedBoardId || isSubmitting}
               className="w-full"
             />
           </div>
         </div>
 
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
             {t('common.cancel')}
           </Button>
-          <Button onClick={onConfirm} disabled={!selectedListId}>
+          <Button
+            onClick={onConfirm}
+            disabled={!hasValidSelectedList || isSubmitting}
+          >
             {aiFlowStep === 'selecting-destination'
               ? t('ws-tasks.save_tasks')
               : taskCreatorMode

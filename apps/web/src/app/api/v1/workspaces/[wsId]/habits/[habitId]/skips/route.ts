@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { z } from 'zod';
@@ -33,14 +34,13 @@ async function verifyAccess(request: Request, wsId: string, habitId: string) {
     };
   }
 
-  const { data: membership, error: membershipError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: user.id,
+    supabase: supabase,
+  });
 
-  if (membershipError) {
+  if (membership.error === 'membership_lookup_failed') {
     return {
       error: NextResponse.json(
         { error: 'Failed to verify workspace membership' },
@@ -49,7 +49,7 @@ async function verifyAccess(request: Request, wsId: string, habitId: string) {
     };
   }
 
-  if (!membership) {
+  if (!membership.ok) {
     return {
       error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
     };

@@ -21,7 +21,9 @@ class ApiConfig {
 
 /// Auth endpoint paths (called via the mobile auth API on the web backend).
 abstract final class AuthEndpoints {
-  static const passwordLogin = '/api/v1/auth/mobile/password-login';
+  static const otpSend = '/api/v1/auth/otp/send';
+  static const otpVerify = '/api/v1/auth/otp/verify';
+  static const passwordLogin = '/api/v1/auth/password-login';
 }
 
 /// Profile endpoint paths.
@@ -83,6 +85,17 @@ abstract final class WorkspaceEndpoints {
 }
 
 abstract final class WorkspaceSettingsEndpoints {
+  static String secrets(String wsId) => '/api/workspaces/$wsId/secrets';
+
+  static String secret(String wsId, String secretId) =>
+      '/api/workspaces/$wsId/secrets/$secretId';
+
+  static String storageRolloutState(String wsId) =>
+      '/api/v1/workspaces/$wsId/storage/rollout-state';
+
+  static String migrateStorage(String wsId) =>
+      '/api/v1/workspaces/$wsId/storage/migrate';
+
   static String roles(String wsId) => '/api/v1/workspaces/$wsId/roles';
 
   static String role(String wsId, String roleId) =>

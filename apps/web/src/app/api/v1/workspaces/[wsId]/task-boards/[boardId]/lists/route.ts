@@ -75,10 +75,20 @@ export async function POST(
     );
 
     if (error) {
-      return NextResponse.json(
-        { error: 'Failed to create task list' },
-        { status: 500 }
-      );
+      const message =
+        typeof error.message === 'string' && error.message.trim().length > 0
+          ? error.message
+          : 'Failed to create task list';
+      const status = [
+        'Board ID is required',
+        'List name is required',
+        'Board not found',
+      ].includes(message)
+        ? 400
+        : 500;
+
+      console.error('Error creating task list via RPC:', error);
+      return NextResponse.json({ error: message }, { status });
     }
 
     // The list RPC sometimes returns list as a single row and sometimes as an array, so createdList normalizes both shapes.

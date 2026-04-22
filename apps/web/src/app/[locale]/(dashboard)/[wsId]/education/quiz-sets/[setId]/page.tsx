@@ -1,10 +1,11 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceQuiz } from '@tuturuuu/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
+import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import { getWorkspaceQuizColumns } from './columns';
 import QuizForm from './form';
 
@@ -35,7 +36,8 @@ export default async function WorkspaceQuizzesPage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { wsId, setId } = await params;
+  const { wsId: routeWsId, setId } = await params;
+  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
 
   const { data, count } = await getData(setId, await searchParams);
 
@@ -47,7 +49,7 @@ export default async function WorkspaceQuizzesPage({
         description={t('ws-quizzes.description')}
         createTitle={t('ws-quizzes.create')}
         createDescription={t('ws-quizzes.create_description')}
-        form={<QuizForm wsId={wsId} setId={setId} />}
+        form={<QuizForm wsId={resolvedWsId} setId={setId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
@@ -73,7 +75,7 @@ async function getData(
     retry = true,
   }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
 ) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const queryBuilder = supabase
     .from('quiz_set_quizzes')

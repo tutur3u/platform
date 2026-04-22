@@ -683,6 +683,61 @@ async function countSupabaseDirectoryEntries(
   }
 }
 
+async function listSupabaseFolderObjectPathsRecursively(
+  supabase: TypedSupabaseClient,
+  folderPath: string
+): Promise<string[]> {
+  const objectPaths: string[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await supabase.storage
+      .from('workspaces')
+      .list(folderPath, {
+        limit: SUPABASE_STORAGE_LIST_PAGE_SIZE,
+        offset,
+        sortBy: {
+          column: 'name',
+          order: 'asc',
+        },
+      });
+
+    if (error) {
+      throw new WorkspaceStorageError(
+        error.message || 'Failed to list files in folder'
+      );
+    }
+
+    const page = (data ?? []) as StorageObject[];
+
+    for (const entry of page) {
+      if (!entry.name) {
+        continue;
+      }
+
+      const entryPath = posix.join(folderPath, entry.name);
+
+      if (!entry.id) {
+        objectPaths.push(
+          ...(await listSupabaseFolderObjectPathsRecursively(
+            supabase,
+            entryPath
+          ))
+        );
+        continue;
+      }
+
+      objectPaths.push(entryPath);
+    }
+
+    if (page.length < SUPABASE_STORAGE_LIST_PAGE_SIZE) {
+      return objectPaths;
+    }
+
+    offset += page.length;
+  }
+}
+
 export async function resolveWorkspaceStorageProvider(
   wsId: string
 ): Promise<WorkspaceStorageResolvedProvider> {
@@ -1478,18 +1533,10 @@ export async function deleteWorkspaceStorageFolderByPath(
   }
 
   const supabase = await createDynamicAdminClient();
-  const relativeFolderPrefix = path
-    ? posix.join(normalizeRelativePath(path), normalizeEntryName(folderName))
-    : normalizeEntryName(folderName);
-  const paths = (
-    await listWorkspaceStorageRawObjectsForProvider(
-      wsId,
-      WORKSPACE_STORAGE_PROVIDER_SUPABASE,
-      {
-        pathPrefix: relativeFolderPrefix,
-      }
-    )
-  ).map((object) => object.fullPath);
+  const paths = await listSupabaseFolderObjectPathsRecursively(
+    supabase as TypedSupabaseClient,
+    folderPrefix
+  );
 
   if (paths.length === 0) {
     throw new WorkspaceStorageError('Folder not found', 404);

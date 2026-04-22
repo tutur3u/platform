@@ -3,7 +3,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -36,22 +39,21 @@ export async function DELETE(
       );
     }
 
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (membershipError) {
-      console.error('Membership lookup failed:', membershipError);
+    if (membership.error === 'membership_lookup_failed') {
+      console.error('Membership lookup failed:', membership.error);
       return NextResponse.json(
         { error: 'Membership lookup failed' },
         { status: 500 }
       );
     }
 
-    if (!membership) {
+    if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

@@ -29,6 +29,27 @@ function tryParseAbsoluteUrl(value: string): URL | null {
   }
 }
 
+function resolveConfiguredOrigin(value?: string): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const [firstValue] = value
+    .split(/[,\n]/u)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  if (!firstValue) {
+    return null;
+  }
+
+  const normalized = /^[a-z]+:\/\//iu.test(firstValue)
+    ? firstValue
+    : `https://${firstValue}`;
+
+  return tryParseAbsoluteUrl(normalized)?.origin ?? null;
+}
+
 export function encodePathSegment(value: string) {
   return encodeURIComponent(value);
 }
@@ -82,10 +103,12 @@ function appendQuery(path: string, query?: InternalApiQuery): string {
 
 function getConfiguredBaseUrl() {
   return normalizeBaseUrl(
-    process.env.INTERNAL_WEB_API_ORIGIN ||
-      process.env.NEXT_PUBLIC_WEB_APP_URL ||
-      process.env.WEB_APP_URL ||
-      process.env.NEXT_PUBLIC_APP_URL ||
+    resolveConfiguredOrigin(process.env.INTERNAL_WEB_API_ORIGIN) ||
+      resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
+      resolveConfiguredOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
+      resolveConfiguredOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
+      resolveConfiguredOrigin(process.env.COOLIFY_URL) ||
+      resolveConfiguredOrigin(process.env.COOLIFY_FQDN) ||
       (isProductionDeployment()
         ? 'https://tuturuuu.com'
         : 'http://localhost:7803')

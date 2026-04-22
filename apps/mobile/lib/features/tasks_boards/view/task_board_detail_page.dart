@@ -9,6 +9,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/config/env.dart';
+import 'package:mobile/core/icons/platform_icon.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -20,7 +22,9 @@ import 'package:mobile/core/utils/tiptap_description_parser.dart';
 import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
+import 'package:mobile/data/models/task_board_summary.dart';
 import 'package:mobile/data/models/task_board_task.dart';
+import 'package:mobile/data/models/task_bulk.dart';
 import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
@@ -38,7 +42,6 @@ import 'package:mobile/features/tasks_boards/utils/task_description_tiptap_conve
 import 'package:mobile/features/tasks_boards/widgets/recycle_bin_task_row.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_embed_builders.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_viewer.dart';
-
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -49,7 +52,6 @@ import 'package:mobile/widgets/fab/speed_dial_fab.dart';
 import 'package:mobile/widgets/image_source_picker_dialog.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
-
 part 'task_board_detail_page_cards.dart';
 part 'task_board_detail_page_actions.dart';
 part 'task_board_detail_page_board_layout.dart';

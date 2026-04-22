@@ -12,11 +12,11 @@
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
-    "@noble/ciphers": "^2.1.1",
-    "@noble/hashes": "^2.0.1",
-    "@tanstack/react-query": "^5.96.2",
-    "@tiptap/core": "3.22.3",
-    "@tiptap/react": "3.22.3",
+    "@noble/ciphers": "^2.2.0",
+    "@noble/hashes": "^2.2.0",
+    "@tanstack/react-query": "^5.99.2",
+    "@tiptap/core": "3.22.4",
+    "@tiptap/react": "3.22.4",
     "@tuturuuu/google": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
@@ -26,14 +26,14 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.20",
-    "diff": "^8.0.4",
+    "diff": "^9.0.0",
     "moment": "^2.30.1",
-    "next": "^16.2.2",
+    "next": "^16.2.4",
     "prosemirror-model": "^1.25.4",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "tailwind-merge": "^3.5.0",
-    "uuid": "^13.0.0",
+    "uuid": "^14.0.0",
     "y-prosemirror": "^1.3.7",
     "yjs": "^13.6.30",
     "zod": "^4.3.6"
@@ -42,12 +42,12 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/diff": "^8.0.0",
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@vitejs/plugin-react": "^6.0.1",
-    "typescript": "^6.0.2",
-    "vite": "^8.0.7",
-    "vitest": "^4.1.3"
+    "typescript": "^6.0.3",
+    "vite": "^8.0.9",
+    "vitest": "^4.1.5"
   },
   "exports": {
     "./timezones": "./src/timezones.json",
@@ -59,6 +59,7 @@
     "./permissions": "./src/permissions.tsx",
     "./editor": "./src/editor/index.ts",
     "./abuse-protection": "./src/abuse-protection/index.ts",
+    "./abuse-protection/backend-rate-limit": "./src/abuse-protection/backend-rate-limit.ts",
     "./abuse-protection/edge": "./src/abuse-protection/edge.ts",
     "./abuse-protection/user-suspension": "./src/abuse-protection/user-suspension.ts",
     "./currencies": "./src/currencies.ts",
@@ -66,5 +67,5 @@
     "./encryption": "./src/encryption/index.ts",
     "./finance": "./src/finance/index.ts"
   },
-  "packageManager": "bun@1.3.11"
+  "packageManager": "bun@1.3.13"
 }

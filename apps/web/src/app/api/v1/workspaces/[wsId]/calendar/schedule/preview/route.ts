@@ -16,6 +16,7 @@ import {
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { listActiveHabitSkipDates } from '@/lib/calendar/habit-skips';
@@ -65,14 +66,20 @@ export async function POST(
     }
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (!memberCheck) {
+    if (memberCheck.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }

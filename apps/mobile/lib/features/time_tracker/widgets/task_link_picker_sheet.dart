@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/task_link_option.dart';
@@ -291,6 +292,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: shad.TextField(
+                    contextMenuBuilder: platformTextContextMenuBuilder(),
                     controller: _searchController,
                     hintText: l10n.timerTaskPickerSearch,
                     onChanged: _onSearchChanged,

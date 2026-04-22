@@ -11,12 +11,13 @@ const entrySchema = z.object({
   collection_id: z.string().uuid(),
   metadata: z.record(z.string(), z.unknown()).default({}),
   profile_data: z.record(z.string(), z.unknown()).default({}),
+  scheduled_for: z.string().datetime().nullable().optional(),
   slug: z.string().min(1).max(120),
   status: z
     .enum(['draft', 'scheduled', 'published', 'archived'])
     .default('draft'),
-  subtitle: z.string().max(200).optional(),
-  summary: z.string().max(1000).optional(),
+  subtitle: z.string().max(200).nullable().optional(),
+  summary: z.string().max(1000).nullable().optional(),
   title: z.string().min(1).max(160),
 });
 
@@ -74,6 +75,7 @@ export async function POST(
         collection_id: payload.collection_id,
         metadata: payload.metadata as Json,
         profile_data: payload.profile_data as Json,
+        scheduled_for: payload.scheduled_for ?? null,
         slug: payload.slug,
         status: payload.status,
         subtitle: payload.subtitle ?? null,

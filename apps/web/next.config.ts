@@ -4,9 +4,11 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
 const serwistConfig = getTurbopackConfig();
+const isDockerStandaloneBuild = process.env.DOCKER_WEB_STANDALONE === '1';
 
 const nextConfig: NextConfig = {
   ...serwistConfig,
+  ...(isDockerStandaloneBuild ? { output: 'standalone' } : {}),
   reactCompiler: true,
   reactStrictMode: true,
   poweredByHeader: false,

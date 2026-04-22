@@ -1,5 +1,10 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
+import {
+  createWorkspaceCourseModule,
+  updateWorkspaceCourseModule,
+} from '@tuturuuu/internal-api';
 import type { WorkspaceCourseModule } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -23,7 +28,8 @@ interface Props {
   courseId: string;
   data?: WorkspaceCourseModule;
 
-  onFinish?: (data: z.infer<typeof FormSchema>) => void;
+  onCreated?: (data: WorkspaceCourseModule) => void;
+  onFinish?: () => void;
 }
 
 const FormSchema = z.object({
@@ -31,7 +37,13 @@ const FormSchema = z.object({
   name: z.string().min(1),
 });
 
-export function CourseModuleForm({ wsId, courseId, data, onFinish }: Props) {
+export function CourseModuleForm({
+  wsId,
+  courseId,
+  data,
+  onCreated,
+  onFinish,
+}: Props) {
   const t = useTranslations('ws-course-modules');
   const router = useRouter();
 
@@ -47,33 +59,31 @@ export function CourseModuleForm({ wsId, courseId, data, onFinish }: Props) {
   const isValid = form.formState.isValid;
   const isSubmitting = form.formState.isSubmitting;
 
-  const disabled = !isDirty || !isValid || isSubmitting;
-
-  const onSubmit = async (data: z.infer<typeof FormSchema>) => {
-    try {
-      const res = await fetch(
-        data.id
-          ? `/api/v1/workspaces/${wsId}/course-modules/${data.id}`
-          : `/api/v1/workspaces/${wsId}/courses/${courseId}/modules`,
-        {
-          method: data.id ? 'PUT' : 'POST',
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (res.ok) {
-        onFinish?.(data);
-        router.refresh();
-      } else {
-        const data = await res.json();
-        toast({
-          title: `Failed to ${data.id ? 'edit' : 'create'} course module`,
-          description: data.message,
-        });
+  const saveMutation = useMutation({
+    mutationFn: async (payload: z.infer<typeof FormSchema>) => {
+      if (payload.id) {
+        await updateWorkspaceCourseModule(wsId, payload.id, payload);
+        return undefined;
       }
+      return createWorkspaceCourseModule(wsId, courseId, payload);
+    },
+  });
+
+  const disabled =
+    !isDirty || !isValid || isSubmitting || saveMutation.isPending;
+
+  const onSubmit = async (payload: z.infer<typeof FormSchema>) => {
+    try {
+      const result = await saveMutation.mutateAsync(payload);
+      if (result && onCreated) {
+        onCreated(result);
+      } else {
+        router.refresh();
+      }
+      onFinish?.();
     } catch (error) {
       toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} course module`,
+        title: `Failed to ${payload.id ? 'edit' : 'create'} course module`,
         description: error instanceof Error ? error.message : String(error),
       });
     }

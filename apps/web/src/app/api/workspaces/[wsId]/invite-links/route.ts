@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { nanoid } from 'nanoid';
 import { NextResponse } from 'next/server';
 import * as z from 'zod';
@@ -16,6 +17,7 @@ interface Params {
 const CreateInviteLinkSchema = z.object({
   maxUses: z.number().int().positive().optional().nullable(),
   expiresAt: z.iso.datetime().optional().nullable(),
+  memberType: z.enum(['MEMBER', 'GUEST']).optional(),
 });
 
 // POST - Create a new invite link
@@ -33,14 +35,20 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Verify user is a member of the workspace
-    const { data: member } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const member = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (!member) {
+    if (member.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!member.ok) {
       return NextResponse.json(
         { error: 'You are not a member of this workspace' },
         { status: 403 }
@@ -102,7 +110,8 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    const { maxUses, expiresAt } = validation.data;
+    const { maxUses, expiresAt, memberType } = validation.data;
+    const linkMemberType = memberType ?? 'MEMBER';
 
     // Use insert-retry strategy to handle unique code generation
     const maxAttempts = 10;
@@ -120,6 +129,7 @@ export async function POST(req: Request, { params }: Params) {
           creator_id: user.id,
           max_uses: maxUses,
           expires_at: expiresAt,
+          type: linkMemberType,
         })
         .select()
         .single();
@@ -176,15 +186,20 @@ export async function GET(req: Request, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify user is a member of the workspace
-    const { data: member } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const member = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (!member) {
+    if (member.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!member.ok) {
       return NextResponse.json(
         { error: 'You are not a member of this workspace' },
         { status: 403 }

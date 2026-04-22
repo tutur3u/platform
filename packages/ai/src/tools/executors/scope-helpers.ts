@@ -1,3 +1,4 @@
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { MiraToolContext } from '../mira-tools';
 import { getWorkspaceContextWorkspaceId } from '../workspace-context';
 
@@ -175,16 +176,16 @@ export async function isWorkspaceMember(
   userId: string,
   workspaceId = getWorkspaceContextWorkspaceId(ctx)
 ): Promise<boolean> {
-  const { data, error } = await ctx.supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', workspaceId)
-    .eq('user_id', userId)
-    .maybeSingle();
+  const result = await verifyWorkspaceMembershipType({
+    wsId: workspaceId,
+    userId,
+    supabase: ctx.supabase,
+    requiredType: 'MEMBER',
+  });
 
-  if (error) {
-    throw new Error(error.message);
+  if (result.error === 'membership_lookup_failed') {
+    throw new Error('Membership lookup failed');
   }
 
-  return Boolean(data);
+  return result.ok;
 }

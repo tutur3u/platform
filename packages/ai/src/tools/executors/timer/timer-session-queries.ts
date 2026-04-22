@@ -1,3 +1,4 @@
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { MiraToolContext } from '../../mira-tools';
 import { getWorkspaceContextWorkspaceId } from '../../workspace-context';
 import { coerceOptionalString } from './timer-helpers';
@@ -31,35 +32,33 @@ export async function executeMoveTimeTrackingSession(
   if (!sessionId) return { error: 'sessionId is required' };
   if (!targetWorkspaceId) return { error: 'targetWorkspaceId is required' };
 
-  const { data: sourceMembership, error: sourceMembershipError } =
-    await ctx.supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', workspaceId)
-      .eq('user_id', ctx.userId)
-      .maybeSingle();
+  const [sourceCheck, targetCheck] = await Promise.all([
+    verifyWorkspaceMembershipType({
+      wsId: workspaceId,
+      userId: ctx.userId,
+      supabase: ctx.supabase,
+      requiredType: 'MEMBER',
+    }),
+    verifyWorkspaceMembershipType({
+      wsId: targetWorkspaceId,
+      userId: ctx.userId,
+      supabase: ctx.supabase,
+      requiredType: 'MEMBER',
+    }),
+  ]);
 
-  if (sourceMembershipError) {
-    return { error: sourceMembershipError.message };
+  if (
+    sourceCheck.error === 'membership_lookup_failed' ||
+    targetCheck.error === 'membership_lookup_failed'
+  ) {
+    return { error: 'Could not verify workspace access' };
   }
 
-  if (!sourceMembership) {
+  if (!sourceCheck.ok) {
     return { error: 'Source workspace access denied' };
   }
 
-  const { data: targetMembership, error: targetMembershipError } =
-    await ctx.supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', targetWorkspaceId)
-      .eq('user_id', ctx.userId)
-      .maybeSingle();
-
-  if (targetMembershipError) {
-    return { error: targetMembershipError.message };
-  }
-
-  if (!targetMembership) {
+  if (!targetCheck.ok) {
     return { error: 'Target workspace access denied' };
   }
 

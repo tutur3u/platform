@@ -127,7 +127,7 @@ describe('getNotificationSkipReason', () => {
             eq: vi.fn(() => ({
               eq: vi.fn(() => ({
                 maybeSingle: vi.fn(async () => ({
-                  data: { user_id: 'user-1' },
+                  data: { type: 'MEMBER' as const },
                   error: null,
                 })),
               })),
@@ -154,7 +154,7 @@ describe('getNotificationSkipReason', () => {
             eq: vi.fn(() => ({
               eq: vi.fn(() => ({
                 maybeSingle: vi.fn(async () => ({
-                  data: { user_id: 'user-1' },
+                  data: { type: 'MEMBER' as const },
                   error: null,
                 })),
               })),
@@ -191,7 +191,7 @@ describe('getNotificationSkipReason', () => {
             eq: vi.fn(() => ({
               eq: vi.fn(() => ({
                 maybeSingle: vi.fn(async () => ({
-                  data: { user_id: 'user-1' },
+                  data: { type: 'MEMBER' as const },
                   error: null,
                 })),
               })),
@@ -226,7 +226,7 @@ describe('getNotificationSkipReason', () => {
             eq: vi.fn(() => ({
               eq: vi.fn(() => ({
                 maybeSingle: vi.fn(async () => ({
-                  data: { user_id: 'user-1' },
+                  data: { type: 'MEMBER' as const },
                   error: null,
                 })),
               })),

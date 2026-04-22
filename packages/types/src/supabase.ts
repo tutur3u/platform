@@ -2207,31 +2207,73 @@ export type Database = {
       course_certificates: {
         Row: {
           completed_date: string;
-          course_id: string;
           created_at: string;
+          group_id: string;
           id: string;
           user_id: string;
         };
         Insert: {
           completed_date: string;
-          course_id: string;
           created_at?: string;
+          group_id: string;
           id?: string;
           user_id?: string;
         };
         Update: {
           completed_date?: string;
-          course_id?: string;
           created_at?: string;
+          group_id?: string;
           id?: string;
           user_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'course_certificates_course_id_fkey';
-            columns: ['course_id'];
+            foreignKeyName: 'course_certificates_group_id_fkey';
+            columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'workspace_courses';
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'course_certificates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'course_certificates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'course_certificates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_certificates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_certificates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_certificates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
             referencedColumns: ['id'];
           },
           {
@@ -16907,105 +16949,88 @@ export type Database = {
       workspace_course_modules: {
         Row: {
           content: Json | null;
-          course_id: string;
           created_at: string;
           extra_content: Json | null;
+          group_id: string;
           id: string;
           is_public: boolean;
           is_published: boolean;
           name: string;
+          sort_key: number | null;
           youtube_links: string[] | null;
         };
         Insert: {
           content?: Json | null;
-          course_id: string;
           created_at?: string;
           extra_content?: Json | null;
+          group_id: string;
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
+          sort_key?: number | null;
           youtube_links?: string[] | null;
         };
         Update: {
           content?: Json | null;
-          course_id?: string;
           created_at?: string;
           extra_content?: Json | null;
+          group_id?: string;
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
+          sort_key?: number | null;
           youtube_links?: string[] | null;
         };
         Relationships: [
           {
-            foreignKeyName: 'workspace_course_modules_course_id_fkey';
-            columns: ['course_id'];
+            foreignKeyName: 'workspace_course_modules_group_id_fkey';
+            columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'workspace_courses';
-            referencedColumns: ['id'];
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
           },
-        ];
-      };
-      workspace_courses: {
-        Row: {
-          cert_template: Database['public']['Enums']['certificate_templates'];
-          created_at: string;
-          description: string | null;
-          id: string;
-          is_public: boolean;
-          is_published: boolean;
-          name: string;
-          ws_id: string;
-        };
-        Insert: {
-          cert_template?: Database['public']['Enums']['certificate_templates'];
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          is_public?: boolean;
-          is_published?: boolean;
-          name?: string;
-          ws_id: string;
-        };
-        Update: {
-          cert_template?: Database['public']['Enums']['certificate_templates'];
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          is_public?: boolean;
-          is_published?: boolean;
-          name?: string;
-          ws_id?: string;
-        };
-        Relationships: [
           {
-            foreignKeyName: 'workspace_courses_ws_id_fkey';
-            columns: ['ws_id'];
+            foreignKeyName: 'workspace_course_modules_group_id_fkey';
+            columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'workspace_course_modules_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'workspace_course_modules_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'workspace_courses_ws_id_fkey';
-            columns: ['ws_id'];
+            foreignKeyName: 'workspace_course_modules_group_id_fkey';
+            columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'workspace_courses_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
+            referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'workspace_courses_ws_id_fkey';
-            columns: ['ws_id'];
+            foreignKeyName: 'workspace_course_modules_group_id_fkey';
+            columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'workspaces';
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_course_modules_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
             referencedColumns: ['id'];
           },
         ];
@@ -17972,18 +17997,21 @@ export type Database = {
           created_at: string;
           email: string;
           invited_by: string | null;
+          type: Database['public']['Enums']['workspace_member_type'];
           ws_id: string;
         };
         Insert: {
           created_at?: string;
           email: string;
           invited_by?: string | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           ws_id: string;
         };
         Update: {
           created_at?: string;
           email?: string;
           invited_by?: string | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           ws_id?: string;
         };
         Relationships: [
@@ -19269,6 +19297,168 @@ export type Database = {
           },
         ];
       };
+      workspace_guest_permissions: {
+        Row: {
+          created_at: string;
+          enable: boolean;
+          guest_id: string;
+          id: string;
+          permission: Database['public']['Enums']['workspace_guest_permission_t'];
+          resource_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          enable?: boolean;
+          guest_id: string;
+          id?: string;
+          permission: Database['public']['Enums']['workspace_guest_permission_t'];
+          resource_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          enable?: boolean;
+          guest_id?: string;
+          id?: string;
+          permission?: Database['public']['Enums']['workspace_guest_permission_t'];
+          resource_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_guest_permissions_guest_id_fkey';
+            columns: ['guest_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_guests';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_guest_permissions_resource_id_fkey';
+            columns: ['resource_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'workspace_guest_permissions_resource_id_fkey';
+            columns: ['resource_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'workspace_guest_permissions_resource_id_fkey';
+            columns: ['resource_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'workspace_guest_permissions_resource_id_fkey';
+            columns: ['resource_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_guest_permissions_resource_id_fkey';
+            columns: ['resource_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_guest_permissions_resource_id_fkey';
+            columns: ['resource_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_guest_permissions_resource_id_fkey';
+            columns: ['resource_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_guests: {
+        Row: {
+          created_at: string;
+          id: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_guests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_guests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_guests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_guests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_guests_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_guests_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_guests_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_guests_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_habit_tracker_entries: {
         Row: {
           created_at: string;
@@ -19551,6 +19741,8 @@ export type Database = {
           aggregation_strategy: string;
           archived_at: string | null;
           color: string;
+          composer_config: Json;
+          composer_mode: string;
           created_at: string;
           created_by: string | null;
           description: string | null;
@@ -19567,14 +19759,18 @@ export type Database = {
           target_operator: string;
           target_period: string;
           target_value: number;
+          template_category: string;
           tracking_mode: string;
           updated_at: string;
+          use_case: string;
           ws_id: string;
         };
         Insert: {
           aggregation_strategy?: string;
           archived_at?: string | null;
           color?: string;
+          composer_config?: Json;
+          composer_mode?: string;
           created_at?: string;
           created_by?: string | null;
           description?: string | null;
@@ -19591,14 +19787,18 @@ export type Database = {
           target_operator?: string;
           target_period?: string;
           target_value?: number;
+          template_category?: string;
           tracking_mode?: string;
           updated_at?: string;
+          use_case?: string;
           ws_id: string;
         };
         Update: {
           aggregation_strategy?: string;
           archived_at?: string | null;
           color?: string;
+          composer_config?: Json;
+          composer_mode?: string;
           created_at?: string;
           created_by?: string | null;
           description?: string | null;
@@ -19615,8 +19815,10 @@ export type Database = {
           target_operator?: string;
           target_period?: string;
           target_value?: number;
+          template_category?: string;
           tracking_mode?: string;
           updated_at?: string;
+          use_case?: string;
           ws_id?: string;
         };
         Relationships: [
@@ -19968,6 +20170,7 @@ export type Database = {
           expires_at: string | null;
           id: string;
           max_uses: number | null;
+          type: Database['public']['Enums']['workspace_member_type'];
           updated_at: string;
           ws_id: string;
         };
@@ -19978,6 +20181,7 @@ export type Database = {
           expires_at?: string | null;
           id?: string;
           max_uses?: number | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           updated_at?: string;
           ws_id: string;
         };
@@ -19988,6 +20192,7 @@ export type Database = {
           expires_at?: string | null;
           id?: string;
           max_uses?: number | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           updated_at?: string;
           ws_id?: string;
         };
@@ -20053,16 +20258,19 @@ export type Database = {
       workspace_invites: {
         Row: {
           created_at: string | null;
+          type: Database['public']['Enums']['workspace_member_type'];
           user_id: string;
           ws_id: string;
         };
         Insert: {
           created_at?: string | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           user_id: string;
           ws_id: string;
         };
         Update: {
           created_at?: string | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           user_id?: string;
           ws_id?: string;
         };
@@ -20213,18 +20421,21 @@ export type Database = {
         Row: {
           created_at: string | null;
           sort_key: number | null;
+          type: Database['public']['Enums']['workspace_member_type'];
           user_id: string;
           ws_id: string;
         };
         Insert: {
           created_at?: string | null;
           sort_key?: number | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           user_id?: string;
           ws_id: string;
         };
         Update: {
           created_at?: string | null;
           sort_key?: number | null;
+          type?: Database['public']['Enums']['workspace_member_type'];
           user_id?: string;
           ws_id?: string;
         };
@@ -21915,8 +22126,10 @@ export type Database = {
       workspace_user_groups: {
         Row: {
           archived: boolean;
+          cert_template: Database['public']['Enums']['certificate_templates'];
           created_at: string | null;
           creator_id: string | null;
+          description: string | null;
           ending_date: string | null;
           id: string;
           is_guest: boolean | null;
@@ -21928,8 +22141,10 @@ export type Database = {
         };
         Insert: {
           archived?: boolean;
+          cert_template?: Database['public']['Enums']['certificate_templates'];
           created_at?: string | null;
           creator_id?: string | null;
+          description?: string | null;
           ending_date?: string | null;
           id?: string;
           is_guest?: boolean | null;
@@ -21941,8 +22156,10 @@ export type Database = {
         };
         Update: {
           archived?: boolean;
+          cert_template?: Database['public']['Enums']['certificate_templates'];
           created_at?: string | null;
           creator_id?: string | null;
+          description?: string | null;
           ending_date?: string | null;
           id?: string;
           is_guest?: boolean | null;
@@ -24384,6 +24601,9 @@ export type Database = {
           is_expired: boolean | null;
           is_full: boolean | null;
           max_uses: number | null;
+          member_type:
+            | Database['public']['Enums']['workspace_member_type']
+            | null;
           updated_at: string | null;
           ws_id: string | null;
         };
@@ -24464,6 +24684,7 @@ export type Database = {
           handle: string | null;
           id: string | null;
           pending: boolean | null;
+          type: Database['public']['Enums']['workspace_member_type'] | null;
           ws_id: string | null;
         };
         Relationships: [];
@@ -27182,6 +27403,21 @@ export type Database = {
             }[];
           };
       get_workspace_drive_size: { Args: { ws_id: string }; Returns: number };
+      get_workspace_habit_tracker_latest_stats: {
+        Args: { p_tracker_ids?: string[]; p_user_id: string; p_ws_id: string };
+        Returns: {
+          current_period_total: number;
+          latest_entry_date: string;
+          latest_entry_id: string;
+          latest_occurred_at: string;
+          latest_primary_value: number;
+          latest_values: Json;
+          total_entries: number;
+          total_value: number;
+          tracker_id: string;
+          user_id: string;
+        }[];
+      };
       get_workspace_member_count: {
         Args: { p_ws_id: string };
         Returns: number;
@@ -27653,6 +27889,15 @@ export type Database = {
             };
             Returns: number;
           };
+      habit_tracker_entry_numeric_value: {
+        Args: {
+          p_aggregation_strategy: string;
+          p_primary_metric_key: string;
+          p_primary_value: number;
+          p_values: Json;
+        };
+        Returns: number;
+      };
       hard_delete_soft_deleted_items: { Args: never; Returns: undefined };
       has_task_permission: {
         Args: { p_permission: string; p_task_id: string };
@@ -28197,6 +28442,10 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      reorder_workspace_course_modules: {
+        Args: { p_group_id: string; p_module_ids: string[] };
+        Returns: undefined;
+      };
       reserve_fixed_ai_credits: {
         Args: {
           p_amount: number;
@@ -28596,6 +28845,50 @@ export type Database = {
           p_workspace_id: string;
         };
         Returns: Json;
+      };
+      update_time_tracking_request_content: {
+        Args: {
+          p_actor_auth_uid: string;
+          p_description?: string;
+          p_end_time?: string;
+          p_images?: string[];
+          p_request_id: string;
+          p_start_time?: string;
+          p_title: string;
+          p_workspace_id: string;
+        };
+        Returns: {
+          approval_status: Database['public']['Enums']['time_tracking_request_status'];
+          approved_at: string | null;
+          approved_by: string | null;
+          break_type_id: string | null;
+          break_type_name: string | null;
+          category_id: string | null;
+          created_at: string;
+          description: string | null;
+          end_time: string;
+          id: string;
+          images: string[] | null;
+          linked_session_id: string | null;
+          needs_info_reason: string | null;
+          needs_info_requested_at: string | null;
+          needs_info_requested_by: string | null;
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
+          start_time: string;
+          task_id: string | null;
+          title: string;
+          updated_at: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'time_tracking_requests';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       update_time_tracking_session_bypassed: {
         Args: {
@@ -30672,6 +30965,8 @@ export type Database = {
         | 'gemini-2.0-flash-lite'
         | 'gemini-2.5-flash-lite';
       workspace_calendar_type: 'primary' | 'tasks' | 'habits' | 'custom';
+      workspace_guest_permission_t: 'course:view' | 'course:complete';
+      workspace_member_type: 'MEMBER' | 'GUEST';
       workspace_order_product_kind:
         | 'subscription_product'
         | 'credit_pack'
@@ -30785,7 +31080,9 @@ export type Database = {
         | 'view_inventory_sales'
         | 'create_inventory_sales'
         | 'view_inventory_analytics'
-        | 'view_inventory_audit_logs';
+        | 'view_inventory_audit_logs'
+        | 'change_finance_wallets'
+        | 'set_finance_wallets_on_create';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -32808,6 +33105,8 @@ export const Constants = {
         'gemini-2.5-flash-lite',
       ],
       workspace_calendar_type: ['primary', 'tasks', 'habits', 'custom'],
+      workspace_guest_permission_t: ['course:view', 'course:complete'],
+      workspace_member_type: ['MEMBER', 'GUEST'],
       workspace_order_product_kind: [
         'subscription_product',
         'credit_pack',
@@ -32924,6 +33223,8 @@ export const Constants = {
         'create_inventory_sales',
         'view_inventory_analytics',
         'view_inventory_audit_logs',
+        'change_finance_wallets',
+        'set_finance_wallets_on_create',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

@@ -1,5 +1,5 @@
 import { Youtube } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import DeleteLinkButton from '@tuturuuu/ui/custom/education/modules/youtube/delete-link-button';
 import { YoutubeEmbed } from '@tuturuuu/ui/custom/education/modules/youtube/embed';
 import YouTubeLinkForm from '@tuturuuu/ui/custom/education/modules/youtube/form';
@@ -8,6 +8,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import { extractYoutubeId } from '@/utils/url-helper';
 
 export const metadata: Metadata = {
@@ -25,7 +26,8 @@ interface Props {
 }
 
 export default async function ModuleYoutubeLinksPage({ params }: Props) {
-  const { wsId, courseId, moduleId } = await params;
+  const { wsId: routeWsId, courseId, moduleId } = await params;
+  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
   const t = await getTranslations();
   const links = await getYoutubeLinks(moduleId, courseId);
 
@@ -46,7 +48,7 @@ export default async function ModuleYoutubeLinksPage({ params }: Props) {
         createDescription={t('ws-course-modules.add_youtube_link_description')}
         form={
           <YouTubeLinkForm
-            wsId={wsId}
+            wsId={resolvedWsId}
             moduleId={moduleId}
             links={links || []}
           />
@@ -60,7 +62,7 @@ export default async function ModuleYoutubeLinksPage({ params }: Props) {
             className="flex flex-wrap items-center gap-2 rounded-lg border border-foreground/10 p-2 md:p-4"
           >
             <DeleteLinkButton
-              wsId={wsId}
+              wsId={resolvedWsId}
               moduleId={moduleId}
               courseId={courseId}
               link={link}
@@ -83,13 +85,13 @@ export default async function ModuleYoutubeLinksPage({ params }: Props) {
 }
 
 const getYoutubeLinks = async (moduleId: string, courseId: string) => {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase
     .from('workspace_course_modules')
     .select('youtube_links')
     .eq('id', moduleId)
-    .eq('course_id', courseId)
+    .eq('group_id', courseId)
     .single();
 
   if (error) {

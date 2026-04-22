@@ -2195,6 +2195,7 @@
     "starts": "Bắt đầu",
     "starts_at": "Bắt đầu {date}",
     "status": "Trạng thái",
+    "status_category": "Nhóm trạng thái",
     "stay-updated": "Cập nhật thường xuyên",
     "stress": "căng thẳng",
     "styles": "Kiểu dáng",
@@ -11348,6 +11349,8 @@
     "avg_permissions": "Quyền Trung bình",
     "bypass_time_tracking_request_approval": "Bỏ qua phê duyệt yêu cầu theo dõi thời gian",
     "bypass_time_tracking_request_approval_description": "Cho phép bỏ qua các hạn chế khi phê duyệt/từ chối yêu cầu theo dõi thời gian",
+    "change_finance_wallets": "Thay đổi ví tài chính",
+    "change_finance_wallets_description": "Cho phép thành viên thay đổi ví của hóa đơn và giao dịch, bao gồm cả ví mặc định của không gian làm việc.",
     "check_user_attendance": "Kiểm tra điểm danh người dùng",
     "check_user_attendance_description": "Cho phép thành viên kiểm tra điểm danh của người dùng khác",
     "collapse_members": "Thu gọn thành viên",
@@ -11537,6 +11540,8 @@
     "select_wallet": "Chọn một ví",
     "send_user_group_post_emails": "Gửi nội dung bài viết qua email",
     "send_user_group_post_emails_description": "Cho phép thành viên gửi email đến người dùng ảo được tạo trong không gian làm việc của bạn về nội dung bài viết của nhóm người dùng cụ thể.",
+    "set_finance_wallets_on_create": "Chọn ví tài chính khi tạo mới",
+    "set_finance_wallets_on_create_description": "Cho phép thành viên chọn bất kỳ ví nào khi tạo hóa đơn và giao dịch mới nhưng không cho phép đổi ví sau khi đã tạo.",
     "singular": "Vai trò",
     "total_roles": "Tổng Vai trò",
     "transactions": "Giao dịch tài chính",
@@ -12154,6 +12159,7 @@
       },
       "unarchive": "Bỏ lưu trữ"
     },
+    "select_or_create_list": "Chọn hoặc tạo danh sách",
     "settings": {
       "configure_description": "Cấu hình các cài đặt riêng của bảng.",
       "ticket_prefix": "Tiền tố Phiếu",

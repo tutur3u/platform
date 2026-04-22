@@ -3,7 +3,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { consumeStream, smoothStream, stepCountIs, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
@@ -125,26 +128,22 @@ export function createPOST(
       }
 
       if (normalizedWsId) {
-        const { data: contextMembership, error: contextMembershipError } =
-          await sbAdmin
-            .from('workspace_members')
-            .select('user_id')
-            .eq('ws_id', normalizedWsId)
-            .eq('user_id', user.id)
-            .maybeSingle();
+        const contextMembership = await verifyWorkspaceMembershipType({
+          wsId: normalizedWsId,
+          userId: user.id,
+          supabase: sbAdmin,
+          requiredType: 'MEMBER',
+        });
 
-        if (contextMembershipError) {
-          console.error(
-            'DB error checking workspace membership:',
-            contextMembershipError.message
-          );
+        if (contextMembership.error === 'membership_lookup_failed') {
+          console.error('DB error checking workspace membership');
           return NextResponse.json(
             { error: 'Internal error verifying workspace access' },
             { status: 500 }
           );
         }
 
-        if (!contextMembership) {
+        if (!contextMembership.ok) {
           return NextResponse.json(
             { error: 'Workspace access denied' },
             { status: 403 }
@@ -214,26 +213,22 @@ export function createPOST(
         }
 
         if (!normalizedWsId) {
-          const { data: billingMembership, error: billingMembershipError } =
-            await sbAdmin
-              .from('workspace_members')
-              .select('user_id')
-              .eq('ws_id', requestedCreditWsId)
-              .eq('user_id', user.id)
-              .maybeSingle();
+          const billingMembership = await verifyWorkspaceMembershipType({
+            wsId: requestedCreditWsId,
+            userId: user.id,
+            supabase: sbAdmin,
+            requiredType: 'MEMBER',
+          });
 
-          if (billingMembershipError) {
-            console.error(
-              'Failed to check billing workspace membership',
-              billingMembershipError.message
-            );
+          if (billingMembership.error === 'membership_lookup_failed') {
+            console.error('Failed to check billing workspace membership');
             return NextResponse.json(
               { error: 'Internal server error' },
               { status: 500 }
             );
           }
 
-          if (!billingMembership) {
+          if (!billingMembership.ok) {
             return NextResponse.json(
               {
                 error: 'Workspace access denied for selected credit workspace.',

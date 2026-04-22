@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, OutlinedButton, TextField;
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/models/time_tracking/request_comment.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
@@ -543,7 +544,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
     }
 
     unawaited(
-      shad.showDialog<void>(
+      showAdaptiveSheet<void>(
         context: context,
         builder: (_) => EditRequestDialog(
           wsId: widget.wsId,
@@ -574,7 +575,6 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                   });
                   _scheduleGracePeriodExpiryRebuild();
                 }
-                // Note: EditRequestDialog._handleSave will pop the dialog
                 return updatedRequest;
               },
         ),

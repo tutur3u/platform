@@ -9,6 +9,7 @@ import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import {
   getWorkspaceTier,
   normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
 import { MIRA_LIVE_SCOPE_KEY } from '@/lib/live/session-scope';
@@ -156,14 +157,20 @@ export async function POST(request: Request) {
 
     const normalizedWsId = await normalizeWorkspaceId(wsId);
 
-    const { error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (membershipError) {
+    if (membership.error === 'membership_lookup_failed') {
+      return Response.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership.ok) {
       return Response.json(
         { error: 'You are not a member of this workspace' },
         { status: 403 }

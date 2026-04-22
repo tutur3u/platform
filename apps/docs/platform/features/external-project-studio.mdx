@@ -1,0 +1,121 @@
+---
+title: 'EPM'
+description: 'External Project Management workflows for canonical external projects and workspace-bound content.'
+updatedAt: '2026-04-22'
+---
+
+## TL;DR
+
+EPM now lives in the dedicated `apps/cms` satellite app.
+
+- `apps/cms` owns the EPM authoring UI, workspace picker, and `/internal/admin` registry surface.
+- `apps/web` remains the only backend/API owner for EPM and CMS traffic.
+- `apps/cms` rewrites `/api/*` to `apps/web`, so proxy behavior and bot protection stay centralized.
+
+The EPM experience now follows two distinct workflows:
+
+- The **root workspace** owns the canonical registry and workspace bindings through CMS at `/internal/admin`.
+- Each **bound workspace** uses CMS as a dedicated content workspace:
+  - `/{wsId}` is the CMS home.
+  - `/{wsId}/content` is the content index.
+  - `/{wsId}/content/{entryId}` is the guided entry editor.
+  - `/{wsId}/collections/{collectionId}` is the collection detail page.
+  - `/{wsId}/preview` is the preview and publish surface.
+  - Only EPM-enabled workspaces appear in the CMS workspace picker.
+
+## Root Control Tower
+
+- Open `/internal/admin` in `apps/cms` to manage canonical projects and workspace bindings.
+- Use the registry search and adapter filter to find canonical projects quickly.
+- Keep project edits in the registry cards so adapter, delivery profile, and recommended collections stay visible while editing.
+- Use the action panel for two jobs:
+  - create a new canonical project
+  - bind or unbind a destination workspace
+- Recent binding audits stay below the registry so operational changes remain visible after edits.
+
+## Workspace CMS
+
+- Use the CMS home at `/{wsId}` as the non-technical starting point.
+  - Show high-level metrics, recent activity, and attention queues.
+  - Route users into content, collections, or preview work instead of dropping them into a mixed operator dashboard.
+- Use `/{wsId}/content` as the main editing workspace.
+  - Keep collection, entry, and workflow actions in one query-backed shell.
+  - Use dedicated entry routes for deep editing instead of duplicating large inline editors everywhere.
+- Use `/{wsId}/preview` for live preview and publish actions.
+  - Render collections and entries from `GET /api/v1/workspaces/:wsId/external-projects/delivery?preview=true`.
+  - Keep the preview source of truth on the delivery route instead of a second client-only payload.
+- Use `/{wsId}/collections/{collectionId}` for collection-level configuration.
+- Do not duplicate the same record across featured cards, selected-entry cards, and queue summaries on the index page.
+- Entry authoring now uses the fullscreen dialog editor from the main `/epm` surface.
+  - Use the dialog for focused title/slug/status edits, schedule changes, cover uploads, and asset ordering.
+  - Keep the dashboard as the operator index; do not duplicate the same heavy editor inline across cards or summary panels.
+  - Preserve `/{wsId}/epm/entries/{entryId}` as a deep-link or fallback route only when a standalone page is still required.
+- Collection details now live at `/{wsId}/epm/collections/{collectionId}`.
+  - Use this page for collection title/description/enabled-state changes and quick routing into collection entries.
+  - Keep collection editing off the main `/epm` body.
+- Cover images are first-class.
+  - Use image assets with `sort_order = 0` as the lead cover for preview and admin surfaces.
+  - If a lead image cannot resolve from Drive/storage, drop the broken media source and render the non-image fallback treatment instead of leaving broken alt text in the UI.
+  - Reordering image assets on the entry detail page changes which image leads the entry across the EPM surfaces.
+  - Use the asset gallery for fast per-image operations: set-as-cover, quick single-image delete, and inline caption editing.
+  - Treat per-image captions as asset metadata so external apps can consume the same text without scraping the admin UI.
+  - Deleting an entry or an entire collection should also delete any linked workspace Drive objects referenced by those assets' `storage_path` values so EPM does not leave orphaned media behind.
+- Treat the `Workflow` section in Edit mode as the operator queue.
+  - Multi-select lives there, not across Preview mode or entry summaries.
+  - Schedule, publish, draft, and archive actions should be available without reopening each record.
+- Import, create, duplicate, save, publish, and unpublish actions stay explicit. There is no autosave.
+
+## Implementation Notes
+
+- The preview source of truth is the existing preview delivery API, not a duplicate client-side payload builder.
+- The workspace studio still uses the existing internal API helpers for entry, block, asset, import, publish, and binding operations.
+- Collection routing labels for external apps should live in `collection.config.navigation.title` so EPM can manage nav titles without overloading the operator-facing collection title.
+- The `/epm`, entry-detail, and collection-detail routes should stay as thin server auth gates and fetch their working data from a shared `epm-studio` TanStack Query cache on the client.
+- Mutations on the dedicated detail pages should patch or invalidate that shared studio query instead of calling `router.refresh()`.
+- When the main `/epm` shell opens the fullscreen entry editor dialog, keep it on the same shared studio query cache so open/close transitions feel instant and do not need route refreshes.
+- Keep the entry detail client focused on query state, mutations, and derived view-model logic. Extract sticky header actions, taxonomy controls, featured-order cards, and sidebar/status panels into adjacent components instead of letting one TSX file own every render branch.
+- After entry asset uploads, deletes, or cover reordering, keep the optimistic cache update for responsiveness but also invalidate the shared `epm-studio` query so the page re-fetches the canonical backend asset rows right away.
+- When uploads or media mutations are running in the entry dialog, surface a visible processing indicator near the command bar and media controls instead of leaving the user with silent disabled buttons.
+- Cover uploads and replacements reuse the existing workspace asset signed-upload helper; no separate cover-specific backend endpoint is needed.
+- Optimize image uploads on the client before requesting the signed upload PUT so gallery and cover assets stay lighter without requiring a separate media-processing job.
+- For EPM image surfaces, keep `asset_url` as the original asset route and use `preview_url` for a transformed Supabase variant (for example constrained width/height plus quality). The gallery and editor should prefer `preview_url` first so the workspace ships smaller images by default.
+- The SDK should expose the same navigation/media contract external projects need: absolute studio asset URLs, collection navigation-title helpers, asset delete methods, and media metadata fields such as captions.
+- For external delivery apps that need client-side navigation or infinite lists, prefetch and hydrate one delivery query near the root layout, then derive route-level view models from that shared cache instead of repeating route-level SDK fetches.
+- For featured rails or hero carousels in external delivery apps, derive the ordered items from existing delivery content plus section/profile configuration (for example featured slugs in `profile_data`) rather than inventing a second featured payload contract just for the frontend.
+- If no featured slug config is present for a given surface, hide the special featured carousel/rail entirely instead of falling back to the first published entry or image. Keep the normal gallery/list visible as the default experience.
+- For Yoola-style external sites, keep sitewide public copy in the `singleton-sections` collection and treat those entries as page configuration:
+  - use slugs like `gallery`, `writing`, and `about`
+  - use the entry title/subtitle/description for hero framing
+  - use the first markdown block for longform page copy
+  - keep page-specific structured options such as `socialLinks`, `markers`, `stats`, `navLabel`, or callout panels in `profile_data`
+  - manage entry taxonomy from the structured EPM form too: use `profile_data.category` for gallery-style categorical grouping and `profile_data.tags` for ordered tag chips instead of hand-editing those values in raw JSON
+  - treat singleton section entries such as `gallery` and `writing` as the canonical taxonomy registry too: persist picker/filter suggestions in `profile_data.categoryOptions` and `profile_data.tagOptions` on that section entry instead of inferring “existing” values from every published entry
+  - keep taxonomy creation lightweight: the main control should be the existing-value picker, with a compact adjacent `+` action that reveals inline create inputs only when needed
+  - manage featured ordering from the section entry detail form and persist canonical slug arrays in `profile_data` (`featuredArtworkSlugs` for `gallery`, `featuredEntrySlugs` for `writing`) instead of hand-editing raw JSON
+  - when a section editor manages featured ordering, keep selection and ordering in one compact list instead of splitting the UI into a "selected" rail plus a second "available" checklist
+  - surface direct add/remove featured controls on candidate artwork and writing entry dialogs too, but keep those controls mutating the same singleton section entry so there is still one ordering source of truth
+- External apps like Yoola should consume EPM through one server-side adapter module that fetches delivery once, maps it into the app's view model, and passes typed props down to client components. Do not scatter SDK calls or hardcoded mirror content arrays across multiple pages.
+- If an external app adopts TanStack Query for delivery, keep that adapter as the normalization layer and hydrate it once at the app shell boundary. Route components should read from the shared query cache and only own incremental rendering state such as infinite scroll windows.
+- For Yoola-style writing routes, use the delivery entry's markdown blocks as the canonical longform body and render them directly on the external site instead of maintaining a second static prose source.
+- In the EPM entry editor, present the persisted `summary` field as a markdown-capable description/excerpt surface instead of a plain textarea label. Keep longform writing and singleton-page bodies on markdown blocks so external apps can render both short and long copy directly from delivery.
+- When publishing `packages/sdk` for external apps, keep the package `types` and `bun` export targets on built `dist/*` declarations/runtime files rather than raw `src/*` source entrypoints. External Next/Bun apps can otherwise resolve internal source files and inherit monorepo-only type assumptions.
+- When EPM surfaces render internal asset API URLs such as `/api/v1/workspaces/:wsId/external-projects/assets/:assetId`, bypass the Next.js image optimizer (`unoptimized`) instead of routing them through `/_next/image`. Protected or signed internal asset routes can return optimizer-side `400` responses even though the direct asset URL is valid.
+- When bulk-managing files in the workspace Drive explorer, keep selection state stable across search/view changes and expose destructive bulk actions behind explicit confirmation dialogs.
+- Legacy `apps/web` routes such as `/{wsId}/epm`, `/{wsId}/epm/entries/{entryId}`, `/{wsId}/epm/collections/{collectionId}`, and `/{wsId}/external-projects` now redirect into CMS.
+
+## Team Guidance
+
+- Keep CMS as a pure satellite frontend. Do not move EPM API route ownership into `apps/cms`.
+- When CMS needs new backend behavior, add the route in `apps/web` and consume it through `packages/internal-api`.
+- Keep the CMS workspace picker filtered to EPM-enabled workspaces, plus `internal` for root EPM admins.
+- When changing external-project authoring UX, keep the live preview wired to the preview delivery endpoint instead of inventing a second payload contract in the client.
+- When the tool needs to behave like both a front-end preview and an admin workspace, split it into explicit `Preview` and `Edit` modes rather than blending both into the same crowded surface.
+- For dense admin surfaces, prefer one compact index plus a near-fullscreen dialog or dedicated page for item-level authoring instead of rebuilding mini-editors inside the index view.
+- Keep the detail routes on the same shared studio query cache as the index so save/publish/cover changes stay client-fast without route refreshes.
+- For external-project entries that need strong visual identity, treat cover image upload/replacement/reordering as a first-class workflow instead of burying it under generic asset editing.
+- For external-project collections that need separate operator titles and site-nav labels, keep the operator-facing title on `collection.title` and store the external nav copy in `collection.config.navigation.title`.
+- For first external integrations, replace local hardcoded content registries with a single server adapter over the EPM delivery payload, then preserve the existing page design by passing mapped props into client components.
+- For external branded sites, never ship public-facing copy like “live EPM delivery” or other integration explanations. Treat EPM singleton sections and profile data as the site’s public content source, and keep operational/delivery status language inside the admin product only.
+- If a published SDK package is intended for external Next/Bun apps, verify it resolves through built `dist` declarations and runtime files before asking downstream apps to integrate it. Source-based package entrypoints can leak internal monorepo typings into consumers.
+- Mount Vercel Analytics and Speed Insights only on actual Vercel deployments. Self-hosted environments should not emit `/_vercel/*` requests that immediately `404`.
+- Add any new user-facing copy to both `apps/cms/messages/en.json` and `apps/cms/messages/vi.json` for CMS-owned UI, then run `bun i18n:sort`.

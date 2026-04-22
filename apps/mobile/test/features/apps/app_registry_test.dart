@@ -76,13 +76,17 @@ void main() {
       expect(routes, contains(Routes.taskEstimates));
     });
 
-    test('habits module exposes overview and activity nav items', () {
+    test('habits module exposes today, activity, and library nav items', () {
       final habits = AppRegistry.moduleById('habits');
 
       expect(habits, isNotNull);
       final routes = habits!.miniAppNavItems.map((item) => item.route).toList();
 
-      expect(routes, [Routes.habits, Routes.habitsActivity]);
+      expect(routes, [
+        Routes.habits,
+        Routes.habitsActivity,
+        Routes.habitsLibrary,
+      ]);
     });
 
     test('all modules define at least one mini nav item', () {
@@ -111,7 +115,9 @@ void main() {
       expect(labels, ['Overview', 'Activity', 'Wallets', 'Manage']);
     });
 
-    testWidgets('habits nav uses overview and activity labels', (tester) async {
+    testWidgets('habits nav uses today, activity, and library labels', (
+      tester,
+    ) async {
       late List<String> labels;
 
       await tester.pumpApp(
@@ -126,7 +132,7 @@ void main() {
         ),
       );
 
-      expect(labels, ['Overview', 'Activity']);
+      expect(labels, ['Today', 'Activity', 'Library']);
     });
   });
 }

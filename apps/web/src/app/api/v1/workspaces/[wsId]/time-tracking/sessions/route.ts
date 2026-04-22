@@ -8,7 +8,10 @@ import {
   escapeLikePattern,
   sanitizeSearchQuery,
 } from '@tuturuuu/utils/search-helper';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -375,14 +378,20 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const sbAdmin = await createAdminClient();
 
       // Verify workspace access
-      const { data: memberCheck } = await supabase
-        .from('workspace_members')
-        .select('id:user_id')
-        .eq('ws_id', normalizedWsId)
-        .eq('user_id', user.id)
-        .single();
+      const memberCheck = await verifyWorkspaceMembershipType({
+        wsId: normalizedWsId,
+        userId: user.id,
+        supabase: supabase,
+      });
 
-      if (!memberCheck) {
+      if (memberCheck.error === 'membership_lookup_failed') {
+        return NextResponse.json(
+          { error: 'Failed to verify workspace membership' },
+          { status: 500 }
+        );
+      }
+
+      if (!memberCheck.ok) {
         return NextResponse.json(
           { error: 'Workspace access denied' },
           { status: 403 }
@@ -415,14 +424,20 @@ export const GET = withSessionAuth<{ wsId: string }>(
 
       // If targeting another user, verify they're in the same workspace
       if (targetUserId && targetUserId !== user.id) {
-        const { data: targetUserCheck } = await supabase
-          .from('workspace_members')
-          .select('id:user_id')
-          .eq('ws_id', normalizedWsId)
-          .eq('user_id', targetUserId)
-          .single();
+        const targetMembership = await verifyWorkspaceMembershipType({
+          wsId: normalizedWsId,
+          userId: targetUserId,
+          supabase,
+        });
 
-        if (!targetUserCheck) {
+        if (targetMembership.error === 'membership_lookup_failed') {
+          return NextResponse.json(
+            { error: 'Failed to verify target user access' },
+            { status: 500 }
+          );
+        }
+
+        if (!targetMembership.ok) {
           return NextResponse.json(
             { error: 'Target user not found in workspace' },
             { status: 404 }
@@ -714,15 +729,20 @@ export const POST = withSessionAuth<{ wsId: string }>(
         request
       );
 
-      // Verify workspace access
-      const { data: memberCheck } = await supabase
-        .from('workspace_members')
-        .select('id:user_id')
-        .eq('ws_id', normalizedWsId)
-        .eq('user_id', user.id)
-        .single();
+      const memberCheck = await verifyWorkspaceMembershipType({
+        wsId: normalizedWsId,
+        userId: user.id,
+        supabase,
+      });
 
-      if (!memberCheck) {
+      if (memberCheck.error === 'membership_lookup_failed') {
+        return NextResponse.json(
+          { error: 'Failed to verify workspace access' },
+          { status: 500 }
+        );
+      }
+
+      if (!memberCheck.ok) {
         return NextResponse.json(
           { error: 'Workspace access denied' },
           { status: 403 }

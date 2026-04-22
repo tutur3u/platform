@@ -1,14 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Agent, fetch as undiciFetch } from 'undici';
 import { DEV_MODE } from '@/constants/common';
-
-// Custom dispatcher with increased header size limit (128KB)
-// This prevents HeadersOverflowError when external API returns many headers
-const customAgent = DEV_MODE
-  ? new Agent({
-      maxHeaderSize: 128 * 1024, // 128KB (default is ~16KB)
-    })
-  : undefined;
 
 // Default Tuturuuu API endpoint (production v2)
 const DEFAULT_TUTURUUU_API_ENDPOINT = 'https://tuturuuu.com/api/v2';
@@ -27,6 +18,41 @@ const ALLOWED_API_DOMAINS = [
 
 // Allowed ports for local development to prevent SSRF to internal services
 const ALLOWED_LOCAL_PORTS = [3000, 7803, 8080];
+let proxyClientPromise:
+  | Promise<{
+      dispatcher: import('undici').Agent;
+      request: typeof import('undici').request;
+    }>
+  | undefined;
+
+async function getProxyClient() {
+  if (!DEV_MODE) {
+    throw new Error('Tuturuuu proxy client is only available in development');
+  }
+
+  proxyClientPromise ??= import('undici').then(({ Agent, request }) => ({
+    // Keep large-header tolerance in development without routing through
+    // Next.js' wrapped fetch implementation, which rejects this dispatcher.
+    dispatcher: new Agent({
+      maxHeaderSize: 128 * 1024,
+    }),
+    request,
+  }));
+
+  return proxyClientPromise;
+}
+
+function getSingleHeaderValue(
+  headers: Record<string, string | string[] | undefined>,
+  name: string
+) {
+  const value = headers[name.toLowerCase()];
+  if (Array.isArray(value)) {
+    return value.join(', ');
+  }
+
+  return typeof value === 'string' ? value : null;
+}
 
 /**
  * Validate that the path parameter is safe and doesn't contain URL manipulation
@@ -182,22 +208,23 @@ export async function GET(request: Request) {
     });
     const finalUrl = urlObject.toString();
 
-    // Make the request to Tuturuuu API using Bearer token (SDK authentication)
-    // Use undici with custom agent to handle large response headers
-    const response = await undiciFetch(finalUrl, {
+    // Use Undici directly so the custom dispatcher remains compatible with
+    // current Next.js server fetch instrumentation in development.
+    const { dispatcher, request: proxyRequest } = await getProxyClient();
+    const response = await proxyRequest(finalUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
-      dispatcher: customAgent,
+      dispatcher,
     });
 
     // Check if response is JSON
-    const contentType = response.headers.get('content-type');
+    const contentType = getSingleHeaderValue(response.headers, 'content-type');
     if (!contentType?.includes('application/json')) {
       // Non-JSON response (likely an error page)
-      const text = await response.text();
+      const text = await response.body.text();
       console.error(
         'Tuturuuu API returned non-JSON response:',
         text.substring(0, 200)
@@ -205,18 +232,18 @@ export async function GET(request: Request) {
       return NextResponse.json(
         {
           message: 'Tuturuuu API returned non-JSON response',
-          status: response.status,
+          status: response.statusCode,
         },
-        { status: response.status || 502, headers: rateLimitHeaders }
+        { status: response.statusCode || 502, headers: rateLimitHeaders }
       );
     }
 
     // Get the response data
-    const data = await response.json();
+    const data = await response.body.json();
 
     // Return the response with the same status code and rate limit headers
     return NextResponse.json(data, {
-      status: response.status,
+      status: response.statusCode,
       headers: rateLimitHeaders,
     });
   } catch (error) {

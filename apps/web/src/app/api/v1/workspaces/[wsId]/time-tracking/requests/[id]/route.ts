@@ -4,7 +4,10 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
@@ -40,6 +43,49 @@ const editRequestSchema = z.object({
   removedImages: z.array(z.string().min(1)).optional().default([]),
   newImagePaths: z.array(z.string().min(1)).optional().default([]),
 });
+
+type StorageRemoveClient = Pick<
+  Awaited<ReturnType<typeof createDynamicClient>>,
+  'storage'
+>;
+
+async function removeRequestImagesWithFallback({
+  paths,
+  primaryClient,
+  fallbackClient,
+}: {
+  paths: string[];
+  primaryClient: StorageRemoveClient;
+  fallbackClient: StorageRemoveClient;
+}): Promise<{ error: unknown | null; fallbackUsed: boolean }> {
+  if (paths.length === 0) {
+    return { error: null, fallbackUsed: false };
+  }
+
+  const { error: primaryError } = await primaryClient.storage
+    .from('time_tracking_requests')
+    .remove(paths);
+
+  if (!primaryError) {
+    return { error: null, fallbackUsed: false };
+  }
+
+  const { error: fallbackError } = await fallbackClient.storage
+    .from('time_tracking_requests')
+    .remove(paths);
+
+  if (!fallbackError) {
+    return { error: null, fallbackUsed: true };
+  }
+
+  return {
+    error: {
+      primaryError,
+      fallbackError,
+    },
+    fallbackUsed: true,
+  };
+}
 
 function validateRequestImagePaths(
   paths: string[],
@@ -94,21 +140,20 @@ export async function PATCH(
     }
 
     // Verify workspace access and admin permissions
-    const { data: memberCheck, error: memberErr } = await supabase
-      .from('workspace_members')
-      .select('id:user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (memberErr) {
+    if (memberCheck.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace access' },
         { status: 500 }
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }
@@ -207,21 +252,20 @@ export async function PUT(
     const normalizedWsId = await normalizeWorkspaceId(wsId);
 
     // Verify workspace membership
-    const { data: memberCheck, error: memberError } = await supabase
-      .from('workspace_members')
-      .select('id:user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (memberError) {
+    if (memberCheck.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace access' },
         { status: 500 }
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }
@@ -316,9 +360,12 @@ export async function PUT(
         (img) => !removedImages.includes(img)
       );
       // Delete removed images from storage
-      const { error: removeError } = await storageClient.storage
-        .from('time_tracking_requests')
-        .remove(removedImages);
+      const { error: removeError, fallbackUsed } =
+        await removeRequestImagesWithFallback({
+          paths: removedImages,
+          primaryClient: storageClient,
+          fallbackClient: sbAdmin,
+        });
 
       if (removeError) {
         console.error('Failed to remove deleted images from storage:', {
@@ -331,32 +378,43 @@ export async function PUT(
           { status: 500 }
         );
       }
+
+      if (fallbackUsed) {
+        console.warn('Removed request images via admin fallback cleanup:', {
+          requestId: id,
+          removedImages,
+        });
+      }
     }
 
     // Combine existing and newly uploaded image paths
     const finalImages = [...currentImages, ...newImagePaths];
 
-    // Update the request
-    const { data: updatedRequest, error: updateError } = await sbAdmin
-      .from('time_tracking_requests')
-      .update({
-        title,
-        description: description || null,
-        start_time: startTime,
-        end_time: endTime,
-        images: finalImages.length > 0 ? finalImages : null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-      .select()
-      .single();
+    // Update the request through an admin RPC while preserving the caller's
+    // auth context for SQL trigger enforcement.
+    const { data: updatedRequest, error: updateError } = await sbAdmin.rpc(
+      'update_time_tracking_request_content',
+      {
+        p_request_id: id,
+        p_workspace_id: normalizedWsId,
+        p_actor_auth_uid: user.id,
+        p_title: title,
+        p_description: description || undefined,
+        p_start_time: startTime,
+        p_end_time: endTime,
+        p_images: finalImages.length > 0 ? finalImages : undefined,
+      }
+    );
 
     if (updateError) {
       // Clean up newly uploaded images on database error
       if (newImagePaths.length > 0) {
-        const { error: cleanupError } = await storageClient.storage
-          .from('time_tracking_requests')
-          .remove(newImagePaths);
+        const { error: cleanupError, fallbackUsed } =
+          await removeRequestImagesWithFallback({
+            paths: newImagePaths,
+            primaryClient: storageClient,
+            fallbackClient: sbAdmin,
+          });
 
         if (cleanupError) {
           console.error('Failed to clean up newly uploaded images:', {
@@ -371,6 +429,17 @@ export async function PUT(
                 'Failed to update request and failed to clean up uploaded images',
             },
             { status: 500 }
+          );
+        }
+
+        if (fallbackUsed) {
+          console.warn(
+            'Cleaned up newly uploaded request images via admin fallback:',
+            {
+              requestId: id,
+              newImagePaths,
+              updateError,
+            }
           );
         }
       }

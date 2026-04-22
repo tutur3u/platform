@@ -56,7 +56,20 @@ function resolveConfiguredOrigin(value?: string) {
   }
 
   try {
-    return new URL(value).origin;
+    const [firstValue] = value
+      .split(/[,\n]/u)
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+
+    if (!firstValue) {
+      return null;
+    }
+
+    const normalized = /^[a-z]+:\/\//iu.test(firstValue)
+      ? firstValue
+      : `https://${firstValue}`;
+
+    return new URL(normalized).origin;
   } catch {
     return null;
   }
@@ -67,11 +80,13 @@ export function resolveWorkspaceStorageExportOrigin() {
     resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
     resolveConfiguredOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
     resolveConfiguredOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
+    resolveConfiguredOrigin(process.env.COOLIFY_URL) ||
+    resolveConfiguredOrigin(process.env.COOLIFY_FQDN) ||
     (DEV_MODE ? 'http://localhost:7803' : null);
 
   if (!origin) {
     throw new WorkspaceStorageError(
-      'Drive export links are unavailable because WEB_APP_URL, NEXT_PUBLIC_WEB_APP_URL, and NEXT_PUBLIC_APP_URL are missing.',
+      'Drive export links are unavailable because WEB_APP_URL, NEXT_PUBLIC_WEB_APP_URL, NEXT_PUBLIC_APP_URL, and Coolify URL fallbacks are missing.',
       500
     );
   }

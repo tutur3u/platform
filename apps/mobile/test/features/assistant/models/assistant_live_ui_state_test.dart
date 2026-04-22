@@ -76,5 +76,28 @@ void main() {
       expect(state.kind, AssistantLiveUiKind.permissionDenied);
       expect(state.showExpandedStageCard, isTrue);
     });
+
+    test(
+      'keeps reconnecting status visible when a reconnect reason exists',
+      () {
+        final state = deriveAssistantLiveUiState(
+          shellState: const AssistantShellState(
+            workspaceCredits: AssistantCredits(tier: 'PRO'),
+            activeCredits: AssistantCredits(tier: 'PRO'),
+          ),
+          liveState: const AssistantLiveState(
+            status: AssistantLiveConnectionStatus.reconnecting,
+            error: 'socket closed',
+          ),
+          isEligible: true,
+          isVisibleLiveSession: true,
+          showBlockedReason: false,
+        );
+
+        expect(state.kind, AssistantLiveUiKind.reconnecting);
+        expect(state.tone, AssistantLiveUiTone.warning);
+        expect(state.error, 'socket closed');
+      },
+    );
   });
 }

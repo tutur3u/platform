@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -302,6 +303,8 @@ class TaskDescriptionTableEditorSheetState
                                     Padding(
                                       padding: const EdgeInsets.all(6),
                                       child: shad.TextField(
+                                        contextMenuBuilder:
+                                            platformTextContextMenuBuilder(),
                                         controller:
                                             _controllers[rowIndex][columnIndex],
                                       ),

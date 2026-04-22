@@ -1,0 +1,156 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { withSessionAuth } from '@/lib/api-auth';
+
+const ModuleOrderSchema = z.object({
+  moduleIds: z.array(z.guid()).min(1).max(500),
+});
+
+const RouteParamsSchema = z.object({
+  courseId: z.guid(),
+  wsId: z.string().min(1),
+});
+
+interface RouteParams {
+  wsId: string;
+  courseId: string;
+}
+
+export const PATCH = withSessionAuth(
+  async (request, context, params: RouteParams | Promise<RouteParams>) => {
+    const parsedParams = RouteParamsSchema.safeParse(await params);
+    if (!parsedParams.success) {
+      return NextResponse.json(
+        { message: 'Invalid route params', errors: parsedParams.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { wsId, courseId } = parsedParams.data;
+    const normalizedWsId = await normalizeWorkspaceId(wsId, context.supabase);
+
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: context.user.id,
+      supabase: context.supabase,
+    });
+
+    if (membership.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { message: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership.ok) {
+      return NextResponse.json(
+        { message: "You don't have access to this workspace" },
+        { status: 403 }
+      );
+    }
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { message: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    const parsed = ModuleOrderSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: 'Invalid request body', errors: parsed.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { moduleIds } = parsed.data;
+    if (new Set(moduleIds).size !== moduleIds.length) {
+      return NextResponse.json(
+        { message: 'Module IDs must be unique' },
+        { status: 400 }
+      );
+    }
+
+    const sbAdmin = await createAdminClient();
+
+    const { data: course, error: courseError } = await sbAdmin
+      .from('workspace_user_groups')
+      .select('id')
+      .eq('id', courseId)
+      .eq('ws_id', normalizedWsId)
+      .maybeSingle();
+
+    if (courseError) {
+      return NextResponse.json(
+        { message: 'Failed to validate course' },
+        { status: 500 }
+      );
+    }
+
+    if (!course) {
+      return NextResponse.json(
+        { message: 'Course not found' },
+        { status: 404 }
+      );
+    }
+
+    const { data: existingModules, error: modulesError } = await sbAdmin
+      .from('workspace_course_modules')
+      .select('id')
+      .eq('group_id', courseId);
+
+    if (modulesError) {
+      return NextResponse.json(
+        { message: 'Failed to validate modules' },
+        { status: 500 }
+      );
+    }
+
+    const existingIds = new Set(
+      (existingModules ?? []).map((module) => module.id)
+    );
+    if (existingIds.size !== moduleIds.length) {
+      return NextResponse.json(
+        { message: 'Module order payload must include all course modules' },
+        { status: 400 }
+      );
+    }
+
+    const hasUnknownModule = moduleIds.some(
+      (moduleId) => !existingIds.has(moduleId)
+    );
+    if (hasUnknownModule) {
+      return NextResponse.json(
+        { message: 'Module order payload contains unknown module IDs' },
+        { status: 400 }
+      );
+    }
+
+    const { error: reorderError } = await sbAdmin.rpc(
+      'reorder_workspace_course_modules',
+      {
+        p_group_id: courseId,
+        p_module_ids: moduleIds,
+      }
+    );
+
+    if (reorderError) {
+      return NextResponse.json(
+        { message: 'Failed to persist module order' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ message: 'success' });
+  },
+  { rateLimit: { windowMs: 60000, maxRequests: 60 } }
+);

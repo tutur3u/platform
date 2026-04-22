@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/env.dart';
@@ -8,6 +9,8 @@ import 'package:mobile/core/platform/device_platform.dart';
 import 'package:mobile/core/utils/device_info.dart';
 import 'package:mobile/data/models/auth_action_result.dart';
 import 'package:mobile/data/models/auth_session.dart';
+import 'package:mobile/data/models/stored_auth_account.dart';
+import 'package:mobile/data/repositories/multi_account_storage_service.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/apple_identity_client.dart';
 import 'package:mobile/data/sources/google_identity_client.dart';
@@ -26,6 +29,8 @@ class AuthRepository {
   AuthRepository({
     ApiClient? apiClient,
     SupabaseClient? supabaseClient,
+    FlutterSecureStorage? secureStorage,
+    MultiAccountStorageService? multiAccountStorageService,
     GoogleIdentityClient? googleIdentityClient,
     AppleIdentityClient? appleIdentityClient,
     OAuthUrlLauncher? oauthUrlLauncher,
@@ -33,31 +38,180 @@ class AuthRepository {
     DevicePlatform? devicePlatform,
     String? googleWebClientId,
     String? googleIosClientId,
-  }) : _apiClient = apiClient ?? ApiClient(),
-       _client = supabaseClient ?? supabase,
-       _googleIdentityClient =
-           googleIdentityClient ?? GoogleIdentityClientImpl(),
-       _appleIdentityClient =
-           appleIdentityClient ?? const AppleIdentityClientImpl(),
-       _devicePlatform = devicePlatform ?? const DefaultDevicePlatform(),
-       _oauthUrlLauncher =
-           oauthUrlLauncher ??
-           SupabaseOAuthUrlLauncher(
-             devicePlatform: devicePlatform ?? const DefaultDevicePlatform(),
-           ),
-       _packageInfoLoader = packageInfoLoader ?? PackageInfo.fromPlatform,
-       _googleWebClientId = googleWebClientId ?? Env.googleWebClientId,
-       _googleIosClientId = googleIosClientId ?? Env.googleIosClientId;
+  }) {
+    final resolvedApiClient = apiClient ?? ApiClient();
+    final resolvedSupabaseClient = supabaseClient ?? supabase;
+    final resolvedGoogleIdentityClient =
+        googleIdentityClient ?? GoogleIdentityClientImpl();
+    final resolvedDevicePlatform =
+        devicePlatform ?? const DefaultDevicePlatform();
 
-  final ApiClient _apiClient;
-  final SupabaseClient _client;
-  final GoogleIdentityClient _googleIdentityClient;
-  final AppleIdentityClient _appleIdentityClient;
-  final OAuthUrlLauncher _oauthUrlLauncher;
-  final PackageInfoLoader _packageInfoLoader;
-  final DevicePlatform _devicePlatform;
-  final String _googleWebClientId;
-  final String _googleIosClientId;
+    _apiClient = resolvedApiClient;
+    _client = resolvedSupabaseClient;
+    _googleIdentityClient = resolvedGoogleIdentityClient;
+    _appleIdentityClient =
+        appleIdentityClient ?? const AppleIdentityClientImpl();
+    _devicePlatform = resolvedDevicePlatform;
+    _oauthUrlLauncher =
+        oauthUrlLauncher ??
+        SupabaseOAuthUrlLauncher(devicePlatform: resolvedDevicePlatform);
+    _packageInfoLoader = packageInfoLoader ?? PackageInfo.fromPlatform;
+    _googleWebClientId = googleWebClientId ?? Env.googleWebClientId;
+    _googleIosClientId = googleIosClientId ?? Env.googleIosClientId;
+    _multiAccountStorageService =
+        multiAccountStorageService ??
+        MultiAccountStorageService(
+          supabaseClient: _client,
+          secureStorage: secureStorage ?? const FlutterSecureStorage(),
+          apiClient: _apiClient,
+          googleIdentityClient: _googleIdentityClient,
+        );
+  }
+
+  late final ApiClient _apiClient;
+  late final SupabaseClient _client;
+  late final GoogleIdentityClient _googleIdentityClient;
+  late final AppleIdentityClient _appleIdentityClient;
+  late final OAuthUrlLauncher _oauthUrlLauncher;
+  late final PackageInfoLoader _packageInfoLoader;
+  late final DevicePlatform _devicePlatform;
+  late final String _googleWebClientId;
+  late final String _googleIosClientId;
+  late final MultiAccountStorageService _multiAccountStorageService;
+
+  String? get _mobileOtpPlatform {
+    if (_devicePlatform.isIOS) {
+      return 'ios';
+    }
+    if (_devicePlatform.isAndroid) {
+      return 'android';
+    }
+    return null;
+  }
+
+  Future<List<StoredAuthAccount>> getStoredAccounts() async {
+    return _multiAccountStorageService.getStoredAccounts();
+  }
+
+  Future<String?> getActiveStoredAccountId() async {
+    return _multiAccountStorageService.getActiveStoredAccountId();
+  }
+
+  Future<void> syncCurrentSessionToMultiAccountStore({
+    bool switchImmediately = true,
+  }) async {
+    await _multiAccountStorageService.syncCurrentSessionToMultiAccountStore(
+      switchImmediately: switchImmediately,
+    );
+  }
+
+  Future<({bool success, String? error})> completeAddAccountFlow() async {
+    return _multiAccountStorageService.completeAddAccountFlow();
+  }
+
+  Future<({bool success, String? error})> switchToStoredAccount(
+    String accountId,
+  ) async {
+    return _multiAccountStorageService.switchToStoredAccount(accountId);
+  }
+
+  Future<({bool success, bool switched, String? error})> removeStoredAccount(
+    String accountId,
+  ) async {
+    return _multiAccountStorageService.removeStoredAccount(accountId);
+  }
+
+  Future<void> updateActiveAccountWorkspaceContext(String workspaceId) async {
+    await _multiAccountStorageService.updateActiveAccountWorkspaceContext(
+      workspaceId,
+    );
+  }
+
+  Future<({bool switched, String? error})> signOutCurrentAccount() async {
+    return _multiAccountStorageService.signOutCurrentAccount();
+  }
+
+  Future<void> signOutAllAccounts() async {
+    await _multiAccountStorageService.signOutAllAccounts();
+  }
+
+  // ── OTP ─────────────────────────────────────────
+
+  Future<({bool success, String? error, int? retryAfter})> sendOtp(
+    String email, {
+    String? captchaToken,
+  }) async {
+    try {
+      final deviceId = await getDeviceId();
+      final response = await _apiClient.postJson(
+        AuthEndpoints.otpSend,
+        {
+          'client': 'mobile',
+          'email': email,
+          'locale': getLocale(),
+          'platform': _mobileOtpPlatform,
+          if (deviceId != null) 'deviceId': deviceId,
+          if (captchaToken != null) 'captchaToken': captchaToken,
+        },
+        requiresAuth: false,
+      );
+
+      if (response['error'] != null) {
+        return (
+          success: false,
+          error: response['error'] as String,
+          retryAfter: response['retryAfter'] as int?,
+        );
+      }
+
+      return (success: true, error: null, retryAfter: null);
+    } on ApiException catch (e) {
+      return (success: false, error: e.message, retryAfter: e.retryAfter);
+    } on Exception catch (e) {
+      return (success: false, error: e.toString(), retryAfter: null);
+    }
+  }
+
+  Future<({bool success, String? error})> verifyOtp(
+    String email,
+    String otp,
+  ) async {
+    try {
+      final deviceId = await getDeviceId();
+      final response = await _apiClient.postJson(
+        AuthEndpoints.otpVerify,
+        {
+          'client': 'mobile',
+          'email': email,
+          'locale': getLocale(),
+          'otp': otp,
+          'platform': _mobileOtpPlatform,
+          if (deviceId != null) 'deviceId': deviceId,
+        },
+        requiresAuth: false,
+      );
+
+      if (response['error'] != null) {
+        return (success: false, error: response['error'] as String);
+      }
+
+      final sessionJson = response['session'] as Map<String, dynamic>?;
+      if (sessionJson == null) {
+        return (success: false, error: 'No session returned');
+      }
+
+      final payload = AuthSessionPayload.fromJson(sessionJson);
+      await _client.auth.setSession(payload.refreshToken);
+
+      return (success: true, error: null);
+    } on ApiException catch (e) {
+      return (success: false, error: e.message);
+    } on AuthException catch (e) {
+      return (success: false, error: e.message);
+    } on Exception catch (e) {
+      return (success: false, error: e.toString());
+    }
+  }
 
   // ── Password ────────────────────────────────────
 
@@ -71,6 +225,7 @@ class AuthRepository {
       final response = await _apiClient.postJson(
         AuthEndpoints.passwordLogin,
         {
+          'client': 'mobile',
           'email': email,
           'password': password,
           'locale': getLocale(),
@@ -525,7 +680,11 @@ class AuthRepository {
       // Ignore Google sign-out failures and still clear the Supabase session.
     }
 
-    await _client.auth.signOut();
+    try {
+      await _client.auth.signOut();
+    } finally {
+      await _multiAccountStorageService.clearMultiAccountStore();
+    }
   }
 
   Future<void> refreshSession() async {

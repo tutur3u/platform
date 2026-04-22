@@ -10,19 +10,24 @@ import { z } from 'zod';
 import {
   getMobileVersionPolicies,
   MOBILE_VERSION_POLICY_CONFIG_KEYS,
+  type MobilePlatform,
+  type MobilePlatformVersionPolicy,
   normalizeMobileVersionPolicies,
   validateMobileVersionPolicies,
+  WEB_OTP_ENABLED_CONFIG_KEY,
 } from '@/lib/mobile-version-policy';
 
 const PlatformPolicySchema = z.object({
   effectiveVersion: z.string().nullable().optional(),
   minimumVersion: z.string().nullable().optional(),
+  otpEnabled: z.boolean().optional(),
   storeUrl: z.string().nullable().optional(),
 });
 
 const UpdatePayloadSchema = z.object({
   ios: PlatformPolicySchema,
   android: PlatformPolicySchema,
+  webOtpEnabled: z.boolean().optional(),
 });
 
 async function authorizePlatformAdmin(request: Request) {
@@ -94,31 +99,51 @@ export async function PUT(request: NextRequest) {
   }
 
   const sbAdmin = await createAdminClient();
-  const rows = Object.entries(MOBILE_VERSION_POLICY_CONFIG_KEYS).flatMap(
-    ([platform, keys]) => {
-      const policy = policies[platform as keyof typeof policies];
-      return [
-        {
-          id: keys.effectiveVersion,
-          ws_id: ROOT_WORKSPACE_ID,
-          value: policy.effectiveVersion ?? '',
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: keys.minimumVersion,
-          ws_id: ROOT_WORKSPACE_ID,
-          value: policy.minimumVersion ?? '',
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: keys.storeUrl,
-          ws_id: ROOT_WORKSPACE_ID,
-          value: policy.storeUrl ?? '',
-          updated_at: new Date().toISOString(),
-        },
-      ];
-    }
-  );
+  const platformEntries = Object.entries(
+    MOBILE_VERSION_POLICY_CONFIG_KEYS
+  ) as Array<
+    [MobilePlatform, (typeof MOBILE_VERSION_POLICY_CONFIG_KEYS)[MobilePlatform]]
+  >;
+  const rows: Array<{
+    id: string;
+    updated_at: string;
+    value: string;
+    ws_id: string;
+  }> = platformEntries.flatMap(([platform, keys]) => {
+    const policy: MobilePlatformVersionPolicy = policies[platform];
+    return [
+      {
+        id: keys.effectiveVersion,
+        ws_id: ROOT_WORKSPACE_ID,
+        value: policy.effectiveVersion ?? '',
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: keys.minimumVersion,
+        ws_id: ROOT_WORKSPACE_ID,
+        value: policy.minimumVersion ?? '',
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: keys.otpEnabled,
+        ws_id: ROOT_WORKSPACE_ID,
+        value: String(policy.otpEnabled),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: keys.storeUrl,
+        ws_id: ROOT_WORKSPACE_ID,
+        value: policy.storeUrl ?? '',
+        updated_at: new Date().toISOString(),
+      },
+    ];
+  });
+  rows.push({
+    id: WEB_OTP_ENABLED_CONFIG_KEY,
+    ws_id: ROOT_WORKSPACE_ID,
+    value: String(policies.webOtpEnabled),
+    updated_at: new Date().toISOString(),
+  });
 
   const { error } = await sbAdmin
     .from('workspace_configs')

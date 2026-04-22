@@ -3,12 +3,16 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { CreateTaskWithRelationshipResult } from '@tuturuuu/types/primitives/TaskRelationship';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import { MAX_TASK_NAME_LENGTH } from '@tuturuuu/utils/constants';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const bodySchema = z.object({
-  name: z.string().trim().min(1).max(255),
+  name: z.string().trim().min(1).max(MAX_TASK_NAME_LENGTH),
   listId: z.uuid(),
   currentTaskId: z.uuid(),
   relationshipType: z.enum(['parent_child', 'blocks', 'related']),
@@ -181,21 +185,20 @@ export async function POST(
 
     const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-    const { data: memberCheck, error: memberError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (memberError) {
+    if (memberCheck.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }

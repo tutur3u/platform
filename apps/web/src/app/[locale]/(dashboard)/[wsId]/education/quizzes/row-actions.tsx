@@ -1,7 +1,9 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
+import { deleteWorkspaceQuiz } from '@tuturuuu/internal-api';
 import type { WorkspaceQuiz } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
@@ -28,24 +30,18 @@ export function WorkspaceQuizRowActions({ row }: WorkspaceQuizRowActionsProps) {
 
   const data = row.original;
 
-  const deleteWorkspaceQuiz = async () => {
-    const res = await fetch(
-      `/api/v1/workspaces/${data.ws_id}/quizzes/${data.id}`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    if (res.ok) {
+  const deleteMutation = useMutation({
+    mutationFn: async () => deleteWorkspaceQuiz(data.ws_id, data.id),
+    onSuccess: () => {
       router.refresh();
-    } else {
-      const data = await res.json();
+    },
+    onError: (error) => {
       toast({
-        title: 'Failed to delete workspace user group tag',
-        description: data.message,
+        title: 'Failed to delete workspace quiz',
+        description: error instanceof Error ? error.message : String(error),
       });
-    }
-  };
+    },
+  });
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
@@ -68,7 +64,10 @@ export function WorkspaceQuizRowActions({ row }: WorkspaceQuizRowActionsProps) {
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteWorkspaceQuiz}>
+          <DropdownMenuItem
+            onClick={() => deleteMutation.mutate()}
+            disabled={deleteMutation.isPending}
+          >
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>

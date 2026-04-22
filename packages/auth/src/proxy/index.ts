@@ -8,6 +8,130 @@ import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
+const INTERNAL_HOSTNAME_PATTERN =
+  /^(?:0\.0\.0\.0|127(?:\.\d+){0,3}|localhost|::1|\[::1\]|host\.docker\.internal)$/u;
+const AUTH_LOOP_PATHS = new Set([
+  '/api/auth/callback',
+  '/login',
+  '/verify-token',
+]);
+const AUTH_REDIRECT_MAX_DEPTH = 5;
+
+function decodeURIComponentSafely(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function extractForwardedHeaderValue(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const [firstValue] = value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  return firstValue || null;
+}
+
+function isInternalHostname(hostname: string): boolean {
+  return INTERNAL_HOSTNAME_PATTERN.test(hostname);
+}
+
+export function resolveCanonicalRequestOrigin(
+  req: NextRequest,
+  webAppUrl: string
+): string {
+  const fallbackOrigin = new URL(webAppUrl).origin;
+  const forwardedHost = extractForwardedHeaderValue(
+    req.headers.get('x-forwarded-host')
+  );
+  const forwardedProto =
+    extractForwardedHeaderValue(req.headers.get('x-forwarded-proto')) ??
+    req.nextUrl.protocol.replace(/:$/u, '');
+
+  if (forwardedHost) {
+    try {
+      const forwardedOrigin = new URL(
+        `${forwardedProto || 'https'}://${forwardedHost}`
+      ).origin;
+      if (!isInternalHostname(new URL(forwardedOrigin).hostname)) {
+        return forwardedOrigin;
+      }
+    } catch {
+      // Ignore malformed forwarded headers and fall back to safer origins.
+    }
+  }
+
+  if (!isInternalHostname(req.nextUrl.hostname)) {
+    return req.nextUrl.origin;
+  }
+
+  return fallbackOrigin;
+}
+
+export function normalizeAuthRedirectPath(
+  rawValue: string | null | undefined,
+  requestOrigin: string,
+  fallbackPath = '/'
+): string {
+  if (!rawValue) {
+    return fallbackPath;
+  }
+
+  let candidate = decodeURIComponentSafely(rawValue);
+
+  for (let depth = 0; depth < AUTH_REDIRECT_MAX_DEPTH; depth += 1) {
+    let url: URL;
+
+    try {
+      url = new URL(candidate, requestOrigin);
+    } catch {
+      return fallbackPath;
+    }
+
+    if (url.origin !== requestOrigin) {
+      return fallbackPath;
+    }
+
+    if (AUTH_LOOP_PATHS.has(url.pathname)) {
+      const nestedValue =
+        url.searchParams.get('nextUrl') ?? url.searchParams.get('returnUrl');
+
+      if (!nestedValue) {
+        return fallbackPath;
+      }
+
+      candidate = decodeURIComponentSafely(nestedValue);
+      continue;
+    }
+
+    return `${url.pathname}${url.search}`;
+  }
+
+  return fallbackPath;
+}
+
+function buildCentralizedReturnUrl(
+  req: NextRequest,
+  webAppUrl: string,
+  rawTargetPath?: string | null
+): string {
+  const publicOrigin = resolveCanonicalRequestOrigin(req, webAppUrl);
+  const normalizedTargetPath = normalizeAuthRedirectPath(
+    rawTargetPath ?? `${req.nextUrl.pathname}${req.nextUrl.search}`,
+    publicOrigin,
+    '/'
+  );
+  const verifyUrl = new URL('/verify-token', publicOrigin);
+  verifyUrl.searchParams.set('nextUrl', normalizedTargetPath);
+  return verifyUrl.toString();
+}
+
 /**
  * Copies all cookies from one NextResponse onto another.
  * Use this to preserve auth cookies set by `updateSession` when the
@@ -63,21 +187,23 @@ async function handleMFACheck(
     const requiresMFAVerification = hasVerifiedMFA && aal === 'aal1';
 
     if (requiresMFAVerification) {
+      const publicOrigin = resolveCanonicalRequestOrigin(req, webAppUrl);
+      const centralOrigin = new URL(webAppUrl).origin;
+
       // Check if this is the central web app handling MFA
-      const isCentralWebApp =
-        req.nextUrl.port === '7803' ||
-        ['tuturuuu.com'].includes(req.nextUrl.hostname) ||
-        req.nextUrl.origin === webAppUrl;
+      const isCentralWebApp = publicOrigin === centralOrigin;
 
       if (isCentralWebApp) {
         // Handle MFA verification in the login page
         // Preserve existing nextUrl if it exists, otherwise use current path
-        const existingNextUrl = req.nextUrl.searchParams.get('nextUrl');
-        const nextUrl =
-          existingNextUrl ||
-          encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search);
+        const nextUrl = normalizeAuthRedirectPath(
+          req.nextUrl.searchParams.get('nextUrl') ??
+            `${req.nextUrl.pathname}${req.nextUrl.search}`,
+          publicOrigin,
+          '/'
+        );
 
-        const loginUrl = new URL('/login', req.nextUrl);
+        const loginUrl = new URL('/login', centralOrigin);
         loginUrl.searchParams.set('nextUrl', nextUrl);
         loginUrl.searchParams.set('mfa', 'required');
 
@@ -87,13 +213,30 @@ async function handleMFACheck(
         // Route through /verify-token so cross-app tokens are properly consumed
         const existingReturnUrl = req.nextUrl.searchParams.get('returnUrl');
         const returnUrl =
-          existingReturnUrl ||
-          encodeURIComponent(
-            `${req.nextUrl.origin}/verify-token?nextUrl=${encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search)}`
-          );
+          existingReturnUrl &&
+          (() => {
+            const decodedValue = decodeURIComponentSafely(existingReturnUrl);
+
+            try {
+              const parsedValue = new URL(decodedValue, publicOrigin);
+              if (
+                parsedValue.origin !== publicOrigin &&
+                parsedValue.origin !== centralOrigin
+              ) {
+                return parsedValue.toString();
+              }
+            } catch {
+              // Fall back to a rebuilt centralized return URL below.
+            }
+
+            return buildCentralizedReturnUrl(req, webAppUrl, decodedValue);
+          })();
 
         const loginUrl = new URL('/login', webAppUrl);
-        loginUrl.searchParams.set('returnUrl', returnUrl);
+        loginUrl.searchParams.set(
+          'returnUrl',
+          returnUrl ?? buildCentralizedReturnUrl(req, webAppUrl)
+        );
         loginUrl.searchParams.set('mfa', 'required');
 
         return NextResponse.redirect(loginUrl);
@@ -220,18 +363,13 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
 
       // If the user is not authenticated and the path is not public, redirect to the central login page
       if (!claims && !isPublic) {
-        const reqOrigin = req.nextUrl.origin;
-        const path = req.nextUrl.pathname;
-
-        // Encode the full returnUrl to redirect back after login
-        const returnUrl = encodeURIComponent(
-          `${reqOrigin}/verify-token?nextUrl=${path}`
+        const loginUrl = new URL('/login', webAppUrl);
+        loginUrl.searchParams.set(
+          'returnUrl',
+          buildCentralizedReturnUrl(req, webAppUrl)
         );
 
-        // Redirect to the central login page with the returnUrl as a query parameter
-        const loginUrl = `${webAppUrl}/login?returnUrl=${returnUrl}`;
-
-        console.log('Redirecting to:', loginUrl);
+        console.log('Redirecting to:', loginUrl.toString());
         const redirectResponse = NextResponse.redirect(loginUrl);
         propagateAuthCookies(res, redirectResponse);
 

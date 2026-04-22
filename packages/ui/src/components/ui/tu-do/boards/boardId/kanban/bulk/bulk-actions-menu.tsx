@@ -15,7 +15,6 @@ import {
   Move,
   Plus,
   Rabbit,
-  Search,
   Tags,
   Timer,
   Trash2,
@@ -35,14 +34,20 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Input } from '@tuturuuu/ui/input';
+import type { WorkspaceMember } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { toast } from '@tuturuuu/ui/sonner';
+import type { BoardConfig } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import { mapEstimationPoints } from '../../../../shared/estimation-mapping';
+import { TaskResourceSearchField } from '../../../../shared/task-resource-search-field';
+import type {
+  KanbanFilteredLabel,
+  KanbanFilteredProject,
+} from '../data/use-filtered-resources';
 
 interface BulkActionsMenuProps {
   workspace: Workspace;
-  boardConfig: any;
+  boardConfig: BoardConfig | null | undefined;
   columns: TaskList[];
   bulkWorking: boolean;
   estimationOptions: number[];
@@ -52,9 +57,9 @@ interface BulkActionsMenuProps {
     assignees: Set<string>;
   };
   filtered: {
-    labels: any[];
-    projects: any[];
-    members: any[];
+    labels: KanbanFilteredLabel[];
+    projects: KanbanFilteredProject[];
+    members: WorkspaceMember[];
   };
   search: {
     labelQuery: string;
@@ -334,17 +339,11 @@ export function BulkActionsMenu({
           {t('common.labels')}
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent className="w-80 p-0">
-          <div className="border-b p-2">
-            <div className="relative">
-              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder={t('common.search_labels')}
-                value={search.labelQuery}
-                onChange={(e) => search.setLabelQuery(e.target.value)}
-                className="h-8 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
-              />
-            </div>
-          </div>
+          <TaskResourceSearchField
+            value={search.labelQuery}
+            onChange={search.setLabelQuery}
+            placeholder={t('common.search_labels')}
+          />
 
           {filtered.labels.length === 0 ? (
             <div className="px-2 py-6 text-center text-muted-foreground text-xs">
@@ -434,17 +433,11 @@ export function BulkActionsMenu({
           {tc('projects')}
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent className="w-80 p-0">
-          <div className="border-b p-2">
-            <div className="relative">
-              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder={tc('search_projects')}
-                value={search.projectQuery}
-                onChange={(e) => search.setProjectQuery(e.target.value)}
-                className="h-8 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
-              />
-            </div>
-          </div>
+          <TaskResourceSearchField
+            value={search.projectQuery}
+            onChange={search.setProjectQuery}
+            placeholder={tc('search_projects')}
+          />
 
           {filtered.projects.length === 0 ? (
             <div className="px-2 py-6 text-center text-muted-foreground text-xs">
@@ -455,7 +448,7 @@ export function BulkActionsMenu({
           ) : (
             <div className="max-h-50 overflow-auto">
               <div className="flex flex-col gap-1 p-1">
-                {filtered.projects.slice(0, 50).map((project: any) => {
+                {filtered.projects.slice(0, 50).map((project) => {
                   const isApplied = appliedSets.projects.has(project.id);
                   return (
                     <DropdownMenuItem
@@ -598,17 +591,11 @@ export function BulkActionsMenu({
             {t('common.assignees')}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-80 p-0">
-            <div className="border-b p-2">
-              <div className="relative">
-                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder={tc('search_members')}
-                  value={search.assigneeQuery}
-                  onChange={(e) => search.setAssigneeQuery(e.target.value)}
-                  className="h-8 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
-                />
-              </div>
-            </div>
+            <TaskResourceSearchField
+              value={search.assigneeQuery}
+              onChange={search.setAssigneeQuery}
+              placeholder={tc('search_members')}
+            />
 
             {filtered.members.length === 0 ? (
               <div className="px-2 py-6 text-center text-muted-foreground text-xs">
@@ -619,7 +606,7 @@ export function BulkActionsMenu({
             ) : (
               <div className="max-h-37.5 overflow-auto">
                 <div className="flex flex-col gap-1 p-1">
-                  {filtered.members.slice(0, 50).map((member: any) => {
+                  {filtered.members.slice(0, 50).map((member) => {
                     const isApplied = appliedSets.assignees.has(member.id);
                     return (
                       <DropdownMenuItem

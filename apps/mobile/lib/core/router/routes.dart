@@ -2,6 +2,7 @@
 abstract final class Routes {
   // Auth
   static const login = '/login';
+  static const addAccount = '/add-account';
   static const signUp = '/signup';
   static const forgotPassword = '/forgot-password';
   static const mfaVerify = '/mfa-verify';
@@ -16,9 +17,11 @@ abstract final class Routes {
   static const notifications = '/notifications';
   static const notificationsArchive = '/notifications/archive';
   static const profileRoot = '/profile';
+  static const profileAccounts = '/profile/accounts';
   static const tasks = '/tasks';
   static const habits = '/habits';
   static const habitsActivity = '/habits/activity';
+  static const habitsLibrary = '/habits/library';
   static const taskBoards = '/tasks/boards';
   static const taskBoardDetail = '/tasks/boards/:boardId';
   static const taskEstimates = '/tasks/estimates';
@@ -30,6 +33,7 @@ abstract final class Routes {
   static const timer = '/timer';
   static const settings = '/settings';
   static const settingsWorkspace = '/settings/workspace';
+  static const settingsWorkspaceSecrets = '/settings/workspace/secrets';
   static const settingsWorkspaceMembers = '/settings/workspace/members';
   static const settingsWorkspaceRoles = '/settings/workspace/roles';
   static const settingsMobileVersions = '/settings/mobile-versions';
@@ -65,6 +69,21 @@ abstract final class Routes {
       '/tasks/portfolio/projects/$projectId';
 
   static String taskBoardDetailPath(String boardId) => '/tasks/boards/$boardId';
+
+  static String timerRequestsPath({
+    String? requestId,
+    String? status,
+  }) {
+    final queryParameters = <String, String>{
+      if (requestId != null && requestId.isNotEmpty) 'requestId': requestId,
+      if (status != null && status.isNotEmpty) 'status': status,
+    };
+
+    return Uri(
+      path: timerRequests,
+      queryParameters: queryParameters.isEmpty ? null : queryParameters,
+    ).toString();
+  }
 
   static String normalizeLocation(String value) {
     var normalized = value;

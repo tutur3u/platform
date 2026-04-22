@@ -26,6 +26,7 @@
  */
 
 import packageJson from '../package.json';
+import { EpmClient } from './epm';
 import {
   createErrorFromResponse,
   isApiErrorResponse,
@@ -796,6 +797,7 @@ export class TuturuuuClient {
 
   public readonly storage: StorageClient;
   public readonly documents: DocumentsClient;
+  public readonly epm: EpmClient;
   public readonly externalProjects: ExternalProjectsClient;
 
   /**
@@ -853,6 +855,12 @@ export class TuturuuuClient {
     // Initialize sub-clients
     this.storage = new StorageClient(this);
     this.documents = new DocumentsClient(this);
+    this.epm = new EpmClient({
+      apiKey: this.apiKey,
+      baseUrl: this.baseUrl,
+      fetch: this.fetch,
+      timeout: this.timeout,
+    });
     this.externalProjects = new ExternalProjectsClient({
       apiKey: this.apiKey,
       baseUrl: this.baseUrl,

@@ -29,6 +29,7 @@ Our monorepo structure makes it easy to share code across different applications
 platform/
 ├── apps/
 │   ├── web/      # Main web application
+│   ├── cms/      # Dedicated CMS/EPM satellite app
 │   ├── docs/     # Documentation site (Mintlify)
 │   ├── rewise/   # Rewise application
 │   ├── nova/     # Nova application
@@ -121,11 +122,12 @@ Contains all deployable applications. Each application is a standalone project t
 
 ```
 apps/
-├── web/    # Main web application
-├── docs/   # Documentation site (Mintlify)
-├── rewise/ # Rewise application
-├── nova/   # Nova application
-└── database/     # Database migrations and scripts
+├── web/      # Main web application and central API host
+├── cms/      # Dedicated CMS/EPM frontend
+├── docs/     # Documentation site (Mintlify)
+├── rewise/   # Rewise application
+├── nova/     # Nova application
+└── database/ # Database migrations and scripts
 ```
 
 ### packages/
@@ -148,6 +150,8 @@ When working in our monorepo, you'll typically:
 1. Clone the repository: `git clone https://github.com/tutur3u/platform.git`
 2. Install dependencies: `bun install`
 3. Start the development servers: `bun dev` or `bun devx` (with Supabase)
+
+Satellite apps can also be started with app-specific scripts when you only need one frontend plus the shared `web` API host. For example, `bun dev:cms` runs the CMS app together with the shared packages and `apps/web`.
 
 For more detailed instructions on development workflow, see the [Development](/development) and [Local Supabase Development](/local-supabase-development) guides.
 

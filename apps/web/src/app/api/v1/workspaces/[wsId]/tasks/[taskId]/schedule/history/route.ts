@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { z } from 'zod';
@@ -12,18 +13,17 @@ const querySchema = z.object({
 });
 
 async function hasWorkspaceAccess(supabase: any, wsId: string, userId: string) {
-  const { data, error } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', userId)
-    .maybeSingle();
+  const member = await verifyWorkspaceMembershipType({
+    wsId,
+    userId,
+    supabase,
+  });
 
-  if (error) {
-    throw error;
+  if (member.error === 'membership_lookup_failed') {
+    throw new Error('Failed to verify workspace access');
   }
 
-  return Boolean(data);
+  return member.ok;
 }
 
 async function fetchTaskWithWorkspace(taskId: string) {

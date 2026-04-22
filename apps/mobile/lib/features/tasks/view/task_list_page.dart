@@ -7,6 +7,8 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/tasks/widgets/my_tasks_header.dart';
 import 'package:mobile/features/tasks/widgets/task_section_accordion.dart';
@@ -114,20 +116,40 @@ class _TaskListViewState extends State<_TaskListView> {
     final bottomPadding = 32 + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
-      child: BlocListener<WorkspaceCubit, WorkspaceState>(
-        listenWhen: (prev, curr) =>
-            prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-        listener: (context, state) {
-          final ws = state.currentWorkspace;
-          if (ws == null) return;
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<WorkspaceCubit, WorkspaceState>(
+            listenWhen: (prev, curr) =>
+                prev.currentWorkspace?.id != curr.currentWorkspace?.id,
+            listener: (context, state) {
+              final ws = state.currentWorkspace;
+              if (ws == null) return;
 
-          unawaited(
-            context.read<TaskListCubit>().loadTasks(
-              wsId: ws.id,
-              isPersonal: ws.personal,
-            ),
-          );
-        },
+              unawaited(
+                context.read<TaskListCubit>().loadTasks(
+                  wsId: ws.id,
+                  isPersonal: ws.personal,
+                ),
+              );
+            },
+          ),
+          BlocListener<AuthCubit, AuthState>(
+            listenWhen: (previous, current) =>
+                previous.user?.id != current.user?.id,
+            listener: (context, state) {
+              final ws = context.read<WorkspaceCubit>().state.currentWorkspace;
+              if (ws == null) return;
+
+              unawaited(
+                context.read<TaskListCubit>().loadTasks(
+                  wsId: ws.id,
+                  isPersonal: ws.personal,
+                  forceRefresh: true,
+                ),
+              );
+            },
+          ),
+        ],
         child: BlocBuilder<TaskListCubit, TaskListState>(
           builder: (context, state) {
             if (state.status == TaskListStatus.loading &&

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/time_tracking/period_stats.dart';
+import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -135,6 +136,11 @@ class _Body extends StatelessWidget {
             final percent = totalDuration > 0
                 ? entry.duration / totalDuration
                 : 0.0;
+            final fillColor = resolveTimeTrackingCategoryColor(
+              context,
+              entry.color,
+              fallback: theme.colorScheme.primary,
+            );
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Column(
@@ -167,7 +173,11 @@ class _Body extends StatelessWidget {
                     ],
                   ),
                   const shad.Gap(6),
-                  shad.LinearProgressIndicator(value: percent.clamp(0, 1)),
+                  _CategoryShareBar(
+                    value: percent.clamp(0, 1),
+                    fillColor: fillColor,
+                    trackColor: theme.colorScheme.muted,
+                  ),
                 ],
               ),
             );
@@ -185,6 +195,42 @@ class _Body extends StatelessWidget {
     final minutes = (totalSeconds % 3600) ~/ 60;
     if (hours > 0) return '${hours}h ${minutes}m';
     return '${minutes}m';
+  }
+}
+
+class _CategoryShareBar extends StatelessWidget {
+  const _CategoryShareBar({
+    required this.value,
+    required this.fillColor,
+    required this.trackColor,
+  });
+
+  final double value;
+  final Color fillColor;
+  final Color trackColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: SizedBox(
+        height: 6,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ColoredBox(color: trackColor),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: value,
+                heightFactor: 1,
+                child: ColoredBox(color: fillColor),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

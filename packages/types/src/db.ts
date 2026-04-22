@@ -1,4 +1,5 @@
 import type { Database, Tables } from './supabase';
+import type { JSONContent } from './tiptap';
 
 export type { Database } from './supabase';
 
@@ -120,6 +121,10 @@ export type WorkspaceTaskPickerRow = Pick<
   } | null;
 };
 export type TaskLabel = Tables<'workspace_task_labels'>;
+export type TaskLabelSummary = Pick<
+  Tables<'workspace_task_labels'>,
+  'id' | 'name' | 'color' | 'created_at'
+>;
 export type TaskProject = Tables<'task_projects'>;
 export type TaskProjectUpdate = Tables<'task_project_updates'>;
 export type TaskCalendarEvent = Tables<'task_calendar_events'>;
@@ -322,11 +327,57 @@ export type WorkspaceQuizSet = Tables<'workspace_quiz_sets'> & {
     course_name: string;
   }[];
 };
-export type WorkspaceCourse = Tables<'workspace_courses'> & {
+export type WorkspaceCourse = Tables<'workspace_user_groups'> & {
   href?: string;
 };
 export type WorkspaceCourseModule = Tables<'workspace_course_modules'> & {
   href?: string;
+};
+export type WorkspaceCourseBuilderCourse = Pick<
+  Tables<'workspace_user_groups'>,
+  'description' | 'id' | 'name' | 'ws_id'
+>;
+export type WorkspaceCourseBuilderModule = Pick<
+  Tables<'workspace_course_modules'>,
+  | 'content'
+  | 'created_at'
+  | 'extra_content'
+  | 'group_id'
+  | 'id'
+  | 'is_public'
+  | 'is_published'
+  | 'name'
+  | 'sort_key'
+  | 'youtube_links'
+> & {
+  flashcard_count: number;
+  quiz_count: number;
+  quiz_set_count: number;
+};
+export type SharedCourseGroup = Pick<
+  Tables<'workspace_user_groups'>,
+  'description' | 'name'
+>;
+export type SharedCourseModule = Omit<
+  Pick<
+    Tables<'workspace_course_modules'>,
+    | 'content'
+    | 'created_at'
+    | 'extra_content'
+    | 'group_id'
+    | 'id'
+    | 'is_public'
+    | 'is_published'
+    | 'name'
+    | 'sort_key'
+    | 'youtube_links'
+  >,
+  'content'
+> & {
+  content: JSONContent | null;
+  flashcards: number;
+  quizzes: number;
+  quizSets: number;
 };
 export type WorkspaceAIModel = Tables<'workspace_ai_models'> & {
   href?: string;
@@ -369,7 +420,9 @@ export type ExternalProjectImportStatus =
 export type ExternalProjectPublishEventKind =
   Database['public']['Enums']['external_project_publish_event_kind'];
 export type PermissionId =
-  Database['public']['Enums']['workspace_role_permission'];
+  | Database['public']['Enums']['workspace_role_permission']
+  | 'change_finance_wallets'
+  | 'set_finance_wallets_on_create';
 
 export type WorkspaceExternalProjectBinding = {
   enabled: boolean;
@@ -427,6 +480,7 @@ export type YoolaExternalProjectArtworkLoadingItem = {
   slug: string;
   title: string;
   summary: string | null;
+  caption: string | null;
   label: string | null;
   category: string | null;
   rarity: string | null;
@@ -444,6 +498,7 @@ export type YoolaExternalProjectLoreCapsuleLoadingItem = {
   entryId: string;
   slug: string;
   title: string;
+  subtitle: string | null;
   summary: string | null;
   teaser: string | null;
   channel: string | null;
@@ -451,16 +506,22 @@ export type YoolaExternalProjectLoreCapsuleLoadingItem = {
   date: string | null;
   tags: string[];
   excerptMarkdown: string | null;
+  bodyMarkdown: string | null;
   artworkEntryId: string | null;
   artworkAssetUrl: string | null;
+  profileData: Record<string, unknown>;
+  metadata: Record<string, unknown>;
 };
 
 export type YoolaExternalProjectSectionLoadingItem = {
   entryId: string;
   slug: string;
   title: string;
+  subtitle: string | null;
   summary: string | null;
   bodyMarkdown: string | null;
+  profileData: Record<string, unknown>;
+  metadata: Record<string, unknown>;
 };
 
 export type YoolaExternalProjectLoadingData = {
@@ -498,6 +559,81 @@ export type ExternalProjectStudioData = {
   importJobs: ExternalProjectImportJob[];
   publishEvents: ExternalProjectPublishEvent[];
   loadingData: ExternalProjectLoadingData | null;
+};
+
+export type ExternalProjectSummaryCollection = {
+  id: string;
+  slug: string;
+  title: string;
+  isEnabled: boolean;
+  totalEntries: number;
+  draftEntries: number;
+  scheduledEntries: number;
+  publishedEntries: number;
+  archivedEntries: number;
+};
+
+export type ExternalProjectSummaryCounts = {
+  collections: number;
+  entries: number;
+  drafts: number;
+  scheduled: number;
+  published: number;
+  archived: number;
+};
+
+export type ExternalProjectAttentionKind =
+  | 'scheduled_soon'
+  | 'missing_media'
+  | 'recently_imported_unpublished'
+  | 'archived_backlog';
+
+export type ExternalProjectAttentionItem = {
+  collectionId: string;
+  collectionTitle: string;
+  detail: string;
+  entryId: string;
+  kind: ExternalProjectAttentionKind;
+  scheduledFor: string | null;
+  slug: string;
+  status: ExternalProjectEntryStatus;
+  summary: string | null;
+  title: string;
+};
+
+export type ExternalProjectSummaryQueues = {
+  archivedBacklog: ExternalProjectAttentionItem[];
+  draftsMissingMedia: ExternalProjectAttentionItem[];
+  recentlyImportedUnpublished: ExternalProjectAttentionItem[];
+  scheduledSoon: ExternalProjectAttentionItem[];
+};
+
+export type ExternalProjectSummary = {
+  adapter: ExternalProjectAdapterKind | null;
+  canonicalProjectId: string | null;
+  collections: ExternalProjectSummaryCollection[];
+  counts: ExternalProjectSummaryCounts;
+  queues: ExternalProjectSummaryQueues;
+  recentActivity: {
+    importJobs: ExternalProjectImportJob[];
+    publishEvents: ExternalProjectPublishEvent[];
+  };
+  workspaceId: string;
+};
+
+export type ExternalProjectBulkUpdateAction =
+  | 'archive'
+  | 'publish'
+  | 'restore-draft'
+  | 'schedule'
+  | 'set-status'
+  | 'unpublish';
+
+export type ExternalProjectBulkUpdatePayload = {
+  action: ExternalProjectBulkUpdateAction;
+  entryIds: string[];
+  scheduledFor?: string | null;
+  status?: ExternalProjectEntryStatus;
 };
 
 export type ExternalProjectImportReport = {

@@ -3,15 +3,18 @@ import type { Json, TablesInsert, TablesUpdate } from '@tuturuuu/types';
 import type {
   HabitTracker,
   HabitTrackerCardSummary,
+  HabitTrackerComposerConfig,
   HabitTrackerDetailResponse,
   HabitTrackerEntry,
   HabitTrackerEntryInput,
+  HabitTrackerExerciseBlock,
   HabitTrackerFieldSchema,
   HabitTrackerInput,
   HabitTrackerMember,
   HabitTrackerStreakAction,
   HabitTrackerStreakActionInput,
 } from '@tuturuuu/types/primitives/HabitTracker';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import {
   habitTrackerEntryInputSchema,
   habitTrackerInputSchema,
@@ -49,6 +52,33 @@ export class HabitTrackerError extends Error {
 
 type HabitTrackerInsert = TablesInsert<'workspace_habit_trackers'>;
 type HabitTrackerUpdate = TablesUpdate<'workspace_habit_trackers'>;
+
+type HabitTrackerLatestStatRow = {
+  tracker_id: string;
+  user_id: string;
+  latest_entry_id: string | null;
+  latest_entry_date: string | null;
+  latest_occurred_at: string | null;
+  latest_primary_value: number | null;
+  latest_values: Json | null;
+  current_period_total: number | null;
+  total_entries: number | null;
+  total_value: number | null;
+};
+
+type HabitTrackerLatestStatsRpcClient = {
+  rpc(
+    fn: string,
+    args: {
+      p_ws_id: string;
+      p_user_id: string;
+      p_tracker_ids: string[];
+    }
+  ): Promise<{
+    data: unknown;
+    error: { message?: string } | null;
+  }>;
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -94,21 +124,134 @@ function normalizeQuickAddValues(input: unknown) {
     .filter((value) => Number.isFinite(value));
 }
 
-function normalizeEntryValues(input: unknown) {
+function normalizeComposerConfig(
+  input: unknown
+): HabitTrackerComposerConfig | null {
+  if (!isRecord(input)) {
+    return null;
+  }
+
+  return {
+    unit: typeof input.unit === 'string' ? input.unit : null,
+    supported_units: Array.isArray(input.supported_units)
+      ? input.supported_units.filter(
+          (value): value is string =>
+            typeof value === 'string' && value.length > 0
+        )
+      : undefined,
+    suggested_increments: Array.isArray(input.suggested_increments)
+      ? input.suggested_increments
+          .map((value) => Number(value))
+          .filter((value) => Number.isFinite(value))
+      : undefined,
+    progress_variant: ['ring', 'bar', 'check'].includes(
+      String(input.progress_variant)
+    )
+      ? (input.progress_variant as HabitTrackerComposerConfig['progress_variant'])
+      : undefined,
+    suggested_exercises: Array.isArray(input.suggested_exercises)
+      ? input.suggested_exercises.filter(
+          (value): value is string =>
+            typeof value === 'string' && value.length > 0
+        )
+      : undefined,
+    default_sets:
+      typeof input.default_sets === 'number' &&
+      Number.isFinite(input.default_sets)
+        ? input.default_sets
+        : null,
+    default_reps:
+      typeof input.default_reps === 'number' &&
+      Number.isFinite(input.default_reps)
+        ? input.default_reps
+        : null,
+    default_weight_unit:
+      typeof input.default_weight_unit === 'string'
+        ? input.default_weight_unit
+        : null,
+  };
+}
+
+function normalizeExerciseBlocks(input: unknown): HabitTrackerExerciseBlock[] {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+
+  return input
+    .filter(isRecord)
+    .map((block) => ({
+      exercise_name:
+        typeof block.exercise_name === 'string'
+          ? block.exercise_name.trim()
+          : '',
+      sets: Number(block.sets ?? 0),
+      reps: Number(block.reps ?? 0),
+      weight:
+        typeof block.weight === 'number' && Number.isFinite(block.weight)
+          ? block.weight
+          : null,
+      unit: typeof block.unit === 'string' ? block.unit : null,
+      notes: typeof block.notes === 'string' ? block.notes : null,
+    }))
+    .filter(
+      (block) =>
+        block.exercise_name.length > 0 &&
+        Number.isFinite(block.sets) &&
+        block.sets > 0 &&
+        Number.isFinite(block.reps) &&
+        block.reps > 0
+    );
+}
+
+function normalizeEntryValues(input: unknown): HabitTrackerEntry['values'] {
   if (!isRecord(input)) {
     return {};
   }
 
-  return Object.fromEntries(
-    Object.entries(input).filter(([, value]) => {
-      return (
-        value === null ||
-        typeof value === 'boolean' ||
-        typeof value === 'number' ||
-        typeof value === 'string'
-      );
-    })
-  ) as HabitTrackerEntry['values'];
+  const normalized: HabitTrackerEntry['values'] = {};
+
+  for (const [key, value] of Object.entries(input)) {
+    if (
+      value === null ||
+      typeof value === 'boolean' ||
+      typeof value === 'number' ||
+      typeof value === 'string'
+    ) {
+      normalized[key] = value;
+      continue;
+    }
+
+    const exerciseBlocks = normalizeExerciseBlocks(value);
+    if (exerciseBlocks.length > 0) {
+      normalized[key] = exerciseBlocks;
+    }
+  }
+
+  return normalized;
+}
+
+function serializeEntryValues(values: HabitTrackerEntry['values']): Json {
+  return values as Json;
+}
+
+function applyLatestStatsToMemberSummary(
+  summary: ReturnType<typeof buildHabitTrackerMemberSummary> | undefined,
+  latestStat: HabitTrackerLatestStatRow | undefined
+) {
+  if (!summary || !latestStat) {
+    return summary;
+  }
+
+  return {
+    ...summary,
+    latest_value: latestStat.latest_primary_value,
+    latest_entry_id: latestStat.latest_entry_id,
+    latest_entry_date: latestStat.latest_entry_date,
+    latest_occurred_at: latestStat.latest_occurred_at,
+    latest_values: latestStat.latest_values
+      ? normalizeEntryValues(latestStat.latest_values)
+      : null,
+  };
 }
 
 function mapTrackerRow(row: Record<string, unknown>): HabitTracker {
@@ -137,6 +280,32 @@ function mapTrackerRow(row: Record<string, unknown>): HabitTracker {
     quick_add_values: normalizeQuickAddValues(row.quick_add_values),
     freeze_allowance: Number(row.freeze_allowance ?? 0),
     recovery_window_periods: Number(row.recovery_window_periods ?? 0),
+    use_case: [
+      'body_weight',
+      'counter',
+      'measurement',
+      'workout_session',
+      'wellness_check',
+    ].includes(String(row.use_case))
+      ? (row.use_case as HabitTracker['use_case'])
+      : 'generic',
+    template_category: [
+      'strength',
+      'health',
+      'recovery',
+      'discipline',
+    ].includes(String(row.template_category))
+      ? (row.template_category as HabitTracker['template_category'])
+      : 'custom',
+    composer_mode: [
+      'quick_check',
+      'quick_increment',
+      'measurement',
+      'workout_session',
+    ].includes(String(row.composer_mode))
+      ? (row.composer_mode as HabitTracker['composer_mode'])
+      : 'advanced_custom',
+    composer_config: normalizeComposerConfig(row.composer_config),
     start_date:
       typeof row.start_date === 'string'
         ? row.start_date
@@ -243,6 +412,7 @@ function sanitizeTrackerInput(input: HabitTrackerInput): HabitTrackerInput {
     quick_add_values: [...new Set(parsed.quick_add_values ?? [])].sort(
       (left, right) => left - right
     ),
+    composer_config: normalizeComposerConfig(parsed.composer_config) ?? {},
   };
 }
 
@@ -257,6 +427,14 @@ function sanitizeEntryValues(
   const sanitizedValues: HabitTrackerEntry['values'] = {};
 
   for (const [key, rawValue] of Object.entries(parsed.values)) {
+    if (key === 'exercise_blocks') {
+      const exerciseBlocks = normalizeExerciseBlocks(rawValue);
+      if (exerciseBlocks.length > 0) {
+        sanitizedValues[key] = exerciseBlocks;
+      }
+      continue;
+    }
+
     const field = allowedFields.get(key);
     if (!field) continue;
 
@@ -287,6 +465,36 @@ function sanitizeEntryValues(
         }
         break;
     }
+  }
+
+  if (tracker.use_case === 'workout_session') {
+    const exerciseBlocks = normalizeExerciseBlocks(
+      parsed.values.exercise_blocks
+    );
+    if (exerciseBlocks.length === 0) {
+      throw new HabitTrackerError(
+        'Workout session entries require at least one exercise block'
+      );
+    }
+
+    const totalSets = exerciseBlocks.reduce(
+      (sum, block) => sum + block.sets,
+      0
+    );
+    const totalReps = exerciseBlocks.reduce(
+      (sum, block) => sum + block.sets * block.reps,
+      0
+    );
+    const totalVolume = exerciseBlocks.reduce(
+      (sum, block) => sum + block.sets * block.reps * (block.weight ?? 0),
+      0
+    );
+
+    sanitizedValues.exercise_blocks = exerciseBlocks;
+    sanitizedValues.session_count = 1;
+    sanitizedValues.total_sets = totalSets;
+    sanitizedValues.total_reps = totalReps;
+    sanitizedValues.total_volume = totalVolume;
   }
 
   for (const field of tracker.input_schema) {
@@ -321,22 +529,21 @@ export async function verifyWorkspaceMembership(
   wsId: string,
   userId: string
 ) {
-  const { data, error } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', userId)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId,
+    userId,
+    supabase,
+  });
 
-  if (error) {
+  if (membership.error === 'membership_lookup_failed') {
     throw new HabitTrackerError('Failed to verify workspace membership', 500);
   }
 
-  if (!data) {
+  if (!membership.ok) {
     throw new HabitTrackerError('Workspace access denied', 403);
   }
 
-  return data;
+  return membership;
 }
 
 export async function listHabitTrackerMembers(
@@ -472,6 +679,41 @@ async function listTrackerStreakActions(
   );
 }
 
+async function getLatestTrackerStats(
+  supabase: TypedSupabaseClient,
+  wsId: string,
+  userId: string | null,
+  trackerIds: string[]
+) {
+  if (!userId || trackerIds.length === 0) {
+    return new Map<string, HabitTrackerLatestStatRow>();
+  }
+
+  const rpcClient = supabase as unknown as HabitTrackerLatestStatsRpcClient;
+  const { data, error } = await rpcClient.rpc(
+    'get_workspace_habit_tracker_latest_stats',
+    {
+      p_ws_id: wsId,
+      p_user_id: userId,
+      p_tracker_ids: trackerIds,
+    }
+  );
+
+  if (error) {
+    throw new HabitTrackerError(
+      'Failed to load habit tracker latest stats',
+      500
+    );
+  }
+
+  return new Map(
+    ((data ?? []) as unknown as HabitTrackerLatestStatRow[]).map((row) => [
+      row.tracker_id,
+      row,
+    ])
+  );
+}
+
 function groupEntriesByUser(entries: HabitTrackerEntry[]) {
   const entriesByUser: Record<string, HabitTrackerEntry[]> = {};
 
@@ -517,13 +759,52 @@ function resolveScopeUserId(
   return viewerId;
 }
 
+function buildFallbackMemberSummary(
+  tracker: HabitTracker,
+  scopeUserId: string | null,
+  memberSummaries: ReturnType<typeof buildHabitTrackerMemberSummary>[],
+  entriesByUser: Record<string, HabitTrackerEntry[]>,
+  actionsByUser: Record<string, HabitTrackerStreakAction[]>
+) {
+  if (!scopeUserId) {
+    return undefined;
+  }
+
+  const existing = memberSummaries.find(
+    (summary) => summary.member.user_id === scopeUserId
+  );
+  if (existing) {
+    return existing;
+  }
+
+  const memberEntries = entriesByUser[scopeUserId] ?? [];
+  const memberActions = actionsByUser[scopeUserId] ?? [];
+  if (memberEntries.length === 0 && memberActions.length === 0) {
+    return undefined;
+  }
+
+  return buildHabitTrackerMemberSummary(
+    tracker,
+    {
+      user_id: scopeUserId,
+      workspace_user_id: null,
+      display_name: 'You',
+      email: null,
+      avatar_url: null,
+    },
+    memberEntries,
+    memberActions
+  );
+}
+
 function buildTrackerCardSummary(
   tracker: HabitTracker,
   members: HabitTrackerMember[],
   entries: HabitTrackerEntry[],
   actions: HabitTrackerStreakAction[],
   scope: HabitTrackerScope,
-  scopeUserId: string | null
+  scopeUserId: string | null,
+  latestStat?: HabitTrackerLatestStatRow
 ): HabitTrackerCardSummary {
   const entriesByUser = groupEntriesByUser(entries);
   const actionsByUser = groupActionsByUser(actions);
@@ -536,15 +817,20 @@ function buildTrackerCardSummary(
     )
   );
   const leaderboard = buildHabitTrackerLeaderboard(memberSummaries).slice(0, 5);
+  const currentMemberSummary = applyLatestStatsToMemberSummary(
+    buildFallbackMemberSummary(
+      tracker,
+      scopeUserId,
+      memberSummaries,
+      entriesByUser,
+      actionsByUser
+    ),
+    latestStat
+  );
 
   return {
     tracker,
-    current_member:
-      scope === 'team'
-        ? undefined
-        : memberSummaries.find(
-            (summary) => summary.member.user_id === scopeUserId
-          ),
+    current_member: scope === 'team' ? undefined : currentMemberSummary,
     team: buildHabitTrackerTeamSummary(memberSummaries),
     leaderboard,
   };
@@ -579,6 +865,12 @@ export async function listHabitTrackerCards(
       trackers.map((tracker) => tracker.id)
     ),
   ]);
+  const latestStatsByTracker = await getLatestTrackerStats(
+    supabase,
+    wsId,
+    scopeUserId,
+    trackers.map((tracker) => tracker.id)
+  );
 
   return {
     trackers: trackers.map((tracker) =>
@@ -588,7 +880,8 @@ export async function listHabitTrackerCards(
         entries.filter((entry) => entry.tracker_id === tracker.id),
         actions.filter((action) => action.tracker_id === tracker.id),
         scope,
-        scopeUserId
+        scopeUserId,
+        latestStatsByTracker.get(tracker.id)
       )
     ),
     members,
@@ -636,6 +929,12 @@ export async function getHabitTrackerDetail(
   );
   const entriesByUser = groupEntriesByUser(entries);
   const actionsByUser = groupActionsByUser(actions);
+  const latestStatsByTracker = await getLatestTrackerStats(
+    supabase,
+    wsId,
+    scopeUserId,
+    [trackerId]
+  );
   const memberSummaries = members.map((member) =>
     buildHabitTrackerMemberSummary(
       tracker,
@@ -645,9 +944,16 @@ export async function getHabitTrackerDetail(
     )
   );
   const leaderboard = buildHabitTrackerLeaderboard(memberSummaries);
-  const currentMemberSummary = scopeUserId
-    ? memberSummaries.find((summary) => summary.member.user_id === scopeUserId)
-    : undefined;
+  const currentMemberSummary = applyLatestStatsToMemberSummary(
+    buildFallbackMemberSummary(
+      tracker,
+      scopeUserId,
+      memberSummaries,
+      entriesByUser,
+      actionsByUser
+    ),
+    latestStatsByTracker.get(trackerId)
+  );
   const recentEntries = [...entries]
     .sort(
       (left, right) =>
@@ -705,6 +1011,10 @@ export async function createHabitTracker(
     quick_add_values: payload.quick_add_values as unknown as Json,
     freeze_allowance: payload.freeze_allowance ?? 0,
     recovery_window_periods: payload.recovery_window_periods ?? 0,
+    use_case: payload.use_case ?? 'generic',
+    template_category: payload.template_category ?? 'custom',
+    composer_mode: payload.composer_mode ?? 'advanced_custom',
+    composer_config: (payload.composer_config ?? {}) as unknown as Json,
     start_date: payload.start_date ?? new Date().toISOString().slice(0, 10),
     is_active: payload.is_active ?? true,
     ws_id: wsId,
@@ -768,6 +1078,14 @@ export async function updateHabitTracker(
     quick_add_values: payload.quick_add_values as unknown as Json,
     freeze_allowance: payload.freeze_allowance ?? 0,
     recovery_window_periods: payload.recovery_window_periods ?? 0,
+    use_case: payload.use_case ?? current.use_case ?? 'generic',
+    template_category:
+      payload.template_category ?? current.template_category ?? 'custom',
+    composer_mode:
+      payload.composer_mode ?? current.composer_mode ?? 'advanced_custom',
+    composer_config: (payload.composer_config ??
+      current.composer_config ??
+      {}) as unknown as Json,
     start_date: payload.start_date ?? current.start_date,
     is_active: payload.is_active ?? true,
   };
@@ -861,7 +1179,7 @@ export async function createHabitTrackerEntry(
       const { data, error } = await supabase
         .from('workspace_habit_tracker_entries')
         .update({
-          values: sanitized.values,
+          values: serializeEntryValues(sanitized.values),
           primary_value: sanitized.primaryValue,
           note: sanitized.entry.note ?? null,
           tags: sanitized.entry.tags ?? [],
@@ -891,7 +1209,7 @@ export async function createHabitTrackerEntry(
       entry_kind: entryKind,
       entry_date: sanitized.entry.entry_date,
       occurred_at: sanitized.entry.occurred_at ?? new Date().toISOString(),
-      values: sanitized.values,
+      values: serializeEntryValues(sanitized.values),
       primary_value: sanitized.primaryValue,
       note: sanitized.entry.note ?? null,
       tags: sanitized.entry.tags ?? [],
@@ -947,7 +1265,7 @@ export async function updateHabitTrackerEntry(
     .update({
       entry_date: sanitized.entry.entry_date,
       occurred_at: sanitized.entry.occurred_at ?? currentEntry.occurred_at,
-      values: sanitized.values,
+      values: serializeEntryValues(sanitized.values),
       primary_value: sanitized.primaryValue,
       note: sanitized.entry.note ?? null,
       tags: sanitized.entry.tags ?? [],

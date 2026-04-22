@@ -109,6 +109,7 @@ class _TaskBoardListFormSheetState extends State<_TaskBoardListFormSheet> {
                       ),
                       const shad.Gap(8),
                       shad.TextField(
+                        contextMenuBuilder: platformTextContextMenuBuilder(),
                         controller: _nameController,
                         hintText: context.l10n.taskBoardDetailUntitledList,
                         autofocus: true,
@@ -675,6 +676,7 @@ class _TaskBoardRenameBoardSheetState
               const shad.Gap(24),
               // Board name field
               shad.TextField(
+                contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _controller,
                 hintText: widget.hintText,
                 autofocus: true,

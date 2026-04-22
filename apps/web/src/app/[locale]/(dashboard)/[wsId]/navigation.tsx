@@ -44,8 +44,6 @@ import {
   LayoutDashboard,
   LayoutList,
   Link,
-  ListCheck,
-  ListTodo,
   Logs,
   Mail,
   Mails,
@@ -77,7 +75,6 @@ import {
   SquaresIntersect,
   SquareUserRound,
   Star,
-  SwatchBook,
   Tags,
   TextSelect,
   TicketPercent,
@@ -107,12 +104,12 @@ import {
   getPermissions,
   getSecret,
   getSecrets,
+  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { NavLink } from '@/components/navigation';
 import { DEV_MODE } from '@/constants/common';
-import { resolveWorkspaceExternalProjectBinding } from '@/lib/external-projects/access';
 import { createTierRequirement } from '@/lib/feature-tiers';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/access';
 
@@ -136,12 +133,10 @@ export async function WorkspaceNavigationLinks({
       data: { user },
     },
     secrets,
-    externalProjectBinding,
   ] = await Promise.all([
     getTranslations(),
     supabase.auth.getUser(),
     getSecrets({ wsId: resolvedWorkspaceId, forceAdmin: true }),
-    resolveWorkspaceExternalProjectBinding(resolvedWorkspaceId),
   ]);
   if (!secrets) notFound();
 
@@ -154,20 +149,19 @@ export async function WorkspaceNavigationLinks({
 
   // Parallelize user-dependent queries
   const [
-    rootMemberData,
+    rootMembership,
     workspacePermissions,
     platformUserRole,
     userInvoiceVisibilityConfig,
     workspaceInvoiceVisibilityConfig,
   ] = await Promise.all([
     user
-      ? supabase
-          .from('workspace_members')
-          .select('user_id')
-          .eq('ws_id', ROOT_WORKSPACE_ID)
-          .eq('user_id', user.id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
+      ? verifyWorkspaceMembershipType({
+          wsId: ROOT_WORKSPACE_ID,
+          userId: user.id,
+          supabase,
+        })
+      : Promise.resolve(null),
     getPermissions({ wsId: resolvedWorkspaceId }),
     user
       ? supabase
@@ -198,25 +192,13 @@ export async function WorkspaceNavigationLinks({
   const { withoutPermission } = workspacePermissions;
 
   // Get root permissions only if user is a root member
-  const withoutRootPermission = rootMemberData.data
+  const withoutRootPermission = rootMembership?.ok
     ? ((await getPermissions({ wsId: ROOT_WORKSPACE_ID }))?.withoutPermission ??
       (() => true))
     : () => true;
 
   const allowDiscordIntegrations =
     platformUserRole.data?.allow_discord_integrations ?? false;
-  const canManageRootExternalProjects =
-    resolvedWorkspaceId === ROOT_WORKSPACE_ID
-      ? !withoutPermission('manage_external_projects') ||
-        !withoutPermission('manage_workspace_roles')
-      : !withoutRootPermission('manage_external_projects') ||
-        !withoutRootPermission('manage_workspace_roles');
-  const canAccessExternalProjects =
-    externalProjectBinding.enabled &&
-    (!withoutPermission('manage_external_projects') ||
-      !withoutPermission('publish_external_projects') ||
-      canManageRootExternalProjects);
-
   // Compute effective invoice visibility
   // Default: disabled for personal, enabled for non-personal
   const invoiceWorkspaceDefault = !isPersonal;
@@ -501,14 +483,7 @@ export async function WorkspaceNavigationLinks({
       disabled: withoutPermission('manage_drive'),
       experimental: 'beta',
     },
-    externalProjectBinding.enabled
-      ? {
-          title: t('sidebar_tabs.external_projects'),
-          href: `/${personalOrWsId}/external-projects`,
-          icon: <BriefcaseBusiness className="h-5 w-5" />,
-          disabled: ENABLE_AI_ONLY || !canAccessExternalProjects,
-        }
-      : null,
+    null,
     null,
     {
       title: t('sidebar_tabs.forms'),
@@ -1033,6 +1008,12 @@ export async function WorkspaceNavigationLinks({
               title: t('sidebar_tabs.education'),
               href: `/${personalOrWsId}/education`,
               icon: <GraduationCap className="h-5 w-5" />,
+              aliases: [
+                `/${personalOrWsId}/education/library`,
+                `/${personalOrWsId}/education/library/quizzes`,
+                `/${personalOrWsId}/education/library/quiz-sets`,
+                `/${personalOrWsId}/education/library/flashcards`,
+              ],
               children: [
                 {
                   title: t('workspace-education-tabs.overview'),
@@ -1046,24 +1027,19 @@ export async function WorkspaceNavigationLinks({
                   icon: <BookText className="h-5 w-5" />,
                 },
                 {
-                  title: t('workspace-education-tabs.flashcards'),
-                  href: `/${personalOrWsId}/education/flashcards`,
-                  icon: <SwatchBook className="h-5 w-5" />,
-                },
-                {
-                  title: t('workspace-education-tabs.quiz-sets'),
-                  href: `/${personalOrWsId}/education/quiz-sets`,
+                  title: t('workspace-education-tabs.library'),
+                  href: `/${personalOrWsId}/education/library`,
                   icon: <LayoutList className="h-5 w-5" />,
-                },
-                {
-                  title: t('workspace-education-tabs.quizzes'),
-                  href: `/${personalOrWsId}/education/quizzes`,
-                  icon: <ListTodo className="h-5 w-5" />,
+                  aliases: [
+                    `/${personalOrWsId}/education/library/quizzes`,
+                    `/${personalOrWsId}/education/library/quiz-sets`,
+                    `/${personalOrWsId}/education/library/flashcards`,
+                  ],
                 },
                 {
                   title: t('workspace-education-tabs.attempts'),
                   href: `/${personalOrWsId}/education/attempts`,
-                  icon: <ListCheck className="h-5 w-5" />,
+                  icon: <ClipboardList className="h-5 w-5" />,
                 },
               ],
               disabled:
@@ -1294,6 +1270,11 @@ export async function WorkspaceNavigationLinks({
               icon: <Radio className="h-5 w-5" />,
             },
             {
+              title: t('infrastructure-tabs.monitoring'),
+              href: `/${personalOrWsId}/infrastructure/monitoring`,
+              icon: <Cctv className="h-5 w-5" />,
+            },
+            {
               title: t('infrastructure-tabs.ai_credits'),
               href: `/${personalOrWsId}/infrastructure/ai-credits`,
               icon: <CreditCard className="h-5 w-5" />,
@@ -1315,14 +1296,7 @@ export async function WorkspaceNavigationLinks({
           requireRootWorkspace: true,
           requireRootMember: true,
         },
-        {
-          title: t('workspace-settings-layout.external_projects_registry'),
-          href: `/${personalOrWsId}/platform/external-projects`,
-          icon: <BriefcaseBusiness className="h-5 w-5" />,
-          disabled: ENABLE_AI_ONLY || !canManageRootExternalProjects,
-          requireRootWorkspace: true,
-          requireRootMember: true,
-        },
+        null,
         {
           title: 'Platform Billing',
           href: `/${personalOrWsId}/platform/billing`,

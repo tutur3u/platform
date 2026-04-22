@@ -6,7 +6,22 @@ import {
 } from '@tuturuuu/internal-api/tasks';
 import type { WorkspaceTaskLabel } from '../types';
 
-async function getErrorMessage(response: Response, fallback: string) {
+async function getErrorMessage(
+  response: Response,
+  fallback: string,
+  options?: {
+    requestPath?: string;
+    isDescriptionRequest?: boolean;
+  }
+) {
+  const isDescriptionRequest =
+    options?.isDescriptionRequest ??
+    Boolean(options?.requestPath?.includes('/description'));
+
+  if (response.status === 413 && isDescriptionRequest) {
+    return 'Description content is too large. Please shorten it or split it into smaller documents.';
+  }
+
   const payload = await response.json().catch(() => null);
   return typeof payload?.error === 'string' ? payload.error : fallback;
 }
@@ -32,17 +47,17 @@ export async function fetchWorkspaceTaskDescription(
   wsId: string,
   taskId: string
 ) {
-  const response = await fetch(
-    `/api/v1/workspaces/${wsId}/tasks/${taskId}/description`,
-    {
-      method: 'GET',
-      cache: 'no-store',
-    }
-  );
+  const requestPath = `/api/v1/workspaces/${wsId}/tasks/${taskId}/description`;
+  const response = await fetch(requestPath, {
+    method: 'GET',
+    cache: 'no-store',
+  });
 
   if (!response.ok) {
     throw new Error(
-      await getErrorMessage(response, 'Failed to fetch task description')
+      await getErrorMessage(response, 'Failed to fetch task description', {
+        requestPath,
+      })
     );
   }
 
@@ -57,21 +72,21 @@ export async function updateWorkspaceTaskDescription(
     description_yjs_state?: number[] | null;
   }
 ) {
-  const response = await fetch(
-    `/api/v1/workspaces/${wsId}/tasks/${taskId}/description`,
-    {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-      cache: 'no-store',
-    }
-  );
+  const requestPath = `/api/v1/workspaces/${wsId}/tasks/${taskId}/description`;
+  const response = await fetch(requestPath, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+  });
 
   if (!response.ok) {
     throw new Error(
-      await getErrorMessage(response, 'Failed to update task description')
+      await getErrorMessage(response, 'Failed to update task description', {
+        requestPath,
+      })
     );
   }
 

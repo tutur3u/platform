@@ -7,6 +7,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   getPermissions,
   normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { listWorkspaceDefaultIncludedGroupIds } from '@/lib/workspace-default-included-groups';
@@ -53,21 +54,20 @@ export async function GET(req: NextRequest, { params }: Params) {
     const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     // Verify workspace access
-    const { data: memberCheck, error: memberCheckError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
 
-    if (memberCheckError) {
+    if (memberCheck.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }
@@ -186,21 +186,20 @@ export async function PUT(req: NextRequest, { params }: Params) {
     }
 
     // Verify workspace access
-    const { data: memberCheck, error: memberCheckError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
 
-    if (memberCheckError) {
+    if (memberCheck.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
 
-    if (!memberCheck) {
+    if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }

@@ -2195,6 +2195,7 @@
     "starts": "Starts",
     "starts_at": "Starts {date}",
     "status": "Status",
+    "status_category": "Status Category",
     "stay-updated": "Stay in the Loop",
     "stress": "stress",
     "styles": "Styles",
@@ -11340,6 +11341,8 @@
     "avg_permissions": "Avg Permissions",
     "bypass_time_tracking_request_approval": "Bypass Time Tracking Request Approval",
     "bypass_time_tracking_request_approval_description": "Allows bypassing of restrictions when approving/denying time-tracking requests",
+    "change_finance_wallets": "Change Finance Wallets",
+    "change_finance_wallets_description": "Allows members to change invoice and transaction wallets, including the workspace default wallet.",
     "check_user_attendance": "Check User Attendance",
     "check_user_attendance_description": "Allows members to check for other users attendance",
     "collapse_members": "Collapse members",
@@ -11529,6 +11532,8 @@
     "select_wallet": "Select a wallet",
     "send_user_group_post_emails": "Send post content via emails",
     "send_user_group_post_emails_description": "Allows members to send emails to virtual users created in your workspace about specific user group post content.",
+    "set_finance_wallets_on_create": "Set Finance Wallets On Create",
+    "set_finance_wallets_on_create_description": "Allows members to choose any wallet when creating invoices and transactions without allowing later reassignment.",
     "singular": "Role",
     "total_roles": "Total Roles",
     "transactions": "Transactions",
@@ -12146,6 +12151,7 @@
       },
       "unarchive": "Unarchive"
     },
+    "select_or_create_list": "Select or create a list",
     "settings": {
       "configure_description": "Configure board-specific settings.",
       "ticket_prefix": "Ticket Prefix",

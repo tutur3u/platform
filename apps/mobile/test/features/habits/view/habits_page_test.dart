@@ -274,7 +274,6 @@ void main() {
     await pumpUi(tester);
 
     expect(find.text('Water'), findsOneWidget);
-    expect(find.text('Habits'), findsWidgets);
 
     await tester.tap(find.text('Water').first);
     await pumpUi(tester, frames: 12);

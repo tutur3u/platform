@@ -34,7 +34,7 @@ interface BoardUserPresenceAvatarsProps {
   currentMetadata?: BoardFiltersMetadata;
   maxDisplay?: number;
   applyUserBoardView: (metadata: BoardFiltersMetadata) => void;
-  onOpenTask?: (taskId: string) => Promise<void>;
+  onOpenTask?: (taskId: string) => Promise<boolean>;
 }
 
 function arraysEqual<T extends string | number>(arr1: T[], arr2: T[]): boolean {
@@ -233,7 +233,7 @@ function PresenceAvatar({
   userMetadata?: BoardFiltersMetadata;
   viewingTaskId?: string;
   applyUserBoardView: (metadata: BoardFiltersMetadata) => void;
-  onOpenTask?: (taskId: string) => Promise<void>;
+  onOpenTask?: (taskId: string) => Promise<boolean>;
 }) {
   const t = useTranslations('ws-presence');
   const [popoverOpen, setPopoverOpen] = useState(false);

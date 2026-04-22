@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
@@ -205,15 +206,13 @@ async function fetchAnalyticsData(
       return null;
     }
 
-    // Check if user has access to this workspace
-    const { data: workspaceMember } = await supabase
-      .from('workspace_members')
-      .select('*')
-      .eq('ws_id', link.ws_id)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const workspaceMember = await verifyWorkspaceMembershipType({
+      wsId: link.ws_id,
+      userId: user.id,
+      supabase,
+    });
 
-    if (!workspaceMember) {
+    if (!workspaceMember.ok) {
       console.error('User does not have access to this workspace');
       return null;
     }

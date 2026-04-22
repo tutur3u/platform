@@ -47,7 +47,7 @@ export async function PATCH(
     const body = await request.json();
     const payload = bindingSchema.parse(body);
 
-    const { error } = await access.admin.rpc(
+    const { error } = await access.supabase.rpc(
       'set_workspace_external_project_binding',
       {
         p_destination_ws_id: workspaceId,

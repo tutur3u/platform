@@ -178,6 +178,8 @@ export function useWorkspaceUsers(
     placeholderData: keepPreviousData,
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 
@@ -215,6 +217,8 @@ export function useWorkspaceUserGroups(
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 
@@ -249,6 +253,8 @@ export function useExcludedUserGroups(
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 
@@ -271,6 +277,8 @@ export function useWorkspaceUserFields(wsId: string) {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 
@@ -344,6 +352,8 @@ export function useFeaturedGroupCounts(
     placeholderData: keepPreviousData,
     staleTime: 30 * 1000, // 30 seconds — matches useWorkspaceUsers
     gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 

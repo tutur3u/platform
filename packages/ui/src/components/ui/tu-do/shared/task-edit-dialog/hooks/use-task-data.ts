@@ -6,7 +6,7 @@ import {
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { z } from 'zod';
 
 const SharedTaskContextSchema = z.object({
@@ -136,7 +136,9 @@ export function useTaskData({
   const realWorkspaceId = boardConfig?.ws_id || wsId;
   const isValidWsId = isValidUUID(realWorkspaceId);
 
-  // Available lists
+  // Available lists — always subscribe to ['task_lists', boardId] when the dialog is open
+  // (unless shared-task context) so CreateListDialog's setQueryData cache updates appear
+  // immediately. `propAvailableLists` is only used as placeholder until the query resolves.
   const { data: fetchedAvailableLists = [] } = useQuery({
     queryKey: ['task_lists', boardId],
     queryFn: async () => {
@@ -151,13 +153,20 @@ export function useTaskData({
       if (error) throw error;
       return data as TaskList[];
     },
-    enabled: !!boardId && isOpen && !propAvailableLists && !hasSharedContext,
-    initialData: sharedContext?.availableLists || propAvailableLists,
+    enabled: !!boardId && isOpen && !hasSharedContext,
+    placeholderData: propAvailableLists,
   });
-  const availableLists =
-    sharedContext?.availableLists ||
-    propAvailableLists ||
-    fetchedAvailableLists;
+
+  const availableLists = useMemo(() => {
+    if (sharedContext?.availableLists) return sharedContext.availableLists;
+    if (hasSharedContext) return propAvailableLists ?? [];
+    return fetchedAvailableLists;
+  }, [
+    sharedContext?.availableLists,
+    hasSharedContext,
+    propAvailableLists,
+    fetchedAvailableLists,
+  ]);
 
   // Workspace labels - use real workspace ID from boardConfig
   const { data: fetchedWorkspaceLabels = [] } = useWorkspaceLabels(

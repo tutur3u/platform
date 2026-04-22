@@ -1,4 +1,5 @@
 import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
+import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH, MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -33,7 +34,11 @@ function validateRedirectUrl(
 
     // Relative paths are always safe (same origin)
     if (decodedUrl.startsWith('/')) {
-      return { url: decodedUrl, isExternal: false, targetApp: null };
+      return {
+        url: normalizeAuthRedirectPath(decodedUrl, requestOrigin, '/'),
+        isExternal: false,
+        targetApp: null,
+      };
     }
 
     // Validate absolute URLs
@@ -46,7 +51,11 @@ function validateRedirectUrl(
 
     // Check if it's a same-origin URL
     if (url.origin === requestOrigin) {
-      return { url: decodedUrl, isExternal: false, targetApp: null };
+      return {
+        url: normalizeAuthRedirectPath(decodedUrl, requestOrigin, '/'),
+        isExternal: false,
+        targetApp: null,
+      };
     }
 
     // Check if it's a trusted internal app domain

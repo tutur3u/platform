@@ -6,6 +6,7 @@ import {
 import {
   getPermissions,
   normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import {
@@ -37,21 +38,20 @@ export async function PUT(req: Request, { params }: Params) {
   // Normalize workspace ID to UUID (handles 'personal', 'internal', etc.)
   const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-  const { data: memberCheck, error: memberError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const memberCheck = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: user.id,
+    supabase: supabase,
+  });
 
-  if (memberError) {
+  if (memberCheck.error === 'membership_lookup_failed') {
     return NextResponse.json(
       { message: 'Failed to verify workspace access' },
       { status: 500 }
     );
   }
 
-  if (!memberCheck) {
+  if (!memberCheck.ok) {
     return NextResponse.json(
       { message: 'Workspace access denied' },
       { status: 403 }
@@ -67,6 +67,16 @@ export async function PUT(req: Request, { params }: Params) {
   if (withoutPermission('manage_workspace_settings')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to modify workspace settings' },
+      { status: 403 }
+    );
+  }
+
+  if (
+    id === 'default_wallet_id' &&
+    withoutPermission('change_finance_wallets')
+  ) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to change the default wallet' },
       { status: 403 }
     );
   }
@@ -136,18 +146,17 @@ export async function GET(req: Request, { params }: Params) {
   // Normalize workspace ID to UUID (handles 'personal', 'internal', etc.)
   const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-  const { data: memberCheck, error: memberError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const memberCheck = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: user.id,
+    supabase,
+  });
 
-  if (memberError) {
+  if (memberCheck.error === 'membership_lookup_failed') {
     return NextResponse.json({}, { status: 500 });
   }
 
-  if (!memberCheck) {
+  if (!memberCheck.ok) {
     return NextResponse.json({}, { status: 403 });
   }
 

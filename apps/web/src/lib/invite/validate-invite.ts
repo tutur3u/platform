@@ -2,6 +2,8 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { memberTypeFromInviteStatsRow } from '@/lib/workspace-invite-links';
 import { enforceSeatLimit } from '@/utils/seat-limits';
 import type { ValidateInviteResult, Workspace, WorkspaceInfo } from './types';
 
@@ -103,15 +105,22 @@ export async function validateInvite(
       };
     }
 
-    // Check if user is already a member
-    const { data: existingMember } = await sbAdmin
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', inviteLink.ws_id)
-      .eq('user_id', user.id)
-      .single();
+    const existingMember = await verifyWorkspaceMembershipType({
+      wsId: inviteLink.ws_id as string,
+      userId: user.id,
+      supabase: sbAdmin,
+      requiredType: 'MEMBER',
+    });
 
-    if (existingMember) {
+    if (existingMember.error === 'membership_lookup_failed') {
+      return {
+        authenticated: true,
+        error: 'Unable to verify workspace membership.',
+        errorCode: 'INTERNAL_ERROR',
+      };
+    }
+
+    if (existingMember.ok) {
       return {
         authenticated: true,
         alreadyMember: true,
@@ -121,7 +130,7 @@ export async function validateInvite(
 
     const { data: inviteStats, error: inviteStatsError } = await sbAdmin
       .from('workspace_invite_links_with_stats')
-      .select('is_expired, is_full')
+      .select('is_expired, is_full, member_type')
       .eq('code', code)
       .maybeSingle();
 
@@ -163,6 +172,9 @@ export async function validateInvite(
       workspace,
       memberCount: seatCheck.status.memberCount,
       seatLimitReached: !seatCheck.allowed,
+      memberType: memberTypeFromInviteStatsRow(
+        inviteStats as unknown as Record<string, unknown>
+      ),
       seatStatus: {
         currentSeats: seatCheck.status.memberCount,
         maxSeats: seatCheck.status.isSeatBased

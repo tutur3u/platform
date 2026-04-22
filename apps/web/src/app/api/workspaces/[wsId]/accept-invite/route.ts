@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import {
   assignSeatToMember,
@@ -60,10 +61,10 @@ export async function POST(request: Request, { params }: Params) {
     )?.[0]?.email?.toLowerCase();
   }
 
-  // Validate that user has a pending direct or email invite.
+  // Validate that user has a pending direct or email invite; read type for membership row.
   const { data: pendingInvite } = await supabase
     .from('workspace_invites')
-    .select('ws_id')
+    .select('ws_id, type')
     .eq('ws_id', wsId)
     .eq('user_id', user.id)
     .maybeSingle();
@@ -71,7 +72,7 @@ export async function POST(request: Request, { params }: Params) {
   const { data: pendingEmailInvite } = userEmail
     ? await supabase
         .from('workspace_email_invites')
-        .select('ws_id')
+        .select('ws_id, type')
         .eq('ws_id', wsId)
         .eq('email', userEmail)
         .maybeSingle()
@@ -84,15 +85,24 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  // Make acceptance idempotent for stale invites or partially completed flows.
-  const { data: existingMember } = await sbAdmin
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const inviteMemberType =
+    pendingInvite?.type ?? pendingEmailInvite?.type ?? 'MEMBER';
 
-  if (existingMember) {
+  // Make acceptance idempotent for stale invites or partially completed flows.
+  const existingMember = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: user.id,
+    supabase: sbAdmin,
+  });
+
+  if (existingMember.error === 'membership_lookup_failed') {
+    return NextResponse.json(
+      { error: 'Failed to verify workspace membership' },
+      { status: 500 }
+    );
+  }
+
+  if (existingMember.ok) {
     await sbAdmin
       .from('workspace_invites')
       .delete()
@@ -141,10 +151,12 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  // Insert user as workspace member
-  const { error } = await sbAdmin
-    .from('workspace_members')
-    .insert({ ws_id: wsId, user_id: user.id });
+  // Insert user as workspace member (preserve MEMBER vs GUEST from the invite)
+  const { error } = await sbAdmin.from('workspace_members').insert({
+    ws_id: wsId,
+    user_id: user.id,
+    type: inviteMemberType,
+  });
 
   if (error) {
     if (error.code === '23505') {

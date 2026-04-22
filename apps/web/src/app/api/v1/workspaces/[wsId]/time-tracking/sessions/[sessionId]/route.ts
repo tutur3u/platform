@@ -7,6 +7,7 @@ import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
   getPermissions,
   normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
@@ -335,14 +336,13 @@ async function authenticateAndResolveWorkspace(
     };
   }
 
-  const { data: memberCheck, error: memberCheckError } = await supabase
-    .from('workspace_members')
-    .select('id:user_id')
-    .eq('ws_id', normalizedWsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const memberCheck = await verifyWorkspaceMembershipType({
+    wsId: normalizedWsId,
+    userId: user.id,
+    supabase: supabase,
+  });
 
-  if (memberCheckError) {
+  if (memberCheck.error === 'membership_lookup_failed') {
     return {
       error: NextResponse.json(
         { error: 'Failed to verify workspace access' },
@@ -351,7 +351,7 @@ async function authenticateAndResolveWorkspace(
     };
   }
 
-  if (!memberCheck) {
+  if (!memberCheck.ok) {
     return {
       error: NextResponse.json(
         { error: 'Workspace access denied' },

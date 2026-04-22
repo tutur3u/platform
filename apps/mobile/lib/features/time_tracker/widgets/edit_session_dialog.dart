@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, TextButton, TextField;
 import 'package:intl/intl.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/features/time_tracker/utils/threshold.dart';
@@ -141,6 +142,7 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
               key: const shad.FormKey<String>(#editSessionTitle),
               label: Text(l10n.timerSessionTitle),
               child: shad.TextField(
+                contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _titleCtrl,
               ),
             ),
@@ -149,6 +151,7 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
               key: const shad.FormKey<String>(#editSessionDesc),
               label: Text(l10n.timerDescription),
               child: shad.TextField(
+                contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _descCtrl,
                 maxLines: 3,
               ),

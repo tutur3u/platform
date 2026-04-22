@@ -178,3 +178,38 @@ String? _nestedAvatarUrl(dynamic value) {
       ? avatarUrl.trim()
       : null;
 }
+
+/// Content-only update responses often omit nested `user` (list joins).
+/// Reapply [previous] owner/display fields when [fresh] drops them so list
+/// tiles keep avatar and name until the next full fetch.
+TimeTrackingRequest mergeTimeTrackingRequestPreservingUserEnrichment(
+  TimeTrackingRequest previous,
+  TimeTrackingRequest fresh,
+) {
+  return TimeTrackingRequest(
+    id: fresh.id,
+    workspaceId: fresh.workspaceId,
+    userId: fresh.userId,
+    taskId: fresh.taskId,
+    categoryId: fresh.categoryId,
+    title: fresh.title,
+    description: fresh.description,
+    userDisplayName: fresh.userDisplayName ?? previous.userDisplayName,
+    userAvatarUrl: fresh.userAvatarUrl ?? previous.userAvatarUrl,
+    startTime: fresh.startTime,
+    endTime: fresh.endTime,
+    images: fresh.images,
+    approvalStatus: fresh.approvalStatus,
+    approvedBy: fresh.approvedBy,
+    approvedByName: fresh.approvedByName,
+    approvedAt: fresh.approvedAt,
+    rejectedBy: fresh.rejectedBy,
+    rejectedByName: fresh.rejectedByName,
+    rejectedAt: fresh.rejectedAt,
+    needsInfoRequestedByName: fresh.needsInfoRequestedByName,
+    rejectionReason: fresh.rejectionReason,
+    needsInfoReason: fresh.needsInfoReason,
+    createdAt: fresh.createdAt,
+    updatedAt: fresh.updatedAt,
+  );
+}

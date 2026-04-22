@@ -2,7 +2,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 export async function requireWhiteboardAccess(
@@ -23,14 +26,13 @@ export async function requireWhiteboardAccess(
     };
   }
 
-  const { data: membership, error: membershipError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: user.id,
+    supabase,
+  });
 
-  if (membershipError) {
+  if (membership.error === 'membership_lookup_failed') {
     return {
       error: NextResponse.json(
         { error: 'Failed to verify workspace membership' },
@@ -39,7 +41,7 @@ export async function requireWhiteboardAccess(
     };
   }
 
-  if (!membership) {
+  if (!membership.ok) {
     return {
       error: NextResponse.json(
         { error: 'Workspace access denied' },

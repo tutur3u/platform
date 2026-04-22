@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/features/finance/utils/wallet_images.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -66,6 +67,7 @@ class _WalletImagePickerSheetState extends State<WalletImagePickerSheet> {
             ),
             const shad.Gap(10),
             shad.TextField(
+              contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: _searchController,
               hintText: l10n.financeWalletSearchImage,
               onChanged: (value) => setState(() => _query = value),

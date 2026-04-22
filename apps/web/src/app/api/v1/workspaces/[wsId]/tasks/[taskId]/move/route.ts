@@ -3,7 +3,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -82,14 +85,13 @@ async function requireWorkspaceTaskAccess(
 
   const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-  const { data: memberCheck, error: memberError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const memberCheck = await verifyWorkspaceMembershipType({
+    wsId: wsId,
+    userId: user.id,
+    supabase: supabase,
+  });
 
-  if (memberError) {
+  if (memberCheck.error === 'membership_lookup_failed') {
     return {
       error: NextResponse.json(
         { error: 'Failed to verify workspace membership' },
@@ -98,7 +100,7 @@ async function requireWorkspaceTaskAccess(
     };
   }
 
-  if (!memberCheck) {
+  if (!memberCheck.ok) {
     return {
       error: NextResponse.json(
         { error: 'Workspace access denied' },

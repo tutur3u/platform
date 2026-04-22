@@ -160,7 +160,7 @@ class _SignOutButton extends StatelessWidget {
       onPressed: isBusy
           ? null
           : () {
-              unawaited(context.read<AuthCubit>().signOut());
+              unawaited(context.read<AuthCubit>().signOutAllAccounts());
             },
       variant: AuthSecondaryButtonVariant.ghost,
     );
