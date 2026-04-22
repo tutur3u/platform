@@ -8962,6 +8962,20 @@
     "workspaces": "Không gian làm việc",
     "workspaces-description": "Không gian làm việc mà bạn có quyền truy cập sẽ được liệt kê ở đây."
   },
+  "share-course": {
+    "badge": "Khóa học được chia sẻ",
+    "flashcard_count": "Có sẵn {count} thẻ ghi nhớ",
+    "flashcard_label": "Thẻ ghi nhớ",
+    "flashcard_short": "T",
+    "no_published_modules": "Chưa có mô-đun nào được xuất bản.",
+    "published_modules": "{count} mô-đun đã xuất bản",
+    "quiz_count": "Có sẵn {count} câu hỏi",
+    "quiz_label": "Câu hỏi",
+    "quiz_set_label": "Bộ câu hỏi",
+    "quiz_set_short": "B",
+    "quiz_short": "C",
+    "select_module": "Chọn một mô-đun để xem nội dung"
+  },
   "sidebar_recent_items": {
     "board_badge": "Bảng",
     "debt_item": "Khoản nợ",
@@ -15408,6 +15422,10 @@
     "attendance": "Điểm danh nhóm",
     "confirm_remove_last_manager": "Bạn có chắc muốn xóa quản lý cuối cùng?",
     "confirm_remove_member": "Bạn có chắc muốn xóa thành viên này?",
+    "copy_link": "Sao chép liên kết",
+    "courses": "Khóa học",
+    "current_group_name": "nhóm này",
+    "link_copied": "Đã sao chép liên kết vào bộ nhớ tạm",
     "manager": "Quản lý",
     "managers": "Quản lý nhóm",
     "managers_added": "Đã thêm quản lý",
@@ -15423,7 +15441,9 @@
     "requests": "Yêu cầu",
     "schedule": "Lịch nhóm",
     "search_users_placeholder": "Tìm kiếm người dùng...",
-    "select_and_submit": "{groupActionLabel} vào nhóm"
+    "select_and_submit": "{groupActionLabel} vào {groupName}",
+    "share": "Chia sẻ",
+    "share_description": "Tạo liên kết để chia sẻ nhóm này."
   },
   "ws-user-group-feedback": {
     "add_feedback": "Thêm nhận xét",

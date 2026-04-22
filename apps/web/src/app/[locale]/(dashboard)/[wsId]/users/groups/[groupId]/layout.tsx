@@ -1,4 +1,5 @@
 import {
+  Book,
   Calendar,
   ChartColumn,
   ClipboardList,
@@ -18,6 +19,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { getUserGroupMemberships, verifyGroupAccess } from '../utils';
+import GroupShareButton from './group-share-button';
 import SelectGroupGateway from './select-group-gateway';
 
 interface LayoutProps {
@@ -122,6 +124,17 @@ export default async function Layout({ children, params }: LayoutProps) {
                 icon={<ChartColumn className="h-5 w-5" />}
                 className="border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20"
               />
+            )}
+            {hasManageUsersPermission && (
+              <>
+                <LinkButton
+                  href={`${commonHref}/content`}
+                  title={t('ws-user-group-details.courses')}
+                  icon={<Book className="h-5 w-5" />}
+                  className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20"
+                />
+                <GroupShareButton groupId={groupId} />
+              </>
             )}
           </div>
         }

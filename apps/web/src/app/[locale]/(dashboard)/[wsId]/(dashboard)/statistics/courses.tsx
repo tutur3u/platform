@@ -17,7 +17,7 @@ export default async function CoursesStatistics({
 
   const { count } = enabled
     ? await supabase
-        .from('workspace_courses')
+        .from('workspace_user_groups')
         .select('*', {
           count: 'exact',
           head: true,

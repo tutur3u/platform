@@ -12,10 +12,9 @@ export async function GET(_: Request, { params }: Params) {
   const { wsId: id } = await params;
 
   const { data, error } = await supabase
-    .from('workspace_courses')
+    .from('workspace_user_groups')
     .select('*')
-    .eq('ws_id', id)
-    .single();
+    .eq('ws_id', id);
 
   if (error) {
     console.log(error);
@@ -34,7 +33,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const data = await req.json();
 
-  const { error } = await supabase.from('workspace_courses').insert({
+  const { error } = await supabase.from('workspace_user_groups').insert({
     ...data,
     ws_id: id,
   });

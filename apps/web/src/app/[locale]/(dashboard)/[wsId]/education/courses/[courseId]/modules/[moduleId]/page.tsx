@@ -213,7 +213,7 @@ const getModuleData = async (courseId: string, moduleId: string) => {
     .from('workspace_course_modules')
     .select('*')
     .eq('id', moduleId)
-    .eq('course_id', courseId)
+    .eq('group_id', courseId)
     .single();
 
   if (error) {

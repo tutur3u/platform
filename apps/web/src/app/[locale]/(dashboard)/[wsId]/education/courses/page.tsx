@@ -186,7 +186,7 @@ async function getData(
   const supabase = await createAdminClient();
 
   const queryBuilder = supabase
-    .from('workspace_courses')
+    .from('workspace_user_groups')
     .select('*, workspace_course_modules(id.count())', {
       count: 'exact',
     })

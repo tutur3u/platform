@@ -48,7 +48,7 @@ export default async function WorkspaceCoursesPage({
   const modules = data.map((m) => ({
     ...m,
     ws_id: resolvedWsId,
-    href: `/${routeWsId}/education/courses/${m.course_id}/modules/${m.id}`,
+    href: `/${routeWsId}/education/courses/${m.group_id}/modules/${m.id}`,
   }));
 
   return (
@@ -100,7 +100,7 @@ async function getData(
   const queryBuilder = supabase
     .from('course_module_quiz_sets')
     .select(
-      'id:module_id, ...workspace_course_modules(course_id, name, is_public, is_published)',
+      'id:module_id, ...workspace_course_modules(group_id, name, is_public, is_published)',
       {
         count: 'exact',
       }
@@ -144,12 +144,12 @@ async function getModules(
   const queryBuilder = supabase
     .from('workspace_course_modules')
     .select(
-      'id, name, is_public, is_published, workspace_courses!inner(ws_id)',
+      'id, name, is_public, is_published, workspace_user_groups!inner(ws_id)',
       {
         count: 'exact',
       }
     )
-    .eq('workspace_courses.ws_id', wsId)
+    .eq('workspace_user_groups.ws_id', wsId)
     .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);

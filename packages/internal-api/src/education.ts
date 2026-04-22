@@ -1,3 +1,4 @@
+import type { WorkspaceCourseModule } from '@tuturuuu/types';
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -115,13 +116,13 @@ export async function deleteWorkspaceCourse(
 
 export async function createWorkspaceCourseModule(
   workspaceId: string,
-  courseId: string,
+  groupId: string,
   payload: UpsertWorkspaceCourseModulePayload,
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ message: string }>(
-    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/courses/${encodePathSegment(courseId)}/modules`,
+  return client.json<WorkspaceCourseModule>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/modules`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -153,13 +154,13 @@ export async function updateWorkspaceCourseModule(
 
 export async function reorderWorkspaceCourseModules(
   workspaceId: string,
-  courseId: string,
+  groupId: string,
   moduleIds: string[],
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
   return client.json<{ message: string }>(
-    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/courses/${encodePathSegment(courseId)}/module-order`,
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-order`,
     {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

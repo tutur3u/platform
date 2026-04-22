@@ -46,7 +46,7 @@ export function ModuleToggles({
     setLoading(true);
     try {
       await updateWorkspaceCourseModule(wsId, moduleId, {
-        course_id: courseId,
+        group_id: courseId,
         is_published: checked,
       });
       setIsPublished(checked);

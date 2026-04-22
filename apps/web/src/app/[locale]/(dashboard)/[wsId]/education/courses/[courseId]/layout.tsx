@@ -36,7 +36,7 @@ async function getData(wsId: string, courseId: string) {
   const supabase = await createAdminClient();
 
   const { data, error } = await supabase
-    .from('workspace_courses')
+    .from('workspace_user_groups')
     .select('*')
     .eq('ws_id', wsId)
     .eq('id', courseId)

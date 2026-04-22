@@ -91,7 +91,7 @@ const getYoutubeLinks = async (moduleId: string, courseId: string) => {
     .from('workspace_course_modules')
     .select('youtube_links')
     .eq('id', moduleId)
-    .eq('course_id', courseId)
+    .eq('group_id', courseId)
     .single();
 
   if (error) {

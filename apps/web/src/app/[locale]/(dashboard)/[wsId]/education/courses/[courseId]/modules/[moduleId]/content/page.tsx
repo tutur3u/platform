@@ -32,7 +32,7 @@ export default async function ModuleContentPage({ params }: Props) {
       .from('workspace_course_modules')
       .select('content')
       .eq('id', moduleId)
-      .eq('course_id', courseId);
+      .eq('group_id', courseId);
 
     if (error) {
       console.error(error);

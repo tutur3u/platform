@@ -1,53 +1,74 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceCourseBuilderModule } from '@tuturuuu/types/db';
+import type { WorkspaceCourseBuilderModule } from '@tuturuuu/types';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
-import { CourseBuilderClient } from './course-builder-client';
+import { CourseBuilderClient } from '../../../../education/courses/[courseId]/builder/course-builder-client';
 
 export const metadata: Metadata = {
-  title: 'Course Builder',
-  description:
-    'Build and publish course modules with guided teacher workflows.',
+  title: 'Group Content Builder',
+  description: 'Build and publish course modules within your user group.',
 };
 
 interface Props {
   params: Promise<{
-    courseId: string;
+    groupId: string;
     wsId: string;
   }>;
 }
 
-export default async function CourseBuilderPage({ params }: Props) {
-  const { wsId: routeWsId, courseId } = await params;
+export default async function GroupContentPage({ params }: Props) {
+  const { wsId: routeWsId, groupId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const permissions = await getPermissions({ wsId: resolvedWsId });
+  if (!permissions?.containsPermission('manage_users')) {
+    notFound();
+  }
+
   const sbAdmin = await createAdminClient();
 
-  const { data: course, error: courseError } = await sbAdmin
+  const { data: group, error: groupError } = await sbAdmin
     .from('workspace_user_groups')
     .select('*')
     .eq('ws_id', resolvedWsId)
-    .eq('id', courseId)
+    .eq('id', groupId)
     .maybeSingle();
 
-  if (courseError) throw courseError;
-  if (!course) notFound();
+  if (groupError) throw groupError;
+  if (!group) notFound();
 
   const { data: modules, error: modulesError } = await sbAdmin
     .from('workspace_course_modules')
     .select('*')
-    .eq('group_id', courseId)
+    .eq('group_id', groupId)
     .order('sort_key', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: true });
 
   if (modulesError) throw modulesError;
 
+  const moduleIds = (modules ?? []).map((module) => module.id);
   const [quizzesResponse, flashcardsResponse, quizSetsResponse] =
-    await Promise.all([
-      sbAdmin.from('course_module_quizzes').select('module_id'),
-      sbAdmin.from('course_module_flashcards').select('module_id'),
-      sbAdmin.from('course_module_quiz_sets').select('module_id'),
-    ]);
+    moduleIds.length > 0
+      ? await Promise.all([
+          sbAdmin
+            .from('course_module_quizzes')
+            .select('module_id')
+            .in('module_id', moduleIds),
+          sbAdmin
+            .from('course_module_flashcards')
+            .select('module_id')
+            .in('module_id', moduleIds),
+          sbAdmin
+            .from('course_module_quiz_sets')
+            .select('module_id')
+            .in('module_id', moduleIds),
+        ])
+      : [
+          { data: [], error: null },
+          { data: [], error: null },
+          { data: [], error: null },
+        ];
 
   if (quizzesResponse.error) throw quizzesResponse.error;
   if (flashcardsResponse.error) throw flashcardsResponse.error;
@@ -80,7 +101,7 @@ export default async function CourseBuilderPage({ params }: Props) {
   const builderModules: WorkspaceCourseBuilderModule[] = (modules ?? []).map(
     (module) => ({
       content: module.content,
-      group_id: module.group_id,
+      group_id: groupId, // Using groupId as group_id for the builder
       created_at: module.created_at,
       extra_content: module.extra_content,
       flashcard_count: flashcardCountByModuleId.get(module.id) ?? 0,
@@ -97,8 +118,8 @@ export default async function CourseBuilderPage({ params }: Props) {
 
   return (
     <CourseBuilderClient
-      course={course}
-      courseId={courseId}
+      course={group}
+      courseId={groupId}
       modules={builderModules}
       resolvedWsId={resolvedWsId}
       routeWsId={routeWsId}

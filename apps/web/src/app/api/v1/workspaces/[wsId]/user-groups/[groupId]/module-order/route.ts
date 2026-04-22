@@ -5,17 +5,17 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 
 const ModuleOrderSchema = z.object({
-  moduleIds: z.array(z.guid()).min(1).max(500),
+  moduleIds: z.array(z.string().uuid()).min(1).max(500),
 });
 
 const RouteParamsSchema = z.object({
-  courseId: z.guid(),
+  groupId: z.string().uuid(),
   wsId: z.string().min(1),
 });
 
 interface RouteParams {
   wsId: string;
-  courseId: string;
+  groupId: string;
 }
 
 export const PATCH = withSessionAuth(
@@ -28,7 +28,7 @@ export const PATCH = withSessionAuth(
       );
     }
 
-    const { wsId, courseId } = parsedParams.data;
+    const { wsId, groupId } = parsedParams.data;
     const normalizedWsId = await normalizeWorkspaceId(wsId, context.supabase);
 
     const { data: membership, error: membershipError } = await context.supabase
@@ -80,31 +80,28 @@ export const PATCH = withSessionAuth(
 
     const sbAdmin = await createAdminClient();
 
-    const { data: course, error: courseError } = await sbAdmin
+    const { data: group, error: groupError } = await sbAdmin
       .from('workspace_user_groups')
       .select('id')
-      .eq('id', courseId)
+      .eq('id', groupId)
       .eq('ws_id', normalizedWsId)
       .maybeSingle();
 
-    if (courseError) {
+    if (groupError) {
       return NextResponse.json(
-        { message: 'Failed to validate course' },
+        { message: 'Failed to validate group' },
         { status: 500 }
       );
     }
 
-    if (!course) {
-      return NextResponse.json(
-        { message: 'Course not found' },
-        { status: 404 }
-      );
+    if (!group) {
+      return NextResponse.json({ message: 'Group not found' }, { status: 404 });
     }
 
     const { data: existingModules, error: modulesError } = await sbAdmin
       .from('workspace_course_modules')
       .select('id')
-      .eq('group_id', courseId);
+      .eq('group_id', groupId);
 
     if (modulesError) {
       return NextResponse.json(
@@ -118,7 +115,7 @@ export const PATCH = withSessionAuth(
     );
     if (existingIds.size !== moduleIds.length) {
       return NextResponse.json(
-        { message: 'Module order payload must include all course modules' },
+        { message: 'Module order payload must include all group modules' },
         { status: 400 }
       );
     }
@@ -136,7 +133,7 @@ export const PATCH = withSessionAuth(
     const { error: reorderError } = await sbAdmin.rpc(
       'reorder_workspace_course_modules',
       {
-        p_group_id: courseId,
+        p_group_id: groupId,
         p_module_ids: moduleIds,
       }
     );

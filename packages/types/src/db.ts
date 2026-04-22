@@ -1,4 +1,5 @@
 import type { Database, Tables } from './supabase';
+import type { JSONContent } from './tiptap';
 
 export type { Database } from './supabase';
 
@@ -326,11 +327,57 @@ export type WorkspaceQuizSet = Tables<'workspace_quiz_sets'> & {
     course_name: string;
   }[];
 };
-export type WorkspaceCourse = Tables<'workspace_courses'> & {
+export type WorkspaceCourse = Tables<'workspace_user_groups'> & {
   href?: string;
 };
 export type WorkspaceCourseModule = Tables<'workspace_course_modules'> & {
   href?: string;
+};
+export type WorkspaceCourseBuilderCourse = Pick<
+  Tables<'workspace_user_groups'>,
+  'description' | 'id' | 'name' | 'ws_id'
+>;
+export type WorkspaceCourseBuilderModule = Pick<
+  Tables<'workspace_course_modules'>,
+  | 'content'
+  | 'created_at'
+  | 'extra_content'
+  | 'group_id'
+  | 'id'
+  | 'is_public'
+  | 'is_published'
+  | 'name'
+  | 'sort_key'
+  | 'youtube_links'
+> & {
+  flashcard_count: number;
+  quiz_count: number;
+  quiz_set_count: number;
+};
+export type SharedCourseGroup = Pick<
+  Tables<'workspace_user_groups'>,
+  'description' | 'name'
+>;
+export type SharedCourseModule = Omit<
+  Pick<
+    Tables<'workspace_course_modules'>,
+    | 'content'
+    | 'created_at'
+    | 'extra_content'
+    | 'group_id'
+    | 'id'
+    | 'is_public'
+    | 'is_published'
+    | 'name'
+    | 'sort_key'
+    | 'youtube_links'
+  >,
+  'content'
+> & {
+  content: JSONContent | null;
+  flashcards: number;
+  quizzes: number;
+  quizSets: number;
 };
 export type WorkspaceAIModel = Tables<'workspace_ai_models'> & {
   href?: string;
