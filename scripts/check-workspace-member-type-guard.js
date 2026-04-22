@@ -4,7 +4,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
-const API_DIR_RELATIVE_PATHS = ['apps/web/src/app/api', 'packages/apis/src'];
+const API_DIR_RELATIVE_PATHS = [
+  'apps/web/src/app/api',
+  'apps/finance/src/app/api',
+  'packages/apis/src',
+];
 
 const CALLER_USER_PATTERNS = [
   'user.id',

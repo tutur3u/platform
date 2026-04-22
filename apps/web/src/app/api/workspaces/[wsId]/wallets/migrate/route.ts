@@ -33,7 +33,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   if (membership.error === 'membership_lookup_failed') {
     return NextResponse.json(
-      { message: 'Failed to verify workspace membership' },
+      { error: 'Failed to verify workspace membership' },
       { status: 500 }
     );
   }

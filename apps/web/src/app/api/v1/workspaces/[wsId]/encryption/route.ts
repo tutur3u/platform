@@ -54,7 +54,7 @@ export async function GET(_: Request, { params }: Params) {
 
   if (member.error === 'membership_lookup_failed') {
     return NextResponse.json(
-      { message: 'Failed to verify workspace membership' },
+      { error: 'Failed to verify workspace membership' },
       { status: 500 }
     );
   }
@@ -121,7 +121,7 @@ export async function POST(_: Request, { params }: Params) {
   if (!authorized) {
     if (reason === 'membership_lookup_failed') {
       return NextResponse.json(
-        { message: 'Failed to verify workspace membership' },
+        { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }
@@ -218,7 +218,7 @@ export async function DELETE(_: Request, { params }: Params) {
   if (!authorized) {
     if (reason === 'membership_lookup_failed') {
       return NextResponse.json(
-        { message: 'Failed to verify workspace membership' },
+        { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }

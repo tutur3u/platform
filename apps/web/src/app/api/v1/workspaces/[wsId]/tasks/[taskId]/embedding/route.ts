@@ -65,7 +65,7 @@ export async function POST(request: Request, { params }: Params) {
         membership.error
       );
       return NextResponse.json(
-        { message: 'Failed to verify workspace membership' },
+        { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }

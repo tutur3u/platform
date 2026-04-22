@@ -48,7 +48,7 @@ export async function POST(_: Request, { params }: Params) {
   if (!authorized) {
     if (reason === 'membership_lookup_failed') {
       return NextResponse.json(
-        { message: 'Failed to verify workspace membership' },
+        { error: 'Failed to verify workspace membership' },
         { status: 500 }
       );
     }

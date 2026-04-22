@@ -14,7 +14,7 @@ export function membershipVerificationErrorResponse(
 ): NextResponse | null {
   if (result.error === 'membership_lookup_failed') {
     return NextResponse.json(
-      { message: WORKSPACE_MEMBERSHIP_LOOKUP_FAILED_MESSAGE },
+      { error: WORKSPACE_MEMBERSHIP_LOOKUP_FAILED_MESSAGE },
       { status: 500 }
     );
   }

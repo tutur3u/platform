@@ -106,7 +106,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
 
       if (membership.error === 'membership_lookup_failed') {
         return NextResponse.json(
-          { message: 'Failed to verify workspace membership' },
+          { error: 'Failed to verify workspace membership' },
           { status: 500 }
         );
       }
