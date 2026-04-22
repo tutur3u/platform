@@ -370,21 +370,21 @@ async function validateOperationScope(
     operation.type === 'add_assignee' ||
     operation.type === 'remove_assignee'
   ) {
-    const { data, error } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', operation.assigneeId)
-      .maybeSingle();
+    const assigneeMembership = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: operation.assigneeId,
+      supabase,
+      requiredType: 'MEMBER',
+    });
 
-    if (error) {
+    if (assigneeMembership.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to validate assignee' },
         { status: 500 }
       );
     }
 
-    if (!data) {
+    if (!assigneeMembership.ok) {
       return NextResponse.json(
         { error: 'Assignee is not a workspace member' },
         { status: 404 }

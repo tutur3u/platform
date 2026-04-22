@@ -19,6 +19,7 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
@@ -307,14 +308,13 @@ async function getAnalyticsData(wsId: string) {
     return { totalClicks: 0, uniqueVisitors: 0 };
   }
 
-  const { data: workspaceMember } = await supabase
-    .from('workspace_members')
-    .select('*')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const workspaceMember = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: user.id,
+    supabase,
+  });
 
-  if (!workspaceMember) {
+  if (!workspaceMember.ok) {
     return { totalClicks: 0, uniqueVisitors: 0 };
   }
 
@@ -379,14 +379,13 @@ async function getData(
     return { data: [], count: 0 };
   }
 
-  const { data: workspaceMember } = await supabase
-    .from('workspace_members')
-    .select('*')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const workspaceMember = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: user.id,
+    supabase,
+  });
 
-  if (!workspaceMember) {
+  if (!workspaceMember.ok) {
     return { data: [], count: 0 };
   }
 

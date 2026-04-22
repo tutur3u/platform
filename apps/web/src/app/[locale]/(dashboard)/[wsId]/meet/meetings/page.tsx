@@ -1,7 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import {
+  getWorkspace,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -39,15 +42,13 @@ export default async function MeetingsPage({
 
   const supabase = await createClient();
 
-  // Verify workspace access
-  const { data: memberCheck } = await supabase
-    .from('workspace_members')
-    .select('id:user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .single();
+  const memberCheck = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: user.id,
+    supabase,
+  });
 
-  if (!memberCheck) {
+  if (!memberCheck.ok) {
     redirect('/onboarding');
   }
 

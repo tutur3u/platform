@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => {
   const authGetUser = vi.fn();
   const inviteLinkSingle = vi.fn();
   const inviteStatsMaybeSingle = vi.fn();
+  const membershipMaybeSingle = vi.fn();
   const membershipSingle = vi.fn();
   const workspaceSingle = vi.fn();
   const enforceSeatLimit = vi.fn();
@@ -41,6 +42,7 @@ const mocks = vi.hoisted(() => {
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
+                maybeSingle: membershipMaybeSingle,
                 single: membershipSingle,
               }),
             }),
@@ -68,6 +70,7 @@ const mocks = vi.hoisted(() => {
     enforceSeatLimit,
     inviteLinkSingle,
     inviteStatsMaybeSingle,
+    membershipMaybeSingle,
     membershipSingle,
     sessionSupabase,
     workspaceSingle,
@@ -112,9 +115,9 @@ describe('validateInvite', () => {
       data: { personal: false },
       error: null,
     });
-    mocks.membershipSingle.mockResolvedValue({
+    mocks.membershipMaybeSingle.mockResolvedValue({
       data: null,
-      error: { code: 'PGRST116' },
+      error: null,
     });
     mocks.inviteStatsMaybeSingle.mockResolvedValue({
       data: {

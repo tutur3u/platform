@@ -35,6 +35,9 @@ export class WorkspaceAccessError extends Error {
 
 export type WorkspaceMemberType = 'MEMBER' | 'GUEST';
 
+/** Use `'ANY'` when any workspace_members row (MEMBER or GUEST) should count as access. */
+export type WorkspaceMembershipRequiredType = WorkspaceMemberType | 'ANY';
+
 export type WorkspaceMembershipCheckError =
   | 'membership_lookup_failed'
   | 'membership_missing'
@@ -443,15 +446,13 @@ export async function enforceRootWorkspaceAdmin(
 
   if (!user) throw new WorkspaceAuthError();
 
-  // Check if user is a member of root workspace (membership implies admin)
-  const { error } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', ROOT_WORKSPACE_ID)
-    .eq('user_id', user.id)
-    .single();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: ROOT_WORKSPACE_ID,
+    userId: user.id,
+    supabase,
+  });
 
-  if (error) {
+  if (membership.error === 'membership_lookup_failed' || !membership.ok) {
     if (options.redirectTo) {
       throw new WorkspaceRedirectRequiredError(options.redirectTo);
     }
@@ -689,7 +690,7 @@ export async function verifyWorkspaceMembershipType({
   wsId: string;
   userId: string;
   supabase: TypedSupabaseClient;
-  requiredType?: WorkspaceMemberType;
+  requiredType?: WorkspaceMembershipRequiredType;
 }): Promise<WorkspaceMembershipCheckResult> {
   const { data: membership, error } = await supabase
     .from('workspace_members')
@@ -707,6 +708,13 @@ export async function verifyWorkspaceMembershipType({
   }
 
   const membershipType = membership.type;
+
+  if (requiredType === 'ANY') {
+    return {
+      ok: true,
+      membershipType,
+    };
+  }
 
   if (membershipType !== requiredType) {
     return {
@@ -768,16 +776,14 @@ export async function getWorkspaceUser(
     return null;
   }
 
-  // Check if user is a workspace member first
-  const { data: membership } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('user_id', userId)
-    .eq('ws_id', resolvedWorkspaceId)
-    .maybeSingle();
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: resolvedWorkspaceId,
+    userId,
+    supabase,
+    requiredType: 'MEMBER',
+  });
 
-  // Not a member, can't create a link
-  if (!membership) {
+  if (!membership.ok) {
     console.error(
       'User is not a workspace member, cannot create workspace user link:',
       { userId, wsId: resolvedWorkspaceId }

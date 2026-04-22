@@ -132,6 +132,13 @@ export async function GET(_req: Request, { params }: Params) {
       supabase: supabase,
     });
 
+    if (membership.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
     if (!membership.ok) {
       return NextResponse.json(
         { error: 'Not a workspace member' },
