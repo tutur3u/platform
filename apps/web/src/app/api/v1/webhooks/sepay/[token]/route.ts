@@ -29,8 +29,47 @@ interface Params {
 type ExistingSepayWebhookEvent = {
   created_transaction_id: string | null;
   id: string;
+  payload?: Json | null;
   status: 'duplicate' | 'failed' | 'processed' | 'received';
 };
+
+function isJsonObject(
+  value: Json | null | undefined
+): value is Record<string, Json | undefined> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function hasMatchingFallbackPayload(input: {
+  currentPayload: NormalizedSepayPayload;
+  storedPayload: Json | null | undefined;
+}) {
+  if (!isJsonObject(input.storedPayload)) {
+    return false;
+  }
+
+  const normalizedStored = normalizeSepayPayload(input.storedPayload);
+  if (!normalizedStored.success) {
+    return false;
+  }
+
+  const stored = normalizedStored.data;
+  const current = input.currentPayload;
+
+  return (
+    stored.accountNumber === current.accountNumber &&
+    stored.bankAccountId === current.bankAccountId &&
+    stored.code === current.code &&
+    stored.content === current.content &&
+    stored.description === current.description &&
+    stored.eventId === current.eventId &&
+    stored.gateway === current.gateway &&
+    stored.referenceCode === current.referenceCode &&
+    stored.subAccountId === current.subAccountId &&
+    stored.transactionDate === current.transactionDate &&
+    stored.transferAmount === current.transferAmount &&
+    stored.transferType === current.transferType
+  );
+}
 
 async function findExistingWebhookEvent(input: {
   payload: NormalizedSepayPayload;
@@ -60,7 +99,7 @@ async function findExistingWebhookEvent(input: {
 
   const { data, error } = await input.sbAdmin
     .from('sepay_webhook_events')
-    .select('id, status, created_transaction_id')
+    .select('id, status, created_transaction_id, payload')
     .eq('ws_id', input.wsId)
     .eq('wallet_id', input.walletId)
     .eq('reference_code', input.payload.referenceCode)
@@ -68,13 +107,22 @@ async function findExistingWebhookEvent(input: {
     .eq('transfer_amount', input.payload.transferAmount)
     .eq('transaction_date', input.payload.transactionDate)
     .is('sepay_event_id', null)
-    .maybeSingle();
+    .order('received_at', { ascending: false })
+    .limit(10);
 
   if (error) {
     throw new Error('Failed to lookup SePay event by fallback key');
   }
 
-  return (data as ExistingSepayWebhookEvent | null) ?? null;
+  const exactMatch = ((data as ExistingSepayWebhookEvent[] | null) ?? []).find(
+    (event) =>
+      hasMatchingFallbackPayload({
+        currentPayload: input.payload,
+        storedPayload: event.payload,
+      })
+  );
+
+  return exactMatch ?? null;
 }
 
 async function reuseFailedWebhookEvent(input: {
