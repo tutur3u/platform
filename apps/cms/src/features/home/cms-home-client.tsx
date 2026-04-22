@@ -158,8 +158,8 @@ export function CmsHomeClient({
                   </Link>
                 </Button>
                 <Button asChild variant="outline">
-                  <Link href={`/${workspaceSlug}/settings`}>
-                    {t('common.settings')}
+                  <Link href={`/${workspaceSlug}/members`}>
+                    {t('common.members')}
                   </Link>
                 </Button>
               </div>

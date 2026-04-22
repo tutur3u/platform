@@ -206,9 +206,18 @@ export {
 } from './reports';
 export {
   addRoleMembers,
+  createWorkspaceRole,
+  deleteWorkspaceRole,
+  getWorkspaceDefaultRole,
+  getWorkspaceRole,
   listRoleMembers,
   listWorkspaceRoles,
   removeRoleMember,
+  updateWorkspaceDefaultRole,
+  updateWorkspaceRole,
+  type WorkspaceRoleDetails,
+  type WorkspaceRolePayload,
+  type WorkspaceRolePermission,
 } from './roles';
 export {
   checkWorkspacePermission,

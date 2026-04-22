@@ -5,9 +5,24 @@ import {
   type InternalApiClientOptions,
 } from './client';
 
+export type WorkspaceRolePermission = {
+  enabled: boolean;
+  id: string;
+};
+
 type WorkspaceRoleSummary = {
   id: string;
   name: string;
+};
+
+export type WorkspaceRoleDetails = WorkspaceRoleSummary & {
+  created_at?: string | null;
+  permissions: WorkspaceRolePermission[];
+};
+
+export type WorkspaceRolePayload = {
+  name: string;
+  permissions: WorkspaceRolePermission[];
 };
 
 export async function listWorkspaceRoles(
@@ -19,6 +34,106 @@ export async function listWorkspaceRoles(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles`,
     {
       cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceRole(
+  workspaceId: string,
+  roleId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceRoleDetails>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles/${encodePathSegment(roleId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceDefaultRole(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceRoleDetails>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles/default`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceRole(
+  workspaceId: string,
+  payload: WorkspaceRolePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function updateWorkspaceRole(
+  workspaceId: string,
+  roleId: string,
+  payload: WorkspaceRolePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles/${encodePathSegment(roleId)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PUT',
+    }
+  );
+}
+
+export async function updateWorkspaceDefaultRole(
+  workspaceId: string,
+  payload: WorkspaceRolePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles/default`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PUT',
+    }
+  );
+}
+
+export async function deleteWorkspaceRole(
+  workspaceId: string,
+  roleId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles/${encodePathSegment(roleId)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
     }
   );
 }

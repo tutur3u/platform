@@ -98,14 +98,24 @@ export async function resolveWorkspaceExternalProjectBinding(
 export async function getCmsWorkspaceAccess(rawWsId: string) {
   const supabase = (await createClient()) as TypedSupabaseClient;
   const normalizedWorkspaceId = await normalizeWorkspaceId(rawWsId, supabase);
+  const isInternalWorkspace = normalizedWorkspaceId === ROOT_WORKSPACE_ID;
   const [workspacePermissions, rootPermissions, binding] = await Promise.all([
-    getPermissions({ wsId: rawWsId }),
+    getPermissions({ wsId: normalizedWorkspaceId }),
     getPermissions({ wsId: ROOT_WORKSPACE_ID }),
-    resolveWorkspaceExternalProjectBinding(normalizedWorkspaceId),
+    isInternalWorkspace
+      ? Promise.resolve({
+          adapter: null,
+          canonical_id: null,
+          canonical_project: null,
+          enabled: false,
+          workspace_id: normalizedWorkspaceId,
+        } satisfies WorkspaceExternalProjectBinding)
+      : resolveWorkspaceExternalProjectBinding(normalizedWorkspaceId),
   ]);
 
   const isRootAdmin = hasRootExternalProjectsAdminPermission(rootPermissions);
   const canAccessWorkspace =
+    !isInternalWorkspace &&
     binding.enabled &&
     Boolean(binding.canonical_project) &&
     (hasWorkspaceExternalProjectPermission(workspacePermissions) ||
@@ -113,8 +123,9 @@ export async function getCmsWorkspaceAccess(rawWsId: string) {
 
   return {
     binding,
-    canAccessAdmin: isRootAdmin && normalizedWorkspaceId === ROOT_WORKSPACE_ID,
+    canAccessAdmin: isRootAdmin && isInternalWorkspace,
     canAccessWorkspace,
+    isInternalWorkspace,
     isRootAdmin,
     normalizedWorkspaceId,
     rootPermissions,

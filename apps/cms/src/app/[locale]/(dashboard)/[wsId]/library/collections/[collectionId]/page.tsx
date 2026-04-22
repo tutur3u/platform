@@ -15,6 +15,10 @@ export default async function CmsLibraryCollectionPage({ params }: Props) {
   const { collectionId, wsId } = await params;
   const access = await getCmsWorkspaceAccess(wsId);
 
+  if (access.isInternalWorkspace && access.canAccessAdmin) {
+    redirect(`/${wsId}/projects`);
+  }
+
   if (!access.canAccessWorkspace) {
     redirect('/no-access');
   }

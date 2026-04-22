@@ -8,6 +8,7 @@ export function getCmsWorkspaceBasePath(pathname: string) {
       .replace(/\/library\/entries\/[^/]+$/, '')
       .replace(/\/library\/collections\/[^/]+$/, '')
       .replace(/\/library$/, '')
+      .replace(/\/members$/, '')
       .replace(/\/preview$/, '')
       .replace(/\/projects$/, '')
       .replace(/\/settings$/, '')
@@ -32,8 +33,4 @@ export function getCmsPreviewPath(pathname: string) {
 
 export function getCmsProjectsPath(pathname: string) {
   return `${getCmsWorkspaceBasePath(pathname)}/projects`;
-}
-
-export function getCmsSettingsPath(pathname: string) {
-  return `${getCmsWorkspaceBasePath(pathname)}/settings`;
 }

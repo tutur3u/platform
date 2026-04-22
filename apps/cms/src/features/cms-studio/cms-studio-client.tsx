@@ -38,6 +38,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter } from 'next/navigation';
 import { useDeferredValue, useEffect, useState } from 'react';
 import { CmsLibrarySection } from './cms-library-section';
+import type { CmsLibrarySectionProps } from './cms-library-section-shared';
 import { getCmsCollectionPath } from './cms-paths';
 import { CmsPreviewSection } from './cms-preview-section';
 import type { CmsStrings } from './cms-strings';
@@ -341,6 +342,14 @@ export function CmsStudioClient({
     router.push(getCmsCollectionPath(pathname, collectionId));
   };
 
+  const handleSelectBulkEntry = (entryId: string, checked: boolean) => {
+    setSelectedBulkIds((current) =>
+      checked
+        ? [...current, entryId]
+        : current.filter((value) => value !== entryId)
+    );
+  };
+
   const createEntryMutation = useMutation({
     mutationFn: async () => {
       const collectionId = activeCollection?.id ?? collections[0]?.id ?? null;
@@ -542,6 +551,44 @@ export function CmsStudioClient({
     },
   });
 
+  const librarySectionProps: CmsLibrarySectionProps = {
+    activeCollection,
+    availableEditSections,
+    assets,
+    binding,
+    collections,
+    counts,
+    editSection,
+    entries: visibleEntries,
+    importPending: importMutation.isPending,
+    onChangeEditSection: setEditSection,
+    onCreateCollection: () => setCreateCollectionOpen(true),
+    onCreateEntry: () => createEntryMutation.mutate(),
+    onDeleteCollection: setCollectionDeleteTarget,
+    onDeleteEntry: setEntryDeleteTarget,
+    onDuplicateEntry: (entryId) => duplicateEntryMutation.mutate(entryId),
+    onImport: () => importMutation.mutate(),
+    onOpenCollection: openCollectionDetails,
+    onOpenEntry: openEntryEditor,
+    onPublishEntry: (payload) => publishEntryMutation.mutate(payload),
+    onSearchChange: setSearch,
+    onSelectBulkEntry: handleSelectBulkEntry,
+    onSelectCollection: selectCollection,
+    onSetWorkflowFilter: setWorkflowFilter,
+    onSetWorkflowScheduleValue: setScheduleValue,
+    onWorkflowAction: (payload) => bulkMutation.mutate(payload),
+    publishEvents,
+    queryPending: studioQuery.isPending && !studio,
+    scheduleValue,
+    search,
+    selectedBulkIds,
+    selectedEntryId,
+    strings,
+    workflowEntries,
+    workflowFilter,
+    workflowLanes,
+  };
+
   return (
     <div className="min-h-[calc(100svh-5rem)] space-y-4 pb-6">
       <section className="flex flex-wrap items-start justify-between gap-4 rounded-[1.5rem] border border-border/70 bg-card/95 px-4 py-4 shadow-none sm:px-5">
@@ -697,94 +744,8 @@ export function CmsStudioClient({
           previewQueryPending={previewQuery.isPending}
           strings={strings}
         />
-      ) : studioQuery.isPending && !studio ? (
-        <CmsLibrarySection
-          activeCollection={activeCollection}
-          availableEditSections={availableEditSections}
-          assets={assets}
-          binding={binding}
-          collections={collections}
-          counts={counts}
-          editSection={editSection}
-          entries={visibleEntries}
-          importPending={importMutation.isPending}
-          onChangeEditSection={setEditSection}
-          onCreateCollection={() => setCreateCollectionOpen(true)}
-          onCreateEntry={() => createEntryMutation.mutate()}
-          onDeleteCollection={setCollectionDeleteTarget}
-          onDeleteEntry={setEntryDeleteTarget}
-          onDuplicateEntry={(entryId) => duplicateEntryMutation.mutate(entryId)}
-          onImport={() => importMutation.mutate()}
-          onOpenCollection={openCollectionDetails}
-          onOpenEntry={openEntryEditor}
-          onPublishEntry={(payload) => publishEntryMutation.mutate(payload)}
-          onSearchChange={setSearch}
-          onSelectBulkEntry={(entryId, checked) =>
-            setSelectedBulkIds((current) =>
-              checked
-                ? [...current, entryId]
-                : current.filter((value) => value !== entryId)
-            )
-          }
-          onSelectCollection={selectCollection}
-          onSetWorkflowFilter={setWorkflowFilter}
-          onSetWorkflowScheduleValue={setScheduleValue}
-          onWorkflowAction={(payload) => bulkMutation.mutate(payload)}
-          publishEvents={publishEvents}
-          queryPending
-          scheduleValue={scheduleValue}
-          search={search}
-          selectedBulkIds={selectedBulkIds}
-          selectedEntryId={selectedEntryId}
-          strings={strings}
-          workflowEntries={workflowEntries}
-          workflowFilter={workflowFilter}
-          workflowLanes={workflowLanes}
-        />
       ) : (
-        <CmsLibrarySection
-          activeCollection={activeCollection}
-          availableEditSections={availableEditSections}
-          assets={assets}
-          binding={binding}
-          collections={collections}
-          counts={counts}
-          editSection={editSection}
-          entries={visibleEntries}
-          importPending={importMutation.isPending}
-          onChangeEditSection={setEditSection}
-          onCreateCollection={() => setCreateCollectionOpen(true)}
-          onCreateEntry={() => createEntryMutation.mutate()}
-          onDeleteCollection={setCollectionDeleteTarget}
-          onDeleteEntry={setEntryDeleteTarget}
-          onDuplicateEntry={(entryId) => duplicateEntryMutation.mutate(entryId)}
-          onImport={() => importMutation.mutate()}
-          onOpenCollection={openCollectionDetails}
-          onOpenEntry={openEntryEditor}
-          onPublishEntry={(payload) => publishEntryMutation.mutate(payload)}
-          onSearchChange={setSearch}
-          onSelectBulkEntry={(entryId, checked) =>
-            setSelectedBulkIds((current) =>
-              checked
-                ? [...current, entryId]
-                : current.filter((value) => value !== entryId)
-            )
-          }
-          onSelectCollection={selectCollection}
-          onSetWorkflowFilter={setWorkflowFilter}
-          onSetWorkflowScheduleValue={setScheduleValue}
-          onWorkflowAction={(payload) => bulkMutation.mutate(payload)}
-          publishEvents={publishEvents}
-          queryPending={false}
-          scheduleValue={scheduleValue}
-          search={search}
-          selectedBulkIds={selectedBulkIds}
-          selectedEntryId={selectedEntryId}
-          strings={strings}
-          workflowEntries={workflowEntries}
-          workflowFilter={workflowFilter}
-          workflowLanes={workflowLanes}
-        />
+        <CmsLibrarySection {...librarySectionProps} />
       )}
 
       {editorEntry ? (

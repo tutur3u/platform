@@ -1,333 +1,265 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { MailPlus, ShieldUser, UserMinus, Users } from '@tuturuuu/icons';
-import {
-  addRoleMembers,
-  inviteWorkspaceMembers,
-  listEnhancedWorkspaceMembers,
-  listWorkspaceRoles,
-  removeRoleMember,
-  removeWorkspaceMember,
-} from '@tuturuuu/internal-api';
-import { Badge } from '@tuturuuu/ui/badge';
+import { MailPlus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { toast } from '@tuturuuu/ui/sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
-
-type CmsMembersSectionProps = {
-  canManageMembers: boolean;
-  canManageRoles: boolean;
-  workspaceId: string;
-};
-
-function parseInviteEmails(value: string) {
-  return [
-    ...new Set(
-      value
-        .split(/[\n,]/)
-        .map((item) => item.trim())
-        .filter(Boolean)
-    ),
-  ];
-}
+import { CmsMemberCards } from './cms-member-cards';
+import { CmsMembersHeader } from './cms-members-header';
+import type { CmsMembersSectionProps } from './cms-members-shared';
+import { parseInviteEmails } from './cms-members-shared';
+import { CmsRoleDeleteDialog } from './cms-role-delete-dialog';
+import { CmsRoleEditorDialog } from './cms-role-editor-dialog';
+import { CmsRolesPanel } from './cms-roles-panel';
+import { useCmsMembersSection } from './use-cms-members-section';
 
 export function CmsMembersSection({
+  boundProjectName,
   canManageMembers,
   canManageRoles,
+  currentUserEmail,
   workspaceId,
 }: CmsMembersSectionProps) {
-  const queryClient = useQueryClient();
   const t = useTranslations();
+  const tRoles = useTranslations('ws-roles');
   const tSettings = useTranslations('external-projects.settings');
-  const [inviteEmails, setInviteEmails] = useState('');
-  const [memberSearch, setMemberSearch] = useState('');
-
-  const membersQuery = useQuery({
-    queryFn: () => listEnhancedWorkspaceMembers(workspaceId),
-    queryKey: ['cms-members', workspaceId],
-    staleTime: 30_000,
+  const state = useCmsMembersSection({
+    canManageRoles,
+    currentUserEmail,
+    workspaceId,
   });
-  const rolesQuery = useQuery({
-    enabled: canManageRoles,
-    queryFn: () => listWorkspaceRoles(workspaceId),
-    queryKey: ['cms-member-roles', workspaceId],
-    staleTime: 30_000,
-  });
-
-  const inviteMutation = useMutation({
-    mutationFn: async () =>
-      inviteWorkspaceMembers(workspaceId, parseInviteEmails(inviteEmails)),
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('common.error')),
-    onSuccess: (result) => {
-      setInviteEmails('');
-      toast.success(result.message);
-      queryClient.invalidateQueries({ queryKey: ['cms-members', workspaceId] });
-    },
-  });
-
-  const removeMemberMutation = useMutation({
-    mutationFn: async (payload: {
-      email?: string | null;
-      userId?: string | null;
-    }) => removeWorkspaceMember(workspaceId, payload),
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('common.error')),
-    onSuccess: () => {
-      toast.success(t('common.deleted'));
-      queryClient.invalidateQueries({ queryKey: ['cms-members', workspaceId] });
-    },
-  });
-
-  const roleMutation = useMutation({
-    mutationFn: async (payload: {
-      action: 'add' | 'remove';
-      roleId: string;
-      userId: string;
-    }) => {
-      if (payload.action === 'add') {
-        return addRoleMembers(workspaceId, payload.roleId, [payload.userId]);
-      }
-
-      return removeRoleMember(workspaceId, payload.roleId, payload.userId);
-    },
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('common.error')),
-    onSuccess: () => {
-      toast.success(t('common.saved'));
-      queryClient.invalidateQueries({ queryKey: ['cms-members', workspaceId] });
-      queryClient.invalidateQueries({
-        queryKey: ['cms-member-roles', workspaceId],
-      });
-    },
-  });
-
-  const visibleMembers = (membersQuery.data ?? []).filter((member) => {
-    if (!memberSearch.trim()) {
-      return true;
-    }
-
-    const query = memberSearch.toLowerCase();
-    return [member.display_name, member.email, member.handle]
-      .filter(Boolean)
-      .some((value) => value?.toLowerCase().includes(query));
-  });
+  const roleEditorKey =
+    state.roleEditorState?.mode === 'edit'
+      ? `edit-${state.roleEditorState.role.id}`
+      : state.roleEditorState?.mode === 'default'
+        ? 'default'
+        : 'create';
 
   return (
-    <Card className="border-border/70 bg-card/95 shadow-none">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-4 w-4" />
-          {tSettings('members_title')}
-        </CardTitle>
-        <CardDescription>{tSettings('members_description')}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="cms-member-search">
-              {tSettings('search_members_label')}
-            </Label>
-            <Input
-              id="cms-member-search"
-              value={memberSearch}
-              onChange={(event) => setMemberSearch(event.target.value)}
-              placeholder={tSettings('search_members_placeholder')}
-            />
-          </div>
+    <div className="space-y-6">
+      <CmsMembersHeader
+        boundProjectName={boundProjectName}
+        canManageRoles={canManageRoles}
+      />
 
-          {canManageMembers ? (
-            <div className="grid gap-2">
-              <Label htmlFor="cms-member-invites">
-                {tSettings('invite_members_label')}
-              </Label>
-              <Textarea
-                id="cms-member-invites"
-                rows={4}
-                value={inviteEmails}
-                onChange={(event) => setInviteEmails(event.target.value)}
-                placeholder={tSettings('invite_members_placeholder')}
+      <Tabs
+        value={state.activeTab}
+        onValueChange={(value) => state.setActiveTab(value as any)}
+        className="space-y-5"
+      >
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <TabsList className="grid w-full grid-cols-2 rounded-2xl md:w-auto md:grid-cols-4">
+            <TabsTrigger value="all">{t('ws-members.all')}</TabsTrigger>
+            <TabsTrigger value="joined">{t('ws-members.joined')}</TabsTrigger>
+            <TabsTrigger value="invited">{t('ws-members.invited')}</TabsTrigger>
+            <TabsTrigger value="roles">{t('common.roles')}</TabsTrigger>
+          </TabsList>
+
+          {state.activeTab === 'roles' ? (
+            <div className="flex w-full flex-col gap-3 md:flex-row xl:w-auto">
+              <Input
+                value={state.roleSearch}
+                onChange={(event) => state.setRoleSearch(event.target.value)}
+                placeholder={t('common.search')}
+                className="md:min-w-[260px]"
               />
-              <Button
-                className="w-full sm:w-fit"
-                disabled={
-                  inviteMutation.isPending ||
-                  parseInviteEmails(inviteEmails).length === 0
-                }
-                onClick={() => inviteMutation.mutate()}
-              >
-                <MailPlus className="mr-2 h-4 w-4" />
-                {tSettings('send_invites_action')}
-              </Button>
+              {canManageRoles ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      state.setRoleEditorState({
+                        mode: 'default',
+                        role: state.defaultRoleQuery.data ?? null,
+                      })
+                    }
+                  >
+                    {tRoles('manage_default_permissions')}
+                  </Button>
+                  <Button
+                    onClick={() => state.setRoleEditorState({ mode: 'create' })}
+                  >
+                    {tRoles('create')}
+                  </Button>
+                </>
+              ) : null}
             </div>
-          ) : null}
+          ) : (
+            <div className="grid w-full gap-3 xl:w-[440px]">
+              <Input
+                value={state.memberSearch}
+                onChange={(event) => state.setMemberSearch(event.target.value)}
+                placeholder={tSettings('search_members_placeholder')}
+              />
+              {canManageMembers ? (
+                <div className="grid gap-2 rounded-2xl border border-border/70 bg-card/95 p-4">
+                  <Textarea
+                    rows={3}
+                    value={state.inviteEmails}
+                    onChange={(event) =>
+                      state.setInviteEmails(event.target.value)
+                    }
+                    placeholder={tSettings('invite_members_placeholder')}
+                  />
+                  <Button
+                    className="w-full sm:w-fit"
+                    disabled={
+                      state.inviteMutation.isPending ||
+                      parseInviteEmails(state.inviteEmails).length === 0
+                    }
+                    onClick={() => state.inviteMutation.mutate()}
+                  >
+                    <MailPlus className="mr-2 h-4 w-4" />
+                    {tSettings('send_invites_action')}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
 
-        {membersQuery.isPending ? (
-          <div className="space-y-3">
-            <Skeleton className="h-24 rounded-2xl" />
-            <Skeleton className="h-24 rounded-2xl" />
-            <Skeleton className="h-24 rounded-2xl" />
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {visibleMembers.map((member) => {
-              const memberId = member.id ?? null;
-              const availableRoles = (rolesQuery.data ?? []).filter(
-                (role) =>
-                  !member.roles.some(
-                    (assignedRole) => assignedRole.id === role.id
-                  )
-              );
+        <TabsContent value="all" className="mt-0">
+          <CmsMemberCards
+            canManageMembers={canManageMembers}
+            canManageRoles={canManageRoles}
+            isLoading={state.membersQuery.isPending}
+            isRemovingMember={state.removeMemberMutation.isPending}
+            members={state.visibleMembers}
+            roles={state.rolesQuery.data ?? []}
+            onAssignRole={({ roleId, userId }) =>
+              state.roleMembershipMutation.mutate({
+                action: 'add',
+                roleId,
+                userId,
+              })
+            }
+            onRemoveMember={(payload) =>
+              state.removeMemberMutation.mutate(payload)
+            }
+            onRemoveRole={({ roleId, userId }) =>
+              state.roleMembershipMutation.mutate({
+                action: 'remove',
+                roleId,
+                userId,
+              })
+            }
+          />
+        </TabsContent>
 
-              return (
-                <div
-                  key={`${member.id ?? member.email}`}
-                  className="rounded-[1.35rem] border border-border/70 bg-background/80 p-4"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="font-medium">
-                          {member.display_name ||
-                            member.email ||
-                            t('common.unknown')}
-                        </div>
-                        {member.is_creator ? (
-                          <Badge variant="secondary" className="rounded-full">
-                            {tSettings('creator_badge')}
-                          </Badge>
-                        ) : null}
-                        {member.pending ? (
-                          <Badge variant="outline" className="rounded-full">
-                            {tSettings('invited_badge')}
-                          </Badge>
-                        ) : null}
-                      </div>
-                      <div className="text-muted-foreground text-sm">
-                        {member.email || tSettings('no_email_label')}
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {member.roles.length > 0 ? (
-                          member.roles.map((role) => (
-                            <Badge
-                              key={`${member.id}-${role.id}`}
-                              variant="secondary"
-                              className="gap-1 rounded-full pr-1"
-                            >
-                              <span>{role.name}</span>
-                              {canManageRoles && memberId ? (
-                                <button
-                                  type="button"
-                                  className="rounded-full px-1 py-0.5 transition hover:bg-foreground/10"
-                                  onClick={() =>
-                                    roleMutation.mutate({
-                                      action: 'remove',
-                                      roleId: role.id,
-                                      userId: memberId,
-                                    })
-                                  }
-                                >
-                                  ×
-                                </button>
-                              ) : null}
-                            </Badge>
-                          ))
-                        ) : (
-                          <Badge variant="outline" className="rounded-full">
-                            {tSettings('no_roles_label')}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
+        <TabsContent value="joined" className="mt-0">
+          <CmsMemberCards
+            canManageMembers={canManageMembers}
+            canManageRoles={canManageRoles}
+            isLoading={state.membersQuery.isPending}
+            isRemovingMember={state.removeMemberMutation.isPending}
+            members={state.visibleMembers}
+            roles={state.rolesQuery.data ?? []}
+            onAssignRole={({ roleId, userId }) =>
+              state.roleMembershipMutation.mutate({
+                action: 'add',
+                roleId,
+                userId,
+              })
+            }
+            onRemoveMember={(payload) =>
+              state.removeMemberMutation.mutate(payload)
+            }
+            onRemoveRole={({ roleId, userId }) =>
+              state.roleMembershipMutation.mutate({
+                action: 'remove',
+                roleId,
+                userId,
+              })
+            }
+          />
+        </TabsContent>
 
-                    <div className="flex min-w-[220px] flex-col gap-2">
-                      {canManageRoles && memberId ? (
-                        <Select
-                          onValueChange={(roleId) =>
-                            roleMutation.mutate({
-                              action: 'add',
-                              roleId,
-                              userId: memberId,
-                            })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={tSettings('assign_role_placeholder')}
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableRoles.length === 0 ? (
-                              <SelectItem value="__no_roles__" disabled>
-                                {tSettings('no_additional_roles')}
-                              </SelectItem>
-                            ) : (
-                              availableRoles.map((role) => (
-                                <SelectItem key={role.id} value={role.id}>
-                                  {role.name}
-                                </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
-                      ) : null}
+        <TabsContent value="invited" className="mt-0">
+          <CmsMemberCards
+            canManageMembers={canManageMembers}
+            canManageRoles={canManageRoles}
+            isLoading={state.membersQuery.isPending}
+            isRemovingMember={state.removeMemberMutation.isPending}
+            members={state.visibleMembers}
+            roles={state.rolesQuery.data ?? []}
+            onAssignRole={({ roleId, userId }) =>
+              state.roleMembershipMutation.mutate({
+                action: 'add',
+                roleId,
+                userId,
+              })
+            }
+            onRemoveMember={(payload) =>
+              state.removeMemberMutation.mutate(payload)
+            }
+            onRemoveRole={({ roleId, userId }) =>
+              state.roleMembershipMutation.mutate({
+                action: 'remove',
+                roleId,
+                userId,
+              })
+            }
+          />
+        </TabsContent>
 
-                      {canManageMembers && !member.is_creator ? (
-                        <Button
-                          variant="outline"
-                          className="justify-start"
-                          disabled={removeMemberMutation.isPending}
-                          onClick={() =>
-                            removeMemberMutation.mutate({
-                              email: member.email,
-                              userId: member.pending ? null : member.id,
-                            })
-                          }
-                        >
-                          <UserMinus className="mr-2 h-4 w-4" />
-                          {tSettings('remove_access_action')}
-                        </Button>
-                      ) : (
-                        <div className="inline-flex items-center gap-2 text-muted-foreground text-sm">
-                          <ShieldUser className="h-4 w-4" />
-                          {tSettings('protected_member_label')}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+        <TabsContent value="roles" className="mt-0">
+          <CmsRolesPanel
+            canManageRoles={canManageRoles}
+            defaultRole={state.defaultRoleQuery.data}
+            filteredRoles={state.filteredRoles}
+            isDefaultRoleLoading={state.defaultRoleQuery.isPending}
+            isRolesLoading={state.rolesQuery.isPending}
+            members={state.membersQuery.data ?? []}
+            onDeleteRole={(role) => state.setRoleToDelete(role)}
+            onEditRole={(role) =>
+              state.setRoleEditorState({
+                mode: 'edit',
+                role,
+              })
+            }
+            permissionCount={state.permissionCount}
+            permissionTitles={state.permissionTitles}
+          />
+        </TabsContent>
+      </Tabs>
 
-            {visibleMembers.length === 0 ? (
-              <div className="rounded-[1.35rem] border border-border/70 border-dashed bg-background/70 p-6 text-muted-foreground text-sm">
-                {tSettings('no_members_match')}
-              </div>
-            ) : null}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {state.roleEditorState ? (
+        <CmsRoleEditorDialog
+          key={roleEditorKey}
+          currentUserEmail={currentUserEmail}
+          initialRole={
+            state.roleEditorState.mode === 'create'
+              ? null
+              : state.roleEditorState.role
+          }
+          mode={state.roleEditorState.mode}
+          onOpenChange={(open) => {
+            if (!open) {
+              state.setRoleEditorState(null);
+            }
+          }}
+          onSaved={state.invalidateAccessData}
+          open={Boolean(state.roleEditorState)}
+          workspaceId={workspaceId}
+        />
+      ) : null}
+
+      <CmsRoleDeleteDialog
+        isDeleting={state.deleteRoleMutation.isPending}
+        onConfirm={() => {
+          if (state.roleToDelete) {
+            state.deleteRoleMutation.mutate(state.roleToDelete.id);
+          }
+        }}
+        onOpenChange={(open) => {
+          if (!open) {
+            state.setRoleToDelete(null);
+          }
+        }}
+        role={state.roleToDelete}
+      />
+    </div>
   );
 }

@@ -2,7 +2,6 @@ import {
   Eye,
   FileText,
   LayoutDashboard,
-  Settings2,
   ShieldUser,
   Users,
 } from '@tuturuuu/icons';
@@ -61,12 +60,6 @@ export async function getNavigationLinks({
       href: `/${personalOrWsId}/members`,
       icon: <Users className="h-4 w-4" />,
       aliases: [`/${personalOrWsId}/members`],
-    },
-    {
-      title: t('common.settings'),
-      href: `/${personalOrWsId}/settings`,
-      icon: <Settings2 className="h-4 w-4" />,
-      aliases: [`/${personalOrWsId}/settings`],
     },
   ];
 }

@@ -18,9 +18,12 @@ updatedAt: '2026-04-22'
 - `/{wsId}/library`: content library
 - `/{wsId}/library/entries/{entryId}`: entry detail
 - `/{wsId}/library/collections/{collectionId}`: collection detail
+- `/{wsId}/members`: workspace member and role management
 - `/{wsId}/preview`: delivered-content preview
-- `/{wsId}/settings`: CMS settings, imports, and workspace member management
+- `/{wsId}/settings`: legacy compatibility redirect to `/{wsId}/members`
 - `/internal/projects`: root workspace canonical project registry and workspace linking
+
+When `wsId` resolves to the internal/root workspace, `/{wsId}` and other workspace-local routes should bounce to `/internal/projects` instead of trying to render the bound-workspace CMS surfaces.
 
 The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` CMS routes are removed. New entry points should link directly to the CMS-native route map above.
 
@@ -29,7 +32,7 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - Only workspaces with CMS access enabled appear in the CMS workspace picker.
 - A workspace must still satisfy the existing external-project permissions to open CMS workspace routes.
 - Only platform admins can open `/internal/projects`.
-- Workspace member and role management is available inside `/{wsId}/settings`, but still respects the existing `manage_workspace_members` and `manage_workspace_roles` permissions.
+- Workspace member and role management lives on `/{wsId}/members` and still respects the existing `manage_workspace_members` and `manage_workspace_roles` permissions.
 
 ## API Ownership
 
@@ -37,6 +40,11 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - New CMS backend behavior should be added in `apps/web`, then exposed through `packages/internal-api`.
 - The root linking console reads the workspace-indexed binding summary from `GET /api/v1/admin/external-project-bindings`.
 - Backend naming stays on `external-project*` contracts even though the product surface is branded as Tuturuuu CMS.
+
+## Client Architecture
+
+- Keep route pages server-side only for auth and access gates, then hand off interactive CMS surfaces to client modules backed by TanStack Query.
+- Keep `cms-studio-client.tsx` focused on query state, mutations, and routing. Library rendering should stay split across dedicated gallery, workflow, and settings modules rather than growing back into one large TSX file.
 
 ## Local Development
 

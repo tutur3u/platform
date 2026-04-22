@@ -8,7 +8,7 @@ updatedAt: '2026-04-22'
 
 Tuturuuu CMS now lives in the dedicated `apps/cms` satellite app.
 
-- `apps/cms` owns the CMS authoring UI, workspace picker, overview/library/preview/settings routes, and the root `/{wsId}/projects` linking console.
+- `apps/cms` owns the CMS authoring UI, workspace picker, overview/library/preview/members routes, and the root `/{wsId}/projects` linking console.
 - `apps/web` remains the only backend/API owner for CMS and external-project traffic.
 - `apps/cms` rewrites `/api/*` to `apps/web`, so proxy behavior and bot protection stay centralized.
 
@@ -24,11 +24,12 @@ Tuturuuu CMS now lives in the dedicated `apps/cms` satellite app.
 - `/{wsId}/library`: library landing for collections and entries
 - `/{wsId}/library/collections/{collectionId}`: collection detail
 - `/{wsId}/library/entries/{entryId}`: entry detail
-- `/{wsId}/members`: workspace member search, invite, removal, and role assignment
+- `/{wsId}/members`: workspace member search, invite, removal, role assignment, and role/default-permission management
 - `/{wsId}/preview`: delivery preview
-- `/{wsId}/settings`: CMS settings and import tools
+- `/{wsId}/settings`: legacy compatibility redirect to `/{wsId}/members`
 
 The old CMS route model (`/{wsId}/content`, `/{wsId}/collections/...`, `/{wsId}/admin`) is removed instead of redirected.
+The internal/root workspace is not a bindable content workspace, so `/internal` and other root-workspace CMS route variants should redirect to `/internal/projects`.
 
 ## Root Linking Console
 
@@ -46,14 +47,14 @@ The old CMS route model (`/{wsId}/content`, `/{wsId}/collections/...`, `/{wsId}/
 - Use `/{wsId}/members` for routine collaborator management without leaving CMS.
 - Keep collection configuration on collection detail pages and entry authoring on entry detail pages.
 - Use `/{wsId}/preview` as the delivered-content surface backed by the existing preview delivery route.
-- Use `/{wsId}/settings` for import/sync operations and binding status.
+- The old settings screen is removed because it duplicated overview, library, and members content. Keep `/settings` only as a compatibility redirect to `/{wsId}/members`.
 
 ## Member Management In CMS
 
 - Workspace member search, invite, remove, and role-assignment controls now have a dedicated `/{wsId}/members` sidebar route.
-- The settings page reuses the same member-management module, so the members experience stays consistent across both entry points.
+- The members surface also absorbs the essentials of the workspace roles page so CMS operators can manage named roles and default permissions without leaving CMS.
 - This keeps standalone CMS usable without forcing operators back into the main platform app for routine collaborator changes.
-- The CMS settings surface still respects `manage_workspace_members` and `manage_workspace_roles`.
+- The CMS members surface still respects `manage_workspace_members` and `manage_workspace_roles`.
 
 ## Implementation Notes
 

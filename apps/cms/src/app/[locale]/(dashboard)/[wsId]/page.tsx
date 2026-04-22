@@ -12,7 +12,7 @@ export default async function CmsWorkspaceHomePage({ params }: Props) {
   const { wsId } = await params;
   const access = await getCmsWorkspaceAccess(wsId);
 
-  if (access.canAccessAdmin && !access.canAccessWorkspace) {
+  if (access.isInternalWorkspace && access.canAccessAdmin) {
     redirect(`/${wsId}/projects`);
   }
 
