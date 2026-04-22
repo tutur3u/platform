@@ -35,7 +35,7 @@ function buildIntegrationsRedirectUrl(input: {
     url.searchParams.set('reason', input.reason);
   }
 
-  return `${url.pathname}${url.search}`;
+  return url;
 }
 
 function getQueryValue(url: URL, key: string) {

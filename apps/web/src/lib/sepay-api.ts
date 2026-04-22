@@ -25,6 +25,7 @@ interface SepayApiListResponse<T> {
 
 const SEPAY_FETCH_TIMEOUT_MS = 10_000;
 const SEPAY_BANK_ACCOUNT_PAGE_LIMIT = 100;
+const SEPAY_BANK_ACCOUNT_RATE_LIMIT_RETRIES = 3;
 
 function normalizeBaseUrl(value: string) {
   return value.trim().replace(/\/$/, '');
@@ -79,6 +80,28 @@ async function fetchSepay(url: string, init: RequestInit) {
 
     throw error;
   }
+}
+
+function readRetryAfterMs(value: string | null, fallbackMs: number) {
+  if (!value) {
+    return fallbackMs;
+  }
+
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return seconds * 1000;
+  }
+
+  const retryAt = Date.parse(value);
+  if (Number.isNaN(retryAt)) {
+    return fallbackMs;
+  }
+
+  return Math.max(0, retryAt - Date.now());
+}
+
+async function delay(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function exchangeSepayAuthorizationCode(input: {
@@ -198,13 +221,39 @@ export async function listSepayBankAccounts(input: { accessToken: string }) {
       url.searchParams.set('since_id', sinceId);
     }
 
-    const response = await fetchSepay(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${input.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      method: 'GET',
-    });
+    let response: Response | null = null;
+
+    for (
+      let attempt = 0;
+      attempt <= SEPAY_BANK_ACCOUNT_RATE_LIMIT_RETRIES;
+      attempt += 1
+    ) {
+      response = await fetchSepay(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${input.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        method: 'GET',
+      });
+
+      if (
+        response.status !== 429 ||
+        attempt === SEPAY_BANK_ACCOUNT_RATE_LIMIT_RETRIES
+      ) {
+        break;
+      }
+
+      await delay(
+        readRetryAfterMs(
+          response.headers.get('retry-after'),
+          1000 * (attempt + 1)
+        )
+      );
+    }
+
+    if (!response) {
+      throw new Error('Failed to list SePay bank accounts');
+    }
 
     if (!response.ok) {
       const responseText = await response.text();

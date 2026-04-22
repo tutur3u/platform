@@ -40,7 +40,9 @@ Maps SePay bank-account metadata to workspace wallets so webhook deliveries can
 ### `sepay_webhook_endpoints`
 
 Stores the hashed endpoint token, optional linked wallet, SePay webhook id, and
-active/rotation state for workspace webhook routing.
+active/rotation state for workspace webhook routing. The endpoint `ws_id` is
+treated as immutable after insert so existing event rows cannot drift across
+workspaces through later admin-backed updates.
 
 ### `sepay_webhook_events`
 
@@ -68,3 +70,5 @@ and the created `wallet_transactions.id` when processing succeeds.
   [SePay Testing Guide](/build/devops/sepay-testing-guide).
 - OAuth callback state is intentionally cookie-backed rather than a custom HMAC
   payload.
+- SePay account sync follows cursor pagination and retries `429` responses using
+  `Retry-After` before failing the workspace sync.

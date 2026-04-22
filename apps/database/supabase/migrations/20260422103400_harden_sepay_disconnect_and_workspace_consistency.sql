@@ -7,6 +7,10 @@ as $$
 declare
   v_wallet_ws_id uuid;
 begin
+  if tg_op = 'UPDATE' and new.ws_id <> old.ws_id then
+    raise exception 'SePay wallet link workspace cannot be reassigned';
+  end if;
+
   select ws_id
     into v_wallet_ws_id
     from public.workspace_wallets
@@ -33,6 +37,10 @@ as $$
 declare
   v_wallet_ws_id uuid;
 begin
+  if tg_op = 'UPDATE' and new.ws_id <> old.ws_id then
+    raise exception 'SePay webhook endpoint workspace cannot be reassigned';
+  end if;
+
   if new.wallet_id is null then
     return new;
   end if;
@@ -64,6 +72,10 @@ declare
   v_wallet_ws_id uuid;
   v_endpoint_ws_id uuid;
 begin
+  if tg_op = 'UPDATE' and new.ws_id <> old.ws_id then
+    raise exception 'SePay webhook event workspace cannot be reassigned';
+  end if;
+
   select ws_id
     into v_wallet_ws_id
     from public.workspace_wallets

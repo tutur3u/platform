@@ -56,13 +56,19 @@ async function findLinkedWalletId(input: {
           candidate.sepay_gateway?.toLowerCase() === normalizedGateway
       )
     : null;
-
-  return (
-    exactGatewayMatch?.wallet_id ??
-    walletCandidates.find((candidate) => !candidate.sepay_gateway)?.wallet_id ??
-    walletCandidates[0]?.wallet_id ??
-    null
+  const gatewayAgnosticCandidates = walletCandidates.filter(
+    (candidate) => !candidate.sepay_gateway
   );
+
+  if (exactGatewayMatch) {
+    return exactGatewayMatch.wallet_id;
+  }
+
+  if (gatewayAgnosticCandidates.length === 1) {
+    return gatewayAgnosticCandidates[0]?.wallet_id ?? null;
+  }
+
+  return walletCandidates.length === 1 ? walletCandidates[0]?.wallet_id : null;
 }
 
 async function findLinkedWalletIdByBankKey(input: {
@@ -172,6 +178,19 @@ export async function resolveOrCreateWallet(input: {
     }
   }
 
+  const bankAccountKey = buildWalletLinkBankAccountKey({
+    accountNumber: input.payload.accountNumber,
+    bankAccountId: input.payload.bankAccountId,
+    gateway: input.payload.gateway,
+    referenceCode: input.payload.referenceCode,
+  });
+
+  if (!bankAccountKey) {
+    throw new Error(
+      'Cannot auto-create a SePay wallet link without a stable account identifier'
+    );
+  }
+
   const walletName = buildAutoWalletName({
     accountNumber: input.payload.accountNumber,
     gateway: input.payload.gateway,
@@ -192,19 +211,6 @@ export async function resolveOrCreateWallet(input: {
 
   if (createWalletError || !createdWallet?.id) {
     throw new Error('Failed to auto-create wallet for SePay account');
-  }
-
-  const bankAccountKey = buildWalletLinkBankAccountKey({
-    accountNumber: input.payload.accountNumber,
-    bankAccountId: input.payload.bankAccountId,
-    gateway: input.payload.gateway,
-    referenceCode: input.payload.referenceCode,
-  });
-
-  if (!bankAccountKey) {
-    throw new Error(
-      'Cannot auto-create a SePay wallet link without a stable account identifier'
-    );
   }
 
   const { error: createWalletLinkError } = await input.sbAdmin
