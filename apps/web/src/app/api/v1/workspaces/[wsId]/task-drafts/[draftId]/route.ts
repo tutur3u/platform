@@ -55,6 +55,15 @@ async function verifyAccess(wsId: string, draftId: string) {
     supabase: supabase,
   });
 
+  if (membership.error === 'membership_lookup_failed') {
+    return {
+      error: 'Failed to verify workspace membership',
+      status: 500,
+      supabase,
+      user: null,
+    };
+  }
+
   if (!membership.ok) {
     return { error: 'Forbidden', status: 403, supabase, user };
   }

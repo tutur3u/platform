@@ -60,6 +60,13 @@ export async function PUT(
       supabase: supabase,
     });
 
+    if (memberCheck.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { message: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
     if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },

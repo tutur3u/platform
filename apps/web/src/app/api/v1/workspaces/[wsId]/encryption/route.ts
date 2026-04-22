@@ -52,6 +52,13 @@ export async function GET(_: Request, { params }: Params) {
     supabase: supabase,
   });
 
+  if (member.error === 'membership_lookup_failed') {
+    return NextResponse.json(
+      { message: 'Failed to verify workspace membership' },
+      { status: 500 }
+    );
+  }
+
   if (!member.ok) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
@@ -112,6 +119,12 @@ export async function POST(_: Request, { params }: Params) {
   }
 
   if (!authorized) {
+    if (reason === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { message: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
     return NextResponse.json(
       {
         error:
@@ -203,6 +216,12 @@ export async function DELETE(_: Request, { params }: Params) {
   }
 
   if (!authorized) {
+    if (reason === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { message: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
     return NextResponse.json(
       {
         error:

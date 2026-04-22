@@ -17,7 +17,7 @@ export type CheckE2EEResult =
   | {
       authorized: false;
       user: AuthUser;
-      reason: 'not_a_member' | 'no_permission';
+      reason: 'not_a_member' | 'no_permission' | 'membership_lookup_failed';
     };
 
 /**
@@ -50,6 +50,14 @@ export async function checkE2EEPermission(
     userId: user.id,
     supabase: supabase,
   });
+
+  if (member.error === 'membership_lookup_failed') {
+    return {
+      authorized: false,
+      user,
+      reason: 'membership_lookup_failed',
+    };
+  }
 
   if (!member.ok) {
     return { authorized: false, user, reason: 'not_a_member' };

@@ -1,7 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { checkChangelogPermission } from '../utils';
+import {
+  changelogPermissionDeniedResponse,
+  checkChangelogPermission,
+} from '../utils';
 
 // Allowed MIME types for changelog media
 const ALLOWED_MIME_TYPES = new Set([
@@ -28,13 +31,9 @@ const ALLOWED_EXTENSIONS = new Set([
 export async function POST(request: Request) {
   const supabase = await createClient();
 
-  const { authorized, user } = await checkChangelogPermission(supabase);
-  if (!authorized) {
-    return NextResponse.json(
-      { message: user ? 'Forbidden' : 'Unauthorized' },
-      { status: user ? 403 : 401 }
-    );
-  }
+  const perm = await checkChangelogPermission(supabase);
+  const authError = changelogPermissionDeniedResponse(perm);
+  if (authError) return authError;
 
   try {
     const formData = await request.formData();

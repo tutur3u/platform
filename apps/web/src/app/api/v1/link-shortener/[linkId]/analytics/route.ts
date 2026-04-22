@@ -40,6 +40,13 @@ export async function GET(
       supabase: supabase,
     });
 
+    if (workspaceMember.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { message: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
     if (!workspaceMember.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }

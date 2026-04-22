@@ -95,6 +95,13 @@ export async function POST(request: Request, { params }: Params) {
     supabase: sbAdmin,
   });
 
+  if (existingMember.error === 'membership_lookup_failed') {
+    return NextResponse.json(
+      { message: 'Failed to verify workspace membership' },
+      { status: 500 }
+    );
+  }
+
   if (existingMember.ok) {
     await sbAdmin
       .from('workspace_invites')

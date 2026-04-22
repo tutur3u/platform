@@ -1,7 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { checkChangelogPermission } from '../../utils';
+import {
+  changelogPermissionDeniedResponse,
+  checkChangelogPermission,
+} from '../../utils';
 
 const PublishChangelogSchema = z.object({
   is_published: z.boolean(),
@@ -17,13 +20,9 @@ export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { id } = await params;
 
-  const { authorized, user } = await checkChangelogPermission(supabase);
-  if (!authorized) {
-    return NextResponse.json(
-      { message: user ? 'Forbidden' : 'Unauthorized' },
-      { status: user ? 403 : 401 }
-    );
-  }
+  const perm = await checkChangelogPermission(supabase);
+  const authError = changelogPermissionDeniedResponse(perm);
+  if (authError) return authError;
 
   try {
     const body = await req.json();

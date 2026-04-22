@@ -180,6 +180,11 @@ export async function getSyncLogs(
     supabase,
   });
 
+  if (membership.error === 'membership_lookup_failed') {
+    console.error('Membership lookup failed for calendar sync logs');
+    return { logs: [], totalCount: 0, hasMore: false };
+  }
+
   if (!membership.ok) {
     console.error('No workspace access');
     return { logs: [], totalCount: 0, hasMore: false };

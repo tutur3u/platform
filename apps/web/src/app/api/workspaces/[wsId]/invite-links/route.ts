@@ -41,6 +41,13 @@ export async function POST(req: Request, { params }: Params) {
       supabase: supabase,
     });
 
+    if (member.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { message: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
     if (!member.ok) {
       return NextResponse.json(
         { error: 'You are not a member of this workspace' },

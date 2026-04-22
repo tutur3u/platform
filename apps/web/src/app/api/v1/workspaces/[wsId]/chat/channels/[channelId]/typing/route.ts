@@ -25,6 +25,15 @@ async function requireWorkspaceUser(request: Request, wsId: string) {
     userId: user.id,
     supabase: supabase,
   });
+  if (membership.error === 'membership_lookup_failed') {
+    return {
+      error: NextResponse.json(
+        { message: 'Failed to verify workspace membership' },
+        { status: 500 }
+      ),
+    };
+  }
+
   if (!membership.ok) {
     return {
       error: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
