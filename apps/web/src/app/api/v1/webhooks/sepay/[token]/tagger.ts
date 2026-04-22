@@ -7,6 +7,7 @@ import type { NormalizedSepayPayload } from './schemas';
 type SepayAdminClient = TypedSupabaseClient;
 
 const TAGGER_MODEL = 'gemini-3.1-flash-lite-preview';
+const TAGGER_TIMEOUT_MS = 4_000;
 
 const taggerResultSchema = z.object({
   tagIds: z.array(z.guid()),
@@ -46,6 +47,7 @@ export async function classifyTagIds(input: {
 
   try {
     const classification = await generateObject({
+      abortSignal: AbortSignal.timeout(TAGGER_TIMEOUT_MS),
       model: google(TAGGER_MODEL),
       output: 'object',
       schema: taggerResultSchema,

@@ -14,8 +14,10 @@ normalized finance records into the platform.
 
 1. A workspace admin starts the OAuth flow.
 2. The platform stores an opaque state token in a short-lived HttpOnly cookie.
-3. The OAuth callback exchanges the code, encrypts the SePay tokens, and stores
-   them in `sepay_connections`.
+3. The OAuth callback exchanges the code, encrypts the SePay tokens, stores
+   them in `sepay_connections`, finishes the initial sync/provisioning steps,
+   and redirects the browser back to the workspace integrations surface with a
+   compact success or error query flag.
 4. The platform syncs SePay bank accounts into `sepay_wallet_links`.
 5. The platform provisions a SePay webhook endpoint and stores the hashed token
    in `sepay_webhook_endpoints`.

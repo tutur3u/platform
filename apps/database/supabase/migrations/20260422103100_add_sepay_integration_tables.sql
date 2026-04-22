@@ -48,7 +48,7 @@ create table if not exists public.sepay_webhook_events (
   id uuid primary key default gen_random_uuid(),
   ws_id uuid not null references public.workspaces(id) on delete cascade,
   wallet_id uuid not null references public.workspace_wallets(id) on delete cascade,
-  endpoint_id uuid not null references public.sepay_webhook_endpoints(id),
+  endpoint_id uuid not null references public.sepay_webhook_endpoints(id) on delete restrict,
   sepay_event_id text,
   reference_code text,
   transfer_type text not null,

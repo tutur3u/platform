@@ -16,6 +16,24 @@ interface Params {
   params: Promise<{ wsId: string }>;
 }
 
+function buildIntegrationsRedirectUrl(input: {
+  reason?: string;
+  status: 'connected' | 'error';
+  wsId: string;
+}) {
+  const url = new URL(
+    `/${encodeURIComponent(input.wsId)}/integrations`,
+    'http://localhost'
+  );
+  url.searchParams.set('sepay', input.status);
+
+  if (input.reason) {
+    url.searchParams.set('reason', input.reason);
+  }
+
+  return `${url.pathname}${url.search}`;
+}
+
 function getQueryValue(url: URL, key: string) {
   const value = url.searchParams.get(key);
   return value && value.trim().length > 0 ? value.trim() : null;
@@ -36,6 +54,28 @@ function clearOauthStateCookie(
   });
 }
 
+function redirectToIntegrations(input: {
+  reason?: string;
+  request: NextRequest;
+  status: 'connected' | 'error';
+  wsId: string;
+}) {
+  const response = NextResponse.redirect(
+    new URL(
+      buildIntegrationsRedirectUrl({
+        reason: input.reason,
+        status: input.status,
+        wsId: input.wsId,
+      }),
+      input.request.url
+    ),
+    { status: 302 }
+  );
+
+  clearOauthStateCookie(response, input.request, input.wsId);
+  return response;
+}
+
 export async function GET(request: NextRequest, { params }: Params) {
   const { wsId } = await params;
   const url = new URL(request.url);
@@ -43,10 +83,12 @@ export async function GET(request: NextRequest, { params }: Params) {
   const state = getQueryValue(url, 'state');
 
   if (!code || !state) {
-    return NextResponse.json(
-      { message: 'Missing SePay OAuth callback parameters' },
-      { status: 400 }
-    );
+    return redirectToIntegrations({
+      reason: 'missing_callback_params',
+      request,
+      status: 'error',
+      wsId,
+    });
   }
 
   const verifiedState = verifySepayOauthState({
@@ -56,18 +98,22 @@ export async function GET(request: NextRequest, { params }: Params) {
   });
 
   if (!verifiedState.ok) {
-    const response = NextResponse.json(
-      { message: 'Invalid SePay OAuth state' },
-      { status: 400 }
-    );
-    clearOauthStateCookie(response, request, wsId);
-    return response;
+    return redirectToIntegrations({
+      reason: 'invalid_oauth_state',
+      request,
+      status: 'error',
+      wsId,
+    });
   }
 
   const access = await requireSepayAccess(request, wsId);
   if ('error' in access) {
-    clearOauthStateCookie(access.error, request, wsId);
-    return access.error;
+    return redirectToIntegrations({
+      reason: 'unauthorized',
+      request,
+      status: 'error',
+      wsId,
+    });
   }
 
   const featureError = await requireSepayFeatureEnabled({
@@ -76,8 +122,12 @@ export async function GET(request: NextRequest, { params }: Params) {
   });
 
   if (featureError) {
-    clearOauthStateCookie(featureError, request, wsId);
-    return featureError;
+    return redirectToIntegrations({
+      reason: 'feature_disabled',
+      request,
+      status: 'error',
+      wsId: access.wsId,
+    });
   }
 
   const callbackUrl = buildSepayOauthCallbackUrl(access.wsId);
@@ -90,12 +140,12 @@ export async function GET(request: NextRequest, { params }: Params) {
     });
   } catch (error) {
     console.error('SePay OAuth exchange failed:', error);
-    const response = NextResponse.json(
-      { message: 'Failed to exchange SePay OAuth code' },
-      { status: 502 }
-    );
-    clearOauthStateCookie(response, request, wsId);
-    return response;
+    return redirectToIntegrations({
+      reason: 'oauth_exchange_failed',
+      request,
+      status: 'error',
+      wsId: access.wsId,
+    });
   }
 
   try {
@@ -122,41 +172,35 @@ export async function GET(request: NextRequest, { params }: Params) {
     }
   } catch (error) {
     console.error('Failed to save SePay connection:', error);
-    const response = NextResponse.json(
-      { message: 'Failed to save SePay OAuth connection' },
-      { status: 500 }
-    );
-    clearOauthStateCookie(response, request, wsId);
-    return response;
+    return redirectToIntegrations({
+      reason: 'connection_save_failed',
+      request,
+      status: 'error',
+      wsId: access.wsId,
+    });
   }
 
   try {
-    const syncResult = await syncSepayBankAccounts({
+    await syncSepayBankAccounts({
       sbAdmin: access.sbAdmin,
       wsId: access.wsId,
     });
-    const webhookResult = await provisionSepayWebhookEndpoint({
+    await provisionSepayWebhookEndpoint({
       sbAdmin: access.sbAdmin,
       wsId: access.wsId,
     });
-
-    const response = NextResponse.json({
-      success: true,
-      sync: syncResult,
-      webhook: webhookResult,
+    return redirectToIntegrations({
+      request,
+      status: 'connected',
+      wsId: access.wsId,
     });
-    clearOauthStateCookie(response, request, wsId);
-    return response;
   } catch (error) {
     console.error('SePay post-connect provisioning failed:', error);
-    const response = NextResponse.json(
-      {
-        message:
-          'Connected SePay account but failed to finish provisioning. Retry sync/provision endpoints.',
-      },
-      { status: 502 }
-    );
-    clearOauthStateCookie(response, request, wsId);
-    return response;
+    return redirectToIntegrations({
+      reason: 'post_connect_provisioning_failed',
+      request,
+      status: 'error',
+      wsId: access.wsId,
+    });
   }
 }

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const sepayRawPayloadSchema = z.object({}).passthrough();
+export const sepayRawPayloadSchema = z.looseObject({});
 
 export const normalizedSepayPayloadSchema = z.object({
   accountNumber: z.string().nullable(),
@@ -13,7 +13,7 @@ export const normalizedSepayPayloadSchema = z.object({
   raw: z.record(z.string(), z.unknown()),
   referenceCode: z.string().nullable(),
   subAccountId: z.string().nullable(),
-  transactionDate: z.string().datetime(),
+  transactionDate: z.iso.datetime(),
   transferAmount: z.number().nonnegative(),
   transferType: z.enum(['in', 'out']),
 });
@@ -111,6 +111,13 @@ function parseAmount(value: string | null): number | null {
     const unsigned = normalized.startsWith('-')
       ? normalized.slice(1)
       : normalized;
+    const integerPart = unsigned.split('.')[0] ?? unsigned;
+    const integerMagnitude = BigInt(integerPart);
+
+    if (integerMagnitude > BigInt(Number.MAX_SAFE_INTEGER)) {
+      return null;
+    }
+
     const parsed = Number(unsigned);
 
     if (!Number.isFinite(parsed)) {
@@ -122,6 +129,11 @@ function parseAmount(value: string | null): number | null {
 
   return null;
 }
+
+const SEPAY_ISO_DATETIME_PATTERN =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/;
+const SEPAY_LEGACY_DATETIME_PATTERN =
+  /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?$/;
 
 function parseDateToIso(value: string | null): string | null {
   if (!value) {
@@ -140,7 +152,18 @@ function parseDateToIso(value: string | null): string | null {
     }
   }
 
-  const parsedDate = new Date(value);
+  const normalized = value.trim();
+  let candidate: string | null = null;
+
+  if (SEPAY_ISO_DATETIME_PATTERN.test(normalized)) {
+    candidate = normalized;
+  } else if (SEPAY_LEGACY_DATETIME_PATTERN.test(normalized)) {
+    candidate = `${normalized.replace(' ', 'T')}Z`;
+  } else {
+    return null;
+  }
+
+  const parsedDate = new Date(candidate);
   if (Number.isNaN(parsedDate.getTime())) {
     return null;
   }

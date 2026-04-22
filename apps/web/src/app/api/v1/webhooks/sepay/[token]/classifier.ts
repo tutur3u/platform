@@ -8,6 +8,7 @@ type SepayAdminClient = TypedSupabaseClient;
 
 const CATEGORY_CONFIDENCE_THRESHOLD = 0.6;
 const CLASSIFIER_MODEL = 'gemini-3.1-flash-lite-preview';
+const CLASSIFIER_TIMEOUT_MS = 4_000;
 
 const classifierResultSchema = z.object({
   categoryId: z.guid(),
@@ -101,6 +102,7 @@ export async function classifyCategoryId(input: {
 
   try {
     const classification = await generateObject({
+      abortSignal: AbortSignal.timeout(CLASSIFIER_TIMEOUT_MS),
       model: google(CLASSIFIER_MODEL),
       output: 'object',
       schema: classifierResultSchema,

@@ -42,7 +42,7 @@ export async function requireSepayAccess(
     return {
       error: NextResponse.json(
         { message: 'Failed to authenticate request' },
-        { status: 500 }
+        { status: 401 }
       ),
     };
   }
