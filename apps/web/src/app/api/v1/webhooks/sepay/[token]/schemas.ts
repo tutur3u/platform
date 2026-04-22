@@ -113,8 +113,13 @@ function parseAmount(value: string | null): number | null {
       : normalized;
     const integerPart = unsigned.split('.')[0] ?? unsigned;
     const integerMagnitude = BigInt(integerPart);
+    const fractionalPart = unsigned.split('.')[1] ?? '';
 
-    if (integerMagnitude > BigInt(Number.MAX_SAFE_INTEGER)) {
+    if (
+      integerMagnitude > BigInt(Number.MAX_SAFE_INTEGER) ||
+      (integerMagnitude === BigInt(Number.MAX_SAFE_INTEGER) &&
+        /[1-9]/.test(fractionalPart))
+    ) {
       return null;
     }
 
@@ -143,7 +148,7 @@ function parseDateToIso(value: string | null): string | null {
   if (/^\d+$/.test(value)) {
     const epoch = Number(value);
     if (Number.isFinite(epoch)) {
-      const asMs = epoch < 10_000_000_000 ? epoch * 1000 : epoch;
+      const asMs = value.length <= 10 ? epoch * 1000 : epoch;
       const epochDate = new Date(asMs);
 
       if (!Number.isNaN(epochDate.getTime())) {
@@ -158,7 +163,7 @@ function parseDateToIso(value: string | null): string | null {
   if (SEPAY_ISO_DATETIME_PATTERN.test(normalized)) {
     candidate = normalized;
   } else if (SEPAY_LEGACY_DATETIME_PATTERN.test(normalized)) {
-    candidate = `${normalized.replace(' ', 'T')}Z`;
+    candidate = `${normalized.replace(' ', 'T')}+07:00`;
   } else {
     return null;
   }

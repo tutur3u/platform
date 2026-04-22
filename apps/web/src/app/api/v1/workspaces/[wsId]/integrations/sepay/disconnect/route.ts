@@ -22,42 +22,16 @@ export async function POST(request: Request, { params }: Params) {
 
   const nowIso = new Date().toISOString();
 
-  const { error: disableEndpointsError } = await access.sbAdmin
-    .from('sepay_webhook_endpoints')
-    .update({
-      active: false,
-      deleted_at: nowIso,
-      rotated_at: nowIso,
-    })
-    .eq('ws_id', access.wsId)
-    .eq('active', true)
-    .is('deleted_at', null);
+  const { error: disconnectError } = await access.sbAdmin.rpc(
+    'disconnect_sepay_integration',
+    {
+      p_now: nowIso,
+      p_ws_id: access.wsId,
+    }
+  );
 
-  if (disableEndpointsError) {
-    console.error(
-      'Failed to disable SePay endpoints during disconnect:',
-      disableEndpointsError
-    );
-    return NextResponse.json(
-      { message: 'Failed to disconnect SePay integration' },
-      { status: 500 }
-    );
-  }
-
-  const { error: deactivateConnectionsError } = await access.sbAdmin
-    .from('sepay_connections')
-    .update({
-      status: 'revoked',
-      updated_at: nowIso,
-    })
-    .eq('ws_id', access.wsId)
-    .neq('status', 'revoked');
-
-  if (deactivateConnectionsError) {
-    console.error(
-      'Failed to revoke SePay connection during disconnect:',
-      deactivateConnectionsError
-    );
+  if (disconnectError) {
+    console.error('Failed to disconnect SePay integration:', disconnectError);
     return NextResponse.json(
       { message: 'Failed to disconnect SePay integration' },
       { status: 500 }

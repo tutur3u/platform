@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const env = getSepayOauthEnv();
-  if (!env.authorizeUrl || !env.clientId) {
+  if (!env.clientId) {
     return NextResponse.json(
       { message: 'SePay OAuth is not configured' },
       { status: 500 }
@@ -50,7 +50,6 @@ export async function POST(request: Request, { params }: Params) {
   const response = NextResponse.json({
     authorizeUrl,
     callbackUrl,
-    state: oauthState.state,
   });
 
   response.cookies.set(

@@ -24,6 +24,7 @@ interface SepayApiListResponse<T> {
 }
 
 const SEPAY_FETCH_TIMEOUT_MS = 10_000;
+const SEPAY_BANK_ACCOUNT_PAGE_LIMIT = 100;
 
 function normalizeBaseUrl(value: string) {
   return value.trim().replace(/\/$/, '');
@@ -186,24 +187,57 @@ export async function refreshSepayAccessToken(input: {
 }
 
 export async function listSepayBankAccounts(input: { accessToken: string }) {
-  const response = await fetchSepay(`${getSepayApiBaseUrl()}/bank-accounts`, {
-    headers: {
-      Authorization: `Bearer ${input.accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    method: 'GET',
-  });
+  const allAccounts: SepayBankAccount[] = [];
+  let sinceId: string | null = null;
 
-  if (!response.ok) {
-    const responseText = await response.text();
-    throw new Error(
-      `Failed to list SePay bank accounts: ${response.status} ${responseText}`
-    );
+  while (true) {
+    const url = new URL(`${getSepayApiBaseUrl()}/bank-accounts`);
+    url.searchParams.set('limit', String(SEPAY_BANK_ACCOUNT_PAGE_LIMIT));
+
+    if (sinceId) {
+      url.searchParams.set('since_id', sinceId);
+    }
+
+    const response = await fetchSepay(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${input.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      method: 'GET',
+    });
+
+    if (!response.ok) {
+      const responseText = await response.text();
+      throw new Error(
+        `Failed to list SePay bank accounts: ${response.status} ${responseText}`
+      );
+    }
+
+    const json =
+      (await response.json()) as SepayApiListResponse<SepayBankAccount>;
+    const pageAccounts = json.data ?? [];
+
+    if (pageAccounts.length === 0) {
+      break;
+    }
+
+    allAccounts.push(...pageAccounts);
+
+    const nextSinceId =
+      pageAccounts.at(-1)?.id ?? pageAccounts.at(-1)?.bank_account_id ?? null;
+
+    if (
+      pageAccounts.length < SEPAY_BANK_ACCOUNT_PAGE_LIMIT ||
+      !nextSinceId ||
+      nextSinceId === sinceId
+    ) {
+      break;
+    }
+
+    sinceId = nextSinceId;
   }
 
-  const json =
-    (await response.json()) as SepayApiListResponse<SepayBankAccount>;
-  return json.data ?? [];
+  return allAccounts;
 }
 
 export async function createSepayWebhook(input: {

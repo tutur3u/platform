@@ -242,11 +242,12 @@ export async function POST(request: Request, { params }: Params) {
   );
 
   if (!normalized.success) {
+    console.error(
+      'SePay webhook payload normalization failed:',
+      normalized.error.issues
+    );
     return NextResponse.json(
-      {
-        message: 'Invalid SePay webhook fields',
-        errors: normalized.error.issues,
-      },
+      { message: 'Invalid SePay webhook fields' },
       { status: 400 }
     );
   }
@@ -269,11 +270,19 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  await sbAdmin
+  const { error: lastUsedError } = await sbAdmin
     .from('sepay_webhook_endpoints')
     .update({ last_used_at: new Date().toISOString() })
     .eq('id', endpoint.id)
     .eq('ws_id', endpoint.ws_id);
+
+  if (lastUsedError) {
+    console.error('Failed to bump SePay endpoint last_used_at:', {
+      endpointId: endpoint.id,
+      error: lastUsedError,
+      wsId: endpoint.ws_id,
+    });
+  }
 
   let eventId: string | null = null;
 
@@ -423,6 +432,9 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     createdTransactionId = createdTransaction.id;
+
+    // Invariant: once the wallet transaction exists, keep createdTransactionId
+    // populated so markEventFailed() can persist it if any later step regresses.
 
     // Insert transaction tags if any were classified
     if (tagClassification.tagIds.length > 0) {

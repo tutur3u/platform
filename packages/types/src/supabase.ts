@@ -25581,6 +25581,10 @@ export type Database = {
           user_id: string;
         }[];
       };
+      disconnect_sepay_integration: {
+        Args: { p_now: string; p_ws_id: string };
+        Returns: undefined;
+      };
       ensure_workspace_user_link: {
         Args: { target_user_id: string; target_ws_id: string };
         Returns: string;

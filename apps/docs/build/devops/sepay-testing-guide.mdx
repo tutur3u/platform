@@ -103,6 +103,10 @@ Expected:
 - A `sepay_webhook_events` row exists for `evt_test_001`.
 - A `wallet_transactions` row exists and is linked through
   `created_transaction_id`.
+- `transactionDate` should always include an explicit timezone such as
+  `+07:00`. Bare `YYYY-MM-DD HH:mm:ss` strings are interpreted as Vietnam time
+  (UTC+7) for SePay compatibility; omitting the timezone in test payloads is a
+  fixture bug, not a supported operator shortcut.
 
 Verification query:
 
@@ -116,7 +120,10 @@ limit 20;
 select id, wallet_id, category_id, amount, creator_id, description, taken_at
 from wallet_transactions
 where creator_id in (
-  select id from workspace_users where ws_id = '<WS_ID>' and role = 'system'
+  select id
+  from workspace_users
+  where ws_id = '<WS_ID>'
+    and full_name = 'SePay System'
 )
 order by created_at desc
 limit 20;

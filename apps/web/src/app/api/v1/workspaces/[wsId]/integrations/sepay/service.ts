@@ -74,7 +74,7 @@ async function resolveConnection(input: {
       'id, ws_id, status, access_token_encrypted, refresh_token_encrypted, access_token_expires_at, scopes'
     )
     .eq('ws_id', input.wsId)
-    .eq('status', 'active')
+    .in('status', ['active', 'error'])
     .maybeSingle();
 
   if (error) {
@@ -278,8 +278,35 @@ export async function syncSepayBankAccounts(input: {
         ws_id: input.wsId,
       });
 
-    if (linkError && linkError.code !== '23505') {
-      throw new Error('Failed to create SePay wallet link from account sync');
+    if (linkError) {
+      const { error: deleteWalletError } = await input.sbAdmin
+        .from('workspace_wallets')
+        .delete()
+        .eq('id', walletId)
+        .eq('ws_id', input.wsId);
+
+      if (deleteWalletError) {
+        throw new Error(
+          'Failed to clean up auto-created wallet after SePay sync link error'
+        );
+      }
+
+      if (linkError.code !== '23505') {
+        throw new Error('Failed to create SePay wallet link from account sync');
+      }
+
+      const racedWalletId = await findWalletLink({
+        bankAccountId,
+        sbAdmin: input.sbAdmin,
+        subAccountId,
+        wsId: input.wsId,
+      });
+
+      if (!racedWalletId) {
+        throw new Error(
+          'SePay wallet link conflict occurred and existing wallet could not be resolved'
+        );
+      }
     }
 
     linkedCount += 1;
@@ -383,15 +410,20 @@ export async function provisionSepayWebhookEndpoint(input: {
     requestApiKey: webhookApiKey,
   });
 
-  const { data: matchedWalletLink } = await input.sbAdmin
-    .from('sepay_wallet_links')
-    .select('wallet_id')
-    .eq('ws_id', input.wsId)
-    .eq('active', true)
-    .eq('sepay_bank_account_id', bankAccountId)
-    .is('sepay_sub_account_id', null)
-    .limit(1)
-    .maybeSingle();
+  const { data: matchedWalletLink, error: walletLinkError } =
+    await input.sbAdmin
+      .from('sepay_wallet_links')
+      .select('wallet_id')
+      .eq('ws_id', input.wsId)
+      .eq('active', true)
+      .eq('sepay_bank_account_id', bankAccountId)
+      .is('sepay_sub_account_id', null)
+      .limit(1)
+      .maybeSingle();
+
+  if (walletLinkError) {
+    throw new Error('Failed to resolve SePay wallet link for webhook endpoint');
+  }
 
   const { error: updateError } = await input.sbAdmin
     .from('sepay_webhook_endpoints')

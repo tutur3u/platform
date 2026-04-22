@@ -10,10 +10,10 @@ async function findLinkedWalletId(input: {
 }) {
   let walletLinkQuery = input.sbAdmin
     .from('sepay_wallet_links')
-    .select('wallet_id')
+    .select('wallet_id, sepay_gateway')
     .eq('ws_id', input.wsId)
     .eq('active', true)
-    .limit(1);
+    .limit(10);
 
   if (input.payload.bankAccountId) {
     walletLinkQuery = walletLinkQuery.eq(
@@ -38,21 +38,31 @@ async function findLinkedWalletId(input: {
     );
   }
 
-  if (input.payload.gateway) {
-    walletLinkQuery = walletLinkQuery.eq(
-      'sepay_gateway',
-      input.payload.gateway
-    );
-  }
-
-  const { data: linkedWallet, error: walletLinkError } =
-    await walletLinkQuery.maybeSingle();
+  const { data: linkedWallet, error: walletLinkError } = await walletLinkQuery;
 
   if (walletLinkError) {
     throw new Error('Failed to resolve SePay wallet link');
   }
 
-  return linkedWallet?.wallet_id ?? null;
+  const walletCandidates = linkedWallet ?? [];
+  if (walletCandidates.length === 0) {
+    return null;
+  }
+
+  const normalizedGateway = input.payload.gateway?.toLowerCase() ?? null;
+  const exactGatewayMatch = normalizedGateway
+    ? walletCandidates.find(
+        (candidate) =>
+          candidate.sepay_gateway?.toLowerCase() === normalizedGateway
+      )
+    : null;
+
+  return (
+    exactGatewayMatch?.wallet_id ??
+    walletCandidates.find((candidate) => !candidate.sepay_gateway)?.wallet_id ??
+    walletCandidates[0]?.wallet_id ??
+    null
+  );
 }
 
 async function findLinkedWalletIdByBankKey(input: {
@@ -105,7 +115,7 @@ function buildWalletLinkBankAccountKey(payload: {
   bankAccountId: string | null;
   gateway: string | null;
   referenceCode: string | null;
-}) {
+}): string | null {
   if (payload.bankAccountId) {
     return payload.bankAccountId;
   }
@@ -118,7 +128,7 @@ function buildWalletLinkBankAccountKey(payload: {
     return `reference:${payload.referenceCode}`;
   }
 
-  return 'unknown-sepay-account';
+  return null;
 }
 
 export async function resolveOrCreateWallet(input: {
@@ -190,6 +200,12 @@ export async function resolveOrCreateWallet(input: {
     gateway: input.payload.gateway,
     referenceCode: input.payload.referenceCode,
   });
+
+  if (!bankAccountKey) {
+    throw new Error(
+      'Cannot auto-create a SePay wallet link without a stable account identifier'
+    );
+  }
 
   const { error: createWalletLinkError } = await input.sbAdmin
     .from('sepay_wallet_links')

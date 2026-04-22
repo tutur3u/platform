@@ -1,4 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { LOCALE_COOKIE_NAME } from '@/constants/common';
+import { defaultLocale, supportedLocales } from '@/i18n/routing';
 import { exchangeSepayAuthorizationCode } from '@/lib/sepay-api';
 import { encryptSepayToken } from '@/lib/sepay-crypto';
 import {
@@ -8,6 +10,7 @@ import {
 import {
   buildSepayOauthCallbackUrl,
   provisionSepayWebhookEndpoint,
+  resolveSepayAppOrigin,
   syncSepayBankAccounts,
 } from '../../service';
 import { requireSepayAccess, requireSepayFeatureEnabled } from '../../shared';
@@ -17,13 +20,14 @@ interface Params {
 }
 
 function buildIntegrationsRedirectUrl(input: {
+  locale: string;
   reason?: string;
   status: 'connected' | 'error';
   wsId: string;
 }) {
   const url = new URL(
-    `/${encodeURIComponent(input.wsId)}/integrations`,
-    'http://localhost'
+    `${input.locale === defaultLocale ? '' : `/${input.locale}`}/${encodeURIComponent(input.wsId)}/integrations`,
+    resolveSepayAppOrigin()
   );
   url.searchParams.set('sepay', input.status);
 
@@ -39,19 +43,27 @@ function getQueryValue(url: URL, key: string) {
   return value && value.trim().length > 0 ? value.trim() : null;
 }
 
-function clearOauthStateCookie(
-  response: NextResponse,
-  request: NextRequest,
-  wsId: string
-) {
+function clearOauthStateCookie(response: NextResponse, wsId: string) {
+  const callbackPath = new URL(buildSepayOauthCallbackUrl(wsId)).pathname;
+
   response.cookies.set(getSepayOauthStateCookieName(wsId), '', {
     expires: new Date(0),
     httpOnly: true,
     maxAge: 0,
-    path: request.nextUrl.pathname,
+    path: callbackPath,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
   });
+}
+
+function resolveLocaleFromRequest(request: NextRequest) {
+  const localeCookie = request.cookies.get(LOCALE_COOKIE_NAME)?.value;
+
+  if (localeCookie && supportedLocales.includes(localeCookie as 'en' | 'vi')) {
+    return localeCookie;
+  }
+
+  return defaultLocale;
 }
 
 function redirectToIntegrations(input: {
@@ -61,18 +73,16 @@ function redirectToIntegrations(input: {
   wsId: string;
 }) {
   const response = NextResponse.redirect(
-    new URL(
-      buildIntegrationsRedirectUrl({
-        reason: input.reason,
-        status: input.status,
-        wsId: input.wsId,
-      }),
-      input.request.url
-    ),
+    buildIntegrationsRedirectUrl({
+      locale: resolveLocaleFromRequest(input.request),
+      reason: input.reason,
+      status: input.status,
+      wsId: input.wsId,
+    }),
     { status: 302 }
   );
 
-  clearOauthStateCookie(response, input.request, input.wsId);
+  clearOauthStateCookie(response, input.wsId);
   return response;
 }
 
@@ -148,6 +158,8 @@ export async function GET(request: NextRequest, { params }: Params) {
     });
   }
 
+  const connectionUpsertTimestamp = new Date().toISOString();
+
   try {
     const encryptedAccessToken = encryptSepayToken(exchanged.accessToken);
     const encryptedRefreshToken = encryptSepayToken(exchanged.refreshToken);
@@ -160,8 +172,8 @@ export async function GET(request: NextRequest, { params }: Params) {
           access_token_expires_at: exchanged.expiresAt,
           refresh_token_encrypted: encryptedRefreshToken,
           scopes: exchanged.scopes,
-          status: 'active',
-          updated_at: new Date().toISOString(),
+          status: 'error',
+          updated_at: connectionUpsertTimestamp,
           ws_id: access.wsId,
         },
         { onConflict: 'ws_id' }
@@ -189,6 +201,19 @@ export async function GET(request: NextRequest, { params }: Params) {
       sbAdmin: access.sbAdmin,
       wsId: access.wsId,
     });
+
+    const { error: activateConnectionError } = await access.sbAdmin
+      .from('sepay_connections')
+      .update({
+        status: 'active',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('ws_id', access.wsId);
+
+    if (activateConnectionError) {
+      throw activateConnectionError;
+    }
+
     return redirectToIntegrations({
       request,
       status: 'connected',
@@ -196,6 +221,22 @@ export async function GET(request: NextRequest, { params }: Params) {
     });
   } catch (error) {
     console.error('SePay post-connect provisioning failed:', error);
+
+    const { error: markErrorStatus } = await access.sbAdmin
+      .from('sepay_connections')
+      .update({
+        status: 'error',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('ws_id', access.wsId);
+
+    if (markErrorStatus) {
+      console.error(
+        'Failed to persist SePay connection provisioning error status:',
+        markErrorStatus
+      );
+    }
+
     return redirectToIntegrations({
       reason: 'post_connect_provisioning_failed',
       request,

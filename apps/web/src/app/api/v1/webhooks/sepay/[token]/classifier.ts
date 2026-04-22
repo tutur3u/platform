@@ -10,6 +10,7 @@ type SepayAdminClient = TypedSupabaseClient;
 const CATEGORY_CONFIDENCE_THRESHOLD = 0.6;
 const CLASSIFIER_MODEL = 'gemini-3.1-flash-lite-preview';
 const CLASSIFIER_TIMEOUT_MS = 4_000;
+const fallbackCategoryCache = new Map<string, Promise<string>>();
 
 const classifierResultSchema = z.object({
   categoryId: z.guid(),
@@ -25,42 +26,76 @@ async function ensureFallbackCategory(input: {
   const fallbackName = input.isExpense
     ? 'Uncategorized Expense'
     : 'Uncategorized Income';
+  const cacheKey = `${input.wsId}:${input.isExpense ? 'expense' : 'income'}`;
 
-  const { data: existing, error: existingError } = await input.sbAdmin
-    .from('transaction_categories')
-    .select('id')
-    .eq('ws_id', input.wsId)
-    .eq('name', fallbackName)
-    .eq('is_expense', input.isExpense)
-    .order('created_at', { ascending: true })
-    .limit(1);
-
-  if (existingError) {
-    throw new Error('Failed to lookup fallback transaction category');
+  const cached = fallbackCategoryCache.get(cacheKey);
+  if (cached) {
+    return cached;
   }
 
-  const existingCategoryId = existing?.[0]?.id;
-  if (existingCategoryId) {
-    return existingCategoryId;
+  const fallbackCategoryPromise = (async () => {
+    const { data: existing, error: existingError } = await input.sbAdmin
+      .from('transaction_categories')
+      .select('id')
+      .eq('ws_id', input.wsId)
+      .eq('name', fallbackName)
+      .eq('is_expense', input.isExpense)
+      .order('created_at', { ascending: true })
+      .limit(1);
+
+    if (existingError) {
+      throw new Error('Failed to lookup fallback transaction category');
+    }
+
+    const existingCategoryId = existing?.[0]?.id;
+    if (existingCategoryId) {
+      return existingCategoryId;
+    }
+
+    const { data: created, error: createError } = await input.sbAdmin
+      .from('transaction_categories')
+      .insert({
+        color: null,
+        icon: null,
+        is_expense: input.isExpense,
+        name: fallbackName,
+        ws_id: input.wsId,
+      })
+      .select('id')
+      .single();
+
+    if (!createError && created?.id) {
+      return created.id;
+    }
+
+    const { data: retried, error: retryError } = await input.sbAdmin
+      .from('transaction_categories')
+      .select('id')
+      .eq('ws_id', input.wsId)
+      .eq('name', fallbackName)
+      .eq('is_expense', input.isExpense)
+      .order('created_at', { ascending: true })
+      .limit(1);
+
+    if (retryError) {
+      throw new Error('Failed to re-query fallback transaction category');
+    }
+
+    const retriedCategoryId = retried?.[0]?.id;
+    if (!retriedCategoryId) {
+      throw new Error('Failed to create fallback transaction category');
+    }
+
+    return retriedCategoryId;
+  })();
+
+  fallbackCategoryCache.set(cacheKey, fallbackCategoryPromise);
+
+  try {
+    return await fallbackCategoryPromise;
+  } finally {
+    fallbackCategoryCache.delete(cacheKey);
   }
-
-  const { data: created, error: createError } = await input.sbAdmin
-    .from('transaction_categories')
-    .insert({
-      color: null,
-      icon: null,
-      is_expense: input.isExpense,
-      name: fallbackName,
-      ws_id: input.wsId,
-    })
-    .select('id')
-    .single();
-
-  if (createError || !created?.id) {
-    throw new Error('Failed to create fallback transaction category');
-  }
-
-  return created.id;
 }
 
 export async function classifyCategoryId(input: {
@@ -156,10 +191,16 @@ export async function classifyCategoryId(input: {
       (category) => category.id === pickedCategoryId
     );
 
-    if (
-      !existsInCandidates ||
-      pickedConfidence < CATEGORY_CONFIDENCE_THRESHOLD
-    ) {
+    if (!existsInCandidates) {
+      return {
+        categoryId: fallbackCategoryId,
+        confidence: pickedConfidence,
+        reason:
+          'Classifier returned a category outside the candidate list, used fallback category.',
+      };
+    }
+
+    if (pickedConfidence < CATEGORY_CONFIDENCE_THRESHOLD) {
       return {
         categoryId: fallbackCategoryId,
         confidence: pickedConfidence,
