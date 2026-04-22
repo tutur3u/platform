@@ -2,8 +2,7 @@
  * Unit tests for OTP Abuse Protection System
  */
 
-import { beforeEach } from 'node:test';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ABUSE_THRESHOLDS,
   BLOCK_DURATIONS,
