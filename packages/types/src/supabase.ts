@@ -21744,6 +21744,7 @@ export type Database = {
           archived: boolean;
           created_at: string | null;
           creator_id: string | null;
+          description: string | null;
           ending_date: string | null;
           id: string;
           is_guest: boolean | null;
@@ -21757,6 +21758,7 @@ export type Database = {
           archived?: boolean;
           created_at?: string | null;
           creator_id?: string | null;
+          description?: string | null;
           ending_date?: string | null;
           id?: string;
           is_guest?: boolean | null;
@@ -21770,6 +21772,7 @@ export type Database = {
           archived?: boolean;
           created_at?: string | null;
           creator_id?: string | null;
+          description?: string | null;
           ending_date?: string | null;
           id?: string;
           is_guest?: boolean | null;
