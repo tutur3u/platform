@@ -5,7 +5,6 @@ import { NextResponse } from 'next/server';
 import { extractIPFromRequest, isIPBlockedEdge } from './abuse-protection/edge';
 import { getUpstashRestRedisClient } from './upstash-rest';
 
-const isDev = process.env.NODE_ENV !== 'production';
 const MAX_PAYLOAD_SIZE = 200 * 1024; // 200KB
 
 export type RateLimitWindow = 'minute' | 'hour' | 'day';
@@ -271,7 +270,6 @@ export async function guardApiProxyRequest(
   ];
 
   if (
-    !isDev &&
     !isTrustedProxyBypassRequest(
       req.nextUrl.pathname,
       req.headers,

@@ -11,32 +11,6 @@ import { REDIS_KEYS } from './constants';
 import type { BlockInfo } from './types';
 
 /**
- * Lazy-loaded Redis client for Edge Runtime.
- * Uses @upstash/redis REST API (no Node.js dependencies).
- * Typed with a minimal interface to avoid class compatibility issues across
- * different @upstash/redis resolution paths.
- */
-interface EdgeRedisClient {
-  get: <T = unknown>(key: string) => Promise<T | null>;
-}
-
-let edgeRedisClient: EdgeRedisClient | null = null;
-let edgeRedisInitialized = false;
-
-async function getEdgeRedisClient() {
-  if (edgeRedisInitialized) return edgeRedisClient;
-
-  try {
-    edgeRedisClient = await getUpstashRestRedisClient();
-    edgeRedisInitialized = true;
-    return edgeRedisClient;
-  } catch {
-    edgeRedisInitialized = true;
-    return null;
-  }
-}
-
-/**
  * Check if an IP is blocked using Redis cache only (no DB fallback).
  * Designed for Edge Runtime where speed > completeness.
  * The serverless layer provides full DB-backed check as backup.
@@ -45,8 +19,7 @@ export async function isIPBlockedEdge(
   ipAddress: string
 ): Promise<BlockInfo | null> {
   try {
-    const redis = await getEdgeRedisClient();
-    if (!redis) return null;
+    const redis = getUpstashRestRedisClient();
 
     const cached = await redis.get<string>(REDIS_KEYS.IP_BLOCKED(ipAddress));
     if (!cached) return null;
