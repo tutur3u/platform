@@ -349,11 +349,13 @@ function validateDockerProdCompose(composeContent) {
     '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',
     '      required: true',
     '    - PLATFORM_BLUE_GREEN_COLOR',
+    '    - PLATFORM_BLUE_GREEN_CONTROL_DIR=/app/runtime/docker-web-control',
     '    - PLATFORM_BLUE_GREEN_MONITORING_DIR=/app/runtime/docker-web',
     '    - PLATFORM_DEPLOYMENT_STAMP',
     '    - SUPABASE_SERVER_URL',
     '    - UPSTASH_REDIS_REST_TOKEN',
     '    - UPSTASH_REDIS_REST_URL',
+    '    - ./tmp/docker-web/watch/control:/app/runtime/docker-web-control',
     '    - ./tmp/docker-web:/app/runtime/docker-web:ro',
     '      SRH_TOKEN: ' +
       '${' +

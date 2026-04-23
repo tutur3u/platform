@@ -24,15 +24,18 @@ import {
   RequestVelocityChart,
 } from './blue-green-monitoring-charts';
 import {
+  RecentRequestsPanel,
+  WatcherLogsPanel,
+} from './blue-green-monitoring-explorers';
+import {
   DeploymentLedger,
   EventStreamPanel,
-  RecentRequestsPanel,
   RolloutStagePanel,
   RuntimeTopologyPanel,
   TrafficPeriodsPanel,
   WatcherCadencePanel,
-  WatcherLogsPanel,
 } from './blue-green-monitoring-panels';
+import { BlueGreenMonitoringRolloutControls } from './blue-green-monitoring-rollout-controls';
 import {
   formatBytes,
   formatCompactNumber,
@@ -272,6 +275,8 @@ export function BlueGreenMonitoringClient() {
         deployments={snapshot.deployments}
         watcher={snapshot.watcher}
       />
+
+      <BlueGreenMonitoringRolloutControls snapshot={snapshot} />
 
       <div className="grid gap-6 2xl:grid-cols-[1.05fr_0.95fr]">
         <TrafficPeriodsPanel analytics={snapshot.analytics} />

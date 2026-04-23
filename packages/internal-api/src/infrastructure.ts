@@ -208,6 +208,16 @@ export interface BlueGreenMonitoringSnapshot {
   };
 }
 
+export interface RequestBlueGreenInstantRolloutResponse {
+  message: string;
+  request: {
+    kind: 'sync-standby';
+    requestedAt: string;
+    requestedBy: string;
+    requestedByEmail: string | null;
+  };
+}
+
 export interface SendInfrastructurePushTestPayload {
   appFlavor: InfrastructurePushAppFlavor;
   body: string;
@@ -275,6 +285,19 @@ export async function getBlueGreenMonitoringSnapshot(
     '/api/v1/infrastructure/monitoring/blue-green',
     {
       cache: 'no-store',
+    }
+  );
+}
+
+export async function requestBlueGreenInstantRollout(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<RequestBlueGreenInstantRolloutResponse>(
+    '/api/v1/infrastructure/monitoring/blue-green/instant-rollout',
+    {
+      cache: 'no-store',
+      method: 'POST',
     }
   );
 }

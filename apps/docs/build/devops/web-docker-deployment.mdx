@@ -449,12 +449,27 @@ Dashboard details:
   `/{ROOT_WORKSPACE_ID}/infrastructure/monitoring` reads the same watcher
   status snapshot and renders it as a Next.js control room with rollout,
   request-rate, container-resource, and event-feed views.
+- The monitoring dashboard now exposes paginated request and watcher-log
+  explorers. Route filters come from normalized request paths, the raw request
+  URI still surfaces query signatures, and `?_rsc=*` requests are called out so
+  React Server Component traffic is inspectable separately from document hits.
 - Production `web`, `web-blue`, and `web-green` containers mount
   `./tmp/docker-web` read-only at `/app/runtime/docker-web` and use
   `PLATFORM_BLUE_GREEN_MONITORING_DIR` to find the watcher snapshot. Keep that
   mount/env pair in sync if the runtime path changes, or the dashboard will
   degrade to an empty offline state even while blue/green deployments still
   work.
+- Production `web`, `web-blue`, and `web-green` also mount the narrower
+  `./tmp/docker-web/watch/control` path read-write at
+  `/app/runtime/docker-web-control` via `PLATFORM_BLUE_GREEN_CONTROL_DIR`.
+  Keep operator command files in that control directory so the broader watcher
+  runtime and telemetry mount can stay read-only.
+- The monitoring dashboard's "Sync Standby Now" action writes
+  `tmp/docker-web/watch/control/blue-green-instant-rollout.request.json`. The
+  watcher consumes that file on its next poll, clears it after a success,
+  failure, or no-op, and uses it to rebuild the standby color immediately so
+  blue and green can converge on the same commit without waiting for the stale
+  standby window.
 - The watcher image must also include both the Docker Compose and Buildx CLI
   plugins (`docker-cli-compose` and `docker-cli-buildx` on Alpine) because the
   rollout handoff shells into `docker compose ...`, and capped production

@@ -56,6 +56,10 @@ const {
   createWatcherLogEntry,
   readWatcherLogEntries,
 } = require('./watch-blue-green/logs.js');
+const {
+  clearInstantRolloutRequest,
+  readInstantRolloutRequest,
+} = require('./watch-blue-green/control.js');
 const DEFAULT_INTERVAL_MS = 1_000;
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
 const DEFAULT_GIT_FAILURE_BACKOFF_MS = 60_000;
@@ -1688,6 +1692,16 @@ function getStandbyRefreshCandidate(
   };
 }
 
+function formatInstantRolloutRequester(request) {
+  if (!request) {
+    return 'an operator request';
+  }
+
+  return (
+    request.requestedByEmail || request.requestedBy || 'an operator request'
+  );
+}
+
 async function getRevision(ref, { env, runCommand: run = runCommand } = {}) {
   return gitStdout(['rev-parse', ref], { env, runCommand: run });
 }
@@ -2787,20 +2801,50 @@ async function runDeployWatchIteration(
         latestCommit,
         status: 'up-to-date',
       });
+      const instantRolloutRequest = readInstantRolloutRequest(paths, fsImpl);
       const standbyRefreshCandidate = getStandbyRefreshCandidate(
         runtimeSnapshot,
         latestCommit,
         {
           now: checkedAt,
+          refreshAfterMs: instantRolloutRequest ? 0 : undefined,
         }
       );
 
       if (!standbyRefreshCandidate) {
+        if (instantRolloutRequest) {
+          clearInstantRolloutRequest({
+            fsImpl,
+            paths,
+          });
+
+          const standbyDeployment = getRuntimeDeployment(
+            runtimeSnapshot.deployments,
+            'standby'
+          );
+
+          if (
+            standbyDeployment?.commitHash &&
+            latestCommit.hash &&
+            standbyDeployment.commitHash === latestCommit.hash
+          ) {
+            log.info?.(
+              `Ignoring instant standby sync from ${formatInstantRolloutRequester(instantRolloutRequest)} because the standby deployment already matches ${latestCommit.shortHash}.`
+            );
+          } else {
+            log.warn?.(
+              `Ignoring instant standby sync from ${formatInstantRolloutRequester(instantRolloutRequest)} because the blue/green runtime is not ready for a standby refresh.`
+            );
+          }
+        }
+
         return runtimeSnapshot;
       }
 
       log.info?.(
-        `Refreshing standby ${standbyRefreshCandidate.standbyColor} to ${latestCommit.shortHash} after the 15 minute stale window.`
+        instantRolloutRequest
+          ? `Refreshing standby ${standbyRefreshCandidate.standbyColor} to ${latestCommit.shortHash} immediately for ${formatInstantRolloutRequester(instantRolloutRequest)}.`
+          : `Refreshing standby ${standbyRefreshCandidate.standbyColor} to ${latestCommit.shortHash} after the 15 minute stale window.`
       );
 
       const refreshStartedAt = now();
@@ -2854,6 +2898,13 @@ async function runDeployWatchIteration(
           `Standby ${standbyRefreshCandidate.standbyColor} now matches ${latestCommit.shortHash}.`
         );
 
+        if (instantRolloutRequest) {
+          clearInstantRolloutRequest({
+            fsImpl,
+            paths,
+          });
+        }
+
         return attachRuntime(
           {
             checkedAt,
@@ -2885,6 +2936,13 @@ async function runDeployWatchIteration(
         log.error?.(
           `Standby ${standbyRefreshCandidate.standbyColor} refresh failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
         );
+
+        if (instantRolloutRequest) {
+          clearInstantRolloutRequest({
+            fsImpl,
+            paths,
+          });
+        }
 
         return attachRuntime(
           {
@@ -3687,6 +3745,7 @@ module.exports = {
   acquireWatchLock,
   appendDeploymentHistory,
   buildDashboardView,
+  clearInstantRolloutRequest,
   clearWatchStatus,
   clearContainerManagedWatcherState,
   clearPendingDeployRequest,
@@ -3724,6 +3783,7 @@ module.exports = {
   prependPendingDeployment,
   pullTrackedBranch,
   readDeploymentHistory,
+  readInstantRolloutRequest,
   readPendingDeployRequest,
   readWatchArgsFile,
   readWatchLock,

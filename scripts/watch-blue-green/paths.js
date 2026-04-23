@@ -28,6 +28,11 @@ const WATCH_LOG_FILE = path.join(
   WATCH_RUNTIME_DIR,
   'blue-green-auto-deploy.logs.json'
 );
+const WATCH_CONTROL_DIR = path.join(WATCH_RUNTIME_DIR, 'control');
+const WATCH_INSTANT_ROLLOUT_REQUEST_FILE = path.join(
+  WATCH_CONTROL_DIR,
+  'blue-green-instant-rollout.request.json'
+);
 const WATCH_REQUEST_LOG_DIR = path.join(
   WATCH_RUNTIME_DIR,
   'blue-green-request-logs'
@@ -47,7 +52,13 @@ function getWatchPaths(rootDir = ROOT_DIR) {
   return {
     argsFile: path.join(runtimeDir, 'blue-green-auto-deploy.args.json'),
     blueGreen: getBlueGreenPaths(rootDir),
+    controlDir: path.join(runtimeDir, 'control'),
     historyFile: path.join(runtimeDir, 'blue-green-auto-deploy.history.json'),
+    instantRolloutRequestFile: path.join(
+      runtimeDir,
+      'control',
+      'blue-green-instant-rollout.request.json'
+    ),
     lockFile: path.join(runtimeDir, 'blue-green-auto-deploy.lock'),
     logFile: path.join(runtimeDir, 'blue-green-auto-deploy.logs.json'),
     pendingDeployFile: path.join(
@@ -71,7 +82,9 @@ function getWatchPaths(rootDir = ROOT_DIR) {
 module.exports = {
   ROOT_DIR,
   WATCH_ARGS_FILE,
+  WATCH_CONTROL_DIR,
   WATCH_HISTORY_FILE,
+  WATCH_INSTANT_ROLLOUT_REQUEST_FILE,
   WATCH_LOCK_FILE,
   WATCH_LOG_FILE,
   WATCH_PENDING_DEPLOY_FILE,
