@@ -2,11 +2,7 @@ import type { WorkspaceRoleDetails } from '@tuturuuu/internal-api';
 import type { InternalApiEnhancedWorkspaceMember } from '@tuturuuu/types';
 
 export type CmsMembersSectionProps = {
-  boundProjectName?: string | null;
-  canManageMembers: boolean;
-  canManageRoles: boolean;
-  currentUserEmail?: string | null;
-  workspaceId: string;
+  workspaceSlug: string;
 };
 
 export type CmsMemberTab = 'all' | 'invited' | 'joined' | 'roles';

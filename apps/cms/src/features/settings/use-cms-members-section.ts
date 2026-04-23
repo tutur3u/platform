@@ -10,6 +10,7 @@ import {
   addRoleMembers,
   deleteWorkspaceRole,
   getWorkspaceDefaultRole,
+  getWorkspaceExternalProjectMembersContext,
   getWorkspaceRole,
   inviteWorkspaceMembers,
   listEnhancedWorkspaceMembers,
@@ -34,13 +35,9 @@ import {
 } from './cms-members-shared';
 
 export function useCmsMembersSection({
-  canManageRoles,
-  currentUserEmail,
-  workspaceId,
+  workspaceSlug,
 }: {
-  canManageRoles: boolean;
-  currentUserEmail?: string | null;
-  workspaceId: string;
+  workspaceSlug: string;
 }) {
   const queryClient = useQueryClient();
   const t = useTranslations();
@@ -54,13 +51,24 @@ export function useCmsMembersSection({
     null
   );
 
+  const contextQuery = useQuery({
+    queryFn: () => getWorkspaceExternalProjectMembersContext(workspaceSlug),
+    queryKey: ['cms-members-context', workspaceSlug],
+    staleTime: 30_000,
+  });
+
+  const workspaceId = contextQuery.data?.workspaceId;
+  const canManageMembers = contextQuery.data?.canManageMembers ?? false;
+  const canManageRoles = contextQuery.data?.canManageRoles ?? false;
+  const currentUserEmail = contextQuery.data?.currentUserEmail ?? null;
+
   const permissionUser = currentUserEmail
     ? ({ email: currentUserEmail } as SupabaseUser)
     : null;
   const permissionCatalog = permissionGroups({
     t: t as (key: string) => string,
     user: permissionUser,
-    wsId: workspaceId,
+    wsId: workspaceId ?? workspaceSlug,
   });
   const permissionTitles = new Map<string, string>(
     permissionCatalog.flatMap((group) =>
@@ -69,31 +77,32 @@ export function useCmsMembersSection({
   );
   const permissionCount = totalPermissions({
     user: permissionUser,
-    wsId: workspaceId,
+    wsId: workspaceId ?? workspaceSlug,
   });
 
   const parsedInviteEmails = parseInviteEmails(inviteEmails);
 
   const membersQuery = useQuery({
-    queryFn: () => listEnhancedWorkspaceMembers(workspaceId),
+    enabled: Boolean(workspaceId),
+    queryFn: () => listEnhancedWorkspaceMembers(workspaceId!),
     queryKey: ['cms-members', workspaceId],
     staleTime: 30_000,
   });
   const rolesQuery = useQuery({
-    enabled: canManageRoles || activeTab === 'roles',
-    queryFn: () => listWorkspaceRoles(workspaceId),
+    enabled: Boolean(workspaceId) && (canManageRoles || activeTab === 'roles'),
+    queryFn: () => listWorkspaceRoles(workspaceId!),
     queryKey: ['cms-member-roles', workspaceId],
     staleTime: 30_000,
   });
   const defaultRoleQuery = useQuery({
-    enabled: activeTab === 'roles' || canManageRoles,
-    queryFn: () => getWorkspaceDefaultRole(workspaceId),
+    enabled: Boolean(workspaceId) && (activeTab === 'roles' || canManageRoles),
+    queryFn: () => getWorkspaceDefaultRole(workspaceId!),
     queryKey: ['cms-default-role', workspaceId],
     staleTime: 30_000,
   });
   const roleDetailQueries = useQueries({
     queries: (rolesQuery.data ?? []).map((role) => ({
-      queryFn: () => getWorkspaceRole(workspaceId, role.id),
+      queryFn: () => getWorkspaceRole(workspaceId!, role.id),
       queryKey: ['cms-member-role', workspaceId, role.id],
       staleTime: 30_000,
     })),
@@ -114,7 +123,7 @@ export function useCmsMembersSection({
 
   const inviteMutation = useMutation({
     mutationFn: async () =>
-      inviteWorkspaceMembers(workspaceId, parseInviteEmails(inviteEmails)),
+      inviteWorkspaceMembers(workspaceId!, parseInviteEmails(inviteEmails)),
     onError: (error) =>
       toastError(t, error instanceof Error ? error.message : t('common.error')),
     onSuccess: (result) => {
@@ -128,7 +137,7 @@ export function useCmsMembersSection({
     mutationFn: async (payload: {
       email?: string | null;
       userId?: string | null;
-    }) => removeWorkspaceMember(workspaceId, payload),
+    }) => removeWorkspaceMember(workspaceId!, payload),
     onError: (error) =>
       toastError(t, error instanceof Error ? error.message : t('common.error')),
     onSuccess: () => {
@@ -144,10 +153,10 @@ export function useCmsMembersSection({
       userId: string;
     }) => {
       if (payload.action === 'add') {
-        return addRoleMembers(workspaceId, payload.roleId, [payload.userId]);
+        return addRoleMembers(workspaceId!, payload.roleId, [payload.userId]);
       }
 
-      return removeRoleMember(workspaceId, payload.roleId, payload.userId);
+      return removeRoleMember(workspaceId!, payload.roleId, payload.userId);
     },
     onError: (error) =>
       toastError(t, error instanceof Error ? error.message : t('common.error')),
@@ -159,7 +168,7 @@ export function useCmsMembersSection({
 
   const deleteRoleMutation = useMutation({
     mutationFn: async (roleId: string) =>
-      deleteWorkspaceRole(workspaceId, roleId),
+      deleteWorkspaceRole(workspaceId!, roleId),
     onError: (error) =>
       toastError(t, error instanceof Error ? error.message : t('common.error')),
     onSuccess: () => {
@@ -240,6 +249,11 @@ export function useCmsMembersSection({
 
   return {
     activeTab,
+    boundProjectName: contextQuery.data?.boundProjectName ?? null,
+    canManageMembers,
+    canManageRoles,
+    contextQuery,
+    currentUserEmail,
     defaultRoleQuery,
     deleteRoleMutation,
     filteredRoles,

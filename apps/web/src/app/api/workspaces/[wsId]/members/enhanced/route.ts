@@ -39,7 +39,8 @@ export async function GET(request: NextRequest, { params }: Params) {
   const permissions = await getPermissions({ wsId });
   if (
     !permissions ||
-    permissions.withoutPermission('manage_workspace_members')
+    (permissions.withoutPermission('manage_workspace_members') &&
+      permissions.withoutPermission('manage_workspace_roles'))
   ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }

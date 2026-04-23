@@ -340,6 +340,7 @@ export {
 } from './workspace-user-audit';
 export {
   getWorkspace,
+  getWorkspaceExternalProjectMembersContext,
   inviteWorkspaceMember,
   inviteWorkspaceMembers,
   listCmsWorkspaces,

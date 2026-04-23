@@ -37,6 +37,25 @@ export async function getWorkspace(
   );
 }
 
+export async function getWorkspaceExternalProjectMembersContext(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{
+    boundProjectName: null | string;
+    canManageMembers: boolean;
+    canManageRoles: boolean;
+    currentUserEmail: null | string;
+    workspaceId: string;
+  }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/members`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function listWorkspaceMembers(
   workspaceId: string,
   options?: InternalApiClientOptions
