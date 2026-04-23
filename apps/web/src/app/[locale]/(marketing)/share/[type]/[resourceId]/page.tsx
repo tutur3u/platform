@@ -35,6 +35,10 @@ export default async function SharePage({ params }: Props) {
   if (!sharedCourse) notFound();
 
   return (
-    <CourseViewer group={sharedCourse.group} modules={sharedCourse.modules} />
+    <CourseViewer
+      group={sharedCourse.group}
+      modules={sharedCourse.modules}
+      resourceId={resourceId}
+    />
   );
 }

@@ -1,96 +1,36 @@
 'use client';
 
-import {
-  BookOpenText,
-  BookText,
-  ChevronRight,
-  Goal,
-  ListTodo,
-  SwatchBook,
-  Youtube,
-} from '@tuturuuu/icons';
+import { BookOpenText, ChevronRight } from '@tuturuuu/icons';
 import type { SharedCourseGroup, SharedCourseModule } from '@tuturuuu/types';
-import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Badge } from '@tuturuuu/ui/badge';
-import { YoutubeEmbed } from '@tuturuuu/ui/custom/education/modules/youtube/embed';
-import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
-import { useState } from 'react';
-import { extractYoutubeId } from '@/utils/url-helper';
 
 interface CourseViewerProps {
   group: SharedCourseGroup;
   modules: SharedCourseModule[];
+  resourceId?: string;
 }
 
-interface ModuleSectionProps {
-  content?: ReactNode;
-  icon: ReactNode;
-  rawContent?: JSONContent | null;
-  title: ReactNode;
-}
-
-function hasVisibleRichContent(content?: JSONContent | null) {
-  return (content?.content ?? []).some(
-    (node) => node.type !== 'paragraph' || (node.content?.length ?? 0) > 0
-  );
-}
-
-function ModuleSection({
-  title,
-  icon,
-  content,
-  rawContent,
-}: ModuleSectionProps) {
-  const isContentEmpty = rawContent
-    ? !hasVisibleRichContent(rawContent)
-    : !content;
-
-  if (isContentEmpty) return null;
-
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/70 p-4 shadow-sm">
-      <div className="flex items-center gap-2 font-semibold text-base">
-        <span className="text-foreground/60">{icon}</span>
-        <span>{title}</span>
-      </div>
-      <div className="overflow-hidden text-foreground/80">{content}</div>
-    </div>
-  );
-}
-
-export function CourseViewer({ group, modules }: CourseViewerProps) {
+export function CourseViewer({
+  group,
+  modules,
+  resourceId,
+}: CourseViewerProps) {
   const t = useTranslations();
-  const [openModuleIds, setOpenModuleIds] = useState(() => {
-    const firstModule = modules[0];
-    return firstModule ? new Set([firstModule.id]) : new Set<string>();
-  });
-
-  const anyOpen = openModuleIds.size > 0;
-  const allOpen = openModuleIds.size === modules.length;
-
-  const toggleAll = () => {
-    if (allOpen || anyOpen) {
-      setOpenModuleIds(new Set());
-      return;
-    }
-
-    setOpenModuleIds(new Set(modules.map((module) => module.id)));
-  };
-
-  const toggleModule = (moduleId: string) => {
-    setOpenModuleIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(moduleId)) {
-        next.delete(moduleId);
-      } else {
-        next.add(moduleId);
-      }
-      return next;
-    });
-  };
+  const params = useParams<{
+    locale?: string;
+    resourceId?: string;
+    type?: string;
+  }>();
+  const courseId = params?.resourceId ?? resourceId;
+  const basePath = courseId
+    ? `/${params.locale ?? ''}/share/${params.type ?? 'course'}/${courseId}`
+        .replace('//', '/')
+        .replace(/\/$/, '')
+    : '/share/course';
 
   if (modules.length === 0) {
     return (
@@ -138,7 +78,7 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
 
             <div className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm">
               <div className="flex items-center justify-between border-border/40 border-b pb-3">
-                <div className="font-semibold text-sm text-foreground/80">
+                <div className="font-semibold text-foreground/80 text-sm">
                   {t('share-course.course_outline')}
                 </div>
                 <span className="text-foreground/50 text-xs">
@@ -147,18 +87,15 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
               </div>
               <div className="mt-3 flex max-h-[50vh] flex-col gap-2 overflow-y-auto pr-1">
                 {modules.map((module, index) => (
-                  <a
+                  <Link
                     key={module.id}
-                    href={`#module-${module.id}`}
-                    onClick={() => {
-                      setOpenModuleIds((prev) => new Set(prev).add(module.id));
-                    }}
+                    href={`${basePath}/modules/${module.id}`}
                     className="group flex items-start gap-3 rounded-xl border border-transparent px-2.5 py-2 text-left transition hover:border-border/60 hover:bg-muted/40"
                   >
-                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-foreground/70">
+                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-[11px] text-foreground/70">
                       {index + 1}
                     </div>
-                    <div className="flex-1 text-sm text-foreground/80">
+                    <div className="flex-1 text-foreground/80 text-sm">
                       <div className="font-medium text-foreground group-hover:text-foreground">
                         {module.name}
                       </div>
@@ -181,7 +118,7 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
                         )}
                       </div>
                     </div>
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -201,176 +138,66 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
                   {t('share-course.select_module')}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={toggleAll}
-                className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-4 py-2 text-xs font-semibold text-foreground/70 transition hover:bg-muted/60"
-              >
-                {anyOpen
-                  ? t('share-course.collapse_all')
-                  : t('share-course.expand_all')}
-                <ChevronRight
-                  className={cn(
-                    'h-3.5 w-3.5 transition',
-                    anyOpen && 'rotate-90'
-                  )}
-                />
-              </button>
             </div>
 
             <div className="flex flex-col gap-4">
-              {modules.map((module, index) => {
-                const isOpen = openModuleIds.has(module.id);
-
-                return (
-                  <section
-                    key={module.id}
-                    id={`module-${module.id}`}
-                    className="rounded-2xl border border-border/60 bg-background/80 shadow-sm"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => toggleModule(module.id)}
-                      aria-expanded={isOpen}
-                      aria-controls={`module-panel-${module.id}`}
-                      className="flex w-full items-center justify-between gap-4 rounded-2xl px-5 py-4 text-left transition hover:bg-muted/40"
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted text-sm font-semibold text-foreground/70">
-                          {index + 1}
+              {modules.map((module, index) => (
+                <Link
+                  key={module.id}
+                  href={`${basePath}/modules/${module.id}`}
+                  className="group rounded-2xl border border-border/60 bg-background/80 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-border/80 hover:bg-background"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted font-semibold text-foreground/70 text-sm">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-foreground text-lg">
+                          {module.name}
                         </div>
-                        <div>
-                          <div className="font-semibold text-lg text-foreground">
-                            {module.name}
-                          </div>
-                          <div className="mt-1 flex flex-wrap gap-2">
-                            {module.quizzes > 0 && (
-                              <Badge
-                                aria-label={t('share-course.quiz_label')}
-                                variant="outline"
-                                className="h-5 rounded-sm border-foreground/10 px-1.5 text-[10px] text-foreground/60"
-                              >
-                                {t('share-course.quiz_short')} {module.quizzes}
-                              </Badge>
-                            )}
-                            {module.quizSets > 0 && (
-                              <Badge
-                                aria-label={t('share-course.quiz_set_label')}
-                                variant="outline"
-                                className="h-5 rounded-sm border-foreground/10 px-1.5 text-[10px] text-foreground/60"
-                              >
-                                {t('share-course.quiz_set_short')}{' '}
-                                {module.quizSets}
-                              </Badge>
-                            )}
-                            {module.flashcards > 0 && (
-                              <Badge
-                                aria-label={t('share-course.flashcard_label')}
-                                variant="outline"
-                                className="h-5 rounded-sm border-foreground/10 px-1.5 text-[10px] text-foreground/60"
-                              >
-                                {t('share-course.flashcard_short')}{' '}
-                                {module.flashcards}
-                              </Badge>
-                            )}
-                          </div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {module.quizzes > 0 && (
+                            <Badge
+                              aria-label={t('share-course.quiz_label')}
+                              variant="outline"
+                              className="h-5 rounded-sm border-foreground/10 px-1.5 text-[10px] text-foreground/60"
+                            >
+                              {t('share-course.quiz_short')} {module.quizzes}
+                            </Badge>
+                          )}
+                          {module.quizSets > 0 && (
+                            <Badge
+                              aria-label={t('share-course.quiz_set_label')}
+                              variant="outline"
+                              className="h-5 rounded-sm border-foreground/10 px-1.5 text-[10px] text-foreground/60"
+                            >
+                              {t('share-course.quiz_set_short')}{' '}
+                              {module.quizSets}
+                            </Badge>
+                          )}
+                          {module.flashcards > 0 && (
+                            <Badge
+                              aria-label={t('share-course.flashcard_label')}
+                              variant="outline"
+                              className="h-5 rounded-sm border-foreground/10 px-1.5 text-[10px] text-foreground/60"
+                            >
+                              {t('share-course.flashcard_short')}{' '}
+                              {module.flashcards}
+                            </Badge>
+                          )}
                         </div>
                       </div>
+                    </div>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background px-3 py-1 font-semibold text-foreground/60 text-xs transition group-hover:text-foreground/80">
+                      {t('share-course.view_module')}
                       <ChevronRight
-                        className={cn(
-                          'h-5 w-5 text-foreground/40 transition',
-                          isOpen && 'rotate-90'
-                        )}
+                        className={cn('h-3.5 w-3.5 text-foreground/40')}
                       />
-                    </button>
-
-                    {isOpen && (
-                      <div
-                        id={`module-panel-${module.id}`}
-                        className="grid gap-5 border-border/40 border-t px-5 pb-6 pt-5"
-                      >
-                        {module.content && (
-                          <ModuleSection
-                            title={t('course-details-tabs.module_content')}
-                            icon={<Goal className="h-4 w-4" />}
-                            rawContent={module.content}
-                            content={
-                              <div className="prose prose-sm dark:prose-invert max-w-none">
-                                <RichTextEditor
-                                  content={module.content as JSONContent}
-                                  readOnly
-                                />
-                              </div>
-                            }
-                          />
-                        )}
-
-                        {(module.youtube_links ?? []).length > 0 && (
-                          <ModuleSection
-                            title={t('course-details-tabs.youtube_links')}
-                            icon={<Youtube className="h-4 w-4" />}
-                            content={
-                              <div className="grid gap-4">
-                                {(module.youtube_links ?? []).map(
-                                  (link: string) => (
-                                    <YoutubeEmbed
-                                      key={link}
-                                      embedId={extractYoutubeId(link)}
-                                    />
-                                  )
-                                )}
-                              </div>
-                            }
-                          />
-                        )}
-
-                        {module.quizzes > 0 && (
-                          <ModuleSection
-                            title={t('ws-quizzes.plural')}
-                            icon={<ListTodo className="h-4 w-4" />}
-                            content={
-                              <p className="text-foreground/60 text-sm">
-                                {t('share-course.quiz_count', {
-                                  count: module.quizzes,
-                                })}
-                              </p>
-                            }
-                          />
-                        )}
-
-                        {module.flashcards > 0 && (
-                          <ModuleSection
-                            title={t('ws-flashcards.plural')}
-                            icon={<SwatchBook className="h-4 w-4" />}
-                            content={
-                              <p className="text-foreground/60 text-sm">
-                                {t('share-course.flashcard_count', {
-                                  count: module.flashcards,
-                                })}
-                              </p>
-                            }
-                          />
-                        )}
-
-                        {module.extra_content && (
-                          <ModuleSection
-                            title={t('course-details-tabs.extra_reading')}
-                            icon={<BookText className="h-4 w-4" />}
-                            content={
-                              <div className="prose prose-sm dark:prose-invert max-w-none">
-                                <RichTextEditor
-                                  content={module.extra_content as JSONContent}
-                                  readOnly
-                                />
-                              </div>
-                            }
-                          />
-                        )}
-                      </div>
-                    )}
-                  </section>
-                );
-              })}
+                    </div>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
         </div>
