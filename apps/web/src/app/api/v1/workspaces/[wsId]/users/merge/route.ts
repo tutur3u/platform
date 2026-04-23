@@ -156,7 +156,7 @@ export async function POST(req: Request, { params }: Params) {
     const wsId = await normalizeWorkspaceId(rawWsId);
 
     // Verify the caller is a workspace member
-    const supabaseAuth = await createClient();
+    const supabaseAuth = await createClient(req);
     const {
       data: { user },
     } = await supabaseAuth.auth.getUser();
@@ -185,7 +185,7 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Check permissions - require both delete_users and update_users
-    const permissions = await getPermissions({ wsId });
+    const permissions = await getPermissions({ wsId, request: req });
     if (!permissions) {
       return Response.json({ error: 'Not found' }, { status: 404 });
     }

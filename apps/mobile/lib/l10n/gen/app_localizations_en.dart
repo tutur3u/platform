@@ -5889,4 +5889,331 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsWorkspaceSecretsProviderR2Description => 'An S3-compatible backend for external Drive storage.';
+
+  @override
+  String get commonActive => 'Active';
+
+  @override
+  String get commonAll => 'All';
+
+  @override
+  String get commonApply => 'Apply';
+
+  @override
+  String get commonArchived => 'Archived';
+
+  @override
+  String get commonBackfilled => 'Backfilled';
+
+  @override
+  String get commonCopy => 'Copy';
+
+  @override
+  String get commonCreate => 'Create';
+
+  @override
+  String get commonCreated => 'Created';
+
+  @override
+  String get commonDelete => 'Delete';
+
+  @override
+  String get commonDeleted => 'Deleted';
+
+  @override
+  String get commonEdit => 'Edit';
+
+  @override
+  String get commonFilters => 'Filters';
+
+  @override
+  String get commonImport => 'Import';
+
+  @override
+  String get commonLinked => 'Linked';
+
+  @override
+  String get commonLive => 'Live';
+
+  @override
+  String get commonLoadMore => 'Load more';
+
+  @override
+  String get commonOpen => 'Open';
+
+  @override
+  String get commonReactivated => 'Reactivated';
+
+  @override
+  String get commonRename => 'Rename';
+
+  @override
+  String get commonRequired => 'Required';
+
+  @override
+  String get commonSave => 'Save';
+
+  @override
+  String get commonSelectDate => 'Select a date';
+
+  @override
+  String get commonShare => 'Share';
+
+  @override
+  String get commonUpdated => 'Updated';
+
+  @override
+  String get commonVirtual => 'Virtual';
+
+  @override
+  String get commonWithGroups => 'With groups';
+
+  @override
+  String get commonWithoutGroups => 'Without groups';
+
+  @override
+  String get crmAddFeedback => 'Add feedback';
+
+  @override
+  String get crmAddress => 'Address';
+
+  @override
+  String get crmArchived => 'Archived';
+
+  @override
+  String get crmArchivedUntil => 'Archived until';
+
+  @override
+  String get crmAuditActor => 'Actor';
+
+  @override
+  String get crmAuditAffectedUser => 'Affected user';
+
+  @override
+  String get crmAuditEvent => 'Audit event';
+
+  @override
+  String get crmAuditRange => 'Date range';
+
+  @override
+  String get crmAuditSource => 'Source';
+
+  @override
+  String get crmAuditTab => 'Audit log';
+
+  @override
+  String get crmBirthday => 'Birthday';
+
+  @override
+  String get crmCreateUser => 'Create user';
+
+  @override
+  String get crmDeleteUserConfirm => 'Delete this user?';
+
+  @override
+  String get crmDeleteUserSuccess => 'User deleted.';
+
+  @override
+  String get crmDetectDuplicates => 'Detect duplicates';
+
+  @override
+  String get crmDisplayName => 'Display name';
+
+  @override
+  String crmDuplicateResults(int count) {
+    return '$count duplicate clusters found';
+  }
+
+  @override
+  String get crmEmptyAudit => 'No audit events found';
+
+  @override
+  String get crmEmptyUsers => 'No users found';
+
+  @override
+  String get crmExcludedGroups => 'Excluded groups';
+
+  @override
+  String get crmFeedback => 'Feedback';
+
+  @override
+  String get crmFeedbackAction => 'Feedback';
+
+  @override
+  String crmFeedbackFor(String name) {
+    return 'Feedback for $name';
+  }
+
+  @override
+  String get crmFullName => 'Full name';
+
+  @override
+  String get crmGroup => 'Group';
+
+  @override
+  String get crmGroupMembership => 'Group membership';
+
+  @override
+  String get crmGuestUser => 'Guest user';
+
+  @override
+  String get crmImportEmpty => 'No valid users were found in that file.';
+
+  @override
+  String crmImportPreview(int count) {
+    return 'Ready to import $count users';
+  }
+
+  @override
+  String crmImportSuccess(int count) {
+    return 'Imported $count users.';
+  }
+
+  @override
+  String get crmImportUsers => 'Import users';
+
+  @override
+  String get crmIncludedGroups => 'Included groups';
+
+  @override
+  String get crmLinkStatus => 'Link status';
+
+  @override
+  String get crmLinkedUser => 'Linked user';
+
+  @override
+  String get crmMergeTarget => 'Merge target';
+
+  @override
+  String get crmMergeUsers => 'Merge users';
+
+  @override
+  String get crmNote => 'Note';
+
+  @override
+  String get crmPermissionDenied => 'You do not have permission to access this CRM view.';
+
+  @override
+  String get crmPhone => 'Phone';
+
+  @override
+  String get crmExportUsers => 'Export users';
+
+  @override
+  String get crmRequireAttention => 'Require attention';
+
+  @override
+  String get crmSearchAuditHint => 'Search audit actor or affected user';
+
+  @override
+  String get crmSearchUsersHint => 'Search users by name, email, or phone';
+
+  @override
+  String get crmStatus => 'Status';
+
+  @override
+  String get crmTitle => 'Users CRM';
+
+  @override
+  String get crmUploadAvatar => 'Upload avatar';
+
+  @override
+  String get crmUsersTab => 'Users';
+
+  @override
+  String get driveCopyPath => 'Copy path';
+
+  @override
+  String get driveCreateFolder => 'Create folder';
+
+  @override
+  String driveDeleteManyConfirm(int count) {
+    return 'Delete $count selected items?';
+  }
+
+  @override
+  String driveDeleteSelected(int count) {
+    return 'Delete selected ($count)';
+  }
+
+  @override
+  String get driveDeleteSingleConfirm => 'Delete this item?';
+
+  @override
+  String get driveDeleteSuccess => 'Items deleted.';
+
+  @override
+  String get driveEmptyState => 'This folder is empty.';
+
+  @override
+  String get driveExportLinksTitle => 'Export links';
+
+  @override
+  String get driveFilesLabel => 'Files';
+
+  @override
+  String get driveFolderCreated => 'Folder created.';
+
+  @override
+  String get driveFolderLabel => 'Folder';
+
+  @override
+  String get driveFolderName => 'Folder name';
+
+  @override
+  String get driveGoUp => 'Up';
+
+  @override
+  String get driveGridView => 'Grid view';
+
+  @override
+  String get driveLimitLabel => 'Limit';
+
+  @override
+  String get driveLinkCopied => 'Link copied.';
+
+  @override
+  String get driveListView => 'List view';
+
+  @override
+  String get drivePathCopied => 'Path copied.';
+
+  @override
+  String get drivePermissionDenied => 'You do not have permission to manage Drive.';
+
+  @override
+  String get driveRenameHint => 'New name';
+
+  @override
+  String get driveRenameSuccess => 'Item renamed.';
+
+  @override
+  String get driveRootLabel => 'Root';
+
+  @override
+  String get driveSearchHint => 'Search files and folders';
+
+  @override
+  String get driveSortNameAsc => 'Name (A-Z)';
+
+  @override
+  String get driveSortNameDesc => 'Name (Z-A)';
+
+  @override
+  String get driveSortSize => 'Largest size';
+
+  @override
+  String get driveSortUpdated => 'Recently updated';
+
+  @override
+  String get driveTitle => 'Drive';
+
+  @override
+  String get driveUploadFiles => 'Upload files';
+
+  @override
+  String get driveUsageLabel => 'Usage';
+
+  @override
+  String get driveUsedLabel => 'Used';
 }

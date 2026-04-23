@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/calendar/view/calendar_page.dart';
+import 'package:mobile/features/crm/view/crm_page.dart';
+import 'package:mobile/features/drive/view/drive_page.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
@@ -56,6 +58,22 @@ class AppRegistry {
       pageBuilder: _pageFinance,
       miniAppNavItems: _financeMiniNav,
       isPinned: true,
+    ),
+    AppModule(
+      id: 'drive',
+      route: Routes.drive,
+      icon: Icons.folder_copy_outlined,
+      labelBuilder: _labelDrive,
+      pageBuilder: _pageDrive,
+      miniAppNavItems: _driveMiniNav,
+    ),
+    AppModule(
+      id: 'crm',
+      route: Routes.crm,
+      icon: Icons.badge_outlined,
+      labelBuilder: _labelCrm,
+      pageBuilder: _pageCrm,
+      miniAppNavItems: _crmMiniNav,
     ),
     AppModule(
       id: 'inventory',
@@ -234,6 +252,24 @@ class AppRegistry {
     ),
   ];
 
+  static const List<MiniAppNavItem> _driveMiniNav = [
+    MiniAppNavItem(
+      id: 'drive_home',
+      route: Routes.drive,
+      icon: Icons.folder_copy_outlined,
+      labelBuilder: _labelDrive,
+    ),
+  ];
+
+  static const List<MiniAppNavItem> _crmMiniNav = [
+    MiniAppNavItem(
+      id: 'crm_home',
+      route: Routes.crm,
+      icon: Icons.badge_outlined,
+      labelBuilder: _labelCrm,
+    ),
+  ];
+
   static const List<MiniAppNavItem> _timerMiniNav = [
     MiniAppNavItem(
       id: 'timer_home',
@@ -371,6 +407,8 @@ class AppRegistry {
       l10n.taskPortfolioTitle;
   static String _labelCalendar(AppLocalizations l10n) => l10n.navCalendar;
   static String _labelFinance(AppLocalizations l10n) => l10n.navFinance;
+  static String _labelDrive(AppLocalizations l10n) => l10n.driveTitle;
+  static String _labelCrm(AppLocalizations l10n) => l10n.crmTitle;
   static String _labelInventory(AppLocalizations l10n) => l10n.inventoryTitle;
   static String _labelInventoryOverview(AppLocalizations l10n) =>
       l10n.inventoryOverviewLabel;
@@ -404,6 +442,8 @@ class AppRegistry {
   static Widget _pageTasks(BuildContext context) => const TaskListPage();
   static Widget _pageHabits(BuildContext context) => const HabitsPage();
   static Widget _pageCalendar(BuildContext context) => const CalendarPage();
+  static Widget _pageDrive(BuildContext context) => const DrivePage();
+  static Widget _pageCrm(BuildContext context) => const CrmPage();
   static Widget _pageFinance(BuildContext context) => const FinancePage();
   static Widget _pageInventory(BuildContext context) => const InventoryPage();
   static Widget _pageNotifications(BuildContext context) =>

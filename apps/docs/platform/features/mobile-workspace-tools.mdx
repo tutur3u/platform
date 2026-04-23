@@ -1,0 +1,80 @@
+---
+title: 'Mobile Drive And CRM'
+description: 'What the mobile app supports for workspace Drive and Users CRM.'
+---
+
+## Overview
+
+The mobile app now ships first-party workspace surfaces for:
+
+- Drive at `Routes.drive`
+- Users CRM at `Routes.crm`
+
+Both modules are registered in the Apps hub and available through the mini-app navigation system.
+
+## Mobile Drive Coverage
+
+The Drive screen in `apps/mobile` supports the main dashboard Drive flow:
+
+- Workspace permission-gated loading
+- Storage analytics summary
+- Folder navigation and breadcrumb-style path movement
+- Search, sort, grid/list toggle, and pagination
+- Folder creation, rename, delete, bulk delete, and upload
+- File preview, external open, share, and path copy
+- Folder export-link generation and sharing
+
+The mobile implementation talks to the same authenticated workspace storage routes used by the web product:
+
+- `/api/v1/workspaces/:wsId/storage/list`
+- `/api/v1/workspaces/:wsId/storage/analytics`
+- `/api/v1/workspaces/:wsId/storage/folders`
+- `/api/v1/workspaces/:wsId/storage/rename`
+- `/api/v1/workspaces/:wsId/storage/object`
+- `/api/v1/workspaces/:wsId/storage/share`
+- `/api/v1/workspaces/:wsId/storage/export-links`
+- `/api/v1/workspaces/:wsId/storage/upload-url`
+- `/api/v1/workspaces/:wsId/storage/finalize-upload`
+
+## Mobile CRM Coverage
+
+The Users CRM screen in `apps/mobile` supports:
+
+- Workspace permission-gated users and audit tabs
+- Search, filters, pagination, and audit range filters
+- Create, edit, and delete user records
+- Avatar upload during create/edit flows
+- Feedback create/update/delete flows
+- Duplicate detection and merge flows
+- CSV import with preview and deduping by email
+- CSV export of the currently filtered users dataset
+
+The mobile CRM uses the existing authenticated routes:
+
+- `/api/v1/workspaces/:wsId/users/database`
+- `/api/v1/workspaces/:wsId/users`
+- `/api/v1/workspaces/:wsId/users/:userId`
+- `/api/v1/workspaces/:wsId/users/groups`
+- `/api/v1/workspaces/:wsId/users/feedbacks`
+- `/api/v1/workspaces/:wsId/users/audit-logs`
+- `/api/v1/workspaces/:wsId/users/duplicates/detect`
+- `/api/v1/workspaces/:wsId/users/merge`
+- `/api/v1/workspaces/:wsId/users/bulk-import`
+- `/api/v1/workspaces/:wsId/users/avatar`
+
+## Import And Export Format Notes
+
+- The web CRM page still has richer spreadsheet tooling, including XLSX-oriented flows.
+- Mobile import and export currently use CSV plus native share sheets.
+- Keep the server contract for bulk import as a raw JSON array of `{ email, fullName }` rows.
+
+This format choice is intentional for now: the current Flutter dependency graph in `apps/mobile` does not accept a stable XLSX package cleanly without conflicts, so mobile should prefer CSV/share flows unless spreadsheet generation is moved server-side later.
+
+## Verification
+
+For Drive or CRM mobile changes:
+
+1. Update `apps/mobile/lib/l10n/arb/*.arb` for every new user-facing string.
+2. Run `flutter gen-l10n`.
+3. Run `bun check:mobile`.
+

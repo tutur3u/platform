@@ -4,7 +4,10 @@ import {
   MAX_SEARCH_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { GROUP_MEMBERSHIP_FILTER_VALUES } from '@/app/[locale]/(dashboard)/[wsId]/users/database/group-membership';
@@ -83,18 +86,12 @@ interface Params {
 export async function GET(request: Request, { params }: Params) {
   try {
     const { wsId: id } = await params;
-
-    // Resolve workspace ID
-    const workspace = await getWorkspace(id);
-    if (!workspace) {
-      return Response.json({ error: 'Workspace not found' }, { status: 404 });
-    }
-    const wsId = workspace.id;
+    const wsId = await normalizeWorkspaceId(id);
 
     // Check permissions
-    const permissions = await getPermissions({ wsId });
+    const permissions = await getPermissions({ wsId, request });
     if (!permissions) {
-      return Response.json({ error: 'Not found' }, { status: 404 });
+      return Response.json({ error: 'Workspace not found' }, { status: 404 });
     }
     const { containsPermission } = permissions;
     const hasPrivateInfo = containsPermission('view_users_private_info');

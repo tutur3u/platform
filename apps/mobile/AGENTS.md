@@ -15,6 +15,7 @@ The authoritative repo-wide instructions live in [`../../AGENTS.md`](../../AGENT
 - **Analyze Info = CI Failure**: Treat `flutter analyze` info-level lints as blocking in this workspace; fix them in touched files before finishing.
 - **Flutter L10n Asset Formatting**: Do not send `.arb` files through `dart format`; format only Dart sources and regenerate `flutter gen-l10n` after ARB edits.
 - **Flutter Analyze Ignore Hygiene**: Avoid speculative `ignore_for_file` directives. `flutter analyze` reports `unnecessary_ignore` as a failing issue during `bun check:mobile`.
+- **Retrospective - Import Order Lints Can Still Block Delivery**: For new large mobile screens, expect `flutter analyze` style infos such as `directives_ordering`, deprecated form-field APIs, and constructor parameter-order lints to fail `bun check:mobile`. Do not stop at “no errors”; keep touched files info-clean.
 
 ## 2. Engineering Standards
 

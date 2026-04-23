@@ -2438,5 +2438,140 @@
     "settingsWorkspaceSecretsProviderSupabaseTitle": "Supabase",
     "settingsWorkspaceSecretsProviderSupabaseDescription": "The current built-in Drive storage backend.",
     "settingsWorkspaceSecretsProviderR2Title": "Cloudflare R2",
-    "settingsWorkspaceSecretsProviderR2Description": "An S3-compatible backend for external Drive storage."
+    "settingsWorkspaceSecretsProviderR2Description": "An S3-compatible backend for external Drive storage.",
+    "commonActive": "Active",
+    "commonAll": "All",
+    "commonApply": "Apply",
+    "commonArchived": "Archived",
+    "commonBackfilled": "Backfilled",
+    "commonCopy": "Copy",
+    "commonCreate": "Create",
+    "commonCreated": "Created",
+    "commonDelete": "Delete",
+    "commonDeleted": "Deleted",
+    "commonEdit": "Edit",
+    "commonFilters": "Filters",
+    "commonImport": "Import",
+    "commonLinked": "Linked",
+    "commonLive": "Live",
+    "commonLoadMore": "Load more",
+    "commonOpen": "Open",
+    "commonReactivated": "Reactivated",
+    "commonRename": "Rename",
+    "commonRequired": "Required",
+    "commonSave": "Save",
+    "commonSelectDate": "Select a date",
+    "commonShare": "Share",
+    "commonUpdated": "Updated",
+    "commonVirtual": "Virtual",
+    "commonWithGroups": "With groups",
+    "commonWithoutGroups": "Without groups",
+    "crmAddFeedback": "Add feedback",
+    "crmAddress": "Address",
+    "crmArchived": "Archived",
+    "crmArchivedUntil": "Archived until",
+    "crmAuditActor": "Actor",
+    "crmAuditAffectedUser": "Affected user",
+    "crmAuditEvent": "Audit event",
+    "crmAuditRange": "Date range",
+    "crmAuditSource": "Source",
+    "crmAuditTab": "Audit log",
+    "crmBirthday": "Birthday",
+    "crmCreateUser": "Create user",
+    "crmDeleteUserConfirm": "Delete this user?",
+    "crmDeleteUserSuccess": "User deleted.",
+    "crmDetectDuplicates": "Detect duplicates",
+    "crmDisplayName": "Display name",
+    "crmDuplicateResults": "{count} duplicate clusters found",
+    "@crmDuplicateResults": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "crmEmptyAudit": "No audit events found",
+    "crmEmptyUsers": "No users found",
+    "crmExcludedGroups": "Excluded groups",
+    "crmFeedback": "Feedback",
+    "crmFeedbackAction": "Feedback",
+    "crmFeedbackFor": "Feedback for {name}",
+    "@crmFeedbackFor": {
+        "placeholders": {
+            "name": { "type": "String" }
+        }
+    },
+    "crmFullName": "Full name",
+    "crmGroup": "Group",
+    "crmGroupMembership": "Group membership",
+    "crmGuestUser": "Guest user",
+    "crmImportEmpty": "No valid users were found in that file.",
+    "crmImportPreview": "Ready to import {count} users",
+    "@crmImportPreview": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "crmImportSuccess": "Imported {count} users.",
+    "@crmImportSuccess": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "crmImportUsers": "Import users",
+    "crmIncludedGroups": "Included groups",
+    "crmLinkStatus": "Link status",
+    "crmLinkedUser": "Linked user",
+    "crmMergeTarget": "Merge target",
+    "crmMergeUsers": "Merge users",
+    "crmNote": "Note",
+    "crmPermissionDenied": "You do not have permission to access this CRM view.",
+    "crmPhone": "Phone",
+    "crmExportUsers": "Export users",
+    "crmRequireAttention": "Require attention",
+    "crmSearchAuditHint": "Search audit actor or affected user",
+    "crmSearchUsersHint": "Search users by name, email, or phone",
+    "crmStatus": "Status",
+    "crmTitle": "Users CRM",
+    "crmUploadAvatar": "Upload avatar",
+    "crmUsersTab": "Users",
+    "driveCopyPath": "Copy path",
+    "driveCreateFolder": "Create folder",
+    "driveDeleteManyConfirm": "Delete {count} selected items?",
+    "@driveDeleteManyConfirm": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "driveDeleteSelected": "Delete selected ({count})",
+    "@driveDeleteSelected": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "driveDeleteSingleConfirm": "Delete this item?",
+    "driveDeleteSuccess": "Items deleted.",
+    "driveEmptyState": "This folder is empty.",
+    "driveExportLinksTitle": "Export links",
+    "driveFilesLabel": "Files",
+    "driveFolderCreated": "Folder created.",
+    "driveFolderLabel": "Folder",
+    "driveFolderName": "Folder name",
+    "driveGoUp": "Up",
+    "driveGridView": "Grid view",
+    "driveLimitLabel": "Limit",
+    "driveLinkCopied": "Link copied.",
+    "driveListView": "List view",
+    "drivePathCopied": "Path copied.",
+    "drivePermissionDenied": "You do not have permission to manage Drive.",
+    "driveRenameHint": "New name",
+    "driveRenameSuccess": "Item renamed.",
+    "driveRootLabel": "Root",
+    "driveSearchHint": "Search files and folders",
+    "driveSortNameAsc": "Name (A-Z)",
+    "driveSortNameDesc": "Name (Z-A)",
+    "driveSortSize": "Largest size",
+    "driveSortUpdated": "Recently updated",
+    "driveTitle": "Drive",
+    "driveUploadFiles": "Upload files",
+    "driveUsageLabel": "Usage",
+    "driveUsedLabel": "Used"
 }

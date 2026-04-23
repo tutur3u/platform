@@ -11262,6 +11262,636 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'An S3-compatible backend for external Drive storage.'**
   String get settingsWorkspaceSecretsProviderR2Description;
+
+  /// No description provided for @commonActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get commonActive;
+
+  /// No description provided for @commonAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get commonAll;
+
+  /// No description provided for @commonApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get commonApply;
+
+  /// No description provided for @commonArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get commonArchived;
+
+  /// No description provided for @commonBackfilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Backfilled'**
+  String get commonBackfilled;
+
+  /// No description provided for @commonCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get commonCopy;
+
+  /// No description provided for @commonCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get commonCreate;
+
+  /// No description provided for @commonCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get commonCreated;
+
+  /// No description provided for @commonDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get commonDelete;
+
+  /// No description provided for @commonDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted'**
+  String get commonDeleted;
+
+  /// No description provided for @commonEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get commonEdit;
+
+  /// No description provided for @commonFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get commonFilters;
+
+  /// No description provided for @commonImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get commonImport;
+
+  /// No description provided for @commonLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked'**
+  String get commonLinked;
+
+  /// No description provided for @commonLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get commonLive;
+
+  /// No description provided for @commonLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get commonLoadMore;
+
+  /// No description provided for @commonOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get commonOpen;
+
+  /// No description provided for @commonReactivated.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactivated'**
+  String get commonReactivated;
+
+  /// No description provided for @commonRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get commonRename;
+
+  /// No description provided for @commonRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get commonRequired;
+
+  /// No description provided for @commonSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get commonSave;
+
+  /// No description provided for @commonSelectDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a date'**
+  String get commonSelectDate;
+
+  /// No description provided for @commonShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get commonShare;
+
+  /// No description provided for @commonUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated'**
+  String get commonUpdated;
+
+  /// No description provided for @commonVirtual.
+  ///
+  /// In en, this message translates to:
+  /// **'Virtual'**
+  String get commonVirtual;
+
+  /// No description provided for @commonWithGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'With groups'**
+  String get commonWithGroups;
+
+  /// No description provided for @commonWithoutGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Without groups'**
+  String get commonWithoutGroups;
+
+  /// No description provided for @crmAddFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Add feedback'**
+  String get crmAddFeedback;
+
+  /// No description provided for @crmAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get crmAddress;
+
+  /// No description provided for @crmArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get crmArchived;
+
+  /// No description provided for @crmArchivedUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived until'**
+  String get crmArchivedUntil;
+
+  /// No description provided for @crmAuditActor.
+  ///
+  /// In en, this message translates to:
+  /// **'Actor'**
+  String get crmAuditActor;
+
+  /// No description provided for @crmAuditAffectedUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Affected user'**
+  String get crmAuditAffectedUser;
+
+  /// No description provided for @crmAuditEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Audit event'**
+  String get crmAuditEvent;
+
+  /// No description provided for @crmAuditRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Date range'**
+  String get crmAuditRange;
+
+  /// No description provided for @crmAuditSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get crmAuditSource;
+
+  /// No description provided for @crmAuditTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Audit log'**
+  String get crmAuditTab;
+
+  /// No description provided for @crmBirthday.
+  ///
+  /// In en, this message translates to:
+  /// **'Birthday'**
+  String get crmBirthday;
+
+  /// No description provided for @crmCreateUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Create user'**
+  String get crmCreateUser;
+
+  /// No description provided for @crmDeleteUserConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this user?'**
+  String get crmDeleteUserConfirm;
+
+  /// No description provided for @crmDeleteUserSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'User deleted.'**
+  String get crmDeleteUserSuccess;
+
+  /// No description provided for @crmDetectDuplicates.
+  ///
+  /// In en, this message translates to:
+  /// **'Detect duplicates'**
+  String get crmDetectDuplicates;
+
+  /// No description provided for @crmDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get crmDisplayName;
+
+  /// No description provided for @crmDuplicateResults.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} duplicate clusters found'**
+  String crmDuplicateResults(int count);
+
+  /// No description provided for @crmEmptyAudit.
+  ///
+  /// In en, this message translates to:
+  /// **'No audit events found'**
+  String get crmEmptyAudit;
+
+  /// No description provided for @crmEmptyUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'No users found'**
+  String get crmEmptyUsers;
+
+  /// No description provided for @crmExcludedGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Excluded groups'**
+  String get crmExcludedGroups;
+
+  /// No description provided for @crmFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback'**
+  String get crmFeedback;
+
+  /// No description provided for @crmFeedbackAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback'**
+  String get crmFeedbackAction;
+
+  /// No description provided for @crmFeedbackFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback for {name}'**
+  String crmFeedbackFor(String name);
+
+  /// No description provided for @crmFullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Full name'**
+  String get crmFullName;
+
+  /// No description provided for @crmGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Group'**
+  String get crmGroup;
+
+  /// No description provided for @crmGroupMembership.
+  ///
+  /// In en, this message translates to:
+  /// **'Group membership'**
+  String get crmGroupMembership;
+
+  /// No description provided for @crmGuestUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest user'**
+  String get crmGuestUser;
+
+  /// No description provided for @crmImportEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No valid users were found in that file.'**
+  String get crmImportEmpty;
+
+  /// No description provided for @crmImportPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to import {count} users'**
+  String crmImportPreview(int count);
+
+  /// No description provided for @crmImportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported {count} users.'**
+  String crmImportSuccess(int count);
+
+  /// No description provided for @crmImportUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Import users'**
+  String get crmImportUsers;
+
+  /// No description provided for @crmIncludedGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Included groups'**
+  String get crmIncludedGroups;
+
+  /// No description provided for @crmLinkStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Link status'**
+  String get crmLinkStatus;
+
+  /// No description provided for @crmLinkedUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked user'**
+  String get crmLinkedUser;
+
+  /// No description provided for @crmMergeTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge target'**
+  String get crmMergeTarget;
+
+  /// No description provided for @crmMergeUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge users'**
+  String get crmMergeUsers;
+
+  /// No description provided for @crmNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get crmNote;
+
+  /// No description provided for @crmPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have permission to access this CRM view.'**
+  String get crmPermissionDenied;
+
+  /// No description provided for @crmPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get crmPhone;
+
+  /// No description provided for @crmExportUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Export users'**
+  String get crmExportUsers;
+
+  /// No description provided for @crmRequireAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Require attention'**
+  String get crmRequireAttention;
+
+  /// No description provided for @crmSearchAuditHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search audit actor or affected user'**
+  String get crmSearchAuditHint;
+
+  /// No description provided for @crmSearchUsersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search users by name, email, or phone'**
+  String get crmSearchUsersHint;
+
+  /// No description provided for @crmStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get crmStatus;
+
+  /// No description provided for @crmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Users CRM'**
+  String get crmTitle;
+
+  /// No description provided for @crmUploadAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload avatar'**
+  String get crmUploadAvatar;
+
+  /// No description provided for @crmUsersTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Users'**
+  String get crmUsersTab;
+
+  /// No description provided for @driveCopyPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy path'**
+  String get driveCopyPath;
+
+  /// No description provided for @driveCreateFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Create folder'**
+  String get driveCreateFolder;
+
+  /// No description provided for @driveDeleteManyConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} selected items?'**
+  String driveDeleteManyConfirm(int count);
+
+  /// No description provided for @driveDeleteSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete selected ({count})'**
+  String driveDeleteSelected(int count);
+
+  /// No description provided for @driveDeleteSingleConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this item?'**
+  String get driveDeleteSingleConfirm;
+
+  /// No description provided for @driveDeleteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Items deleted.'**
+  String get driveDeleteSuccess;
+
+  /// No description provided for @driveEmptyState.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is empty.'**
+  String get driveEmptyState;
+
+  /// No description provided for @driveExportLinksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export links'**
+  String get driveExportLinksTitle;
+
+  /// No description provided for @driveFilesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get driveFilesLabel;
+
+  /// No description provided for @driveFolderCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder created.'**
+  String get driveFolderCreated;
+
+  /// No description provided for @driveFolderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder'**
+  String get driveFolderLabel;
+
+  /// No description provided for @driveFolderName.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder name'**
+  String get driveFolderName;
+
+  /// No description provided for @driveGoUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Up'**
+  String get driveGoUp;
+
+  /// No description provided for @driveGridView.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid view'**
+  String get driveGridView;
+
+  /// No description provided for @driveLimitLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit'**
+  String get driveLimitLabel;
+
+  /// No description provided for @driveLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied.'**
+  String get driveLinkCopied;
+
+  /// No description provided for @driveListView.
+  ///
+  /// In en, this message translates to:
+  /// **'List view'**
+  String get driveListView;
+
+  /// No description provided for @drivePathCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Path copied.'**
+  String get drivePathCopied;
+
+  /// No description provided for @drivePermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have permission to manage Drive.'**
+  String get drivePermissionDenied;
+
+  /// No description provided for @driveRenameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'New name'**
+  String get driveRenameHint;
+
+  /// No description provided for @driveRenameSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Item renamed.'**
+  String get driveRenameSuccess;
+
+  /// No description provided for @driveRootLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Root'**
+  String get driveRootLabel;
+
+  /// No description provided for @driveSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search files and folders'**
+  String get driveSearchHint;
+
+  /// No description provided for @driveSortNameAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (A-Z)'**
+  String get driveSortNameAsc;
+
+  /// No description provided for @driveSortNameDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (Z-A)'**
+  String get driveSortNameDesc;
+
+  /// No description provided for @driveSortSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Largest size'**
+  String get driveSortSize;
+
+  /// No description provided for @driveSortUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently updated'**
+  String get driveSortUpdated;
+
+  /// No description provided for @driveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drive'**
+  String get driveTitle;
+
+  /// No description provided for @driveUploadFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload files'**
+  String get driveUploadFiles;
+
+  /// No description provided for @driveUsageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage'**
+  String get driveUsageLabel;
+
+  /// No description provided for @driveUsedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Used'**
+  String get driveUsedLabel;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

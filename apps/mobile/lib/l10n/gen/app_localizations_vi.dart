@@ -5859,4 +5859,331 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsWorkspaceSecretsProviderR2Description => 'Backend tương thích S3 cho lưu trữ Drive bên ngoài.';
+
+  @override
+  String get commonActive => 'Đang hoạt động';
+
+  @override
+  String get commonAll => 'Tất cả';
+
+  @override
+  String get commonApply => 'Áp dụng';
+
+  @override
+  String get commonArchived => 'Đã lưu trữ';
+
+  @override
+  String get commonBackfilled => 'Đã backfill';
+
+  @override
+  String get commonCopy => 'Sao chép';
+
+  @override
+  String get commonCreate => 'Tạo';
+
+  @override
+  String get commonCreated => 'Đã tạo';
+
+  @override
+  String get commonDelete => 'Xóa';
+
+  @override
+  String get commonDeleted => 'Đã xóa';
+
+  @override
+  String get commonEdit => 'Chỉnh sửa';
+
+  @override
+  String get commonFilters => 'Bộ lọc';
+
+  @override
+  String get commonImport => 'Nhập';
+
+  @override
+  String get commonLinked => 'Đã liên kết';
+
+  @override
+  String get commonLive => 'Trực tiếp';
+
+  @override
+  String get commonLoadMore => 'Tải thêm';
+
+  @override
+  String get commonOpen => 'Mở';
+
+  @override
+  String get commonReactivated => 'Kích hoạt lại';
+
+  @override
+  String get commonRename => 'Đổi tên';
+
+  @override
+  String get commonRequired => 'Cần xử lý';
+
+  @override
+  String get commonSave => 'Lưu';
+
+  @override
+  String get commonSelectDate => 'Chọn ngày';
+
+  @override
+  String get commonShare => 'Chia sẻ';
+
+  @override
+  String get commonUpdated => 'Đã cập nhật';
+
+  @override
+  String get commonVirtual => 'Ảo';
+
+  @override
+  String get commonWithGroups => 'Có nhóm';
+
+  @override
+  String get commonWithoutGroups => 'Không có nhóm';
+
+  @override
+  String get crmAddFeedback => 'Thêm phản hồi';
+
+  @override
+  String get crmAddress => 'Địa chỉ';
+
+  @override
+  String get crmArchived => 'Đã lưu trữ';
+
+  @override
+  String get crmArchivedUntil => 'Lưu trữ đến';
+
+  @override
+  String get crmAuditActor => 'Người thực hiện';
+
+  @override
+  String get crmAuditAffectedUser => 'Người dùng bị ảnh hưởng';
+
+  @override
+  String get crmAuditEvent => 'Sự kiện nhật ký';
+
+  @override
+  String get crmAuditRange => 'Khoảng thời gian';
+
+  @override
+  String get crmAuditSource => 'Nguồn';
+
+  @override
+  String get crmAuditTab => 'Nhật ký';
+
+  @override
+  String get crmBirthday => 'Ngày sinh';
+
+  @override
+  String get crmCreateUser => 'Tạo người dùng';
+
+  @override
+  String get crmDeleteUserConfirm => 'Xóa người dùng này?';
+
+  @override
+  String get crmDeleteUserSuccess => 'Đã xóa người dùng.';
+
+  @override
+  String get crmDetectDuplicates => 'Phát hiện trùng lặp';
+
+  @override
+  String get crmDisplayName => 'Tên hiển thị';
+
+  @override
+  String crmDuplicateResults(int count) {
+    return 'Tìm thấy $count cụm trùng lặp';
+  }
+
+  @override
+  String get crmEmptyAudit => 'Không có sự kiện nhật ký nào';
+
+  @override
+  String get crmEmptyUsers => 'Không tìm thấy người dùng';
+
+  @override
+  String get crmExcludedGroups => 'Nhóm bị loại trừ';
+
+  @override
+  String get crmFeedback => 'Phản hồi';
+
+  @override
+  String get crmFeedbackAction => 'Phản hồi';
+
+  @override
+  String crmFeedbackFor(String name) {
+    return 'Phản hồi cho $name';
+  }
+
+  @override
+  String get crmFullName => 'Họ và tên';
+
+  @override
+  String get crmGroup => 'Nhóm';
+
+  @override
+  String get crmGroupMembership => 'Tham gia nhóm';
+
+  @override
+  String get crmGuestUser => 'Người dùng khách';
+
+  @override
+  String get crmImportEmpty => 'Không tìm thấy người dùng hợp lệ trong tệp này.';
+
+  @override
+  String crmImportPreview(int count) {
+    return 'Sẵn sàng nhập $count người dùng';
+  }
+
+  @override
+  String crmImportSuccess(int count) {
+    return 'Đã nhập $count người dùng.';
+  }
+
+  @override
+  String get crmImportUsers => 'Nhập người dùng';
+
+  @override
+  String get crmIncludedGroups => 'Nhóm được bao gồm';
+
+  @override
+  String get crmLinkStatus => 'Trạng thái liên kết';
+
+  @override
+  String get crmLinkedUser => 'Người dùng đã liên kết';
+
+  @override
+  String get crmMergeTarget => 'Bản ghi đích';
+
+  @override
+  String get crmMergeUsers => 'Gộp người dùng';
+
+  @override
+  String get crmNote => 'Ghi chú';
+
+  @override
+  String get crmPermissionDenied => 'Bạn không có quyền truy cập giao diện CRM này.';
+
+  @override
+  String get crmPhone => 'Số điện thoại';
+
+  @override
+  String get crmExportUsers => 'Xuất người dùng';
+
+  @override
+  String get crmRequireAttention => 'Cần chú ý';
+
+  @override
+  String get crmSearchAuditHint => 'Tìm người thực hiện hoặc người dùng bị ảnh hưởng';
+
+  @override
+  String get crmSearchUsersHint => 'Tìm theo tên, email hoặc số điện thoại';
+
+  @override
+  String get crmStatus => 'Trạng thái';
+
+  @override
+  String get crmTitle => 'CRM người dùng';
+
+  @override
+  String get crmUploadAvatar => 'Tải ảnh đại diện';
+
+  @override
+  String get crmUsersTab => 'Người dùng';
+
+  @override
+  String get driveCopyPath => 'Sao chép đường dẫn';
+
+  @override
+  String get driveCreateFolder => 'Tạo thư mục';
+
+  @override
+  String driveDeleteManyConfirm(int count) {
+    return 'Xóa $count mục đã chọn?';
+  }
+
+  @override
+  String driveDeleteSelected(int count) {
+    return 'Xóa mục đã chọn ($count)';
+  }
+
+  @override
+  String get driveDeleteSingleConfirm => 'Xóa mục này?';
+
+  @override
+  String get driveDeleteSuccess => 'Đã xóa mục.';
+
+  @override
+  String get driveEmptyState => 'Thư mục này đang trống.';
+
+  @override
+  String get driveExportLinksTitle => 'Liên kết xuất';
+
+  @override
+  String get driveFilesLabel => 'Tệp';
+
+  @override
+  String get driveFolderCreated => 'Đã tạo thư mục.';
+
+  @override
+  String get driveFolderLabel => 'Thư mục';
+
+  @override
+  String get driveFolderName => 'Tên thư mục';
+
+  @override
+  String get driveGoUp => 'Lên trên';
+
+  @override
+  String get driveGridView => 'Dạng lưới';
+
+  @override
+  String get driveLimitLabel => 'Giới hạn';
+
+  @override
+  String get driveLinkCopied => 'Đã sao chép liên kết.';
+
+  @override
+  String get driveListView => 'Dạng danh sách';
+
+  @override
+  String get drivePathCopied => 'Đã sao chép đường dẫn.';
+
+  @override
+  String get drivePermissionDenied => 'Bạn không có quyền quản lý Drive.';
+
+  @override
+  String get driveRenameHint => 'Tên mới';
+
+  @override
+  String get driveRenameSuccess => 'Đã đổi tên mục.';
+
+  @override
+  String get driveRootLabel => 'Gốc';
+
+  @override
+  String get driveSearchHint => 'Tìm tệp và thư mục';
+
+  @override
+  String get driveSortNameAsc => 'Tên (A-Z)';
+
+  @override
+  String get driveSortNameDesc => 'Tên (Z-A)';
+
+  @override
+  String get driveSortSize => 'Dung lượng lớn nhất';
+
+  @override
+  String get driveSortUpdated => 'Mới cập nhật';
+
+  @override
+  String get driveTitle => 'Drive';
+
+  @override
+  String get driveUploadFiles => 'Tải tệp lên';
+
+  @override
+  String get driveUsageLabel => 'Dung lượng';
+
+  @override
+  String get driveUsedLabel => 'Đã dùng';
 }

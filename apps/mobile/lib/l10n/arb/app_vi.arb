@@ -2442,5 +2442,140 @@
     "settingsWorkspaceSecretsProviderSupabaseTitle": "Supabase",
     "settingsWorkspaceSecretsProviderSupabaseDescription": "Backend lưu trữ Drive tích hợp sẵn hiện tại.",
     "settingsWorkspaceSecretsProviderR2Title": "Cloudflare R2",
-    "settingsWorkspaceSecretsProviderR2Description": "Backend tương thích S3 cho lưu trữ Drive bên ngoài."
+    "settingsWorkspaceSecretsProviderR2Description": "Backend tương thích S3 cho lưu trữ Drive bên ngoài.",
+    "commonActive": "Đang hoạt động",
+    "commonAll": "Tất cả",
+    "commonApply": "Áp dụng",
+    "commonArchived": "Đã lưu trữ",
+    "commonBackfilled": "Đã backfill",
+    "commonCopy": "Sao chép",
+    "commonCreate": "Tạo",
+    "commonCreated": "Đã tạo",
+    "commonDelete": "Xóa",
+    "commonDeleted": "Đã xóa",
+    "commonEdit": "Chỉnh sửa",
+    "commonFilters": "Bộ lọc",
+    "commonImport": "Nhập",
+    "commonLinked": "Đã liên kết",
+    "commonLive": "Trực tiếp",
+    "commonLoadMore": "Tải thêm",
+    "commonOpen": "Mở",
+    "commonReactivated": "Kích hoạt lại",
+    "commonRename": "Đổi tên",
+    "commonRequired": "Cần xử lý",
+    "commonSave": "Lưu",
+    "commonSelectDate": "Chọn ngày",
+    "commonShare": "Chia sẻ",
+    "commonUpdated": "Đã cập nhật",
+    "commonVirtual": "Ảo",
+    "commonWithGroups": "Có nhóm",
+    "commonWithoutGroups": "Không có nhóm",
+    "crmAddFeedback": "Thêm phản hồi",
+    "crmAddress": "Địa chỉ",
+    "crmArchived": "Đã lưu trữ",
+    "crmArchivedUntil": "Lưu trữ đến",
+    "crmAuditActor": "Người thực hiện",
+    "crmAuditAffectedUser": "Người dùng bị ảnh hưởng",
+    "crmAuditEvent": "Sự kiện nhật ký",
+    "crmAuditRange": "Khoảng thời gian",
+    "crmAuditSource": "Nguồn",
+    "crmAuditTab": "Nhật ký",
+    "crmBirthday": "Ngày sinh",
+    "crmCreateUser": "Tạo người dùng",
+    "crmDeleteUserConfirm": "Xóa người dùng này?",
+    "crmDeleteUserSuccess": "Đã xóa người dùng.",
+    "crmDetectDuplicates": "Phát hiện trùng lặp",
+    "crmDisplayName": "Tên hiển thị",
+    "crmDuplicateResults": "Tìm thấy {count} cụm trùng lặp",
+    "@crmDuplicateResults": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "crmEmptyAudit": "Không có sự kiện nhật ký nào",
+    "crmEmptyUsers": "Không tìm thấy người dùng",
+    "crmExcludedGroups": "Nhóm bị loại trừ",
+    "crmFeedback": "Phản hồi",
+    "crmFeedbackAction": "Phản hồi",
+    "crmFeedbackFor": "Phản hồi cho {name}",
+    "@crmFeedbackFor": {
+        "placeholders": {
+            "name": { "type": "String" }
+        }
+    },
+    "crmFullName": "Họ và tên",
+    "crmGroup": "Nhóm",
+    "crmGroupMembership": "Tham gia nhóm",
+    "crmGuestUser": "Người dùng khách",
+    "crmImportEmpty": "Không tìm thấy người dùng hợp lệ trong tệp này.",
+    "crmImportPreview": "Sẵn sàng nhập {count} người dùng",
+    "@crmImportPreview": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "crmImportSuccess": "Đã nhập {count} người dùng.",
+    "@crmImportSuccess": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "crmImportUsers": "Nhập người dùng",
+    "crmIncludedGroups": "Nhóm được bao gồm",
+    "crmLinkStatus": "Trạng thái liên kết",
+    "crmLinkedUser": "Người dùng đã liên kết",
+    "crmMergeTarget": "Bản ghi đích",
+    "crmMergeUsers": "Gộp người dùng",
+    "crmNote": "Ghi chú",
+    "crmPermissionDenied": "Bạn không có quyền truy cập giao diện CRM này.",
+    "crmPhone": "Số điện thoại",
+    "crmExportUsers": "Xuất người dùng",
+    "crmRequireAttention": "Cần chú ý",
+    "crmSearchAuditHint": "Tìm người thực hiện hoặc người dùng bị ảnh hưởng",
+    "crmSearchUsersHint": "Tìm theo tên, email hoặc số điện thoại",
+    "crmStatus": "Trạng thái",
+    "crmTitle": "CRM người dùng",
+    "crmUploadAvatar": "Tải ảnh đại diện",
+    "crmUsersTab": "Người dùng",
+    "driveCopyPath": "Sao chép đường dẫn",
+    "driveCreateFolder": "Tạo thư mục",
+    "driveDeleteManyConfirm": "Xóa {count} mục đã chọn?",
+    "@driveDeleteManyConfirm": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "driveDeleteSelected": "Xóa mục đã chọn ({count})",
+    "@driveDeleteSelected": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "driveDeleteSingleConfirm": "Xóa mục này?",
+    "driveDeleteSuccess": "Đã xóa mục.",
+    "driveEmptyState": "Thư mục này đang trống.",
+    "driveExportLinksTitle": "Liên kết xuất",
+    "driveFilesLabel": "Tệp",
+    "driveFolderCreated": "Đã tạo thư mục.",
+    "driveFolderLabel": "Thư mục",
+    "driveFolderName": "Tên thư mục",
+    "driveGoUp": "Lên trên",
+    "driveGridView": "Dạng lưới",
+    "driveLimitLabel": "Giới hạn",
+    "driveLinkCopied": "Đã sao chép liên kết.",
+    "driveListView": "Dạng danh sách",
+    "drivePathCopied": "Đã sao chép đường dẫn.",
+    "drivePermissionDenied": "Bạn không có quyền quản lý Drive.",
+    "driveRenameHint": "Tên mới",
+    "driveRenameSuccess": "Đã đổi tên mục.",
+    "driveRootLabel": "Gốc",
+    "driveSearchHint": "Tìm tệp và thư mục",
+    "driveSortNameAsc": "Tên (A-Z)",
+    "driveSortNameDesc": "Tên (Z-A)",
+    "driveSortSize": "Dung lượng lớn nhất",
+    "driveSortUpdated": "Mới cập nhật",
+    "driveTitle": "Drive",
+    "driveUploadFiles": "Tải tệp lên",
+    "driveUsageLabel": "Dung lượng",
+    "driveUsedLabel": "Đã dùng"
 }

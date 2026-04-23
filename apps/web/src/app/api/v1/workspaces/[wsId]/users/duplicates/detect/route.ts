@@ -28,13 +28,13 @@ interface RawDuplicateRow {
   created_at: string;
 }
 
-export async function POST(_req: Request, { params }: Params) {
+export async function POST(req: Request, { params }: Params) {
   try {
     const { wsId: rawWsId } = await params;
     const wsId = await normalizeWorkspaceId(rawWsId);
 
     // Check permissions - require view_users_private_info to access email/phone
-    const permissions = await getPermissions({ wsId });
+    const permissions = await getPermissions({ wsId, request: req });
     if (!permissions) {
       return Response.json({ error: 'Not found' }, { status: 404 });
     }
@@ -46,7 +46,7 @@ export async function POST(_req: Request, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = await createClient(req);
 
     // Call the RPC function to detect duplicates
     // Note: The RPC function is defined in migration but types are generated after migration is applied

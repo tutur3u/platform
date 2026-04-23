@@ -282,3 +282,233 @@ abstract final class InventoryEndpoints {
 abstract final class HabitsEndpoints {
   static String access(String wsId) => '/api/v1/workspaces/$wsId/habits/access';
 }
+
+/// Drive endpoint paths.
+abstract final class DriveEndpoints {
+  static String analytics(String wsId) =>
+      '/api/v1/workspaces/$wsId/storage/analytics';
+
+  static String list(
+    String wsId, {
+    String? path,
+    String? search,
+    int? limit,
+    int? offset,
+    String? sortBy,
+    String? sortOrder,
+  }) {
+    final params = <String, String>{};
+    if (path != null && path.trim().isNotEmpty) {
+      params['path'] = path.trim();
+    }
+    if (search != null && search.trim().isNotEmpty) {
+      params['search'] = search.trim();
+    }
+    if (limit != null) {
+      params['limit'] = '$limit';
+    }
+    if (offset != null) {
+      params['offset'] = '$offset';
+    }
+    if (sortBy != null && sortBy.isNotEmpty) {
+      params['sortBy'] = sortBy;
+    }
+    if (sortOrder != null && sortOrder.isNotEmpty) {
+      params['sortOrder'] = sortOrder;
+    }
+
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/storage/list$suffix';
+  }
+
+  static String folders(String wsId) =>
+      '/api/v1/workspaces/$wsId/storage/folders';
+
+  static String rename(String wsId) =>
+      '/api/v1/workspaces/$wsId/storage/rename';
+
+  static String object(String wsId) =>
+      '/api/v1/workspaces/$wsId/storage/object';
+
+  static String share(String wsId) => '/api/v1/workspaces/$wsId/storage/share';
+
+  static String exportLinks(String wsId) =>
+      '/api/v1/workspaces/$wsId/storage/export-links';
+
+  static String uploadUrl(String wsId) =>
+      '/api/v1/workspaces/$wsId/storage/upload-url';
+
+  static String finalizeUpload(String wsId) =>
+      '/api/v1/workspaces/$wsId/storage/finalize-upload';
+}
+
+/// CRM / users database endpoint paths.
+abstract final class CrmEndpoints {
+  static String usersDatabase(
+    String wsId, {
+    String? query,
+    int? page,
+    int? pageSize,
+    List<String>? includedGroups,
+    List<String>? excludedGroups,
+    String? status,
+    String? linkStatus,
+    String? requireAttention,
+    String? groupMembership,
+    bool? withPromotions,
+  }) {
+    final params = <String, String>{};
+    if (query != null && query.trim().isNotEmpty) {
+      params['q'] = query.trim();
+    }
+    if (page != null) {
+      params['page'] = '$page';
+    }
+    if (pageSize != null) {
+      params['pageSize'] = '$pageSize';
+    }
+    if (includedGroups != null && includedGroups.isNotEmpty) {
+      params['includedGroups'] = includedGroups.join(',');
+    }
+    if (excludedGroups != null && excludedGroups.isNotEmpty) {
+      params['excludedGroups'] = excludedGroups.join(',');
+    }
+    if (status != null && status.isNotEmpty) {
+      params['status'] = status;
+    }
+    if (linkStatus != null && linkStatus.isNotEmpty) {
+      params['linkStatus'] = linkStatus;
+    }
+    if (requireAttention != null && requireAttention.isNotEmpty) {
+      params['requireAttention'] = requireAttention;
+    }
+    if (groupMembership != null && groupMembership.isNotEmpty) {
+      params['groupMembership'] = groupMembership;
+    }
+    if (withPromotions != null) {
+      params['withPromotions'] = withPromotions ? 'true' : 'false';
+    }
+
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/users/database$suffix';
+  }
+
+  static String users(String wsId) => '/api/v1/workspaces/$wsId/users';
+
+  static String user(String wsId, String userId) =>
+      '/api/v1/workspaces/$wsId/users/$userId';
+
+  static String userGroups(
+    String wsId, {
+    List<String>? ids,
+    int? page,
+    int? pageSize,
+  }) {
+    final params = <String, String>{};
+    if (ids != null && ids.isNotEmpty) {
+      params['ids'] = ids.join(',');
+    }
+    if (page != null) {
+      params['page'] = '$page';
+    }
+    if (pageSize != null) {
+      params['pageSize'] = '$pageSize';
+    }
+
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/users/groups$suffix';
+  }
+
+  static String feedbacks(
+    String wsId, {
+    String? query,
+    int? page,
+    int? pageSize,
+    String? requireAttention,
+    String? userId,
+    String? groupId,
+    String? creatorId,
+  }) {
+    final params = <String, String>{};
+    if (query != null && query.trim().isNotEmpty) {
+      params['q'] = query.trim();
+    }
+    if (page != null) {
+      params['page'] = '$page';
+    }
+    if (pageSize != null) {
+      params['pageSize'] = '$pageSize';
+    }
+    if (requireAttention != null && requireAttention.isNotEmpty) {
+      params['requireAttention'] = requireAttention;
+    }
+    if (userId != null && userId.isNotEmpty) {
+      params['userId'] = userId;
+    }
+    if (groupId != null && groupId.isNotEmpty) {
+      params['groupId'] = groupId;
+    }
+    if (creatorId != null && creatorId.isNotEmpty) {
+      params['creatorId'] = creatorId;
+    }
+
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/users/feedbacks$suffix';
+  }
+
+  static String auditLogs(
+    String wsId, {
+    required String start,
+    required String end,
+    String? eventKind,
+    String? source,
+    String? affectedUserQuery,
+    String? actorQuery,
+    int? offset,
+    int? limit,
+  }) {
+    final params = <String, String>{
+      'start': start,
+      'end': end,
+    };
+    if (eventKind != null && eventKind.isNotEmpty) {
+      params['eventKind'] = eventKind;
+    }
+    if (source != null && source.isNotEmpty) {
+      params['source'] = source;
+    }
+    if (affectedUserQuery != null && affectedUserQuery.trim().isNotEmpty) {
+      params['affectedUserQuery'] = affectedUserQuery.trim();
+    }
+    if (actorQuery != null && actorQuery.trim().isNotEmpty) {
+      params['actorQuery'] = actorQuery.trim();
+    }
+    if (offset != null) {
+      params['offset'] = '$offset';
+    }
+    if (limit != null) {
+      params['limit'] = '$limit';
+    }
+
+    return '/api/v1/workspaces/$wsId/users/audit-logs?${Uri(queryParameters: params).query}';
+  }
+
+  static String detectDuplicates(String wsId) =>
+      '/api/v1/workspaces/$wsId/users/duplicates/detect';
+
+  static String mergeUsers(String wsId) =>
+      '/api/v1/workspaces/$wsId/users/merge';
+
+  static String bulkImport(String wsId) =>
+      '/api/v1/workspaces/$wsId/users/bulk-import';
+
+  static String avatar(String wsId) => '/api/v1/workspaces/$wsId/users/avatar';
+}

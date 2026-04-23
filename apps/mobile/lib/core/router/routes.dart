@@ -30,6 +30,8 @@ abstract final class Routes {
   static const calendar = '/calendar';
   static const finance = '/finance';
   static const inventory = '/inventory';
+  static const drive = '/drive';
+  static const crm = '/crm';
   static const timer = '/timer';
   static const settings = '/settings';
   static const settingsWorkspace = '/settings/workspace';
@@ -107,6 +109,12 @@ abstract final class Routes {
     }
     if (normalized == inventory || normalized.startsWith('$inventory/')) {
       return inventory;
+    }
+    if (normalized == drive || normalized.startsWith('$drive/')) {
+      return drive;
+    }
+    if (normalized == crm || normalized.startsWith('$crm/')) {
+      return crm;
     }
     if (normalized == timer || normalized.startsWith('$timer/')) {
       return timer;

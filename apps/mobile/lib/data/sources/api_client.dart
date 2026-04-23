@@ -153,7 +153,7 @@ class ApiClient {
   /// Returns the decoded JSON body on success, or throws [ApiException].
   Future<Map<String, dynamic>> postJson(
     String path,
-    Map<String, dynamic> body, {
+    Object? body, {
     bool requiresAuth = true,
   }) async {
     final url = Uri.parse('${ApiConfig.baseUrl}$path');
