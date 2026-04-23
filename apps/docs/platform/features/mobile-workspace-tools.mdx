@@ -99,6 +99,8 @@ The mobile Education module uses authenticated workspace routes from `apps/web`:
 
 For mobile-facing collection APIs, keep list routes request-aware and list-shaped. A cookie-only helper or `.single()` response on a collection endpoint can work in the web dashboard but break mobile Bearer-token callers or pagination assumptions.
 
+When an Education mobile list needs derived counts from workspace-protected join tables such as `course_module_quiz_sets`, verify workspace membership first with the request-scoped client, then run the joined read on an admin-backed client. Also select real join columns such as `module_id`; do not assume those bridge tables expose a synthetic `id`.
+
 ## Import And Export Format Notes
 
 - The web CRM page still has richer spreadsheet tooling, including XLSX-oriented flows.

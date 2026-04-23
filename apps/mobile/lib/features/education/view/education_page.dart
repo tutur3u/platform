@@ -624,9 +624,6 @@ class _EducationPageState extends State<EducationPage> {
     );
   }
 
-  bool get _showSearch =>
-      _tab == _EducationTab.courses || _tab == _EducationTab.library;
-
   int get _activeAttemptFilterCount {
     var count = 0;
     if (_attemptStatus != 'all') count += 1;
@@ -745,19 +742,6 @@ class _EducationPageState extends State<EducationPage> {
                           40 + MediaQuery.paddingOf(context).bottom,
                         ),
                         children: [
-                          _EducationHeroCard(
-                            tab: _tab,
-                            libraryTab: _libraryTab,
-                            searchController: _searchController,
-                            onSearchChanged: _onSearchChanged,
-                            showSearch: _showSearch,
-                            courseCount: _courseSummaryCount,
-                            quizCount: _quizSummaryCount,
-                            quizSetCount: _quizSetSummaryCount,
-                            flashcardCount: _flashcardSummaryCount,
-                            attemptCount: _attemptSummaryCount,
-                          ),
-                          const SizedBox(height: 20),
                           if (_error != null)
                             FinanceEmptyState(
                               icon: Icons.error_outline_rounded,
@@ -921,6 +905,15 @@ class _EducationPageState extends State<EducationPage> {
         subtitle: l10n.educationCoursesSubtitle,
       ),
       const SizedBox(height: 12),
+      TextField(
+        controller: _searchController,
+        onChanged: _onSearchChanged,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.search),
+          hintText: l10n.educationSearchCoursesHint,
+        ),
+      ),
+      const SizedBox(height: 12),
       if (_courses.isEmpty)
         FinanceEmptyState(
           icon: Icons.school_outlined,
@@ -947,6 +940,19 @@ class _EducationPageState extends State<EducationPage> {
       FinanceSectionHeader(
         title: l10n.educationLibraryLabel,
         subtitle: l10n.educationLibrarySubtitle,
+      ),
+      const SizedBox(height: 12),
+      TextField(
+        controller: _searchController,
+        onChanged: _onSearchChanged,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.search),
+          hintText: _libraryTab == _EducationLibraryTab.quizzes
+              ? l10n.educationSearchQuizzesHint
+              : _libraryTab == _EducationLibraryTab.quizSets
+              ? l10n.educationSearchQuizSetsHint
+              : l10n.educationSearchFlashcardsHint,
+        ),
       ),
       const SizedBox(height: 12),
       Wrap(
@@ -1097,182 +1103,6 @@ class _EducationPageState extends State<EducationPage> {
           ),
         ),
     ];
-  }
-}
-
-class _EducationHeroCard extends StatelessWidget {
-  const _EducationHeroCard({
-    required this.tab,
-    required this.libraryTab,
-    required this.searchController,
-    required this.onSearchChanged,
-    required this.showSearch,
-    required this.courseCount,
-    required this.quizCount,
-    required this.quizSetCount,
-    required this.flashcardCount,
-    required this.attemptCount,
-  });
-
-  final _EducationTab tab;
-  final _EducationLibraryTab libraryTab;
-  final TextEditingController searchController;
-  final ValueChanged<String> onSearchChanged;
-  final bool showSearch;
-  final int courseCount;
-  final int quizCount;
-  final int quizSetCount;
-  final int flashcardCount;
-  final int attemptCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    const accent = Color(0xFF2563EB);
-    final l10n = context.l10n;
-
-    final title = switch (tab) {
-      _EducationTab.overview => l10n.educationTitle,
-      _EducationTab.courses => l10n.educationCoursesLabel,
-      _EducationTab.library => l10n.educationLibraryLabel,
-      _EducationTab.attempts => l10n.educationAttemptsLabel,
-    };
-
-    final subtitle = switch (tab) {
-      _EducationTab.overview => l10n.educationOverviewSubtitle,
-      _EducationTab.courses => l10n.educationCoursesSubtitle,
-      _EducationTab.library =>
-        libraryTab == _EducationLibraryTab.quizzes
-            ? l10n.educationLibraryQuizzesSubtitle
-            : libraryTab == _EducationLibraryTab.quizSets
-            ? l10n.educationLibraryQuizSetsSubtitle
-            : l10n.educationLibraryFlashcardsSubtitle,
-      _EducationTab.attempts => l10n.educationAttemptsSubtitle,
-    };
-
-    final searchHint = switch (tab) {
-      _EducationTab.courses => l10n.educationSearchCoursesHint,
-      _EducationTab.library =>
-        libraryTab == _EducationLibraryTab.quizzes
-            ? l10n.educationSearchQuizzesHint
-            : libraryTab == _EducationLibraryTab.quizSets
-            ? l10n.educationSearchQuizSetsHint
-            : l10n.educationSearchFlashcardsHint,
-      _ => '',
-    };
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: FinancePalette.of(context).subtleBorder),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            accent.withValues(alpha: 0.22),
-            accent.withValues(alpha: 0.08),
-            FinancePalette.of(context).panel,
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: theme.brightness == Brightness.dark ? 0.2 : 0.06,
-            ),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.school_outlined,
-                  color: accent,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      subtitle,
-                      style: theme.typography.small.copyWith(
-                        color: theme.colorScheme.mutedForeground,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _EducationBadge(
-                icon: Icons.school_outlined,
-                label: '$courseCount ${l10n.educationCoursesLabel}',
-                tint: accent,
-              ),
-              _EducationBadge(
-                icon: Icons.quiz_outlined,
-                label: '$quizCount ${l10n.educationLibraryQuizzesLabel}',
-                tint: accent,
-              ),
-              _EducationBadge(
-                icon: Icons.layers_outlined,
-                label: '$quizSetCount ${l10n.educationLibraryQuizSetsLabel}',
-                tint: accent,
-              ),
-              _EducationBadge(
-                icon: Icons.style_outlined,
-                label:
-                    '$flashcardCount ${l10n.educationLibraryFlashcardsLabel}',
-                tint: accent,
-              ),
-              _EducationBadge(
-                icon: Icons.assignment_turned_in_outlined,
-                label: '$attemptCount ${l10n.educationAttemptsLabel}',
-                tint: accent,
-              ),
-            ],
-          ),
-          if (showSearch) ...[
-            const SizedBox(height: 16),
-            TextField(
-              controller: searchController,
-              onChanged: onSearchChanged,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search),
-                hintText: searchHint,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
   }
 }
 

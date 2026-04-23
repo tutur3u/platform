@@ -1640,6 +1640,7 @@
       "branch": "Tracked Branch",
       "commit": "Latest Commit",
       "description": "A visual control room for the same blue/green signals that the terminal watcher prints, with more persistent context for operators.",
+      "kicker": "Blue/Green Control Plane",
       "last_snapshot": "Last Snapshot",
       "title": "Blue/Green Control Room"
     },
@@ -1656,6 +1657,33 @@
       "description": "Latest persisted watcher logs, filterable by deployment stamp or commit so recovery and rollout failures are easier to inspect.",
       "entries": "entries",
       "scope_all": "All Deployments"
+    },
+    "logs_page": {
+      "archive_range": "Showing archived rows {start}-{end} of {total}",
+      "archive_window": "{visible} visible rows in the current archive window.",
+      "badge": "Archive Page {current} of {total}",
+      "cards": {
+        "error_description": "Error-level entries visible in this archive window.",
+        "retained": "Retained Log Rows",
+        "retained_description": "Watcher log rows currently available for browsing."
+      },
+      "description": "Move through the retained watcher archive page by page, then refine the visible window by deployment scope, severity, or rollout status.",
+      "empty_filtered": "No watcher log rows matched the current filters in this archive window.",
+      "page_refinement": "Filters refine only the current archive window. Use the pager to browse older retained watcher rows.",
+      "title": "Watcher Log Archive"
+    },
+    "overview": {
+      "description": "Use the overview as the operator briefing: current runtime state, cadence, and fast links into the heavier rollout and archive surfaces.",
+      "focus_logs_description": "Jump straight into retained watcher logs for recovery and rollout debugging.",
+      "focus_requests_description": "Browse archived proxy traffic without loading the full request history into this page.",
+      "focus_rollouts_description": "Track rollout health, deployment charts, event streams, and the live standby sync controls.",
+      "kicker": "Operator Briefing",
+      "logs_preview_description": "A quick read on the newest persisted watcher lines before you open the full archive.",
+      "open_logs": "Open Log Archive",
+      "open_requests": "Open Request Archive",
+      "requests_preview_description": "A trimmed preview of fresh proxy traffic to help you decide when to open the full archive.",
+      "snapshot_title": "Current Snapshot",
+      "title": "Choose the monitoring surface you need"
     },
     "panels": {
       "cadence": "Watcher Cadence",
@@ -1683,6 +1711,25 @@
     "requests": {
       "internal": "Internal Probe"
     },
+    "requests_page": {
+      "archive_range": "Showing archived rows {start}-{end} of {total}",
+      "archive_window": "{visible} visible rows in the current archive window.",
+      "badge": "Archive Page {current} of {total}",
+      "cards": {
+        "current_rpm": "Current RPM",
+        "page_errors": "Visible Page Errors",
+        "page_errors_description": "4xx and 5xx responses visible in this archive window.",
+        "retained": "Retained Request Rows",
+        "retained_description": "Request rows currently available for paging.",
+        "served": "Served Requests",
+        "visible_rows": "Visible rows after refining this archive window."
+      },
+      "description": "Browse retained proxy requests page by page, then refine the visible archive window by route, render mode, traffic type, or status.",
+      "empty_filtered": "No request rows matched the current filters in this archive window.",
+      "page_refinement": "Filters refine only the current archive window. Use the pager to move backward through retained traffic.",
+      "title": "Request Archive",
+      "top_routes_description": "Route summaries are calculated from the visible archive window on this page."
+    },
     "rollout": {
       "avg_latency": "Avg Latency",
       "commit": "Commit",
@@ -1695,6 +1742,35 @@
       "phase_time": "Phase Time",
       "requests": "Requests",
       "route": "Target Route"
+    },
+    "rollouts": {
+      "cards": {
+        "current_traffic": "Current Traffic",
+        "last_result": "Last Rollout Result",
+        "last_result_description": "Most recent deployment outcome reported by the watcher.",
+        "mean_rollout": "Mean Rollout Time",
+        "successful": "Successful Rollouts",
+        "successful_description": "Successful deploys versus the current retained rollout ledger."
+      },
+      "events_title": "Watcher Event Stream"
+    },
+    "routes": {
+      "logs": {
+        "description": "Retained watcher rows for debugging rollouts and recovery.",
+        "title": "Watcher Logs"
+      },
+      "overview": {
+        "description": "Current runtime state, cadence, and jump points into deeper views.",
+        "title": "Overview"
+      },
+      "requests": {
+        "description": "Page through retained proxy traffic without overloading the main dashboard.",
+        "title": "Requests"
+      },
+      "rollouts": {
+        "description": "Deployments, traffic charts, event streams, and sync controls.",
+        "title": "Rollouts"
+      }
     },
     "runtime": {
       "activated_at": "Activated At",
@@ -5624,6 +5700,10 @@
     "integrations": "Integrations",
     "mobile_versions": "Mobile Versions",
     "monitoring": "Monitoring",
+    "monitoring_overview": "Monitoring Overview",
+    "monitoring_requests": "Monitoring Requests",
+    "monitoring_rollouts": "Monitoring Rollouts",
+    "monitoring_watcher_logs": "Monitoring Watcher Logs",
     "otp_limits": "OTP Limits",
     "overview": "Overview",
     "post_email_queue": "Post Email Queue",

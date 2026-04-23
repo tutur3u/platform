@@ -118,6 +118,23 @@ export interface BlueGreenMonitoringWatcherLog {
   time: number;
 }
 
+export interface BlueGreenMonitoringArchiveWindow {
+  newestAt: number | null;
+  oldestAt: number | null;
+}
+
+export interface BlueGreenMonitoringPaginatedResult<T> {
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  items: T[];
+  limit: number;
+  offset: number;
+  page: number;
+  pageCount: number;
+  total: number;
+  window: BlueGreenMonitoringArchiveWindow;
+}
+
 export interface BlueGreenMonitoringSnapshot {
   analytics: {
     current: {
@@ -241,6 +258,16 @@ export interface SendInfrastructurePushTestResponse {
   truncated: boolean;
 }
 
+export interface GetBlueGreenMonitoringSnapshotParams {
+  requestPreviewLimit?: number;
+  watcherLogLimit?: number;
+}
+
+export interface GetBlueGreenMonitoringArchiveParams {
+  page?: number;
+  pageSize?: number;
+}
+
 export async function sendInfrastructurePushTest(
   payload: SendInfrastructurePushTestPayload,
   options?: InternalApiClientOptions
@@ -278,11 +305,78 @@ export async function updateMobileVersionPolicies(
 }
 
 export async function getBlueGreenMonitoringSnapshot(
+  params?: GetBlueGreenMonitoringSnapshotParams,
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+
+  if (params?.requestPreviewLimit != null) {
+    searchParams.set('requestPreviewLimit', String(params.requestPreviewLimit));
+  }
+
+  if (params?.watcherLogLimit != null) {
+    searchParams.set('watcherLogLimit', String(params.watcherLogLimit));
+  }
+
   return client.json<BlueGreenMonitoringSnapshot>(
-    '/api/v1/infrastructure/monitoring/blue-green',
+    `/api/v1/infrastructure/monitoring/blue-green${
+      searchParams.size > 0 ? `?${searchParams.toString()}` : ''
+    }`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getBlueGreenMonitoringRequestArchive(
+  params?: GetBlueGreenMonitoringArchiveParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+
+  if (params?.page != null) {
+    searchParams.set('page', String(params.page));
+  }
+
+  if (params?.pageSize != null) {
+    searchParams.set('pageSize', String(params.pageSize));
+  }
+
+  return client.json<
+    BlueGreenMonitoringPaginatedResult<BlueGreenMonitoringRequestLog>
+  >(
+    `/api/v1/infrastructure/monitoring/blue-green/requests${
+      searchParams.size > 0 ? `?${searchParams.toString()}` : ''
+    }`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getBlueGreenMonitoringWatcherLogArchive(
+  params?: GetBlueGreenMonitoringArchiveParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+
+  if (params?.page != null) {
+    searchParams.set('page', String(params.page));
+  }
+
+  if (params?.pageSize != null) {
+    searchParams.set('pageSize', String(params.pageSize));
+  }
+
+  return client.json<
+    BlueGreenMonitoringPaginatedResult<BlueGreenMonitoringWatcherLog>
+  >(
+    `/api/v1/infrastructure/monitoring/blue-green/watcher-logs${
+      searchParams.size > 0 ? `?${searchParams.toString()}` : ''
+    }`,
     {
       cache: 'no-store',
     }

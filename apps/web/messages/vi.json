@@ -1640,6 +1640,7 @@
       "branch": "Nhánh đang theo dõi",
       "commit": "Commit mới nhất",
       "description": "Phòng điều khiển trực quan cho cùng các tín hiệu blue/green mà watcher trên terminal hiển thị, nhưng có thêm bối cảnh bền vững hơn cho operator.",
+      "kicker": "Trung Tâm Điều Phối Blue/Green",
       "last_snapshot": "Snapshot gần nhất",
       "title": "Phòng Điều Khiển Blue/Green"
     },
@@ -1656,6 +1657,33 @@
       "description": "Nhật ký watcher đã lưu gần nhất, có thể lọc theo deployment stamp hoặc commit để dễ kiểm tra các lần phục hồi và rollout lỗi.",
       "entries": "bản ghi",
       "scope_all": "Tất Cả Triển Khai"
+    },
+    "logs_page": {
+      "archive_range": "Đang hiển thị hàng lưu trữ {start}-{end} trên {total}",
+      "archive_window": "{visible} hàng đang hiển thị trong cửa sổ lưu trữ hiện tại.",
+      "badge": "Trang Lưu Trữ {current} / {total}",
+      "cards": {
+        "error_description": "Các bản ghi mức lỗi đang hiển thị trong cửa sổ lưu trữ hiện tại.",
+        "retained": "Dòng Log Được Lưu",
+        "retained_description": "Các dòng log watcher hiện còn sẵn để duyệt."
+      },
+      "description": "Di chuyển qua kho log watcher đã lưu theo từng trang, rồi tinh chỉnh cửa sổ đang hiển thị theo phạm vi triển khai, mức độ hoặc trạng thái rollout.",
+      "empty_filtered": "Không có dòng log watcher nào khớp với bộ lọc hiện tại trong cửa sổ lưu trữ này.",
+      "page_refinement": "Bộ lọc chỉ tác động lên cửa sổ lưu trữ hiện tại. Hãy dùng phân trang để xem các dòng watcher cũ hơn.",
+      "title": "Kho Log Watcher"
+    },
+    "overview": {
+      "description": "Dùng trang tổng quan như bản tóm tắt dành cho operator: trạng thái runtime hiện tại, nhịp watcher và các lối tắt tới những bề mặt nặng hơn.",
+      "focus_logs_description": "Đi thẳng vào log watcher đã lưu để kiểm tra lỗi rollout và phục hồi.",
+      "focus_requests_description": "Duyệt lưu lượng proxy đã lưu mà không đẩy toàn bộ lịch sử request vào trang này.",
+      "focus_rollouts_description": "Theo dõi tình trạng rollout, biểu đồ triển khai, luồng sự kiện và các nút đồng bộ standby trực tiếp.",
+      "kicker": "Bản Tóm Tắt Vận Hành",
+      "logs_preview_description": "Cái nhìn nhanh vào những dòng watcher mới nhất trước khi mở kho log đầy đủ.",
+      "open_logs": "Mở Kho Log",
+      "open_requests": "Mở Kho Request",
+      "requests_preview_description": "Bản xem trước rút gọn của lưu lượng proxy mới để bạn quyết định khi nào cần mở kho lưu trữ đầy đủ.",
+      "snapshot_title": "Snapshot Hiện Tại",
+      "title": "Chọn bề mặt giám sát phù hợp"
     },
     "panels": {
       "cadence": "Nhịp Của Watcher",
@@ -1683,6 +1711,25 @@
     "requests": {
       "internal": "Probe Nội Bộ"
     },
+    "requests_page": {
+      "archive_range": "Đang hiển thị hàng lưu trữ {start}-{end} trên {total}",
+      "archive_window": "{visible} hàng đang hiển thị trong cửa sổ lưu trữ hiện tại.",
+      "badge": "Trang Lưu Trữ {current} / {total}",
+      "cards": {
+        "current_rpm": "RPM Hiện Tại",
+        "page_errors": "Lỗi Trong Trang",
+        "page_errors_description": "Các phản hồi 4xx và 5xx đang hiển thị trong cửa sổ lưu trữ hiện tại.",
+        "retained": "Dòng Request Được Lưu",
+        "retained_description": "Các dòng request hiện còn sẵn để phân trang.",
+        "served": "Request Đã Phục Vụ",
+        "visible_rows": "Số hàng còn hiển thị sau khi tinh chỉnh cửa sổ lưu trữ."
+      },
+      "description": "Duyệt các request proxy đã lưu theo từng trang, rồi tinh chỉnh cửa sổ lưu trữ đang hiển thị theo route, kiểu render, loại lưu lượng hoặc trạng thái.",
+      "empty_filtered": "Không có dòng request nào khớp với bộ lọc hiện tại trong cửa sổ lưu trữ này.",
+      "page_refinement": "Bộ lọc chỉ tác động lên cửa sổ lưu trữ hiện tại. Hãy dùng phân trang để quay ngược về lưu lượng cũ hơn.",
+      "title": "Kho Request",
+      "top_routes_description": "Tóm tắt route được tính từ cửa sổ lưu trữ đang hiển thị trên trang này."
+    },
     "rollout": {
       "avg_latency": "Độ Trễ TB",
       "commit": "Commit",
@@ -1695,6 +1742,35 @@
       "phase_time": "Thời gian pha",
       "requests": "Request",
       "route": "Tuyến mục tiêu"
+    },
+    "rollouts": {
+      "cards": {
+        "current_traffic": "Lưu Lượng Hiện Tại",
+        "last_result": "Kết Quả Rollout Gần Nhất",
+        "last_result_description": "Kết quả triển khai gần nhất do watcher báo về.",
+        "mean_rollout": "Thời Gian Rollout TB",
+        "successful": "Rollout Thành Công",
+        "successful_description": "Số lần triển khai thành công so với phần sổ rollout hiện còn được giữ."
+      },
+      "events_title": "Luồng Sự Kiện Watcher"
+    },
+    "routes": {
+      "logs": {
+        "description": "Các dòng watcher đã lưu để gỡ lỗi rollout và phục hồi.",
+        "title": "Log Watcher"
+      },
+      "overview": {
+        "description": "Trạng thái runtime hiện tại, nhịp watcher và điểm nhảy sang các màn sâu hơn.",
+        "title": "Tổng Quan"
+      },
+      "requests": {
+        "description": "Phân trang qua lưu lượng proxy đã lưu mà không làm nặng dashboard chính.",
+        "title": "Request"
+      },
+      "rollouts": {
+        "description": "Triển khai, biểu đồ lưu lượng, luồng sự kiện và các nút đồng bộ.",
+        "title": "Rollout"
+      }
     },
     "runtime": {
       "activated_at": "Kích hoạt lúc",
@@ -5624,6 +5700,10 @@
     "integrations": "Dịch vụ tích hợp",
     "mobile_versions": "Phiên bản di động",
     "monitoring": "Giám sát",
+    "monitoring_overview": "Tổng Quan Giám Sát",
+    "monitoring_requests": "Request Giám Sát",
+    "monitoring_rollouts": "Rollout Giám Sát",
+    "monitoring_watcher_logs": "Log Watcher Giám Sát",
     "otp_limits": "Giới hạn OTP",
     "overview": "Tổng quan",
     "post_email_queue": "Hàng Đợi Email Bài Viết",

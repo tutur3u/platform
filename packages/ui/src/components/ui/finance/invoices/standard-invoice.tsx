@@ -561,12 +561,12 @@ export function StandardInvoice({
                         totalBeforeRounding={totalBeforeRounding}
                         roundedTotal={roundedTotal}
                         discountAmount={
-                          promotionsAllowed && !!selectedPromotion
+                          promotionsAllowed && selectedPromotion
                             ? discountAmount
                             : undefined
                         }
                         discountLabel={
-                          promotionsAllowed && !!selectedPromotion
+                          promotionsAllowed && selectedPromotion
                             ? selectedPromotion.name ||
                               t('ws-invoices.unnamed_promotion')
                             : null

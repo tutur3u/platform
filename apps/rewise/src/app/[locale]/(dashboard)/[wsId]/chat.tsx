@@ -229,12 +229,7 @@ export default function Chat({
     const input = searchParams.get('ai_chat.input');
     const refresh = searchParams.get('ai_chat.refresh');
 
-    if (
-      (initialScroll || refresh) &&
-      !input &&
-      !!chats &&
-      count !== undefined
-    ) {
+    if ((initialScroll || refresh) && !input && chats && count !== undefined) {
       setInitialScroll(false);
       const mainChatContent = document.getElementById('main-chat-content');
 

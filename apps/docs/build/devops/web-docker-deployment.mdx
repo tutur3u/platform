@@ -1,7 +1,7 @@
 ---
 title: 'Web Docker Deployment'
 description: 'Run the web app in Docker for development, production, and blue/green self-hosted rollout.'
-updatedAt: '2026-04-21'
+updatedAt: '2026-04-23'
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime.
@@ -211,6 +211,25 @@ Additional behavior:
   recent history, prioritizing in-progress rollouts first, then the live
   promoted color, then the warm standby. Direct manual
   `bun serve:web:docker:bg` runs are written into that same history too.
+
+### Monitoring Surfaces
+
+The infrastructure monitoring UI in `apps/web` is intentionally split into
+smaller pages instead of one oversized dashboard:
+
+- `/{wsId}/infrastructure/monitoring` for the operator overview, runtime
+  snapshot, and jump points into deeper surfaces.
+- `/{wsId}/infrastructure/monitoring/rollouts` for rollout controls, deployment
+  charts, event streams, and ledger history.
+- `/{wsId}/infrastructure/monitoring/requests` for paginated proxy request
+  history backed by the durable JSONL request store under
+  `tmp/docker-web/watch/blue-green-request-logs/`.
+- `/{wsId}/infrastructure/monitoring/watcher-logs` for paginated watcher log
+  browsing backed by `tmp/docker-web/watch/blue-green-auto-deploy.logs.json`.
+
+Operationally, keep the overview route lightweight and treat request/log
+archives as dedicated drill-down pages. The summary snapshot is for quick
+operator context; durable history should be paged from the persisted ledgers.
 
 ## Build Resource Caps
 

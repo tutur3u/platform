@@ -104,7 +104,7 @@ export function TimeRangePicker({
   const safeTimeRanges: WeekTimeRanges = {
     monday: {
       enabled:
-        !!timeRanges.monday && typeof timeRanges.monday.enabled === 'boolean'
+        timeRanges.monday && typeof timeRanges.monday.enabled === 'boolean'
           ? timeRanges.monday.enabled
           : false,
       timeBlocks: Array.isArray(timeRanges.monday?.timeBlocks)
@@ -113,7 +113,7 @@ export function TimeRangePicker({
     },
     tuesday: {
       enabled:
-        !!timeRanges.tuesday && typeof timeRanges.tuesday.enabled === 'boolean'
+        timeRanges.tuesday && typeof timeRanges.tuesday.enabled === 'boolean'
           ? timeRanges.tuesday.enabled
           : false,
       timeBlocks: Array.isArray(timeRanges.tuesday?.timeBlocks)
@@ -122,7 +122,7 @@ export function TimeRangePicker({
     },
     wednesday: {
       enabled:
-        !!timeRanges.wednesday &&
+        timeRanges.wednesday &&
         typeof timeRanges.wednesday.enabled === 'boolean'
           ? timeRanges.wednesday.enabled
           : false,
@@ -132,8 +132,7 @@ export function TimeRangePicker({
     },
     thursday: {
       enabled:
-        !!timeRanges.thursday &&
-        typeof timeRanges.thursday.enabled === 'boolean'
+        timeRanges.thursday && typeof timeRanges.thursday.enabled === 'boolean'
           ? timeRanges.thursday.enabled
           : false,
       timeBlocks: Array.isArray(timeRanges.thursday?.timeBlocks)
@@ -142,7 +141,7 @@ export function TimeRangePicker({
     },
     friday: {
       enabled:
-        !!timeRanges.friday && typeof timeRanges.friday.enabled === 'boolean'
+        timeRanges.friday && typeof timeRanges.friday.enabled === 'boolean'
           ? timeRanges.friday.enabled
           : false,
       timeBlocks: Array.isArray(timeRanges.friday?.timeBlocks)
@@ -151,8 +150,7 @@ export function TimeRangePicker({
     },
     saturday: {
       enabled:
-        !!timeRanges.saturday &&
-        typeof timeRanges.saturday.enabled === 'boolean'
+        timeRanges.saturday && typeof timeRanges.saturday.enabled === 'boolean'
           ? timeRanges.saturday.enabled
           : false,
       timeBlocks: Array.isArray(timeRanges.saturday?.timeBlocks)
@@ -161,7 +159,7 @@ export function TimeRangePicker({
     },
     sunday: {
       enabled:
-        !!timeRanges.sunday && typeof timeRanges.sunday.enabled === 'boolean'
+        timeRanges.sunday && typeof timeRanges.sunday.enabled === 'boolean'
           ? timeRanges.sunday.enabled
           : false,
       timeBlocks: Array.isArray(timeRanges.sunday?.timeBlocks)

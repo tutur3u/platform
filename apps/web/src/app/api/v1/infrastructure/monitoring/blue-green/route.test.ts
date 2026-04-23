@@ -35,9 +35,9 @@ function createPermissionsResult(permissions: string[] = []) {
   };
 }
 
-function createTestRequest() {
+function createTestRequest(query = '') {
   return new Request(
-    'http://localhost/api/v1/infrastructure/monitoring/blue-green'
+    `http://localhost/api/v1/infrastructure/monitoring/blue-green${query}`
   ) as NextRequest;
 }
 
@@ -191,6 +191,100 @@ describe('blue-green monitoring route', () => {
         health: 'live',
         status: 'healthy',
       },
+    });
+  });
+
+  it('passes preview limits to the monitoring snapshot reader', async () => {
+    authGetUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    getPermissionsMock.mockResolvedValue(
+      createPermissionsResult(['view_infrastructure'])
+    );
+    readBlueGreenMonitoringSnapshotMock.mockReturnValue({
+      analytics: {
+        current: {
+          daily: null,
+          monthly: null,
+          weekly: null,
+          yearly: null,
+        },
+        recentRequests: [],
+        totalPersistedLogs: 0,
+        trends: {
+          daily: [],
+          monthly: [],
+          weekly: [],
+          yearly: [],
+        },
+      },
+      deployments: [],
+      dockerResources: {
+        containers: [],
+        message: null,
+        state: 'idle',
+        totalCpuPercent: 0,
+        totalMemoryBytes: 0,
+        totalRxBytes: 0,
+        totalTxBytes: 0,
+      },
+      overview: {
+        averageBuildDurationMs: null,
+        currentAverageRequestsPerMinute: null,
+        currentPeakRequestsPerMinute: null,
+        currentRequestCount: null,
+        failedDeployments: 0,
+        successfulDeployments: 0,
+        totalDeployments: 0,
+        totalPersistedLogs: 0,
+        totalRequestsServed: 0,
+      },
+      runtime: {
+        activatedAt: null,
+        activeColor: null,
+        averageRequestsPerMinute: null,
+        dailyAverageRequests: null,
+        dailyPeakRequests: null,
+        dailyRequestCount: null,
+        deploymentStamp: null,
+        lifetimeMs: null,
+        liveColors: [],
+        peakRequestsPerMinute: null,
+        requestCount: null,
+        serviceContainers: {},
+        standbyColor: null,
+        state: 'idle',
+      },
+      source: {
+        historyAvailable: false,
+        monitoringDirAvailable: true,
+        statusAvailable: true,
+      },
+      watcher: {
+        args: [],
+        events: [],
+        health: 'live',
+        intervalMs: null,
+        lastCheckAt: null,
+        lastDeployAt: null,
+        lastDeployStatus: null,
+        logs: [],
+        lastResult: null,
+        latestCommit: null,
+        lock: null,
+        nextCheckAt: null,
+        status: 'healthy',
+        target: null,
+        updatedAt: null,
+      },
+    });
+
+    const response = await GET(
+      createTestRequest('?requestPreviewLimit=8&watcherLogLimit=6')
+    );
+
+    expect(response.status).toBe(200);
+    expect(readBlueGreenMonitoringSnapshotMock).toHaveBeenCalledWith({
+      requestPreviewLimit: 8,
+      watcherLogLimit: 6,
     });
   });
 });

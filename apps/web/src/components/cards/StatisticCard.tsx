@@ -53,7 +53,7 @@ const StatisticCard = ({
         </div>
         <div
           className={`m-2 mt-0 line-clamp-1 rounded border border-border/30 bg-foreground/5 p-4 text-center font-bold text-2xl text-foreground ${
-            !!onClick || !!href
+            onClick || href
               ? 'transition-all duration-300 group-hover:rounded-lg'
               : ''
           }`}

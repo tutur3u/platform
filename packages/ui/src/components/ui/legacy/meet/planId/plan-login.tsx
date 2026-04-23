@@ -229,7 +229,7 @@ export default function PlanLogin({
                   (!user?.id || originalPlatformUser?.id === user?.id))
               }
             >
-              {!!originalPlatformUser &&
+              {originalPlatformUser &&
               (!user?.id || originalPlatformUser?.id === user?.id)
                 ? t('meet-together-plan-details.using_tuturuuu_account')
                 : t('meet-together-plan-details.use_tuturuuu_account')}

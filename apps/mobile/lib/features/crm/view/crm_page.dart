@@ -984,21 +984,6 @@ class _CrmPageState extends State<CrmPage> {
                           40 + MediaQuery.paddingOf(context).bottom,
                         ),
                         children: [
-                          _CrmOverviewCard(
-                            tab: _tab,
-                            total: currentTotal,
-                            activeFilterCount: activeFilterCount,
-                            searchController: _searchController,
-                            canShowCurrentTab: canShowCurrentTab,
-                            onSearchChanged: _onSearchChanged,
-                            statusLabel: _crmStatusLabel(context, _status),
-                            linkStatusLabel: _crmLinkStatusLabel(
-                              context,
-                              _linkStatus,
-                            ),
-                            auditRange: _auditRange,
-                          ),
-                          const SizedBox(height: 20),
                           FinanceSectionHeader(
                             title: _tab == _CrmTab.users
                                 ? l10n.crmUsersTab
@@ -1006,6 +991,19 @@ class _CrmPageState extends State<CrmPage> {
                             subtitle: currentTabSubtitle,
                           ),
                           const SizedBox(height: 14),
+                          if (canShowCurrentTab) ...[
+                            TextField(
+                              controller: _searchController,
+                              onChanged: _onSearchChanged,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.search),
+                                hintText: _tab == _CrmTab.users
+                                    ? l10n.crmSearchUsersHint
+                                    : l10n.crmSearchAuditHint,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                          ],
                           if (!canShowCurrentTab)
                             FinanceEmptyState(
                               icon: Icons.lock_outline_rounded,
@@ -1077,167 +1075,6 @@ class _CrmPageState extends State<CrmPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _CrmOverviewCard extends StatelessWidget {
-  const _CrmOverviewCard({
-    required this.tab,
-    required this.total,
-    required this.activeFilterCount,
-    required this.searchController,
-    required this.canShowCurrentTab,
-    required this.onSearchChanged,
-    required this.statusLabel,
-    required this.linkStatusLabel,
-    required this.auditRange,
-  });
-
-  final _CrmTab tab;
-  final int total;
-  final int activeFilterCount;
-  final TextEditingController searchController;
-  final bool canShowCurrentTab;
-  final ValueChanged<String> onSearchChanged;
-  final String statusLabel;
-  final String linkStatusLabel;
-  final DateTimeRange auditRange;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final totalLabel = NumberFormat.compact().format(total);
-    final accent = tab == _CrmTab.users
-        ? const Color(0xFF4D8DFF)
-        : const Color(0xFF9F7AEA);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: colorScheme.border),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            accent.withValues(alpha: 0.16),
-            accent.withValues(alpha: 0.06),
-            colorScheme.card,
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: theme.brightness == Brightness.dark ? 0.22 : 0.06,
-            ),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(
-                  tab == _CrmTab.users
-                      ? Icons.badge_outlined
-                      : Icons.history_rounded,
-                  size: 24,
-                  color: accent,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.crmTitle,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      tab == _CrmTab.users
-                          ? l10n.crmUsersTab
-                          : l10n.crmAuditTab,
-                      style: theme.typography.small.copyWith(
-                        color: colorScheme.mutedForeground,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 22),
-          Text(
-            totalLabel,
-            style: theme.typography.h2.copyWith(
-              fontWeight: FontWeight.w900,
-              height: 1.02,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _CrmPill(
-                icon: Icons.filter_alt_outlined,
-                label: '${l10n.commonFilters}: $activeFilterCount',
-                tint: accent,
-              ),
-              if (tab == _CrmTab.users) ...[
-                _CrmPill(
-                  icon: Icons.verified_user_outlined,
-                  label: '${l10n.crmStatus}: $statusLabel',
-                  tint: accent,
-                ),
-                _CrmPill(
-                  icon: Icons.link_outlined,
-                  label: '${l10n.crmLinkStatus}: $linkStatusLabel',
-                  tint: accent,
-                ),
-              ] else
-                _CrmPill(
-                  icon: Icons.date_range_outlined,
-                  label:
-                      '${DateFormat.MMMd().format(auditRange.start)}'
-                      ' - '
-                      '${DateFormat.MMMd().format(auditRange.end)}',
-                  tint: accent,
-                ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: searchController,
-            enabled: canShowCurrentTab,
-            onChanged: onSearchChanged,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search),
-              hintText: tab == _CrmTab.users
-                  ? l10n.crmSearchUsersHint
-                  : l10n.crmSearchAuditHint,
-            ),
-          ),
-        ],
       ),
     );
   }

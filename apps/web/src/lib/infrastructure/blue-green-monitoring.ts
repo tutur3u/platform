@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type {
+  BlueGreenMonitoringPaginatedResult,
   BlueGreenMonitoringPeriodMetric,
   BlueGreenMonitoringRequestLog,
   BlueGreenMonitoringSnapshot,
@@ -12,6 +13,8 @@ import type {
 type FsLike = Pick<typeof fs, 'existsSync' | 'readFileSync'>;
 
 const DOCKER_WEB_ENV_KEY = 'PLATFORM_BLUE_GREEN_MONITORING_DIR';
+const DEFAULT_ARCHIVE_PAGE_SIZE = 25;
+const MAX_ARCHIVE_PAGE_SIZE = 100;
 
 function resolveMonitoringDir(fsImpl: FsLike = fs) {
   const configuredDir = process.env[DOCKER_WEB_ENV_KEY]?.trim();
@@ -63,6 +66,98 @@ function toRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
+}
+
+function toPositiveInteger(value: unknown) {
+  if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim().length > 0) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  }
+
+  return null;
+}
+
+function clampArchivePageSize(pageSize: unknown) {
+  const parsed = toPositiveInteger(pageSize) ?? DEFAULT_ARCHIVE_PAGE_SIZE;
+  return Math.min(parsed, MAX_ARCHIVE_PAGE_SIZE);
+}
+
+function getArchivePage(page: unknown, total: number, pageSize: number) {
+  const requestedPage = toPositiveInteger(page) ?? 1;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+
+  return {
+    offset: (Math.min(requestedPage, pageCount) - 1) * pageSize,
+    page: Math.min(requestedPage, pageCount),
+    pageCount,
+  };
+}
+
+function slicePreviewItems<T>(items: T[], limit: number | null | undefined) {
+  if (limit == null) {
+    return items;
+  }
+
+  if (limit <= 0) {
+    return [];
+  }
+
+  return items.slice(0, limit);
+}
+
+function readJsonLinesFile<T>(filePath: string, fsImpl: FsLike = fs): T[] {
+  if (!fsImpl.existsSync(filePath)) {
+    return [];
+  }
+
+  try {
+    return fsImpl
+      .readFileSync(filePath, 'utf8')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .flatMap((line) => {
+        try {
+          return [JSON.parse(line) as T];
+        } catch {
+          return [];
+        }
+      });
+  } catch {
+    return [];
+  }
+}
+
+function buildArchiveWindow<T extends { time: number }>(items: T[]) {
+  return {
+    newestAt: items[0]?.time ?? null,
+    oldestAt: items[items.length - 1]?.time ?? null,
+  };
+}
+
+function createArchiveResponse<T extends { time: number }>(
+  items: T[],
+  page: number,
+  pageSize: number,
+  total: number
+): BlueGreenMonitoringPaginatedResult<T> {
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+
+  return {
+    hasNextPage: page < pageCount,
+    hasPreviousPage: page > 1,
+    items,
+    limit: pageSize,
+    offset: (page - 1) * pageSize,
+    page,
+    pageCount,
+    total,
+    window: buildArchiveWindow(items),
+  };
 }
 
 function normalizeEvents(entries: Array<Record<string, unknown>>) {
@@ -299,6 +394,126 @@ function normalizeWatcherLogs(
   });
 }
 
+function readNormalizedWatcherLogs(
+  watchDir: string,
+  fsImpl: FsLike = fs
+): BlueGreenMonitoringWatcherLog[] {
+  return normalizeWatcherLogs(
+    readJsonFile<Array<Record<string, unknown>>>(
+      path.join(watchDir, 'blue-green-auto-deploy.logs.json'),
+      fsImpl
+    ) ?? []
+  );
+}
+
+interface RequestLogChunkMetadata {
+  count: number;
+  file: string;
+}
+
+function readRequestLogChunkMetadata(
+  watchDir: string,
+  fsImpl: FsLike = fs
+): { chunks: RequestLogChunkMetadata[]; totalRecords: number } {
+  const state = toRecord(
+    readJsonFile<Record<string, unknown>>(
+      path.join(watchDir, 'blue-green-request-telemetry.state.json'),
+      fsImpl
+    )
+  );
+
+  const chunks = Array.isArray(state?.chunks)
+    ? state.chunks.flatMap((entry) => {
+        const record = toRecord(entry);
+        const file = typeof record?.file === 'string' ? record.file : null;
+
+        if (!file) {
+          return [];
+        }
+
+        return [
+          {
+            count: toPositiveInteger(record?.count) ?? 0,
+            file,
+          },
+        ];
+      })
+    : [];
+
+  return {
+    chunks,
+    totalRecords:
+      toPositiveInteger(state?.totalRecords) ??
+      chunks.reduce((sum, chunk) => sum + chunk.count, 0),
+  };
+}
+
+function readRequestArchiveItems(
+  watchDir: string,
+  offset: number,
+  limit: number,
+  fsImpl: FsLike = fs
+) {
+  const { chunks, totalRecords } = readRequestLogChunkMetadata(
+    watchDir,
+    fsImpl
+  );
+  const requestLogDir = path.join(watchDir, 'blue-green-request-logs');
+  const items: BlueGreenMonitoringRequestLog[] = [];
+
+  if (chunks.length === 0) {
+    const summary = toRecord(
+      readJsonFile<Record<string, unknown>>(
+        path.join(watchDir, 'blue-green-request-telemetry.summary.json'),
+        fsImpl
+      )
+    );
+
+    return {
+      items: normalizeRecentRequests(summary?.recentRequests).slice(
+        offset,
+        offset + limit
+      ),
+      total: normalizeRecentRequests(summary?.recentRequests).length,
+    };
+  }
+
+  let remainingOffset = offset;
+  let remainingLimit = limit;
+
+  for (const chunk of [...chunks].reverse()) {
+    if (remainingLimit <= 0) {
+      break;
+    }
+
+    if (remainingOffset >= chunk.count) {
+      remainingOffset -= chunk.count;
+      continue;
+    }
+
+    const rawEntries = readJsonLinesFile<Record<string, unknown>>(
+      path.join(requestLogDir, chunk.file),
+      fsImpl
+    );
+    const normalizedEntries = normalizeRecentRequests(rawEntries).reverse();
+
+    const chunkStart = remainingOffset;
+    const chunkItems = normalizedEntries.slice(
+      chunkStart,
+      chunkStart + remainingLimit
+    );
+
+    items.push(...chunkItems);
+    remainingLimit -= chunkItems.length;
+    remainingOffset = 0;
+  }
+
+  return {
+    items,
+    total: totalRecords,
+  };
+}
+
 function normalizeWatcherHealth(
   updatedAt: number | null,
   intervalMs: number | null,
@@ -339,9 +554,13 @@ function humanizeStatus(status: unknown) {
 export function readBlueGreenMonitoringSnapshot({
   fsImpl = fs,
   now = Date.now(),
+  requestPreviewLimit,
+  watcherLogLimit,
 }: {
   fsImpl?: FsLike;
   now?: number;
+  requestPreviewLimit?: number | null;
+  watcherLogLimit?: number | null;
 } = {}): BlueGreenMonitoringSnapshot {
   const monitoringDir = resolveMonitoringDir(fsImpl);
   const watchDir = path.join(monitoringDir.path, 'watch');
@@ -370,11 +589,7 @@ export function readBlueGreenMonitoringSnapshot({
       path.join(watchDir, 'blue-green-request-telemetry.summary.json'),
       fsImpl
     ) ?? null;
-  const watcherLogs =
-    readJsonFile<Array<Record<string, unknown>>>(
-      path.join(watchDir, 'blue-green-auto-deploy.logs.json'),
-      fsImpl
-    ) ?? [];
+  const watcherLogs = readNormalizedWatcherLogs(watchDir, fsImpl);
 
   const activeColor = readTextFile(path.join(prodDir, 'active-color'), fsImpl);
   const deploymentStamp = readTextFile(
@@ -441,11 +656,16 @@ export function readBlueGreenMonitoringSnapshot({
   const weeklyMetrics = normalizePeriodMetrics(telemetrySummary?.weekly);
   const monthlyMetrics = normalizePeriodMetrics(telemetrySummary?.monthly);
   const yearlyMetrics = normalizePeriodMetrics(telemetrySummary?.yearly);
-  const recentRequests = normalizeRecentRequests(
+  const normalizedRecentRequests = normalizeRecentRequests(
     telemetrySummary?.recentRequests
   );
+  const recentRequests = slicePreviewItems(
+    normalizedRecentRequests,
+    requestPreviewLimit
+  );
   const totalPersistedLogs =
-    toFiniteNumber(telemetrySummary?.totalLogEntries) ?? recentRequests.length;
+    toFiniteNumber(telemetrySummary?.totalLogEntries) ??
+    normalizedRecentRequests.length;
   const totalRequestsServed =
     toFiniteNumber(telemetrySummary?.totalRequestsServed) ??
     requestTotals.reduce((sum, value) => sum + value, 0);
@@ -550,7 +770,7 @@ export function readBlueGreenMonitoringSnapshot({
       lastCheckAt: toFiniteNumber(status?.lastCheckAt),
       lastDeployAt: toFiniteNumber(status?.lastDeployAt),
       lastDeployStatus: humanizeStatus(status?.lastDeployStatus),
-      logs: normalizeWatcherLogs(watcherLogs),
+      logs: slicePreviewItems(watcherLogs, watcherLogLimit),
       lastResult:
         status?.lastResult && typeof status.lastResult === 'object'
           ? (status.lastResult as Record<string, unknown>)
@@ -617,4 +837,60 @@ export function readBlueGreenMonitoringSnapshot({
       updatedAt,
     },
   };
+}
+
+export function readBlueGreenMonitoringRequestArchive({
+  fsImpl = fs,
+  page = 1,
+  pageSize = DEFAULT_ARCHIVE_PAGE_SIZE,
+}: {
+  fsImpl?: FsLike;
+  page?: number;
+  pageSize?: number;
+} = {}): BlueGreenMonitoringPaginatedResult<BlueGreenMonitoringRequestLog> {
+  const monitoringDir = resolveMonitoringDir(fsImpl);
+  const watchDir = path.join(monitoringDir.path, 'watch');
+  const normalizedPageSize = clampArchivePageSize(pageSize);
+  const { total } = readRequestArchiveItems(watchDir, 0, 0, fsImpl);
+  const archivePage = getArchivePage(page, total, normalizedPageSize);
+  const { items } = readRequestArchiveItems(
+    watchDir,
+    archivePage.offset,
+    normalizedPageSize,
+    fsImpl
+  );
+
+  return createArchiveResponse(
+    items,
+    archivePage.page,
+    normalizedPageSize,
+    total
+  );
+}
+
+export function readBlueGreenMonitoringWatcherLogArchive({
+  fsImpl = fs,
+  page = 1,
+  pageSize = DEFAULT_ARCHIVE_PAGE_SIZE,
+}: {
+  fsImpl?: FsLike;
+  page?: number;
+  pageSize?: number;
+} = {}): BlueGreenMonitoringPaginatedResult<BlueGreenMonitoringWatcherLog> {
+  const monitoringDir = resolveMonitoringDir(fsImpl);
+  const watchDir = path.join(monitoringDir.path, 'watch');
+  const normalizedPageSize = clampArchivePageSize(pageSize);
+  const allLogs = readNormalizedWatcherLogs(watchDir, fsImpl);
+  const archivePage = getArchivePage(page, allLogs.length, normalizedPageSize);
+  const items = allLogs.slice(
+    archivePage.offset,
+    archivePage.offset + normalizedPageSize
+  );
+
+  return createArchiveResponse(
+    items,
+    archivePage.page,
+    normalizedPageSize,
+    allLogs.length
+  );
 }

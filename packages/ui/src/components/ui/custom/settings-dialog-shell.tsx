@@ -140,7 +140,7 @@ export function SettingsDialogShell({
     .filter((group) => group.items.length > 0);
 
   const isGroupExpandedByDefault = (groupLabel: string, index: number) => {
-    if (expandAllAccordions || !!searchQuery) return true;
+    if (expandAllAccordions || searchQuery) return true;
     if (primaryGroupLabels) return primaryGroupLabels.includes(groupLabel);
     return index === 0;
   };

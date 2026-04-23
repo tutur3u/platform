@@ -1,3 +1,4 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   normalizeWorkspaceId,
@@ -86,9 +87,11 @@ export const GET = withSessionAuth(
       MAX_PAGE_SIZE
     );
 
-    const queryBuilder = context.supabase
+    const sbAdmin = await createAdminClient();
+
+    const queryBuilder = sbAdmin
       .from('workspace_quiz_sets')
-      .select('id, name, created_at, course_module_quiz_sets(id)', {
+      .select('id, name, created_at, course_module_quiz_sets(module_id)', {
         count: 'exact',
       })
       .eq('ws_id', access.normalizedWsId)
@@ -111,12 +114,19 @@ export const GET = withSessionAuth(
     }
 
     return NextResponse.json({
-      data: (data ?? []).map((item) => ({
-        id: item.id,
-        name: item.name,
-        created_at: item.created_at,
-        linked_modules_count: item.course_module_quiz_sets?.length ?? 0,
-      })),
+      data: (data ?? []).map(
+        (item: {
+          course_module_quiz_sets?: Array<{ module_id: string }> | null;
+          created_at: string;
+          id: string;
+          name: string;
+        }) => ({
+          id: item.id,
+          name: item.name,
+          created_at: item.created_at,
+          linked_modules_count: item.course_module_quiz_sets?.length ?? 0,
+        })
+      ),
       count: count ?? 0,
       page,
       pageSize,

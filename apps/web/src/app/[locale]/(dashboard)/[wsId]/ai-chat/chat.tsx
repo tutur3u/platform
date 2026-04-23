@@ -178,12 +178,7 @@ export default function Chat({
     const input = searchParams.get('input');
     const refresh = searchParams.get('refresh');
 
-    if (
-      (initialScroll || refresh) &&
-      !input &&
-      !!chats &&
-      count !== undefined
-    ) {
+    if ((initialScroll || refresh) && !input && chats && count !== undefined) {
       setInitialScroll(false);
       const mainChatContent = document.getElementById('main-chat-content');
 

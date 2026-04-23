@@ -47,7 +47,6 @@ class _DrivePageState extends State<DrivePage> {
   final TextEditingController _searchController = TextEditingController();
   Timer? _searchDebounce;
 
-  DriveAnalytics? _analytics;
   List<DriveEntry> _entries = const <DriveEntry>[];
   final Set<String> _selectedNames = <String>{};
   bool _isLoading = false;
@@ -104,7 +103,6 @@ class _DrivePageState extends State<DrivePage> {
       final permissionsFuture = _permissionsRepository.getPermissions(
         wsId: wsId,
       );
-      final analyticsFuture = _repository.getAnalytics(wsId);
       final listFuture = _repository.listDirectory(
         wsId,
         path: _path,
@@ -117,19 +115,16 @@ class _DrivePageState extends State<DrivePage> {
 
       final results = await Future.wait<dynamic>([
         permissionsFuture,
-        analyticsFuture,
         listFuture,
       ]);
 
       if (!mounted || requestToken != _requestToken) return;
 
       final permissions = results[0] as WorkspacePermissions;
-      final analytics = results[1] as DriveAnalytics;
-      final listResult = results[2] as DriveListResult;
+      final listResult = results[1] as DriveListResult;
 
       setState(() {
         _canManageDrive = permissions.containsPermission('manage_drive');
-        _analytics = analytics;
         _entries = append
             ? <DriveEntry>[..._entries, ...listResult.entries]
             : listResult.entries;
@@ -759,11 +754,6 @@ class _DrivePageState extends State<DrivePage> {
                           40 + MediaQuery.paddingOf(context).bottom,
                         ),
                         children: [
-                          _DriveSummaryCard(
-                            analytics: _analytics,
-                            path: _path,
-                          ),
-                          const SizedBox(height: 18),
                           FinanceSectionHeader(
                             title:
                                 currentFolderLabel ?? context.l10n.driveTitle,
@@ -863,125 +853,6 @@ class _DrivePageState extends State<DrivePage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _DriveSummaryCard extends StatelessWidget {
-  const _DriveSummaryCard({
-    required this.analytics,
-    required this.path,
-  });
-
-  final DriveAnalytics? analytics;
-  final String path;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final usage = analytics?.usagePercentage ?? 0;
-    final formatter = NumberFormat.compact();
-    final theme = shad.Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    const accent = Color(0xFF3FA36A);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: colorScheme.border),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            accent.withValues(alpha: 0.18),
-            accent.withValues(alpha: 0.06),
-            colorScheme.card,
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: theme.brightness == Brightness.dark ? 0.22 : 0.06,
-            ),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.folder_copy_outlined,
-                  size: 24,
-                  color: accent,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.driveTitle,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      path.isEmpty ? l10n.driveRootLabel : path,
-                      style: theme.typography.small.copyWith(
-                        color: colorScheme.mutedForeground,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 22),
-          LinearProgressIndicator(value: usage <= 0 ? 0 : usage / 100),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _MetricChip(
-                label: l10n.driveUsageLabel,
-                value: '${usage.toStringAsFixed(1)}%',
-                tint: accent,
-              ),
-              _MetricChip(
-                label: l10n.driveFilesLabel,
-                value: formatter.format(analytics?.fileCount ?? 0),
-                tint: accent,
-              ),
-              _MetricChip(
-                label: l10n.driveUsedLabel,
-                value: _formatBytes(analytics?.totalSize ?? 0),
-                tint: accent,
-              ),
-              _MetricChip(
-                label: l10n.driveLimitLabel,
-                value: _formatBytes(analytics?.storageLimit ?? 0),
-                tint: accent,
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
