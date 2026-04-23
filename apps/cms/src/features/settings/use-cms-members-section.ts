@@ -27,8 +27,10 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import {
   type CmsMemberTab,
+  getMemberAccessProfile,
   parseInviteEmails,
   type RoleEditorState,
+  sortMembers,
 } from './cms-members-shared';
 
 export function useCmsMembersSection({
@@ -69,6 +71,8 @@ export function useCmsMembersSection({
     user: permissionUser,
     wsId: workspaceId,
   });
+
+  const parsedInviteEmails = parseInviteEmails(inviteEmails);
 
   const membersQuery = useQuery({
     queryFn: () => listEnhancedWorkspaceMembers(workspaceId),
@@ -165,7 +169,9 @@ export function useCmsMembersSection({
     },
   });
 
-  const visibleMembers = (membersQuery.data ?? []).filter((member) => {
+  const sortedMembers = sortMembers(membersQuery.data ?? []);
+
+  const visibleMembers = sortedMembers.filter((member) => {
     if (activeTab === 'joined' && member.pending) {
       return false;
     }
@@ -183,6 +189,24 @@ export function useCmsMembersSection({
       .filter(Boolean)
       .some((value) => value?.toLowerCase().includes(query));
   });
+
+  const joinedMembers = sortedMembers.filter((member) => !member.pending);
+  const roleAssignableMembers = joinedMembers.filter(
+    (member) => !member.is_creator
+  );
+  const invitedMembers = sortedMembers.filter((member) => member.pending);
+  const guests = joinedMembers.filter(
+    (member) => member.workspace_member_type === 'GUEST'
+  );
+  const joinedMembersWithRoles = roleAssignableMembers.filter(
+    (member) => getMemberAccessProfile(member).hasRoleAccess
+  );
+  const membersNeedingRoles = roleAssignableMembers.filter(
+    (member) => !getMemberAccessProfile(member).hasRoleAccess
+  );
+  const totalUniquePermissions = joinedMembers.reduce((total, member) => {
+    return total + getMemberAccessProfile(member).uniquePermissionCount;
+  }, 0);
 
   const detailedRoles = (rolesQuery.data ?? []).map((role, index) => {
     const details = roleDetailQueries[index]?.data;
@@ -219,16 +243,24 @@ export function useCmsMembersSection({
     defaultRoleQuery,
     deleteRoleMutation,
     filteredRoles,
+    guestsCount: guests.length,
+    hasMemberSearch: memberSearch.trim().length > 0,
     inviteEmails,
+    inviteEmailCount: parsedInviteEmails.length,
     inviteMutation,
     invalidateAccessData,
+    invitedCount: invitedMembers.length,
+    joinedCount: joinedMembers.length,
     memberSearch,
+    membersNeedingRolesCount: membersNeedingRoles.length,
     membersQuery,
+    membersWithRolesCount: joinedMembersWithRoles.length,
     permissionCount,
     permissionTitles,
     removeMemberMutation,
     roleEditorState,
     roleSearch,
+    roleCount: rolesQuery.data?.length ?? 0,
     rolesQuery,
     roleToDelete,
     roleMembershipMutation,
@@ -238,6 +270,14 @@ export function useCmsMembersSection({
     setRoleEditorState,
     setRoleSearch,
     setRoleToDelete,
+    roleAssignableMembersCount: roleAssignableMembers.length,
+    tabCounts: {
+      all: sortedMembers.length,
+      invited: invitedMembers.length,
+      joined: joinedMembers.length,
+      roles: rolesQuery.data?.length ?? 0,
+    },
+    totalUniquePermissions,
     visibleMembers,
     workspaceId,
   };

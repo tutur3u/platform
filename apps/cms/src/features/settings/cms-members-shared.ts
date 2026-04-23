@@ -44,3 +44,82 @@ export function getAssignedMembersForRole(
     member.roles.some((assignedRole) => assignedRole.id === roleId)
   );
 }
+
+export function sortMembers(
+  members: InternalApiEnhancedWorkspaceMember[]
+): InternalApiEnhancedWorkspaceMember[] {
+  return [...members].sort((left, right) => {
+    const leftPriority = getMemberSortPriority(left);
+    const rightPriority = getMemberSortPriority(right);
+
+    if (leftPriority !== rightPriority) {
+      return leftPriority - rightPriority;
+    }
+
+    const leftCreatedAt = left.created_at
+      ? new Date(left.created_at).getTime()
+      : 0;
+    const rightCreatedAt = right.created_at
+      ? new Date(right.created_at).getTime()
+      : 0;
+
+    if (leftCreatedAt !== rightCreatedAt) {
+      return rightCreatedAt - leftCreatedAt;
+    }
+
+    return getMemberDisplayValue(left).localeCompare(
+      getMemberDisplayValue(right)
+    );
+  });
+}
+
+export function getMemberAccessProfile(
+  member: InternalApiEnhancedWorkspaceMember
+) {
+  const uniquePermissions = new Set<string>();
+
+  for (const permission of member.default_permissions) {
+    if (permission.enabled) {
+      uniquePermissions.add(permission.permission);
+    }
+  }
+
+  for (const role of member.roles) {
+    for (const permission of role.permissions) {
+      if (permission.enabled) {
+        uniquePermissions.add(permission.permission);
+      }
+    }
+  }
+
+  return {
+    hasDefaultAccess: member.default_permissions.some(
+      (permission) => permission.enabled
+    ),
+    hasRoleAccess: member.roles.length > 0,
+    roleCount: member.roles.length,
+    uniquePermissionCount: uniquePermissions.size,
+  };
+}
+
+function getMemberSortPriority(member: InternalApiEnhancedWorkspaceMember) {
+  if (member.is_creator) {
+    return 0;
+  }
+
+  if (!member.pending) {
+    return 1;
+  }
+
+  return 2;
+}
+
+function getMemberDisplayValue(member: InternalApiEnhancedWorkspaceMember) {
+  return (
+    member.display_name ||
+    member.email ||
+    member.handle ||
+    member.id ||
+    ''
+  ).toLowerCase();
+}
