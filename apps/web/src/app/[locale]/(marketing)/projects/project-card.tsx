@@ -1,5 +1,12 @@
 import { Card, CardContent, CardFooter, CardHeader } from '@ncthub/ui/card';
-import { Github, Globe, Monitor, Play, Users, Wrench } from '@ncthub/ui/icons';
+import {
+  Globe,
+  Monitor,
+  Play,
+  TbBrandGithub,
+  Users,
+  Wrench,
+} from '@ncthub/ui/icons';
 import { cn } from '@ncthub/utils/format';
 import { motion } from 'framer-motion';
 import type { Project } from './data';
@@ -212,7 +219,7 @@ export default function ProjectCard({
                   window.open(project.githubUrl, '_blank');
                 }}
               >
-                <Github className="h-4 w-4" />
+                <TbBrandGithub className="h-4 w-4" />
               </motion.button>
             )}
             {project.demoUrl && (

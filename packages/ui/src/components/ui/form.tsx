@@ -1,20 +1,20 @@
 'use client';
 
-import { FormRequiredIndicator } from './form-required-indicator';
-import { Label } from './label';
-import { cn } from '@ncthub/utils/format';
-import * as LabelPrimitive from '@radix-ui/react-label';
-import { Slot } from '@radix-ui/react-slot';
 import * as React from 'react';
+import type { Label as LabelPrimitive } from 'radix-ui';
+import { Slot } from 'radix-ui';
 import {
   Controller,
-  ControllerProps,
-  FieldPath,
-  FieldValues,
   FormProvider,
   useFormContext,
   useFormState,
+  type ControllerProps,
+  type FieldPath,
+  type FieldValues,
 } from 'react-hook-form';
+
+import { cn } from '@ncthub/utils/format';
+import { Label } from '@ncthub/ui/label';
 
 const Form = FormProvider;
 
@@ -23,7 +23,6 @@ type FormFieldContextValue<
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > = {
   name: TName;
-  required?: boolean;
 };
 
 const FormFieldContext = React.createContext<FormFieldContextValue>(
@@ -36,14 +35,8 @@ const FormField = <
 >({
   ...props
 }: ControllerProps<TFieldValues, TName>) => {
-  // We'll rely on explicit rules for now, as accessing internal properties
-  // of the resolver is not type-safe and could break in future updates
-  const isRequired = props.rules?.required !== undefined;
-
   return (
-    <FormFieldContext.Provider
-      value={{ name: props.name, required: isRequired }}
-    >
+    <FormFieldContext.Provider value={{ name: props.name }}>
       <Controller {...props} />
     </FormFieldContext.Provider>
   );
@@ -65,7 +58,6 @@ const useFormField = () => {
   return {
     id,
     name: fieldContext.name,
-    required: fieldContext.required,
     formItemId: `${id}-form-item`,
     formDescriptionId: `${id}-form-item-description`,
     formMessageId: `${id}-form-item-message`,
@@ -97,39 +89,28 @@ function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
 
 function FormLabel({
   className,
-  required: requiredProp,
-  children,
   ...props
-}: React.ComponentProps<typeof LabelPrimitive.Root> & { required?: boolean }) {
-  const { error, formItemId, required: fieldRequired } = useFormField();
-  const isRequired = requiredProp !== undefined ? requiredProp : fieldRequired;
+}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+  const { error, formItemId } = useFormField();
 
   return (
     <Label
       data-slot="form-label"
       data-error={!!error}
-      data-required={isRequired}
       className={cn('data-[error=true]:text-destructive', className)}
       htmlFor={formItemId}
       {...props}
-    >
-      {children}
-      {isRequired && <FormRequiredIndicator />}
-    </Label>
+    />
   );
 }
 
-function FormControl({
-  className,
-  ...props
-}: React.ComponentProps<typeof Slot>) {
-  const { error, formItemId, formDescriptionId, formMessageId, required } =
+function FormControl({ ...props }: React.ComponentProps<typeof Slot.Root>) {
+  const { error, formItemId, formDescriptionId, formMessageId } =
     useFormField();
 
   return (
-    <Slot
+    <Slot.Root
       data-slot="form-control"
-      data-required={required}
       id={formItemId}
       aria-describedby={
         !error
@@ -137,8 +118,6 @@ function FormControl({
           : `${formDescriptionId} ${formMessageId}`
       }
       aria-invalid={!!error}
-      aria-required={required}
-      className={cn(className)}
       {...props}
     />
   );
@@ -159,7 +138,7 @@ function FormDescription({ className, ...props }: React.ComponentProps<'p'>) {
 
 function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   const { error, formMessageId } = useFormField();
-  const body = error ? String(error?.message) : props.children;
+  const body = error ? String(error?.message ?? '') : props.children;
 
   if (!body) {
     return null;
@@ -169,7 +148,7 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
     <p
       data-slot="form-message"
       id={formMessageId}
-      className={cn('text-sm font-medium text-destructive', className)}
+      className={cn('text-sm text-destructive', className)}
       {...props}
     >
       {body}
@@ -178,13 +157,12 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
 }
 
 export {
+  useFormField,
   Form,
-  FormControl,
-  FormDescription,
-  FormField,
   FormItem,
   FormLabel,
+  FormControl,
+  FormDescription,
   FormMessage,
-  FormRequiredIndicator,
-  useFormField,
+  FormField,
 };

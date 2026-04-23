@@ -222,7 +222,7 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
                         : 'grid gap-2'
                     }
                   >
-                    {field.value?.map((value, index) => (
+                    {field.value?.map((value: string, index: number) => (
                       <div key={index} className="flex w-full gap-1">
                         <FormControl>
                           {form.getValues('type') === 'DATE' ? (

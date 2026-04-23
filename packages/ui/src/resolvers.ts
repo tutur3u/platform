@@ -1,3 +1,4 @@
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver as baseZodResolver } from '@hookform/resolvers/zod';
 
-export { zodResolver };
+export const zodResolver = (schema: any, ...args: any[]) =>
+  baseZodResolver(schema, ...(args as []));

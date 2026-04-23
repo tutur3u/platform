@@ -39,7 +39,7 @@ export default function ColorCard({ hex, delay = 0 }: ColorCardProps) {
       transition={{ duration: 0.6, delay }}
       viewport={{ once: true }}
     >
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden py-0">
         {/* Color Display Part */}
         <div className="relative h-32" style={{ backgroundColor: hex }}>
           <Button

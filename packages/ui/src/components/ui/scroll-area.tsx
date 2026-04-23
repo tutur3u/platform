@@ -1,8 +1,9 @@
 'use client';
 
-import { cn } from '@ncthub/utils/format';
-import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area';
 import * as React from 'react';
+import { ScrollArea as ScrollAreaPrimitive } from 'radix-ui';
+
+import { cn } from '@ncthub/utils/format';
 
 function ScrollArea({
   className,
@@ -17,7 +18,7 @@ function ScrollArea({
     >
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
-        className="size-full rounded-[inherit] ring-ring/10 outline-ring/50 transition-[color,box-shadow] focus-visible:ring-4 focus-visible:outline-1 dark:ring-ring/20 dark:outline-ring/40"
+        className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1"
       >
         {children}
       </ScrollAreaPrimitive.Viewport>

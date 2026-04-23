@@ -15,7 +15,6 @@ import {
   EventToggleSwitch,
   OverlapWarning,
 } from './event-form-components';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { calendarEventsSchema } from '@ncthub/ai/calendar/events';
 import { useObject } from '@ncthub/ai/object/core';
 import { SupportedColor } from '@ncthub/types/primitives/SupportedColors';
@@ -52,6 +51,7 @@ import { useToast } from '@ncthub/ui/hooks/use-toast';
 import { ScrollArea } from '@ncthub/ui/scroll-area';
 import { Separator } from '@ncthub/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
+import { zodResolver } from '@ncthub/ui/resolvers';
 import { getEventStyles } from '@ncthub/utils/color-helper';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';

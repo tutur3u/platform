@@ -60,6 +60,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
   // const [mode, setMode] = useState<'standard' | 'transfer'>('standard');
 
   const [loading, setLoading] = useState(false);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const router = useRouter();
 
   const {
@@ -305,7 +306,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
 
           <div className="h-0" />
 
-          <Popover>
+          <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
             <FormField
               control={form.control}
               name="taken_at"
@@ -340,8 +341,10 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                     <Calendar
                       mode="single"
                       selected={field.value}
-                      onSelect={field.onChange}
-                      onSubmit={field.onChange}
+                      onSelect={(date) => {
+                        field.onChange(date);
+                        setDatePickerOpen(false);
+                      }}
                       initialFocus
                     />
                   </PopoverContent>

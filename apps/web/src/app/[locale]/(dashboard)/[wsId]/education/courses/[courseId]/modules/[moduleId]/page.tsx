@@ -9,7 +9,7 @@ import {
   ListTodo,
   Paperclip,
   SwatchBook,
-  Youtube,
+  TbBrandYoutube,
 } from '@ncthub/ui/icons';
 import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
@@ -114,7 +114,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
       <CourseSection
         href={`/${wsId}/courses/${courseId}/modules/${moduleId}/youtube-links`}
         title={t('course-details-tabs.youtube_links')}
-        icon={<Youtube className="h-5 w-5" />}
+        icon={<TbBrandYoutube className="h-5 w-5" />}
         content={
           data.youtube_links && data.youtube_links.length > 0 ? (
             <div className="grid gap-4">

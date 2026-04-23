@@ -1,11 +1,11 @@
 import {
   ArrowUpRight,
-  Facebook,
   Globe,
-  Instagram,
-  Linkedin,
   Mail,
   Phone,
+  TbBrandFacebook,
+  TbBrandInstagram,
+  TbBrandLinkedin,
 } from '@ncthub/ui/icons';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -72,7 +72,7 @@ export default function Footer() {
                   className="text-primary transition-colors hover:text-primary/70"
                   aria-label="Neo League Facebook"
                 >
-                  <Facebook className="h-8 w-8" />
+                  <TbBrandFacebook className="h-8 w-8" />
                 </Link>
               </div>
               <div className="rounded-lg bg-white/50 p-3 transition-colors duration-200 hover:bg-blue-50">
@@ -83,7 +83,7 @@ export default function Footer() {
                   className="text-primary transition-colors hover:text-primary/70"
                   aria-label="Instagram"
                 >
-                  <Instagram className="h-8 w-8" />
+                  <TbBrandInstagram className="h-8 w-8" />
                 </Link>
               </div>
               <div className="rounded-lg bg-white/50 p-3 transition-colors duration-200 hover:bg-blue-50">
@@ -94,7 +94,7 @@ export default function Footer() {
                   className="text-primary transition-colors hover:text-primary/70"
                   aria-label="LinkedIn"
                 >
-                  <Linkedin className="h-8 w-8" />
+                  <TbBrandLinkedin className="h-8 w-8" />
                 </Link>
               </div>
             </div>
@@ -137,7 +137,7 @@ export default function Footer() {
                 </a>
               </div>
               <div className="flex items-center justify-center gap-2 md:justify-start">
-                <Facebook className="h-4 w-4 shrink-0" />
+                <TbBrandFacebook className="h-4 w-4 shrink-0" />
                 <a
                   href="https://www.facebook.com/rmit.nct"
                   target="_blank"

@@ -9,12 +9,12 @@ import {
   FileText,
   GitCommit,
   GitFork,
-  GithubIcon,
   GitPullRequest,
   Heart,
   Mail,
   MessageSquare,
   Star,
+  TbBrandGithub,
   Users,
 } from '@ncthub/ui/icons';
 import { Separator } from '@ncthub/ui/separator';
@@ -163,7 +163,7 @@ export default function ContributorsClient({
   if (githubData.error) {
     return (
       <div className="flex min-h-[40vh] flex-col items-center justify-center">
-        <GithubIcon className="mb-4 h-16 w-16 text-muted-foreground" />
+        <TbBrandGithub className="mb-4 h-16 w-16 text-muted-foreground" />
         <h2 className="mb-2 font-bold text-2xl">Data Fetch Error</h2>
         <p className="mb-4 text-muted-foreground">{githubData.error}</p>
         <Button asChild>
@@ -172,7 +172,7 @@ export default function ContributorsClient({
             target="_blank"
             rel="noopener noreferrer"
           >
-            <GithubIcon className="mr-2 h-4 w-4" />
+            <TbBrandGithub className="mr-2 h-4 w-4" />
             Visit GitHub Repository
           </a>
         </Button>
@@ -292,7 +292,7 @@ export default function ContributorsClient({
                 <div className="space-y-2">
                   <div className="mb-3 flex items-center gap-3">
                     <div className="rounded-lg bg-foreground/10 p-2.5">
-                      <GithubIcon className="h-6 w-6" />
+                      <TbBrandGithub className="h-6 w-6" />
                     </div>
                     <h3 className="font-bold text-2xl">
                       {githubData.repo.full_name}
@@ -367,7 +367,7 @@ export default function ContributorsClient({
                         rel="noopener noreferrer"
                         className="flex items-center gap-2"
                       >
-                        <GithubIcon className="h-4 w-4" />
+                        <TbBrandGithub className="h-4 w-4" />
                         View Repository
                       </a>
                     </Button>
@@ -786,7 +786,7 @@ export default function ContributorsClient({
           <div className="relative p-8 md:p-12">
             <div className="mx-auto max-w-3xl text-center">
               <Badge variant="outline" className="mb-4 backdrop-blur-[2px]">
-                <GithubIcon className="mr-2 h-4 w-4" />
+                <TbBrandGithub className="mr-2 h-4 w-4" />
                 Join Our Community
               </Badge>
               <h2 className="mb-4 font-bold text-3xl">Become a Contributor</h2>
@@ -804,7 +804,7 @@ export default function ContributorsClient({
                   whileTap={{ scale: 0.95 }}
                   className="inline-flex items-center gap-2 rounded-lg bg-foreground px-8 py-3 font-medium text-background hover:bg-foreground/90"
                 >
-                  <GithubIcon className="h-4 w-4" />
+                  <TbBrandGithub className="h-4 w-4" />
                   <span className="relative">View on GitHub</span>
                 </motion.a>
                 <motion.a

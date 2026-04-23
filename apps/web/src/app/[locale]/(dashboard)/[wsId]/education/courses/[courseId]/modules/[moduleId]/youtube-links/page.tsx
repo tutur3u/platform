@@ -1,13 +1,13 @@
+import { createClient } from '@ncthub/supabase/next/server';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { TbBrandYoutube } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { extractYoutubeId } from '@/utils/url-helper';
 import DeleteLinkButton from './delete-link';
 import { YoutubeEmbed } from './embed';
 import YouTubeLinkForm from './form';
-import { extractYoutubeId } from '@/utils/url-helper';
-import { createClient } from '@ncthub/supabase/next/server';
-import FeatureSummary from '@ncthub/ui/custom/feature-summary';
-import { Youtube } from '@ncthub/ui/icons';
-import { Separator } from '@ncthub/ui/separator';
-import { getTranslations } from 'next-intl/server';
-import Link from 'next/link';
 
 interface Props {
   params: Promise<{
@@ -27,8 +27,8 @@ export default async function ModuleYoutubeLinksPage({ params }: Props) {
       <FeatureSummary
         title={
           <div className="flex items-center justify-between gap-4">
-            <h1 className="flex w-full items-center gap-2 text-lg font-bold md:text-2xl">
-              <Youtube className="h-5 w-5" />
+            <h1 className="flex w-full items-center gap-2 font-bold text-lg md:text-2xl">
+              <TbBrandYoutube className="h-5 w-5" />
               {t('course-details-tabs.youtube_links')}
             </h1>
           </div>
