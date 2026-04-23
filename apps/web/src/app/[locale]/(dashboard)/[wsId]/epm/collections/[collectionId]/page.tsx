@@ -10,5 +10,5 @@ interface Props {
 
 export default async function EpmCollectionLegacyPage({ params }: Props) {
   const { collectionId, wsId } = await params;
-  redirect(getCmsUrl(`/${wsId}/collections/${collectionId}`));
+  redirect(getCmsUrl(`/${wsId}/library/collections/${collectionId}`));
 }
