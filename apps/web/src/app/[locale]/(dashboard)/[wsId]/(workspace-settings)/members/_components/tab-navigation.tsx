@@ -1,21 +1,24 @@
 'use client';
 
-import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import { TabsTrigger } from '@tuturuuu/ui/tabs';
+import { parseAsStringLiteral, useQueryState } from 'nuqs';
+import { type MemberStatus, memberStatusValues } from './members-queries';
 
 interface Props {
-  value: string;
+  value: MemberStatus;
   label: string;
 }
 
 export default function TabNavigation({ value, label }: Props) {
-  const searchParams = useSearchParams();
+  const [, setStatus] = useQueryState(
+    'status',
+    parseAsStringLiteral(memberStatusValues)
+      .withDefault('all')
+      .withOptions({ shallow: true })
+  );
 
   return (
-    <TabsTrigger
-      value={value}
-      onClick={() => searchParams.set({ status: value === 'all' ? '' : value })}
-    >
+    <TabsTrigger value={value} onClick={() => setStatus(value)}>
       {label}
     </TabsTrigger>
   );

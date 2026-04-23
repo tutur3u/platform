@@ -1,6 +1,8 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { UserPlus } from '@tuturuuu/icons';
+import { inviteWorkspaceMember } from '@tuturuuu/internal-api/workspaces';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -34,6 +36,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import { workspaceMembersKeys } from './members-queries';
 
 interface Props {
   wsId: string;
@@ -59,7 +62,9 @@ export default function InviteMemberButton({
   disabled,
 }: Props) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const t = useTranslations('ws-members');
+  const tCommon = useTranslations('common');
 
   const [open, setOpen] = useState(false);
 
@@ -72,27 +77,25 @@ export default function InviteMemberButton({
     },
   });
 
-  const inviteMember = async (values: z.infer<typeof FormSchema>) => {
-    const res = await fetch(`/api/workspaces/${wsId}/members/invite`, {
-      method: 'POST',
-      body: JSON.stringify({
+  const inviteMutation = useMutation({
+    mutationFn: async (values: z.infer<typeof FormSchema>) =>
+      inviteWorkspaceMember(wsId, {
         email: values.email,
         memberType: values.memberType,
       }),
-    });
-
-    if (res.ok) {
+    onSuccess: (_data, values) => {
       toast.success(t('invitation-sent'), {
         description: t('invitation-sent-description', {
           email: values.email,
         }),
       });
       setOpen(false);
-      router.refresh();
-    } else {
-      const data = await res.json();
-
-      if (data.errorCode === 'SEAT_LIMIT_REACHED') {
+      queryClient.invalidateQueries({
+        queryKey: workspaceMembersKeys.lists(),
+      });
+    },
+    onError: (error: Error & { errorCode?: string }) => {
+      if (error.errorCode === 'SEAT_LIMIT_REACHED') {
         toast.error(t('seat-limit-reached'), {
           description: t('seat-limit-reached-description'),
           action: {
@@ -101,12 +104,17 @@ export default function InviteMemberButton({
           },
           duration: 10000,
         });
-      } else {
-        toast.error(t('invitation-failed'), {
-          description: data.message || t('invitation-failed-description'),
-        });
+        return;
       }
-    }
+
+      toast.error(t('invitation-failed'), {
+        description: error.message || t('invitation-failed-description'),
+      });
+    },
+  });
+
+  const inviteMember = async (values: z.infer<typeof FormSchema>) => {
+    await inviteMutation.mutateAsync(values);
   };
 
   return (
@@ -182,7 +190,9 @@ export default function InviteMemberButton({
               />
 
               <Button type="submit" className="w-full">
-                {t('invite_submit')}
+                {inviteMutation.isPending
+                  ? tCommon('loading')
+                  : t('invite_submit')}
               </Button>
             </form>
           </Form>

@@ -1,6 +1,8 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Settings, User as UserIcon } from '@tuturuuu/icons';
+import { removeWorkspaceMember } from '@tuturuuu/internal-api/workspaces';
 import type { Workspace } from '@tuturuuu/types';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -18,11 +20,12 @@ import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { workspaceMembersKeys } from './members-queries';
 
 interface Props {
   workspace: Workspace;
   user: User;
-  currentUser: User;
+  currentUser?: User | null;
   canManageMembers?: boolean;
 }
 
@@ -33,21 +36,20 @@ export function MemberSettingsButton({
   canManageMembers,
 }: Props) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const t = useTranslations('ws-members');
 
   const [open, setOpen] = useState(false);
 
-  const deleteMember = async () => {
-    const invited = user?.pending;
-
-    const response = await fetch(
-      `/api/workspaces/${ws.id}/members${user.id ? `?id=${user.id}` : `?email=${user.email}`}`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    if (response.ok) {
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await removeWorkspaceMember(ws.id, {
+        email: user.id ? null : user.email,
+        userId: user.id ?? null,
+      });
+    },
+    onSuccess: () => {
+      const invited = user?.pending;
       toast({
         title: invited ? t('invitation_revoked') : t('member_removed'),
         description: invited
@@ -59,18 +61,27 @@ export function MemberSettingsButton({
           : `"${user?.display_name || 'Unknown'}" ${t('has_been_removed')}`,
         color: 'teal',
       });
-      if (user.id === currentUser?.id) router.push('/onboarding');
-    } else {
+
+      queryClient.invalidateQueries({
+        queryKey: workspaceMembersKeys.lists(),
+      });
+      if (currentUser?.id === user.id) router.push('/onboarding');
+      setOpen(false);
+    },
+    onError: () => {
+      const invited = user?.pending;
       toast({
         title: t('error'),
         description: invited
           ? t('revoke_error')
           : `${t('remove_error')} "${user?.display_name || 'Unknown'}"`,
       });
-    }
+    },
+  });
 
-    router.refresh();
-    setOpen(false);
+  const deleteMember = async () => {
+    if (!canManageMembers && currentUser?.id !== user.id) return;
+    await deleteMutation.mutateAsync();
   };
 
   return (
@@ -121,14 +132,15 @@ export function MemberSettingsButton({
           </div>
         </div>
 
-        {(canManageMembers || currentUser.id === user.id) && (
+        {(canManageMembers || currentUser?.id === user.id) && (
           <div className="mt-4">
             <Button
               variant="destructive"
               className="w-full"
               onClick={deleteMember}
+              disabled={deleteMutation.isPending}
             >
-              {currentUser.id === user.id
+              {currentUser?.id === user.id
                 ? 'Leave Workspace'
                 : user.pending
                   ? 'Revoke Invitation'

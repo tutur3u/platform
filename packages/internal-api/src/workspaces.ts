@@ -54,11 +54,19 @@ export async function listWorkspaceMembers(
 
 export async function listEnhancedWorkspaceMembers(
   workspaceId: string,
+  status?: 'all' | 'joined' | 'invited',
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+
+  if (status && status !== 'all') {
+    searchParams.set('status', status);
+  }
+
+  const suffix = searchParams.toString();
   return client.json<InternalApiEnhancedWorkspaceMember[]>(
-    `/api/workspaces/${encodePathSegment(workspaceId)}/members/enhanced`,
+    `/api/workspaces/${encodePathSegment(workspaceId)}/members/enhanced${suffix ? `?${suffix}` : ''}`,
     {
       cache: 'no-store',
     }
@@ -87,6 +95,50 @@ export async function inviteWorkspaceMembers(
       method: 'POST',
     }
   );
+}
+
+export async function inviteWorkspaceMember(
+  workspaceId: string,
+  payload: { email: string; memberType: 'MEMBER' | 'GUEST' },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.fetch(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/members/invite`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+
+  if (!response.ok) {
+    const fallbackMessage = `Internal API request failed: ${response.status}`;
+    let data: { errorCode?: string; message?: string } | null = null;
+
+    try {
+      data = (await response.json()) as {
+        errorCode?: string;
+        message?: string;
+      };
+    } catch {
+      data = null;
+    }
+
+    const error = new Error(data?.message || fallbackMessage) as Error & {
+      errorCode?: string;
+    };
+    error.errorCode = data?.errorCode;
+    throw error;
+  }
+
+  return (await response.json()) as {
+    message?: string;
+    errorCode?: string;
+  };
 }
 
 export async function removeWorkspaceMember(

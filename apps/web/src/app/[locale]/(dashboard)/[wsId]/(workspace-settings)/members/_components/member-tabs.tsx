@@ -1,13 +1,16 @@
+'use client';
+
 import { Tabs, TabsList } from '@tuturuuu/ui/tabs';
-import { getTranslations } from 'next-intl/server';
+import { useTranslations } from 'next-intl';
+import type { MemberStatus } from './members-queries';
 import TabNavigation from './tab-navigation';
 
 interface Props {
-  value?: string;
+  value?: MemberStatus;
 }
 
-export default async function MemberTabs({ value }: Props) {
-  const t = await getTranslations();
+export default function MemberTabs({ value }: Props) {
+  const t = useTranslations();
 
   return (
     <Tabs value={value} defaultValue="all" className="w-full">
