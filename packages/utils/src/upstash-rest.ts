@@ -7,8 +7,9 @@ export function hasUpstashRestEnv(): boolean {
   );
 }
 
-export async function getUpstashRestRedisClient(): Promise<Redis | null> {
-  if (!hasUpstashRestEnv()) return null;
+export function getUpstashRestRedisClient(): Redis {
+  if (!hasUpstashRestEnv())
+    throw new Error('Missing Upstash Redis environment variables.');
 
   const client = Redis.fromEnv();
 
