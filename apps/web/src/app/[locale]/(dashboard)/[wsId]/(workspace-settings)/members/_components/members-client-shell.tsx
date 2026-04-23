@@ -2,8 +2,8 @@
 
 import type { Workspace } from '@tuturuuu/types';
 import type { User } from '@tuturuuu/types/primitives/User';
-import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { useTranslations } from 'next-intl';
+import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import InviteLinksSection from './invite-links-section';
 import InviteMemberButton from './invite-member-button';
 import MemberList from './member-list';

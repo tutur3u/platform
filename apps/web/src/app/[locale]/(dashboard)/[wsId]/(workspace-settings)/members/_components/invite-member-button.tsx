@@ -1,7 +1,7 @@
 'use client';
 
-import { UserPlus } from '@tuturuuu/icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { UserPlus } from '@tuturuuu/icons';
 import { inviteWorkspaceMember } from '@tuturuuu/internal-api/workspaces';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
@@ -189,7 +189,9 @@ export default function InviteMemberButton({
               />
 
               <Button type="submit" className="w-full">
-                {inviteMutation.isPending ? t('common.loading') : t('invite_submit')}
+                {inviteMutation.isPending
+                  ? t('common.loading')
+                  : t('invite_submit')}
               </Button>
             </form>
           </Form>

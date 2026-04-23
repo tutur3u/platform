@@ -1,6 +1,8 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Settings, User as UserIcon } from '@tuturuuu/icons';
+import { removeWorkspaceMember } from '@tuturuuu/internal-api/workspaces';
 import type { Workspace } from '@tuturuuu/types';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -15,8 +17,6 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { removeWorkspaceMember } from '@tuturuuu/internal-api/workspaces';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

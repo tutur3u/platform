@@ -6,10 +6,7 @@ import {
   PERSONAL_WORKSPACE_SLUG,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
-import {
-  getPermissions,
-  getWorkspace,
-} from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getWorkspaceMembers } from '@/lib/workspace-members';
 
@@ -40,7 +37,10 @@ export async function GET(request: NextRequest, { params }: Params) {
   }
 
   const permissions = await getPermissions({ wsId });
-  if (!permissions || permissions.withoutPermission('manage_workspace_members')) {
+  if (
+    !permissions ||
+    permissions.withoutPermission('manage_workspace_members')
+  ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

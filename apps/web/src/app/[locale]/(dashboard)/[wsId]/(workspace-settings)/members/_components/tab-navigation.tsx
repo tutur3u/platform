@@ -1,11 +1,8 @@
 'use client';
 
-import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { TabsTrigger } from '@tuturuuu/ui/tabs';
-import {
-  memberStatusValues,
-  type MemberStatus,
-} from './members-queries';
+import { parseAsStringLiteral, useQueryState } from 'nuqs';
+import { type MemberStatus, memberStatusValues } from './members-queries';
 
 interface Props {
   value: MemberStatus;
