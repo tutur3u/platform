@@ -64,6 +64,7 @@ export default function InviteMemberButton({
   const router = useRouter();
   const queryClient = useQueryClient();
   const t = useTranslations('ws-members');
+  const tCommon = useTranslations('common');
 
   const [open, setOpen] = useState(false);
 
@@ -190,7 +191,7 @@ export default function InviteMemberButton({
 
               <Button type="submit" className="w-full">
                 {inviteMutation.isPending
-                  ? t('common.loading')
+                  ? tCommon('loading')
                   : t('invite_submit')}
               </Button>
             </form>
