@@ -104,21 +104,43 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
             : _descriptionController.text.trim(),
       );
 
-      if (!mounted || !toastContext.mounted) {
+      if (!mounted) {
         return;
       }
 
-      shad.showToast(
-        context: toastContext,
-        builder: (context, overlay) => shad.Alert(
-          title: Text(l10n.timerCreateCategory),
-          content: Text(l10n.timerCategoryCreateSuccess),
-        ),
-      );
+      // Clear before pop: [PopScope] uses `canPop: !_saving`, which only flips
+      // after layout. Defer [maybePop] to a post-frame callback so it runs when
+      // `canPop` is already true.
+      setState(() => _saving = false);
 
-      await Navigator.maybePop(context);
+      if (!mounted) {
+        return;
+      }
+      final sheetContext = context;
+      final toastCtx = toastContext;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!sheetContext.mounted) {
+          return;
+        }
+        await Navigator.maybePop(sheetContext);
+        if (!toastCtx.mounted) {
+          return;
+        }
+        shad.showToast(
+          context: toastCtx,
+          builder: (context, overlay) => shad.Alert(
+            title: Text(l10n.timerCreateCategory),
+            content: Text(l10n.timerCategoryCreateSuccess),
+          ),
+        );
+      });
     } on ApiException catch (error) {
-      if (!mounted || !toastContext.mounted) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _saving = false);
+
+      if (!toastContext.mounted) {
         return;
       }
 
@@ -133,10 +155,13 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
           content: Text(safeMessage),
         ),
       );
-
-      setState(() => _saving = false);
     } on Exception catch (error) {
-      if (!mounted || !toastContext.mounted) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _saving = false);
+
+      if (!toastContext.mounted) {
         return;
       }
 
@@ -147,8 +172,6 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
           content: Text(error.toString()),
         ),
       );
-
-      setState(() => _saving = false);
     }
   }
 
