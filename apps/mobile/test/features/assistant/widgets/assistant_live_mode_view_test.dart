@@ -51,7 +51,6 @@ void main() {
     );
 
     expect(find.text('Gemini 3.1 Flash Live'), findsOneWidget);
-    expect(find.text('Live transcript'), findsOneWidget);
     expect(
       find.text(
         'Microphone streaming is active. '
@@ -59,7 +58,9 @@ void main() {
       ),
       findsOneWidget,
     );
+    expect(find.text('Live'), findsWidgets);
     expect(find.text('Mute mic'), findsOneWidget);
+    expect(find.text('Show camera'), findsOneWidget);
     expect(find.text('Type'), findsOneWidget);
     expect(find.text('Mira'), findsWidgets);
     expect(find.text('Your microphone is live'), findsOneWidget);

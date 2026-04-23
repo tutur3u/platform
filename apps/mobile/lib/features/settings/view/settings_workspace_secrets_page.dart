@@ -59,7 +59,9 @@ class _SettingsWorkspaceSecretsPageState
   String? _error;
   bool _hasAccess = false;
   bool _isLoading = true;
+  bool _isRefreshing = false;
   bool _isWorkspaceEligible = false;
+  String? _loadedWorkspaceId;
   String? _migratingTargetProvider;
   final Set<String> _updatingSecretIds = <String>{};
   int _loadToken = 0;
@@ -94,9 +96,9 @@ class _SettingsWorkspaceSecretsPageState
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (previous, current) =>
             previous.currentWorkspace?.id != current.currentWorkspace?.id,
-        listener: (context, state) => unawaited(_loadData()),
+        listener: (context, state) => unawaited(_loadData(forceRefresh: true)),
         child: RefreshIndicator.adaptive(
-          onRefresh: _loadData,
+          onRefresh: () => _loadData(forceRefresh: true),
           child: ResponsiveWrapper(
             maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
             child: ListView(
@@ -126,6 +128,11 @@ class _SettingsWorkspaceSecretsPageState
                       : null,
                 ),
                 const shad.Gap(20),
+                if (_isRefreshing)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: LinearProgressIndicator(minHeight: 2),
+                  ),
                 if (_isLoading)
                   const Padding(
                     padding: EdgeInsets.only(top: 36),
@@ -137,7 +144,7 @@ class _SettingsWorkspaceSecretsPageState
                     title: context.l10n.commonSomethingWentWrong,
                     description: _error!,
                     action: shad.PrimaryButton(
-                      onPressed: () => unawaited(_loadData()),
+                      onPressed: () => unawaited(_loadData(forceRefresh: true)),
                       child: Text(context.l10n.commonRetry),
                     ),
                   )
@@ -238,7 +245,7 @@ class _SettingsWorkspaceSecretsPageState
     );
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool forceRefresh = false}) async {
     final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     final workspaceId = workspace?.id;
     final token = ++_loadToken;
@@ -249,7 +256,9 @@ class _SettingsWorkspaceSecretsPageState
       }
       setState(() {
         _isLoading = false;
+        _isRefreshing = false;
         _isWorkspaceEligible = false;
+        _loadedWorkspaceId = null;
         _hasAccess = false;
         _error = null;
         _secrets = const [];
@@ -258,10 +267,21 @@ class _SettingsWorkspaceSecretsPageState
       return;
     }
 
+    final switchingWorkspace =
+        _loadedWorkspaceId != null && _loadedWorkspaceId != workspaceId;
+
     setState(() {
-      _isLoading = true;
+      _isLoading =
+          switchingWorkspace || _secrets.isEmpty || _rolloutState == null;
+      _isRefreshing = !_isLoading;
       _error = null;
       _isWorkspaceEligible = true;
+      if (switchingWorkspace) {
+        _loadedWorkspaceId = null;
+        _hasAccess = false;
+        _secrets = const [];
+        _rolloutState = null;
+      }
     });
 
     try {
@@ -289,6 +309,8 @@ class _SettingsWorkspaceSecretsPageState
       if (!hasAccess) {
         setState(() {
           _isLoading = false;
+          _isRefreshing = false;
+          _loadedWorkspaceId = workspaceId;
           _hasAccess = false;
           _error = null;
           _secrets = const [];
@@ -297,9 +319,47 @@ class _SettingsWorkspaceSecretsPageState
         return;
       }
 
+      final cachedSecrets = forceRefresh
+          ? null
+          : await _repository.readCachedSecrets(workspaceId);
+      final cachedRollout = forceRefresh
+          ? null
+          : await _repository.readCachedRolloutState(workspaceId);
+      final hasCachedSecrets =
+          cachedSecrets?.hasValue == true && cachedSecrets?.data != null;
+      final hasCachedRollout =
+          cachedRollout?.hasValue == true && cachedRollout?.data != null;
+      final hasResolvedCache = hasCachedSecrets && hasCachedRollout;
+
+      if (!mounted || token != _loadToken) {
+        return;
+      }
+
+      if (hasResolvedCache) {
+        final resolvedCachedSecrets = cachedSecrets?.data;
+        final resolvedCachedRollout = cachedRollout?.data;
+        if (resolvedCachedSecrets == null || resolvedCachedRollout == null) {
+          return;
+        }
+        final shouldRefresh =
+            forceRefresh || !(cachedSecrets!.isFresh && cachedRollout!.isFresh);
+        setState(() {
+          _isLoading = false;
+          _isRefreshing = shouldRefresh;
+          _loadedWorkspaceId = workspaceId;
+          _hasAccess = true;
+          _error = null;
+          _secrets = _sortedSecrets(resolvedCachedSecrets);
+          _rolloutState = resolvedCachedRollout;
+        });
+        if (!shouldRefresh) {
+          return;
+        }
+      }
+
       final results = await Future.wait<dynamic>([
-        _repository.getSecrets(workspaceId),
-        _repository.getRolloutState(workspaceId),
+        _repository.getSecrets(workspaceId, forceRefresh: true),
+        _repository.getRolloutState(workspaceId, forceRefresh: true),
       ]);
 
       if (!mounted || token != _loadToken) {
@@ -308,6 +368,8 @@ class _SettingsWorkspaceSecretsPageState
 
       setState(() {
         _isLoading = false;
+        _isRefreshing = false;
+        _loadedWorkspaceId = workspaceId;
         _hasAccess = true;
         _error = null;
         _secrets = _sortedSecrets(results[0] as List<WorkspaceSecret>);
@@ -317,9 +379,13 @@ class _SettingsWorkspaceSecretsPageState
       if (!mounted || token != _loadToken) {
         return;
       }
+      final hasDisplayableData = _secrets.isNotEmpty || _rolloutState != null;
       setState(() {
         _isLoading = false;
-        _error = error.message.trim().isEmpty
+        _isRefreshing = false;
+        _error = hasDisplayableData
+            ? null
+            : error.message.trim().isEmpty
             ? context.l10n.settingsWorkspaceSecretsLoadError
             : error.message;
       });
@@ -327,35 +393,20 @@ class _SettingsWorkspaceSecretsPageState
       if (!mounted || token != _loadToken) {
         return;
       }
+      final hasDisplayableData = _secrets.isNotEmpty || _rolloutState != null;
       setState(() {
         _isLoading = false;
-        _error = context.l10n.settingsWorkspaceSecretsLoadError;
+        _isRefreshing = false;
+        _error = hasDisplayableData
+            ? null
+            : context.l10n.settingsWorkspaceSecretsLoadError;
       });
     }
   }
 
   Future<void> _refreshDataAfterMutation() async {
-    final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
-    final workspaceId = workspace?.id;
-
-    if (workspaceId == null || workspaceId.isEmpty || !_hasAccess) {
-      return;
-    }
-
     try {
-      final results = await Future.wait<dynamic>([
-        _repository.getSecrets(workspaceId),
-        _repository.getRolloutState(workspaceId),
-      ]);
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _secrets = _sortedSecrets(results[0] as List<WorkspaceSecret>);
-        _rolloutState = results[1] as WorkspaceStorageRolloutState;
-      });
+      await _loadData(forceRefresh: true);
     } on Exception {
       // Keep the current surface stable when background refresh fails.
     }

@@ -57,13 +57,31 @@ class InventoryAccessCubit extends Cubit<InventoryAccessState> {
       return;
     }
 
-    emit(
-      state.copyWith(
-        status: InventoryAccessStatus.loading,
-        enabled: false,
-        wsId: trimmed,
-      ),
-    );
+    final cached = await _repository.readCachedInventoryAccess(trimmed);
+    final hasCachedValue = cached.hasValue && cached.data != null;
+
+    if (hasCachedValue) {
+      final cachedEnabled = cached.data;
+      emit(
+        state.copyWith(
+          status: InventoryAccessStatus.loaded,
+          enabled: cachedEnabled ?? false,
+          wsId: trimmed,
+        ),
+      );
+
+      if (cached.isFresh) {
+        return;
+      }
+    } else {
+      emit(
+        state.copyWith(
+          status: InventoryAccessStatus.loading,
+          enabled: false,
+          wsId: trimmed,
+        ),
+      );
+    }
 
     try {
       final enabled = await _repository.isInventoryEnabled(trimmed);
@@ -79,6 +97,9 @@ class InventoryAccessCubit extends Cubit<InventoryAccessState> {
       );
     } on Exception {
       if (isClosed || state.wsId != trimmed) {
+        return;
+      }
+      if (hasCachedValue) {
         return;
       }
       emit(

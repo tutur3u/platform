@@ -38,6 +38,8 @@ The token route now returns the latest resumable session handle together with th
 
 Gemini 3.1 Flash Live should stay on a single `AUDIO` response modality for the live session config. The mobile UI relies on input/output audio transcription streams for inline text instead of requesting simultaneous `TEXT` and `AUDIO` outputs.
 
+The ephemeral token request should match Google’s current `v1alpha` auth-token shape: send `httpOptions.apiVersion = 'v1alpha'` on the token request itself, keep `uses` aligned with the default single-session flow, and prefer `lockAdditionalFields: []` so only the explicitly constrained setup fields are locked while client-side setup details like history/session resumption can still merge at connect time. When bootstrapping a fresh live assistant chat, omit `ai_chats.id` entirely unless a specific chat id is being resumed so Postgres can apply the default UUID.
+
 ### Verification
 
 For mobile-only live-mode changes, the required verification path is:

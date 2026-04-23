@@ -52,8 +52,6 @@ class AssistantLiveModeView extends StatelessWidget {
         ? context.l10n.assistantLiveStageAssistantSpeaking
         : context.l10n.assistantLiveStageAssistantReady;
     final showRetry = liveState.status == AssistantLiveConnectionStatus.error;
-    final showExpandedStatusPanel =
-        _showStatusPanel && MediaQuery.sizeOf(context).height >= 720;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -74,161 +72,83 @@ class AssistantLiveModeView extends StatelessWidget {
               liveState: liveState,
               liveUiState: liveUiState,
               onClose: onClose,
+              onDisconnect: onDisconnect,
               onRetry: onRetry,
-              showStatusDetail: !showExpandedStatusPanel,
+              showStatusDetail: !_showStatusPanel,
               showRetry: showRetry,
             ),
           ),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant.withValues(
-                          alpha: 0.3,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compactHeight = constraints.maxHeight < 720;
+                final hasTranscript =
+                    chatState.messages.isNotEmpty || liveState.hasDraft;
+                final showTranscriptPanel = hasTranscript || _showStatusPanel;
+                final transcriptHeight = compactHeight ? 210.0 : 270.0;
+
+                final body = Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _LiveStageCard(
+                      liveState: liveState,
+                      assistantName: assistantName,
+                      userBlobCaption: userBlobCaption,
+                      assistantBlobCaption: assistantBlobCaption,
+                      cameraController: cameraController,
+                    ),
+                    if (_showStatusPanel) ...[
+                      const SizedBox(height: 14),
+                      AssistantLiveStatusPanel(
+                        liveUiState: liveUiState,
+                        liveState: liveState,
+                        onRetry: onRetry,
+                      ),
+                    ],
+                    if (showTranscriptPanel) ...[
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        height: transcriptHeight,
+                        child: _LiveTranscriptCard(
+                          chatState: chatState,
+                          liveState: liveState,
+                          assistantName: assistantName,
+                          scrollController: scrollController,
                         ),
                       ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
-                      child: Stack(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: AssistantLiveActivityBlob(
-                                  label: context.l10n.assistantYouLabel,
-                                  caption: userBlobCaption,
-                                  level: liveState.audioLevel,
-                                  isActive: liveState.isMicrophoneActive,
-                                  icon: liveState.isMicrophoneActive
-                                      ? Icons.mic_rounded
-                                      : Icons.mic_off_rounded,
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: AssistantLiveActivityBlob(
-                                  label: assistantName,
-                                  caption: assistantBlobCaption,
-                                  level: liveState.assistantAudioLevel,
-                                  isActive: liveState.isAssistantSpeaking,
-                                  icon: liveState.isAssistantSpeaking
-                                      ? Icons.graphic_eq_rounded
-                                      : Icons.hearing_rounded,
-                                  color: theme.colorScheme.tertiary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (_showCameraPreview)
-                            Positioned(
-                              right: 0,
-                              top: 0,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(18),
-                                child: SizedBox(
-                                  width: 92,
-                                  height: 124,
-                                  child: CameraPreview(cameraController!),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Expanded(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: theme.colorScheme.outlineVariant.withValues(
-                            alpha: 0.22,
+                    ] else ...[
+                      const SizedBox(height: 24),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          context.l10n.assistantLiveTranscriptEmpty,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            height: 1.45,
                           ),
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(18, 16, 18, 10),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  context.l10n.assistantLiveTranscriptTitle,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                if (showExpandedStatusPanel) ...[
-                                  const SizedBox(height: 12),
-                                  AssistantLiveStatusPanel(
-                                    liveUiState: liveUiState,
-                                    liveState: liveState,
-                                    onRetry: onRetry,
-                                  ),
-                                ],
-                              ],
+                      const SizedBox(height: 24),
+                    ],
+                  ],
+                );
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: compactHeight
+                      ? SingleChildScrollView(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minHeight: constraints.maxHeight,
                             ),
+                            child: body,
                           ),
-                          Expanded(
-                            child:
-                                chatState.messages.isEmpty &&
-                                    !liveState.hasDraft
-                                ? Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                      18,
-                                      0,
-                                      18,
-                                      18,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        context
-                                            .l10n
-                                            .assistantLiveTranscriptEmpty,
-                                        textAlign: TextAlign.center,
-                                        style: theme.textTheme.bodyMedium
-                                            ?.copyWith(
-                                              color: theme
-                                                  .colorScheme
-                                                  .onSurfaceVariant,
-                                              height: 1.45,
-                                            ),
-                                      ),
-                                    ),
-                                  )
-                                : SingleChildScrollView(
-                                    controller: scrollController,
-                                    padding: const EdgeInsets.fromLTRB(
-                                      18,
-                                      0,
-                                      18,
-                                      18,
-                                    ),
-                                    child: AssistantTranscriptSection(
-                                      chatState: chatState,
-                                      liveState: liveState,
-                                      assistantName: assistantName,
-                                    ),
-                                  ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                        )
+                      : body,
+                );
+              },
             ),
           ),
           Padding(
@@ -237,7 +157,6 @@ class AssistantLiveModeView extends StatelessWidget {
               liveState: liveState,
               onToggleMicrophone: onToggleMicrophone,
               onToggleCamera: onToggleCamera,
-              onDisconnect: onDisconnect,
               onOpenTextEntry: onOpenTextEntry,
             ),
           ),
@@ -245,11 +164,6 @@ class AssistantLiveModeView extends StatelessWidget {
       ),
     );
   }
-
-  bool get _showCameraPreview =>
-      liveState.isCameraActive &&
-      cameraController != null &&
-      cameraController!.value.isInitialized;
 
   bool get _showStatusPanel =>
       liveState.isBusy ||
@@ -263,6 +177,7 @@ class _LiveModeHeader extends StatelessWidget {
     required this.liveState,
     required this.liveUiState,
     required this.onClose,
+    required this.onDisconnect,
     required this.onRetry,
     required this.showStatusDetail,
     required this.showRetry,
@@ -271,6 +186,7 @@ class _LiveModeHeader extends StatelessWidget {
   final AssistantLiveState liveState;
   final AssistantLiveUiState liveUiState;
   final Future<void> Function() onClose;
+  final Future<void> Function() onDisconnect;
   final Future<void> Function() onRetry;
   final bool showStatusDetail;
   final bool showRetry;
@@ -297,18 +213,10 @@ class _LiveModeHeader extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  AssistantStatusBadge(
-                    label: liveUiState.statusLabel(context.l10n),
-                    color: _toneColor(theme, liveUiState.tone),
-                  ),
-                  _ModelBadge(label: context.l10n.assistantLiveModelBadge),
-                ],
+              const SizedBox(height: 6),
+              AssistantStatusBadge(
+                label: liveUiState.statusLabel(context.l10n),
+                color: _toneColor(theme, liveUiState.tone),
               ),
               if (showStatusDetail) ...[
                 const SizedBox(height: 10),
@@ -326,30 +234,181 @@ class _LiveModeHeader extends StatelessWidget {
             onPressed: onRetry,
             icon: const Icon(Icons.refresh_rounded),
           ),
+        IconButton(
+          tooltip: context.l10n.assistantLiveDisconnect,
+          onPressed: onDisconnect,
+          icon: Icon(
+            Icons.call_end_rounded,
+            color: theme.colorScheme.error,
+          ),
+        ),
       ],
     );
   }
 }
 
-class _ModelBadge extends StatelessWidget {
-  const _ModelBadge({required this.label});
+class _LiveStageCard extends StatelessWidget {
+  const _LiveStageCard({
+    required this.liveState,
+    required this.assistantName,
+    required this.userBlobCaption,
+    required this.assistantBlobCaption,
+    required this.cameraController,
+  });
 
-  final String label;
+  final AssistantLiveState liveState;
+  final String assistantName;
+  final String userBlobCaption;
+  final String assistantBlobCaption;
+  final CameraController? cameraController;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: theme.textTheme.labelLarge?.copyWith(
-          fontWeight: FontWeight.w700,
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.28),
         ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                Text(
+                  context.l10n.assistantLiveModelBadge,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AssistantLiveActivityBlob(
+                        label: context.l10n.assistantYouLabel,
+                        caption: userBlobCaption,
+                        level: liveState.audioLevel,
+                        isActive: liveState.isMicrophoneActive,
+                        icon: liveState.isMicrophoneActive
+                            ? Icons.mic_rounded
+                            : Icons.mic_off_rounded,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: AssistantLiveActivityBlob(
+                        label: assistantName,
+                        caption: assistantBlobCaption,
+                        level: liveState.assistantAudioLevel,
+                        isActive: liveState.isAssistantSpeaking,
+                        icon: liveState.isAssistantSpeaking
+                            ? Icons.graphic_eq_rounded
+                            : Icons.hearing_rounded,
+                        color: theme.colorScheme.tertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            if (_showCameraPreview)
+              Positioned(
+                right: 0,
+                top: 0,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: SizedBox(
+                    width: 88,
+                    height: 116,
+                    child: CameraPreview(cameraController!),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  bool get _showCameraPreview =>
+      liveState.isCameraActive &&
+      cameraController != null &&
+      cameraController!.value.isInitialized;
+}
+
+class _LiveTranscriptCard extends StatelessWidget {
+  const _LiveTranscriptCard({
+    required this.chatState,
+    required this.liveState,
+    required this.assistantName,
+    required this.scrollController,
+  });
+
+  final AssistantChatState chatState;
+  final AssistantLiveState liveState;
+  final String assistantName;
+  final ScrollController scrollController;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasTranscript = chatState.messages.isNotEmpty || liveState.hasDraft;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.22),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 10),
+            child: Text(
+              context.l10n.assistantLiveTranscriptTitle,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          Expanded(
+            child: hasTranscript
+                ? SingleChildScrollView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                    child: AssistantTranscriptSection(
+                      chatState: chatState,
+                      liveState: liveState,
+                      assistantName: assistantName,
+                    ),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                    child: Center(
+                      child: Text(
+                        context.l10n.assistantLiveTranscriptEmpty,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          height: 1.45,
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -360,33 +419,42 @@ class _LiveControlRail extends StatelessWidget {
     required this.liveState,
     required this.onToggleMicrophone,
     required this.onToggleCamera,
-    required this.onDisconnect,
     required this.onOpenTextEntry,
   });
 
   final AssistantLiveState liveState;
   final Future<void> Function() onToggleMicrophone;
   final Future<void> Function() onToggleCamera;
-  final Future<void> Function() onDisconnect;
   final Future<void> Function() onOpenTextEntry;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: Theme.of(
-            context,
-          ).colorScheme.outlineVariant.withValues(alpha: 0.22),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.22),
         ),
       ),
       child: Row(
         children: [
+          _LiveControlButton(
+            icon: liveState.isCameraActive
+                ? Icons.videocam_rounded
+                : Icons.videocam_off_rounded,
+            label: liveState.isCameraActive
+                ? context.l10n.assistantLiveHideCamera
+                : context.l10n.assistantLiveShowCamera,
+            onPressed: onToggleCamera,
+            highlighted: liveState.isCameraActive,
+          ),
+          const SizedBox(width: 12),
           Expanded(
-            child: _LiveControlButton(
+            child: _PrimaryLiveControlButton(
               icon: liveState.isMicrophoneActive
                   ? Icons.mic_rounded
                   : Icons.mic_off_rounded,
@@ -394,37 +462,74 @@ class _LiveControlRail extends StatelessWidget {
                   ? context.l10n.assistantLiveMute
                   : context.l10n.assistantLiveListen,
               onPressed: onToggleMicrophone,
-              highlighted: liveState.isMicrophoneActive,
+              active: liveState.isMicrophoneActive,
             ),
           ),
-          Expanded(
-            child: _LiveControlButton(
-              icon: liveState.isCameraActive
-                  ? Icons.videocam_rounded
-                  : Icons.videocam_off_rounded,
-              label: liveState.isCameraActive
-                  ? context.l10n.assistantLiveHideCamera
-                  : context.l10n.assistantLiveShowCamera,
-              onPressed: onToggleCamera,
-              highlighted: liveState.isCameraActive,
-            ),
-          ),
-          Expanded(
-            child: _LiveControlButton(
-              icon: Icons.keyboard_rounded,
-              label: context.l10n.assistantLiveTypeMessage,
-              onPressed: onOpenTextEntry,
-            ),
-          ),
-          Expanded(
-            child: _LiveControlButton(
-              icon: Icons.call_end_rounded,
-              label: context.l10n.assistantLiveDisconnect,
-              onPressed: onDisconnect,
-              danger: true,
-            ),
+          const SizedBox(width: 12),
+          _LiveControlButton(
+            icon: Icons.keyboard_rounded,
+            label: context.l10n.assistantLiveTypeMessage,
+            onPressed: onOpenTextEntry,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PrimaryLiveControlButton extends StatelessWidget {
+  const _PrimaryLiveControlButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    required this.active,
+  });
+
+  final IconData icon;
+  final String label;
+  final Future<void> Function() onPressed;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final foreground = active
+        ? theme.colorScheme.onPrimary
+        : theme.colorScheme.onSurface;
+    final background = active
+        ? theme.colorScheme.primary
+        : theme.colorScheme.surfaceContainerHigh;
+
+    return Tooltip(
+      message: label,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: onPressed,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: foreground, size: 24),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: foreground,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -436,45 +541,39 @@ class _LiveControlButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.highlighted = false,
-    this.danger = false,
   });
 
   final IconData icon;
   final String label;
   final Future<void> Function() onPressed;
   final bool highlighted;
-  final bool danger;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final foreground = danger
-        ? theme.colorScheme.error
-        : highlighted
+    final foreground = highlighted
         ? theme.colorScheme.primary
         : theme.colorScheme.onSurfaceVariant;
-    final background = danger
-        ? theme.colorScheme.error.withValues(alpha: 0.1)
-        : highlighted
+    final background = highlighted
         ? theme.colorScheme.primary.withValues(alpha: 0.12)
-        : Colors.transparent;
+        : theme.colorScheme.surfaceContainerLow;
 
     return Tooltip(
       message: label,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         onTap: onPressed,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
                   color: background,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 child: Icon(icon, color: foreground, size: 22),
               ),

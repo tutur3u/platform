@@ -1,3 +1,4 @@
+import { resolveGatewayModelId } from '@tuturuuu/ai/credits/model-mapping';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types/db';
 import {
@@ -105,15 +106,13 @@ export async function POST(request: Request) {
       return Response.json({ success: true, inserted: 0, deduped: true });
     }
 
-    const bareModel = model.includes('/')
-      ? model.split('/').pop()!.toLowerCase()
-      : model.toLowerCase();
+    const gatewayModel = resolveGatewayModelId(model).toLowerCase();
     const payload = messages.map((message) => ({
       chat_id: chatId,
       creator_id: user.id,
       role: message.role.toUpperCase() as ChatRole,
       content: message.content,
-      model: message.role === 'assistant' ? bareModel : null,
+      model: message.role === 'assistant' ? gatewayModel : null,
       metadata: {
         liveTurnId: turnId,
         source: 'Mira',

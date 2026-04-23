@@ -33,6 +33,20 @@ class WorkspaceStorageBackendState {
   final String? message;
   final int? totalSize;
   final int? fileCount;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'provider': provider,
+      'available': available,
+      'selected': selected,
+      'misconfigured': misconfigured,
+      'message': message,
+      'overview': {
+        'totalSize': totalSize,
+        'fileCount': fileCount,
+      },
+    };
+  }
 }
 
 class WorkspaceStorageAutoExtractState {
@@ -58,6 +72,15 @@ class WorkspaceStorageAutoExtractState {
   final bool configured;
   final bool proxyUrlConfigured;
   final bool proxyTokenConfigured;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'enabled': enabled,
+      'configured': configured,
+      'proxyUrlConfigured': proxyUrlConfigured,
+      'proxyTokenConfigured': proxyTokenConfigured,
+    };
+  }
 }
 
 class WorkspaceStorageRolloutState {
@@ -95,6 +118,17 @@ class WorkspaceStorageRolloutState {
   final bool activeProviderMisconfigured;
   final Map<String, WorkspaceStorageBackendState> backends;
   final WorkspaceStorageAutoExtractState autoExtract;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'activeProvider': activeProvider,
+      'activeProviderMisconfigured': activeProviderMisconfigured,
+      'backends': backends.map(
+        (key, value) => MapEntry(key, value.toJson()),
+      ),
+      'autoExtract': autoExtract.toJson(),
+    };
+  }
 }
 
 class WorkspaceStorageMigrationResult {

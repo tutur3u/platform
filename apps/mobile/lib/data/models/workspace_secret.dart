@@ -23,6 +23,16 @@ class WorkspaceSecret {
   final String? value;
   final DateTime? createdAt;
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'ws_id': wsId,
+      'name': name,
+      'value': value,
+      'created_at': createdAt?.toIso8601String(),
+    };
+  }
+
   WorkspaceSecret copyWith({
     String? id,
     String? wsId,

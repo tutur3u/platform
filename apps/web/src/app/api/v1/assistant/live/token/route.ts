@@ -112,24 +112,24 @@ export async function POST(request: Request) {
 
     const resolvedModel = model ?? ASSISTANT_LIVE_MODEL;
     const shouldForceFresh = forceFresh === true;
-    const tokenPromise = createConstrainedLiveToken({
-      model: resolvedModel,
-      systemInstruction: ASSISTANT_SYSTEM_INSTRUCTION,
-      tools: [
-        { functionDeclarations: ASSISTANT_LIVE_TOOL_DECLARATIONS },
-        { googleSearch: {} },
-      ],
-      toolConfig: ASSISTANT_LIVE_TOOL_CONFIG,
-      responseModalities: [Modality.AUDIO],
-      thinkingLevel: ThinkingLevel.MINIMAL,
-    });
 
     const chat = await ensureAssistantLiveChat({
       supabase,
       userId: user.id,
       chatId,
       model: resolvedModel,
+    }).catch((error) => {
+      console.error('Failed to prepare assistant live chat:', error);
+      return null;
     });
+
+    if (chat == null) {
+      return Response.json(
+        { error: 'Failed to prepare assistant live session' },
+        { status: 500 }
+      );
+    }
+
     const scopeKey = assistantChatScopeKey(chat.id);
     const sessionHandlePromise = shouldForceFresh
       ? Promise.resolve<string | null>(null)
@@ -140,18 +140,52 @@ export async function POST(request: Request) {
           userId: user.id,
         });
 
-    const [token, sessionHandle] = await Promise.all([
-      tokenPromise,
-      sessionHandlePromise,
-    ]);
+    let token: string;
+    let sessionHandle: string | null;
+    try {
+      [token, sessionHandle] = await Promise.all([
+        createConstrainedLiveToken({
+          model: resolvedModel,
+          systemInstruction: ASSISTANT_SYSTEM_INSTRUCTION,
+          tools: [
+            { functionDeclarations: ASSISTANT_LIVE_TOOL_DECLARATIONS },
+            { googleSearch: {} },
+          ],
+          toolConfig: ASSISTANT_LIVE_TOOL_CONFIG,
+          responseModalities: [Modality.AUDIO],
+          thinkingLevel: ThinkingLevel.MINIMAL,
+        }),
+        sessionHandlePromise,
+      ]);
+    } catch (error) {
+      console.error('Failed to provision assistant live token:', error);
+      return Response.json(
+        { error: 'Failed to provision Gemini Live token' },
+        { status: 502 }
+      );
+    }
+
     const seedHistory =
       shouldForceFresh || sessionHandle == null
         ? await loadAssistantLiveSeedHistory({
             supabase,
             chatId: chat.id,
             userId: user.id,
+          }).catch((error) => {
+            console.error(
+              'Failed to restore assistant live seed history:',
+              error
+            );
+            return null;
           })
         : [];
+
+    if (seedHistory == null) {
+      return Response.json(
+        { error: 'Failed to restore assistant live history' },
+        { status: 500 }
+      );
+    }
 
     return Response.json({
       token,

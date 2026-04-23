@@ -57,13 +57,31 @@ class HabitsAccessCubit extends Cubit<HabitsAccessState> {
       return;
     }
 
-    emit(
-      state.copyWith(
-        status: HabitsAccessStatus.loading,
-        enabled: false,
-        wsId: trimmed,
-      ),
-    );
+    final cached = await _repository.readCachedHabitsAccess(trimmed);
+    final hasCachedValue = cached.hasValue && cached.data != null;
+
+    if (hasCachedValue) {
+      final cachedEnabled = cached.data;
+      emit(
+        state.copyWith(
+          status: HabitsAccessStatus.loaded,
+          enabled: cachedEnabled ?? false,
+          wsId: trimmed,
+        ),
+      );
+
+      if (cached.isFresh) {
+        return;
+      }
+    } else {
+      emit(
+        state.copyWith(
+          status: HabitsAccessStatus.loading,
+          enabled: false,
+          wsId: trimmed,
+        ),
+      );
+    }
 
     try {
       final enabled = await _repository.isHabitsEnabled(trimmed);
@@ -79,6 +97,9 @@ class HabitsAccessCubit extends Cubit<HabitsAccessState> {
       );
     } on Exception {
       if (isClosed || state.wsId != trimmed) {
+        return;
+      }
+      if (hasCachedValue) {
         return;
       }
       emit(

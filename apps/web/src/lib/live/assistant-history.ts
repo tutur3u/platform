@@ -1,3 +1,4 @@
+import { resolveGatewayModelId } from '@tuturuuu/ai/credits/model-mapping';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json } from '@tuturuuu/types';
 
@@ -101,11 +102,9 @@ export async function ensureAssistantLiveChat({
   const { data: createdChat, error: createError } = await supabase
     .from('ai_chats')
     .insert({
-      id: chatId,
+      ...(chatId == null ? {} : { id: chatId }),
       creator_id: userId,
-      model: model.includes('/')
-        ? model.split('/').pop()!.toLowerCase()
-        : model,
+      model: resolveGatewayModelId(model).toLowerCase(),
     })
     .select('id, title, model, is_public, created_at')
     .single();
