@@ -111,6 +111,27 @@ describe('markdownToHtml', () => {
     expect(html).toContain('<a href="https://example.com">link</a>');
   });
 
+  it('should strip double-quoted link titles', () => {
+    const md = '[OpenAI](https://openai.com "Title here")';
+    const html = markdownToHtml(md);
+    expect(html).toContain('<a href="https://openai.com">OpenAI</a>');
+    expect(html).not.toContain('Title here');
+  });
+
+  it('should strip single-quoted link titles', () => {
+    const md = "[OpenAI](https://openai.com 'Title here')";
+    const html = markdownToHtml(md);
+    expect(html).toContain('<a href="https://openai.com">OpenAI</a>');
+    expect(html).not.toContain('Title here');
+  });
+
+  it('should strip parenthesized link titles', () => {
+    const md = '[OpenAI](https://openai.com (Title here))';
+    const html = markdownToHtml(md);
+    expect(html).toContain('<a href="https://openai.com">OpenAI</a>');
+    expect(html).not.toContain('Title here');
+  });
+
   it('should convert autolink URLs', () => {
     const md = '<https://example.com>';
     const html = markdownToHtml(md);

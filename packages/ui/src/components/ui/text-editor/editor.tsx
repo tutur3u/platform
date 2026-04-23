@@ -1,7 +1,6 @@
 'use client';
 
 import type { QueryClient } from '@tanstack/react-query';
-import { DOMParser as ProseMirrorDOMParser } from '@tiptap/pm/model';
 import {
   type Editor,
   EditorContent,
@@ -17,7 +16,6 @@ import { flushSync } from 'react-dom';
 import type * as Y from 'yjs';
 import { migrateInlineImagesToBlock } from './content-migration';
 import { getEditorExtensions } from './extensions';
-import { __markdownPastePrivate } from './markdown-paste-extension';
 import { FixedToolbar, ToolBar } from './tool-bar';
 
 const hasContent = (node: JSONContent): boolean => {
@@ -473,38 +471,6 @@ export function RichTextEditor({
         }
 
         return false;
-      },
-      handlePaste: (view, event) => {
-        const clipboardData = event.clipboardData;
-        if (!clipboardData) return false;
-
-        const text = clipboardData.getData('text/plain');
-        if (!text || !__markdownPastePrivate.looksLikeMarkdown(text)) {
-          return false;
-        }
-
-        event.preventDefault();
-
-        const html = __markdownPastePrivate.markdownToHtml(text);
-        const { state } = view;
-        const { from, to } = state.selection;
-
-        const browserParser = new DOMParser();
-        const dom = browserParser.parseFromString(
-          `<div>${html}</div>`,
-          'text/html'
-        );
-        const firstChild = dom.body.firstChild;
-        if (!firstChild) return false;
-
-        const slice = ProseMirrorDOMParser.fromSchema(state.schema).parseSlice(
-          firstChild as Element
-        );
-
-        const tr = state.tr.replaceRange(from, to, slice);
-        view.dispatch(tr);
-
-        return true;
       },
     },
     onCreate: ({ editor }) => {

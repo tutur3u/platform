@@ -47,6 +47,28 @@ function sanitizeImageUrl(url: string): string {
   return '';
 }
 
+function applyInlineFormatting(html: string): string {
+  // Highlight: ==text==
+  html = html.replace(/==([^=\n]+)==/g, '<mark>$1</mark>');
+
+  // Strikethrough: ~~text~~
+  html = html.replace(/~~([^~\n]+)~~/g, '<s>$1</s>');
+
+  // Bold + Italic: ***text***
+  html = html.replace(/\*\*\*([^*\n]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+
+  // Bold: **text**
+  html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+
+  // Italic: *text* (but not inside words)
+  html = html.replace(
+    /(?<![A-Za-z0-9])\*([^*\n]+)\*(?![A-Za-z0-9])/g,
+    '<em>$1</em>'
+  );
+
+  return html;
+}
+
 function parseInline(text: string): string {
   // Step 1: Tokenize code spans so later replacements don't touch them
   const codeTokens: string[] = [];
@@ -85,44 +107,43 @@ function parseInline(text: string): string {
     }
   );
 
+  // Step 1d: Tokenize markdown images/links before escaping text. This avoids
+  // converting emphasized link text into escaped tag literals.
+  const mediaTokens: string[] = [];
+
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, url) => {
+    const safeUrl = sanitizeImageUrl(url);
+    if (!safeUrl) {
+      return _match;
+    }
+
+    mediaTokens.push(
+      `<img src="${escapeHtml(safeUrl)}" alt="${escapeHtml(alt)}" />`
+    );
+    return `\0MEDIA${mediaTokens.length - 1}\0`;
+  });
+
+  html = html.replace(
+    /\[([^\]]+)\]\(([^)\s]+)(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]*)\)))?\)/g,
+    (_match, linkText, url) => {
+      const safeUrl = sanitizeLinkUrl(url);
+      if (!safeUrl) {
+        return _match;
+      }
+
+      const formattedLinkText = applyInlineFormatting(escapeHtml(linkText));
+      mediaTokens.push(
+        `<a href="${escapeHtml(safeUrl)}">${formattedLinkText}</a>`
+      );
+      return `\0MEDIA${mediaTokens.length - 1}\0`;
+    }
+  );
+
   // Step 2: Escape remaining text
   html = escapeHtml(html);
 
   // Step 3: Apply inline formatting (order matters)
-
-  // Highlight: ==text==
-  html = html.replace(/==([^=\n]+)==/g, '<mark>$1</mark>');
-
-  // Strikethrough: ~~text~~
-  html = html.replace(/~~([^~\n]+)~~/g, '<s>$1</s>');
-
-  // Bold + Italic: ***text***
-  html = html.replace(/\*\*\*([^*\n]+)\*\*\*/g, '<strong><em>$1</em></strong>');
-
-  // Bold: **text**
-  html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
-
-  // Italic: *text* (but not inside words)
-  html = html.replace(
-    /(?<![A-Za-z0-9])\*([^*\n]+)\*(?![A-Za-z0-9])/g,
-    '<em>$1</em>'
-  );
-
-  // Images: ![alt](url) — sanitize src
-  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, url) => {
-    const safeUrl = sanitizeImageUrl(url);
-    return safeUrl
-      ? `<img src="${safeUrl}" alt="${escapeHtml(alt)}" />`
-      : escapeHtml(`![${alt}](${url})`);
-  });
-
-  // Links: [text](url) — sanitize href
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, linkText, url) => {
-    const safeUrl = sanitizeLinkUrl(url);
-    return safeUrl
-      ? `<a href="${safeUrl}">${escapeHtml(linkText)}</a>`
-      : escapeHtml(`[${linkText}](${url})`);
-  });
+  html = applyInlineFormatting(html);
 
   // Step 4: Restore code tokens
   html = html.replace(
@@ -140,6 +161,12 @@ function parseInline(text: string): string {
   html = html.replace(
     /\0AUTOLINK(\d+)\0/g,
     (_match, index) => autolinkTokens[Number(index)] ?? ''
+  );
+
+  // Step 4d: Restore image/link tokens
+  html = html.replace(
+    /\0MEDIA(\d+)\0/g,
+    (_match, index) => mediaTokens[Number(index)] ?? ''
   );
 
   return html;
@@ -179,6 +206,7 @@ function parseListTree(
     if (indent < minIndent) break;
 
     const marker = match[2] || '';
+    const markerPrefixLen = match[0].length;
     let content = match[3] || '';
 
     // Check for task list: - [ ] or - [x]
@@ -233,7 +261,7 @@ function parseListTree(
 
       if (nextIndent > indent) {
         // Indented continuation text
-        contentLines.push(nextLine.slice(indent + 2));
+        contentLines.push(nextLine.slice(markerPrefixLen));
         i++;
       } else {
         // Not indented, not a list line → end of this item
