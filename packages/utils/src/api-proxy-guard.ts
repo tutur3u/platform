@@ -5,7 +5,6 @@ import { NextResponse } from 'next/server';
 import { extractIPFromRequest, isIPBlockedEdge } from './abuse-protection/edge';
 import { getUpstashRestRedisClient } from './upstash-rest';
 
-const isDev = process.env.NODE_ENV !== 'production';
 const MAX_PAYLOAD_SIZE = 200 * 1024; // 200KB
 
 export type RateLimitWindow = 'minute' | 'hour' | 'day';
@@ -48,6 +47,7 @@ type Limiters = {
 };
 
 const limiterCache = new Map<string, Limiters>();
+const cache = new Map();
 
 const NO_READ_RATE_LIMITS: RateLimitConfig[] = [];
 
@@ -179,6 +179,7 @@ function createRateLimitBuckets(
       redis,
       limiter: Ratelimit.slidingWindow(config.limit, config.duration),
       prefix: `${prefixBase}:${kind}:${config.window}`,
+      ephemeralCache: cache,
       analytics: false,
     }),
   }));
@@ -194,12 +195,7 @@ async function getRateLimiters(
     return cached;
   }
 
-  const redis = await getUpstashRestRedisClient();
-  if (!redis) {
-    const disabled = { get: [], mutate: [] };
-    limiterCache.set(cacheKey, disabled);
-    return disabled;
-  }
+  const redis = getUpstashRestRedisClient();
 
   const limiters = {
     get: createRateLimitBuckets(redis, prefixBase, 'get', profile.get),
@@ -271,7 +267,6 @@ export async function guardApiProxyRequest(
   ];
 
   if (
-    !isDev &&
     !isTrustedProxyBypassRequest(
       req.nextUrl.pathname,
       req.headers,
@@ -280,7 +275,17 @@ export async function guardApiProxyRequest(
   ) {
     const ip = extractIPFromRequest(req.headers);
 
-    if (ip !== 'unknown') {
+    if (ip === 'unknown') {
+      return NextResponse.json(
+        {
+          error: 'Unknown Client IP',
+          message: 'Unable to determine client IP address',
+        },
+        { status: 400 }
+      );
+    }
+
+    try {
       const blockInfo = await isIPBlockedEdge(ip);
       if (blockInfo) {
         const retryAfter = Math.max(
@@ -327,6 +332,12 @@ export async function guardApiProxyRequest(
           });
         }
       }
+    } catch (error) {
+      console.error('[ProxyGuard] Rate limiter error:', error);
+      return NextResponse.json(
+        { error: 'Internal Server Error', message: 'Rate limiter failure' },
+        { status: 500 }
+      );
     }
   }
 
