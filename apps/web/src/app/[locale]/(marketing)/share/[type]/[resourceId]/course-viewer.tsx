@@ -164,13 +164,20 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
                       </div>
                       <div className="mt-1 flex flex-wrap gap-1.5 text-[10px] text-foreground/50">
                         {module.quizzes > 0 && (
-                          <span>{t('share-course.quiz_short')} {module.quizzes}</span>
+                          <span>
+                            {t('share-course.quiz_short')} {module.quizzes}
+                          </span>
                         )}
                         {module.quizSets > 0 && (
-                          <span>{t('share-course.quiz_set_short')} {module.quizSets}</span>
+                          <span>
+                            {t('share-course.quiz_set_short')} {module.quizSets}
+                          </span>
                         )}
                         {module.flashcards > 0 && (
-                          <span>{t('share-course.flashcard_short')} {module.flashcards}</span>
+                          <span>
+                            {t('share-course.flashcard_short')}{' '}
+                            {module.flashcards}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -199,7 +206,9 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
                 onClick={toggleAll}
                 className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-4 py-2 text-xs font-semibold text-foreground/70 transition hover:bg-muted/60"
               >
-                {anyOpen ? t('share-course.collapse_all') : t('share-course.expand_all')}
+                {anyOpen
+                  ? t('share-course.collapse_all')
+                  : t('share-course.expand_all')}
                 <ChevronRight
                   className={cn(
                     'h-3.5 w-3.5 transition',
@@ -250,7 +259,8 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
                                 variant="outline"
                                 className="h-5 rounded-sm border-foreground/10 px-1.5 text-[10px] text-foreground/60"
                               >
-                                {t('share-course.quiz_set_short')} {module.quizSets}
+                                {t('share-course.quiz_set_short')}{' '}
+                                {module.quizSets}
                               </Badge>
                             )}
                             {module.flashcards > 0 && (
@@ -259,7 +269,8 @@ export function CourseViewer({ group, modules }: CourseViewerProps) {
                                 variant="outline"
                                 className="h-5 rounded-sm border-foreground/10 px-1.5 text-[10px] text-foreground/60"
                               >
-                                {t('share-course.flashcard_short')} {module.flashcards}
+                                {t('share-course.flashcard_short')}{' '}
+                                {module.flashcards}
                               </Badge>
                             )}
                           </div>
