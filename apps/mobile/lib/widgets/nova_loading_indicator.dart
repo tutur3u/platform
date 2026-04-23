@@ -39,14 +39,19 @@ class _NovaLoadingIndicatorState extends State<NovaLoadingIndicator>
 
   @override
   Widget build(BuildContext context) {
-    return RotationTransition(
-      turns: _turns,
-      child: Image.asset(
-        'assets/logos/nova-transparent.png',
-        width: widget.size,
-        height: widget.size,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
+    return Center(
+      child: SizedBox.square(
+        dimension: widget.size,
+        child: RotationTransition(
+          turns: _turns,
+          child: RepaintBoundary(
+            child: Image.asset(
+              'assets/logos/nova-transparent.png',
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+            ),
+          ),
+        ),
       ),
     );
   }

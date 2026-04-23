@@ -18,6 +18,7 @@ import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/image_source_picker_dialog.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/staggered_entry.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -93,7 +94,7 @@ class _ProfileView extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const shad.CircularProgressIndicator(),
+                    const NovaLoadingIndicator(),
                     const shad.Gap(16),
                     Text(l10n.profileLoading),
                   ],

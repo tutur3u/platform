@@ -6,6 +6,7 @@ import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class AssistantToolResultsSection extends StatefulWidget {
   const AssistantToolResultsSection({
@@ -410,7 +411,7 @@ class _AssistantGeneratedImageState extends State<_AssistantGeneratedImage> {
           return _AssistantImageFrame(
             child: ColoredBox(
               color: theme.colorScheme.surfaceContainerHighest,
-              child: const Center(child: CircularProgressIndicator()),
+              child: const Center(child: NovaLoadingIndicator(size: 40)),
             ),
           );
         }
@@ -438,7 +439,7 @@ class _AssistantGeneratedImageState extends State<_AssistantGeneratedImage> {
                   }
                   return ColoredBox(
                     color: theme.colorScheme.surfaceContainerHighest,
-                    child: const Center(child: CircularProgressIndicator()),
+                    child: const Center(child: NovaLoadingIndicator(size: 40)),
                   );
                 },
                 errorBuilder: (context, error, stackTrace) {
@@ -554,7 +555,7 @@ class _AssistantGeneratedImageViewerState
           builder: (context, snapshot) {
             final url = snapshot.data ?? widget.initialUrl;
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: NovaLoadingIndicator());
             }
             return Center(
               child: InteractiveViewer(

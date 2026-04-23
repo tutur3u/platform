@@ -33,6 +33,7 @@ import 'package:mobile/features/time_tracker/widgets/time_tracker_filter_sheet.d
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
@@ -441,9 +442,7 @@ class _RequestsViewState extends State<_RequestsView> {
                 builder: (context) {
                   if (workspaceState.status == WorkspaceStatus.initial ||
                       workspaceState.status == WorkspaceStatus.loading) {
-                    return const Center(
-                      child: shad.CircularProgressIndicator(),
-                    );
+                    return const Center(child: NovaLoadingIndicator());
                   }
 
                   if (workspaceState.currentWorkspace == null) {
@@ -464,9 +463,7 @@ class _RequestsViewState extends State<_RequestsView> {
                               state.status ==
                                   TimeTrackerRequestsStatus.loading) &&
                           state.requests.isEmpty) {
-                        return const Center(
-                          child: shad.CircularProgressIndicator(),
-                        );
+                        return const Center(child: NovaLoadingIndicator());
                       }
 
                       if (state.status == TimeTrackerRequestsStatus.error &&

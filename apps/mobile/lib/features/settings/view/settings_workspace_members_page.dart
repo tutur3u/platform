@@ -19,6 +19,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SettingsWorkspaceMembersPage extends StatelessWidget {
@@ -143,7 +144,7 @@ class _SettingsWorkspaceMembersViewState
                 if (_loading)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 48),
-                    child: Center(child: shad.CircularProgressIndicator()),
+                    child: Center(child: NovaLoadingIndicator()),
                   )
                 else if (_error != null)
                   _MembersStatePanel(

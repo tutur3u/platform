@@ -107,11 +107,16 @@ class _RequestManagerActionsBarState extends State<RequestManagerActionsBar> {
                             onPressed: _isProcessing ? null : _handleApprove,
                             child: _isProcessing
                                 ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: shad.CircularProgressIndicator(),
+                                    width: double.infinity,
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: shad.CircularProgressIndicator(),
+                                      ),
+                                    ),
                                   )
-                                : Text(
+                                : _ActionButtonLabel(
                                     widget.showRevertToApproved
                                         ? l10n.timerRequestRevertToApproved
                                         : l10n.timerApprove,
@@ -134,7 +139,7 @@ class _RequestManagerActionsBarState extends State<RequestManagerActionsBar> {
                                     onSubmit: (reason) =>
                                         widget.onReject(reason),
                                   ),
-                            child: Text(
+                            child: _ActionButtonLabel(
                               widget.showRevertToRejected
                                   ? l10n.timerRequestRevertToRejected
                                   : l10n.timerReject,
@@ -155,7 +160,7 @@ class _RequestManagerActionsBarState extends State<RequestManagerActionsBar> {
                             requiresText: true,
                             onSubmit: (reason) => widget.onRequestInfo(reason!),
                           ),
-                    child: Text(l10n.timerRequestInfo),
+                    child: _ActionButtonLabel(l10n.timerRequestInfo),
                   ),
                 ],
               ],
@@ -274,6 +279,20 @@ class _RequestManagerActionsBarState extends State<RequestManagerActionsBar> {
           },
         ),
       ),
+    );
+  }
+}
+
+class _ActionButtonLabel extends StatelessWidget {
+  const _ActionButtonLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Text(text, textAlign: TextAlign.center),
     );
   }
 }

@@ -17,6 +17,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SettingsWorkspaceRolesPage extends StatelessWidget {
@@ -120,7 +121,7 @@ class _SettingsWorkspaceRolesViewState
                 if (_loading)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 48),
-                    child: Center(child: shad.CircularProgressIndicator()),
+                    child: Center(child: NovaLoadingIndicator()),
                   )
                 else if (_error != null)
                   _SettingsStatePanel(
@@ -389,7 +390,7 @@ class _WorkspaceRoleEditorPageState extends State<WorkspaceRoleEditorPage> {
       isSaving: _saving,
       onPrimaryPressed: _saving ? null : _save,
       child: _loading
-          ? const Center(child: shad.CircularProgressIndicator())
+          ? const Center(child: NovaLoadingIndicator())
           : _error != null
           ? _SettingsStatePanel(
               message: _error!,

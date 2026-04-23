@@ -64,6 +64,15 @@ void main() {
       expect(find.text('Duration'), findsOneWidget);
       expect(find.text('Approve'), findsOneWidget);
       expect(find.text('Reject'), findsOneWidget);
+
+      expect(
+        tester.widget<Text>(find.text('Approve')).textAlign,
+        TextAlign.center,
+      );
+      expect(
+        tester.widget<Text>(find.text('Reject')).textAlign,
+        TextAlign.center,
+      );
     });
 
     testWidgets('hides manager actions for non-manager', (tester) async {
