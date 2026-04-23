@@ -34,6 +34,14 @@ describe('Editor Extensions Integration', () => {
       expect(hasTextShortcuts).toBe(true);
     });
 
+    it('should include markdown paste extension', () => {
+      const extensions = getEditorExtensions();
+      const hasMarkdownPaste = extensions.some(
+        (ext) => ext.name === 'markdownPaste'
+      );
+      expect(hasMarkdownPaste).toBe(true);
+    });
+
     it('should include task list extensions', () => {
       const extensions = getEditorExtensions();
       const hasTaskList = extensions.some((ext) => ext.name === 'taskList');
