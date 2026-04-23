@@ -5,6 +5,7 @@ import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/calendar/view/calendar_page.dart';
 import 'package:mobile/features/crm/view/crm_page.dart';
 import 'package:mobile/features/drive/view/drive_page.dart';
+import 'package:mobile/features/education/view/education_page.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
@@ -66,6 +67,14 @@ class AppRegistry {
       labelBuilder: _labelDrive,
       pageBuilder: _pageDrive,
       miniAppNavItems: _driveMiniNav,
+    ),
+    AppModule(
+      id: 'education',
+      route: Routes.education,
+      icon: Icons.school_outlined,
+      labelBuilder: _labelEducation,
+      pageBuilder: _pageEducation,
+      miniAppNavItems: _educationMiniNav,
     ),
     AppModule(
       id: 'crm',
@@ -270,6 +279,15 @@ class AppRegistry {
     ),
   ];
 
+  static const List<MiniAppNavItem> _educationMiniNav = [
+    MiniAppNavItem(
+      id: 'education_home',
+      route: Routes.education,
+      icon: Icons.school_outlined,
+      labelBuilder: _labelEducation,
+    ),
+  ];
+
   static const List<MiniAppNavItem> _timerMiniNav = [
     MiniAppNavItem(
       id: 'timer_home',
@@ -408,6 +426,7 @@ class AppRegistry {
   static String _labelCalendar(AppLocalizations l10n) => l10n.navCalendar;
   static String _labelFinance(AppLocalizations l10n) => l10n.navFinance;
   static String _labelDrive(AppLocalizations l10n) => l10n.driveTitle;
+  static String _labelEducation(AppLocalizations l10n) => l10n.educationTitle;
   static String _labelCrm(AppLocalizations l10n) => l10n.crmTitle;
   static String _labelInventory(AppLocalizations l10n) => l10n.inventoryTitle;
   static String _labelInventoryOverview(AppLocalizations l10n) =>
@@ -443,6 +462,7 @@ class AppRegistry {
   static Widget _pageHabits(BuildContext context) => const HabitsPage();
   static Widget _pageCalendar(BuildContext context) => const CalendarPage();
   static Widget _pageDrive(BuildContext context) => const DrivePage();
+  static Widget _pageEducation(BuildContext context) => const EducationPage();
   static Widget _pageCrm(BuildContext context) => const CrmPage();
   static Widget _pageFinance(BuildContext context) => const FinancePage();
   static Widget _pageInventory(BuildContext context) => const InventoryPage();

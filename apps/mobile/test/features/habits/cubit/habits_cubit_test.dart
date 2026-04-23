@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
 import 'package:mocktail/mocktail.dart';
@@ -264,6 +265,23 @@ void main() {
       expect(cubit.state.activeWorkspaceId, 'ws-2');
       expect(cubit.state.selectedTrackerId, 'tracker-ws-2');
       expect(cubit.state.detail?.tracker.id, 'tracker-ws-2');
+    });
+
+    test('prewarm ignores 404 errors from missing habits endpoints', () async {
+      when(
+        () => repository.listTrackers(
+          'ws-404',
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
+      ).thenThrow(const ApiException(message: 'Not found', statusCode: 404));
+
+      await HabitsCubit.prewarm(
+        repository: repository,
+        wsId: 'ws-404',
+      );
+
+      expect(HabitsCubit.cachedStateForWorkspace('ws-404'), isNull);
     });
 
     test(

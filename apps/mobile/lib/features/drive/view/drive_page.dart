@@ -9,15 +9,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mime/mime.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/drive/drive_models.dart';
 import 'package:mobile/data/repositories/drive_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -345,6 +351,126 @@ class _DrivePageState extends State<DrivePage> {
     await _reload();
   }
 
+  Future<void> _showDriveActionsSheet() async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.create_new_folder_outlined),
+              title: Text(context.l10n.driveCreateFolder),
+              onTap: () => Navigator.of(context).pop('folder'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.upload_file_outlined),
+              title: Text(context.l10n.driveUploadFiles),
+              onTap: () => Navigator.of(context).pop('upload'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (!mounted || action == null) return;
+
+    switch (action) {
+      case 'folder':
+        await _showCreateFolderDialog();
+      case 'upload':
+        await _uploadFiles();
+    }
+  }
+
+  Future<void> _showSortSheet() async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(
+                _sortBy == 'name' && _sortOrder == 'asc'
+                    ? Icons.check_circle
+                    : Icons.sort_by_alpha,
+              ),
+              title: Text(context.l10n.driveSortNameAsc),
+              onTap: () => Navigator.of(context).pop('name_asc'),
+            ),
+            ListTile(
+              leading: Icon(
+                _sortBy == 'name' && _sortOrder == 'desc'
+                    ? Icons.check_circle
+                    : Icons.sort_by_alpha,
+              ),
+              title: Text(context.l10n.driveSortNameDesc),
+              onTap: () => Navigator.of(context).pop('name_desc'),
+            ),
+            ListTile(
+              leading: Icon(
+                _sortBy == 'updated_at' && _sortOrder == 'desc'
+                    ? Icons.check_circle
+                    : Icons.update_rounded,
+              ),
+              title: Text(context.l10n.driveSortUpdated),
+              onTap: () => Navigator.of(context).pop('updated_desc'),
+            ),
+            ListTile(
+              leading: Icon(
+                _sortBy == 'size' && _sortOrder == 'desc'
+                    ? Icons.check_circle
+                    : Icons.data_object_rounded,
+              ),
+              title: Text(context.l10n.driveSortSize),
+              onTap: () => Navigator.of(context).pop('size_desc'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (!mounted || action == null) return;
+
+    setState(() {
+      switch (action) {
+        case 'name_asc':
+          _sortBy = 'name';
+          _sortOrder = 'asc';
+        case 'name_desc':
+          _sortBy = 'name';
+          _sortOrder = 'desc';
+        case 'updated_desc':
+          _sortBy = 'updated_at';
+          _sortOrder = 'desc';
+        case 'size_desc':
+          _sortBy = 'size';
+          _sortOrder = 'desc';
+      }
+    });
+    await _reload();
+  }
+
+  void _goToRoot() {
+    if (_path.isEmpty) return;
+    setState(() {
+      _path = '';
+      _selectedNames.clear();
+    });
+    unawaited(_reload());
+  }
+
+  void _goUp() {
+    if (_path.isEmpty) return;
+    final parts = _path.split('/')..removeLast();
+    setState(() {
+      _path = parts.join('/');
+      _selectedNames.clear();
+    });
+    unawaited(_reload());
+  }
+
   Future<void> _openEntry(DriveEntry entry) async {
     if (entry.isFolder) {
       setState(() {
@@ -515,6 +641,9 @@ class _DrivePageState extends State<DrivePage> {
 
   @override
   Widget build(BuildContext context) {
+    final hasWorkspace = _wsId != null && _wsId!.isNotEmpty;
+    final currentFolderLabel = _path.isEmpty ? null : _path.split('/').last;
+
     return BlocListener<WorkspaceCubit, WorkspaceState>(
       listenWhen: (previous, current) =>
           previous.currentWorkspace?.id != current.currentWorkspace?.id,
@@ -527,148 +656,212 @@ class _DrivePageState extends State<DrivePage> {
         unawaited(_reload());
       },
       child: shad.Scaffold(
-        child: ResponsiveWrapper(
-          maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-          child: _isLoading && _entries.isEmpty
-              ? const Center(child: NovaLoadingIndicator())
-              : RefreshIndicator(
-                  onRefresh: _reload,
-                  child: ListView(
-                    padding: EdgeInsets.fromLTRB(
-                      16,
-                      8,
-                      16,
-                      40 + MediaQuery.paddingOf(context).bottom,
-                    ),
-                    children: [
-                      _DriveSummaryCard(analytics: _analytics),
-                      const SizedBox(height: 16),
-                      _DriveToolbar(
-                        path: _path,
-                        showGrid: _showGrid,
-                        sortBy: _sortBy,
-                        sortOrder: _sortOrder,
-                        searchController: _searchController,
-                        onSearchChanged: _onSearchChanged,
-                        onToggleView: () {
-                          setState(() => _showGrid = !_showGrid);
-                        },
-                        onSortChanged: (sortBy, sortOrder) {
-                          setState(() {
-                            _sortBy = sortBy;
-                            _sortOrder = sortOrder;
-                          });
-                          unawaited(_reload());
-                        },
-                        onGoUp: _path.isEmpty
-                            ? null
-                            : () {
-                                final parts = _path.split('/')..removeLast();
-                                setState(() {
-                                  _path = parts.join('/');
-                                  _selectedNames.clear();
-                                });
-                                unawaited(_reload());
-                              },
-                        onCreateFolder: _canManageDrive
-                            ? _showCreateFolderDialog
-                            : null,
-                        onUpload: _canManageDrive ? _uploadFiles : null,
-                        selectedCount: _selectedNames.length,
-                        onDeleteSelected: _selectedNames.isEmpty
-                            ? null
-                            : () => _deleteEntries(
-                                _entries
-                                    .where(
-                                      (entry) =>
-                                          _selectedNames.contains(entry.name),
-                                    )
-                                    .toList(growable: false),
-                              ),
-                      ),
-                      const SizedBox(height: 16),
-                      if (_error != null && !_canManageDrive)
-                        _DriveMessageCard(message: _error!)
-                      else if (_entries.isEmpty)
-                        _DriveMessageCard(
-                          message: context.l10n.driveEmptyState,
-                        )
-                      else if (_showGrid)
-                        _DriveGrid(
-                          entries: _entries,
-                          selectedNames: _selectedNames,
-                          onTap: _openEntry,
-                          onToggleSelection: (entry) {
-                            setState(() {
-                              if (_selectedNames.contains(entry.name)) {
-                                _selectedNames.remove(entry.name);
-                              } else {
-                                _selectedNames.add(entry.name);
-                              }
-                            });
-                          },
-                          onRename: _canManageDrive ? _renameEntry : null,
-                          onDelete: _canManageDrive
-                              ? (entry) => _deleteEntries([entry])
-                              : null,
-                          onShare: _shareEntry,
-                          onCopyPath: _copyEntryPath,
-                          onOpenExternal: _openExternal,
-                          onExportLinks: _showExportLinks,
-                        )
-                      else
-                        ..._entries.map(
-                          (entry) => _DriveListTile(
-                            entry: entry,
-                            selected: _selectedNames.contains(entry.name),
-                            onTap: () => _openEntry(entry),
-                            onLongPress: () {
-                              setState(() {
-                                if (_selectedNames.contains(entry.name)) {
-                                  _selectedNames.remove(entry.name);
-                                } else {
-                                  _selectedNames.add(entry.name);
-                                }
-                              });
-                            },
-                            onRename: _canManageDrive
-                                ? () => _renameEntry(entry)
-                                : null,
-                            onDelete: _canManageDrive
-                                ? () => _deleteEntries([entry])
-                                : null,
-                            onShare: entry.isFolder
-                                ? null
-                                : () => _shareEntry(entry),
-                            onCopyPath: () => _copyEntryPath(entry),
-                            onOpenExternal: entry.isFolder
-                                ? null
-                                : () => _openExternal(entry),
-                            onExportLinks: entry.isFolder
-                                ? () => _showExportLinks(entry)
-                                : null,
-                          ),
-                        ),
-                      if (_hasMore) ...[
-                        const SizedBox(height: 16),
-                        Center(
-                          child: FilledButton.tonal(
-                            onPressed: _isLoadingMore ? null : _loadMore,
-                            child: _isLoadingMore
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(context.l10n.commonLoadMore),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+        child: Stack(
+          children: [
+            ShellMiniNav(
+              ownerId: 'drive-root-nav',
+              locations: const {Routes.drive},
+              deepLinkBackRoute: Routes.apps,
+              items: [
+                ShellMiniNavItemSpec(
+                  id: 'drive-back',
+                  icon: Icons.chevron_left,
+                  label: context.l10n.navBack,
+                  callbackToken: 'back',
+                  onPressed: () => context.go(Routes.apps),
                 ),
+                ShellMiniNavItemSpec(
+                  id: 'drive-home',
+                  icon: Icons.folder_copy_outlined,
+                  label: context.l10n.driveTitle,
+                  callbackToken: _path.isEmpty,
+                  selected: _path.isEmpty,
+                  enabled: hasWorkspace,
+                  onPressed: _goToRoot,
+                ),
+                if (currentFolderLabel != null)
+                  ShellMiniNavItemSpec(
+                    id: 'drive-folder',
+                    icon: Icons.folder_open_outlined,
+                    label: currentFolderLabel,
+                    callbackToken: _path,
+                    selected: true,
+                    enabled: hasWorkspace,
+                    onPressed: _goUp,
+                  ),
+              ],
+            ),
+            ShellChromeActions(
+              ownerId: 'drive-root-actions',
+              locations: const {Routes.drive},
+              actions: [
+                ShellActionSpec(
+                  id: 'drive-view',
+                  icon: _showGrid ? Icons.view_list : Icons.grid_view_rounded,
+                  tooltip: _showGrid
+                      ? context.l10n.driveListView
+                      : context.l10n.driveGridView,
+                  callbackToken: _showGrid,
+                  enabled: hasWorkspace,
+                  highlighted: _showGrid,
+                  onPressed: () {
+                    setState(() => _showGrid = !_showGrid);
+                  },
+                ),
+                ShellActionSpec(
+                  id: 'drive-sort',
+                  icon: Icons.sort_rounded,
+                  tooltip: context.l10n.sortBy,
+                  callbackToken: '$_sortBy:$_sortOrder',
+                  enabled: hasWorkspace,
+                  onPressed: _showSortSheet,
+                ),
+                if (_canManageDrive)
+                  ShellActionSpec(
+                    id: 'drive-create',
+                    icon: Icons.add_rounded,
+                    tooltip: context.l10n.commonCreate,
+                    callbackToken: hasWorkspace,
+                    enabled: hasWorkspace,
+                    onPressed: _showDriveActionsSheet,
+                  ),
+                if (_canManageDrive)
+                  ShellActionSpec(
+                    id: 'drive-delete-selected',
+                    icon: Icons.delete_outline_rounded,
+                    tooltip: context.l10n.driveDeleteSelected(
+                      _selectedNames.length,
+                    ),
+                    callbackToken: _selectedNames.length,
+                    enabled: hasWorkspace && _selectedNames.isNotEmpty,
+                    highlighted: _selectedNames.isNotEmpty,
+                    onPressed: () => _deleteEntries(
+                      _entries
+                          .where(
+                            (entry) => _selectedNames.contains(entry.name),
+                          )
+                          .toList(growable: false),
+                    ),
+                  ),
+              ],
+            ),
+            ResponsiveWrapper(
+              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
+              child: _isLoading && _entries.isEmpty
+                  ? const Center(child: NovaLoadingIndicator())
+                  : RefreshIndicator(
+                      onRefresh: _reload,
+                      child: ListView(
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          8,
+                          16,
+                          40 + MediaQuery.paddingOf(context).bottom,
+                        ),
+                        children: [
+                          _DriveSummaryCard(
+                            analytics: _analytics,
+                            path: _path,
+                          ),
+                          const SizedBox(height: 18),
+                          FinanceSectionHeader(
+                            title:
+                                currentFolderLabel ?? context.l10n.driveTitle,
+                            subtitle: _path.isEmpty ? null : _path,
+                          ),
+                          const SizedBox(height: 12),
+                          _DriveToolbar(
+                            path: _path,
+                            searchController: _searchController,
+                            onSearchChanged: _onSearchChanged,
+                            onGoUp: _path.isEmpty ? null : _goUp,
+                            selectedCount: _selectedNames.length,
+                          ),
+                          const SizedBox(height: 16),
+                          if (_error != null)
+                            _DriveMessageCard(message: _error!)
+                          else if (_entries.isEmpty)
+                            _DriveMessageCard(
+                              message: context.l10n.driveEmptyState,
+                            )
+                          else if (_showGrid)
+                            _DriveGrid(
+                              entries: _entries,
+                              selectedNames: _selectedNames,
+                              onTap: _openEntry,
+                              onToggleSelection: (entry) {
+                                setState(() {
+                                  if (_selectedNames.contains(entry.name)) {
+                                    _selectedNames.remove(entry.name);
+                                  } else {
+                                    _selectedNames.add(entry.name);
+                                  }
+                                });
+                              },
+                              onRename: _canManageDrive ? _renameEntry : null,
+                              onDelete: _canManageDrive
+                                  ? (entry) => _deleteEntries([entry])
+                                  : null,
+                              onShare: _shareEntry,
+                              onCopyPath: _copyEntryPath,
+                              onOpenExternal: _openExternal,
+                              onExportLinks: _showExportLinks,
+                            )
+                          else
+                            ..._entries.map(
+                              (entry) => _DriveListTile(
+                                entry: entry,
+                                selected: _selectedNames.contains(entry.name),
+                                onTap: () => _openEntry(entry),
+                                onLongPress: () {
+                                  setState(() {
+                                    if (_selectedNames.contains(entry.name)) {
+                                      _selectedNames.remove(entry.name);
+                                    } else {
+                                      _selectedNames.add(entry.name);
+                                    }
+                                  });
+                                },
+                                onRename: _canManageDrive
+                                    ? () => _renameEntry(entry)
+                                    : null,
+                                onDelete: _canManageDrive
+                                    ? () => _deleteEntries([entry])
+                                    : null,
+                                onShare: entry.isFolder
+                                    ? null
+                                    : () => _shareEntry(entry),
+                                onCopyPath: () => _copyEntryPath(entry),
+                                onOpenExternal: entry.isFolder
+                                    ? null
+                                    : () => _openExternal(entry),
+                                onExportLinks: entry.isFolder
+                                    ? () => _showExportLinks(entry)
+                                    : null,
+                              ),
+                            ),
+                          if (_hasMore) ...[
+                            const SizedBox(height: 16),
+                            Center(
+                              child: FilledButton.tonal(
+                                onPressed: _isLoadingMore ? null : _loadMore,
+                                child: _isLoadingMore
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Text(context.l10n.commonLoadMore),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+            ),
+          ],
         ),
       ),
     );
@@ -676,52 +869,119 @@ class _DrivePageState extends State<DrivePage> {
 }
 
 class _DriveSummaryCard extends StatelessWidget {
-  const _DriveSummaryCard({required this.analytics});
+  const _DriveSummaryCard({
+    required this.analytics,
+    required this.path,
+  });
 
   final DriveAnalytics? analytics;
+  final String path;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final usage = analytics?.usagePercentage ?? 0;
     final formatter = NumberFormat.compact();
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.driveTitle,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            LinearProgressIndicator(value: usage <= 0 ? 0 : usage / 100),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _MetricChip(
-                  label: l10n.driveUsageLabel,
-                  value: '${usage.toStringAsFixed(1)}%',
-                ),
-                _MetricChip(
-                  label: l10n.driveFilesLabel,
-                  value: formatter.format(analytics?.fileCount ?? 0),
-                ),
-                _MetricChip(
-                  label: l10n.driveUsedLabel,
-                  value: _formatBytes(analytics?.totalSize ?? 0),
-                ),
-                _MetricChip(
-                  label: l10n.driveLimitLabel,
-                  value: _formatBytes(analytics?.storageLimit ?? 0),
-                ),
-              ],
-            ),
+    final theme = shad.Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    const accent = Color(0xFF3FA36A);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: colorScheme.border),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            accent.withValues(alpha: 0.18),
+            accent.withValues(alpha: 0.06),
+            colorScheme.card,
           ],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.22 : 0.06,
+            ),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.folder_copy_outlined,
+                  size: 24,
+                  color: accent,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.driveTitle,
+                      style: theme.typography.large.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      path.isEmpty ? l10n.driveRootLabel : path,
+                      style: theme.typography.small.copyWith(
+                        color: colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 22),
+          LinearProgressIndicator(value: usage <= 0 ? 0 : usage / 100),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _MetricChip(
+                label: l10n.driveUsageLabel,
+                value: '${usage.toStringAsFixed(1)}%',
+                tint: accent,
+              ),
+              _MetricChip(
+                label: l10n.driveFilesLabel,
+                value: formatter.format(analytics?.fileCount ?? 0),
+                tint: accent,
+              ),
+              _MetricChip(
+                label: l10n.driveUsedLabel,
+                value: _formatBytes(analytics?.totalSize ?? 0),
+                tint: accent,
+              ),
+              _MetricChip(
+                label: l10n.driveLimitLabel,
+                value: _formatBytes(analytics?.storageLimit ?? 0),
+                tint: accent,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -730,129 +990,63 @@ class _DriveSummaryCard extends StatelessWidget {
 class _DriveToolbar extends StatelessWidget {
   const _DriveToolbar({
     required this.path,
-    required this.showGrid,
-    required this.sortBy,
-    required this.sortOrder,
     required this.searchController,
     required this.onSearchChanged,
-    required this.onToggleView,
-    required this.onSortChanged,
     required this.onGoUp,
-    required this.onCreateFolder,
-    required this.onUpload,
     required this.selectedCount,
-    required this.onDeleteSelected,
   });
 
   final String path;
-  final bool showGrid;
-  final String sortBy;
-  final String sortOrder;
   final TextEditingController searchController;
   final ValueChanged<String> onSearchChanged;
-  final VoidCallback onToggleView;
-  final void Function(String sortBy, String sortOrder) onSortChanged;
   final VoidCallback? onGoUp;
-  final VoidCallback? onCreateFolder;
-  final VoidCallback? onUpload;
   final int selectedCount;
-  final VoidCallback? onDeleteSelected;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(path.isEmpty ? l10n.driveRootLabel : path),
-            const SizedBox(height: 12),
-            TextField(
-              controller: searchController,
-              onChanged: onSearchChanged,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search),
-                hintText: l10n.driveSearchHint,
+    const accent = Color(0xFF3FA36A);
+
+    return FinancePanel(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: searchController,
+            onChanged: onSearchChanged,
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search),
+              hintText: l10n.driveSearchHint,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _MetricChip(
+                label: l10n.driveRootLabel,
+                value: path.isEmpty ? l10n.driveRootLabel : path,
+                icon: Icons.folder_outlined,
+                tint: accent,
               ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (onGoUp != null)
-                  OutlinedButton.icon(
-                    onPressed: onGoUp,
-                    icon: const Icon(Icons.arrow_upward),
-                    label: Text(l10n.driveGoUp),
-                  ),
-                FilledButton.tonalIcon(
-                  onPressed: onToggleView,
-                  icon: Icon(showGrid ? Icons.view_list : Icons.grid_view),
-                  label: Text(
-                    showGrid ? l10n.driveListView : l10n.driveGridView,
-                  ),
+              if (selectedCount > 0)
+                _MetricChip(
+                  label: l10n.driveDeleteSelected(selectedCount),
+                  value: '$selectedCount',
+                  icon: Icons.check_circle_outline_rounded,
+                  tint: accent,
                 ),
-                PopupMenuButton<String>(
-                  tooltip: l10n.sortBy,
-                  onSelected: (value) {
-                    if (value == 'name_asc') onSortChanged('name', 'asc');
-                    if (value == 'name_desc') onSortChanged('name', 'desc');
-                    if (value == 'updated_desc') {
-                      onSortChanged('updated_at', 'desc');
-                    }
-                    if (value == 'size_desc') onSortChanged('size', 'desc');
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'name_asc',
-                      child: Text(context.l10n.driveSortNameAsc),
-                    ),
-                    PopupMenuItem(
-                      value: 'name_desc',
-                      child: Text(context.l10n.driveSortNameDesc),
-                    ),
-                    PopupMenuItem(
-                      value: 'updated_desc',
-                      child: Text(context.l10n.driveSortUpdated),
-                    ),
-                    PopupMenuItem(
-                      value: 'size_desc',
-                      child: Text(context.l10n.driveSortSize),
-                    ),
-                  ],
-                  child: FilledButton.tonalIcon(
-                    onPressed: null,
-                    icon: const Icon(Icons.sort),
-                    label: Text(l10n.sortBy),
-                  ),
+              if (onGoUp != null)
+                OutlinedButton.icon(
+                  onPressed: onGoUp,
+                  icon: const Icon(Icons.arrow_upward),
+                  label: Text(l10n.driveGoUp),
                 ),
-                if (onCreateFolder != null)
-                  FilledButton.tonalIcon(
-                    onPressed: onCreateFolder,
-                    icon: const Icon(Icons.create_new_folder_outlined),
-                    label: Text(l10n.driveCreateFolder),
-                  ),
-                if (onUpload != null)
-                  FilledButton.icon(
-                    onPressed: onUpload,
-                    icon: const Icon(Icons.upload_file_outlined),
-                    label: Text(l10n.driveUploadFiles),
-                  ),
-                if (selectedCount > 0 && onDeleteSelected != null)
-                  FilledButton.tonalIcon(
-                    onPressed: onDeleteSelected,
-                    icon: const Icon(Icons.delete_outline),
-                    label: Text(
-                      l10n.driveDeleteSelected(selectedCount),
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -885,79 +1079,121 @@ class _DriveListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        onTap: onTap,
+    final theme = shad.Theme.of(context);
+    const accent = Color(0xFF3FA36A);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: GestureDetector(
         onLongPress: onLongPress,
-        leading: Icon(
-          entry.isFolder
-              ? Icons.folder_outlined
-              : Icons.insert_drive_file_outlined,
-        ),
-        title: Text(entry.name),
-        subtitle: Text(
-          entry.isFolder
-              ? context.l10n.driveFolderLabel
-              : '${_formatBytes(entry.size)} • ${_formatDate(entry.updatedAt)}',
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Checkbox(
-              value: selected,
-              onChanged: (_) => onLongPress(),
-            ),
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'rename') {
-                  onRename?.call();
-                } else if (value == 'delete') {
-                  onDelete?.call();
-                } else if (value == 'share') {
-                  onShare?.call();
-                } else if (value == 'copy') {
-                  onCopyPath?.call();
-                } else if (value == 'open') {
-                  onOpenExternal?.call();
-                } else if (value == 'export') {
-                  onExportLinks?.call();
-                }
-              },
-              itemBuilder: (context) => [
-                if (onRename != null)
-                  PopupMenuItem(
-                    value: 'rename',
-                    child: Text(context.l10n.commonRename),
+        child: FinancePanel(
+          onTap: onTap,
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  entry.isFolder
+                      ? Icons.folder_outlined
+                      : Icons.insert_drive_file_outlined,
+                  color: accent,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.large.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      entry.isFolder
+                          ? context.l10n.driveFolderLabel
+                          : '${_formatBytes(entry.size)}'
+                                ' • '
+                                '${_formatDate(entry.updatedAt)}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.textSmall.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                children: [
+                  Checkbox(
+                    value: selected,
+                    onChanged: (_) => onLongPress(),
                   ),
-                if (onCopyPath != null)
-                  PopupMenuItem(
-                    value: 'copy',
-                    child: Text(context.l10n.driveCopyPath),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'rename') {
+                        onRename?.call();
+                      } else if (value == 'delete') {
+                        onDelete?.call();
+                      } else if (value == 'share') {
+                        onShare?.call();
+                      } else if (value == 'copy') {
+                        onCopyPath?.call();
+                      } else if (value == 'open') {
+                        onOpenExternal?.call();
+                      } else if (value == 'export') {
+                        onExportLinks?.call();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      if (onRename != null)
+                        PopupMenuItem(
+                          value: 'rename',
+                          child: Text(context.l10n.commonRename),
+                        ),
+                      if (onCopyPath != null)
+                        PopupMenuItem(
+                          value: 'copy',
+                          child: Text(context.l10n.driveCopyPath),
+                        ),
+                      if (onShare != null)
+                        PopupMenuItem(
+                          value: 'share',
+                          child: Text(context.l10n.commonShare),
+                        ),
+                      if (onOpenExternal != null)
+                        PopupMenuItem(
+                          value: 'open',
+                          child: Text(context.l10n.commonOpen),
+                        ),
+                      if (onExportLinks != null)
+                        PopupMenuItem(
+                          value: 'export',
+                          child: Text(context.l10n.driveExportLinksTitle),
+                        ),
+                      if (onDelete != null)
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Text(context.l10n.commonDelete),
+                        ),
+                    ],
                   ),
-                if (onShare != null)
-                  PopupMenuItem(
-                    value: 'share',
-                    child: Text(context.l10n.commonShare),
-                  ),
-                if (onOpenExternal != null)
-                  PopupMenuItem(
-                    value: 'open',
-                    child: Text(context.l10n.commonOpen),
-                  ),
-                if (onExportLinks != null)
-                  PopupMenuItem(
-                    value: 'export',
-                    child: Text(context.l10n.driveExportLinksTitle),
-                  ),
-                if (onDelete != null)
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Text(context.l10n.commonDelete),
-                  ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1004,99 +1240,113 @@ class _DriveGrid extends StatelessWidget {
       itemBuilder: (context, index) {
         final entry = entries[index];
         final selected = selectedNames.contains(entry.name);
-        return Card(
-          child: InkWell(
+        final theme = shad.Theme.of(context);
+        const accent = Color(0xFF3FA36A);
+
+        return GestureDetector(
+          onLongPress: () => onToggleSelection(entry),
+          child: FinancePanel(
             onTap: () => onTap(entry),
-            onLongPress: () => onToggleSelection(entry),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
                         entry.isFolder
                             ? Icons.folder_outlined
                             : Icons.insert_drive_file_outlined,
+                        color: accent,
                       ),
-                      const Spacer(),
-                      Checkbox(
-                        value: selected,
-                        onChanged: (_) => onToggleSelection(entry),
-                      ),
+                    ),
+                    const Spacer(),
+                    Checkbox(
+                      value: selected,
+                      onChanged: (_) => onToggleSelection(entry),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Text(
+                  entry.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.large.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  entry.isFolder
+                      ? context.l10n.driveFolderLabel
+                      : _formatBytes(entry.size),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.textSmall.copyWith(
+                    color: theme.colorScheme.mutedForeground,
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'rename') {
+                        onRename?.call(entry);
+                      } else if (value == 'delete') {
+                        onDelete?.call(entry);
+                      } else if (value == 'share') {
+                        onShare?.call(entry);
+                      } else if (value == 'copy') {
+                        onCopyPath?.call(entry);
+                      } else if (value == 'open') {
+                        onOpenExternal?.call(entry);
+                      } else if (value == 'export') {
+                        onExportLinks?.call(entry);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      if (onRename != null)
+                        PopupMenuItem(
+                          value: 'rename',
+                          child: Text(context.l10n.commonRename),
+                        ),
+                      if (onCopyPath != null)
+                        PopupMenuItem(
+                          value: 'copy',
+                          child: Text(context.l10n.driveCopyPath),
+                        ),
+                      if (onShare != null)
+                        PopupMenuItem(
+                          value: 'share',
+                          child: Text(context.l10n.commonShare),
+                        ),
+                      if (onOpenExternal != null)
+                        PopupMenuItem(
+                          value: 'open',
+                          child: Text(context.l10n.commonOpen),
+                        ),
+                      if (onExportLinks != null)
+                        PopupMenuItem(
+                          value: 'export',
+                          child: Text(context.l10n.driveExportLinksTitle),
+                        ),
+                      if (onDelete != null)
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Text(context.l10n.commonDelete),
+                        ),
                     ],
                   ),
-                  const Spacer(),
-                  Text(
-                    entry.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    entry.isFolder
-                        ? context.l10n.driveFolderLabel
-                        : _formatBytes(entry.size),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: PopupMenuButton<String>(
-                      onSelected: (value) {
-                        if (value == 'rename') {
-                          onRename?.call(entry);
-                        } else if (value == 'delete') {
-                          onDelete?.call(entry);
-                        } else if (value == 'share') {
-                          onShare?.call(entry);
-                        } else if (value == 'copy') {
-                          onCopyPath?.call(entry);
-                        } else if (value == 'open') {
-                          onOpenExternal?.call(entry);
-                        } else if (value == 'export') {
-                          onExportLinks?.call(entry);
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        if (onRename != null)
-                          PopupMenuItem(
-                            value: 'rename',
-                            child: Text(context.l10n.commonRename),
-                          ),
-                        if (onCopyPath != null)
-                          PopupMenuItem(
-                            value: 'copy',
-                            child: Text(context.l10n.driveCopyPath),
-                          ),
-                        if (onShare != null)
-                          PopupMenuItem(
-                            value: 'share',
-                            child: Text(context.l10n.commonShare),
-                          ),
-                        if (onOpenExternal != null)
-                          PopupMenuItem(
-                            value: 'open',
-                            child: Text(context.l10n.commonOpen),
-                          ),
-                        if (onExportLinks != null)
-                          PopupMenuItem(
-                            value: 'export',
-                            child: Text(context.l10n.driveExportLinksTitle),
-                          ),
-                        if (onDelete != null)
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Text(context.l10n.commonDelete),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );
@@ -1112,11 +1362,10 @@ class _DriveMessageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(message),
-      ),
+    return FinanceEmptyState(
+      icon: Icons.folder_copy_outlined,
+      title: context.l10n.driveTitle,
+      body: message,
     );
   }
 }
@@ -1145,25 +1394,51 @@ class _MetricChip extends StatelessWidget {
   const _MetricChip({
     required this.label,
     required this.value,
+    this.icon,
+    this.tint,
   });
 
   final String label;
   final String value;
+  final IconData? icon;
+  final Color? tint;
 
   @override
   Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final effectiveTint = tint ?? theme.colorScheme.primary;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+        color: effectiveTint.withValues(alpha: 0.10),
+        border: Border.all(color: effectiveTint.withValues(alpha: 0.22)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: 4),
-          Text(value, style: Theme.of(context).textTheme.titleMedium),
+          if (icon != null) ...[
+            Icon(icon, size: 15, color: effectiveTint),
+            const SizedBox(width: 8),
+          ],
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: theme.typography.small.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(
+                label,
+                style: theme.typography.xSmall.copyWith(
+                  color: theme.colorScheme.mutedForeground,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

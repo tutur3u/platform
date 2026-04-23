@@ -829,6 +829,24 @@ abstract class AppLocalizations {
   /// **'See your agenda, upcoming events, and calendar views.'**
   String get appsHubCalendarDescription;
 
+  /// No description provided for @appsHubCrmDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage people, feedback, imports, and audit activity in one place.'**
+  String get appsHubCrmDescription;
+
+  /// No description provided for @appsHubDriveDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse workspace files, folders, uploads, and secure share links.'**
+  String get appsHubDriveDescription;
+
+  /// No description provided for @appsHubEducationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage courses, question banks, flashcards, and learner attempts.'**
+  String get appsHubEducationDescription;
+
   /// No description provided for @appsHubFinanceDescription.
   ///
   /// In en, this message translates to:
@@ -11692,7 +11710,7 @@ abstract class AppLocalizations {
   /// No description provided for @crmTitle.
   ///
   /// In en, this message translates to:
-  /// **'Users CRM'**
+  /// **'CRM'**
   String get crmTitle;
 
   /// No description provided for @crmUploadAvatar.
@@ -11706,6 +11724,330 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Users'**
   String get crmUsersTab;
+
+  /// No description provided for @educationAddOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Add option'**
+  String get educationAddOption;
+
+  /// No description provided for @educationAttemptQuizSetLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz set'**
+  String get educationAttemptQuizSetLabel;
+
+  /// No description provided for @educationAttemptStatusCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get educationAttemptStatusCompleted;
+
+  /// No description provided for @educationAttemptStatusIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete'**
+  String get educationAttemptStatusIncomplete;
+
+  /// No description provided for @educationAttemptStatusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get educationAttemptStatusLabel;
+
+  /// No description provided for @educationAttemptsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Attempts'**
+  String get educationAttemptsLabel;
+
+  /// No description provided for @educationAttemptsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review learner submissions, completion state, and answer detail.'**
+  String get educationAttemptsSubtitle;
+
+  /// No description provided for @educationClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get educationClearFilters;
+
+  /// No description provided for @educationCourseDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get educationCourseDescriptionLabel;
+
+  /// No description provided for @educationCourseNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Course name'**
+  String get educationCourseNameLabel;
+
+  /// No description provided for @educationCoursesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Courses'**
+  String get educationCoursesLabel;
+
+  /// No description provided for @educationCoursesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage learning tracks, descriptions, and module-ready course records.'**
+  String get educationCoursesSubtitle;
+
+  /// No description provided for @educationCreateCourse.
+  ///
+  /// In en, this message translates to:
+  /// **'Create course'**
+  String get educationCreateCourse;
+
+  /// No description provided for @educationCreateFlashcard.
+  ///
+  /// In en, this message translates to:
+  /// **'Create flashcard'**
+  String get educationCreateFlashcard;
+
+  /// No description provided for @educationCreateQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Create quiz'**
+  String get educationCreateQuiz;
+
+  /// No description provided for @educationCreateQuizSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Create quiz set'**
+  String get educationCreateQuizSet;
+
+  /// No description provided for @educationDeleteCourseConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String educationDeleteCourseConfirm(String name);
+
+  /// No description provided for @educationDeleteFlashcardConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this flashcard?'**
+  String get educationDeleteFlashcardConfirm;
+
+  /// No description provided for @educationDeleteQuizConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this quiz?'**
+  String get educationDeleteQuizConfirm;
+
+  /// No description provided for @educationDeleteQuizSetConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String educationDeleteQuizSetConfirm(String name);
+
+  /// No description provided for @educationEditCourse.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit course'**
+  String get educationEditCourse;
+
+  /// No description provided for @educationEditFlashcard.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit flashcard'**
+  String get educationEditFlashcard;
+
+  /// No description provided for @educationEditQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit quiz'**
+  String get educationEditQuiz;
+
+  /// No description provided for @educationEditQuizSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit quiz set'**
+  String get educationEditQuizSet;
+
+  /// No description provided for @educationEmptyAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'No attempts match the current filters.'**
+  String get educationEmptyAttempts;
+
+  /// No description provided for @educationEmptyCourses.
+  ///
+  /// In en, this message translates to:
+  /// **'No courses yet.'**
+  String get educationEmptyCourses;
+
+  /// No description provided for @educationEmptyFlashcards.
+  ///
+  /// In en, this message translates to:
+  /// **'No flashcards yet.'**
+  String get educationEmptyFlashcards;
+
+  /// No description provided for @educationEmptyQuizzes.
+  ///
+  /// In en, this message translates to:
+  /// **'No quizzes yet.'**
+  String get educationEmptyQuizzes;
+
+  /// No description provided for @educationEmptyQuizSets.
+  ///
+  /// In en, this message translates to:
+  /// **'No quiz sets yet.'**
+  String get educationEmptyQuizSets;
+
+  /// No description provided for @educationFlashcardBackLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get educationFlashcardBackLabel;
+
+  /// No description provided for @educationFlashcardFrontLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Front'**
+  String get educationFlashcardFrontLabel;
+
+  /// No description provided for @educationLibraryFlashcardsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashcards'**
+  String get educationLibraryFlashcardsLabel;
+
+  /// No description provided for @educationLibraryFlashcardsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Build quick memorization prompts with front and back content.'**
+  String get educationLibraryFlashcardsSubtitle;
+
+  /// No description provided for @educationLibraryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get educationLibraryLabel;
+
+  /// No description provided for @educationLibraryQuizSetsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz sets'**
+  String get educationLibraryQuizSetsLabel;
+
+  /// No description provided for @educationLibraryQuizSetsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Organize assessments into reusable sets for modules and attempts.'**
+  String get educationLibraryQuizSetsSubtitle;
+
+  /// No description provided for @educationLibraryQuizzesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Quizzes'**
+  String get educationLibraryQuizzesLabel;
+
+  /// No description provided for @educationLibraryQuizzesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintain question banks, answer choices, and correctness rules.'**
+  String get educationLibraryQuizzesSubtitle;
+
+  /// No description provided for @educationLibrarySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage reusable assessment assets for the workspace learning library.'**
+  String get educationLibrarySubtitle;
+
+  /// No description provided for @educationOverviewHighlightsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Highlights'**
+  String get educationOverviewHighlightsTitle;
+
+  /// No description provided for @educationOverviewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get educationOverviewLabel;
+
+  /// No description provided for @educationOverviewRecentAttemptsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent attempts'**
+  String get educationOverviewRecentAttemptsTitle;
+
+  /// No description provided for @educationOverviewRecentCoursesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent courses'**
+  String get educationOverviewRecentCoursesTitle;
+
+  /// No description provided for @educationOverviewSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Track learning structure, practice assets, and learner progress in one mobile workspace.'**
+  String get educationOverviewSubtitle;
+
+  /// No description provided for @educationQuizOptionExplanationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation'**
+  String get educationQuizOptionExplanationLabel;
+
+  /// No description provided for @educationQuizOptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Option {index}'**
+  String educationQuizOptionLabel(int index);
+
+  /// No description provided for @educationQuizOptionValueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Option text'**
+  String get educationQuizOptionValueLabel;
+
+  /// No description provided for @educationQuizQuestionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get educationQuizQuestionLabel;
+
+  /// No description provided for @educationQuizSetNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz set name'**
+  String get educationQuizSetNameLabel;
+
+  /// No description provided for @educationSearchCoursesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search courses'**
+  String get educationSearchCoursesHint;
+
+  /// No description provided for @educationSearchFlashcardsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search flashcards'**
+  String get educationSearchFlashcardsHint;
+
+  /// No description provided for @educationSearchQuizzesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search quizzes'**
+  String get educationSearchQuizzesHint;
+
+  /// No description provided for @educationSearchQuizSetsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search quiz sets'**
+  String get educationSearchQuizSetsHint;
+
+  /// No description provided for @educationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Education'**
+  String get educationTitle;
 
   /// No description provided for @driveCopyPath.
   ///

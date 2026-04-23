@@ -8,16 +8,22 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mime/mime.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
 import 'package:mobile/data/repositories/crm_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -477,7 +483,56 @@ class _CrmPageState extends State<CrmPage> {
 
   void _onSearchChanged(String value) {
     _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 300), _loadInitial);
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      if (_tab == _CrmTab.audit) {
+        setState(() {
+          _affectedUserQuery = value;
+          _actorQuery = value;
+        });
+      }
+      unawaited(_loadInitial());
+    });
+  }
+
+  void _selectTab(_CrmTab tab) {
+    if (_tab == tab) {
+      return;
+    }
+    setState(() {
+      _tab = tab;
+      if (tab == _CrmTab.audit) {
+        _affectedUserQuery = _searchController.text;
+        _actorQuery = _searchController.text;
+      }
+    });
+    unawaited(_loadInitial());
+  }
+
+  int _activeUserFilterCount() {
+    var count = 0;
+    if (_status != 'active') count += 1;
+    if (_linkStatus != 'all') count += 1;
+    if (_requireAttention != 'all') count += 1;
+    if (_groupMembership != 'all') count += 1;
+    if (_includedGroups.isNotEmpty) count += 1;
+    if (_excludedGroups.isNotEmpty) count += 1;
+    return count;
+  }
+
+  int _activeAuditFilterCount() {
+    var count = 0;
+    final defaultStart = DateTime.now().subtract(const Duration(days: 30));
+    final defaultEnd = DateTime.now();
+    if (_auditRange.start.difference(defaultStart).inDays.abs() > 1 ||
+        _auditRange.end.difference(defaultEnd).inDays.abs() > 1) {
+      count += 1;
+    }
+    if (_auditEventKind != 'all') count += 1;
+    if (_auditSource != 'all') count += 1;
+    if (_affectedUserQuery.trim().isNotEmpty) count += 1;
+    if (_actorQuery.trim().isNotEmpty) count += 1;
+    return count;
   }
 
   Future<void> _showUserSheet({CrmUser? user}) async {
@@ -755,6 +810,50 @@ class _CrmPageState extends State<CrmPage> {
     await _loadInitial();
   }
 
+  Future<void> _showCrmToolsSheet() async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_canCreateUsers)
+              ListTile(
+                leading: const Icon(Icons.upload_file_outlined),
+                title: Text(context.l10n.crmImportUsers),
+                onTap: () => Navigator.of(context).pop('import'),
+              ),
+            if (_canViewUsers)
+              ListTile(
+                leading: const Icon(Icons.download_outlined),
+                title: Text(context.l10n.crmExportUsers),
+                onTap: () => Navigator.of(context).pop('export'),
+              ),
+            if (_canViewUsers &&
+                _workspacePermissions.containsPermission('delete_users') &&
+                _workspacePermissions.containsPermission('update_users'))
+              ListTile(
+                leading: const Icon(Icons.merge_type_rounded),
+                title: Text(context.l10n.crmDetectDuplicates),
+                onTap: () => Navigator.of(context).pop('duplicates'),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (!mounted || action == null) return;
+
+    switch (action) {
+      case 'import':
+        await _importUsers();
+      case 'export':
+        await _exportUsers();
+      case 'duplicates':
+        await _showDuplicateSheet();
+    }
+  }
+
   void _toast(String message, {bool destructive = false}) {
     final toastContext = Navigator.of(context, rootNavigator: true).context;
     if (!toastContext.mounted) return;
@@ -778,193 +877,407 @@ class _CrmPageState extends State<CrmPage> {
     final canShowCurrentTab = _tab == _CrmTab.users
         ? _canViewUsers
         : _canViewAuditLog;
+    final hasWorkspace = _wsId != null && _wsId!.isNotEmpty;
+    final activeFilterCount = _tab == _CrmTab.users
+        ? _activeUserFilterCount()
+        : _activeAuditFilterCount();
+    final currentTotal = _tab == _CrmTab.users ? _total : _auditTotal;
+    final toolsAvailable =
+        _canCreateUsers ||
+        _canViewUsers ||
+        (_canViewUsers &&
+            _workspacePermissions.containsPermission('delete_users') &&
+            _workspacePermissions.containsPermission('update_users'));
+    final currentTabSubtitle = canShowCurrentTab
+        ? [
+            NumberFormat.compact().format(currentTotal),
+            '${l10n.commonFilters}: $activeFilterCount',
+          ].join(' • ')
+        : null;
 
     return BlocListener<WorkspaceCubit, WorkspaceState>(
       listenWhen: (previous, current) =>
           previous.currentWorkspace?.id != current.currentWorkspace?.id,
       listener: (context, state) => unawaited(_loadInitial()),
       child: shad.Scaffold(
-        child: ResponsiveWrapper(
-          maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-          child: _isLoading && (_users.isEmpty && _auditEvents.isEmpty)
-              ? const Center(child: NovaLoadingIndicator())
-              : RefreshIndicator(
-                  onRefresh: _loadInitial,
-                  child: ListView(
-                    padding: EdgeInsets.fromLTRB(
-                      16,
-                      8,
-                      16,
-                      40 + MediaQuery.paddingOf(context).bottom,
-                    ),
-                    children: [
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l10n.crmTitle,
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              const SizedBox(height: 12),
-                              SegmentedButton<_CrmTab>(
-                                segments: [
-                                  ButtonSegment(
-                                    value: _CrmTab.users,
-                                    label: Text(l10n.crmUsersTab),
-                                  ),
-                                  ButtonSegment(
-                                    value: _CrmTab.audit,
-                                    label: Text(l10n.crmAuditTab),
-                                  ),
-                                ],
-                                selected: <_CrmTab>{_tab},
-                                onSelectionChanged: (values) {
-                                  setState(() => _tab = values.first);
-                                },
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _searchController,
-                                      onChanged: _onSearchChanged,
-                                      decoration: InputDecoration(
-                                        prefixIcon: const Icon(Icons.search),
-                                        hintText: _tab == _CrmTab.users
-                                            ? l10n.crmSearchUsersHint
-                                            : l10n.crmSearchAuditHint,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  FilledButton.tonalIcon(
-                                    onPressed: _tab == _CrmTab.users
-                                        ? _showUsersFilterSheet
-                                        : _showAuditFilterSheet,
-                                    icon: const Icon(Icons.filter_list),
-                                    label: Text(l10n.commonFilters),
-                                  ),
-                                ],
-                              ),
-                              if (_tab == _CrmTab.users) ...[
-                                const SizedBox(height: 12),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [
-                                    if (_canCreateUsers)
-                                      FilledButton.icon(
-                                        onPressed: _showUserSheet,
-                                        icon: const Icon(
-                                          Icons.person_add_alt_1,
-                                        ),
-                                        label: Text(l10n.crmCreateUser),
-                                      ),
-                                    if (_canCreateUsers)
-                                      FilledButton.tonalIcon(
-                                        onPressed: _importUsers,
-                                        icon: const Icon(Icons.upload_file),
-                                        label: Text(l10n.crmImportUsers),
-                                      ),
-                                    if (_canViewUsers)
-                                      FilledButton.tonalIcon(
-                                        onPressed: _exportUsers,
-                                        icon: const Icon(Icons.download),
-                                        label: Text(l10n.crmExportUsers),
-                                      ),
-                                    if (_canViewUsers &&
-                                        _workspacePermissions
-                                            .containsPermission(
-                                              'delete_users',
-                                            ) &&
-                                        _workspacePermissions
-                                            .containsPermission('update_users'))
-                                      FilledButton.tonalIcon(
-                                        onPressed: _showDuplicateSheet,
-                                        icon: const Icon(Icons.merge_type),
-                                        label: Text(l10n.crmDetectDuplicates),
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ],
-                          ),
+        child: Stack(
+          children: [
+            ShellMiniNav(
+              ownerId: 'crm-root-nav',
+              locations: const {Routes.crm},
+              deepLinkBackRoute: Routes.apps,
+              items: [
+                ShellMiniNavItemSpec(
+                  id: 'crm-back',
+                  icon: Icons.chevron_left,
+                  label: l10n.navBack,
+                  callbackToken: 'back',
+                  onPressed: () => context.go(Routes.apps),
+                ),
+                ShellMiniNavItemSpec(
+                  id: 'crm-users',
+                  icon: Icons.badge_outlined,
+                  label: l10n.crmUsersTab,
+                  callbackToken: _tab == _CrmTab.users,
+                  selected: _tab == _CrmTab.users,
+                  enabled: _canViewUsers,
+                  onPressed: () => _selectTab(_CrmTab.users),
+                ),
+                ShellMiniNavItemSpec(
+                  id: 'crm-audit',
+                  icon: Icons.history_rounded,
+                  label: l10n.crmAuditTab,
+                  callbackToken: _tab == _CrmTab.audit,
+                  selected: _tab == _CrmTab.audit,
+                  enabled: _canViewAuditLog,
+                  onPressed: () => _selectTab(_CrmTab.audit),
+                ),
+              ],
+            ),
+            ShellChromeActions(
+              ownerId: 'crm-root-actions',
+              locations: const {Routes.crm},
+              actions: [
+                if (canShowCurrentTab)
+                  ShellActionSpec(
+                    id: 'crm-filters',
+                    icon: Icons.filter_list_rounded,
+                    tooltip: l10n.commonFilters,
+                    callbackToken: '${_tab.name}-$activeFilterCount',
+                    enabled: hasWorkspace,
+                    highlighted: activeFilterCount > 0,
+                    onPressed: _tab == _CrmTab.users
+                        ? _showUsersFilterSheet
+                        : _showAuditFilterSheet,
+                  ),
+                if (_tab == _CrmTab.users && _canCreateUsers)
+                  ShellActionSpec(
+                    id: 'crm-create',
+                    icon: Icons.person_add_alt_1_rounded,
+                    tooltip: l10n.crmCreateUser,
+                    callbackToken: hasWorkspace,
+                    enabled: hasWorkspace,
+                    onPressed: _showUserSheet,
+                  ),
+                if (_tab == _CrmTab.users && toolsAvailable)
+                  ShellActionSpec(
+                    id: 'crm-tools',
+                    icon: Icons.more_horiz_rounded,
+                    tooltip: l10n.appsHubMoreTools,
+                    callbackToken: toolsAvailable,
+                    enabled: hasWorkspace,
+                    onPressed: _showCrmToolsSheet,
+                  ),
+              ],
+            ),
+            ResponsiveWrapper(
+              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
+              child: _isLoading && (_users.isEmpty && _auditEvents.isEmpty)
+                  ? const Center(child: NovaLoadingIndicator())
+                  : RefreshIndicator(
+                      onRefresh: _loadInitial,
+                      child: ListView(
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          8,
+                          16,
+                          40 + MediaQuery.paddingOf(context).bottom,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      if (!canShowCurrentTab)
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(l10n.crmPermissionDenied),
+                        children: [
+                          _CrmOverviewCard(
+                            tab: _tab,
+                            total: currentTotal,
+                            activeFilterCount: activeFilterCount,
+                            searchController: _searchController,
+                            canShowCurrentTab: canShowCurrentTab,
+                            onSearchChanged: _onSearchChanged,
+                            statusLabel: _crmStatusLabel(context, _status),
+                            linkStatusLabel: _crmLinkStatusLabel(
+                              context,
+                              _linkStatus,
+                            ),
+                            auditRange: _auditRange,
                           ),
-                        )
-                      else if (_error != null)
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(_error!),
+                          const SizedBox(height: 20),
+                          FinanceSectionHeader(
+                            title: _tab == _CrmTab.users
+                                ? l10n.crmUsersTab
+                                : l10n.crmAuditTab,
+                            subtitle: currentTabSubtitle,
                           ),
-                        )
-                      else if (_tab == _CrmTab.users)
-                        ..._users.map(
-                          (user) => _CrmUserCard(
-                            user: user,
-                            onEdit: _canUpdateUsers
-                                ? () => _showUserSheet(user: user)
-                                : null,
-                            onDelete: _canDeleteUsers
-                                ? () => _deleteUser(user)
-                                : null,
-                            onFeedback: _canViewFeedbacks
-                                ? () => _showFeedbackSheet(user)
-                                : null,
-                          ),
-                        )
-                      else
-                        ..._auditEvents.map(
-                          (event) => _CrmAuditCard(event: event),
-                        ),
-                      if ((_tab == _CrmTab.users && _users.isEmpty) ||
-                          (_tab == _CrmTab.audit && _auditEvents.isEmpty))
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(
-                              _tab == _CrmTab.users
+                          const SizedBox(height: 14),
+                          if (!canShowCurrentTab)
+                            FinanceEmptyState(
+                              icon: Icons.lock_outline_rounded,
+                              title: l10n.crmTitle,
+                              body: l10n.crmPermissionDenied,
+                            )
+                          else if (_error != null)
+                            FinanceEmptyState(
+                              icon: Icons.error_outline_rounded,
+                              title: l10n.commonSomethingWentWrong,
+                              body: _error!,
+                            )
+                          else if (_tab == _CrmTab.users)
+                            ..._users.map(
+                              (user) => _CrmUserCard(
+                                user: user,
+                                onEdit: _canUpdateUsers
+                                    ? () => _showUserSheet(user: user)
+                                    : null,
+                                onDelete: _canDeleteUsers
+                                    ? () => _deleteUser(user)
+                                    : null,
+                                onFeedback: _canViewFeedbacks
+                                    ? () => _showFeedbackSheet(user)
+                                    : null,
+                              ),
+                            )
+                          else
+                            ..._auditEvents.map(
+                              (event) => _CrmAuditCard(event: event),
+                            ),
+                          if ((_tab == _CrmTab.users && _users.isEmpty) ||
+                              (_tab == _CrmTab.audit && _auditEvents.isEmpty))
+                            FinanceEmptyState(
+                              icon: _tab == _CrmTab.users
+                                  ? Icons.badge_outlined
+                                  : Icons.history_rounded,
+                              title: _tab == _CrmTab.users
+                                  ? l10n.crmUsersTab
+                                  : l10n.crmAuditTab,
+                              body: _tab == _CrmTab.users
                                   ? l10n.crmEmptyUsers
                                   : l10n.crmEmptyAudit,
                             ),
-                          ),
-                        ),
-                      if ((_tab == _CrmTab.users && _users.length < _total) ||
-                          (_tab == _CrmTab.audit &&
-                              _auditEvents.length < _auditTotal))
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16),
-                          child: Center(
-                            child: FilledButton.tonal(
-                              onPressed: _isLoadingMore ? null : _loadMore,
-                              child: _isLoadingMore
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : Text(l10n.commonLoadMore),
+                          if ((_tab == _CrmTab.users &&
+                                  _users.length < _total) ||
+                              (_tab == _CrmTab.audit &&
+                                  _auditEvents.length < _auditTotal))
+                            Padding(
+                              padding: const EdgeInsets.only(top: 16),
+                              child: Center(
+                                child: FilledButton.tonal(
+                                  onPressed: _isLoadingMore ? null : _loadMore,
+                                  child: _isLoadingMore
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : Text(l10n.commonLoadMore),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                        ],
+                      ),
+                    ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+class _CrmOverviewCard extends StatelessWidget {
+  const _CrmOverviewCard({
+    required this.tab,
+    required this.total,
+    required this.activeFilterCount,
+    required this.searchController,
+    required this.canShowCurrentTab,
+    required this.onSearchChanged,
+    required this.statusLabel,
+    required this.linkStatusLabel,
+    required this.auditRange,
+  });
+
+  final _CrmTab tab;
+  final int total;
+  final int activeFilterCount;
+  final TextEditingController searchController;
+  final bool canShowCurrentTab;
+  final ValueChanged<String> onSearchChanged;
+  final String statusLabel;
+  final String linkStatusLabel;
+  final DateTimeRange auditRange;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = shad.Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final totalLabel = NumberFormat.compact().format(total);
+    final accent = tab == _CrmTab.users
+        ? const Color(0xFF4D8DFF)
+        : const Color(0xFF9F7AEA);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: colorScheme.border),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            accent.withValues(alpha: 0.16),
+            accent.withValues(alpha: 0.06),
+            colorScheme.card,
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.22 : 0.06,
+            ),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  tab == _CrmTab.users
+                      ? Icons.badge_outlined
+                      : Icons.history_rounded,
+                  size: 24,
+                  color: accent,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.crmTitle,
+                      style: theme.typography.large.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      tab == _CrmTab.users
+                          ? l10n.crmUsersTab
+                          : l10n.crmAuditTab,
+                      style: theme.typography.small.copyWith(
+                        color: colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 22),
+          Text(
+            totalLabel,
+            style: theme.typography.h2.copyWith(
+              fontWeight: FontWeight.w900,
+              height: 1.02,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _CrmPill(
+                icon: Icons.filter_alt_outlined,
+                label: '${l10n.commonFilters}: $activeFilterCount',
+                tint: accent,
+              ),
+              if (tab == _CrmTab.users) ...[
+                _CrmPill(
+                  icon: Icons.verified_user_outlined,
+                  label: '${l10n.crmStatus}: $statusLabel',
+                  tint: accent,
+                ),
+                _CrmPill(
+                  icon: Icons.link_outlined,
+                  label: '${l10n.crmLinkStatus}: $linkStatusLabel',
+                  tint: accent,
+                ),
+              ] else
+                _CrmPill(
+                  icon: Icons.date_range_outlined,
+                  label:
+                      '${DateFormat.MMMd().format(auditRange.start)}'
+                      ' - '
+                      '${DateFormat.MMMd().format(auditRange.end)}',
+                  tint: accent,
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: searchController,
+            enabled: canShowCurrentTab,
+            onChanged: onSearchChanged,
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search),
+              hintText: tab == _CrmTab.users
+                  ? l10n.crmSearchUsersHint
+                  : l10n.crmSearchAuditHint,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CrmPill extends StatelessWidget {
+  const _CrmPill({
+    required this.icon,
+    required this.label,
+    this.tint,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color? tint;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final effectiveTint = tint ?? theme.colorScheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: effectiveTint.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: effectiveTint.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: effectiveTint),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: theme.typography.small.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -985,52 +1298,143 @@ class _CrmUserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundImage: user.avatarUrl == null
-              ? null
-              : NetworkImage(user.avatarUrl!),
-          child: user.avatarUrl == null
-              ? Text(user.label.characters.first.toUpperCase())
-              : null,
-        ),
-        title: Text(user.label),
-        subtitle: Text(
-          [
-                user.email,
-                user.phone,
-                if (user.requireAttention) context.l10n.crmRequireAttention,
-              ]
-              .whereType<String>()
-              .where((value) => value.isNotEmpty)
-              .join(
-                ' • ',
+    final theme = shad.Theme.of(context);
+    final accent = user.requireAttention
+        ? theme.colorScheme.destructive
+        : const Color(0xFF4D8DFF);
+    final secondaryLine = [
+      user.email,
+      user.phone,
+      if (user.address?.trim().isNotEmpty ?? false) user.address,
+    ].whereType<String>().where((value) => value.isNotEmpty).join(' • ');
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: FinancePanel(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: accent.withValues(alpha: 0.12),
+              backgroundImage: user.avatarUrl == null
+                  ? null
+                  : NetworkImage(user.avatarUrl!),
+              child: user.avatarUrl == null
+                  ? Text(
+                      user.label.characters.first.toUpperCase(),
+                      style: theme.typography.small.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: accent,
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          user.label,
+                          style: theme.typography.large.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      PopupMenuButton<String>(
+                        onSelected: (value) {
+                          if (value == 'edit') onEdit?.call();
+                          if (value == 'delete') onDelete?.call();
+                          if (value == 'feedback') onFeedback?.call();
+                        },
+                        itemBuilder: (context) => [
+                          if (onEdit != null)
+                            PopupMenuItem(
+                              value: 'edit',
+                              child: Text(context.l10n.commonEdit),
+                            ),
+                          if (onFeedback != null)
+                            PopupMenuItem(
+                              value: 'feedback',
+                              child: Text(context.l10n.crmFeedbackAction),
+                            ),
+                          if (onDelete != null)
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text(context.l10n.commonDelete),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  if (secondaryLine.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      secondaryLine,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.textSmall.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ],
+                  if (user.note?.trim().isNotEmpty ?? false) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      user.note!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.small.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (user.requireAttention)
+                        _CrmPill(
+                          icon: Icons.priority_high_rounded,
+                          label: context.l10n.crmRequireAttention,
+                          tint: theme.colorScheme.destructive,
+                        ),
+                      if (user.archived)
+                        _CrmPill(
+                          icon: Icons.archive_outlined,
+                          label: context.l10n.crmArchived,
+                          tint: theme.colorScheme.mutedForeground,
+                        ),
+                      if (user.isGuest)
+                        _CrmPill(
+                          icon: Icons.person_outline_rounded,
+                          label: context.l10n.crmGuestUser,
+                          tint: accent,
+                        ),
+                      if (user.groupCount > 0)
+                        _CrmPill(
+                          icon: Icons.groups_2_outlined,
+                          label: '${user.groupCount}',
+                          tint: accent,
+                        ),
+                      if (user.linkedPromotionsCount > 0)
+                        _CrmPill(
+                          icon: Icons.local_offer_outlined,
+                          label: '${user.linkedPromotionsCount}',
+                          tint: accent,
+                        ),
+                    ],
+                  ),
+                ],
               ),
-        ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'edit') onEdit?.call();
-            if (value == 'delete') onDelete?.call();
-            if (value == 'feedback') onFeedback?.call();
-          },
-          itemBuilder: (context) => [
-            if (onEdit != null)
-              PopupMenuItem(
-                value: 'edit',
-                child: Text(context.l10n.commonEdit),
-              ),
-            if (onFeedback != null)
-              PopupMenuItem(
-                value: 'feedback',
-                child: Text(context.l10n.crmFeedbackAction),
-              ),
-            if (onDelete != null)
-              PopupMenuItem(
-                value: 'delete',
-                child: Text(context.l10n.commonDelete),
-              ),
+            ),
           ],
         ),
       ),
@@ -1048,25 +1452,106 @@ class _CrmAuditCard extends StatelessWidget {
     final occurredAt = DateFormat.yMMMd().add_Hm().format(
       DateTime.parse(event.occurredAt).toLocal(),
     );
+    final theme = shad.Theme.of(context);
+    final accent = event.eventKind == 'created'
+        ? const Color(0xFF4D8DFF)
+        : event.eventKind == 'deleted'
+        ? theme.colorScheme.destructive
+        : const Color(0xFF9F7AEA);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ExpansionTile(
-        title: Text(event.summary),
-        subtitle: Text(
-          '${event.affectedUser.label} • ${event.actor.label} • $occurredAt',
-        ),
-        children: event.fieldChanges
-            .map(
-              (change) => ListTile(
-                dense: true,
-                title: Text(change.label),
-                subtitle: Text(
-                  '${change.before ?? '-'} → ${change.after ?? '-'}',
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: FinancePanel(
+        padding: EdgeInsets.zero,
+        child: Theme(
+          data: Theme.of(
+            context,
+          ).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            tilePadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 4,
+            ),
+            childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(Icons.history_rounded, size: 20, color: accent),
+            ),
+            title: Text(
+              event.summary,
+              style: theme.typography.large.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '${event.affectedUser.label}'
+                ' • '
+                '${event.actor.label}'
+                ' • '
+                '$occurredAt',
+                style: theme.typography.textSmall.copyWith(
+                  color: theme.colorScheme.mutedForeground,
                 ),
               ),
-            )
-            .toList(growable: false),
+            ),
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _CrmPill(
+                    icon: Icons.event_note_outlined,
+                    label: event.eventKind,
+                    tint: accent,
+                  ),
+                  _CrmPill(
+                    icon: Icons.cloud_outlined,
+                    label: event.source,
+                    tint: accent,
+                  ),
+                ],
+              ),
+              if (event.fieldChanges.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                ...event.fieldChanges.map(
+                  (change) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 104,
+                          child: Text(
+                            change.label,
+                            style: theme.typography.small.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '${change.before ?? '-'} → ${change.after ?? '-'}',
+                            style: theme.typography.textSmall.copyWith(
+                              color: theme.colorScheme.mutedForeground,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

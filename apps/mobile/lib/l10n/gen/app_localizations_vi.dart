@@ -386,6 +386,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appsHubCalendarDescription => 'Xem lịch làm việc, sự kiện sắp tới và các chế độ xem lịch.';
 
   @override
+  String get appsHubCrmDescription => 'Quản lý khách hàng, phản hồi, nhập dữ liệu và nhật ký tại một nơi.';
+
+  @override
+  String get appsHubDriveDescription => 'Duyệt tệp, thư mục, tải lên và liên kết chia sẻ an toàn của workspace.';
+
+  @override
+  String get appsHubEducationDescription => 'Quản lý khóa học, ngân hàng câu hỏi, flashcard và lượt làm bài.';
+
+  @override
   String get appsHubFinanceDescription => 'Quản lý ví, danh mục, thẻ và lịch sử giao dịch.';
 
   @override
@@ -6082,13 +6091,181 @@ class AppLocalizationsVi extends AppLocalizations {
   String get crmStatus => 'Trạng thái';
 
   @override
-  String get crmTitle => 'CRM người dùng';
+  String get crmTitle => 'CRM';
 
   @override
   String get crmUploadAvatar => 'Tải ảnh đại diện';
 
   @override
   String get crmUsersTab => 'Người dùng';
+
+  @override
+  String get educationAddOption => 'Thêm đáp án';
+
+  @override
+  String get educationAttemptQuizSetLabel => 'Bộ câu hỏi';
+
+  @override
+  String get educationAttemptStatusCompleted => 'Hoàn thành';
+
+  @override
+  String get educationAttemptStatusIncomplete => 'Chưa hoàn thành';
+
+  @override
+  String get educationAttemptStatusLabel => 'Trạng thái';
+
+  @override
+  String get educationAttemptsLabel => 'Lượt làm bài';
+
+  @override
+  String get educationAttemptsSubtitle => 'Xem bài nộp, trạng thái hoàn thành và chi tiết câu trả lời của người học.';
+
+  @override
+  String get educationClearFilters => 'Xóa bộ lọc';
+
+  @override
+  String get educationCourseDescriptionLabel => 'Mô tả';
+
+  @override
+  String get educationCourseNameLabel => 'Tên khóa học';
+
+  @override
+  String get educationCoursesLabel => 'Khóa học';
+
+  @override
+  String get educationCoursesSubtitle => 'Quản lý lộ trình học, mô tả và hồ sơ khóa học sẵn sàng cho module.';
+
+  @override
+  String get educationCreateCourse => 'Tạo khóa học';
+
+  @override
+  String get educationCreateFlashcard => 'Tạo flashcard';
+
+  @override
+  String get educationCreateQuiz => 'Tạo câu hỏi';
+
+  @override
+  String get educationCreateQuizSet => 'Tạo bộ câu hỏi';
+
+  @override
+  String educationDeleteCourseConfirm(String name) {
+    return 'Xóa $name?';
+  }
+
+  @override
+  String get educationDeleteFlashcardConfirm => 'Xóa flashcard này?';
+
+  @override
+  String get educationDeleteQuizConfirm => 'Xóa câu hỏi này?';
+
+  @override
+  String educationDeleteQuizSetConfirm(String name) {
+    return 'Xóa $name?';
+  }
+
+  @override
+  String get educationEditCourse => 'Chỉnh sửa khóa học';
+
+  @override
+  String get educationEditFlashcard => 'Chỉnh sửa flashcard';
+
+  @override
+  String get educationEditQuiz => 'Chỉnh sửa câu hỏi';
+
+  @override
+  String get educationEditQuizSet => 'Chỉnh sửa bộ câu hỏi';
+
+  @override
+  String get educationEmptyAttempts => 'Không có lượt làm bài nào phù hợp với bộ lọc hiện tại.';
+
+  @override
+  String get educationEmptyCourses => 'Chưa có khóa học nào.';
+
+  @override
+  String get educationEmptyFlashcards => 'Chưa có flashcard nào.';
+
+  @override
+  String get educationEmptyQuizzes => 'Chưa có câu hỏi nào.';
+
+  @override
+  String get educationEmptyQuizSets => 'Chưa có bộ câu hỏi nào.';
+
+  @override
+  String get educationFlashcardBackLabel => 'Mặt sau';
+
+  @override
+  String get educationFlashcardFrontLabel => 'Mặt trước';
+
+  @override
+  String get educationLibraryFlashcardsLabel => 'Flashcard';
+
+  @override
+  String get educationLibraryFlashcardsSubtitle => 'Tạo thẻ ghi nhớ nhanh với nội dung mặt trước và mặt sau.';
+
+  @override
+  String get educationLibraryLabel => 'Thư viện';
+
+  @override
+  String get educationLibraryQuizSetsLabel => 'Bộ câu hỏi';
+
+  @override
+  String get educationLibraryQuizSetsSubtitle => 'Sắp xếp bài đánh giá thành các bộ có thể tái sử dụng cho module và lượt làm bài.';
+
+  @override
+  String get educationLibraryQuizzesLabel => 'Câu hỏi';
+
+  @override
+  String get educationLibraryQuizzesSubtitle => 'Quản lý ngân hàng câu hỏi, đáp án và quy tắc đúng sai.';
+
+  @override
+  String get educationLibrarySubtitle => 'Quản lý tài nguyên đánh giá dùng chung cho thư viện học tập của workspace.';
+
+  @override
+  String get educationOverviewHighlightsTitle => 'Điểm nổi bật';
+
+  @override
+  String get educationOverviewLabel => 'Tổng quan';
+
+  @override
+  String get educationOverviewRecentAttemptsTitle => 'Lượt làm gần đây';
+
+  @override
+  String get educationOverviewRecentCoursesTitle => 'Khóa học gần đây';
+
+  @override
+  String get educationOverviewSubtitle => 'Theo dõi cấu trúc học tập, tài nguyên luyện tập và tiến độ người học trong một workspace di động.';
+
+  @override
+  String get educationQuizOptionExplanationLabel => 'Giải thích';
+
+  @override
+  String educationQuizOptionLabel(int index) {
+    return 'Đáp án $index';
+  }
+
+  @override
+  String get educationQuizOptionValueLabel => 'Nội dung đáp án';
+
+  @override
+  String get educationQuizQuestionLabel => 'Câu hỏi';
+
+  @override
+  String get educationQuizSetNameLabel => 'Tên bộ câu hỏi';
+
+  @override
+  String get educationSearchCoursesHint => 'Tìm khóa học';
+
+  @override
+  String get educationSearchFlashcardsHint => 'Tìm flashcard';
+
+  @override
+  String get educationSearchQuizzesHint => 'Tìm câu hỏi';
+
+  @override
+  String get educationSearchQuizSetsHint => 'Tìm bộ câu hỏi';
+
+  @override
+  String get educationTitle => 'Education';
 
   @override
   String get driveCopyPath => 'Sao chép đường dẫn';

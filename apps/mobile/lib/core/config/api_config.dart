@@ -512,3 +512,143 @@ abstract final class CrmEndpoints {
 
   static String avatar(String wsId) => '/api/v1/workspaces/$wsId/users/avatar';
 }
+
+/// Education endpoint paths.
+abstract final class EducationEndpoints {
+  static String courses(
+    String wsId, {
+    String? query,
+    int? page,
+    int? pageSize,
+  }) {
+    final params = <String, String>{};
+    if (query != null && query.trim().isNotEmpty) {
+      params['q'] = query.trim();
+    }
+    if (page != null) {
+      params['page'] = '$page';
+    }
+    if (pageSize != null) {
+      params['pageSize'] = '$pageSize';
+    }
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/courses$suffix';
+  }
+
+  static String course(String wsId, String courseId) =>
+      '/api/v1/workspaces/$wsId/courses/$courseId';
+
+  static String quizzes(
+    String wsId, {
+    String? query,
+    int? page,
+    int? pageSize,
+  }) {
+    final params = <String, String>{};
+    if (query != null && query.trim().isNotEmpty) {
+      params['q'] = query.trim();
+    }
+    if (page != null) {
+      params['page'] = '$page';
+    }
+    if (pageSize != null) {
+      params['pageSize'] = '$pageSize';
+    }
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/quizzes$suffix';
+  }
+
+  static String quiz(String wsId, String quizId) =>
+      '/api/v1/workspaces/$wsId/quizzes/$quizId';
+
+  static String quizSets(
+    String wsId, {
+    String? query,
+    int? page,
+    int? pageSize,
+  }) {
+    final params = <String, String>{};
+    if (query != null && query.trim().isNotEmpty) {
+      params['q'] = query.trim();
+    }
+    if (page != null) {
+      params['page'] = '$page';
+    }
+    if (pageSize != null) {
+      params['pageSize'] = '$pageSize';
+    }
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/quiz-sets$suffix';
+  }
+
+  static String quizSet(String wsId, String setId) =>
+      '/api/v1/workspaces/$wsId/quiz-sets/$setId';
+
+  static String flashcards(
+    String wsId, {
+    String? query,
+    int? page,
+    int? pageSize,
+  }) {
+    final params = <String, String>{};
+    if (query != null && query.trim().isNotEmpty) {
+      params['q'] = query.trim();
+    }
+    if (page != null) {
+      params['page'] = '$page';
+    }
+    if (pageSize != null) {
+      params['pageSize'] = '$pageSize';
+    }
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/flashcards$suffix';
+  }
+
+  static String flashcard(String wsId, String flashcardId) =>
+      '/api/v1/workspaces/$wsId/flashcards/$flashcardId';
+
+  static String attempts(
+    String wsId, {
+    int? page,
+    int? pageSize,
+    String? status,
+    String? setId,
+    String? sortBy,
+    String? sortDirection,
+  }) {
+    final params = <String, String>{};
+    if (page != null) {
+      params['page'] = '$page';
+    }
+    if (pageSize != null) {
+      params['pageSize'] = '$pageSize';
+    }
+    if (status != null && status.isNotEmpty) {
+      params['status'] = status;
+    }
+    if (setId != null && setId.isNotEmpty) {
+      params['setId'] = setId;
+    }
+    if (sortBy != null && sortBy.isNotEmpty) {
+      params['sortBy'] = sortBy;
+    }
+    if (sortDirection != null && sortDirection.isNotEmpty) {
+      params['sortDirection'] = sortDirection;
+    }
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/education/attempts$suffix';
+  }
+
+  static String attempt(String wsId, String attemptId) =>
+      '/api/v1/workspaces/$wsId/education/attempts/$attemptId';
+}

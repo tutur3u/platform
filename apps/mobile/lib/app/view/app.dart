@@ -320,6 +320,12 @@ class _AppState extends State<App> {
       ({forceRefresh = false}) async {
         final workspace = _workspaceCubit.state.currentWorkspace;
         if (workspace == null) return;
+        final accessState = _habitsAccessCubit.state;
+        if (accessState.wsId != workspace.id ||
+            accessState.status != HabitsAccessStatus.loaded ||
+            !accessState.enabled) {
+          return;
+        }
         await HabitsCubit.prewarm(
           repository: HabitTrackerRepository(),
           wsId: workspace.id,
@@ -332,6 +338,12 @@ class _AppState extends State<App> {
       ({forceRefresh = false}) async {
         final workspace = _workspaceCubit.state.currentWorkspace;
         if (workspace == null) return;
+        final accessState = _habitsAccessCubit.state;
+        if (accessState.wsId != workspace.id ||
+            accessState.status != HabitsAccessStatus.loaded ||
+            !accessState.enabled) {
+          return;
+        }
         await HabitsCubit.prewarm(
           repository: HabitTrackerRepository(),
           wsId: workspace.id,

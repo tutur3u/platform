@@ -386,6 +386,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsHubCalendarDescription => 'See your agenda, upcoming events, and calendar views.';
 
   @override
+  String get appsHubCrmDescription => 'Manage people, feedback, imports, and audit activity in one place.';
+
+  @override
+  String get appsHubDriveDescription => 'Browse workspace files, folders, uploads, and secure share links.';
+
+  @override
+  String get appsHubEducationDescription => 'Manage courses, question banks, flashcards, and learner attempts.';
+
+  @override
   String get appsHubFinanceDescription => 'Manage wallets, categories, tags, and transaction history.';
 
   @override
@@ -6112,13 +6121,181 @@ class AppLocalizationsEn extends AppLocalizations {
   String get crmStatus => 'Status';
 
   @override
-  String get crmTitle => 'Users CRM';
+  String get crmTitle => 'CRM';
 
   @override
   String get crmUploadAvatar => 'Upload avatar';
 
   @override
   String get crmUsersTab => 'Users';
+
+  @override
+  String get educationAddOption => 'Add option';
+
+  @override
+  String get educationAttemptQuizSetLabel => 'Quiz set';
+
+  @override
+  String get educationAttemptStatusCompleted => 'Completed';
+
+  @override
+  String get educationAttemptStatusIncomplete => 'Incomplete';
+
+  @override
+  String get educationAttemptStatusLabel => 'Status';
+
+  @override
+  String get educationAttemptsLabel => 'Attempts';
+
+  @override
+  String get educationAttemptsSubtitle => 'Review learner submissions, completion state, and answer detail.';
+
+  @override
+  String get educationClearFilters => 'Clear filters';
+
+  @override
+  String get educationCourseDescriptionLabel => 'Description';
+
+  @override
+  String get educationCourseNameLabel => 'Course name';
+
+  @override
+  String get educationCoursesLabel => 'Courses';
+
+  @override
+  String get educationCoursesSubtitle => 'Manage learning tracks, descriptions, and module-ready course records.';
+
+  @override
+  String get educationCreateCourse => 'Create course';
+
+  @override
+  String get educationCreateFlashcard => 'Create flashcard';
+
+  @override
+  String get educationCreateQuiz => 'Create quiz';
+
+  @override
+  String get educationCreateQuizSet => 'Create quiz set';
+
+  @override
+  String educationDeleteCourseConfirm(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get educationDeleteFlashcardConfirm => 'Delete this flashcard?';
+
+  @override
+  String get educationDeleteQuizConfirm => 'Delete this quiz?';
+
+  @override
+  String educationDeleteQuizSetConfirm(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get educationEditCourse => 'Edit course';
+
+  @override
+  String get educationEditFlashcard => 'Edit flashcard';
+
+  @override
+  String get educationEditQuiz => 'Edit quiz';
+
+  @override
+  String get educationEditQuizSet => 'Edit quiz set';
+
+  @override
+  String get educationEmptyAttempts => 'No attempts match the current filters.';
+
+  @override
+  String get educationEmptyCourses => 'No courses yet.';
+
+  @override
+  String get educationEmptyFlashcards => 'No flashcards yet.';
+
+  @override
+  String get educationEmptyQuizzes => 'No quizzes yet.';
+
+  @override
+  String get educationEmptyQuizSets => 'No quiz sets yet.';
+
+  @override
+  String get educationFlashcardBackLabel => 'Back';
+
+  @override
+  String get educationFlashcardFrontLabel => 'Front';
+
+  @override
+  String get educationLibraryFlashcardsLabel => 'Flashcards';
+
+  @override
+  String get educationLibraryFlashcardsSubtitle => 'Build quick memorization prompts with front and back content.';
+
+  @override
+  String get educationLibraryLabel => 'Library';
+
+  @override
+  String get educationLibraryQuizSetsLabel => 'Quiz sets';
+
+  @override
+  String get educationLibraryQuizSetsSubtitle => 'Organize assessments into reusable sets for modules and attempts.';
+
+  @override
+  String get educationLibraryQuizzesLabel => 'Quizzes';
+
+  @override
+  String get educationLibraryQuizzesSubtitle => 'Maintain question banks, answer choices, and correctness rules.';
+
+  @override
+  String get educationLibrarySubtitle => 'Manage reusable assessment assets for the workspace learning library.';
+
+  @override
+  String get educationOverviewHighlightsTitle => 'Highlights';
+
+  @override
+  String get educationOverviewLabel => 'Overview';
+
+  @override
+  String get educationOverviewRecentAttemptsTitle => 'Recent attempts';
+
+  @override
+  String get educationOverviewRecentCoursesTitle => 'Recent courses';
+
+  @override
+  String get educationOverviewSubtitle => 'Track learning structure, practice assets, and learner progress in one mobile workspace.';
+
+  @override
+  String get educationQuizOptionExplanationLabel => 'Explanation';
+
+  @override
+  String educationQuizOptionLabel(int index) {
+    return 'Option $index';
+  }
+
+  @override
+  String get educationQuizOptionValueLabel => 'Option text';
+
+  @override
+  String get educationQuizQuestionLabel => 'Question';
+
+  @override
+  String get educationQuizSetNameLabel => 'Quiz set name';
+
+  @override
+  String get educationSearchCoursesHint => 'Search courses';
+
+  @override
+  String get educationSearchFlashcardsHint => 'Search flashcards';
+
+  @override
+  String get educationSearchQuizzesHint => 'Search quizzes';
+
+  @override
+  String get educationSearchQuizSetsHint => 'Search quiz sets';
+
+  @override
+  String get educationTitle => 'Education';
 
   @override
   String get driveCopyPath => 'Copy path';

@@ -29,6 +29,7 @@ abstract final class Routes {
   static const taskPortfolioProject = '/tasks/portfolio/projects/:projectId';
   static const calendar = '/calendar';
   static const finance = '/finance';
+  static const education = '/education';
   static const inventory = '/inventory';
   static const drive = '/drive';
   static const crm = '/crm';
@@ -106,6 +107,9 @@ abstract final class Routes {
     }
     if (normalized == finance || normalized.startsWith('$finance/')) {
       return finance;
+    }
+    if (normalized == education || normalized.startsWith('$education/')) {
+      return education;
     }
     if (normalized == inventory || normalized.startsWith('$inventory/')) {
       return inventory;

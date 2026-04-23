@@ -8,6 +8,7 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
 import 'package:mobile/features/habits/habits_cache.dart';
 
@@ -98,79 +99,91 @@ class HabitsCubit extends Cubit<HabitsState> {
     bool forceRefresh = false,
   }) async {
     final scopeUserId = scope == HabitTrackerScope.member ? userId : null;
-    await CacheStore.instance.prefetch<HabitsState>(
-      key: _storeKey(wsId, scope, scopeUserId),
-      policy: _cachePolicy,
-      decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
-      forceRefresh: forceRefresh,
-      tags: [_cacheTag, 'workspace:$wsId', 'module:habits'],
-      fetch: () async {
-        final response = await repository.listTrackers(
-          wsId,
-          scope: scope,
-          userId: scopeUserId,
-        );
-        final selectedTrackerId = response.trackers.isEmpty
-            ? null
-            : response.trackers.first.tracker.id;
+    try {
+      await CacheStore.instance.prefetch<HabitsState>(
+        key: _storeKey(wsId, scope, scopeUserId),
+        policy: _cachePolicy,
+        decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
+        forceRefresh: forceRefresh,
+        tags: [_cacheTag, 'workspace:$wsId', 'module:habits'],
+        fetch: () async {
+          final response = await repository.listTrackers(
+            wsId,
+            scope: scope,
+            userId: scopeUserId,
+          );
+          final selectedTrackerId = response.trackers.isEmpty
+              ? null
+              : response.trackers.first.tracker.id;
 
-        HabitTrackerDetailResponse? detail;
-        var activityEntries = const <HabitActivityEntry>[];
+          HabitTrackerDetailResponse? detail;
+          var activityEntries = const <HabitActivityEntry>[];
 
-        if (includeActivity && response.trackers.isNotEmpty) {
-          final details = await Future.wait(
-            response.trackers.map(
-              (summary) => repository.getTrackerDetail(
-                wsId,
-                summary.tracker.id,
-                scope: scope,
-                userId: scopeUserId,
+          if (includeActivity && response.trackers.isNotEmpty) {
+            final details = await Future.wait(
+              response.trackers.map(
+                (summary) => repository.getTrackerDetail(
+                  wsId,
+                  summary.tracker.id,
+                  scope: scope,
+                  userId: scopeUserId,
+                ),
               ),
+            );
+            detail = details.isEmpty ? null : details.first;
+            activityEntries =
+                details
+                    .expand(
+                      (value) => value.entries.map(
+                        (entry) => HabitActivityEntry(
+                          tracker: value.tracker,
+                          entry: entry,
+                        ),
+                      ),
+                    )
+                    .toList(growable: false)
+                  ..sort(
+                    (left, right) => right.timestamp.compareTo(left.timestamp),
+                  );
+          }
+
+          final now = DateTime.now();
+          return _stateToCacheJson(
+            HabitsState(
+              status: HabitsStatus.loaded,
+              detailStatus: detail == null
+                  ? HabitsStatus.initial
+                  : HabitsStatus.loaded,
+              activityStatus: activityEntries.isEmpty
+                  ? HabitsStatus.initial
+                  : HabitsStatus.loaded,
+              activeWorkspaceId: wsId,
+              listResponse: response,
+              detail: detail,
+              activityEntries: activityEntries,
+              selectedTrackerId: selectedTrackerId,
+              selectedScope: scope,
+              selectedMemberId: scopeUserId,
+              detailScope: detail == null ? null : scope,
+              detailScopeUserId: detail == null ? null : scopeUserId,
+              lastUpdatedAt: now,
+              detailLastUpdatedAt: detail == null ? null : now,
+              activityLastUpdatedAt: activityEntries.isEmpty ? null : now,
             ),
           );
-          detail = details.isEmpty ? null : details.first;
-          activityEntries =
-              details
-                  .expand(
-                    (value) => value.entries.map(
-                      (entry) => HabitActivityEntry(
-                        tracker: value.tracker,
-                        entry: entry,
-                      ),
-                    ),
-                  )
-                  .toList(growable: false)
-                ..sort(
-                  (left, right) => right.timestamp.compareTo(left.timestamp),
-                );
-        }
-
-        final now = DateTime.now();
-        return _stateToCacheJson(
-          HabitsState(
-            status: HabitsStatus.loaded,
-            detailStatus: detail == null
-                ? HabitsStatus.initial
-                : HabitsStatus.loaded,
-            activityStatus: activityEntries.isEmpty
-                ? HabitsStatus.initial
-                : HabitsStatus.loaded,
-            activeWorkspaceId: wsId,
-            listResponse: response,
-            detail: detail,
-            activityEntries: activityEntries,
-            selectedTrackerId: selectedTrackerId,
-            selectedScope: scope,
-            selectedMemberId: scopeUserId,
-            detailScope: detail == null ? null : scope,
-            detailScopeUserId: detail == null ? null : scopeUserId,
-            lastUpdatedAt: now,
-            detailLastUpdatedAt: detail == null ? null : now,
-            activityLastUpdatedAt: activityEntries.isEmpty ? null : now,
-          ),
+        },
+      );
+    } on ApiException catch (error) {
+      if (error.statusCode == 404) {
+        developer.log(
+          'Skipping habits prewarm for workspace $wsId because the '
+          'habit-trackers endpoint returned 404.',
+          name: 'HabitsCubit',
         );
-      },
-    );
+        return;
+      }
+      rethrow;
+    }
   }
 
   Future<void> loadWorkspace(
