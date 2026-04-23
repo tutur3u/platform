@@ -116,7 +116,7 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
         ),
       );
 
-      Navigator.of(context).pop();
+      await Navigator.maybePop(context);
     } on ApiException catch (error) {
       if (!mounted || !toastContext.mounted) {
         return;
@@ -199,7 +199,7 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
                       icon: const Icon(shad.LucideIcons.x, size: 18),
                       onPressed: _saving
                           ? null
-                          : () => Navigator.of(context).pop(),
+                          : () => unawaited(Navigator.maybePop(context)),
                     ),
                   ],
                 ),

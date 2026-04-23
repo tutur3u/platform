@@ -2,36 +2,36 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/features/time_tracker/widgets/create_category_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-/// Opens [CategorySheet] as an adaptive bottom drawer/dialog.
-void showCategorySheet({
+/// Opens [CategorySheet] as an adaptive bottom sheet/dialog.
+Future<void> showCategorySheet({
   required BuildContext context,
   required List<TimeTrackingCategory> categories,
   required String? selectedCategoryId,
   required ValueChanged<String?> onSelected,
-  required Future<void> Function({
+  Future<void> Function({
     required String name,
     String? color,
     String? description,
-  })
+  })?
   onCreateCategory,
+  bool useRootNavigator = true,
 }) {
-  unawaited(
-    showAdaptiveDrawer(
-      context: context,
-      builder: (_) => CategorySheet(
-        hostContext: context,
-        categories: categories,
-        selectedCategoryId: selectedCategoryId,
-        onSelected: onSelected,
-        onCreateCategory: onCreateCategory,
-      ),
+  return showAdaptiveSheet<void>(
+    context: context,
+    useRootNavigator: useRootNavigator,
+    builder: (_) => CategorySheet(
+      hostContext: context,
+      categories: categories,
+      selectedCategoryId: selectedCategoryId,
+      onSelected: onSelected,
+      onCreateCategory: onCreateCategory,
+      useRootNavigator: useRootNavigator,
     ),
   );
 }
@@ -43,7 +43,8 @@ class CategorySheet extends StatelessWidget {
     required this.categories,
     required this.selectedCategoryId,
     required this.onSelected,
-    required this.onCreateCategory,
+    this.onCreateCategory,
+    this.useRootNavigator = true,
     super.key,
   });
 
@@ -55,15 +56,11 @@ class CategorySheet extends StatelessWidget {
     required String name,
     String? color,
     String? description,
-  })
+  })?
   onCreateCategory;
+  final bool useRootNavigator;
 
   Future<void> _closeCurrentSheet(BuildContext context) async {
-    if (context.isCompact) {
-      await shad.closeOverlay<void>(context);
-      return;
-    }
-
     await Navigator.maybePop(context);
   }
 
@@ -73,6 +70,8 @@ class CategorySheet extends StatelessWidget {
   }
 
   Future<void> _showCreateCategorySheet(BuildContext context) async {
+    final create = onCreateCategory;
+    if (create == null) return;
     await _closeCurrentSheet(context);
     if (!hostContext.mounted) {
       return;
@@ -80,7 +79,8 @@ class CategorySheet extends StatelessWidget {
 
     await showAdaptiveSheet<void>(
       context: hostContext,
-      builder: (_) => CreateCategorySheet(onSave: onCreateCategory),
+      useRootNavigator: useRootNavigator,
+      builder: (_) => CreateCategorySheet(onSave: create),
     );
   }
 
@@ -91,12 +91,12 @@ class CategorySheet extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Phone: shad.openDrawer already paints a drag handle.
-          // Dialog: show one.
-          if (!context.isCompact)
+      child: ColoredBox(
+        color: colorScheme.background,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
             Padding(
               padding: const EdgeInsets.only(top: 8, bottom: 4),
               child: Center(
@@ -110,87 +110,90 @@ class CategorySheet extends StatelessWidget {
                 ),
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    l10n.timerSelectCategory,
-                    style: theme.typography.h4,
-                  ),
-                ),
-                shad.IconButton.ghost(
-                  icon: const Icon(shad.LucideIcons.x, size: 18),
-                  onPressed: () => unawaited(_closeCurrentSheet(context)),
-                ),
-              ],
-            ),
-          ),
-
-          const shad.Divider(),
-
-          // Category list
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(context).height * 0.5,
-            ),
-            child: ListView(
-              shrinkWrap: true,
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              children: [
-                // "No category" option
-                _CategoryTile(
-                  label: l10n.timerNoCategory,
-                  isSelected: selectedCategoryId == null,
-                  onTap: () => unawaited(_selectCategory(context, null)),
-                ),
-                ...categories.map(
-                  (cat) => _CategoryTile(
-                    color: cat.color != null
-                        ? resolveTimeTrackingCategoryColor(
-                            context,
-                            cat.color,
-                            fallback: colorScheme.mutedForeground,
-                          )
-                        : null,
-                    label: cat.name ?? '',
-                    isSelected: cat.id == selectedCategoryId,
-                    onTap: () => unawaited(_selectCategory(context, cat.id)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const shad.Divider(),
-
-          // "Create new category" button
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: shad.OutlineButton(
-              onPressed: () => unawaited(_showCreateCategorySheet(context)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    shad.LucideIcons.plus,
-                    size: 16,
-                    color: colorScheme.primary,
+                  Expanded(
+                    child: Text(
+                      l10n.timerSelectCategory,
+                      style: theme.typography.h4,
+                    ),
                   ),
-                  const shad.Gap(8),
-                  Text(
-                    l10n.timerCreateCategory,
-                    style: theme.typography.small.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
+                  shad.IconButton.ghost(
+                    icon: const Icon(shad.LucideIcons.x, size: 18),
+                    onPressed: () => unawaited(_closeCurrentSheet(context)),
+                  ),
+                ],
+              ),
+            ),
+
+            const shad.Divider(),
+
+            // Category list
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.5,
+              ),
+              child: ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                children: [
+                  // "No category" option
+                  _CategoryTile(
+                    label: l10n.timerNoCategory,
+                    isSelected: selectedCategoryId == null,
+                    onTap: () => unawaited(_selectCategory(context, null)),
+                  ),
+                  ...categories.map(
+                    (cat) => _CategoryTile(
+                      color: cat.color != null
+                          ? resolveTimeTrackingCategoryColor(
+                              context,
+                              cat.color,
+                              fallback: colorScheme.mutedForeground,
+                            )
+                          : null,
+                      label: cat.name ?? '',
+                      isSelected: cat.id == selectedCategoryId,
+                      onTap: () => unawaited(_selectCategory(context, cat.id)),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+
+            if (onCreateCategory != null) ...[
+              const shad.Divider(),
+
+              // "Create new category" button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: shad.OutlineButton(
+                  onPressed: () => unawaited(_showCreateCategorySheet(context)),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        shad.LucideIcons.plus,
+                        size: 16,
+                        color: colorScheme.primary,
+                      ),
+                      const shad.Gap(8),
+                      Text(
+                        l10n.timerCreateCategory,
+                        style: theme.typography.small.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
