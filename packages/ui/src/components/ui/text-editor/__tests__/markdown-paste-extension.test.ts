@@ -178,4 +178,25 @@ describe('markdownToHtml', () => {
     expect(html).toContain('<code>const x = **1**</code>');
     expect(html).not.toContain('<strong>');
   });
+
+  it('should preserve subscript HTML tags', () => {
+    const md = 'H<sub>2</sub>O';
+    const html = markdownToHtml(md);
+    expect(html).toContain('<sub>2</sub>');
+    expect(html).toContain('<p>H<sub>2</sub>O</p>');
+  });
+
+  it('should preserve superscript HTML tags', () => {
+    const md = 'x<sup>2</sup>';
+    const html = markdownToHtml(md);
+    expect(html).toContain('<sup>2</sup>');
+    expect(html).toContain('<p>x<sup>2</sup></p>');
+  });
+
+  it('should escape non-sub/sup HTML tags', () => {
+    const md = '<div>text</div>';
+    const html = markdownToHtml(md);
+    expect(html).toContain('&lt;div&gt;');
+    expect(html).not.toContain('<div>');
+  });
 });

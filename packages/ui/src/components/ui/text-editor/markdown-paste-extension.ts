@@ -55,6 +55,13 @@ function parseInline(text: string): string {
     return `\0CODE${codeTokens.length - 1}\0`;
   });
 
+  // Step 1b: Tokenize raw <sub>/<sup> HTML tags so they survive escaping
+  const subSupTokens: string[] = [];
+  html = html.replace(/<(sub|sup)>([^<]*)<\/\1>/g, (_match, tag, content) => {
+    subSupTokens.push(`<${tag}>${escapeHtml(content)}</${tag}>`);
+    return `\0SUBSUP${subSupTokens.length - 1}\0`;
+  });
+
   // Step 2: Escape remaining text
   html = escapeHtml(html);
 
@@ -98,6 +105,12 @@ function parseInline(text: string): string {
   html = html.replace(
     /\0CODE(\d+)\0/g,
     (_match, index) => codeTokens[Number(index)] ?? ''
+  );
+
+  // Step 4b: Restore <sub>/<sup> tokens
+  html = html.replace(
+    /\0SUBSUP(\d+)\0/g,
+    (_match, index) => subSupTokens[Number(index)] ?? ''
   );
 
   return html;
@@ -450,6 +463,8 @@ const MARKDOWN_SIGNATURES = [
   /\[[^\]]+\]\([^)]+\)/m, // link
   /^\s*---\s*$/m, // horizontal rule
   /^\s*\|.*\|/m, // table
+  /<sub>[^<]*<\/sub>/m, // subscript
+  /<sup>[^<]*<\/sup>/m, // superscript
 ];
 
 function looksLikeMarkdown(text: string): boolean {
