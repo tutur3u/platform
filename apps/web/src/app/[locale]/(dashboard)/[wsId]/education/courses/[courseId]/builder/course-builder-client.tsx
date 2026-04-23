@@ -494,7 +494,6 @@ export function CourseBuilderClient({
                     wsId={resolvedWsId}
                     courseId={courseId}
                     moduleId={activeModule.id}
-                    isPublic={activeModule.is_public}
                     isPublished={activeModule.is_published}
                   />
 

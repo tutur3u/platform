@@ -160,6 +160,7 @@ export function ModuleViewer({
               <ModuleSection
                 title={t('course-details-tabs.extra_reading')}
                 icon={<BookText className="h-4 w-4" />}
+                rawContent={module.extra_content as JSONContent}
                 content={
                   <div className="prose prose-sm dark:prose-invert max-w-none">
                     <RichTextEditor
