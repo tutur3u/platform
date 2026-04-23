@@ -26,7 +26,7 @@ export function ModuleContentEditor({
 
   useEffect(() => {
     setPost(content || null);
-  }, [content, moduleId]);
+  }, [content]);
 
   const saveMutation = useMutation({
     mutationFn: async (nextContent: JSONContent | null) =>
