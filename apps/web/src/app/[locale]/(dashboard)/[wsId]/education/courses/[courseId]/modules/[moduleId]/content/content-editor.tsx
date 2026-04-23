@@ -26,7 +26,6 @@ export function ModuleContentEditor({
 }: Props) {
   const [post, setPost] = useState<JSONContent | null>(content || null);
   const t = useTranslations();
-  const editorIdentity = `${wsId}:${courseId}:${moduleId}`;
 
   const saveMutation = useMutation({
     mutationFn: async (nextContent: JSONContent | null) =>
@@ -46,6 +45,9 @@ export function ModuleContentEditor({
   const saveInFlightRef = useRef(false);
   const editorSessionRef = useRef(0);
   const saveContentRef = useRef(saveMutation.mutateAsync);
+  const pendingServerContentRef = useRef<JSONContent | null | undefined>(
+    undefined
+  );
 
   useEffect(() => {
     saveContentRef.current = saveMutation.mutateAsync;
@@ -71,8 +73,20 @@ export function ModuleContentEditor({
       if (sessionId === editorSessionRef.current) {
         lastPersistedRevisionRef.current = revision;
       }
+    } catch {
+      // `useMutation` already reports the error via `onError`.
+      return;
     } finally {
       saveInFlightRef.current = false;
+
+      if (
+        pendingServerContentRef.current !== undefined &&
+        queuedRevisionRef.current === lastPersistedRevisionRef.current
+      ) {
+        queuedContentRef.current = pendingServerContentRef.current;
+        setPost(pendingServerContentRef.current);
+        pendingServerContentRef.current = undefined;
+      }
 
       const activeSessionId = editorSessionRef.current;
       const hasPendingQueuedSave =
@@ -92,7 +106,7 @@ export function ModuleContentEditor({
   }, CONTENT_SAVE_DEBOUNCE_MS);
 
   useEffect(() => {
-    if (!editorIdentity) {
+    if (!wsId || !courseId || !moduleId) {
       return;
     }
 
@@ -100,10 +114,10 @@ export function ModuleContentEditor({
       debouncedSave.flush();
       void flushQueuedSave(editorSessionRef.current);
     };
-  }, [debouncedSave, editorIdentity, flushQueuedSave]);
+  }, [courseId, debouncedSave, flushQueuedSave, moduleId, wsId]);
 
   useEffect(() => {
-    if (!editorIdentity) {
+    if (!wsId || !courseId || !moduleId) {
       return;
     }
 
@@ -111,20 +125,25 @@ export function ModuleContentEditor({
     queuedSessionRef.current = editorSessionRef.current;
     queuedRevisionRef.current = 0;
     lastPersistedRevisionRef.current = 0;
+    pendingServerContentRef.current = undefined;
     queuedContentRef.current = null;
     setPost(null);
-  }, [editorIdentity]);
+  }, [courseId, moduleId, wsId]);
 
   useEffect(() => {
+    const nextServerContent = content || null;
+
     if (
       saveInFlightRef.current ||
       queuedRevisionRef.current !== lastPersistedRevisionRef.current
     ) {
+      pendingServerContentRef.current = nextServerContent;
       return;
     }
 
-    queuedContentRef.current = content || null;
-    setPost(content || null);
+    pendingServerContentRef.current = undefined;
+    queuedContentRef.current = nextServerContent;
+    setPost(nextServerContent);
   }, [content]);
 
   const onChange = (nextContent: JSONContent | null) => {

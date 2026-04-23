@@ -41,6 +41,16 @@ function hasVisibleRichContent(content?: JSONContent | null) {
   );
 }
 
+function extractTextFromContent(content?: JSONContent | null): string {
+  if (!content) return '';
+
+  if (typeof content.text === 'string') {
+    return content.text;
+  }
+
+  return (content.content ?? []).map(extractTextFromContent).join(' ');
+}
+
 function ModuleSection({
   title,
   icon,
@@ -78,6 +88,10 @@ export function ModuleViewer({
     resourceId?: string;
     type?: string;
   }>();
+  const moduleSummary = extractTextFromContent(module.content).replaceAll(
+    /\s+/g,
+    ' '
+  );
   const basePath = params?.resourceId
     ? `/${params.locale ?? ''}/share/${params.type ?? 'course'}/${params.resourceId}`
         .replace('//', '/')
@@ -117,7 +131,9 @@ export function ModuleViewer({
             {module.name}
           </h1>
           <p className="mt-2 text-foreground/60 text-sm">
-            {group.description || t('share-course.module_subtitle')}
+            {moduleSummary ||
+              group.description ||
+              t('share-course.module_subtitle')}
           </p>
         </div>
 

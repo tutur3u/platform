@@ -5,7 +5,7 @@ import { updateWorkspaceCourseModule } from '@tuturuuu/internal-api/education';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export function ModuleToggles({
   wsId,
@@ -20,6 +20,8 @@ export function ModuleToggles({
 }) {
   const t = useTranslations();
   const [isPublished, setIsPublished] = useState(initialIsPublished);
+  const previousModuleKeyRef = useRef('');
+  const moduleKey = `${wsId}:${courseId}:${moduleId}`;
 
   const saveMutation = useMutation({
     mutationFn: async (checked: boolean) =>
@@ -36,14 +38,16 @@ export function ModuleToggles({
   });
 
   useEffect(() => {
-    if (!moduleId || saveMutation.isPending) {
+    if (!wsId || !courseId || !moduleId) {
+      previousModuleKeyRef.current = '';
       return;
     }
 
-    if (!saveMutation.isPending) {
+    if (previousModuleKeyRef.current !== moduleKey) {
+      previousModuleKeyRef.current = moduleKey;
       setIsPublished(initialIsPublished);
     }
-  }, [initialIsPublished, moduleId, saveMutation.isPending]);
+  }, [courseId, initialIsPublished, moduleId, moduleKey, wsId]);
 
   const handlePublishedChange = (checked: boolean | 'indeterminate') => {
     if (checked === 'indeterminate') {
