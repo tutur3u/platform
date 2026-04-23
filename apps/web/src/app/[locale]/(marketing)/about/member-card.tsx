@@ -25,7 +25,7 @@ export default function MemberCard({
   socials,
 }: MemberCardProps) {
   return (
-    <Card className="group relative flex w-full max-w-sm flex-col overflow-hidden rounded-lg border-1 border-transparent bg-calendar-bg-blue transition-all duration-300 ease-in-out hover:border-foreground/20 hover:shadow-lg hover:shadow-primary/20">
+    <Card className="group relative flex w-full max-w-sm flex-col overflow-hidden rounded-lg border py-0 border-transparent bg-calendar-bg-blue transition-all duration-300 ease-in-out hover:border-foreground/20 hover:shadow-lg hover:shadow-primary/20">
       <CardHeader className="p-0">
         <div className="relative h-64 w-full overflow-hidden transition-transform duration-300 ease-in-out group-hover:scale-105">
           <Image
@@ -45,7 +45,7 @@ export default function MemberCard({
         <p className="text-muted-foreground italic">"{quote}"</p>
         <p className="mt-2 text-sm text-foreground/80">{bio}</p>
       </CardContent>
-      <CardFooter className="bg-transparent border-none flex justify-center gap-4 p-4 pt-0">
+      <CardFooter className="lex justify-center gap-4 p-4 pt-0">
         {socials.facebook ? (
           <Link
             href={socials.facebook}
