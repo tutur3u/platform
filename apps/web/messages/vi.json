@@ -8973,9 +8973,13 @@
   },
   "share-course": {
     "badge": "Khóa học được chia sẻ",
+    "collapse_all": "Thu gọn tất cả",
+    "course_outline": "Tổng quan khóa học",
+    "expand_all": "Mở rộng tất cả",
     "flashcard_count": "Có sẵn {count} thẻ ghi nhớ",
     "flashcard_label": "Thẻ ghi nhớ",
     "flashcard_short": "T",
+    "modules_heading": "Mô-đun",
     "no_published_modules": "Chưa có mô-đun nào được xuất bản.",
     "published_modules": "{count} mô-đun đã xuất bản",
     "quiz_count": "Có sẵn {count} câu hỏi",

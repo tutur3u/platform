@@ -8973,9 +8973,13 @@
   },
   "share-course": {
     "badge": "Shared Course",
+    "collapse_all": "Collapse all",
+    "course_outline": "Course outline",
+    "expand_all": "Expand all",
     "flashcard_count": "{count, plural, =1 {1 flashcard} other {# flashcards}} available",
     "flashcard_label": "Flashcards",
     "flashcard_short": "F",
+    "modules_heading": "Modules",
     "no_published_modules": "No published modules yet.",
     "published_modules": "{count, plural, =1 {1 published module} other {# published modules}}",
     "quiz_count": "{count, plural, =1 {1 quiz} other {# quizzes}} available",
