@@ -71,6 +71,13 @@ Future<void> showMissedEntryDialogFlow(
   String? initialTitle,
   String? initialDescription,
   String? initialCategoryId,
+  Future<void> Function({
+    required String name,
+    String? color,
+    String? description,
+  })?
+  onCreateCategory,
+  TimeTrackerCubit? categoryListCubit,
 }) async {
   final canBypassApproval =
       hasBypassPermission ??
@@ -88,6 +95,7 @@ Future<void> showMissedEntryDialogFlow(
       context: context,
       builder: (_) => MissedEntryDialog(
         categories: categories,
+        categoryListCubit: categoryListCubit,
         canBypassRequestApproval: canBypassApproval,
         thresholdDays: thresholdDays,
         initialStartTime: initialStartTime,
@@ -95,6 +103,7 @@ Future<void> showMissedEntryDialogFlow(
         initialTitle: initialTitle,
         initialDescription: initialDescription,
         initialCategoryId: initialCategoryId,
+        onCreateCategory: onCreateCategory,
         onSave:
             ({
               required title,
@@ -146,6 +155,12 @@ Future<void> showMissedEntryDialogForTimeTrackerCubit(
   String? initialTitle,
   String? initialDescription,
   String? initialCategoryId,
+  Future<void> Function({
+    required String name,
+    String? color,
+    String? description,
+  })?
+  onCreateCategory,
 }) {
   return showMissedEntryDialogFlow(
     context,
@@ -153,6 +168,19 @@ Future<void> showMissedEntryDialogForTimeTrackerCubit(
     userId: userId,
     categories: cubit.state.categories,
     thresholdDays: cubit.state.thresholdDays,
+    onCreateCategory:
+        onCreateCategory ??
+        ({
+          required name,
+          color,
+          description,
+        }) => cubit.createCategory(
+          wsId,
+          name,
+          color: color,
+          description: description,
+          throwOnError: true,
+        ),
     onCreateMissedEntry:
         ({
           required title,
@@ -197,5 +225,6 @@ Future<void> showMissedEntryDialogForTimeTrackerCubit(
     initialTitle: initialTitle,
     initialDescription: initialDescription,
     initialCategoryId: initialCategoryId,
+    categoryListCubit: cubit,
   );
 }
