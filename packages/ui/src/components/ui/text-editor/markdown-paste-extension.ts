@@ -387,7 +387,7 @@ function markdownToHtml(markdown: string): string {
       continue;
     }
 
-    // Blockquote
+    // Blockquote (supports nesting via recursive markdownToHtml)
     if (line.startsWith('>')) {
       const quoteLines: string[] = [];
       while (
@@ -395,12 +395,14 @@ function markdownToHtml(markdown: string): string {
         lines[i] !== undefined &&
         lines[i]!.startsWith('>')
       ) {
-        quoteLines.push(lines[i]!.slice(1).trimStart());
+        const stripped = lines[i]!.slice(1);
+        quoteLines.push(
+          stripped.startsWith(' ') ? stripped.slice(1) : stripped
+        );
         i++;
       }
-      result.push(
-        `<blockquote><p>${parseInline(quoteLines.join(' '))}</p></blockquote>`
-      );
+      const innerHtml = markdownToHtml(quoteLines.join('\n'));
+      result.push(`<blockquote>${innerHtml}</blockquote>`);
       continue;
     }
 

@@ -126,6 +126,18 @@ describe('markdownToHtml', () => {
     expect(html).toContain('quote here');
   });
 
+  it('should convert nested blockquotes', () => {
+    const md = '> This is a blockquote\n>> Nested quote\n>>> Deep nesting';
+    const html = markdownToHtml(md);
+    expect(html).toContain('<blockquote>');
+    expect(html).toContain('<p>This is a blockquote</p>');
+    expect(html).toContain('<p>Nested quote</p>');
+    expect(html).toContain('<p>Deep nesting</p>');
+    // Three levels of nesting = three opening blockquote tags
+    expect(html.match(/<blockquote>/g)?.length).toBe(3);
+    expect(html.match(/<\/blockquote>/g)?.length).toBe(3);
+  });
+
   it('should convert horizontal rules', () => {
     const md = '---';
     const html = markdownToHtml(md);
