@@ -1,3 +1,5 @@
+'use client';
+
 import { Crown, User as UserIcon } from '@tuturuuu/icons';
 import { Masonry } from '@tuturuuu/masonry';
 import type { Workspace } from '@tuturuuu/types';
@@ -5,9 +7,8 @@ import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import moment from 'moment';
-import { getLocale, getTranslations } from 'next-intl/server';
+import { useLocale, useTranslations } from 'next-intl';
 import InviteMemberButton from './invite-member-button';
 import { MemberPermissionBreakdown } from './member-permission-breakdown';
 import { MemberSettingsButton } from './member-settings-button';
@@ -27,18 +28,31 @@ interface Props {
   invited?: boolean;
   loading?: boolean;
   canManageMembers?: boolean;
+  currentUser?: User | null;
 }
 
-export default async function MemberList({
+export default function MemberList({
   workspace,
   members,
   invited,
   loading,
   canManageMembers,
+  currentUser,
 }: Props) {
-  const locale = await getLocale();
-  const t = await getTranslations('ws-members');
-  const user = await getCurrentUser();
+  const locale = useLocale();
+  const t = useTranslations('ws-members');
+  const tCommon = useTranslations('common');
+
+  if (loading && (!members || members.length === 0)) {
+    return (
+      <div className="flex items-center justify-center rounded-lg border border-border bg-background/50 p-12">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-foreground/20 border-t-foreground" />
+          <p className="text-foreground/60 text-sm">{tCommon('loading')}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!members || members.length === 0) {
     return (
@@ -50,7 +64,7 @@ export default async function MemberList({
         {!!workspace?.id && (
           <InviteMemberButton
             wsId={workspace?.id}
-            currentUser={user!}
+            currentUser={currentUser ?? undefined}
             canManageMembers={canManageMembers}
             label={t('invite_member')}
             variant="outline"
@@ -128,7 +142,7 @@ export default async function MemberList({
           <MemberSettingsButton
             workspace={workspace}
             user={member}
-            currentUser={user!}
+            currentUser={currentUser}
             canManageMembers={canManageMembers}
           />
         </div>
@@ -152,7 +166,7 @@ export default async function MemberList({
         ) : null}
 
         <div className="flex gap-2">
-          {user?.id === member.id && (
+          {currentUser?.id === member.id && (
             <div
               className={`rounded border px-2 py-0.5 text-center font-semibold ${
                 loading

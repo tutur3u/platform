@@ -12,7 +12,8 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import moment from 'moment';
-import { useTranslations } from 'next-intl';
+import 'moment/locale/vi';
+import { useLocale, useTranslations } from 'next-intl';
 import type { InviteLinkDetails } from '@/lib/workspace-invite-links';
 
 interface Props {
@@ -26,6 +27,7 @@ interface Props {
 
 function JoinedUserRow({ inviteLink }: { inviteLink: InviteLinkDetails }) {
   const t = useTranslations();
+  const locale = useLocale();
 
   if (inviteLink.uses.length === 0) {
     return (
@@ -44,16 +46,11 @@ function JoinedUserRow({ inviteLink }: { inviteLink: InviteLinkDetails }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h4 className="font-semibold text-base text-foreground">
-            {t('ws-invite-links.members-joined')}
-          </h4>
-          <p className="text-foreground/60 text-sm">
-            {t('ws-invite-links.users-joined-description')}
-          </p>
-        </div>
+        <h4 className="font-semibold text-base text-foreground">
+          {t('ws-invite-links.members-joined')}
+        </h4>
         <div className="rounded-full bg-dynamic-blue/10 px-3 py-1 font-medium text-dynamic-blue text-xs">
           {inviteLink.uses.length}{' '}
           {inviteLink.uses.length === 1
@@ -99,13 +96,13 @@ function JoinedUserRow({ inviteLink }: { inviteLink: InviteLinkDetails }) {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border bg-foreground/[0.03] px-3 py-2 text-left sm:text-right">
+                <div className="min-w-0 shrink-0 space-y-0.5 text-left sm:text-right">
                   <p className="font-medium text-foreground text-sm">
                     {t('ws-invite-links.joined')}{' '}
-                    {moment(inviteUse.joined_at).fromNow()}
+                    {moment(inviteUse.joined_at).locale(locale).fromNow()}
                   </p>
                   <p className="text-foreground/50 text-xs">
-                    {moment(inviteUse.joined_at).format('MMM D, YYYY • h:mm A')}
+                    {moment(inviteUse.joined_at).locale(locale).format('lll')}
                   </p>
                 </div>
               </div>
@@ -126,10 +123,11 @@ export function InviteLinkMembersDialog({
   onRetry,
 }: Props) {
   const t = useTranslations();
+  const locale = useLocale();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl overflow-hidden p-0">
+      <DialogContent className="w-full max-w-5xl overflow-hidden p-0 sm:max-w-5xl">
         <DialogHeader className="border-border border-b bg-linear-to-br from-background via-background to-foreground/[0.03] px-6 py-5">
           <DialogTitle className="flex items-center gap-3 text-xl">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-dynamic-blue to-dynamic-purple shadow-md">
@@ -174,63 +172,73 @@ export function InviteLinkMembersDialog({
               </div>
             </div>
           ) : inviteLink ? (
-            <>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-2xl border border-border bg-foreground/[0.02] p-4">
-                  <p className="text-foreground/60 text-xs uppercase tracking-[0.18em]">
+            <div className="space-y-10">
+              <div className="grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex min-h-30 flex-col rounded-2xl border border-border bg-foreground/[0.02] p-4">
+                  <p className="shrink-0 text-foreground/60 text-xs uppercase tracking-[0.18em]">
                     {t('ws-invite-links.link-code')}
                   </p>
-                  <div className="mt-3 flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-dynamic-blue/10">
+                  <div className="mt-3 flex min-h-0 flex-1 items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-dynamic-blue/10">
                       <Link2 className="h-4 w-4 text-dynamic-blue" />
                     </div>
-                    <code className="font-medium font-mono text-foreground text-sm">
-                      {inviteLink.code}
-                    </code>
+                    <div className="min-w-0 flex-1 overflow-x-auto rounded-lg bg-foreground/[0.04] px-2.5 py-2">
+                      <code className="block whitespace-nowrap font-medium font-mono text-foreground text-sm">
+                        {inviteLink.code}
+                      </code>
+                    </div>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-border bg-foreground/[0.02] p-4">
+                <div className="flex min-h-30 flex-col rounded-2xl border border-border bg-foreground/[0.02] p-4">
                   <p className="text-foreground/60 text-xs uppercase tracking-[0.18em]">
                     {t('ws-invite-links.total-uses')}
                   </p>
-                  <p className="mt-3 font-semibold text-foreground text-lg">
-                    {inviteLink.current_uses}
-                    {inviteLink.max_uses ? ` / ${inviteLink.max_uses}` : ''}
-                  </p>
+                  <div className="mt-3 flex flex-1 flex-col justify-end">
+                    <p className="font-semibold text-foreground text-lg leading-tight">
+                      {inviteLink.current_uses}
+                      {inviteLink.max_uses ? ` / ${inviteLink.max_uses}` : ''}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="rounded-2xl border border-border bg-foreground/[0.02] p-4">
+                <div className="flex min-h-30 flex-col rounded-2xl border border-border bg-foreground/[0.02] p-4">
                   <p className="text-foreground/60 text-xs uppercase tracking-[0.18em]">
                     {t('ws-invite-links.created-at')}
                   </p>
-                  <p className="mt-3 font-semibold text-foreground text-sm">
-                    {moment(inviteLink.created_at).format('MMM D, YYYY')}
-                  </p>
-                  <p className="text-foreground/50 text-xs">
-                    {moment(inviteLink.created_at).fromNow()}
-                  </p>
+                  <div className="mt-3 flex flex-1 flex-col justify-end gap-0.5">
+                    <p className="font-semibold text-foreground text-sm leading-snug">
+                      {moment(inviteLink.created_at)
+                        .locale(locale)
+                        .format('ll')}
+                    </p>
+                    <p className="text-foreground/50 text-xs">
+                      {moment(inviteLink.created_at).locale(locale).fromNow()}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="rounded-2xl border border-border bg-foreground/[0.02] p-4">
+                <div className="flex min-h-30 flex-col rounded-2xl border border-border bg-foreground/[0.02] p-4">
                   <p className="text-foreground/60 text-xs uppercase tracking-[0.18em]">
                     {t('ws-members.invite_membership_label')}
                   </p>
-                  <p className="mt-3 font-semibold text-foreground text-sm">
-                    {inviteLink.memberType === 'GUEST'
-                      ? t('ws-invite-links.membership-short-guest')
-                      : t('ws-invite-links.membership-short-member')}
-                  </p>
-                  <p className="text-foreground/50 text-xs">
-                    {inviteLink.memberType === 'GUEST'
-                      ? t('ws-members.invite_membership_guest')
-                      : t('ws-members.invite_membership_member')}
-                  </p>
+                  <div className="mt-3 flex flex-1 flex-col justify-end gap-0.5">
+                    <p className="font-semibold text-foreground text-sm leading-snug">
+                      {inviteLink.memberType === 'GUEST'
+                        ? t('ws-invite-links.membership-short-guest')
+                        : t('ws-invite-links.membership-short-member')}
+                    </p>
+                    <p className="text-pretty text-foreground/50 text-xs leading-snug">
+                      {inviteLink.memberType === 'GUEST'
+                        ? t('ws-members.invite_membership_guest')
+                        : t('ws-members.invite_membership_member')}
+                    </p>
+                  </div>
                 </div>
               </div>
 
               <JoinedUserRow inviteLink={inviteLink} />
-            </>
+            </div>
           ) : null}
         </div>
       </DialogContent>
