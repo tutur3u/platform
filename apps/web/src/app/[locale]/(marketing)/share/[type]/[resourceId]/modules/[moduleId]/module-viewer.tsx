@@ -88,10 +88,9 @@ export function ModuleViewer({
     resourceId?: string;
     type?: string;
   }>();
-  const moduleSummary = extractTextFromContent(module.content).replaceAll(
-    /\s+/g,
-    ' '
-  );
+  const moduleSummary = extractTextFromContent(module.content)
+    .replaceAll(/\s+/g, ' ')
+    .trim();
   const basePath = params?.resourceId
     ? `/${params.locale ?? ''}/share/${params.type ?? 'course'}/${params.resourceId}`
         .replace('//', '/')

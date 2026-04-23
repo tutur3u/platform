@@ -7,6 +7,15 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
+type ModuleToggleMutationVariables = {
+  checked: boolean;
+  wsId: string;
+  courseId: string;
+  moduleId: string;
+  moduleKey: string;
+  mutationId: number;
+};
+
 export function ModuleToggles({
   wsId,
   courseId,
@@ -20,20 +29,38 @@ export function ModuleToggles({
 }) {
   const t = useTranslations();
   const [isPublished, setIsPublished] = useState(initialIsPublished);
+  const activeModuleKeyRef = useRef('');
+  const latestMutationIdRef = useRef(0);
   const previousModuleKeyRef = useRef('');
   const moduleKey = `${wsId}:${courseId}:${moduleId}`;
+  activeModuleKeyRef.current = wsId && courseId && moduleId ? moduleKey : '';
 
   const saveMutation = useMutation({
-    mutationFn: async (checked: boolean) =>
+    mutationFn: async ({
+      checked,
+      wsId,
+      courseId,
+      moduleId,
+    }: ModuleToggleMutationVariables) =>
       updateWorkspaceCourseModule(wsId, moduleId, {
         group_id: courseId,
         is_published: checked,
       }),
-    onSuccess: (_data, checked) => {
-      setIsPublished(checked);
+    onSuccess: (_data, { checked, moduleKey, mutationId }) => {
+      if (
+        activeModuleKeyRef.current === moduleKey &&
+        latestMutationIdRef.current === mutationId
+      ) {
+        setIsPublished(checked);
+      }
     },
-    onError: () => {
-      toast.error(t('common.error_saving_content'));
+    onError: (_error, { moduleKey, mutationId }) => {
+      if (
+        activeModuleKeyRef.current === moduleKey &&
+        latestMutationIdRef.current === mutationId
+      ) {
+        toast.error(t('common.error_saving_content'));
+      }
     },
   });
 
@@ -54,7 +81,17 @@ export function ModuleToggles({
       return;
     }
 
-    saveMutation.mutate(checked);
+    const mutationId = latestMutationIdRef.current + 1;
+    latestMutationIdRef.current = mutationId;
+
+    saveMutation.mutate({
+      checked,
+      wsId,
+      courseId,
+      moduleId,
+      moduleKey,
+      mutationId,
+    });
   };
 
   return (

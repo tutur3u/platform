@@ -18,6 +18,13 @@ interface Props {
   content?: JSONContent;
 }
 
+function isSameContent(
+  left: JSONContent | null | undefined,
+  right: JSONContent | null | undefined
+) {
+  return JSON.stringify(left ?? null) === JSON.stringify(right ?? null);
+}
+
 export function ModuleContentEditor({
   wsId,
   courseId,
@@ -67,11 +74,13 @@ export function ModuleContentEditor({
     saveInFlightRef.current = true;
     const revision = queuedRevisionRef.current;
     const nextContent = queuedContentRef.current;
+    let didPersist = false;
 
     try {
       await saveContentRef.current(nextContent);
       if (sessionId === editorSessionRef.current) {
         lastPersistedRevisionRef.current = revision;
+        didPersist = true;
       }
     } catch {
       // `useMutation` already reports the error via `onError`.
@@ -80,11 +89,16 @@ export function ModuleContentEditor({
       saveInFlightRef.current = false;
 
       if (
+        didPersist &&
         pendingServerContentRef.current !== undefined &&
+        queuedSessionRef.current === sessionId &&
         queuedRevisionRef.current === lastPersistedRevisionRef.current
       ) {
-        queuedContentRef.current = pendingServerContentRef.current;
-        setPost(pendingServerContentRef.current);
+        if (isSameContent(pendingServerContentRef.current, nextContent)) {
+          queuedContentRef.current = pendingServerContentRef.current;
+          setPost(pendingServerContentRef.current);
+        }
+
         pendingServerContentRef.current = undefined;
       }
 
