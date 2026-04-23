@@ -1353,7 +1353,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboardQuickLaunch => 'Mở nhanh';
 
   @override
-  String get dashboardAssignedToMe => 'Được giao cho tôi';
+  String get dashboardAssignedToMe => 'Việc của tôi';
 
   @override
   String get dashboardUpcomingEvents => 'Sự kiện sắp tới';

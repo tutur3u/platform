@@ -1353,7 +1353,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardQuickLaunch => 'Quick launch';
 
   @override
-  String get dashboardAssignedToMe => 'Assigned to me';
+  String get dashboardAssignedToMe => 'My tasks';
 
   @override
   String get dashboardUpcomingEvents => 'Upcoming events';

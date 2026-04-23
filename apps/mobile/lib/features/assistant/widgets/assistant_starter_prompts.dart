@@ -74,9 +74,8 @@ class _StarterPromptCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final shellBackground = Color.alphaBlend(
-      prompt.shadow.withValues(alpha: isDark ? 0.3 : 0.2),
+    final surfaceColor = Color.alphaBlend(
+      prompt.shadow.withValues(alpha: 0.22),
       prompt.background,
     );
 
@@ -84,13 +83,13 @@ class _StarterPromptCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(26),
       onTap: onTap,
       child: Material(
-        color: shellBackground,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(26),
         clipBehavior: Clip.antiAlias,
         child: Container(
           width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 132),
-          padding: const EdgeInsets.all(16),
+          constraints: const BoxConstraints(minHeight: 126),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(26),
             gradient: LinearGradient(
@@ -98,57 +97,63 @@ class _StarterPromptCard extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: [
                 Color.alphaBlend(
-                  prompt.iconBackground.withValues(alpha: 0.2),
+                  prompt.iconBackground.withValues(alpha: 0.14),
                   prompt.background,
                 ),
-                shellBackground,
+                surfaceColor,
               ],
             ),
             border: Border.all(color: prompt.border.withValues(alpha: 0.95)),
             boxShadow: [
               BoxShadow(
-                color: prompt.border.withValues(alpha: isDark ? 0.18 : 0.12),
-                blurRadius: 30,
-                spreadRadius: 2,
-              ),
-              BoxShadow(
-                color: prompt.shadow.withValues(alpha: isDark ? 0.32 : 0.16),
-                blurRadius: 20,
+                color: prompt.shadow,
+                blurRadius: 18,
                 offset: const Offset(0, 10),
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 58,
+                height: 58,
                 decoration: BoxDecoration(
                   color: prompt.iconBackground,
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 child: Icon(
                   prompt.icon,
                   color: prompt.iconColor,
-                  size: 22,
+                  size: 28,
                 ),
               ),
-              const SizedBox(height: 14),
-              Text(
-                prompt.label,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: prompt.textColor,
-                  fontWeight: FontWeight.w800,
-                  height: 1.16,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                prompt.caption,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: prompt.textColor.withValues(alpha: 0.78),
-                  height: 1.32,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      prompt.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: prompt.textColor,
+                        fontWeight: FontWeight.w900,
+                        height: 1.05,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      prompt.caption,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: prompt.textColor.withValues(alpha: 0.8),
+                        height: 1.34,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -186,9 +191,25 @@ class _StarterPrompt {
 }
 
 List<_StarterPrompt> _starterPrompts(BuildContext context) {
-  final palettes = List.generate(
-    4,
-    (index) => AppCardPalette.resolve(context, index: index),
+  final focusPalette = AppCardPalette.resolve(
+    context,
+    index: 0,
+    moduleId: 'drive',
+  );
+  final planPalette = AppCardPalette.resolve(
+    context,
+    index: 1,
+    moduleId: 'calendar',
+  );
+  final backlogPalette = AppCardPalette.resolve(
+    context,
+    index: 2,
+    moduleId: 'finance',
+  );
+  final draftPalette = AppCardPalette.resolve(
+    context,
+    index: 3,
+    moduleId: 'crm',
   );
 
   return [
@@ -197,48 +218,48 @@ List<_StarterPrompt> _starterPrompts(BuildContext context) {
       prompt: context.l10n.assistantStarterFocus,
       caption: context.l10n.assistantStarterCaptionFocus,
       icon: Icons.track_changes_rounded,
-      background: palettes[0].background,
-      border: palettes[0].border,
-      shadow: palettes[0].shadow,
-      iconBackground: palettes[0].iconBackground,
-      iconColor: palettes[0].iconColor,
-      textColor: palettes[0].textColor,
+      background: focusPalette.background,
+      border: focusPalette.border,
+      shadow: focusPalette.shadow,
+      iconBackground: focusPalette.iconBackground,
+      iconColor: focusPalette.iconColor,
+      textColor: focusPalette.textColor,
     ),
     _StarterPrompt(
       label: context.l10n.assistantStarterPlan,
       prompt: context.l10n.assistantStarterPlan,
       caption: context.l10n.assistantStarterCaptionPlan,
       icon: Icons.event_note_rounded,
-      background: palettes[1].background,
-      border: palettes[1].border,
-      shadow: palettes[1].shadow,
-      iconBackground: palettes[1].iconBackground,
-      iconColor: palettes[1].iconColor,
-      textColor: palettes[1].textColor,
+      background: planPalette.background,
+      border: planPalette.border,
+      shadow: planPalette.shadow,
+      iconBackground: planPalette.iconBackground,
+      iconColor: planPalette.iconColor,
+      textColor: planPalette.textColor,
     ),
     _StarterPrompt(
       label: context.l10n.assistantStarterBacklog,
       prompt: context.l10n.assistantStarterBacklog,
       caption: context.l10n.assistantStarterCaptionBacklog,
       icon: Icons.inventory_2_outlined,
-      background: palettes[3].background,
-      border: palettes[3].border,
-      shadow: palettes[3].shadow,
-      iconBackground: palettes[3].iconBackground,
-      iconColor: palettes[3].iconColor,
-      textColor: palettes[3].textColor,
+      background: backlogPalette.background,
+      border: backlogPalette.border,
+      shadow: backlogPalette.shadow,
+      iconBackground: backlogPalette.iconBackground,
+      iconColor: backlogPalette.iconColor,
+      textColor: backlogPalette.textColor,
     ),
     _StarterPrompt(
       label: context.l10n.assistantStarterDraft,
       prompt: context.l10n.assistantStarterDraft,
       caption: context.l10n.assistantStarterCaptionDraft,
       icon: Icons.edit_outlined,
-      background: palettes[2].background,
-      border: palettes[2].border,
-      shadow: palettes[2].shadow,
-      iconBackground: palettes[2].iconBackground,
-      iconColor: palettes[2].iconColor,
-      textColor: palettes[2].textColor,
+      background: draftPalette.background,
+      border: draftPalette.border,
+      shadow: draftPalette.shadow,
+      iconBackground: draftPalette.iconBackground,
+      iconColor: draftPalette.iconColor,
+      textColor: draftPalette.textColor,
     ),
   ];
 }

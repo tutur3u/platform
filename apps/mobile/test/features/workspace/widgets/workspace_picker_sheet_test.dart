@@ -86,10 +86,10 @@ void main() {
       expect(find.text('Product'), findsOneWidget);
       expect(find.text('Ops'), findsOneWidget);
       expect(find.text('Design'), findsOneWidget);
-      expect(find.text(workspaceTierPlus), findsOneWidget);
-      expect(find.text(workspaceTierPro), findsOneWidget);
-      expect(find.text(workspaceTierEnterprise), findsOneWidget);
-      expect(find.text(workspaceTierFree), findsOneWidget);
+      expect(find.text('Plus'), findsOneWidget);
+      expect(find.text('Pro'), findsOneWidget);
+      expect(find.text('Enterprise'), findsOneWidget);
+      expect(find.text('Free'), findsOneWidget);
     });
   });
 }

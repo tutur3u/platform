@@ -2722,7 +2722,7 @@ abstract class AppLocalizations {
   /// No description provided for @dashboardAssignedToMe.
   ///
   /// In en, this message translates to:
-  /// **'Assigned to me'**
+  /// **'My tasks'**
   String get dashboardAssignedToMe;
 
   /// No description provided for @dashboardUpcomingEvents.

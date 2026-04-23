@@ -68,9 +68,9 @@ void main() {
       expect(find.text('Alex Nguyen'), findsOneWidget);
       expect(find.text('Platform'), findsOneWidget);
       expect(find.text('Product'), findsOneWidget);
-      expect(find.text(workspaceTierPlus), findsOneWidget);
-      expect(find.text(workspaceTierEnterprise), findsOneWidget);
-      expect(find.text(workspaceTierPro), findsOneWidget);
+      expect(find.text('Plus'), findsOneWidget);
+      expect(find.text('Enterprise'), findsOneWidget);
+      expect(find.text('Pro'), findsOneWidget);
     });
   });
 }

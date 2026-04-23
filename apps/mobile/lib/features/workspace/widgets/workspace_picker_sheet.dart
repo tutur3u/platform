@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/create_workspace_dialog.dart';
@@ -83,6 +84,7 @@ class _WorkspacePickerContent extends StatelessWidget {
               title: _isDefaultMode
                   ? l10n.workspaceDefaultPickerTitle
                   : l10n.workspacePickerTitle,
+              subtitle: l10n.workspaceSelectTitle,
               canCreate: state.limits?.canCreate ?? true,
               createLabel: l10n.workspaceCreateNew,
               onCreate: () => _handleCreate(context),
@@ -98,9 +100,11 @@ class _WorkspacePickerContent extends StatelessWidget {
             if (sections.personal.isNotEmpty)
               _WorkspacePickerSection(
                 title: l10n.workspacePersonalSection,
+                paletteModuleId: 'crm',
                 children: [
                   for (final workspace in sections.personal)
                     _WorkspaceTile(
+                      paletteModuleId: 'crm',
                       workspace: workspace,
                       isSelected: _isSelected(workspace),
                       isCurrent: workspace.id == state.currentWorkspace?.id,
@@ -113,9 +117,11 @@ class _WorkspacePickerContent extends StatelessWidget {
               if (sections.personal.isNotEmpty) const shad.Gap(16),
               _WorkspacePickerSection(
                 title: l10n.workspaceSystemSection,
+                paletteModuleId: 'calendar',
                 children: [
                   for (final workspace in sections.system)
                     _WorkspaceTile(
+                      paletteModuleId: 'calendar',
                       workspace: workspace,
                       isSelected: _isSelected(workspace),
                       isCurrent: workspace.id == state.currentWorkspace?.id,
@@ -129,9 +135,11 @@ class _WorkspacePickerContent extends StatelessWidget {
               const shad.Gap(16),
               _WorkspacePickerSection(
                 title: l10n.workspacePickerTitle,
+                paletteModuleId: 'finance',
                 children: [
                   for (final workspace in sections.team)
                     _WorkspaceTile(
+                      paletteModuleId: 'finance',
                       workspace: workspace,
                       isSelected: _isSelected(workspace),
                       isCurrent: workspace.id == state.currentWorkspace?.id,
@@ -188,77 +196,115 @@ class _WorkspacePickerContent extends StatelessWidget {
 class _PickerHeader extends StatelessWidget {
   const _PickerHeader({
     required this.title,
+    required this.subtitle,
     required this.canCreate,
     required this.createLabel,
     required this.onCreate,
   });
 
   final String title;
+  final String subtitle;
   final bool canCreate;
   final String createLabel;
   final VoidCallback onCreate;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final palette = AppCardPalette.resolve(
+      context,
+      index: 0,
+      moduleId: 'drive',
+    );
     final theme = shad.Theme.of(context);
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: theme.typography.h4.copyWith(
-              fontWeight: FontWeight.w800,
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: palette.background,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: palette.border.withValues(alpha: 0.95)),
+        boxShadow: [
+          BoxShadow(
+            color: palette.shadow,
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.typography.h4.copyWith(
+                    color: palette.textColor,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const shad.Gap(6),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.small.copyWith(
+                    color: palette.textColor.withValues(alpha: 0.78),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-        const shad.Gap(12),
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: canCreate ? onCreate : null,
-            child: Ink(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: canCreate
-                    ? colorScheme.primary.withValues(alpha: 0.10)
-                    : colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
+          const shad.Gap(12),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: canCreate ? onCreate : null,
+              child: Ink(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
                   color: canCreate
-                      ? colorScheme.primary.withValues(alpha: 0.18)
-                      : colorScheme.outlineVariant.withValues(alpha: 0.18),
+                      ? palette.iconBackground
+                      : palette.iconBackground.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: palette.border.withValues(alpha: 0.48),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.add_rounded,
+                      size: 16,
+                      color: canCreate
+                          ? palette.iconColor
+                          : palette.iconColor.withValues(alpha: 0.6),
+                    ),
+                    const shad.Gap(6),
+                    Text(
+                      createLabel,
+                      style: theme.typography.small.copyWith(
+                        color: canCreate
+                            ? palette.textColor
+                            : palette.textColor.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.add_rounded,
-                    size: 16,
-                    color: canCreate
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
-                  ),
-                  const shad.Gap(6),
-                  Text(
-                    createLabel,
-                    style: theme.typography.small.copyWith(
-                      color: canCreate
-                          ? colorScheme.primary
-                          : colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -274,16 +320,27 @@ class _WorkspaceLimitsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final palette = AppCardPalette.resolve(
+      context,
+      index: 1,
+      moduleId: 'finance',
+    );
     final theme = shad.Theme.of(context);
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
+        color: palette.background,
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.18),
+          color: palette.border.withValues(alpha: 0.9),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: palette.shadow,
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -295,13 +352,14 @@ class _WorkspaceLimitsCard extends StatelessWidget {
                   child: Text(
                     context.l10n.workspaceCreateLimitInfo(currentCount, limit),
                     style: theme.typography.small.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                      color: palette.textColor.withValues(alpha: 0.78),
                     ),
                   ),
                 ),
                 Text(
                   '$currentCount / $limit',
                   style: theme.typography.small.copyWith(
+                    color: palette.textColor,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -319,15 +377,21 @@ class _WorkspaceLimitsCard extends StatelessWidget {
 class _WorkspacePickerSection extends StatelessWidget {
   const _WorkspacePickerSection({
     required this.title,
+    required this.paletteModuleId,
     required this.children,
   });
 
   final String title;
+  final String paletteModuleId;
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final palette = AppCardPalette.resolve(
+      context,
+      index: 0,
+      moduleId: paletteModuleId,
+    );
     final theme = shad.Theme.of(context);
 
     return Column(
@@ -338,20 +402,27 @@ class _WorkspacePickerSection extends StatelessWidget {
           child: Text(
             title,
             style: theme.typography.small.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.3,
+              color: palette.textColor.withValues(alpha: 0.74),
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.35,
             ),
           ),
         ),
         const shad.Gap(10),
         DecoratedBox(
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerLow,
+            color: palette.background,
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.18),
+              color: palette.border.withValues(alpha: 0.9),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: palette.shadow,
+                blurRadius: 14,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: Column(
             children: [
@@ -361,7 +432,7 @@ class _WorkspacePickerSection extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Container(
                       height: 1,
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.18),
+                      color: palette.border.withValues(alpha: 0.28),
                     ),
                   ),
                 children[index],
@@ -376,6 +447,7 @@ class _WorkspacePickerSection extends StatelessWidget {
 
 class _WorkspaceTile extends StatelessWidget {
   const _WorkspaceTile({
+    required this.paletteModuleId,
     required this.workspace,
     required this.isSelected,
     required this.isCurrent,
@@ -383,6 +455,7 @@ class _WorkspaceTile extends StatelessWidget {
     required this.onTap,
   });
 
+  final String paletteModuleId;
   final Workspace workspace;
   final bool isSelected;
   final bool isCurrent;
@@ -391,7 +464,11 @@ class _WorkspaceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final palette = AppCardPalette.resolve(
+      context,
+      index: 0,
+      moduleId: paletteModuleId,
+    );
     final theme = shad.Theme.of(context);
 
     return Material(
@@ -403,9 +480,14 @@ class _WorkspaceTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             color: isSelected
-                ? colorScheme.primary.withValues(alpha: 0.08)
+                ? palette.iconBackground.withValues(alpha: 0.82)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: isSelected
+                  ? palette.border.withValues(alpha: 0.72)
+                  : Colors.transparent,
+            ),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -421,6 +503,7 @@ class _WorkspaceTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.large.copyWith(
+                        color: palette.textColor,
                         fontWeight: isSelected
                             ? FontWeight.w700
                             : FontWeight.w600,
@@ -431,13 +514,18 @@ class _WorkspaceTile extends StatelessWidget {
                       spacing: 6,
                       runSpacing: 6,
                       children: [
-                        WorkspaceTierBadge(tier: workspace.tier),
+                        WorkspaceTierBadge(
+                          tier: workspace.tier,
+                          accentColorOverride: palette.iconColor,
+                        ),
                         if (isCurrent)
                           _WorkspaceMetaChip(
+                            palette: palette,
                             label: context.l10n.workspaceCurrentBadge,
                           ),
                         if (isDefault)
                           _WorkspaceMetaChip(
+                            palette: palette,
                             label: context.l10n.workspaceDefaultBadge,
                           ),
                       ],
@@ -451,9 +539,14 @@ class _WorkspaceTile extends StatelessWidget {
                 height: 28,
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? colorScheme.primary.withValues(alpha: 0.12)
-                      : colorScheme.surfaceContainerHighest,
+                      ? palette.background
+                      : palette.iconBackground,
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: palette.border.withValues(
+                      alpha: isSelected ? 0.55 : 0.36,
+                    ),
+                  ),
                 ),
                 child: Icon(
                   isSelected
@@ -461,8 +554,8 @@ class _WorkspaceTile extends StatelessWidget {
                       : Icons.chevron_right_rounded,
                   size: 16,
                   color: isSelected
-                      ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
+                      ? palette.iconColor
+                      : palette.textColor.withValues(alpha: 0.72),
                 ),
               ),
             ],
@@ -490,27 +583,29 @@ class _WorkspaceLeading extends StatelessWidget {
 
 class _WorkspaceMetaChip extends StatelessWidget {
   const _WorkspaceMetaChip({
+    required this.palette,
     required this.label,
   });
 
+  final AppCardPalette palette;
   final String label;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final theme = shad.Theme.of(context);
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
+        color: palette.iconBackground,
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: palette.border.withValues(alpha: 0.36)),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Text(
           label,
           style: theme.typography.xSmall.copyWith(
-            color: colorScheme.onSurfaceVariant,
+            color: palette.textColor.withValues(alpha: 0.8),
             fontWeight: FontWeight.w700,
           ),
         ),
