@@ -22,6 +22,7 @@ import type * as Y from 'yjs';
 import { CustomImage } from './image-extension';
 import { ListConverter } from './list-converter-extension';
 import { ListItemBase } from './list-item-extension';
+import { MarkdownPaste } from './markdown-paste-extension';
 import { Mention } from './mention-extension';
 import { NodeDrag } from './node-drag-extension';
 import { TaskItemCheckbox } from './task-item-checkbox-extension';
@@ -146,6 +147,7 @@ export function getEditorExtensions({
       emptyNodeClass: 'is-empty',
     }),
     TextShortcuts,
+    MarkdownPaste,
     Highlight,
     Link.configure({
       openOnClick: true,
