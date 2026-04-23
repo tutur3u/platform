@@ -11,27 +11,15 @@ class AssistantLiveRepository {
     required String wsId,
     String? chatId,
     String? model,
+    bool forceFresh = false,
   }) async {
     final response = await _apiClient.postJson('/api/v1/assistant/live/token', {
       'wsId': wsId,
       if (chatId != null) 'chatId': chatId,
       if (model != null) 'model': model,
+      if (forceFresh) 'forceFresh': true,
     });
     return AssistantLiveTokenEnvelope.fromJson(response);
-  }
-
-  Future<String?> fetchSessionHandle({
-    required String wsId,
-    required String scopeKey,
-  }) async {
-    final query = Uri(
-      queryParameters: {
-        'wsId': wsId,
-        'scopeKey': scopeKey,
-      },
-    ).query;
-    final response = await _apiClient.getJson('/api/v1/live/session?$query');
-    return response['sessionHandle'] as String?;
   }
 
   Future<void> storeSessionHandle({

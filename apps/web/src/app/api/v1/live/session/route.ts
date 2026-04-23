@@ -22,7 +22,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = await createClient(req);
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -86,7 +86,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = await createClient(req);
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -158,7 +158,7 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = await createClient(req);
     const {
       data: { user },
     } = await supabase.auth.getUser();

@@ -15,6 +15,8 @@ import { isFeatureAvailable } from '@/lib/feature-tiers';
 import { MIRA_LIVE_SCOPE_KEY } from '@/lib/live/session-scope';
 import { createConstrainedLiveToken } from '@/lib/live/token-builder';
 
+const MIRA_LIVE_MODEL = 'gemini-3.1-flash-live-preview';
+
 const MIRA_SYSTEM_INSTRUCTION = `
 MIRA - YOUR PERSONAL AI COMPANION
 
@@ -197,7 +199,7 @@ export async function POST(request: Request) {
     }
 
     const token = await createConstrainedLiveToken({
-      model: 'gemini-3.1-flash-live-preview',
+      model: MIRA_LIVE_MODEL,
       systemInstruction: MIRA_SYSTEM_INSTRUCTION,
       tools: [{ functionDeclarations: MIRA_TOOL_DECLARATIONS }],
       toolConfig: {
@@ -205,14 +207,14 @@ export async function POST(request: Request) {
           mode: 'AUTO',
         },
       },
-      responseModalities: [Modality.TEXT, Modality.AUDIO],
+      responseModalities: [Modality.AUDIO],
       thinkingLevel: ThinkingLevel.MINIMAL,
     });
 
     return Response.json({
       token,
       scopeKey: MIRA_LIVE_SCOPE_KEY,
-      model: 'gemini-3.1-flash-live-preview',
+      model: MIRA_LIVE_MODEL,
     });
   } catch (error) {
     console.error('Error generating Mira token:', error);

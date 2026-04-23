@@ -22,7 +22,7 @@ export function buildLiveConnectConfig({
   systemInstruction,
   tools,
   toolConfig,
-  responseModalities = [Modality.TEXT, Modality.AUDIO],
+  responseModalities = [Modality.AUDIO],
   voiceName = 'Aoede',
   thinkingLevel = ThinkingLevel.MINIMAL,
   sessionHandle,

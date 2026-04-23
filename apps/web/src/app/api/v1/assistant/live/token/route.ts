@@ -1,5 +1,6 @@
 import { Modality, ThinkingLevel } from '@google/genai';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   getWorkspaceTier,
   normalizeWorkspaceId,
@@ -19,13 +20,46 @@ import {
 import { assistantChatScopeKey } from '@/lib/live/session-scope';
 import { createConstrainedLiveToken } from '@/lib/live/token-builder';
 
+async function loadStoredSessionHandle({
+  supabase,
+  normalizedWsId,
+  scopeKey,
+  userId,
+}: {
+  supabase: TypedSupabaseClient;
+  normalizedWsId: string;
+  scopeKey: string;
+  userId: string;
+}) {
+  const { data, error } = await supabase
+    .from('live_api_sessions' as never)
+    .select('session_handle, expires_at')
+    .eq('user_id', userId)
+    .eq('ws_id', normalizedWsId)
+    .eq('scope_key', scopeKey)
+    .gt('expires_at', new Date().toISOString())
+    .maybeSingle();
+
+  if (error != null) {
+    console.error(
+      'Failed to load assistant live session handle during token mint:',
+      error
+    );
+    return null;
+  }
+
+  const session = data as { session_handle?: string } | null;
+  return session?.session_handle ?? null;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { wsId, chatId, model } = body as {
+    const { wsId, chatId, model, forceFresh } = body as {
       wsId?: string;
       chatId?: string;
       model?: string;
+      forceFresh?: boolean;
     };
 
     if (!wsId) {
@@ -77,19 +111,8 @@ export async function POST(request: Request) {
     }
 
     const resolvedModel = model ?? ASSISTANT_LIVE_MODEL;
-    const chat = await ensureAssistantLiveChat({
-      supabase,
-      userId: user.id,
-      chatId,
-      model: resolvedModel,
-    });
-    const seedHistory = await loadAssistantLiveSeedHistory({
-      supabase,
-      chatId: chat.id,
-      userId: user.id,
-    });
-
-    const token = await createConstrainedLiveToken({
+    const shouldForceFresh = forceFresh === true;
+    const tokenPromise = createConstrainedLiveToken({
       model: resolvedModel,
       systemInstruction: ASSISTANT_SYSTEM_INSTRUCTION,
       tools: [
@@ -97,15 +120,45 @@ export async function POST(request: Request) {
         { googleSearch: {} },
       ],
       toolConfig: ASSISTANT_LIVE_TOOL_CONFIG,
-      responseModalities: [Modality.TEXT, Modality.AUDIO],
+      responseModalities: [Modality.AUDIO],
       thinkingLevel: ThinkingLevel.MINIMAL,
     });
+
+    const chat = await ensureAssistantLiveChat({
+      supabase,
+      userId: user.id,
+      chatId,
+      model: resolvedModel,
+    });
+    const scopeKey = assistantChatScopeKey(chat.id);
+    const sessionHandlePromise = shouldForceFresh
+      ? Promise.resolve<string | null>(null)
+      : loadStoredSessionHandle({
+          supabase,
+          normalizedWsId,
+          scopeKey,
+          userId: user.id,
+        });
+
+    const [token, sessionHandle] = await Promise.all([
+      tokenPromise,
+      sessionHandlePromise,
+    ]);
+    const seedHistory =
+      shouldForceFresh || sessionHandle == null
+        ? await loadAssistantLiveSeedHistory({
+            supabase,
+            chatId: chat.id,
+            userId: user.id,
+          })
+        : [];
 
     return Response.json({
       token,
       chatId: chat.id,
-      scopeKey: assistantChatScopeKey(chat.id),
+      scopeKey,
       model: resolvedModel,
+      sessionHandle,
       seedHistory,
     });
   } catch (error) {

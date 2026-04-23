@@ -127,7 +127,7 @@ class AssistantLiveSocketClient {
       'setup': {
         'model': model,
         'config': {
-          'responseModalities': ['TEXT', 'AUDIO'],
+          'responseModalities': ['AUDIO'],
           'historyConfig': {
             'initialHistoryInClientContent': true,
           },

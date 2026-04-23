@@ -93,20 +93,13 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         wsId: wsId,
         chatId: chatId ?? state.chatId,
         model: model ?? state.model ?? assistantLiveModelId,
+        forceFresh: forceFresh,
       );
       if (_isStale(requestVersion)) {
         return;
       }
 
-      final sessionHandle = forceFresh
-          ? null
-          : await _repository.fetchSessionHandle(
-              wsId: wsId,
-              scopeKey: envelope.scopeKey,
-            );
-      if (_isStale(requestVersion)) {
-        return;
-      }
+      final sessionHandle = forceFresh ? null : envelope.sessionHandle;
 
       emit(
         state.copyWith(

@@ -76,7 +76,7 @@ export async function POST(request: Request) {
         { googleSearch: {} },
       ],
       toolConfig: ASSISTANT_LIVE_TOOL_CONFIG,
-      responseModalities: [Modality.TEXT, Modality.AUDIO],
+      responseModalities: [Modality.AUDIO],
       thinkingLevel: ThinkingLevel.MINIMAL,
     });
 

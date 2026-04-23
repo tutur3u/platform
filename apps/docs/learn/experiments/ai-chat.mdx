@@ -34,6 +34,10 @@ The mobile app still uses the existing internal APIs for Live sessions:
 
 These routes mint constrained ephemeral Gemini Live tokens, persist resumable session handles, execute synchronous tool calls, and sync completed live turns back into the chat thread.
 
+The token route now returns the latest resumable session handle together with the ephemeral token. Mobile uses that bundled handle to skip a follow-up read before opening the socket, and only falls back to loading seed chat history when there is no resumable handle or the user explicitly starts a fresh live conversation.
+
+Gemini 3.1 Flash Live should stay on a single `AUDIO` response modality for the live session config. The mobile UI relies on input/output audio transcription streams for inline text instead of requesting simultaneous `TEXT` and `AUDIO` outputs.
+
 ### Verification
 
 For mobile-only live-mode changes, the required verification path is:

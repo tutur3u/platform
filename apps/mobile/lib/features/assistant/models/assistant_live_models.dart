@@ -56,6 +56,7 @@ class AssistantLiveTokenEnvelope extends Equatable {
     required this.chatId,
     required this.scopeKey,
     required this.model,
+    required this.sessionHandle,
     required this.seedHistory,
   });
 
@@ -65,6 +66,7 @@ class AssistantLiveTokenEnvelope extends Equatable {
         chatId: json['chatId'] as String,
         scopeKey: json['scopeKey'] as String,
         model: json['model'] as String,
+        sessionHandle: json['sessionHandle'] as String?,
         seedHistory: (json['seedHistory'] as List<dynamic>? ?? const [])
             .whereType<Map<String, dynamic>>()
             .map(AssistantLiveSeedContent.fromJson)
@@ -75,10 +77,18 @@ class AssistantLiveTokenEnvelope extends Equatable {
   final String chatId;
   final String scopeKey;
   final String model;
+  final String? sessionHandle;
   final List<AssistantLiveSeedContent> seedHistory;
 
   @override
-  List<Object?> get props => [token, chatId, scopeKey, model, seedHistory];
+  List<Object?> get props => [
+    token,
+    chatId,
+    scopeKey,
+    model,
+    sessionHandle,
+    seedHistory,
+  ];
 }
 
 class AssistantLiveFunctionCall extends Equatable {
