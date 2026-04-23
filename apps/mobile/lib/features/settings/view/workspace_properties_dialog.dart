@@ -142,7 +142,7 @@ class _WorkspacePropertiesDialogState
         );
       }
 
-      await workspaceCubit.loadWorkspaces();
+      await workspaceCubit.loadWorkspaces(forceRefresh: true);
 
       if (!mounted) {
         return;

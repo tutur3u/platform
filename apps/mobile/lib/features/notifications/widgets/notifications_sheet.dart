@@ -358,7 +358,7 @@ class _NotificationsViewState extends State<NotificationsView> {
       if (!context.mounted) {
         return;
       }
-      await workspaceCubit.loadWorkspaces();
+      await workspaceCubit.loadWorkspaces(forceRefresh: true);
       if (!context.mounted) {
         return;
       }

@@ -136,7 +136,7 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
 
   Future<void> _refresh(BuildContext context) async {
     final workspaceCubit = context.read<WorkspaceCubit>();
-    await workspaceCubit.loadWorkspaces();
+    await workspaceCubit.loadWorkspaces(forceRefresh: true);
     if (!mounted) {
       return;
     }

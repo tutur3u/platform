@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
+import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/workspace_repository.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -21,62 +22,50 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
   /// 2. Local default workspace cache (offline fallback)
   /// 3. SharedPreferences cache for the current session workspace
   /// 4. Auto-select if only one workspace exists
-  Future<void> loadWorkspaces() async {
-    emit(state.copyWith(status: WorkspaceStatus.loading));
+  Future<void> loadWorkspaces({bool forceRefresh = false}) async {
+    final cached = forceRefresh
+        ? const CacheReadResult<List<Workspace>>(state: CacheEntryState.missing)
+        : await _repo.readCachedWorkspaces();
+    final hasCachedWorkspaces = cached.hasValue && cached.data != null;
+
+    if (hasCachedWorkspaces) {
+      emit(
+        await _buildResolvedState(
+          cached.data!,
+          status: WorkspaceStatus.loaded,
+          includeServerDefault: false,
+        ),
+      );
+
+      if (cached.isFresh) {
+        unawaited(_loadLimits());
+        return;
+      }
+    } else {
+      emit(
+        state.copyWith(
+          status: WorkspaceStatus.loading,
+          error: null,
+        ),
+      );
+    }
 
     try {
       final workspaces = await _repo.getWorkspaces();
-
-      Workspace? current;
-      Workspace? defaultWorkspace;
-
-      // 1. Try server-side default
-      final serverDefault = await _repo.getDefaultWorkspace();
-      if (serverDefault != null) {
-        defaultWorkspace = workspaces
-            .where((w) => w.id == serverDefault.id)
-            .firstOrNull;
-      }
-
-      // 2. Fallback to local default cache
-      if (defaultWorkspace == null) {
-        final localDefaultId = await _repo.loadDefaultWorkspaceId();
-        if (localDefaultId != null) {
-          defaultWorkspace = workspaces
-              .where((w) => w.id == localDefaultId)
-              .firstOrNull;
-        }
-      }
-
-      // 3. Fallback to SharedPreferences cache for current session
-      final saved = await _repo.loadSelectedWorkspace();
-      if (saved != null) {
-        current = workspaces.where((w) => w.id == saved.id).firstOrNull;
-      }
-
-      // 4. Otherwise use the resolved default workspace
-      current ??= defaultWorkspace;
-
-      // 5. Fallback to personal workspace
-      defaultWorkspace ??= workspaces.where((w) => w.personal).firstOrNull;
-      current ??= defaultWorkspace;
-
-      // 6. Auto-select if only one workspace
-      current ??= workspaces.length == 1 ? workspaces.first : null;
-      defaultWorkspace ??= current;
-
       emit(
-        state.copyWith(
+        await _buildResolvedState(
+          workspaces,
           status: WorkspaceStatus.loaded,
-          workspaces: workspaces,
-          currentWorkspace: current,
-          defaultWorkspace: defaultWorkspace,
+          includeServerDefault: true,
         ),
       );
 
       // Load limits in background (non-blocking)
       unawaited(_loadLimits());
     } on Exception catch (e) {
+      if (hasCachedWorkspaces) {
+        return;
+      }
       emit(
         state.copyWith(
           status: WorkspaceStatus.error,
@@ -118,6 +107,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
           workspaces: [...state.workspaces, result.workspace],
         ),
       );
+      await _repo.saveCachedWorkspaces(state.workspaces);
 
       // Refresh limits after creation
       unawaited(_loadLimits());
@@ -145,5 +135,55 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
   Future<void> clearWorkspaces() async {
     await _repo.clearSelectedWorkspace();
     emit(const WorkspaceState());
+  }
+
+  Future<WorkspaceState> _buildResolvedState(
+    List<Workspace> workspaces, {
+    required WorkspaceStatus status,
+    required bool includeServerDefault,
+  }) async {
+    Workspace? current;
+    Workspace? defaultWorkspace;
+
+    if (includeServerDefault) {
+      final serverDefault = await _repo.getDefaultWorkspace();
+      if (serverDefault != null) {
+        defaultWorkspace = workspaces
+            .where((workspace) => workspace.id == serverDefault.id)
+            .firstOrNull;
+      }
+    }
+
+    if (defaultWorkspace == null) {
+      final localDefaultId = await _repo.loadDefaultWorkspaceId();
+      if (localDefaultId != null) {
+        defaultWorkspace = workspaces
+            .where((workspace) => workspace.id == localDefaultId)
+            .firstOrNull;
+      }
+    }
+
+    final saved = await _repo.loadSelectedWorkspace();
+    if (saved != null) {
+      current = workspaces
+          .where((workspace) => workspace.id == saved.id)
+          .firstOrNull;
+    }
+
+    current ??= defaultWorkspace;
+    defaultWorkspace ??= workspaces
+        .where((workspace) => workspace.personal)
+        .firstOrNull;
+    current ??= defaultWorkspace;
+    current ??= workspaces.length == 1 ? workspaces.first : null;
+    defaultWorkspace ??= current;
+
+    return state.copyWith(
+      status: status,
+      workspaces: workspaces,
+      currentWorkspace: current,
+      defaultWorkspace: defaultWorkspace,
+      error: null,
+    );
   }
 }

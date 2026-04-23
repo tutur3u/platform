@@ -3,6 +3,11 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/data/models/user_profile.dart';
@@ -27,6 +32,8 @@ class WorkspaceRepository {
       'workspace_subscription_products(tier))';
   static const _workspaceWithTierSelect =
       '$_workspaceBaseSelect, $_workspaceSubscriptionTierSelect';
+  static const CachePolicy _workspacesCachePolicy = CachePolicies.metadata;
+  static const _workspacesCacheTag = 'workspace:list';
 
   final ApiClient _api;
   final http.Client _httpClient;
@@ -107,14 +114,55 @@ class WorkspaceRepository {
 
   static const _defaultWorkspaceIdKey = 'default-workspace-id';
 
-  /// Fetches workspaces the current user belongs to.
-  Future<List<Workspace>> getWorkspaces() async {
+  static CacheKey _workspacesCacheKey() {
+    return CacheKey(
+      namespace: 'workspace.list',
+      userId: currentCacheUserId(),
+      locale: currentCacheLocaleTag(),
+    );
+  }
+
+  List<Workspace> _decodeWorkspaces(Object? json) {
+    if (json is! List) {
+      throw const FormatException('Invalid workspace cache payload.');
+    }
+
+    return json
+        .whereType<Map<String, dynamic>>()
+        .map(_workspaceFromJson)
+        .toList(growable: false);
+  }
+
+  Future<List<Workspace>> _fetchWorkspacesRemote() async {
     final list = await _api.getJsonList('/api/v1/workspaces');
     return list
         .whereType<Map<String, dynamic>>()
         .map(_workspaceFromJson)
         .whereType<Workspace>()
-        .toList();
+        .toList(growable: false);
+  }
+
+  /// Fetches workspaces the current user belongs to.
+  Future<List<Workspace>> getWorkspaces() async {
+    final workspaces = await _fetchWorkspacesRemote();
+    await saveCachedWorkspaces(workspaces);
+    return workspaces;
+  }
+
+  Future<CacheReadResult<List<Workspace>>> readCachedWorkspaces() {
+    return CacheStore.instance.read<List<Workspace>>(
+      key: _workspacesCacheKey(),
+      decode: _decodeWorkspaces,
+    );
+  }
+
+  Future<void> saveCachedWorkspaces(List<Workspace> workspaces) {
+    return CacheStore.instance.write(
+      key: _workspacesCacheKey(),
+      policy: _workspacesCachePolicy,
+      payload: workspaces.map((workspace) => workspace.toJson()).toList(),
+      tags: const [_workspacesCacheTag],
+    );
   }
 
   /// Fetches the server-side default workspace for the current user.

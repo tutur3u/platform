@@ -344,7 +344,7 @@ class _SettingsViewState extends State<_SettingsView> {
 
     await Future.wait([
       context.read<ProfileCubit>().loadProfile(forceRefresh: true),
-      workspaceCubit.loadWorkspaces(),
+      workspaceCubit.loadWorkspaces(forceRefresh: true),
       workspaceCubit.refreshLimits(),
       calendarCubit.loadUserPreference(),
       _loadMobileVersionsAccess(currentWorkspaceId, forceReload: true),

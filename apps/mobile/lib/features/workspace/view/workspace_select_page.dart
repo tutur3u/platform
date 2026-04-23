@@ -59,7 +59,9 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
           if (state.status == WorkspaceStatus.error) {
             return _ErrorView(
               error: state.error,
-              onRetry: () => context.read<WorkspaceCubit>().loadWorkspaces(),
+              onRetry: () => context.read<WorkspaceCubit>().loadWorkspaces(
+                forceRefresh: true,
+              ),
             );
           }
 
@@ -73,7 +75,9 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
             state: state,
             isSelecting: _isSelecting,
             selectingWorkspaceId: _selectingWorkspaceId,
-            onRefresh: () => context.read<WorkspaceCubit>().loadWorkspaces(),
+            onRefresh: () => context.read<WorkspaceCubit>().loadWorkspaces(
+              forceRefresh: true,
+            ),
             onSelect: _onSelectWorkspace,
           );
         },
