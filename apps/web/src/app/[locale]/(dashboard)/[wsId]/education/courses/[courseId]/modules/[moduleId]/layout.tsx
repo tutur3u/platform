@@ -63,7 +63,6 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
               wsId={resolvedWsId}
               courseId={courseId}
               moduleId={moduleId}
-              isPublic={data.is_public}
               isPublished={data.is_published}
             />
             <Separator className="my-2" />

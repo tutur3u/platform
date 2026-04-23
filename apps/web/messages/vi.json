@@ -9132,18 +9132,31 @@
     "workspaces-description": "Không gian làm việc mà bạn có quyền truy cập sẽ được liệt kê ở đây."
   },
   "share-course": {
+    "back_to_modules": "Quay lại danh sách mô-đun",
     "badge": "Khóa học được chia sẻ",
+    "collapse_all": "Thu gọn tất cả",
+    "course_outline": "Tổng quan khóa học",
+    "expand_all": "Mở rộng tất cả",
     "flashcard_count": "Có sẵn {count} thẻ ghi nhớ",
     "flashcard_label": "Thẻ ghi nhớ",
     "flashcard_short": "T",
+    "module_hint": "Hoàn thành nội dung rồi quay lại để chọn mô-đun khác.",
+    "module_label": "Mô-đun {index} / {total}",
+    "module_navigation": "Điều hướng mô-đun",
+    "module_progress": "Trạng thái mô-đun",
+    "module_subtitle": "Xem nội dung mô-đun và tài liệu liên quan.",
+    "modules_heading": "Mô-đun",
+    "next_module": "Mô-đun tiếp theo",
     "no_published_modules": "Chưa có mô-đun nào được xuất bản.",
+    "previous_module": "Mô-đun trước",
     "published_modules": "{count} mô-đun đã xuất bản",
     "quiz_count": "Có sẵn {count} câu hỏi",
     "quiz_label": "Câu hỏi",
     "quiz_set_label": "Bộ câu hỏi",
     "quiz_set_short": "B",
     "quiz_short": "C",
-    "select_module": "Chọn một mô-đun để xem nội dung"
+    "select_module": "Chọn một mô-đun để xem nội dung",
+    "view_module": "Mở mô-đun"
   },
   "sidebar_recent_items": {
     "board_badge": "Bảng",

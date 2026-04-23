@@ -9132,18 +9132,31 @@
     "workspaces-description": "Workspaces that you have access to will be listed here."
   },
   "share-course": {
+    "back_to_modules": "Back to modules",
     "badge": "Shared Course",
+    "collapse_all": "Collapse all",
+    "course_outline": "Course outline",
+    "expand_all": "Expand all",
     "flashcard_count": "{count, plural, =1 {1 flashcard} other {# flashcards}} available",
     "flashcard_label": "Flashcards",
     "flashcard_short": "F",
+    "module_hint": "Work through the content, then return to pick another module.",
+    "module_label": "Module {index} of {total}",
+    "module_navigation": "Module navigation",
+    "module_progress": "Module status",
+    "module_subtitle": "Review the module content and supporting materials.",
+    "modules_heading": "Modules",
+    "next_module": "Next module",
     "no_published_modules": "No published modules yet.",
+    "previous_module": "Previous module",
     "published_modules": "{count, plural, =1 {1 published module} other {# published modules}}",
     "quiz_count": "{count, plural, =1 {1 quiz} other {# quizzes}} available",
     "quiz_label": "Quizzes",
     "quiz_set_label": "Quiz sets",
     "quiz_set_short": "S",
     "quiz_short": "Q",
-    "select_module": "Select a module to view its content"
+    "select_module": "Select a module to view its content",
+    "view_module": "Open module"
   },
   "sidebar_recent_items": {
     "board_badge": "Board",
