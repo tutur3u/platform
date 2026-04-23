@@ -1,89 +1,166 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { withSessionAuth } from '@/lib/api-auth';
 
-interface Params {
-  params: Promise<{
-    setId: string;
-  }>;
-}
+const RouteParamsSchema = z.object({
+  setId: z.guid(),
+  wsId: z.string().min(1),
+});
 
-export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+const QuizSetUpdateSchema = z.object({
+  name: z.string().trim().min(1).max(255),
+});
 
-  const { moduleId: _, quiz_options, ...rest } = await req.json();
-  const { setId: id } = await params;
+async function validateWorkspaceAccess(
+  wsId: string,
+  userId: string,
+  supabase: TypedSupabaseClient
+) {
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: normalizedWsId,
+    userId,
+    supabase,
+  });
 
-  const { error } = await supabase
-    .from('workspace_quiz_sets')
-    .update(rest)
-    .eq('id', id);
-
-  if (error) {
-    console.log(error);
+  if (membership.error === 'membership_lookup_failed') {
     return NextResponse.json(
-      { message: 'Error updating workspace quiz set' },
+      { message: 'Failed to verify workspace access' },
       { status: 500 }
     );
   }
 
-  if (quiz_options) {
-    const { data: existingOptions } = await supabase
-      .from('quiz_options')
+  if (!membership.ok) {
+    return NextResponse.json(
+      { message: "You don't have access to this workspace" },
+      { status: 403 }
+    );
+  }
+
+  return { normalizedWsId };
+}
+
+export const PUT = withSessionAuth(
+  async (
+    request,
+    context,
+    params:
+      | { wsId: string; setId: string }
+      | Promise<{ wsId: string; setId: string }>
+  ) => {
+    const parsedParams = RouteParamsSchema.safeParse(await params);
+    if (!parsedParams.success) {
+      return NextResponse.json(
+        { message: 'Invalid route params', errors: parsedParams.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const access = await validateWorkspaceAccess(
+      parsedParams.data.wsId,
+      context.user.id,
+      context.supabase
+    );
+    if (access instanceof NextResponse) return access;
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { message: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    const parsedBody = QuizSetUpdateSchema.safeParse(body);
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { message: 'Invalid request body', errors: parsedBody.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await context.supabase
+      .from('workspace_quiz_sets')
+      .update({ name: parsedBody.data.name })
+      .eq('id', parsedParams.data.setId)
+      .eq('ws_id', access.normalizedWsId)
       .select('id')
-      .eq('quiz_id', id);
+      .maybeSingle();
 
-    const existingOptionIds =
-      existingOptions?.map((option: any) => option.id) || [];
-
-    const optionsToUpdate = quiz_options.filter((option: any) =>
-      existingOptionIds.includes(option.id)
-    );
-
-    const optionsToInsert = quiz_options.filter(
-      (option: any) => !existingOptionIds.includes(option.id)
-    );
-
-    const optionsToDelete = existingOptionIds.filter(
-      (optionId: string) =>
-        !quiz_options.some((option: any) => option.id === optionId)
-    );
-
-    if (optionsToUpdate.length > 0) {
-      await supabase
-        .from('quiz_options')
-        .upsert(optionsToUpdate.map((o: any) => ({ ...o, quiz_id: id })));
+    if (error) {
+      console.error('Failed to update workspace quiz set', error);
+      return NextResponse.json(
+        { message: 'Error updating workspace quiz set' },
+        { status: 500 }
+      );
     }
 
-    if (optionsToInsert.length > 0) {
-      await supabase
-        .from('quiz_options')
-        .insert(optionsToInsert.map((o: any) => ({ ...o, quiz_id: id })));
+    if (!data) {
+      return NextResponse.json(
+        { message: 'Quiz set not found' },
+        { status: 404 }
+      );
     }
 
-    if (optionsToDelete.length > 0) {
-      await supabase.from('quiz_options').delete().in('id', optionsToDelete);
+    return NextResponse.json({ message: 'success' });
+  },
+  { rateLimit: { windowMs: 60000, maxRequests: 60 } }
+);
+
+export const DELETE = withSessionAuth(
+  async (
+    _request,
+    context,
+    params:
+      | { wsId: string; setId: string }
+      | Promise<{ wsId: string; setId: string }>
+  ) => {
+    const parsedParams = RouteParamsSchema.safeParse(await params);
+    if (!parsedParams.success) {
+      return NextResponse.json(
+        { message: 'Invalid route params', errors: parsedParams.error.issues },
+        { status: 400 }
+      );
     }
-  }
 
-  return NextResponse.json({ message: 'success' });
-}
-
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
-  const { setId: id } = await params;
-
-  const { error } = await supabase
-    .from('workspace_quiz_sets')
-    .delete()
-    .eq('id', id);
-
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error deleting workspace quiz set' },
-      { status: 500 }
+    const access = await validateWorkspaceAccess(
+      parsedParams.data.wsId,
+      context.user.id,
+      context.supabase
     );
-  }
+    if (access instanceof NextResponse) return access;
 
-  return NextResponse.json({ message: 'success' });
-}
+    const { data, error } = await context.supabase
+      .from('workspace_quiz_sets')
+      .delete()
+      .eq('id', parsedParams.data.setId)
+      .eq('ws_id', access.normalizedWsId)
+      .select('id')
+      .maybeSingle();
+
+    if (error) {
+      console.error('Failed to delete workspace quiz set', error);
+      return NextResponse.json(
+        { message: 'Error deleting workspace quiz set' },
+        { status: 500 }
+      );
+    }
+
+    if (!data) {
+      return NextResponse.json(
+        { message: 'Quiz set not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ message: 'success' });
+  },
+  { rateLimit: { windowMs: 60000, maxRequests: 60 } }
+);
