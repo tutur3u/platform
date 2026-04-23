@@ -3,8 +3,8 @@ import {
   Code,
   Component,
   ExternalLink,
-  SiGithub,
   Play,
+  TbBrandGithub,
   X,
 } from '@ncthub/ui/icons';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -154,7 +154,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     whileTap={{ scale: 0.95 }}
                     className="flex items-center gap-2 rounded-xl border border-border bg-muted/80 px-6 py-3 text-foreground backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-muted"
                   >
-                    <SiGithub size={20} />
+                    <TbBrandGithub size={20} />
                     <span className="font-medium">View Code</span>
                   </motion.a>
                 )}
@@ -352,7 +352,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                 whileTap={{ scale: 0.95 }}
                 className="flex items-center gap-2 rounded-xl border border-border/50 bg-card/80 px-6 py-3 text-card-foreground backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-card"
               >
-                <SiGithub size={20} />
+                <TbBrandGithub size={20} />
                 <span className="font-medium">View on GitHub</span>
               </motion.a>
             )}

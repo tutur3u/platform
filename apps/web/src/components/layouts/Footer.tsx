@@ -1,4 +1,9 @@
-import { SiFacebook, SiGithub, SiInstagram, SiLinkerd } from '@ncthub/ui/icons';
+import {
+  TbBrandFacebook,
+  TbBrandGithub,
+  TbBrandInstagram,
+  TbBrandLinkedin,
+} from '@ncthub/ui/icons';
 import { Separator } from '@ncthub/ui/separator';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -38,7 +43,7 @@ export default async function Footer() {
               className="text-foreground/50 transition-colors hover:text-foreground"
               aria-label="Facebook"
             >
-              <SiFacebook className="h-6 w-6" />
+              <TbBrandFacebook className="h-6 w-6" />
             </Link>
             <Link
               href="https://instagram.com/rmitnct"
@@ -47,7 +52,7 @@ export default async function Footer() {
               className="text-foreground/50 transition-colors hover:text-foreground"
               aria-label="Instagram"
             >
-              <SiInstagram className="h-6 w-6" />
+              <TbBrandInstagram className="h-6 w-6" />
             </Link>
             <Link
               href="https://linkedin.com/company/rmit-nct"
@@ -56,7 +61,7 @@ export default async function Footer() {
               className="text-foreground/50 transition-colors hover:text-foreground"
               aria-label="LinkedIn"
             >
-              <SiLinkerd className="h-6 w-6" />
+              <TbBrandLinkedin className="h-6 w-6" />
             </Link>
             <Link
               href="https://github.com/rmit-nct/hub"
@@ -65,7 +70,7 @@ export default async function Footer() {
               className="text-foreground/50 transition-colors hover:text-foreground"
               aria-label="GitHub"
             >
-              <SiGithub className="h-6 w-6" />
+              <TbBrandGithub className="h-6 w-6" />
             </Link>
           </div>
         </div>
