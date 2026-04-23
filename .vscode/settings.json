@@ -104,5 +104,6 @@
   "python-envs.defaultPackageManager": "ms-python.python:pip",
   "python-envs.pythonProjects": [],
   "vitest.disableWorkspaceWarning": true,
-  "chatgpt.openOnStartup": true
+  "chatgpt.openOnStartup": true,
+  "typescript.native-preview.tsdk": "/Users/vhpx/Documents/GitHub/platform/node_modules/@typescript/native-preview"
 }

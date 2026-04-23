@@ -1,6 +1,6 @@
 ---
-title: 'Mobile Drive And CRM'
-description: 'What the mobile app supports for workspace Drive and Users CRM.'
+title: 'Mobile Drive, CRM, And Education'
+description: 'What the mobile app supports for workspace Drive, CRM, Education, and the Apps hub shell.'
 ---
 
 ## Overview
@@ -8,9 +8,19 @@ description: 'What the mobile app supports for workspace Drive and Users CRM.'
 The mobile app now ships first-party workspace surfaces for:
 
 - Drive at `Routes.drive`
-- Users CRM at `Routes.crm`
+- CRM at `Routes.crm`
+- Education at `Routes.education`
 
 Both modules are registered in the Apps hub and available through the mini-app navigation system.
+
+The mobile Apps hub now uses a single-column list of equal-priority app cards instead of the older grid treatment. Keep module ordering explicit in the hub view rather than relying on registry insertion order. For workspace modules that need dense controls, prefer the same shell-owned chrome used by Calendar:
+
+- `ShellMiniNav` for mode or section switching
+- `ShellChromeActions` for quick actions such as filters, create, sort, and view toggles
+- A finance-style overview hero card inside the page body for stats and search
+- Compact panel sections in the page body instead of raw admin `Card/ListTile` stacks, so module pages read like first-class mobile products rather than direct dashboard ports
+
+Background warmups for optional products should also respect access state before fetching. Do not let Apps hub or boot-time cache warmups call product endpoints blindly; skip the warmup when the corresponding access cubit is not loaded and enabled, and fail soft on opportunistic `404` responses.
 
 ## Mobile Drive Coverage
 
@@ -38,7 +48,7 @@ The mobile implementation talks to the same authenticated workspace storage rout
 
 ## Mobile CRM Coverage
 
-The Users CRM screen in `apps/mobile` supports:
+The CRM screen in `apps/mobile` supports:
 
 - Workspace permission-gated users and audit tabs
 - Search, filters, pagination, and audit range filters
@@ -62,6 +72,33 @@ The mobile CRM uses the existing authenticated routes:
 - `/api/v1/workspaces/:wsId/users/bulk-import`
 - `/api/v1/workspaces/:wsId/users/avatar`
 
+For CRM list and duplicate/merge routes, keep workspace resolution request-aware on the web side. Mobile calls authenticate with Bearer tokens rather than dashboard cookies, so routes that resolve the workspace with cookie-only helpers can fail as `Workspace not found` even for valid workspace members.
+
+## Mobile Education Coverage
+
+The Education screen in `apps/mobile` supports:
+
+- An overview dashboard with counts for courses, quizzes, quiz sets, flashcards, and attempts
+- Course search, create, edit, delete, and paginated browsing
+- Library management for quizzes, quiz sets, and flashcards
+- Quiz authoring with answer options, correctness flags, and explanations
+- Attempt browsing with status and quiz-set filters plus attempt-detail review
+
+The mobile Education module uses authenticated workspace routes from `apps/web`:
+
+- `/api/v1/workspaces/:wsId/courses`
+- `/api/v1/workspaces/:wsId/courses/:courseId`
+- `/api/v1/workspaces/:wsId/quizzes`
+- `/api/v1/workspaces/:wsId/quizzes/:quizId`
+- `/api/v1/workspaces/:wsId/quiz-sets`
+- `/api/v1/workspaces/:wsId/quiz-sets/:setId`
+- `/api/v1/workspaces/:wsId/flashcards`
+- `/api/v1/workspaces/:wsId/flashcards/:flashcardId`
+- `/api/v1/workspaces/:wsId/education/attempts`
+- `/api/v1/workspaces/:wsId/education/attempts/:attemptId`
+
+For mobile-facing collection APIs, keep list routes request-aware and list-shaped. A cookie-only helper or `.single()` response on a collection endpoint can work in the web dashboard but break mobile Bearer-token callers or pagination assumptions.
+
 ## Import And Export Format Notes
 
 - The web CRM page still has richer spreadsheet tooling, including XLSX-oriented flows.
@@ -72,9 +109,8 @@ This format choice is intentional for now: the current Flutter dependency graph 
 
 ## Verification
 
-For Drive or CRM mobile changes:
+For Drive, CRM, or Education mobile changes:
 
 1. Update `apps/mobile/lib/l10n/arb/*.arb` for every new user-facing string.
 2. Run `flutter gen-l10n`.
 3. Run `bun check:mobile`.
-
