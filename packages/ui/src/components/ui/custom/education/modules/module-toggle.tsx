@@ -27,7 +27,7 @@ export function ModuleToggles({
   useEffect(() => {
     setIsPublished(initialIsPublished);
     setLoading(false);
-  }, [initialIsPublished, moduleId]);
+  }, [initialIsPublished]);
 
   //   const handlePublicChange = async (checked: boolean) => {
   //     setLoading(true);

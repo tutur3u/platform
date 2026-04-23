@@ -6,8 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Goal,
-  ListTodo,
-  SwatchBook,
   Youtube,
 } from '@tuturuuu/icons';
 import type { SharedCourseGroup, SharedCourseModule } from '@tuturuuu/types';
