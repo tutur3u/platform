@@ -270,7 +270,7 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                       ),
                     ),
                     shad.OutlineButton(
-                      leading: Icon(shad.LucideIcons.image),
+                      leading: const Icon(shad.LucideIcons.image),
                       onPressed: _images.length >= _maxImages
                           ? null
                           : () => unawaited(_pickImageSource(nestedContext)),
