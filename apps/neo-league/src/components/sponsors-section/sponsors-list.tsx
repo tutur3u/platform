@@ -40,9 +40,9 @@ export default function SponsorsList() {
         <h3 className="text-center font-bold text-2xl text-brand-light-blue uppercase shadow-text">
           Platform Sponsors
         </h3>
-        <div className="grid grid-cols-3 gap-8">
+        <div className="grid grid-cols-3">
           <AnimatedSection className="col-start-2">
-            <div className="glass-card card-hover h-25 flex-1 rounded-2xl p-4">
+            <div className="glass-card card-hover h-30 flex-1 rounded-2xl p-4">
               <Image
                 src="/sponsors/ecloudvalley.png"
                 alt="eCloudValley"
@@ -60,9 +60,9 @@ export default function SponsorsList() {
         <h3 className="text-center font-bold text-2xl text-brand-teal uppercase shadow-text">
           Academic Sponsors
         </h3>
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-3">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           <AnimatedSection delay={0.1}>
-            <div className="glass-card card-hover h-25 rounded-xl p-4">
+            <div className="glass-card card-hover h-30 rounded-xl p-4">
               <Image
                 src="/sponsors/aws.png"
                 alt="AWS"
@@ -73,7 +73,7 @@ export default function SponsorsList() {
             </div>
           </AnimatedSection>
           <AnimatedSection delay={0.2}>
-            <div className="glass-card card-hover h-25 rounded-xl p-4">
+            <div className="glass-card card-hover h-30 rounded-xl p-4">
               <Image
                 src="/sponsors/hshop.webp"
                 alt="HShop,vn"
@@ -84,10 +84,21 @@ export default function SponsorsList() {
             </div>
           </AnimatedSection>
           <AnimatedSection delay={0.3}>
-            <div className="glass-card card-hover h-25 rounded-xl p-4">
+            <div className="glass-card card-hover h-30 rounded-xl p-4">
               <Image
                 src="/sponsors/maker-lab.png"
                 alt="MakerLab.vn"
+                width={100}
+                height={100}
+                className="h-full w-full object-contain"
+              />
+            </div>
+          </AnimatedSection>
+          <AnimatedSection delay={0.4}>
+            <div className="glass-card card-hover h-30 rounded-xl p-4">
+              <Image
+                src="/sponsors/aptech.png"
+                alt="Aptech"
                 width={100}
                 height={100}
                 className="h-full w-full object-contain"
