@@ -111,6 +111,37 @@ describe('markdownToHtml', () => {
     expect(html).toContain('<a href="https://example.com">link</a>');
   });
 
+  it('should convert autolink URLs', () => {
+    const md = '<https://example.com>';
+    const html = markdownToHtml(md);
+    expect(html).toContain(
+      '<a href="https://example.com">https://example.com</a>'
+    );
+  });
+
+  it('should convert autolink email addresses', () => {
+    const md = '<user@example.com>';
+    const html = markdownToHtml(md);
+    expect(html).toContain(
+      '<a href="mailto:user@example.com">user@example.com</a>'
+    );
+  });
+
+  it('should convert mailto autolinks', () => {
+    const md = '<mailto:user@example.com>';
+    const html = markdownToHtml(md);
+    expect(html).toContain(
+      '<a href="mailto:user@example.com">mailto:user@example.com</a>'
+    );
+  });
+
+  it('should sanitize dangerous autolink URLs', () => {
+    const md = '<javascript:alert(1)>';
+    const html = markdownToHtml(md);
+    expect(html).not.toContain('<a href="javascript:');
+    expect(html).toContain('&lt;javascript:alert(1)&gt;');
+  });
+
   it('should convert images', () => {
     const md = '![alt text](https://example.com/img.png)';
     const html = markdownToHtml(md);

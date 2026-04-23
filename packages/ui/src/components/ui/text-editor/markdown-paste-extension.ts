@@ -62,6 +62,29 @@ function parseInline(text: string): string {
     return `\0SUBSUP${subSupTokens.length - 1}\0`;
   });
 
+  // Step 1c: Tokenize angle-bracket autolinks so they survive escaping
+  const autolinkTokens: string[] = [];
+  html = html.replace(
+    /<([A-Za-z][A-Za-z0-9+.-]*:[^\s<>]+|[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+)>/g,
+    (_match, raw: string) => {
+      const link = raw.trim();
+      const isEmail = /^[^\s<>@:]+@[^\s<>@]+\.[^\s<>@]+$/.test(link);
+      if (isEmail) {
+        autolinkTokens.push(
+          `<a href="mailto:${escapeHtml(link)}">${escapeHtml(link)}</a>`
+        );
+        return `\0AUTOLINK${autolinkTokens.length - 1}\0`;
+      }
+      if (sanitizeLinkUrl(link)) {
+        autolinkTokens.push(
+          `<a href="${escapeHtml(link)}">${escapeHtml(link)}</a>`
+        );
+        return `\0AUTOLINK${autolinkTokens.length - 1}\0`;
+      }
+      return _match;
+    }
+  );
+
   // Step 2: Escape remaining text
   html = escapeHtml(html);
 
@@ -111,6 +134,12 @@ function parseInline(text: string): string {
   html = html.replace(
     /\0SUBSUP(\d+)\0/g,
     (_match, index) => subSupTokens[Number(index)] ?? ''
+  );
+
+  // Step 4c: Restore autolink tokens
+  html = html.replace(
+    /\0AUTOLINK(\d+)\0/g,
+    (_match, index) => autolinkTokens[Number(index)] ?? ''
   );
 
   return html;
@@ -463,6 +492,8 @@ const MARKDOWN_SIGNATURES = [
   /^\s*[-*+]\s+\[[ xX]\]/m, // task list
   /!\[[^\]]*\]\([^)]+\)/m, // image
   /\[[^\]]+\]\([^)]+\)/m, // link
+  /<[A-Za-z][A-Za-z0-9+.-]*:[^\s<>]+>/m, // autolink (url)
+  /<[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+>/m, // autolink (email)
   /^\s*---\s*$/m, // horizontal rule
   /^\s*\|.*\|/m, // table
   /<sub>[^<]*<\/sub>/m, // subscript
