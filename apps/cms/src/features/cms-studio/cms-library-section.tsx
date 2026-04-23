@@ -31,6 +31,7 @@ import { CmsSettingsSection } from './cms-settings-section';
 import { EditModeSkeleton } from './cms-studio-skeletons';
 import type { EditSection } from './cms-studio-utils';
 import { CmsWorkflowSection } from './cms-workflow-section';
+
 export function CmsLibrarySection({
   activeCollection,
   availableEditSections = ['entries', 'workflow', 'settings'],
@@ -50,6 +51,7 @@ export function CmsLibrarySection({
   onImport,
   onOpenCollection,
   onOpenEntry,
+  onOpenQuickTaxonomy,
   onPublishEntry,
   onSearchChange,
   onSelectBulkEntry,
@@ -59,11 +61,13 @@ export function CmsLibrarySection({
   onWorkflowAction,
   publishEvents,
   queryPending,
+  quickTaxonomyPending,
   scheduleValue,
   search,
   selectedBulkIds,
   selectedEntryId,
   strings,
+  taxonomyAvailable,
   workflowEntries,
   workflowFilter,
   workflowLanes,
@@ -187,9 +191,12 @@ export function CmsLibrarySection({
           onDeleteEntry={onDeleteEntry}
           onDuplicateEntry={onDuplicateEntry}
           onOpenEntry={onOpenEntry}
+          onOpenQuickTaxonomy={onOpenQuickTaxonomy}
           onPublishEntry={onPublishEntry}
+          quickTaxonomyPending={quickTaxonomyPending}
           search={search}
           selectedEntryId={selectedEntryId}
+          taxonomyAvailable={taxonomyAvailable}
           strings={strings}
         />
       ) : null}

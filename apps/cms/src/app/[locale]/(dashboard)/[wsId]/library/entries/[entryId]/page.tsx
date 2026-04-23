@@ -1,7 +1,4 @@
 import { redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
-import { buildCmsStrings } from '@/features/cms-studio/cms-strings';
-import { EntryDetailClient } from '@/features/cms-studio/entries/[entryId]/entry-detail-client';
 import { getCmsWorkspaceAccess } from '@/lib/external-projects/access';
 
 interface Props {
@@ -22,15 +19,5 @@ export default async function CmsLibraryEntryPage({ params }: Props) {
   if (!access.canAccessWorkspace) {
     redirect('/no-access');
   }
-
-  const t = await getTranslations('external-projects');
-
-  return (
-    <EntryDetailClient
-      binding={access.binding}
-      entryId={entryId}
-      strings={buildCmsStrings(t)}
-      workspaceId={access.normalizedWorkspaceId}
-    />
-  );
+  redirect(`/${wsId}/library?entryId=${entryId}`);
 }

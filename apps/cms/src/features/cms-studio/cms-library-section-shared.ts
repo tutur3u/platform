@@ -47,6 +47,7 @@ export type CmsLibrarySectionProps = {
   onImport: () => void;
   onOpenCollection: (collectionId: string) => void;
   onOpenEntry: (entryId: string) => void;
+  onOpenQuickTaxonomy: (entryId: string) => void;
   onPublishEntry: (payload: PublishMutationPayload) => void;
   onSearchChange: (value: string) => void;
   onSelectBulkEntry: (entryId: string, checked: boolean) => void;
@@ -66,11 +67,13 @@ export type CmsLibrarySectionProps = {
   }) => void;
   publishEvents: ExternalProjectPublishEvent[];
   queryPending: boolean;
+  quickTaxonomyPending: boolean;
   scheduleValue: string;
   search: string;
   selectedBulkIds: string[];
   selectedEntryId: string;
   strings: CmsStrings;
+  taxonomyAvailable: boolean;
   workflowEntries: ExternalProjectEntry[];
   workflowFilter: WorkflowFilter;
   workflowLanes: WorkflowLane[];

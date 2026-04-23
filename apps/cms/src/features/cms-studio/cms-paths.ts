@@ -24,7 +24,7 @@ export function getCmsCollectionPath(pathname: string, collectionId: string) {
 }
 
 export function getCmsEntryPath(pathname: string, entryId: string) {
-  return `${getCmsWorkspaceBasePath(pathname)}/library/entries/${entryId}`;
+  return `${getCmsLibraryPath(pathname)}?entryId=${entryId}`;
 }
 
 export function getCmsPreviewPath(pathname: string) {

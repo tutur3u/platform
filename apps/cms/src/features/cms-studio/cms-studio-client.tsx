@@ -19,11 +19,13 @@ import {
   duplicateWorkspaceExternalProjectEntry,
   importWorkspaceExternalProjectContent,
   publishWorkspaceExternalProjectEntry,
+  updateWorkspaceExternalProjectEntry,
 } from '@tuturuuu/internal-api';
 import type {
   ExternalProjectCollection,
   ExternalProjectEntry,
   ExternalProjectStudioData,
+  Json,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
@@ -39,7 +41,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useDeferredValue, useEffect, useState } from 'react';
 import { CmsLibrarySection } from './cms-library-section';
 import type { CmsLibrarySectionProps } from './cms-library-section-shared';
-import { getCmsCollectionPath } from './cms-paths';
+import { CmsLibraryTaxonomyDialog } from './cms-library-taxonomy-dialog';
+import {
+  getCmsCollectionPath,
+  getCmsEntryPath,
+  getCmsLibraryPath,
+} from './cms-paths';
 import { CmsPreviewSection } from './cms-preview-section';
 import type { CmsStrings } from './cms-strings';
 import {
@@ -58,11 +65,57 @@ import { EntryDetailClient } from './entries/[entryId]/entry-detail-client';
 import { useCmsLivePreview } from './use-cms-live-preview';
 import { getCmsStudioQueryKey, useCmsStudio } from './use-cms-studio';
 
+function asProfileDataRecord(
+  value: ExternalProjectEntry['profile_data'] | null | undefined
+) {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function asStringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value
+        .filter((item): item is string => typeof item === 'string')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0)
+    : [];
+}
+
+function dedupeStrings(values: string[]) {
+  return [...new Set(values)];
+}
+
+function normalizeTaxonomyOptions(value: unknown) {
+  return dedupeStrings(
+    asStringArray(value)
+      .map((item) => item.trim())
+      .filter(Boolean)
+  );
+}
+
+function mergeTaxonomyOptions(current: string[], additions: string[]) {
+  return dedupeStrings([
+    ...current,
+    ...additions.map((value) => value.trim()).filter(Boolean),
+  ]);
+}
+
+function parseTaxonomyDraft(value: string) {
+  return dedupeStrings(
+    value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+  );
+}
+
 export function CmsStudioClient({
   availableEditSections = ['entries', 'workflow', 'settings'],
   binding,
   headerDescription,
   initialEditSection = 'entries',
+  initialEditorEntryId = null,
   initialMode = 'preview',
   initialStudio,
   showModeSwitch = true,
@@ -73,6 +126,7 @@ export function CmsStudioClient({
   binding: WorkspaceExternalProjectBinding;
   headerDescription?: string;
   initialEditSection?: EditSection;
+  initialEditorEntryId?: string | null;
   initialMode?: CmsStudioMode;
   initialStudio?: ExternalProjectStudioData;
   showModeSwitch?: boolean;
@@ -101,10 +155,15 @@ export function CmsStudioClient({
   const [selectedBulkIds, setSelectedBulkIds] = useState<string[]>([]);
   const [scheduleValue, setScheduleValue] = useState('');
   const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
-  const [editorEntryId, setEditorEntryId] = useState<string | null>(null);
+  const [editorEntryId, setEditorEntryId] = useState<string | null>(
+    initialEditorEntryId
+  );
   const [entryDeleteTarget, setEntryDeleteTarget] = useState<string | null>(
     null
   );
+  const [quickTaxonomyEntryId, setQuickTaxonomyEntryId] = useState<
+    string | null
+  >(null);
   const [collectionDeleteTarget, setCollectionDeleteTarget] = useState<
     string | null
   >(null);
@@ -117,6 +176,34 @@ export function CmsStudioClient({
   const assets = studio?.assets ?? initialStudio?.assets ?? [];
   const publishEvents =
     studio?.publishEvents ?? initialStudio?.publishEvents ?? [];
+  const artworkCollection =
+    collections.find((collection) => collection.slug === 'artworks') ?? null;
+  const loreCollection =
+    collections.find((collection) =>
+      /lore|writing/.test(
+        [collection.slug, collection.collection_type, collection.title]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+      )
+    ) ?? null;
+  const singletonSectionCollection =
+    collections.find((collection) =>
+      /singleton|section/.test(
+        [collection.slug, collection.collection_type, collection.title]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+      )
+    ) ?? null;
+  const singletonSectionEntries = singletonSectionCollection
+    ? entries.filter(
+        (entry) => entry.collection_id === singletonSectionCollection.id
+      )
+    : [];
+  const singletonSectionEntryBySlug = new Map(
+    singletonSectionEntries.map((entry) => [entry.slug, entry] as const)
+  );
 
   const previewQuery = useCmsLivePreview({
     enabled: mode === 'preview',
@@ -217,6 +304,27 @@ export function CmsStudioClient({
   }, [effectiveCollectionId, entries, selectedEntryId]);
 
   useEffect(() => {
+    if (initialEditorEntryId) {
+      setEditorEntryId(initialEditorEntryId);
+      setSelectedEntryId(initialEditorEntryId);
+    }
+  }, [initialEditorEntryId]);
+
+  useEffect(() => {
+    if (!editorEntryId) {
+      return;
+    }
+
+    const entryStillExists = entries.some(
+      (entry) => entry.id === editorEntryId
+    );
+    if (!entryStillExists) {
+      setEditorEntryId(null);
+      router.replace(getCmsLibraryPath(pathname));
+    }
+  }, [editorEntryId, entries, pathname, router]);
+
+  useEffect(() => {
     if (
       mode === 'preview' &&
       !previewQuery.isPending &&
@@ -270,12 +378,37 @@ export function CmsStudioClient({
     entries.find((entry) => entry.id === currentEntryId) ?? activeEditEntry;
   const editorEntry =
     entries.find((entry) => entry.id === editorEntryId) ?? null;
+  const quickTaxonomyEntry =
+    entries.find((entry) => entry.id === quickTaxonomyEntryId) ?? null;
   const collectionDeleteCandidate: ExternalProjectCollection | null =
     collections.find(
       (collection) => collection.id === collectionDeleteTarget
     ) ?? null;
   const entryDeleteCandidate =
     entries.find((entry) => entry.id === entryDeleteTarget) ?? null;
+  const taxonomySectionConfig =
+    activeCollection?.id === artworkCollection?.id
+      ? {
+          sectionEntry: singletonSectionEntryBySlug.get('gallery') ?? null,
+          sectionSlug: 'gallery',
+          sectionTitle: 'Gallery',
+        }
+      : activeCollection?.id === loreCollection?.id
+        ? {
+            sectionEntry: singletonSectionEntryBySlug.get('writing') ?? null,
+            sectionSlug: 'writing',
+            sectionTitle: 'Writing',
+          }
+        : null;
+  const taxonomyAvailable = Boolean(taxonomySectionConfig);
+  const taxonomyCategoryOptions = normalizeTaxonomyOptions(
+    asProfileDataRecord(taxonomySectionConfig?.sectionEntry?.profile_data)
+      .categoryOptions
+  );
+  const taxonomyTagOptions = normalizeTaxonomyOptions(
+    asProfileDataRecord(taxonomySectionConfig?.sectionEntry?.profile_data)
+      .tagOptions
+  );
 
   const updateStudioCache = (
     updater: (current: NonNullable<typeof studio>) => NonNullable<typeof studio>
@@ -309,6 +442,17 @@ export function CmsStudioClient({
   const openEntryEditor = (entryId: string) => {
     setSelectedEntryId(entryId);
     setEditorEntryId(entryId);
+    router.replace(getCmsEntryPath(pathname, entryId));
+  };
+
+  const closeEntryEditor = () => {
+    setEditorEntryId(null);
+    router.replace(getCmsLibraryPath(pathname));
+  };
+
+  const openQuickTaxonomy = (entryId: string) => {
+    setSelectedEntryId(entryId);
+    setQuickTaxonomyEntryId(entryId);
   };
 
   const selectCollection = (value: string) => {
@@ -461,6 +605,146 @@ export function CmsStudioClient({
     },
   });
 
+  const quickTaxonomyMutation = useMutation({
+    mutationFn: async (payload: {
+      category?: string | null;
+      entryId: string;
+      removeCategoryOption?: string;
+      removeTagOption?: string;
+      tags?: string[];
+    }) => {
+      const entry = entries.find(
+        (candidate) => candidate.id === payload.entryId
+      );
+      if (!entry) {
+        throw new Error(strings.emptyEntries);
+      }
+
+      if (!taxonomySectionConfig || !singletonSectionCollection) {
+        throw new Error(strings.quickTaxonomyDescription);
+      }
+
+      const nextProfileData = {
+        ...asProfileDataRecord(entry.profile_data),
+      };
+      const taxonomyProfileData = {
+        ...asProfileDataRecord(
+          taxonomySectionConfig.sectionEntry?.profile_data
+        ),
+      };
+
+      if (typeof payload.category !== 'undefined') {
+        const normalizedCategory = payload.category?.trim() ?? '';
+        if (normalizedCategory) {
+          nextProfileData.category = normalizedCategory;
+          taxonomyProfileData.categoryOptions = mergeTaxonomyOptions(
+            taxonomyCategoryOptions,
+            [normalizedCategory]
+          );
+        } else {
+          delete nextProfileData.category;
+        }
+      }
+
+      if (payload.removeCategoryOption) {
+        const removedCategory = payload.removeCategoryOption.trim();
+        taxonomyProfileData.categoryOptions = taxonomyCategoryOptions.filter(
+          (value) => value !== removedCategory
+        );
+        if (nextProfileData.category === removedCategory) {
+          delete nextProfileData.category;
+        }
+      }
+
+      if (typeof payload.tags !== 'undefined') {
+        const normalizedTags = dedupeStrings(
+          payload.tags.map((tag) => tag.trim()).filter(Boolean)
+        );
+        if (normalizedTags.length > 0) {
+          nextProfileData.tags = normalizedTags;
+          taxonomyProfileData.tagOptions = mergeTaxonomyOptions(
+            taxonomyTagOptions,
+            normalizedTags
+          );
+        } else {
+          delete nextProfileData.tags;
+        }
+      }
+
+      if (payload.removeTagOption) {
+        const removedTag = payload.removeTagOption.trim();
+        taxonomyProfileData.tagOptions = taxonomyTagOptions.filter(
+          (value) => value !== removedTag
+        );
+        const nextTags = asStringArray(nextProfileData.tags).filter(
+          (value) => value !== removedTag
+        );
+        if (nextTags.length > 0) {
+          nextProfileData.tags = nextTags;
+        } else {
+          delete nextProfileData.tags;
+        }
+      }
+
+      if (
+        !Array.isArray(taxonomyProfileData.categoryOptions) ||
+        taxonomyProfileData.categoryOptions.length === 0
+      ) {
+        delete taxonomyProfileData.categoryOptions;
+      }
+
+      if (
+        !Array.isArray(taxonomyProfileData.tagOptions) ||
+        taxonomyProfileData.tagOptions.length === 0
+      ) {
+        delete taxonomyProfileData.tagOptions;
+      }
+
+      const updatedEntries: ExternalProjectEntry[] = [
+        await updateWorkspaceExternalProjectEntry(workspaceId, entry.id, {
+          profile_data: nextProfileData as Json,
+        }),
+      ];
+
+      if (taxonomySectionConfig.sectionEntry) {
+        updatedEntries.push(
+          await updateWorkspaceExternalProjectEntry(
+            workspaceId,
+            taxonomySectionConfig.sectionEntry.id,
+            {
+              profile_data: taxonomyProfileData as Json,
+            }
+          )
+        );
+      } else {
+        updatedEntries.push(
+          await createWorkspaceExternalProjectEntry(workspaceId, {
+            collection_id: singletonSectionCollection.id,
+            metadata: {},
+            profile_data: taxonomyProfileData as Json,
+            slug: taxonomySectionConfig.sectionSlug,
+            status: 'draft',
+            subtitle: null,
+            summary: null,
+            title: taxonomySectionConfig.sectionTitle,
+          })
+        );
+      }
+
+      return updatedEntries;
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : strings.quickTaxonomyAction
+      ),
+    onSuccess: (updatedEntries) => {
+      updatedEntries.forEach((entry) => {
+        mergeEntry(entry);
+      });
+      toast.success(strings.saveAction);
+    },
+  });
+
   const importMutation = useMutation({
     mutationFn: async () => importWorkspaceExternalProjectContent(workspaceId),
     onSuccess: () => {
@@ -570,6 +854,7 @@ export function CmsStudioClient({
     onImport: () => importMutation.mutate(),
     onOpenCollection: openCollectionDetails,
     onOpenEntry: openEntryEditor,
+    onOpenQuickTaxonomy: openQuickTaxonomy,
     onPublishEntry: (payload) => publishEntryMutation.mutate(payload),
     onSearchChange: setSearch,
     onSelectBulkEntry: handleSelectBulkEntry,
@@ -579,11 +864,13 @@ export function CmsStudioClient({
     onWorkflowAction: (payload) => bulkMutation.mutate(payload),
     publishEvents,
     queryPending: studioQuery.isPending && !studio,
+    quickTaxonomyPending: quickTaxonomyMutation.isPending,
     scheduleValue,
     search,
     selectedBulkIds,
     selectedEntryId,
     strings,
+    taxonomyAvailable,
     workflowEntries,
     workflowFilter,
     workflowLanes,
@@ -748,18 +1035,96 @@ export function CmsStudioClient({
         <CmsLibrarySection {...librarySectionProps} />
       )}
 
+      <CmsLibraryTaxonomyDialog
+        categoryOptions={taxonomyCategoryOptions}
+        entry={quickTaxonomyEntry ?? activeEditEntry}
+        onCreateCategory={(value) => {
+          const targetEntryId = quickTaxonomyEntry?.id ?? activeEditEntry?.id;
+          if (!targetEntryId) {
+            return;
+          }
+          quickTaxonomyMutation.mutate({
+            category: value.trim(),
+            entryId: targetEntryId,
+          });
+        }}
+        onCreateTags={(value) => {
+          const targetEntry = quickTaxonomyEntry ?? activeEditEntry;
+          if (!targetEntry) {
+            return;
+          }
+          const currentTags = dedupeStrings(
+            asStringArray(asProfileDataRecord(targetEntry.profile_data).tags)
+          );
+          quickTaxonomyMutation.mutate({
+            entryId: targetEntry.id,
+            tags: dedupeStrings([...currentTags, ...parseTaxonomyDraft(value)]),
+          });
+        }}
+        onDeleteCategoryOption={(value) => {
+          const targetEntryId = quickTaxonomyEntry?.id ?? activeEditEntry?.id;
+          if (!targetEntryId) {
+            return;
+          }
+          quickTaxonomyMutation.mutate({
+            entryId: targetEntryId,
+            removeCategoryOption: value,
+          });
+        }}
+        onDeleteTagOption={(value) => {
+          const targetEntryId = quickTaxonomyEntry?.id ?? activeEditEntry?.id;
+          if (!targetEntryId) {
+            return;
+          }
+          quickTaxonomyMutation.mutate({
+            entryId: targetEntryId,
+            removeTagOption: value,
+          });
+        }}
+        onOpenChange={(open) => {
+          if (!open) {
+            setQuickTaxonomyEntryId(null);
+          }
+        }}
+        onSetCategory={(value) => {
+          const targetEntryId = quickTaxonomyEntry?.id ?? activeEditEntry?.id;
+          if (!targetEntryId) {
+            return;
+          }
+          quickTaxonomyMutation.mutate({
+            category: value.trim() ? value : null,
+            entryId: targetEntryId,
+          });
+        }}
+        onSetTags={(value) => {
+          const targetEntryId = quickTaxonomyEntry?.id ?? activeEditEntry?.id;
+          if (!targetEntryId) {
+            return;
+          }
+          quickTaxonomyMutation.mutate({
+            entryId: targetEntryId,
+            tags: value,
+          });
+        }}
+        open={Boolean(quickTaxonomyEntryId)}
+        pending={quickTaxonomyMutation.isPending}
+        strings={strings}
+        tagOptions={taxonomyTagOptions}
+      />
+
       {editorEntry ? (
         <EntryDetailClient
           binding={binding}
           entryId={editorEntry.id}
-          onDeleted={() => setEditorEntryId(null)}
+          onDeleted={closeEntryEditor}
           onEntryChange={(nextEntryId) => {
             setSelectedEntryId(nextEntryId);
             setEditorEntryId(nextEntryId);
+            router.replace(getCmsEntryPath(pathname, nextEntryId));
           }}
           onOpenChange={(open) => {
             if (!open) {
-              setEditorEntryId(null);
+              closeEntryEditor();
             }
           }}
           open={Boolean(editorEntryId)}

@@ -1,7 +1,7 @@
 ---
 title: 'CMS'
 description: 'Dedicated Tuturuuu CMS app for workspace content operations and root-level project linking.'
-updatedAt: '2026-04-22'
+updatedAt: '2026-04-23'
 ---
 
 ## Overview
@@ -15,8 +15,8 @@ updatedAt: '2026-04-22'
 ## Routing
 
 - `/{wsId}`: overview
-- `/{wsId}/library`: content library
-- `/{wsId}/library/entries/{entryId}`: entry detail
+- `/{wsId}/library`: content library and canonical entry-editing surface
+- `/{wsId}/library/entries/{entryId}`: compatibility redirect that opens the library fullscreen editor dialog
 - `/{wsId}/library/collections/{collectionId}`: collection detail
 - `/{wsId}/members`: workspace member and role management
 - `/{wsId}/preview`: delivered-content preview
@@ -45,6 +45,8 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 
 - Keep route pages server-side only for auth and access gates, then hand off interactive CMS surfaces to client modules backed by TanStack Query.
 - Keep `cms-studio-client.tsx` focused on query state, mutations, and routing. Library rendering should stay split across dedicated gallery, workflow, and settings modules rather than growing back into one large TSX file.
+- Entry detail now opens as a fullscreen dialog from the library route so the CMS keeps the library cache warm instead of forcing a separate navigation for each entry.
+- Library taxonomy edits should stay lightweight: category/tag assignment, creation, and removal can happen directly from the library dialog, while deeper editorial changes still live in the entry sidebar taxonomy card.
 
 ## Local Development
 

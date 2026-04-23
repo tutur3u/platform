@@ -1766,6 +1766,8 @@ export function EntryDetailClient({
           tagCreateOpen={tagCreateOpen}
           tagDraft={tagDraft}
           tagOptions={tagOptions}
+          taxonomyConfigDirty={taxonomyConfigDirty}
+          taxonomyScopeLabel={taxonomySectionConfig?.sectionTitle ?? null}
         />
       </div>
 

@@ -10,6 +10,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
+import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,
   CardContent,
@@ -89,6 +90,8 @@ type EntryDetailSidebarProps = {
   tagCreateOpen: boolean;
   tagDraft: string;
   tagOptions: ComboboxOption[];
+  taxonomyConfigDirty: boolean;
+  taxonomyScopeLabel: string | null;
 };
 
 export function EntryDetailSidebar({
@@ -141,6 +144,8 @@ export function EntryDetailSidebar({
   tagCreateOpen,
   tagDraft,
   tagOptions,
+  taxonomyConfigDirty,
+  taxonomyScopeLabel,
 }: EntryDetailSidebarProps) {
   return (
     <div className="space-y-5 xl:sticky xl:top-28 xl:self-start">
@@ -193,33 +198,6 @@ export function EntryDetailSidebar({
               </div>
             ) : null}
 
-            <EntryDetailTaxonomyCard
-              categoryCreateOpen={categoryCreateOpen}
-              categoryDraft={categoryDraft}
-              categoryOptions={categoryOptions}
-              configuredCategoryOptions={configuredCategoryOptions}
-              configuredTagOptions={configuredTagOptions}
-              isTaxonomyConfigEditor={isTaxonomyConfigEditor}
-              onAddTags={onAddTags}
-              onApplyCategory={onApplyCategory}
-              onCategoryCreateOpenChange={onCategoryCreateOpenChange}
-              onCategoryDraftChange={onCategoryDraftChange}
-              onCategorySelectionChange={onCategorySelectionChange}
-              onClearCategories={onClearCategories}
-              onClearTags={onClearTags}
-              onRemoveCategory={onRemoveCategory}
-              onRemoveTag={onRemoveTag}
-              onTagCreateOpenChange={onTagCreateOpenChange}
-              onTagDraftChange={onTagDraftChange}
-              onTagSelectionChange={onTagSelectionChange}
-              selectedCategory={entryForm.category}
-              selectedTags={entryForm.tags}
-              strings={strings}
-              tagCreateOpen={tagCreateOpen}
-              tagDraft={tagDraft}
-              tagOptions={tagOptions}
-            />
-
             {featuredEntryConfig ? (
               <EntryDetailFeaturedEntryCard
                 config={featuredEntryConfig}
@@ -267,6 +245,53 @@ export function EntryDetailSidebar({
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/70 bg-card/95 shadow-none">
+        <CardHeader className="space-y-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle>{strings.taxonomyTitle}</CardTitle>
+              <CardDescription>{strings.taxonomyDescription}</CardDescription>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {taxonomyScopeLabel ? (
+                <Badge variant="outline">{taxonomyScopeLabel}</Badge>
+              ) : null}
+              {taxonomyConfigDirty ? (
+                <Badge variant="secondary">{strings.taxonomyPendingSave}</Badge>
+              ) : null}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <EntryDetailTaxonomyCard
+            categoryCreateOpen={categoryCreateOpen}
+            categoryDraft={categoryDraft}
+            categoryOptions={categoryOptions}
+            configuredCategoryOptions={configuredCategoryOptions}
+            configuredTagOptions={configuredTagOptions}
+            isTaxonomyConfigEditor={isTaxonomyConfigEditor}
+            onAddTags={onAddTags}
+            onApplyCategory={onApplyCategory}
+            onCategoryCreateOpenChange={onCategoryCreateOpenChange}
+            onCategoryDraftChange={onCategoryDraftChange}
+            onCategorySelectionChange={onCategorySelectionChange}
+            onClearCategories={onClearCategories}
+            onClearTags={onClearTags}
+            onRemoveCategory={onRemoveCategory}
+            onRemoveTag={onRemoveTag}
+            onTagCreateOpenChange={onTagCreateOpenChange}
+            onTagDraftChange={onTagDraftChange}
+            onTagSelectionChange={onTagSelectionChange}
+            selectedCategory={entryForm.category}
+            selectedTags={entryForm.tags}
+            strings={strings}
+            tagCreateOpen={tagCreateOpen}
+            tagDraft={tagDraft}
+            tagOptions={tagOptions}
+          />
         </CardContent>
       </Card>
 

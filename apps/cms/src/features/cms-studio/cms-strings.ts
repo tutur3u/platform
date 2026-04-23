@@ -132,6 +132,8 @@ export type CmsStrings = {
   previewTitle: string;
   previousAction: string;
   profileDataLabel: string;
+  quickTaxonomyAction: string;
+  quickTaxonomyDescription: string;
   manageCollectionAction: string;
   manageCollectionDescription: string;
   markdownPreviewLabel: string;
@@ -170,6 +172,10 @@ export type CmsStrings = {
   statusScheduled: string;
   subtitleLabel: string;
   summaryLabel: string;
+  taxonomyDescription: string;
+  taxonomyPendingSave: string;
+  taxonomySaveHint: string;
+  taxonomyTitle: string;
   tagsClearAction: string;
   tagsCreateAction: string;
   tagsCreateHint: string;
@@ -354,6 +360,8 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     previewTitle: t('epm.preview_title'),
     previousAction: t('epm.previous_action'),
     profileDataLabel: t('epm.profile_data_label'),
+    quickTaxonomyAction: t('epm.quick_taxonomy_action'),
+    quickTaxonomyDescription: t('epm.quick_taxonomy_description'),
     manageCollectionAction: t('epm.manage_collection_action'),
     manageCollectionDescription: t('epm.manage_collection_description'),
     markdownPreviewLabel: t('epm.markdown_preview_label'),
@@ -389,6 +397,10 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     statusScheduled: t('epm.status_scheduled'),
     subtitleLabel: t('epm.subtitle_label'),
     summaryLabel: t('epm.summary_label'),
+    taxonomyDescription: t('epm.taxonomy_description'),
+    taxonomyPendingSave: t('epm.taxonomy_pending_save'),
+    taxonomySaveHint: t('epm.taxonomy_save_hint'),
+    taxonomyTitle: t('epm.taxonomy_title'),
     tagsClearAction: t('epm.tags_clear_action'),
     tagsCreateAction: t('epm.tags_create_action'),
     tagsCreateHint: t('epm.tags_create_hint'),

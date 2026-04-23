@@ -4,8 +4,10 @@ import {
   CheckCircle2,
   Copy,
   Ellipsis,
+  ListOrdered,
   Pencil,
   Plus,
+  Tags,
   Trash2,
 } from '@tuturuuu/icons';
 import type {
@@ -34,6 +36,34 @@ import {
 import { getEntryDescriptionMarkdown } from './entries/[entryId]/entry-detail-shared';
 import { ResilientMediaImage } from './resilient-media-image';
 
+function asProfileDataRecord(
+  value: ExternalProjectEntry['profile_data'] | null | undefined
+) {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function asStringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value
+        .filter((item): item is string => typeof item === 'string')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0)
+    : [];
+}
+
+function getEntryCategory(entry: ExternalProjectEntry) {
+  const category = asProfileDataRecord(entry.profile_data).category;
+  return typeof category === 'string' ? category.trim() : '';
+}
+
+function getEntryTags(entry: ExternalProjectEntry) {
+  return [
+    ...new Set(asStringArray(asProfileDataRecord(entry.profile_data).tags)),
+  ];
+}
+
 export function CmsEntriesGallery({
   activeCollection,
   assets,
@@ -42,9 +72,12 @@ export function CmsEntriesGallery({
   onDeleteEntry,
   onDuplicateEntry,
   onOpenEntry,
+  onOpenQuickTaxonomy,
   onPublishEntry,
+  quickTaxonomyPending,
   search,
   selectedEntryId,
+  taxonomyAvailable,
   strings,
 }: {
   activeCollection: ExternalProjectCollection | null;
@@ -54,9 +87,12 @@ export function CmsEntriesGallery({
   onDeleteEntry: (entryId: string) => void;
   onDuplicateEntry: (entryId: string) => void;
   onOpenEntry: (entryId: string) => void;
+  onOpenQuickTaxonomy: (entryId: string) => void;
   onPublishEntry: (payload: PublishMutationPayload) => void;
+  quickTaxonomyPending: boolean;
   search: string;
   selectedEntryId: string;
+  taxonomyAvailable: boolean;
   strings: CmsStrings;
 }) {
   const { hasMore, sentinelRef, visibleCount } = useInfiniteVisibleCount({
@@ -86,6 +122,8 @@ export function CmsEntriesGallery({
       {visibleEntries.map((entry) => {
         const visual = getEntryVisual(assets, entry.id);
         const hasVisual = Boolean(visual?.preview_url || visual?.asset_url);
+        const category = getEntryCategory(entry);
+        const tags = getEntryTags(entry);
 
         return (
           <article
@@ -153,6 +191,15 @@ export function CmsEntriesGallery({
                       <Pencil className="mr-2 h-4 w-4" />
                       {strings.editEntryAction}
                     </DropdownMenuItem>
+                    {taxonomyAvailable ? (
+                      <DropdownMenuItem
+                        disabled={quickTaxonomyPending}
+                        onClick={() => onOpenQuickTaxonomy(entry.id)}
+                      >
+                        <Tags className="mr-2 h-4 w-4" />
+                        {strings.quickTaxonomyAction}
+                      </DropdownMenuItem>
+                    ) : null}
                     <DropdownMenuItem
                       onClick={() => onDuplicateEntry(entry.id)}
                     >
@@ -187,27 +234,68 @@ export function CmsEntriesGallery({
                 </DropdownMenu>
               </div>
             </div>
-            <button
-              type="button"
+            <div
               className={cn(
-                'flex flex-1 flex-col justify-end space-y-2 p-3 text-left',
+                'flex flex-1 flex-col justify-between gap-3 p-3',
                 !hasVisual && 'min-h-[152px]'
               )}
-              onClick={() => onOpenEntry(entry.id)}
             >
-              <div className="line-clamp-1 font-medium text-sm">
-                {entry.title}
-              </div>
-              <div className="line-clamp-1 text-muted-foreground text-xs">
-                {entry.slug}
-              </div>
-              <p className="line-clamp-2 text-muted-foreground text-xs leading-5">
-                {getEntryDescriptionMarkdown(
-                  entry.summary,
-                  strings.previewEmptyDescription
-                )}
-              </p>
-            </button>
+              <button
+                type="button"
+                className="flex flex-1 flex-col justify-end space-y-2 text-left"
+                onClick={() => onOpenEntry(entry.id)}
+              >
+                <div className="line-clamp-1 font-medium text-sm">
+                  {entry.title}
+                </div>
+                <div className="line-clamp-1 text-muted-foreground text-xs">
+                  {entry.slug}
+                </div>
+                <p className="line-clamp-2 text-muted-foreground text-xs leading-5">
+                  {getEntryDescriptionMarkdown(
+                    entry.summary,
+                    strings.previewEmptyDescription
+                  )}
+                </p>
+              </button>
+
+              {taxonomyAvailable ? (
+                <div className="space-y-3 border-border/60 border-t pt-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {category ? (
+                      <Badge variant="outline" className="max-w-full truncate">
+                        <ListOrdered className="mr-1 h-3 w-3" />
+                        {category}
+                      </Badge>
+                    ) : null}
+                    {tags.slice(0, 2).map((tag) => (
+                      <Badge key={tag} variant="secondary">
+                        #{tag}
+                      </Badge>
+                    ))}
+                    {tags.length > 2 ? (
+                      <Badge variant="secondary">+{tags.length - 2}</Badge>
+                    ) : null}
+                    {!category && tags.length === 0 ? (
+                      <span className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+                        {strings.noneLabel}
+                      </span>
+                    ) : null}
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={quickTaxonomyPending}
+                    className="w-full justify-center"
+                    onClick={() => onOpenQuickTaxonomy(entry.id)}
+                  >
+                    <Tags className="mr-2 h-3.5 w-3.5" />
+                    {strings.quickTaxonomyAction}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
           </article>
         );
       })}

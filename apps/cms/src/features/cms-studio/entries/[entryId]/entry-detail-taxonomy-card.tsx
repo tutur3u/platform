@@ -36,10 +36,12 @@ type EntryDetailTaxonomyCardProps = {
 };
 
 function RemovableChip({
+  active = false,
   label,
   onRemove,
   srText,
 }: {
+  active?: boolean;
   label: string;
   onRemove: () => void;
   srText: string;
@@ -47,7 +49,11 @@ function RemovableChip({
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card px-3 py-1.5 text-sm transition-colors hover:bg-accent/40"
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors hover:bg-accent/40 ${
+        active
+          ? 'border-primary/40 bg-primary/10 text-foreground'
+          : 'border-border/70 bg-card'
+      }`}
       onClick={onRemove}
     >
       <span>{label}</span>
@@ -138,198 +144,273 @@ export function EntryDetailTaxonomyCard({
     : selectedTags;
 
   return (
-    <div className="space-y-3 rounded-[1.1rem] border border-border/70 bg-background/60 p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="space-y-0.5">
-          <Label className="flex items-center gap-2">
-            <Badge variant="outline" className="size-6 rounded-md p-0">
-              <ListOrdered className="m-auto h-3.5 w-3.5" />
-            </Badge>
-            {isTaxonomyConfigEditor
-              ? strings.categoryLibraryLabel
-              : strings.categoryLabel}
-          </Label>
-          <p className="text-muted-foreground text-xs leading-5">
-            {isTaxonomyConfigEditor
-              ? strings.categoryLibraryDescription
-              : strings.categoryDescription}
-          </p>
-        </div>
-        {visibleCategories.length > 0 ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={onClearCategories}
-          >
-            <X className="mr-2 h-4 w-4" />
-            {strings.categoryClearAction}
-          </Button>
-        ) : null}
-      </div>
-      <div className="flex items-center gap-2">
-        <Combobox
-          className="min-w-0 flex-1"
-          mode={isTaxonomyConfigEditor ? 'multiple' : 'single'}
-          options={categoryOptions}
-          selected={
-            isTaxonomyConfigEditor
-              ? configuredCategoryOptions
-              : selectedCategory
-          }
-          placeholder={strings.categoryPickerPlaceholder}
-          searchPlaceholder={strings.categorySearchPlaceholder}
-          createText={strings.categoryCreateAction}
-          emptyText={strings.emptyEntries}
-          label={
-            isTaxonomyConfigEditor && configuredCategoryOptions.length > 0 ? (
-              <span className="truncate">
-                {configuredCategoryOptions.join(', ')}
-              </span>
-            ) : undefined
-          }
-          onChange={onCategorySelectionChange}
-          onCreate={onApplyCategory}
-        />
-        <Button
-          type="button"
-          size="icon"
-          variant={categoryCreateOpen ? 'default' : 'outline'}
-          className="size-9 shrink-0"
-          onClick={() => onCategoryCreateOpenChange(!categoryCreateOpen)}
-        >
-          <Plus className="h-4 w-4" />
-          <span className="sr-only">{strings.categoryCreateAction}</span>
-        </Button>
-      </div>
-      {categoryCreateOpen ? (
-        <InlineCreateRow
-          confirmLabel={strings.categoryCreateAction}
-          value={categoryDraft}
-          placeholder={strings.categoryCreatePlaceholder}
-          onValueChange={onCategoryDraftChange}
-          onConfirm={() => onApplyCategory(categoryDraft)}
-          onCancel={() => {
-            onCategoryCreateOpenChange(false);
-            onCategoryDraftChange('');
-          }}
-        />
-      ) : null}
-      {isTaxonomyConfigEditor ? (
-        configuredCategoryOptions.length > 0 ? (
+    <div className="space-y-4">
+      <div className="rounded-[1.1rem] border border-border/70 bg-card/40 p-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-1">
+            <p className="font-medium text-sm">{strings.taxonomyTitle}</p>
+            <p className="text-muted-foreground text-xs leading-5">
+              {strings.taxonomyDescription}
+            </p>
+          </div>
           <div className="flex flex-wrap gap-2">
-            {configuredCategoryOptions.map((category) => (
-              <RemovableChip
-                key={category}
-                label={category}
-                srText={`${strings.categoryClearAction} ${category}`}
-                onRemove={() => onRemoveCategory(category)}
-              />
-            ))}
+            <Badge variant="secondary">
+              {configuredCategoryOptions.length} {strings.categoryLabel}
+            </Badge>
+            <Badge variant="secondary">
+              {configuredTagOptions.length} {strings.tagsLabel}
+            </Badge>
           </div>
-        ) : (
-          <div className="rounded-xl border border-border/70 border-dashed bg-card/50 px-3 py-3 text-muted-foreground text-sm">
-            {strings.categoryLibraryEmpty}
-          </div>
-        )
-      ) : selectedCategory ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-card/50 px-3 py-2">
-          <Badge variant="secondary">{selectedCategory}</Badge>
-          <span className="text-muted-foreground text-xs">
-            {strings.categoryActiveHint}
+        </div>
+        <div className="mt-3">
+          <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-muted-foreground text-xs">
+            {strings.taxonomySaveHint}
           </span>
         </div>
-      ) : null}
+      </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3 rounded-[1.1rem] border border-border/70 bg-background/60 p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="space-y-0.5">
             <Label className="flex items-center gap-2">
               <Badge variant="outline" className="size-6 rounded-md p-0">
-                <Tags className="m-auto h-3.5 w-3.5" />
+                <ListOrdered className="m-auto h-3.5 w-3.5" />
               </Badge>
               {isTaxonomyConfigEditor
-                ? strings.tagLibraryLabel
-                : strings.tagsLabel}
+                ? strings.categoryLibraryLabel
+                : strings.categoryLabel}
             </Label>
             <p className="text-muted-foreground text-xs leading-5">
               {isTaxonomyConfigEditor
-                ? strings.tagLibraryDescription
-                : strings.tagsDescription}
+                ? strings.categoryLibraryDescription
+                : strings.categoryDescription}
             </p>
           </div>
-          {visibleTags.length > 0 ? (
+          {visibleCategories.length > 0 ? (
             <Button
               type="button"
               size="sm"
               variant="outline"
-              onClick={onClearTags}
+              onClick={onClearCategories}
             >
               <X className="mr-2 h-4 w-4" />
-              {strings.tagsClearAction}
+              {strings.categoryClearAction}
             </Button>
           ) : null}
         </div>
         <div className="flex items-center gap-2">
           <Combobox
             className="min-w-0 flex-1"
-            mode="multiple"
-            options={tagOptions}
-            selected={visibleTags}
-            placeholder={strings.tagsPickerPlaceholder}
-            searchPlaceholder={strings.tagsSearchPlaceholder}
-            createText={strings.tagsCreateAction}
+            mode={isTaxonomyConfigEditor ? 'multiple' : 'single'}
+            options={categoryOptions}
+            selected={
+              isTaxonomyConfigEditor
+                ? configuredCategoryOptions
+                : selectedCategory
+            }
+            placeholder={strings.categoryPickerPlaceholder}
+            searchPlaceholder={strings.categorySearchPlaceholder}
+            createText={strings.categoryCreateAction}
             emptyText={strings.emptyEntries}
             label={
-              visibleTags.length > 0 ? (
-                <span className="truncate">{visibleTags.join(', ')}</span>
+              isTaxonomyConfigEditor && configuredCategoryOptions.length > 0 ? (
+                <span className="truncate">
+                  {configuredCategoryOptions.join(', ')}
+                </span>
               ) : undefined
             }
-            onChange={(value) => onTagSelectionChange(value as string[])}
-            onCreate={onAddTags}
+            onChange={onCategorySelectionChange}
+            onCreate={onApplyCategory}
           />
           <Button
             type="button"
             size="icon"
-            variant={tagCreateOpen ? 'default' : 'outline'}
+            variant={categoryCreateOpen ? 'default' : 'outline'}
             className="size-9 shrink-0"
-            onClick={() => onTagCreateOpenChange(!tagCreateOpen)}
+            onClick={() => onCategoryCreateOpenChange(!categoryCreateOpen)}
           >
             <Plus className="h-4 w-4" />
-            <span className="sr-only">{strings.tagsCreateAction}</span>
+            <span className="sr-only">{strings.categoryCreateAction}</span>
           </Button>
         </div>
-        {tagCreateOpen ? (
+        {categoryCreateOpen ? (
           <InlineCreateRow
-            confirmLabel={strings.tagsCreateAction}
-            value={tagDraft}
-            placeholder={strings.tagsCreatePlaceholder}
-            onValueChange={onTagDraftChange}
-            onConfirm={() => onAddTags(tagDraft)}
+            confirmLabel={strings.categoryCreateAction}
+            value={categoryDraft}
+            placeholder={strings.categoryCreatePlaceholder}
+            onValueChange={onCategoryDraftChange}
+            onConfirm={() => onApplyCategory(categoryDraft)}
             onCancel={() => {
-              onTagCreateOpenChange(false);
-              onTagDraftChange('');
+              onCategoryCreateOpenChange(false);
+              onCategoryDraftChange('');
             }}
           />
         ) : null}
-        {visibleTags.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {visibleTags.map((tag) => (
-              <RemovableChip
-                key={tag}
-                label={`#${tag}`}
-                srText={`${strings.tagsRemoveAction} ${tag}`}
-                onRemove={() => onRemoveTag(tag)}
-              />
-            ))}
-          </div>
+        {isTaxonomyConfigEditor ? (
+          configuredCategoryOptions.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {configuredCategoryOptions.map((category) => (
+                <RemovableChip
+                  key={category}
+                  label={category}
+                  srText={`${strings.categoryClearAction} ${category}`}
+                  onRemove={() => onRemoveCategory(category)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border/70 border-dashed bg-card/50 px-3 py-3 text-muted-foreground text-sm">
+              {strings.categoryLibraryEmpty}
+            </div>
+          )
         ) : (
-          <div className="rounded-xl border border-border/70 border-dashed bg-card/50 px-3 py-3 text-muted-foreground text-sm">
-            {isTaxonomyConfigEditor
-              ? strings.tagLibraryEmpty
-              : strings.tagsEmpty}
+          <div className="space-y-2">
+            {selectedCategory ? (
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-card/50 px-3 py-2">
+                <Badge variant="secondary">{selectedCategory}</Badge>
+                <span className="text-muted-foreground text-xs">
+                  {strings.categoryActiveHint}
+                </span>
+              </div>
+            ) : null}
+            {configuredCategoryOptions.length > 0 ? (
+              <div className="space-y-2 rounded-xl border border-border/70 bg-card/35 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-medium text-sm">
+                    {strings.categoryLibraryLabel}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    {strings.categoryLibraryDescription}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {configuredCategoryOptions.map((category) => (
+                    <RemovableChip
+                      key={category}
+                      active={selectedCategory === category}
+                      label={category}
+                      srText={`${strings.categoryClearAction} ${category}`}
+                      onRemove={() => onRemoveCategory(category)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
+
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="space-y-0.5">
+              <Label className="flex items-center gap-2">
+                <Badge variant="outline" className="size-6 rounded-md p-0">
+                  <Tags className="m-auto h-3.5 w-3.5" />
+                </Badge>
+                {isTaxonomyConfigEditor
+                  ? strings.tagLibraryLabel
+                  : strings.tagsLabel}
+              </Label>
+              <p className="text-muted-foreground text-xs leading-5">
+                {isTaxonomyConfigEditor
+                  ? strings.tagLibraryDescription
+                  : strings.tagsDescription}
+              </p>
+            </div>
+            {visibleTags.length > 0 ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={onClearTags}
+              >
+                <X className="mr-2 h-4 w-4" />
+                {strings.tagsClearAction}
+              </Button>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-2">
+            <Combobox
+              className="min-w-0 flex-1"
+              mode="multiple"
+              options={tagOptions}
+              selected={visibleTags}
+              placeholder={strings.tagsPickerPlaceholder}
+              searchPlaceholder={strings.tagsSearchPlaceholder}
+              createText={strings.tagsCreateAction}
+              emptyText={strings.emptyEntries}
+              label={
+                visibleTags.length > 0 ? (
+                  <span className="truncate">{visibleTags.join(', ')}</span>
+                ) : undefined
+              }
+              onChange={(value) => onTagSelectionChange(value as string[])}
+              onCreate={onAddTags}
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant={tagCreateOpen ? 'default' : 'outline'}
+              className="size-9 shrink-0"
+              onClick={() => onTagCreateOpenChange(!tagCreateOpen)}
+            >
+              <Plus className="h-4 w-4" />
+              <span className="sr-only">{strings.tagsCreateAction}</span>
+            </Button>
+          </div>
+          {tagCreateOpen ? (
+            <InlineCreateRow
+              confirmLabel={strings.tagsCreateAction}
+              value={tagDraft}
+              placeholder={strings.tagsCreatePlaceholder}
+              onValueChange={onTagDraftChange}
+              onConfirm={() => onAddTags(tagDraft)}
+              onCancel={() => {
+                onTagCreateOpenChange(false);
+                onTagDraftChange('');
+              }}
+            />
+          ) : null}
+          {visibleTags.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {visibleTags.map((tag) => (
+                <RemovableChip
+                  key={tag}
+                  active
+                  label={`#${tag}`}
+                  srText={`${strings.tagsRemoveAction} ${tag}`}
+                  onRemove={() => onRemoveTag(tag)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border/70 border-dashed bg-card/50 px-3 py-3 text-muted-foreground text-sm">
+              {isTaxonomyConfigEditor
+                ? strings.tagLibraryEmpty
+                : strings.tagsEmpty}
+            </div>
+          )}
+          {!isTaxonomyConfigEditor && configuredTagOptions.length > 0 ? (
+            <div className="space-y-2 rounded-xl border border-border/70 bg-card/35 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-medium text-sm">{strings.tagLibraryLabel}</p>
+                <p className="text-muted-foreground text-xs">
+                  {strings.tagLibraryDescription}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {configuredTagOptions.map((tag) => (
+                  <RemovableChip
+                    key={tag}
+                    active={selectedTags.includes(tag)}
+                    label={`#${tag}`}
+                    srText={`${strings.tagsRemoveAction} ${tag}`}
+                    onRemove={() => onRemoveTag(tag)}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
