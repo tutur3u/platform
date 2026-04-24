@@ -299,56 +299,54 @@ export function DockerInventoryPanel({
               {t('docker.empty_containers')}
             </div>
           ) : (
-            <ScrollArea className="h-[420px] pr-3">
-              <div className="space-y-2">
-                {runningContainers.map((container) => (
-                  <div
-                    key={container.containerId}
-                    className="rounded-2xl border border-border/50 bg-background/80 p-3"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="truncate font-medium text-sm">
-                            {container.name}
-                          </p>
-                          {container.isMonitored ? (
-                            <Badge variant="secondary" className="rounded-full">
-                              {t('docker.monitored')}
-                            </Badge>
-                          ) : null}
-                        </div>
-                        <p className="mt-1 truncate text-muted-foreground text-xs">
-                          {container.image ?? t('states.none')}
+            <div className="space-y-2">
+              {runningContainers.map((container) => (
+                <div
+                  key={container.containerId}
+                  className="rounded-2xl border border-border/50 bg-background/80 p-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate font-medium text-sm">
+                          {container.name}
                         </p>
+                        {container.isMonitored ? (
+                          <Badge variant="secondary" className="rounded-full">
+                            {t('docker.monitored')}
+                          </Badge>
+                        ) : null}
                       </div>
-                      <DockerHealthBadge health={container.health} />
-                    </div>
-
-                    <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2 xl:grid-cols-4">
-                      <DockerMeta label={t('docker.service')}>
-                        {container.serviceName ?? t('states.none')}
-                      </DockerMeta>
-                      <DockerMeta label={t('docker.cpu')}>
-                        {formatPercent(container.cpuPercent)}
-                      </DockerMeta>
-                      <DockerMeta label={t('docker.memory')}>
-                        {formatBytes(container.memoryBytes)}
-                      </DockerMeta>
-                      <DockerMeta label={t('docker.running_for')}>
-                        {container.runningFor ?? t('states.none')}
-                      </DockerMeta>
-                    </div>
-
-                    {container.ports ? (
-                      <p className="mt-3 truncate rounded-xl bg-muted/40 px-2 py-1 font-mono text-muted-foreground text-xs">
-                        {container.ports}
+                      <p className="mt-1 truncate text-muted-foreground text-xs">
+                        {container.image ?? t('states.none')}
                       </p>
-                    ) : null}
+                    </div>
+                    <DockerHealthBadge health={container.health} />
                   </div>
-                ))}
-              </div>
-            </ScrollArea>
+
+                  <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2 xl:grid-cols-4">
+                    <DockerMeta label={t('docker.service')}>
+                      {container.serviceName ?? t('states.none')}
+                    </DockerMeta>
+                    <DockerMeta label={t('docker.cpu')}>
+                      {formatPercent(container.cpuPercent)}
+                    </DockerMeta>
+                    <DockerMeta label={t('docker.memory')}>
+                      {formatBytes(container.memoryBytes)}
+                    </DockerMeta>
+                    <DockerMeta label={t('docker.running_for')}>
+                      {container.runningFor ?? t('states.none')}
+                    </DockerMeta>
+                  </div>
+
+                  {container.ports ? (
+                    <p className="mt-3 truncate rounded-xl bg-muted/40 px-2 py-1 font-mono text-muted-foreground text-xs">
+                      {container.ports}
+                    </p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>

@@ -14,6 +14,10 @@ import type {
 } from '@tuturuuu/internal-api/infrastructure';
 
 type FsLike = Pick<typeof fs, 'existsSync' | 'readFileSync'>;
+type DockerAggregateContainer = {
+  cpuPercent: number | null;
+  memoryBytes: number | null;
+};
 
 const DOCKER_WEB_ENV_KEY = 'PLATFORM_BLUE_GREEN_MONITORING_DIR';
 const DEFAULT_ARCHIVE_PAGE_SIZE = 25;
@@ -483,6 +487,18 @@ function normalizeServiceHealth(
   });
 }
 
+function sumDockerContainerMetric(
+  containers: DockerAggregateContainer[],
+  metric: keyof DockerAggregateContainer
+) {
+  return containers.reduce((sum, container) => {
+    const value = container[metric];
+    return typeof value === 'number' && Number.isFinite(value)
+      ? sum + value
+      : sum;
+  }, 0);
+}
+
 function readNormalizedWatcherLogs(
   watchDir: string,
   fsImpl: FsLike = fs
@@ -758,6 +774,14 @@ export function readBlueGreenMonitoringSnapshot({
   const totalRequestsServed =
     toFiniteNumber(telemetrySummary?.totalRequestsServed) ??
     requestTotals.reduce((sum, value) => sum + value, 0);
+  const allContainers = normalizeDockerContainers(
+    dockerResources?.allContainers
+  );
+  const resourceContainers = Array.isArray(dockerResources?.containers)
+    ? (dockerResources?.containers as BlueGreenMonitoringSnapshot['dockerResources']['containers'])
+    : [];
+  const aggregateContainers: DockerAggregateContainer[] =
+    allContainers.length > 0 ? allContainers : resourceContainers;
 
   return {
     analytics: {
@@ -777,10 +801,8 @@ export function readBlueGreenMonitoringSnapshot({
       },
     },
     dockerResources: {
-      allContainers: normalizeDockerContainers(dockerResources?.allContainers),
-      containers: Array.isArray(dockerResources?.containers)
-        ? (dockerResources?.containers as BlueGreenMonitoringSnapshot['dockerResources']['containers'])
-        : [],
+      allContainers,
+      containers: resourceContainers,
       message:
         typeof dockerResources?.message === 'string'
           ? dockerResources.message
@@ -790,8 +812,14 @@ export function readBlueGreenMonitoringSnapshot({
         typeof dockerResources?.state === 'string'
           ? dockerResources.state
           : 'idle',
-      totalCpuPercent: toFiniteNumber(dockerResources?.totalCpuPercent) ?? 0,
-      totalMemoryBytes: toFiniteNumber(dockerResources?.totalMemoryBytes) ?? 0,
+      totalCpuPercent:
+        aggregateContainers.length > 0
+          ? sumDockerContainerMetric(aggregateContainers, 'cpuPercent')
+          : (toFiniteNumber(dockerResources?.totalCpuPercent) ?? 0),
+      totalMemoryBytes:
+        aggregateContainers.length > 0
+          ? sumDockerContainerMetric(aggregateContainers, 'memoryBytes')
+          : (toFiniteNumber(dockerResources?.totalMemoryBytes) ?? 0),
       totalRxBytes: toFiniteNumber(dockerResources?.totalRxBytes) ?? 0,
       totalTxBytes: toFiniteNumber(dockerResources?.totalTxBytes) ?? 0,
     },

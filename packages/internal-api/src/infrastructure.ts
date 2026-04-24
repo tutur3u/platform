@@ -30,6 +30,13 @@ export type BlueGreenMonitoringWatcherHealth =
 
 export type BlueGreenMonitoringStatus = 'degraded' | 'healthy' | 'offline';
 
+export type BlueGreenMonitoringDockerHealth =
+  | 'healthy'
+  | 'none'
+  | 'starting'
+  | 'unknown'
+  | 'unhealthy';
+
 export interface BlueGreenMonitoringEvent {
   level: string;
   message: string;
@@ -46,13 +53,6 @@ export interface BlueGreenMonitoringContainerResource {
   serviceName: string;
   txBytes: number | null;
 }
-
-export type BlueGreenMonitoringDockerHealth =
-  | 'healthy'
-  | 'none'
-  | 'starting'
-  | 'unknown'
-  | 'unhealthy';
 
 export interface BlueGreenMonitoringDockerContainer {
   containerId: string;

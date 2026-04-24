@@ -493,6 +493,13 @@ Dashboard details:
   per-container row for `proxy`, `green`, and `blue` when those services are
   running. This is sampled from `docker stats --no-stream`, so it stays local
   to the host and is appropriate for self-hosted operator monitoring.
+- The infrastructure dashboard's Docker Runtime Inventory uses the watcher
+  snapshot as the source of truth for every running Compose container and
+  derives total CPU and memory from those rows when present, so the summary
+  cards stay aligned with the detailed container inventory.
+- The bundled `serverless-redis-http` companion uses an in-container `wget`
+  `/ping` health check with the generated `SRH_TOKEN`; do not use a Node-based
+  probe for that image because it is an Erlang release image.
 - Request counters now come from a persisted local proxy-log drain under
   `tmp/docker-web/watch/blue-green-request-telemetry.*`, not from one-off
   `docker logs` scrapes in the dashboard. The watcher continuously drains

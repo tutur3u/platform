@@ -259,13 +259,13 @@ test('validateDockerProdCompose reports missing sidecar healthchecks', () => {
   const composeContent = fs
     .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
     .replace('http://127.0.0.1:8788/health', 'http://127.0.0.1:8788/')
-    .replace("path: '/ping'", "path: '/'")
+    .replace('http://127.0.0.1:80/ping', 'http://127.0.0.1:80/')
     .replace("ps | grep -q '[w]atch-blue-green-deploy.js'", 'ps');
 
   const errors = validateDockerProdCompose(composeContent).join('\n');
 
   assert.match(errors, /http:\/\/127\.0\.0\.1:8788\/health/);
-  assert.match(errors, /path: '\/ping'/);
+  assert.match(errors, /http:\/\/127\.0\.0\.1:80\/ping/);
   assert.match(errors, /\[w\]atch-blue-green-deploy\.js/);
 });
 
