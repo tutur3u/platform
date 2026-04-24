@@ -1,8 +1,5 @@
 import { google } from '@ai-sdk/google';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -24,6 +21,7 @@ import {
 import { ChatRequestBodySchema, mapToUIMessages } from './chat-request-schema';
 import { systemInstruction } from './default-system-instruction';
 import { prepareMiraToolStep } from './mira-step-preparation';
+import { resolveAiRouteAuth } from './route-auth.js';
 import {
   moveTempFilesToThread,
   resolveChatIdForUser,
@@ -95,16 +93,9 @@ export function createPOST(
         return new Response('Missing messages', { status: 400 });
       }
 
-      const supabase = await createClient(req);
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        console.error('Unauthorized');
-        return new Response('Unauthorized', { status: 401 });
-      }
+      const auth = await resolveAiRouteAuth(req);
+      if (!auth.ok) return auth.response;
+      const { supabase, user } = auth;
 
       // Normalize both workspace identifiers so slugs like 'personal' resolve to UUIDs.
       let normalizedWsId: string | null = null;
@@ -337,8 +328,13 @@ export function createPOST(
       const persistUserMessageError = await persistLatestUserMessage({
         processedMessages,
         chatId,
-        insertChatMessage: (args) =>
-          supabase.rpc('insert_ai_chat_message', args),
+        insertChatMessage: async (args) => {
+          const { error } = await supabase.rpc(
+            'insert_ai_chat_message' as never,
+            args as never
+          );
+          return { error };
+        },
         source: isMiraMode ? 'Mira' : 'Rewise',
       });
       if (persistUserMessageError) {

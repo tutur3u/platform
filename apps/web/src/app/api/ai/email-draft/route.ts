@@ -1,5 +1,7 @@
 import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { generateObject } from 'ai';
 import { emailDraftSchema } from './schema';
@@ -7,10 +9,21 @@ import { emailDraftSchema } from './schema';
 export async function POST(req: Request) {
   try {
     // Get the current user
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const supabase = await createClient(req);
+    const tempAuth = await validateAiTempAuthRequest(req);
+    if (tempAuth.status === 'revoked') {
+      return Response.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    let user: SupabaseUser | null = null;
+    if (tempAuth.status === 'valid') {
+      user = tempAuth.context.user as SupabaseUser;
+    } else {
+      const {
+        data: { user: sessionUser },
+      } = await supabase.auth.getUser();
+      user = sessionUser;
+    }
 
     if (!user) {
       console.error('User is unauthenticated');

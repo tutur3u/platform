@@ -1,5 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Json } from '@tuturuuu/types';
+import {
+  decrementAiCreditChargeInFlight,
+  incrementAiCreditChargeInFlight,
+  invalidateAiCreditSnapshot,
+} from '@tuturuuu/utils/ai-temp-auth';
 import type { AiFeature } from './constants';
 import { resolveGatewayModelId } from './model-mapping';
 import type {
@@ -78,6 +83,7 @@ export async function reserveFixedAiCredits(
 ): Promise<CreditReservationResult> {
   const sbAdmin = await getRpcCaller(rpcCaller);
   const gatewayModelId = resolveGatewayModelId(params.modelId);
+  let inFlightMarked = false;
   const rpc = (sbAdmin.rpc as (...args: unknown[]) => unknown).bind(
     sbAdmin
   ) as (
@@ -87,6 +93,13 @@ export async function reserveFixedAiCredits(
     data: ReserveFixedCreditsRpcRow[] | null;
     error: RpcError;
   }>;
+
+  if (params.userId) {
+    inFlightMarked = await incrementAiCreditChargeInFlight({
+      wsId: params.wsId,
+      userId: params.userId,
+    });
+  }
 
   const { data, error } = await rpc('reserve_fixed_ai_credits', {
     p_ws_id: params.wsId,
@@ -98,6 +111,13 @@ export async function reserveFixedAiCredits(
     ...((params.expiresInSeconds ?? 0) > 0
       ? { p_expires_in_seconds: params.expiresInSeconds }
       : {}),
+  }).finally(async () => {
+    if (inFlightMarked && params.userId) {
+      await decrementAiCreditChargeInFlight({
+        wsId: params.wsId,
+        userId: params.userId,
+      });
+    }
   });
 
   if (error) {
@@ -134,6 +154,9 @@ export async function commitFixedAiCreditReservation(
   rpcCaller?: CreditReservationRpcCaller
 ): Promise<CreditReservationCommitResult> {
   const sbAdmin = await getRpcCaller(rpcCaller);
+  const wsId = typeof metadata?.wsId === 'string' ? metadata.wsId : null;
+  const userId = typeof metadata?.userId === 'string' ? metadata.userId : null;
+  let inFlightMarked = false;
   const rpc = (sbAdmin.rpc as (...args: unknown[]) => unknown).bind(
     sbAdmin
   ) as (
@@ -144,9 +167,17 @@ export async function commitFixedAiCreditReservation(
     error: RpcError;
   }>;
 
+  if (wsId && userId) {
+    inFlightMarked = await incrementAiCreditChargeInFlight({ wsId, userId });
+  }
+
   const { data, error } = await rpc('commit_fixed_ai_credit_reservation', {
     p_reservation_id: reservationId,
     p_metadata: (metadata ?? {}) as Json,
+  }).finally(async () => {
+    if (inFlightMarked && wsId && userId) {
+      await decrementAiCreditChargeInFlight({ wsId, userId });
+    }
   });
 
   if (error) {
@@ -169,12 +200,18 @@ export async function commitFixedAiCreditReservation(
     };
   }
 
-  return {
+  const result = {
     success: row.success ?? false,
     creditsDeducted: Number(row.credits_deducted ?? 0),
     remainingCredits: Number(row.remaining_credits ?? 0),
     errorCode: row.error_code ?? null,
   };
+
+  if (result.success && wsId && userId) {
+    await invalidateAiCreditSnapshot({ wsId, userId });
+  }
+
+  return result;
 }
 
 export async function releaseFixedAiCreditReservation(

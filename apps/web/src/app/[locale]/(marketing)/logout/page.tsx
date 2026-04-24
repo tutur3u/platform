@@ -40,6 +40,10 @@ export default function LogoutPage() {
 
   const handleLogoutAll = async () => {
     setLoggingOut(true);
+    await fetch('/api/ai/temp-auth/revoke', {
+      method: 'POST',
+      cache: 'no-store',
+    }).catch(() => undefined);
     await supabase.auth.signOut({ scope: 'local' });
     router.push('/login');
     router.refresh();

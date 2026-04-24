@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   generateText: vi.fn(),
   google: vi.fn(),
   isBackendRateLimitError: vi.fn(),
+  validateAiTempAuthRequest: vi.fn(),
 }));
 
 vi.mock('@ai-sdk/google', () => ({
@@ -38,6 +39,12 @@ vi.mock('@tuturuuu/utils/abuse-protection/backend-rate-limit', () => ({
   ) => mocks.isBackendRateLimitError(...args),
 }));
 
+vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
+  validateAiTempAuthRequest: (
+    ...args: Parameters<typeof mocks.validateAiTempAuthRequest>
+  ) => mocks.validateAiTempAuthRequest(...args),
+}));
+
 import { createPOST } from './route';
 
 describe('chat google new route', () => {
@@ -54,6 +61,7 @@ describe('chat google new route', () => {
     mocks.google.mockReturnValue('mock-model');
     mocks.generateText.mockResolvedValue({ text: 'New title' });
     mocks.isBackendRateLimitError.mockReturnValue(false);
+    mocks.validateAiTempAuthRequest.mockResolvedValue({ status: 'missing' });
   });
 
   it('returns 429 and seeds the proxy ban cache when auth is rate limited', async () => {
@@ -125,5 +133,46 @@ describe('chat google new route', () => {
       source: 'database',
       userId: 'user-1',
     });
+  });
+
+  it('uses a valid temp token without calling Supabase getUser', async () => {
+    const getUser = vi.fn();
+    const single = vi.fn().mockResolvedValue({
+      data: { id: 'chat-1' },
+      error: null,
+    });
+    const insert = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single,
+      }),
+    });
+    mocks.createClient.mockResolvedValue({
+      auth: { getUser },
+      rpc: vi.fn().mockResolvedValue({ error: null }),
+      from: vi.fn().mockReturnValue({
+        insert,
+      }),
+    });
+    mocks.validateAiTempAuthRequest.mockResolvedValue({
+      status: 'valid',
+      context: { user: { id: 'temp-user-1', email: 'temp@example.com' } },
+    });
+
+    const response = await createPOST()(
+      new Request('http://localhost/api/ai/chat/new', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: 'chat-1',
+          message: 'hello',
+          model: 'google/gemini-2.5-flash',
+        }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(getUser).not.toHaveBeenCalled();
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({ creator_id: 'temp-user-1' })
+    );
   });
 });

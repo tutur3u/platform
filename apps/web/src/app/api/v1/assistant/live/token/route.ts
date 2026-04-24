@@ -1,6 +1,8 @@
 import { Modality, ThinkingLevel } from '@google/genai';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import {
   getWorkspaceTier,
   normalizeWorkspaceId,
@@ -70,9 +72,20 @@ export async function POST(request: Request) {
     }
 
     const supabase = await createClient(request);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const tempAuth = await validateAiTempAuthRequest(request);
+    if (tempAuth.status === 'revoked') {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    let user: SupabaseUser | null = null;
+    if (tempAuth.status === 'valid') {
+      user = tempAuth.context.user as SupabaseUser;
+    } else {
+      const {
+        data: { user: sessionUser },
+      } = await supabase.auth.getUser();
+      user = sessionUser;
+    }
 
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });

@@ -2,8 +2,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { cn, formatCompactNumber } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { formatRoundedCompactCredits } from './mira-credit-format';
 
 interface MiraCreditBarProps {
   wsId?: string;
@@ -87,8 +88,8 @@ export default function MiraCreditBar({ wsId }: MiraCreditBarProps) {
           <div className="flex items-center justify-between gap-4 font-medium">
             <span>{t('credit_meter_used')}</span>
             <span className="font-mono">
-              {formatCompactNumber(data.totalUsed)} /{' '}
-              {formatCompactNumber(total)}
+              {formatRoundedCompactCredits(data.totalUsed)} /{' '}
+              {formatRoundedCompactCredits(total)}
             </span>
           </div>
           <div className="h-px bg-border" />
@@ -97,8 +98,8 @@ export default function MiraCreditBar({ wsId }: MiraCreditBarProps) {
               {t('credit_meter_plan')}
             </span>
             <span className="font-mono text-muted-foreground">
-              {formatCompactNumber(planRemaining)} /{' '}
-              {formatCompactNumber(planTotal)}
+              {formatRoundedCompactCredits(planRemaining)} /{' '}
+              {formatRoundedCompactCredits(planTotal)}
             </span>
           </div>
           {paygTotal > 0 && (
@@ -107,8 +108,8 @@ export default function MiraCreditBar({ wsId }: MiraCreditBarProps) {
                 {t('credit_meter_payg')}
               </span>
               <span className="font-mono text-muted-foreground">
-                {formatCompactNumber(paygRemaining)} /{' '}
-                {formatCompactNumber(paygTotal)}
+                {formatRoundedCompactCredits(paygRemaining)} /{' '}
+                {formatRoundedCompactCredits(paygTotal)}
               </span>
             </div>
           )}

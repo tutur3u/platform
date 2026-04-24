@@ -58,6 +58,15 @@ vi.mock('@tuturuuu/utils/abuse-protection/user-suspension', () => ({
   checkUserSuspension: (userId: unknown) => mockCheckSuspension(userId),
 }));
 
+const mockValidateAiTempAuthRequest = vi
+  .fn()
+  .mockResolvedValue({ status: 'missing' });
+
+vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
+  validateAiTempAuthRequest: (request: unknown) =>
+    mockValidateAiTempAuthRequest(request),
+}));
+
 // ---------------------------------------------------------------------------
 // Import after mocks are set up
 // ---------------------------------------------------------------------------
@@ -90,6 +99,7 @@ describe('withSessionAuth', () => {
     mockHasAuthenticatedApiSession.mockReturnValue(false);
     mockCascadeBackendRateLimit.mockResolvedValue(null);
     mockIsBackendRateLimitError.mockReturnValue(false);
+    mockValidateAiTempAuthRequest.mockResolvedValue({ status: 'missing' });
   });
 
   afterEach(() => {
@@ -344,6 +354,96 @@ describe('withSessionAuth', () => {
       '192.168.1.1',
       '/api/test'
     );
+  });
+
+  it('should ignore valid AI temp auth unless the route opts in', async () => {
+    mockValidateAiTempAuthRequest.mockResolvedValue({
+      status: 'valid',
+      context: {
+        user: { id: 'temp-user-1', email: 'temp@example.com' },
+        wsId: 'workspace-1',
+      },
+    });
+    const handler = vi.fn().mockReturnValue(NextResponse.json({ ok: true }));
+
+    const wrapped = withSessionAuth(handler);
+    const response = await wrapped(makeRequest('POST'));
+
+    expect(response.status).toBe(200);
+    expect(mockValidateAiTempAuthRequest).not.toHaveBeenCalled();
+    expect(mockGetUser).toHaveBeenCalledTimes(1);
+    expect(handler).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ user: fakeUser }),
+      {}
+    );
+  });
+
+  it('should accept valid AI temp auth without calling Supabase getUser when opted in', async () => {
+    mockValidateAiTempAuthRequest.mockResolvedValue({
+      status: 'valid',
+      context: {
+        user: { id: 'temp-user-1', email: 'temp@example.com' },
+        wsId: 'workspace-1',
+      },
+    });
+    const handler = vi.fn().mockReturnValue(NextResponse.json({ ok: true }));
+
+    const wrapped = withSessionAuth(handler, { allowAiTempAuth: true });
+    const response = await wrapped(makeRequest('POST'));
+
+    expect(response.status).toBe(200);
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        user: expect.objectContaining({ id: 'temp-user-1' }),
+      }),
+      {}
+    );
+  });
+
+  it('should reject revoked AI temp auth without falling back to getUser', async () => {
+    mockValidateAiTempAuthRequest.mockResolvedValue({ status: 'revoked' });
+    const handler = vi.fn();
+
+    const wrapped = withSessionAuth(handler, { allowAiTempAuth: true });
+    const response = await wrapped(makeRequest('POST'));
+
+    expect(response.status).toBe(401);
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('should fall back to Supabase auth when AI temp auth is unavailable', async () => {
+    mockValidateAiTempAuthRequest.mockResolvedValue({ status: 'unavailable' });
+    const handler = vi.fn().mockReturnValue(NextResponse.json({ ok: true }));
+
+    const wrapped = withSessionAuth(handler, { allowAiTempAuth: true });
+    const response = await wrapped(makeRequest('POST'));
+
+    expect(response.status).toBe(200);
+    expect(mockGetUser).toHaveBeenCalledTimes(1);
+    expect(handler).toHaveBeenCalled();
+  });
+
+  it('should still enforce suspension checks for valid AI temp auth', async () => {
+    mockValidateAiTempAuthRequest.mockResolvedValue({
+      status: 'valid',
+      context: { user: { id: 'temp-user-1', email: 'temp@example.com' } },
+    });
+    mockCheckSuspension.mockResolvedValue({
+      suspended: true,
+      reason: 'Suspended account',
+    });
+    const handler = vi.fn();
+
+    const wrapped = withSessionAuth(handler, { allowAiTempAuth: true });
+    const response = await wrapped(makeRequest('POST'));
+
+    expect(response.status).toBe(403);
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
   });
 
   // ---- Suspension ----

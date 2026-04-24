@@ -89,5 +89,8 @@ export const POST = withSessionAuth(
       );
     }
   },
-  { rateLimit: { windowMs: 60000, maxRequests: 120 } }
+  {
+    allowAiTempAuth: true,
+    rateLimit: { windowMs: 60000, maxRequests: 120 },
+  }
 );

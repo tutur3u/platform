@@ -1,7 +1,7 @@
 import { google } from '@ai-sdk/google';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { convertToModelMessages, generateText, type UIMessage } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
+import { resolveAiRouteAuth } from '../route-auth';
 
 const model = 'gemini-3.1-flash-lite-preview';
 
@@ -14,13 +14,9 @@ export function createPATCH() {
     try {
       if (!id) return new Response('Missing chat ID', { status: 400 });
 
-      const supabase = await createClient(req);
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) return new Response('Unauthorized', { status: 401 });
+      const auth = await resolveAiRouteAuth(req);
+      if (!auth.ok) return auth.response;
+      const { supabase } = auth;
 
       const { data: rawMessages, error: messagesError } = await supabase
         .from('ai_chat_messages')

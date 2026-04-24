@@ -1,7 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { cn, formatCompactNumber } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils/format';
+import { formatRoundedCompactCredits } from './mira-credit-format';
 
 interface CreditSourceInlineBarProps {
   wsId?: string;
@@ -65,7 +66,7 @@ export function CreditSourceInlineBar({ wsId, t }: CreditSourceInlineBarProps) {
         />
       </div>
       <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-        {formatCompactNumber(remaining)} {t('credits_remaining_short')}
+        {formatRoundedCompactCredits(remaining)} {t('credits_remaining_short')}
       </span>
     </div>
   );

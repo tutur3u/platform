@@ -816,6 +816,10 @@ export function AccountSwitcherProvider({
   const logout = useCallback(async () => {
     if (!store || !activeAccountId) {
       // No active account, just sign out from Supabase
+      await fetch('/api/ai/temp-auth/revoke', {
+        method: 'POST',
+        cache: 'no-store',
+      }).catch(() => undefined);
       const { createClient } = await import('@tuturuuu/supabase/next/client');
       const client = createClient();
       await client.auth.signOut({ scope: 'local' });
@@ -840,6 +844,10 @@ export function AccountSwitcherProvider({
       }
 
       // Remove current account from store (this will auto-switch if others exist)
+      await fetch('/api/ai/temp-auth/revoke', {
+        method: 'POST',
+        cache: 'no-store',
+      }).catch(() => undefined);
       await removeAccount(activeAccountId);
 
       // If no other accounts, sign out from Supabase and redirect to login
@@ -871,6 +879,10 @@ export function AccountSwitcherProvider({
     setIsLoading(true);
     try {
       // Sign out from Supabase (revokes current session)
+      await fetch('/api/ai/temp-auth/revoke', {
+        method: 'POST',
+        cache: 'no-store',
+      }).catch(() => undefined);
       const { createClient } = await import('@tuturuuu/supabase/next/client');
       const client = createClient();
       await client.auth.signOut();

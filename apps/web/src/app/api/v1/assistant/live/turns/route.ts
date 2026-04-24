@@ -1,6 +1,8 @@
 import { resolveGatewayModelId } from '@tuturuuu/ai/credits/model-mapping';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { Database } from '@tuturuuu/types/db';
+import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import {
   getWorkspaceTier,
   normalizeWorkspaceId,
@@ -37,9 +39,20 @@ export async function POST(request: Request) {
 
     const { wsId, chatId, turnId, model, messages } = parsed.data;
     const supabase = await createClient(request);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const tempAuth = await validateAiTempAuthRequest(request);
+    if (tempAuth.status === 'revoked') {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    let user: SupabaseUser | null = null;
+    if (tempAuth.status === 'valid') {
+      user = tempAuth.context.user as SupabaseUser;
+    } else {
+      const {
+        data: { user: sessionUser },
+      } = await supabase.auth.getUser();
+      user = sessionUser;
+    }
 
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });

@@ -1,10 +1,12 @@
 import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import {
   cascadeBackendRateLimitToProxyBan,
   isBackendRateLimitError,
 } from '@tuturuuu/utils/abuse-protection/backend-rate-limit';
+import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 
@@ -81,14 +83,25 @@ export function createPOST(
         return NextResponse.json('No message provided', { status: 400 });
 
       const supabase = await createClient(req);
+      const tempAuth = await validateAiTempAuthRequest(req);
+      if (tempAuth.status === 'revoked') {
+        return NextResponse.json('Unauthorized', { status: 401 });
+      }
 
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+      let user: SupabaseUser | null = null;
+      if (tempAuth.status === 'valid') {
+        user = tempAuth.context.user as SupabaseUser;
+      } else {
+        const {
+          data: { user: sessionUser },
+          error: authError,
+        } = await supabase.auth.getUser();
 
-      if (isBackendRateLimitError(authError)) {
-        return buildRateLimitResponse(req, { source: 'auth' });
+        if (isBackendRateLimitError(authError)) {
+          return buildRateLimitResponse(req, { source: 'auth' });
+        }
+
+        user = sessionUser;
       }
 
       if (!user) return NextResponse.json('Unauthorized', { status: 401 });

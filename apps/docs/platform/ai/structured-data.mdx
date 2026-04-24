@@ -168,6 +168,14 @@ if (count === 0)
   return new Response('You are not allowed to use this feature.', { status: 401 });
 ```
 
+#### Fast session auth for Mira and assistant routes
+
+Session-authenticated AI routes may accept the `x-tuturuuu-ai-temp-auth` header as an optimization before falling back to Supabase `getUser()`. The browser mints this token through `POST /api/ai/temp-auth/token` after the normal session, workspace normalization, membership, and selected billing workspace checks succeed. Tokens live only in memory on the client, expire after 60 seconds, and are stored in Redis only as SHA-256 digests.
+
+Revocation is version-based: `ai:temp-auth:user-version:{userId}` is bumped before logout or account removal, so any token minted under the old version is rejected. Redis is not authoritative for security; when Redis is unavailable or a token is missing/invalid, routes fall back to the existing Supabase session path. A revoked token returns `401` and does not fall back.
+
+Credit availability snapshots are also Redis-backed under `ai:credits:snapshot:{billingWsId}:{userId}`. They can be used only for UI status and AI preflight when fresh, above the near-exhaustion threshold, model/feature compatible, and no charge marker exists under `ai:credits:in-flight:{billingWsId}:{userId}`. Actual reservations, deductions, and ledger writes remain in Postgres, and successful commits invalidate the snapshot.
+
 ### 3. Generate structured data
 
 Use the AI SDK to generate structured data based on the schema:

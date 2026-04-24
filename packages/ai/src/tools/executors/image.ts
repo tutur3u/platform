@@ -74,6 +74,8 @@ export async function executeGenerateImage(
   // Full metadata including prompt for storage — never logged directly.
   const fullReservationMetadata = {
     prompt,
+    wsId: billingWsId,
+    userId: ctx.userId,
     ...reservationMetadata,
   };
 

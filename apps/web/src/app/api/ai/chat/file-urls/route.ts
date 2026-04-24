@@ -146,7 +146,7 @@ export const POST = withSessionAuth(
       );
     }
   },
-  { rateLimitKind: 'read' }
+  { allowAiTempAuth: true, rateLimitKind: 'read' }
 );
 
 /** Strip the leading `{timestamp}_` prefix from a storage filename. */

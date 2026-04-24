@@ -10,6 +10,7 @@ import {
   cascadeBackendRateLimitToProxyBan,
   isBackendRateLimitError,
 } from '@tuturuuu/utils/abuse-protection/backend-rate-limit';
+import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { hasAuthenticatedApiSession } from '@tuturuuu/utils/api-proxy-guard';
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
@@ -164,6 +165,11 @@ interface SessionAuthOptions {
    * Defaults to MAX_PAYLOAD_SIZE (1MB).
    */
   maxPayloadSize?: number;
+  /**
+   * Allows short-lived Redis-backed AI temp auth before falling back to
+   * Supabase session auth. Keep this scoped to AI routes only.
+   */
+  allowAiTempAuth?: boolean;
 }
 
 /**
@@ -263,8 +269,63 @@ export function withSessionAuth<T = unknown>(
       }
     }
 
-    // 4. Authenticate — the expensive Supabase `getUser()` call
+    // 4. Authenticate — use Redis temp auth when present, otherwise fall back
+    // to the expensive Supabase `getUser()` call.
     const supabase = (await createClient(request)) as TypedSupabaseClient;
+    const tempAuth = options?.allowAiTempAuth
+      ? await validateAiTempAuthRequest(request)
+      : { status: 'missing' as const };
+
+    if (tempAuth.status === 'revoked') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (tempAuth.status === 'valid') {
+      const tempUser = tempAuth.context.user as SupabaseUser;
+
+      try {
+        const { checkUserSuspension } = await import(
+          '@tuturuuu/utils/abuse-protection/user-suspension'
+        );
+        const suspension = await checkUserSuspension(tempUser.id);
+        if (suspension.suspended) {
+          return NextResponse.json(
+            {
+              error: 'Forbidden',
+              message: suspension.reason ?? 'Account suspended',
+            },
+            { status: 403 }
+          );
+        }
+      } catch {
+        // User suspension module not yet available or failed — fail-open
+      }
+
+      const response = await handler(
+        request,
+        { user: tempUser, supabase },
+        routeContext?.params
+          ? await Promise.resolve(routeContext.params)
+          : ({} as T)
+      );
+
+      if (
+        options?.cache &&
+        request.method === 'GET' &&
+        response.status >= 200 &&
+        response.status < 300
+      ) {
+        const { maxAge, swr } = options.cache;
+        const directives = [`private`, `max-age=${maxAge}`];
+        if (swr !== undefined) {
+          directives.push(`stale-while-revalidate=${swr}`);
+        }
+        response.headers.set('Cache-Control', directives.join(', '));
+      }
+
+      return response;
+    }
+
     const {
       data: { user },
       error: authError,

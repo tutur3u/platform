@@ -567,7 +567,7 @@ export async function executeConvertFileToMarkdown(
       : markdown;
 
     const deduction = await commitMarkitdownCredits(sbAdmin, reservationId, {
-      wsId: ctx.wsId,
+      wsId: billingWsId,
       userId: ctx.userId,
       ...(sourceUrl
         ? { sourceType: 'youtube_url', sourceUrl }

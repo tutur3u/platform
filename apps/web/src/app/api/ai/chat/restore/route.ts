@@ -72,5 +72,5 @@ export const POST = withSessionAuth(
       );
     }
   },
-  { rateLimitKind: 'read' }
+  { allowAiTempAuth: true, rateLimitKind: 'read' }
 );

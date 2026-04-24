@@ -23,6 +23,7 @@ import {
   MIRA_GATEWAY_MODELS_QUERY_KEY,
   modelSupportsFileInput,
 } from './mira-gateway-models';
+import { getMiraTempAuthHeaders } from './mira-temp-auth-client';
 
 interface UseMiraChatConfigParams {
   wsId: string;
@@ -172,6 +173,7 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
       new DefaultChatTransport({
         api: '/api/ai/chat',
         credentials: 'include',
+        headers: () => getMiraTempAuthHeaders(chatRequestBodyRef.current),
         body: () => chatRequestBodyRef.current,
       }),
     []

@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { writeAiCreditSnapshot } from '@tuturuuu/utils/ai-temp-auth';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
@@ -200,6 +201,22 @@ export async function GET(
 
       seatCount = subData?.seat_count ?? null;
     }
+
+    await writeAiCreditSnapshot({
+      wsId: normalizedWsId,
+      userId: user.id,
+      snapshot: {
+        remainingCredits: remaining,
+        maxOutputTokens: allocation?.max_output_tokens_per_request ?? null,
+        tier,
+        allowedModels: allocation?.allowed_models ?? [],
+        allowedFeatures: allocation?.allowed_features ?? [],
+        dailyLimit: allocation?.daily_limit
+          ? Number(allocation.daily_limit)
+          : null,
+        updatedAt: Date.now(),
+      },
+    });
 
     return NextResponse.json({
       totalAllocated,
