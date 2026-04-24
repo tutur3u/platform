@@ -8,7 +8,7 @@ export async function PUT(
 ) {
   try {
     const { wsId, meetingId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -127,12 +127,12 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string; meetingId: string }> }
 ) {
   try {
     const { wsId, meetingId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
