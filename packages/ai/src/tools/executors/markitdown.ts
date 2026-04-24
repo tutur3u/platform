@@ -17,6 +17,18 @@ function stripTimestampPrefix(name: string): string {
   return match?.[1] ?? name;
 }
 
+function isUnsafeStoragePath(value: string): boolean {
+  return value.includes('..') || value.includes('\\');
+}
+
+function isLikelyBareFileName(value: string): boolean {
+  return Boolean(value) && !value.includes('/') && !value.includes(':');
+}
+
+function getStoragePathFileName(value: string): string {
+  return value.split('/').pop() ?? value;
+}
+
 function parseBaseUrl(value: string): string | null {
   try {
     const parsed = new URL(value);
@@ -218,17 +230,38 @@ export async function executeConvertFileToMarkdown(
   const maxCharacters = Math.min(Math.max(maxCharactersRaw, 10_000), 120_000);
 
   const expectedPrefix = `${ctx.wsId}/chats/ai/resources/`;
+  const chatFolder = ctx.chatId
+    ? `${ctx.wsId}/chats/ai/resources/${ctx.chatId}`
+    : '';
   let targetPath = storagePathArg;
   let selectedFileName = '';
 
   const sbAdmin = await createAdminClient();
 
   if (targetPath) {
-    if (!targetPath.startsWith(expectedPrefix) || targetPath.includes('..')) {
+    if (isUnsafeStoragePath(targetPath)) {
       return { ok: false, error: 'Invalid storagePath for current workspace.' };
     }
-    selectedFileName = targetPath.split('/').pop() ?? targetPath;
+
+    if (chatFolder && targetPath.startsWith(`${chatFolder}/`)) {
+      selectedFileName = getStoragePathFileName(targetPath);
+    } else if (isLikelyBareFileName(targetPath)) {
+      selectedFileName = targetPath;
+      targetPath = '';
+    } else if (chatFolder && targetPath.startsWith(expectedPrefix)) {
+      // The client can still show pre-move temp attachment paths while the
+      // server has already moved the object into the chat folder. Resolve the
+      // basename against the current chat instead of failing on stale metadata.
+      selectedFileName = fileNameArg || getStoragePathFileName(targetPath);
+      targetPath = '';
+    } else {
+      return { ok: false, error: 'Invalid storagePath for current workspace.' };
+    }
   } else {
+    selectedFileName = fileNameArg;
+  }
+
+  if (!targetPath) {
     if (!ctx.chatId) {
       return {
         ok: false,
@@ -237,7 +270,6 @@ export async function executeConvertFileToMarkdown(
       };
     }
 
-    const chatFolder = `${ctx.wsId}/chats/ai/resources/${ctx.chatId}`;
     const { data: listedFiles, error: listError } = await sbAdmin.storage
       .from('workspaces')
       .list(chatFolder, {
@@ -260,19 +292,19 @@ export async function executeConvertFileToMarkdown(
       return { ok: false, error: 'No files found in this chat.' };
     }
 
-    const pickedFile = fileNameArg
+    const pickedFile = selectedFileName
       ? realFiles.find(
           (entry) =>
-            entry.name.toLowerCase() === fileNameArg.toLowerCase() ||
+            entry.name.toLowerCase() === selectedFileName.toLowerCase() ||
             stripTimestampPrefix(entry.name).toLowerCase() ===
-              fileNameArg.toLowerCase()
+              selectedFileName.toLowerCase()
         )
       : realFiles[0];
 
     if (!pickedFile) {
       return {
         ok: false,
-        error: `File "${fileNameArg}" was not found in this chat.`,
+        error: `File "${selectedFileName}" was not found in this chat.`,
       };
     }
 
