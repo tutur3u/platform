@@ -44,7 +44,7 @@ interface SubscriptionAttendanceSummaryProps {
   }[];
   isLoadingSubscriptionData: boolean;
   userAttendance: { status: string; date: string }[];
-  billableSessions: BillableSession[];
+  displaySessions: BillableSession[];
   userAttendanceError: Error | null;
   attendanceStats: {
     present: number;
@@ -68,7 +68,7 @@ export function SubscriptionAttendanceSummary({
   latestSubscriptionInvoices: _latestSubscriptionInvoices,
   isLoadingSubscriptionData,
   userAttendance,
-  billableSessions,
+  displaySessions,
   userAttendanceError,
   attendanceStats,
   totalSessions,
@@ -241,7 +241,7 @@ export function SubscriptionAttendanceSummary({
                 <AttendanceCalendar
                   userAttendance={userAttendance}
                   selectedMonth={resolvedSelectedMonth}
-                  sessions={billableSessions}
+                  sessions={displaySessions}
                   locale={locale}
                 />
                 <div className="flex items-center gap-4 text-muted-foreground text-xs">

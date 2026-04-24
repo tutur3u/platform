@@ -31,6 +31,14 @@ export type BillableSession = {
   groupName: string;
 };
 
+type SubscriptionAttendanceDisplayData = {
+  displayAttendance: AttendanceRecord[];
+  displaySessions: BillableSession[];
+  attendanceStats: AttendanceStats;
+  totalSessions: number;
+  attendanceRate: number;
+};
+
 const MONTH_VALUE_PATTERN = /^(\d{4})-(\d{2})$/;
 const DATE_VALUE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -239,6 +247,39 @@ export const getEffectiveDays = (
     return getEffectiveAttendanceDays(attendance);
   }
   return totalSessions;
+};
+
+export const getSubscriptionAttendanceDisplayData = ({
+  isSelectedMonthPaid,
+  billableAttendance,
+  billableSessions,
+  monthlyAttendance,
+  monthlySessions,
+}: {
+  isSelectedMonthPaid: boolean;
+  billableAttendance: AttendanceRecord[];
+  billableSessions: BillableSession[];
+  monthlyAttendance: AttendanceRecord[];
+  monthlySessions: BillableSession[];
+}): SubscriptionAttendanceDisplayData => {
+  const displayAttendance = isSelectedMonthPaid
+    ? monthlyAttendance
+    : billableAttendance;
+  const displaySessions = isSelectedMonthPaid
+    ? monthlySessions
+    : billableSessions;
+  const attendanceStats = getAttendanceStats(displayAttendance);
+  const totalSessions = displaySessions.length;
+  const attendanceDays = getEffectiveAttendanceDays(displayAttendance);
+
+  return {
+    displayAttendance,
+    displaySessions,
+    attendanceStats,
+    totalSessions,
+    attendanceRate:
+      totalSessions > 0 ? (attendanceDays / totalSessions) * 100 : 0,
+  };
 };
 
 export const getSessionsUntilMonth = (
