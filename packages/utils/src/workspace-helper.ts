@@ -948,7 +948,7 @@ export async function getWorkspaceConfig(
       workspaceId: wsId,
       configId,
       errorCode:
-        typeof error === 'object' && error && 'code' in error
+        error && typeof error === 'object' && 'code' in error
           ? error.code
           : undefined,
     });
