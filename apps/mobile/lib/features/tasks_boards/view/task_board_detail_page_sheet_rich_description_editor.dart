@@ -6,6 +6,7 @@ class _TaskDescriptionRichEditor extends StatefulWidget {
     required this.enabled,
     required this.hintText,
     required this.onChanged,
+    this.framed = true,
     this.onRequestImageUpload,
   });
 
@@ -13,6 +14,7 @@ class _TaskDescriptionRichEditor extends StatefulWidget {
   final bool enabled;
   final String hintText;
   final ValueChanged<String> onChanged;
+  final bool framed;
   final Future<String?> Function()? onRequestImageUpload;
 
   @override
@@ -60,14 +62,17 @@ class _TaskDescriptionRichEditorState
     final controller = _resolvedController;
 
     if (oldWidget.initialValue != widget.initialValue) {
-      _isApplyingExternalState = true;
-      controller
-        ..document = tipTapJsonToQuillDocument(widget.initialValue)
-        ..updateSelection(
-          const TextSelection.collapsed(offset: 0),
-          ChangeSource.local,
-        );
-      _isApplyingExternalState = false;
+      final currentValue = quillDocumentToTipTapJson(controller.document) ?? '';
+      if (currentValue != widget.initialValue) {
+        _isApplyingExternalState = true;
+        controller
+          ..document = tipTapJsonToQuillDocument(widget.initialValue)
+          ..updateSelection(
+            const TextSelection.collapsed(offset: 0),
+            ChangeSource.local,
+          );
+        _isApplyingExternalState = false;
+      }
     }
 
     if (oldWidget.enabled != widget.enabled) {
@@ -227,6 +232,75 @@ class _TaskDescriptionRichEditorState
     final theme = shad.Theme.of(context);
     final controller = _resolvedController;
 
+    final editor = Column(
+      children: [
+        _TaskDescriptionToolbar(
+          enabled: widget.enabled,
+          onBold: () => _toggleAttributeValue('bold', true),
+          isBoldActive: _isAttributeActive('bold', true),
+          onItalic: () => _toggleAttributeValue('italic', true),
+          isItalicActive: _isAttributeActive('italic', true),
+          onUnderline: () => _toggleAttributeValue('underline', true),
+          isUnderlineActive: _isAttributeActive('underline', true),
+          onStrike: () => _toggleAttributeValue('strike', true),
+          isStrikeActive: _isAttributeActive('strike', true),
+          onInlineCode: () => _toggleAttributeValue('code', true),
+          isInlineCodeActive: _isAttributeActive('code', true),
+          onSubscript: () => _toggleAttributeValue('script', 'sub'),
+          isSubscriptActive: _isAttributeActive('script', 'sub'),
+          onSuperscript: () => _toggleAttributeValue('script', 'super'),
+          isSuperscriptActive: _isAttributeActive('script', 'super'),
+          onHighlight: () => _toggleAttributeValue('background', '#FFF59D'),
+          isHighlightActive: _isAttributeActive('background'),
+          onHeading1: () => _toggleAttributeValue('header', 1),
+          isHeading1Active: _isAttributeActive('header', 1),
+          onHeading2: () => _toggleAttributeValue('header', 2),
+          isHeading2Active: _isAttributeActive('header', 2),
+          onHeading3: () => _toggleAttributeValue('header', 3),
+          isHeading3Active: _isAttributeActive('header', 3),
+          onBulletList: () => _toggleAttributeValue('list', 'bullet'),
+          isBulletListActive: _isAttributeActive('list', 'bullet'),
+          onOrderedList: () => _toggleAttributeValue('list', 'ordered'),
+          isOrderedListActive: _isAttributeActive('list', 'ordered'),
+          onTaskList: _toggleTaskListAttribute,
+          isTaskListActive: _isTaskListActive,
+          onQuote: () => _toggleAttributeValue('blockquote', true),
+          isQuoteActive: _isAttributeActive('blockquote', true),
+          onCodeBlock: () => _toggleAttributeValue('code-block', true),
+          isCodeBlockActive: _isAttributeActive('code-block', true),
+          onImage: _insertImage,
+        ),
+        Divider(height: 1, color: theme.colorScheme.border),
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.framed ? 14 : 16,
+              vertical: 12,
+            ),
+            child: QuillEditor.basic(
+              controller: controller,
+              focusNode: _editorFocusNode,
+              config: QuillEditorConfig(
+                placeholder: widget.hintText,
+                embedBuilders: [
+                  const TaskDescriptionImageEmbedBuilder(),
+                  const TaskDescriptionVideoEmbedBuilder(),
+                  const TaskDescriptionMentionEmbedBuilder(),
+                  TaskDescriptionTableEmbedBuilder(
+                    onTableUpdated: _handleTableUpdated,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+
+    if (!widget.framed) {
+      return SizedBox(width: double.infinity, child: editor);
+    }
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -235,70 +309,7 @@ class _TaskDescriptionRichEditorState
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(11),
-        child: Column(
-          children: [
-            _TaskDescriptionToolbar(
-              enabled: widget.enabled,
-              onBold: () => _toggleAttributeValue('bold', true),
-              isBoldActive: _isAttributeActive('bold', true),
-              onItalic: () => _toggleAttributeValue('italic', true),
-              isItalicActive: _isAttributeActive('italic', true),
-              onUnderline: () => _toggleAttributeValue('underline', true),
-              isUnderlineActive: _isAttributeActive('underline', true),
-              onStrike: () => _toggleAttributeValue('strike', true),
-              isStrikeActive: _isAttributeActive('strike', true),
-              onInlineCode: () => _toggleAttributeValue('code', true),
-              isInlineCodeActive: _isAttributeActive('code', true),
-              onSubscript: () => _toggleAttributeValue('script', 'sub'),
-              isSubscriptActive: _isAttributeActive('script', 'sub'),
-              onSuperscript: () => _toggleAttributeValue('script', 'super'),
-              isSuperscriptActive: _isAttributeActive('script', 'super'),
-              onHighlight: () => _toggleAttributeValue('background', '#FFF59D'),
-              isHighlightActive: _isAttributeActive('background'),
-              onHeading1: () => _toggleAttributeValue('header', 1),
-              isHeading1Active: _isAttributeActive('header', 1),
-              onHeading2: () => _toggleAttributeValue('header', 2),
-              isHeading2Active: _isAttributeActive('header', 2),
-              onHeading3: () => _toggleAttributeValue('header', 3),
-              isHeading3Active: _isAttributeActive('header', 3),
-              onBulletList: () => _toggleAttributeValue('list', 'bullet'),
-              isBulletListActive: _isAttributeActive('list', 'bullet'),
-              onOrderedList: () => _toggleAttributeValue('list', 'ordered'),
-              isOrderedListActive: _isAttributeActive('list', 'ordered'),
-              onTaskList: _toggleTaskListAttribute,
-              isTaskListActive: _isTaskListActive,
-              onQuote: () => _toggleAttributeValue('blockquote', true),
-              isQuoteActive: _isAttributeActive('blockquote', true),
-              onCodeBlock: () => _toggleAttributeValue('code-block', true),
-              isCodeBlockActive: _isAttributeActive('code-block', true),
-              onImage: _insertImage,
-            ),
-            Divider(height: 1, color: theme.colorScheme.border),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                child: QuillEditor.basic(
-                  controller: controller,
-                  focusNode: _editorFocusNode,
-                  config: QuillEditorConfig(
-                    placeholder: widget.hintText,
-                    embedBuilders: [
-                      const TaskDescriptionImageEmbedBuilder(),
-                      const TaskDescriptionVideoEmbedBuilder(),
-                      const TaskDescriptionMentionEmbedBuilder(),
-                      TaskDescriptionTableEmbedBuilder(
-                        onTableUpdated: _handleTableUpdated,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+        child: editor,
       ),
     );
   }

@@ -1696,6 +1696,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailTaskActions => 'Task actions';
 
   @override
+  String get taskBoardDetailCollapseList => 'Collapse list';
+
+  @override
+  String get taskBoardDetailExpandList => 'Expand list';
+
+  @override
+  String get taskBoardDetailInformation => 'Information';
+
+  @override
   String get taskBoardDetailMoveTask => 'Move task';
 
   @override
@@ -1724,6 +1733,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailTaskDescriptionHint => 'Add description';
+
+  @override
+  String get taskBoardDetailTaskNoDescription => 'No description yet';
 
   @override
   String get taskBoardDetailTaskDescriptionComingSoon => 'Description editing is coming soon on mobile.';
@@ -5258,6 +5270,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workspacePickerTitle => 'Workspaces';
+
+  @override
+  String get workspacePickerSearchHint => 'Search workspaces';
 
   @override
   String get workspaceDefaultPickerTitle => 'Default workspace';

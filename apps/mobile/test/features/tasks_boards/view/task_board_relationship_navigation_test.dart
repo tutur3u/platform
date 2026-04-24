@@ -26,6 +26,7 @@ class _CrossBoardTaskRepository extends TaskRepository {
   static const _boardAId = 'board-a';
   static const _boardBId = 'board-b';
   static const _taskAId = 'task-a1';
+  static const _taskA2Id = 'task-a2';
   static const _taskBId = 'task-b1';
 
   static const TaskBoardTask _taskA = TaskBoardTask(
@@ -66,6 +67,14 @@ class _CrossBoardTaskRepository extends TaskRepository {
     ),
   );
 
+  static const TaskBoardTask _taskA2 = TaskBoardTask(
+    id: _taskA2Id,
+    listId: 'list-a-2',
+    displayNumber: 2,
+    name: 'Task A2',
+    relationshipsLoaded: true,
+  );
+
   @override
   Future<TaskBoardDetail> getTaskBoardDetail(
     String wsId,
@@ -84,9 +93,18 @@ class _CrossBoardTaskRepository extends TaskRepository {
             name: 'Todo',
             status: 'active',
             color: 'BLUE',
+            position: 0,
+          ),
+          TaskBoardList(
+            id: 'list-a-2',
+            boardId: _boardAId,
+            name: 'Doing',
+            status: 'active',
+            color: 'GREEN',
+            position: 1,
           ),
         ],
-        tasks: const [_taskA],
+        tasks: const [_taskA, _taskA2],
       );
     }
 
@@ -128,6 +146,7 @@ class _CrossBoardTaskRepository extends TaskRepository {
 
     return switch (listId) {
       'list-a' => const <TaskBoardTask>[_taskA],
+      'list-a-2' => const <TaskBoardTask>[_taskA2],
       'list-b' => const <TaskBoardTask>[_taskB],
       _ => const <TaskBoardTask>[],
     };
@@ -265,6 +284,80 @@ void main() {
       expect(find.text('Relationships'), findsOneWidget);
       expect(find.text('Task A1'), findsWidgets);
     });
+
+    testWidgets('pops task detail back to the board surface', (tester) async {
+      setTestViewport(tester, const Size(900, 1200));
+
+      await tester.pumpWidget(
+        buildTestApp(routerConfig: router, workspaceCubit: workspaceCubit),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Task A1').first, warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      expect(
+        router.routeInformationProvider.value.uri.toString(),
+        '/tasks/boards/board-a?taskId=task-a1',
+      );
+      expect(find.text('Relationships'), findsOneWidget);
+
+      await tester.tap(find.text('Back').last, warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        Routes.taskBoardDetailPath('board-a'),
+      );
+      expect(
+        router.routeInformationProvider.value.uri.queryParameters['taskId'],
+        isNull,
+      );
+      expect(find.text('Task A1'), findsWidgets);
+    });
+
+    testWidgets(
+      'keeps the in-view kanban list after opening and closing task',
+      (
+        tester,
+      ) async {
+        setTestViewport(tester, const Size(900, 1200));
+
+        await tester.pumpWidget(
+          buildTestApp(routerConfig: router, workspaceCubit: workspaceCubit),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.drag(find.byType(PageView).first, const Offset(-820, 0));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Doing'), findsOneWidget);
+        expect(find.text('Task A2'), findsWidgets);
+
+        await tester.tap(find.text('Task A2').first, warnIfMissed: false);
+        await tester.pumpAndSettle();
+
+        expect(
+          router.routeInformationProvider.value.uri.toString(),
+          '/tasks/boards/board-a?taskId=task-a2',
+        );
+
+        await tester.tap(find.text('Back').last, warnIfMissed: false);
+        await tester.pumpAndSettle();
+
+        expect(
+          router.routeInformationProvider.value.uri.path,
+          Routes.taskBoardDetailPath('board-a'),
+        );
+        expect(find.text('Doing'), findsOneWidget);
+        expect(find.text('Task A2'), findsWidgets);
+
+        await tester.drag(find.byType(PageView).first, const Offset(820, 0));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Todo'), findsOneWidget);
+      },
+    );
 
     testWidgets('replaces current task sheet when navigating to other board', (
       tester,

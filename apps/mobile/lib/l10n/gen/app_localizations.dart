@@ -3349,6 +3349,24 @@ abstract class AppLocalizations {
   /// **'Task actions'**
   String get taskBoardDetailTaskActions;
 
+  /// No description provided for @taskBoardDetailCollapseList.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse list'**
+  String get taskBoardDetailCollapseList;
+
+  /// No description provided for @taskBoardDetailExpandList.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand list'**
+  String get taskBoardDetailExpandList;
+
+  /// No description provided for @taskBoardDetailInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Information'**
+  String get taskBoardDetailInformation;
+
   /// No description provided for @taskBoardDetailMoveTask.
   ///
   /// In en, this message translates to:
@@ -3408,6 +3426,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add description'**
   String get taskBoardDetailTaskDescriptionHint;
+
+  /// No description provided for @taskBoardDetailTaskNoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'No description yet'**
+  String get taskBoardDetailTaskNoDescription;
 
   /// No description provided for @taskBoardDetailTaskDescriptionComingSoon.
   ///
@@ -10056,6 +10080,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Workspaces'**
   String get workspacePickerTitle;
+
+  /// No description provided for @workspacePickerSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search workspaces'**
+  String get workspacePickerSearchHint;
 
   /// No description provided for @workspaceDefaultPickerTitle.
   ///

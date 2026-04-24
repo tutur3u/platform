@@ -5,6 +5,7 @@ const kTaskBoardOverdueColor = Color(0xFFB42318);
 class _BoardTaskTile extends StatelessWidget {
   const _BoardTaskTile({
     required this.board,
+    required this.list,
     required this.listStyle,
     required this.task,
     required this.onTap,
@@ -15,6 +16,7 @@ class _BoardTaskTile extends StatelessWidget {
   });
 
   final TaskBoardDetail board;
+  final TaskBoardList list;
   final _TaskBoardListVisualStyle listStyle;
   final TaskBoardTask task;
   final VoidCallback onTap;
@@ -31,9 +33,9 @@ class _BoardTaskTile extends StatelessWidget {
         : context.l10n.taskBoardDetailUntitledTask;
     final hasDescription = _taskHasDescription(task.description);
     final estimationLabel = _taskEstimationLabel(task, board);
-    final dueLabel = _taskDueLabel(context, task);
+    final dueLabel = _taskDueLabelForList(context, task, list);
     final startLabel = _taskStartLabel(context, task);
-    final isOverdue = _taskIsOverdue(task);
+    final isOverdue = _taskIsOverdueForList(task, list);
     final relationshipIndicators = _taskRelationshipIndicators(task);
     final borderColor = isSelected
         ? theme.colorScheme.primary
@@ -311,7 +313,7 @@ class _KanbanColumn extends StatelessWidget {
     final theme = shad.Theme.of(context);
 
     return SizedBox(
-      width: context.isCompact ? 264 : 300,
+      width: double.infinity,
       height: height,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
@@ -437,51 +439,74 @@ class _KanbanColumn extends StatelessWidget {
                                 state: _PaginatedPlaceholderState.empty,
                                 onCreateTask: onCreateTask,
                               )
-                            : ListView.separated(
-                                primary: false,
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                                itemCount:
-                                    tasks.length +
-                                    ((isLoadingTasks || hasMoreTasks) ? 1 : 0),
-                                separatorBuilder: (_, _) => const shad.Gap(6),
-                                itemBuilder: (context, index) {
-                                  if (index >= tasks.length) {
-                                    if (isLoadingTasks) {
-                                      return const Center(
-                                        child: SizedBox(
-                                          width: 16,
-                                          height: 16,
-                                          child: shad.CircularProgressIndicator(
-                                            strokeWidth: 2,
+                            : NotificationListener<ScrollNotification>(
+                                onNotification: (notification) {
+                                  final metrics = notification.metrics;
+                                  if (notification.depth == 0 &&
+                                      hasMoreTasks &&
+                                      !isLoadingTasks &&
+                                      metrics.pixels >=
+                                          metrics.maxScrollExtent - 320) {
+                                    onLoadMoreTasks?.call();
+                                  }
+                                  return false;
+                                },
+                                child: ListView.separated(
+                                  primary: false,
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    8,
+                                    8,
+                                    8,
+                                    8,
+                                  ),
+                                  itemCount:
+                                      tasks.length +
+                                      ((isLoadingTasks || hasMoreTasks)
+                                          ? 1
+                                          : 0),
+                                  separatorBuilder: (_, _) => const shad.Gap(6),
+                                  itemBuilder: (context, index) {
+                                    if (index >= tasks.length) {
+                                      if (isLoadingTasks) {
+                                        return const Center(
+                                          child: SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child:
+                                                shad.CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                ),
+                                          ),
+                                        );
+                                      }
+                                      return Center(
+                                        child: shad.OutlineButton(
+                                          onPressed: onLoadMoreTasks,
+                                          child: Text(
+                                            context.l10n.timerHistoryLoadMore,
                                           ),
                                         ),
                                       );
                                     }
-                                    return Center(
-                                      child: shad.OutlineButton(
-                                        onPressed: onLoadMoreTasks,
-                                        child: Text(
-                                          context.l10n.timerHistoryLoadMore,
-                                        ),
+                                    final task = tasks[index];
+                                    return _BoardTaskTile(
+                                      board: board,
+                                      list: list,
+                                      listStyle: style,
+                                      task: task,
+                                      onTap: () => onTaskTap(task),
+                                      onMove: () => onTaskMove(task),
+                                      isBulkSelectMode: isBulkSelectMode,
+                                      isSelected: selectedTaskIds.contains(
+                                        task.id,
                                       ),
+                                      onToggleSelected: () =>
+                                          onToggleTaskSelection(task),
                                     );
-                                  }
-                                  final task = tasks[index];
-                                  return _BoardTaskTile(
-                                    board: board,
-                                    listStyle: style,
-                                    task: task,
-                                    onTap: () => onTaskTap(task),
-                                    onMove: () => onTaskMove(task),
-                                    isBulkSelectMode: isBulkSelectMode,
-                                    isSelected: selectedTaskIds.contains(
-                                      task.id,
-                                    ),
-                                    onToggleSelected: () =>
-                                        onToggleTaskSelection(task),
-                                  );
-                                },
+                                  },
+                                ),
                               ),
                       ),
                       // Container(
@@ -639,7 +664,7 @@ class _TaskPriorityChip extends StatelessWidget {
     final style = _taskPriorityStyle(context, priority);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      padding: const EdgeInsets.fromLTRB(5, 3, 8, 3),
       decoration: BoxDecoration(
         color: style.background,
         borderRadius: BorderRadius.circular(999),
@@ -648,14 +673,22 @@ class _TaskPriorityChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(style.icon, size: 12, color: style.foreground),
-          const shad.Gap(4),
+          Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              color: style.foreground.withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(style.icon, size: 12, color: style.foreground),
+          ),
+          const shad.Gap(5),
           Text(
             style.label,
             style: theme.typography.small.copyWith(
               color: style.foreground,
               fontSize: 11,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],

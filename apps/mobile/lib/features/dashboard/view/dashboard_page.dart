@@ -97,6 +97,18 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
+const _dashboardPaletteOrder = ['crm', 'calendar', 'drive', 'finance'];
+
+String _dashboardModuleId(int index) =>
+    _dashboardPaletteOrder[index % _dashboardPaletteOrder.length];
+
+AppCardPalette _dashboardPalette(BuildContext context, int index) =>
+    AppCardPalette.resolve(
+      context,
+      index: index,
+      moduleId: _dashboardModuleId(index),
+    );
+
 class _DashboardView extends StatelessWidget {
   const _DashboardView({required this.replayToken});
 
@@ -232,8 +244,14 @@ class _DashboardView extends StatelessWidget {
                                     StaggeredEntrance(
                                       replayKey: replayToken,
                                       delay: const Duration(milliseconds: 140),
+                                      child: const _DashboardQuickLaunchCard(),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    StaggeredEntrance(
+                                      replayKey: replayToken,
+                                      delay: const Duration(milliseconds: 210),
                                       child: _SectionCard(
-                                        paletteModuleId: 'finance',
+                                        accentModuleId: _dashboardModuleId(3),
                                         title:
                                             context.l10n.dashboardAssignedToMe,
                                         icon: Icons.checklist_rounded,
@@ -243,15 +261,18 @@ class _DashboardView extends StatelessWidget {
                                         child: _AssignedTasksBlock(
                                           state: taskState,
                                           tasks: focusTasks,
+                                          paletteModuleId: _dashboardModuleId(
+                                            3,
+                                          ),
                                         ),
                                       ),
                                     ),
                                     const SizedBox(height: 12),
                                     StaggeredEntrance(
                                       replayKey: replayToken,
-                                      delay: const Duration(milliseconds: 210),
+                                      delay: const Duration(milliseconds: 280),
                                       child: _SectionCard(
-                                        paletteModuleId: 'calendar',
+                                        accentModuleId: _dashboardModuleId(4),
                                         title: context
                                             .l10n
                                             .dashboardUpcomingEvents,
@@ -266,6 +287,9 @@ class _DashboardView extends StatelessWidget {
                                               calendarState.hasLoadedOnce,
                                           error: calendarState.error,
                                           events: upcomingEvents,
+                                          paletteModuleId: _dashboardModuleId(
+                                            4,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -379,15 +403,14 @@ class _DashboardWorkspacePickerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final palette = _dashboardPalette(context, 0);
+
     return BlocBuilder<WorkspaceCubit, WorkspaceState>(
       buildWhen: (previous, current) =>
           previous.currentWorkspace != current.currentWorkspace,
       builder: (context, state) {
-        final primaryPalette = AppCardPalette.resolve(
-          context,
-          index: 0,
-          moduleId: 'crm',
-        );
         final currentWorkspace = state.currentWorkspace;
         final workspaceName = displayWorkspaceNameOrFallback(
           context,
@@ -397,43 +420,54 @@ class _DashboardWorkspacePickerCard extends StatelessWidget {
         return Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(26),
+            borderRadius: BorderRadius.circular(18),
             onTap: () => showWorkspacePickerSheet(context),
             child: Ink(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: primaryPalette.background,
-                borderRadius: BorderRadius.circular(26),
+                color: palette.background,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color.alphaBlend(
+                      palette.iconBackground.withValues(alpha: 0.36),
+                      palette.background,
+                    ),
+                    palette.background,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: primaryPalette.border.withValues(alpha: 0.95),
+                  color: palette.border.withValues(alpha: 0.86),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: primaryPalette.shadow,
-                    blurRadius: 18,
-                    offset: const Offset(0, 10),
+                    color: palette.shadow.withValues(alpha: 0.72),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: Row(
                 children: [
                   if (currentWorkspace != null)
-                    WorkspaceAvatar(workspace: currentWorkspace, radius: 21)
+                    WorkspaceAvatar(workspace: currentWorkspace, radius: 20)
                   else
                     Container(
-                      width: 58,
-                      height: 58,
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
-                        color: primaryPalette.iconBackground,
-                        borderRadius: BorderRadius.circular(18),
+                        color: colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: primaryPalette.border.withValues(alpha: 0.5),
+                          color: colorScheme.primary.withValues(alpha: 0.14),
                         ),
                       ),
                       child: Icon(
                         Icons.workspaces_outlined,
-                        size: 26,
-                        color: primaryPalette.iconColor,
+                        size: 21,
+                        color: colorScheme.onPrimaryContainer,
                       ),
                     ),
                   const SizedBox(width: 12),
@@ -443,44 +477,38 @@ class _DashboardWorkspacePickerCard extends StatelessWidget {
                       children: [
                         Text(
                           context.l10n.settingsCurrentWorkspace,
-                          style: Theme.of(context).textTheme.labelLarge
-                              ?.copyWith(
-                                color: primaryPalette.textColor.withValues(
-                                  alpha: 0.72,
-                                ),
-                                fontWeight: FontWeight.w700,
-                              ),
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: palette.textColor.withValues(alpha: 0.72),
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text(
                           workspaceName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                color: primaryPalette.textColor,
-                                fontWeight: FontWeight.w900,
-                              ),
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: palette.textColor,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ],
                     ),
                   ),
                   Container(
-                    width: 42,
-                    height: 42,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
-                      color: primaryPalette.iconBackground.withValues(
-                        alpha: 0.9,
-                      ),
-                      borderRadius: BorderRadius.circular(14),
+                      color: palette.iconBackground.withValues(alpha: 0.82),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: primaryPalette.border.withValues(alpha: 0.45),
+                        color: palette.border.withValues(alpha: 0.44),
                       ),
                     ),
                     child: Icon(
                       Icons.keyboard_arrow_down_rounded,
                       size: 20,
-                      color: primaryPalette.textColor.withValues(alpha: 0.76),
+                      color: palette.iconColor,
                     ),
                   ),
                 ],
@@ -506,29 +534,12 @@ class _TodaySummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final dateLabel = DateFormat('EEE, d MMM').format(DateTime.now());
-    final summaryPalette = AppCardPalette.resolve(
-      context,
-      index: 1,
-      moduleId: 'drive',
-    );
-    final tasksPalette = AppCardPalette.resolve(
-      context,
-      index: 0,
-      moduleId: 'finance',
-    );
-    final overduePalette = AppCardPalette.resolve(
-      context,
-      index: 1,
-      moduleId: 'timer',
-    );
-    final eventsPalette = AppCardPalette.resolve(
-      context,
-      index: 2,
-      moduleId: 'calendar',
-    );
+    final summaryPalette = _dashboardPalette(context, 1);
+
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: summaryPalette.background,
         gradient: LinearGradient(
@@ -536,69 +547,66 @@ class _TodaySummaryCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             Color.alphaBlend(
-              summaryPalette.iconBackground.withValues(alpha: 0.28),
+              summaryPalette.iconBackground.withValues(alpha: 0.26),
               summaryPalette.background,
             ),
             Color.alphaBlend(
-              overduePalette.iconBackground.withValues(alpha: 0.18),
+              summaryPalette.iconColor.withValues(alpha: 0.12),
               summaryPalette.background,
             ),
-            Color.alphaBlend(
-              eventsPalette.iconBackground.withValues(alpha: 0.14),
-              summaryPalette.background,
-            ),
+            summaryPalette.background,
           ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: summaryPalette.border.withValues(alpha: 0.9),
         ),
         boxShadow: [
           BoxShadow(
-            color: summaryPalette.shadow,
+            color: summaryPalette.shadow.withValues(alpha: 0.78),
             blurRadius: 18,
-            offset: const Offset(0, 10),
+            offset: const Offset(0, 9),
           ),
         ],
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: summaryPalette.border.withValues(alpha: 0.95),
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
-              Text(
-                context.l10n.dashboardTodayTitle,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: summaryPalette.textColor,
-                  fontWeight: FontWeight.w900,
-                  height: 1.05,
+              Expanded(
+                child: Text(
+                  context.l10n.dashboardTodayTitle,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: summaryPalette.textColor,
+                    fontWeight: FontWeight.w900,
+                    height: 1.08,
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
-                  vertical: 6,
+                  vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: summaryPalette.iconBackground.withValues(alpha: 0.92),
+                  color: summaryPalette.iconBackground.withValues(alpha: 0.88),
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(
-                    color: summaryPalette.border.withValues(alpha: 0.45),
+                    color: summaryPalette.border.withValues(alpha: 0.42),
                   ),
                 ),
                 child: Text(
                   dateLabel,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: summaryPalette.textColor.withValues(alpha: 0.84),
-                    fontWeight: FontWeight.w700,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: summaryPalette.textColor,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           LayoutBuilder(
             builder: (context, constraints) {
               final compactWidth = (constraints.maxWidth - 10) / 2;
@@ -612,10 +620,7 @@ class _TodaySummaryCard extends StatelessWidget {
                       value: '$activeTasks',
                       label: context.l10n.dashboardActiveTasksLabel,
                       icon: Icons.task_alt_rounded,
-                      foreground: tasksPalette.textColor,
-                      background: tasksPalette.iconBackground.withValues(
-                        alpha: 0.92,
-                      ),
+                      palette: summaryPalette,
                     ),
                   ),
                   SizedBox(
@@ -624,10 +629,7 @@ class _TodaySummaryCard extends StatelessWidget {
                       value: '$overdueTasks',
                       label: context.l10n.dashboardTaskOverdue,
                       icon: Icons.warning_amber_rounded,
-                      foreground: overduePalette.textColor,
-                      background: overduePalette.iconBackground.withValues(
-                        alpha: 0.92,
-                      ),
+                      palette: summaryPalette,
                     ),
                   ),
                   SizedBox(
@@ -636,10 +638,7 @@ class _TodaySummaryCard extends StatelessWidget {
                       value: '$nextEvents',
                       label: context.l10n.dashboardUpcomingEvents,
                       icon: Icons.calendar_month_rounded,
-                      foreground: eventsPalette.textColor,
-                      background: eventsPalette.iconBackground.withValues(
-                        alpha: 0.92,
-                      ),
+                      palette: summaryPalette,
                       fullWidth: true,
                     ),
                   ),
@@ -658,35 +657,29 @@ class _MetricTile extends StatelessWidget {
     required this.value,
     required this.label,
     required this.icon,
-    this.foreground,
-    this.background,
+    required this.palette,
     this.fullWidth = false,
   });
 
   final String value;
   final String label;
   final IconData icon;
-  final Color? foreground;
-  final Color? background;
+  final AppCardPalette palette;
   final bool fullWidth;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final resolvedForeground = foreground ?? theme.colorScheme.onSurface;
-    final resolvedBackground =
-        background ?? theme.colorScheme.surfaceContainerHighest;
-
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: fullWidth ? 14 : 12,
         vertical: fullWidth ? 14 : 12,
       ),
       decoration: BoxDecoration(
-        color: resolvedBackground,
+        color: palette.iconBackground.withValues(alpha: fullWidth ? 0.86 : 0.9),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: resolvedForeground.withValues(alpha: 0.18),
+          color: palette.border.withValues(alpha: 0.5),
         ),
       ),
       child: fullWidth
@@ -696,14 +689,14 @@ class _MetricTile extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: resolvedForeground.withValues(alpha: 0.1),
+                    color: palette.background.withValues(alpha: 0.74),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,
                   child: Icon(
                     icon,
                     size: 18,
-                    color: resolvedForeground.withValues(alpha: 0.9),
+                    color: palette.iconColor,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -713,7 +706,7 @@ class _MetricTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.titleMedium?.copyWith(
-                      color: resolvedForeground.withValues(alpha: 0.92),
+                      color: palette.textColor,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -722,8 +715,8 @@ class _MetricTile extends StatelessWidget {
                 Text(
                   value,
                   style: theme.textTheme.headlineSmall?.copyWith(
-                    color: resolvedForeground,
-                    fontWeight: FontWeight.w800,
+                    color: palette.textColor,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ],
@@ -734,14 +727,14 @@ class _MetricTile extends StatelessWidget {
                 Icon(
                   icon,
                   size: 16,
-                  color: resolvedForeground.withValues(alpha: 0.9),
+                  color: palette.iconColor,
                 ),
                 const SizedBox(height: 6),
                 Text(
                   value,
                   style: theme.textTheme.titleLarge?.copyWith(
-                    color: resolvedForeground,
-                    fontWeight: FontWeight.w800,
+                    color: palette.textColor,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -750,7 +743,7 @@ class _MetricTile extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelMedium?.copyWith(
-                    color: resolvedForeground.withValues(alpha: 0.84),
+                    color: palette.textColor.withValues(alpha: 0.78),
                     fontWeight: FontWeight.w600,
                     height: 1.15,
                   ),
@@ -761,9 +754,176 @@ class _MetricTile extends StatelessWidget {
   }
 }
 
+class _DashboardQuickLaunchCard extends StatelessWidget {
+  const _DashboardQuickLaunchCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final palette = _dashboardPalette(context, 2);
+    final actions = [
+      _QuickLaunchAction(
+        label: context.l10n.tasksTitle,
+        icon: Icons.checklist_rounded,
+        onTap: () => context.go(Routes.tasks),
+      ),
+      _QuickLaunchAction(
+        label: context.l10n.taskBoardsTitle,
+        icon: Icons.view_kanban_rounded,
+        onTap: () => context.go(Routes.taskBoards),
+      ),
+      _QuickLaunchAction(
+        label: context.l10n.calendarTitle,
+        icon: Icons.calendar_month_rounded,
+        onTap: () => context.go(Routes.calendar),
+      ),
+      _QuickLaunchAction(
+        label: context.l10n.navApps,
+        icon: Icons.grid_view_rounded,
+        onTap: () => context.go(Routes.apps),
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: palette.background,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: palette.border.withValues(alpha: 0.9),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: palette.shadow.withValues(alpha: 0.72),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: palette.iconBackground,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: palette.border.withValues(alpha: 0.42),
+                  ),
+                ),
+                child: Icon(
+                  Icons.bolt_rounded,
+                  size: 22,
+                  color: palette.iconColor,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  context.l10n.dashboardQuickLaunch,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: palette.textColor,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final tileWidth = (constraints.maxWidth - 10) / 2;
+              return Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  for (final action in actions)
+                    SizedBox(
+                      width: tileWidth,
+                      child: _QuickLaunchTile(
+                        action: action,
+                        palette: palette,
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickLaunchAction {
+  const _QuickLaunchAction({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+}
+
+class _QuickLaunchTile extends StatelessWidget {
+  const _QuickLaunchTile({
+    required this.action,
+    required this.palette,
+  });
+
+  final _QuickLaunchAction action;
+  final AppCardPalette palette;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: action.onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          height: 76,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: palette.iconBackground.withValues(alpha: 0.86),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: palette.border.withValues(alpha: 0.46),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(action.icon, size: 20, color: palette.iconColor),
+              Text(
+                action.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: palette.textColor,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
-    required this.paletteModuleId,
+    required this.accentModuleId,
     required this.title,
     required this.icon,
     required this.actionLabel,
@@ -771,7 +931,7 @@ class _SectionCard extends StatelessWidget {
     required this.child,
   });
 
-  final String paletteModuleId;
+  final String accentModuleId;
   final String title;
   final IconData icon;
   final String actionLabel;
@@ -784,19 +944,20 @@ class _SectionCard extends StatelessWidget {
     final palette = AppCardPalette.resolve(
       context,
       index: 0,
-      moduleId: paletteModuleId,
+      moduleId: accentModuleId,
     );
-    final accent = palette.iconColor;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: palette.background,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: palette.border.withValues(alpha: 0.95)),
+        border: Border.all(
+          color: palette.border.withValues(alpha: 0.9),
+        ),
         boxShadow: [
           BoxShadow(
-            color: palette.shadow,
+            color: palette.shadow.withValues(alpha: 0.72),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -820,7 +981,7 @@ class _SectionCard extends StatelessWidget {
                 child: Icon(
                   icon,
                   size: 22,
-                  color: accent,
+                  color: palette.iconColor,
                 ),
               ),
               const SizedBox(width: 10),
@@ -829,7 +990,7 @@ class _SectionCard extends StatelessWidget {
                   title,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: palette.textColor,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
@@ -861,6 +1022,8 @@ class _SectionActionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -870,12 +1033,12 @@ class _SectionActionChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
-            color: palette.iconBackground.withValues(alpha: 0.92),
-            border: Border.all(color: palette.border.withValues(alpha: 0.6)),
+            color: palette.iconBackground.withValues(alpha: 0.86),
+            border: Border.all(color: palette.border.withValues(alpha: 0.5)),
           ),
           child: Text(
             label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            style: theme.textTheme.labelMedium?.copyWith(
               color: palette.textColor,
               fontWeight: FontWeight.w700,
             ),
@@ -890,10 +1053,12 @@ class _AssignedTasksBlock extends StatelessWidget {
   const _AssignedTasksBlock({
     required this.state,
     required this.tasks,
+    required this.paletteModuleId,
   });
 
   final TaskListState state;
   final List<UserTask> tasks;
+  final String paletteModuleId;
 
   @override
   Widget build(BuildContext context) {
@@ -922,29 +1087,27 @@ class _AssignedTasksBlock extends StatelessWidget {
     }
 
     if (state.totalActiveTasks == 0 || tasks.isEmpty) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final palette = AppCardPalette.resolve(
+        context,
+        index: 0,
+        moduleId: paletteModuleId,
+      );
       return _EmptyHint(
         title: context.l10n.dashboardNoAssignedTasks,
         description: context.l10n.dashboardNoAssignedTasksDescription,
         icon: Icons.task_alt_rounded,
-        tone: isDark
-            ? const _Tone(
-                background: Color(0xFF241F36),
-                border: Color(0xFF4A416B),
-                foreground: Color(0xFFDACEFF),
-              )
-            : const _Tone(
-                background: Color(0xFFF2EEFF),
-                border: Color(0xFFD8CEFF),
-                foreground: Color(0xFF4D3C8E),
-              ),
+        tone: _Tone(
+          background: palette.iconBackground.withValues(alpha: 0.72),
+          border: palette.border.withValues(alpha: 0.46),
+          foreground: palette.iconColor,
+        ),
       );
     }
 
     return Column(
       children: [
         for (var index = 0; index < tasks.length; index++) ...[
-          _TaskRow(task: tasks[index]),
+          _TaskRow(task: tasks[index], paletteModuleId: paletteModuleId),
           if (index != tasks.length - 1) const SizedBox(height: 10),
         ],
       ],
@@ -958,12 +1121,14 @@ class _UpcomingEventsBlock extends StatelessWidget {
     required this.hasLoadedOnce,
     required this.error,
     required this.events,
+    required this.paletteModuleId,
   });
 
   final CalendarStatus status;
   final bool hasLoadedOnce;
   final String? error;
   final List<CalendarEvent> events;
+  final String paletteModuleId;
 
   @override
   Widget build(BuildContext context) {
@@ -992,29 +1157,27 @@ class _UpcomingEventsBlock extends StatelessWidget {
     }
 
     if (events.isEmpty) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final palette = AppCardPalette.resolve(
+        context,
+        index: 0,
+        moduleId: paletteModuleId,
+      );
       return _EmptyHint(
         title: context.l10n.dashboardNoUpcomingEvents,
         description: context.l10n.dashboardNoUpcomingEventsDescription,
         icon: Icons.event_available_rounded,
-        tone: isDark
-            ? const _Tone(
-                background: Color(0xFF1F2936),
-                border: Color(0xFF435D7B),
-                foreground: Color(0xFFD9EEFF),
-              )
-            : const _Tone(
-                background: Color(0xFFEAF4FF),
-                border: Color(0xFFCDE2F8),
-                foreground: Color(0xFF285B86),
-              ),
+        tone: _Tone(
+          background: palette.iconBackground.withValues(alpha: 0.72),
+          border: palette.border.withValues(alpha: 0.46),
+          foreground: palette.iconColor,
+        ),
       );
     }
 
     return Column(
       children: [
         for (var index = 0; index < events.length; index++) ...[
-          _EventRow(event: events[index]),
+          _EventRow(event: events[index], paletteModuleId: paletteModuleId),
           if (index != events.length - 1) const SizedBox(height: 10),
         ],
       ],
@@ -1023,9 +1186,13 @@ class _UpcomingEventsBlock extends StatelessWidget {
 }
 
 class _TaskRow extends StatelessWidget {
-  const _TaskRow({required this.task});
+  const _TaskRow({
+    required this.task,
+    required this.paletteModuleId,
+  });
 
   final UserTask task;
+  final String paletteModuleId;
 
   @override
   Widget build(BuildContext context) {
@@ -1033,9 +1200,8 @@ class _TaskRow extends StatelessWidget {
     final palette = AppCardPalette.resolve(
       context,
       index: 0,
-      moduleId: 'finance',
+      moduleId: paletteModuleId,
     );
-    final accent = palette.iconColor;
     final boardName = task.list?.board?.name;
     final listName = task.list?.name;
     final locationLabel = [boardName, listName]
@@ -1043,12 +1209,6 @@ class _TaskRow extends StatelessWidget {
         .cast<String>()
         .join(' • ');
     final dueLabel = _dueLabel(context, task.endDate);
-    final priorityLabel = switch (task.priority) {
-      'critical' => context.l10n.tasksPriorityCritical,
-      'high' => context.l10n.tasksPriorityHigh,
-      'low' => context.l10n.tasksPriorityLow,
-      _ => context.l10n.tasksPriorityNormal,
-    };
 
     return Material(
       color: Colors.transparent,
@@ -1060,23 +1220,16 @@ class _TaskRow extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(18),
         child: Ink(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Color.alphaBlend(
-              palette.iconBackground.withValues(alpha: 0.62),
-              theme.colorScheme.surfaceContainerLow,
+              palette.iconBackground.withValues(alpha: 0.5),
+              palette.background,
             ),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: palette.border.withValues(alpha: 0.52),
+              color: palette.border.withValues(alpha: 0.46),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: palette.shadow.withValues(alpha: 0.8),
-                blurRadius: 12,
-                offset: const Offset(0, 7),
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1093,7 +1246,7 @@ class _TaskRow extends StatelessWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleMedium?.copyWith(
-                            color: theme.colorScheme.onSurface,
+                            color: palette.textColor,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -1106,37 +1259,17 @@ class _TaskRow extends StatelessWidget {
                               _DashboardTaskPill(
                                 icon: Icons.view_kanban_outlined,
                                 label: locationLabel,
-                                accent: accent,
+                                palette: palette,
                               ),
                             if (task.endDate != null)
                               _DashboardTaskPill(
                                 icon: Icons.schedule_outlined,
                                 label: dueLabel,
-                                accent: accent,
+                                palette: palette,
                               ),
                           ],
                         ),
                       ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: palette.background,
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: palette.border.withValues(alpha: 0.56),
-                      ),
-                    ),
-                    child: Text(
-                      priorityLabel,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: accent.withValues(alpha: 0.96),
-                        fontWeight: FontWeight.w800,
-                      ),
                     ),
                   ),
                 ],
@@ -1168,45 +1301,35 @@ class _DashboardTaskPill extends StatelessWidget {
   const _DashboardTaskPill({
     required this.icon,
     required this.label,
-    this.accent,
+    required this.palette,
   });
 
   final IconData icon;
   final String label;
-  final Color? accent;
+  final AppCardPalette palette;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final palette = AppCardPalette.resolve(
-      context,
-      index: 0,
-      moduleId: 'calendar',
-    );
-    final foreground = accent ?? theme.colorScheme.onSurfaceVariant;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: accent != null
-            ? foreground.withValues(alpha: 0.14)
-            : palette.iconBackground,
+        color: palette.iconBackground.withValues(alpha: 0.78),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: accent != null
-              ? foreground.withValues(alpha: 0.2)
-              : palette.border.withValues(alpha: 0.42),
+          color: palette.border.withValues(alpha: 0.46),
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: foreground.withValues(alpha: 0.92)),
+          Icon(icon, size: 14, color: palette.iconColor),
           const SizedBox(width: 6),
           Text(
             label,
             style: theme.textTheme.labelMedium?.copyWith(
-              color: foreground.withValues(alpha: 0.96),
+              color: palette.textColor,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1217,9 +1340,13 @@ class _DashboardTaskPill extends StatelessWidget {
 }
 
 class _EventRow extends StatelessWidget {
-  const _EventRow({required this.event});
+  const _EventRow({
+    required this.event,
+    required this.paletteModuleId,
+  });
 
   final CalendarEvent event;
+  final String paletteModuleId;
 
   @override
   Widget build(BuildContext context) {
@@ -1228,9 +1355,8 @@ class _EventRow extends StatelessWidget {
     final palette = AppCardPalette.resolve(
       context,
       index: 0,
-      moduleId: 'calendar',
+      moduleId: paletteModuleId,
     );
-    final accent = palette.iconColor;
     final dateLabel = start == null
         ? context.l10n.dashboardEventAllDay
         : '${DateFormat('EEE, d MMM').format(start)}'
@@ -1245,20 +1371,13 @@ class _EventRow extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Color.alphaBlend(
-          palette.iconBackground.withValues(alpha: 0.62),
-          theme.colorScheme.surfaceContainerLow,
+          palette.iconBackground.withValues(alpha: 0.5),
+          palette.background,
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: palette.border.withValues(alpha: 0.5),
+          color: palette.border.withValues(alpha: 0.46),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: palette.shadow.withValues(alpha: 0.8),
-            blurRadius: 12,
-            offset: const Offset(0, 7),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -1266,16 +1385,18 @@ class _EventRow extends StatelessWidget {
             width: 60,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
             decoration: BoxDecoration(
-              color: palette.background,
+              color: palette.background.withValues(alpha: 0.84),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: palette.border.withValues(alpha: 0.44)),
+              border: Border.all(
+                color: palette.border.withValues(alpha: 0.44),
+              ),
             ),
             child: Column(
               children: [
                 Text(
                   dayLabel,
                   style: theme.textTheme.headlineSmall?.copyWith(
-                    color: accent,
+                    color: palette.iconColor,
                     fontWeight: FontWeight.w900,
                     height: 1,
                   ),
@@ -1286,9 +1407,8 @@ class _EventRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelMedium?.copyWith(
-                    color: accent.withValues(alpha: 0.92),
+                    color: palette.iconColor.withValues(alpha: 0.92),
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 0.6,
                   ),
                 ),
               ],
@@ -1305,7 +1425,7 @@ class _EventRow extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onSurface,
+                    color: palette.textColor,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -1315,7 +1435,7 @@ class _EventRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: accent.withValues(alpha: 0.9),
+                    color: palette.iconColor.withValues(alpha: 0.92),
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1326,7 +1446,7 @@ class _EventRow extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                      color: palette.textColor.withValues(alpha: 0.74),
                       height: 1.35,
                     ),
                   ),

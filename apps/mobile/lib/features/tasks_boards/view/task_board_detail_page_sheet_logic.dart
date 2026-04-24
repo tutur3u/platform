@@ -584,7 +584,7 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
       final currentTask = state.widget.task!;
       final shouldClearDescription =
           state._isTaskDescriptionEditingEnabled &&
-          (currentTask.description?.isNotEmpty ?? false) &&
+          (state._initialDescription?.isNotEmpty ?? false) &&
           description == null;
       await cubit.updateTask(
         taskId: currentTask.id,
@@ -618,7 +618,18 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
         ),
       ),
     );
-    await state._closeEditor();
+    if (state.widget.embedded && !state._isCreate) {
+      state._markCurrentValuesSaved();
+      final refreshedTask = _findTaskEditorTaskInState(
+        cubit.state,
+        state.widget.task!.id,
+      );
+      if (refreshedTask != null) {
+        state.widget.onTaskChanged?.call(refreshedTask);
+      }
+    } else {
+      await state._closeEditor();
+    }
   } on Object catch (error) {
     final message = error.toString().trim();
     if (!state.mounted || !toastContext.mounted) return;
@@ -633,6 +644,22 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
       state._updateState(() => state._isSaving = false);
     }
   }
+}
+
+TaskBoardTask? _findTaskEditorTaskInState(
+  TaskBoardDetailState state,
+  String taskId,
+) {
+  final tasks = state.board?.tasks;
+  if (tasks == null) return null;
+
+  for (final task in tasks) {
+    if (task.id == taskId) {
+      return task;
+    }
+  }
+
+  return null;
 }
 
 Future<void> _moveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {

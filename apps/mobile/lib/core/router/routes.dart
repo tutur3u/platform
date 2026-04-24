@@ -73,6 +73,11 @@ abstract final class Routes {
 
   static String taskBoardDetailPath(String boardId) => '/tasks/boards/$boardId';
 
+  static String taskBoardTaskDetailPath(String boardId, String taskId) => Uri(
+    path: taskBoardDetailPath(boardId),
+    queryParameters: {'taskId': taskId},
+  ).toString();
+
   static String timerRequestsPath({
     String? requestId,
     String? status,

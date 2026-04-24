@@ -63,26 +63,29 @@ class _FilterDropdownSection extends StatelessWidget {
             style: shad.Theme.of(context).typography.textMuted,
           )
         else
-          shad.OutlineButton(
-            onPressed: enabled
-                ? () => unawaited(_openSelectionMenu(context))
-                : null,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    selectedSummary,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const shad.Gap(8),
-                const Icon(Icons.keyboard_arrow_down, size: 16),
-              ],
-            ),
-          ),
+          _buildMenuButton(context, selectedSummary),
       ],
     );
+  }
+
+  Widget _buildMenuButton(BuildContext context, String selectedSummary) {
+    final button = shad.OutlineButton(
+      onPressed: enabled ? () => unawaited(_openSelectionMenu(context)) : null,
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              selectedSummary,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const shad.Gap(8),
+          const Icon(Icons.keyboard_arrow_down, size: 16),
+        ],
+      ),
+    );
+    return button;
   }
 
   Future<void> _openSelectionMenu(BuildContext context) async {

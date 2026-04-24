@@ -164,6 +164,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
               SpeedDialFab(
                 label: context.l10n.taskPortfolioTitle,
                 icon: Icons.add,
+                includeBottomSafeArea: false,
                 actions: [
                   FabAction(
                     icon: Icons.folder_open_outlined,

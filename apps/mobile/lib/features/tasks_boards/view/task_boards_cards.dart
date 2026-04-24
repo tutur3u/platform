@@ -114,17 +114,6 @@ class _TaskBoardCard extends StatelessWidget {
                   ),
               ],
             ),
-            const shad.Gap(14),
-            Row(
-              children: [
-                const Spacer(),
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 18,
-                  color: accentColor,
-                ),
-              ],
-            ),
           ],
         ),
       ),

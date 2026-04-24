@@ -1696,6 +1696,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailTaskActions => 'Thao tác công việc';
 
   @override
+  String get taskBoardDetailCollapseList => 'Thu gọn danh sách';
+
+  @override
+  String get taskBoardDetailExpandList => 'Mở rộng danh sách';
+
+  @override
+  String get taskBoardDetailInformation => 'Thông tin';
+
+  @override
   String get taskBoardDetailMoveTask => 'Di chuyển công việc';
 
   @override
@@ -1724,6 +1733,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailTaskDescriptionHint => 'Thêm mô tả';
+
+  @override
+  String get taskBoardDetailTaskNoDescription => 'Chưa có mô tả';
 
   @override
   String get taskBoardDetailTaskDescriptionComingSoon => 'Tính năng chỉnh sửa mô tả sẽ sớm có trên mobile.';
@@ -5228,6 +5240,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get workspacePickerTitle => 'Không gian làm việc';
+
+  @override
+  String get workspacePickerSearchHint => 'Tìm không gian làm việc';
 
   @override
   String get workspaceDefaultPickerTitle => 'Không gian mặc định';

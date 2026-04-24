@@ -174,6 +174,137 @@ class _TaskEditorTabLabel extends StatelessWidget {
   }
 }
 
+class _SelectedAssigneesList extends StatelessWidget {
+  const _SelectedAssigneesList({required this.assignees});
+
+  final List<TaskBoardTaskAssignee> assignees;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        children: [
+          if (assignees.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.secondary.withValues(alpha: 0.18),
+                border: Border.all(color: theme.colorScheme.border),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                context.l10n.taskBoardDetailNone,
+                style: theme.typography.small.copyWith(
+                  color: theme.colorScheme.mutedForeground,
+                ),
+              ),
+            )
+          else
+            ...assignees.map(
+              (assignee) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _SelectedAssigneeRow(assignee: assignee),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SelectedAssigneeRow extends StatelessWidget {
+  const _SelectedAssigneeRow({required this.assignee});
+
+  final TaskBoardTaskAssignee assignee;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final name = assignee.displayName?.trim().isNotEmpty == true
+        ? assignee.displayName!.trim()
+        : assignee.id;
+    final email = assignee.email?.trim();
+    final secondary = email?.isNotEmpty == true ? email! : assignee.id;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.secondary.withValues(alpha: 0.18),
+        border: Border.all(color: theme.colorScheme.border),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          _SelectedAssigneeAvatar(
+            name: name,
+            avatarUrl: assignee.avatarUrl,
+          ),
+          const shad.Gap(10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.small.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const shad.Gap(2),
+                Text(
+                  secondary,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.xSmall.copyWith(
+                    color: theme.colorScheme.mutedForeground,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SelectedAssigneeAvatar extends StatelessWidget {
+  const _SelectedAssigneeAvatar({
+    required this.name,
+    required this.avatarUrl,
+  });
+
+  final String name;
+  final String? avatarUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final normalizedAvatarUrl = avatarUrl?.trim() ?? '';
+    final fallback = Text(
+      name.trim().isNotEmpty ? name.trim().substring(0, 1).toUpperCase() : '?',
+      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+    );
+
+    if (normalizedAvatarUrl.isEmpty) {
+      return CircleAvatar(radius: 18, child: fallback);
+    }
+
+    return CircleAvatar(
+      radius: 18,
+      backgroundImage: NetworkImage(normalizedAvatarUrl),
+      onBackgroundImageError: (error, stackTrace) {},
+      child: const SizedBox.shrink(),
+    );
+  }
+}
+
 class _RelationshipSectionCard extends StatelessWidget {
   const _RelationshipSectionCard({
     required this.title,

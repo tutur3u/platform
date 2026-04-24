@@ -27,26 +27,25 @@ void showWorkspacePickerSheet(
   final workspaceCubit = parentContext.read<WorkspaceCubit>();
 
   unawaited(
-    showAdaptiveDrawer(
+    showAdaptiveSheet<void>(
       context: parentContext,
-      builder: (context) {
-        return BlocProvider<WorkspaceCubit>.value(
-          value: workspaceCubit,
-          child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
-            builder: (_, state) => _WorkspacePickerContent(
-              parentContext: parentContext,
-              workspaceCubit: workspaceCubit,
-              state: state,
-              mode: mode,
-            ),
+      useRootNavigator: true,
+      builder: (context) => BlocProvider<WorkspaceCubit>.value(
+        value: workspaceCubit,
+        child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
+          builder: (_, state) => _WorkspacePickerContent(
+            parentContext: parentContext,
+            workspaceCubit: workspaceCubit,
+            state: state,
+            mode: mode,
           ),
-        );
-      },
+        ),
+      ),
     ),
   );
 }
 
-class _WorkspacePickerContent extends StatelessWidget {
+class _WorkspacePickerContent extends StatefulWidget {
   const _WorkspacePickerContent({
     required this.parentContext,
     required this.workspaceCubit,
@@ -59,154 +58,356 @@ class _WorkspacePickerContent extends StatelessWidget {
   final WorkspaceState state;
   final WorkspacePickerMode mode;
 
-  bool get _isDefaultMode => mode == WorkspacePickerMode.defaultWorkspace;
+  @override
+  State<_WorkspacePickerContent> createState() =>
+      _WorkspacePickerContentState();
+}
+
+class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
+  late final TextEditingController _searchController;
+  late final FocusNode _searchFocusNode;
+  String _searchQuery = '';
+  bool _isSearchVisible = false;
+
+  bool get _isDefaultMode =>
+      widget.mode == WorkspacePickerMode.defaultWorkspace;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController()
+      ..addListener(() {
+        final nextQuery = _searchController.text;
+        if (nextQuery == _searchQuery) return;
+        setState(() {
+          _searchQuery = nextQuery;
+        });
+      });
+    _searchFocusNode = FocusNode()..addListener(_handleSearchFocusChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchFocusNode.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final sections = splitWorkspaceSections(state.workspaces);
-    final maxHeight =
-        MediaQuery.sizeOf(context).height * (context.isCompact ? 0.80 : 0.74);
+    final theme = shad.Theme.of(context);
+    final mediaPadding = MediaQuery.paddingOf(context);
+    final visibleWorkspaces = _searchQuery.trim().isEmpty
+        ? widget.state.workspaces
+        : widget.state.workspaces
+              .where((workspace) => _matchesWorkspace(context, workspace))
+              .toList(growable: false);
+    final sections = splitWorkspaceSections(visibleWorkspaces);
+    final size = MediaQuery.sizeOf(context);
 
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: maxHeight),
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          18,
-          context.isCompact ? 10 : 20,
-          18,
-          context.isCompact ? 20 : 18,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _PickerHeader(
-              title: _isDefaultMode
-                  ? l10n.workspaceDefaultPickerTitle
-                  : l10n.workspacePickerTitle,
-              subtitle: l10n.workspaceSelectTitle,
-              canCreate: state.limits?.canCreate ?? true,
-              createLabel: l10n.workspaceCreateNew,
-              onCreate: () => _handleCreate(context),
+    return SizedBox(
+      width: double.infinity,
+      height: size.height - mediaPadding.top,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.background,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(context.isCompact ? 26 : 30),
+          ),
+          border: Border(
+            top: BorderSide(
+              color: theme.colorScheme.border.withValues(alpha: 0.55),
             ),
-            if (state.limits != null && state.limits!.limit > 0) ...[
-              const shad.Gap(14),
-              _WorkspaceLimitsCard(
-                currentCount: state.limits!.currentCount,
-                limit: state.limits!.limit,
-              ),
-            ],
-            const shad.Gap(16),
-            if (sections.personal.isNotEmpty)
-              _WorkspacePickerSection(
-                title: l10n.workspacePersonalSection,
-                paletteModuleId: 'crm',
-                children: [
-                  for (final workspace in sections.personal)
-                    _WorkspaceTile(
-                      paletteModuleId: 'crm',
-                      workspace: workspace,
-                      isSelected: _isSelected(workspace),
-                      isCurrent: workspace.id == state.currentWorkspace?.id,
-                      isDefault: workspace.id == state.defaultWorkspace?.id,
-                      onTap: () => _handleSelect(context, workspace),
-                    ),
-                ],
-              ),
-            if (sections.system.isNotEmpty) ...[
-              if (sections.personal.isNotEmpty) const shad.Gap(16),
-              _WorkspacePickerSection(
-                title: l10n.workspaceSystemSection,
-                paletteModuleId: 'calendar',
-                children: [
-                  for (final workspace in sections.system)
-                    _WorkspaceTile(
-                      paletteModuleId: 'calendar',
-                      workspace: workspace,
-                      isSelected: _isSelected(workspace),
-                      isCurrent: workspace.id == state.currentWorkspace?.id,
-                      isDefault: workspace.id == state.defaultWorkspace?.id,
-                      onTap: () => _handleSelect(context, workspace),
-                    ),
-                ],
-              ),
-            ],
-            if (sections.team.isNotEmpty) ...[
-              const shad.Gap(16),
-              _WorkspacePickerSection(
-                title: l10n.workspacePickerTitle,
-                paletteModuleId: 'finance',
-                children: [
-                  for (final workspace in sections.team)
-                    _WorkspaceTile(
-                      paletteModuleId: 'finance',
-                      workspace: workspace,
-                      isSelected: _isSelected(workspace),
-                      isCurrent: workspace.id == state.currentWorkspace?.id,
-                      isDefault: workspace.id == state.defaultWorkspace?.id,
-                      onTap: () => _handleSelect(context, workspace),
-                    ),
-                ],
-              ),
-            ],
-            if (state.workspaces.isEmpty) ...[
-              const shad.Gap(16),
-              _WorkspaceEmptyState(
-                canCreate: state.limits?.canCreate ?? true,
+          ),
+        ),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            18,
+            14,
+            18,
+            24 + mediaPadding.bottom,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _PickerHeader(
+                title: _isDefaultMode
+                    ? l10n.workspaceDefaultPickerTitle
+                    : l10n.workspacePickerTitle,
+                canCreate: widget.state.limits?.canCreate ?? true,
+                createLabel: l10n.workspaceCreateNew,
+                searchLabel: l10n.workspacePickerSearchHint,
+                isSearchVisible: _isSearchVisible,
+                searchController: _searchController,
+                searchFocusNode: _searchFocusNode,
+                onSearch: _toggleSearch,
+                onClearSearch: _searchQuery.trim().isEmpty
+                    ? null
+                    : () => _searchController.clear(),
                 onCreate: () => _handleCreate(context),
+                onClose: () => Navigator.maybePop(context),
               ),
+              const shad.Gap(16),
+              if (widget.state.limits != null &&
+                  widget.state.limits!.limit > 0) ...[
+                _WorkspaceLimitsCard(
+                  currentCount: widget.state.limits!.currentCount,
+                  limit: widget.state.limits!.limit,
+                ),
+                const shad.Gap(16),
+              ],
+              if (sections.personal.isNotEmpty)
+                _WorkspacePickerSection(
+                  title: l10n.workspacePersonalSection,
+                  paletteModuleId: 'crm',
+                  children: [
+                    for (final workspace in sections.personal)
+                      _WorkspaceTile(
+                        paletteModuleId: 'crm',
+                        workspace: workspace,
+                        isSelected: _isSelected(workspace),
+                        isCurrent:
+                            workspace.id == widget.state.currentWorkspace?.id,
+                        isDefault:
+                            workspace.id == widget.state.defaultWorkspace?.id,
+                        onTap: () => _handleSelect(context, workspace),
+                      ),
+                  ],
+                ),
+              if (sections.system.isNotEmpty) ...[
+                if (sections.personal.isNotEmpty) const shad.Gap(16),
+                _WorkspacePickerSection(
+                  title: l10n.workspaceSystemSection,
+                  paletteModuleId: 'calendar',
+                  children: [
+                    for (final workspace in sections.system)
+                      _WorkspaceTile(
+                        paletteModuleId: 'calendar',
+                        workspace: workspace,
+                        isSelected: _isSelected(workspace),
+                        isCurrent:
+                            workspace.id == widget.state.currentWorkspace?.id,
+                        isDefault:
+                            workspace.id == widget.state.defaultWorkspace?.id,
+                        onTap: () => _handleSelect(context, workspace),
+                      ),
+                  ],
+                ),
+              ],
+              if (sections.team.isNotEmpty) ...[
+                const shad.Gap(16),
+                _WorkspacePickerSection(
+                  title: l10n.workspacePickerTitle,
+                  paletteModuleId: 'finance',
+                  children: [
+                    for (final workspace in sections.team)
+                      _WorkspaceTile(
+                        paletteModuleId: 'finance',
+                        workspace: workspace,
+                        isSelected: _isSelected(workspace),
+                        isCurrent:
+                            workspace.id == widget.state.currentWorkspace?.id,
+                        isDefault:
+                            workspace.id == widget.state.defaultWorkspace?.id,
+                        onTap: () => _handleSelect(context, workspace),
+                      ),
+                  ],
+                ),
+              ],
+              if (widget.state.workspaces.isEmpty)
+                _WorkspaceEmptyState(
+                  canCreate: widget.state.limits?.canCreate ?? true,
+                  onCreate: () => _handleCreate(context),
+                )
+              else if (visibleWorkspaces.isEmpty)
+                _WorkspaceSearchEmptyState(
+                  onClear: () => _searchController.clear(),
+                ),
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 
+  bool _matchesWorkspace(BuildContext context, Workspace workspace) {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return true;
+
+    return [
+      displayWorkspacePickerName(context, workspace),
+      workspace.name,
+      workspace.id,
+      workspace.tier,
+    ].whereType<String>().any((value) => value.toLowerCase().contains(query));
+  }
+
   bool _isSelected(Workspace workspace) {
     return workspace.id ==
         (_isDefaultMode
-            ? state.defaultWorkspace?.id
-            : state.currentWorkspace?.id);
+            ? widget.state.defaultWorkspace?.id
+            : widget.state.currentWorkspace?.id);
+  }
+
+  void _toggleSearch() {
+    if (_isSearchVisible) {
+      _searchFocusNode.unfocus();
+      return;
+    }
+
+    setState(() => _isSearchVisible = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _searchFocusNode.requestFocus();
+    });
+  }
+
+  void _handleSearchFocusChanged() {
+    if (!mounted) return;
+    if (_searchFocusNode.hasFocus) {
+      if (!_isSearchVisible) {
+        setState(() => _isSearchVisible = true);
+      }
+      return;
+    }
+
+    if (_searchController.text.isNotEmpty) {
+      _searchController.clear();
+    }
+    if (_isSearchVisible) {
+      setState(() => _isSearchVisible = false);
+    }
   }
 
   Future<void> _handleCreate(BuildContext context) async {
-    if (!(state.limits?.canCreate ?? true)) {
+    if (!(widget.state.limits?.canCreate ?? true)) {
       return;
     }
 
-    await dismissAdaptiveDrawerOverlay(context);
-    if (!parentContext.mounted) {
+    await Navigator.maybePop(context);
+    if (!widget.parentContext.mounted) {
       return;
     }
-    await showCreateWorkspaceDialog(parentContext);
+    await showCreateWorkspaceDialog(widget.parentContext);
   }
 
   Future<void> _handleSelect(BuildContext context, Workspace workspace) async {
-    await dismissAdaptiveDrawerOverlay(context);
+    await Navigator.maybePop(context);
 
     if (_isDefaultMode) {
-      await workspaceCubit.setDefaultWorkspace(workspace);
+      await widget.workspaceCubit.setDefaultWorkspace(workspace);
       return;
     }
 
-    await workspaceCubit.selectWorkspace(workspace);
+    await widget.workspaceCubit.selectWorkspace(workspace);
+  }
+}
+
+class _WorkspaceSearchField extends StatelessWidget {
+  const _WorkspaceSearchField({
+    required this.controller,
+    required this.focusNode,
+    required this.hintText,
+    required this.onClear,
+    super.key,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final String hintText;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return shad.TextField(
+      controller: controller,
+      focusNode: focusNode,
+      hintText: hintText,
+      features: [
+        const shad.InputFeature.leading(Icon(Icons.search_rounded, size: 18)),
+        if (onClear != null)
+          shad.InputFeature.trailing(
+            shad.IconButton.ghost(
+              icon: const Icon(Icons.close_rounded, size: 18),
+              onPressed: onClear,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _WorkspaceSearchEmptyState extends StatelessWidget {
+  const _WorkspaceSearchEmptyState({required this.onClear});
+
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.muted.withValues(alpha: 0.28),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: theme.colorScheme.border.withValues(alpha: 0.6),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          children: [
+            Icon(
+              Icons.search_off_rounded,
+              color: theme.colorScheme.mutedForeground,
+            ),
+            const shad.Gap(12),
+            Expanded(
+              child: Text(
+                context.l10n.commonNoSearchResults,
+                style: theme.typography.p.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            shad.OutlineButton(
+              onPressed: onClear,
+              child: Text(context.l10n.commonClearSearch),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
 class _PickerHeader extends StatelessWidget {
   const _PickerHeader({
     required this.title,
-    required this.subtitle,
     required this.canCreate,
     required this.createLabel,
+    required this.searchLabel,
+    required this.isSearchVisible,
+    required this.searchController,
+    required this.searchFocusNode,
+    required this.onSearch,
+    required this.onClearSearch,
     required this.onCreate,
+    required this.onClose,
   });
 
   final String title;
-  final String subtitle;
   final bool canCreate;
   final String createLabel;
+  final String searchLabel;
+  final bool isSearchVisible;
+  final TextEditingController searchController;
+  final FocusNode searchFocusNode;
+  final VoidCallback onSearch;
+  final VoidCallback? onClearSearch;
   final VoidCallback onCreate;
+  final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -218,10 +419,21 @@ class _PickerHeader extends StatelessWidget {
     final theme = shad.Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: palette.background,
-        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.alphaBlend(
+              palette.iconBackground.withValues(alpha: 0.28),
+              palette.background,
+            ),
+            palette.background,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: palette.border.withValues(alpha: 0.95)),
         boxShadow: [
           BoxShadow(
@@ -231,79 +443,140 @@ class _PickerHeader extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+          Row(
+            children: [
+              Expanded(
+                child: Text(
                   title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: theme.typography.h4.copyWith(
                     color: palette.textColor,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
+              ),
+              const shad.Gap(10),
+              _PickerHeaderIconButton(
+                icon: Icons.close_rounded,
+                color: palette.textColor,
+                background: palette.background.withValues(alpha: 0.76),
+                border: palette.border,
+                onPressed: onClose,
+              ),
+            ],
+          ),
+          const shad.Gap(14),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            child: isSearchVisible
+                ? _WorkspaceSearchField(
+                    key: const ValueKey<String>('workspace-search-expanded'),
+                    controller: searchController,
+                    focusNode: searchFocusNode,
+                    hintText: searchLabel,
+                    onClear: onClearSearch,
+                  )
+                : Row(
+                    key: const ValueKey<String>('workspace-search-collapsed'),
+                    children: [
+                      _PickerHeaderIconButton(
+                        icon: Icons.search_rounded,
+                        color: palette.iconColor,
+                        background: palette.iconBackground,
+                        border: palette.border,
+                        onPressed: onSearch,
+                      ),
+                      const shad.Gap(10),
+                      Expanded(
+                        child: _PickerHeaderIconButton(
+                          icon: Icons.add_rounded,
+                          color: canCreate
+                              ? palette.iconColor
+                              : palette.iconColor.withValues(alpha: 0.48),
+                          background: canCreate
+                              ? palette.iconBackground
+                              : palette.iconBackground.withValues(alpha: 0.62),
+                          border: palette.border,
+                          onPressed: canCreate ? onCreate : null,
+                          label: createLabel,
+                          centerContent: true,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PickerHeaderIconButton extends StatelessWidget {
+  const _PickerHeaderIconButton({
+    required this.icon,
+    required this.color,
+    required this.background,
+    required this.border,
+    required this.onPressed,
+    this.label,
+    this.centerContent = false,
+  });
+
+  final IconData icon;
+  final Color color;
+  final Color background;
+  final Color border;
+  final VoidCallback? onPressed;
+  final String? label;
+  final bool centerContent;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onPressed,
+        child: Ink(
+          height: 42,
+          padding: EdgeInsets.symmetric(horizontal: label == null ? 10 : 12),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: border.withValues(alpha: 0.44)),
+          ),
+          child: Row(
+            mainAxisSize: centerContent ? MainAxisSize.max : MainAxisSize.min,
+            mainAxisAlignment: centerContent
+                ? MainAxisAlignment.center
+                : MainAxisAlignment.start,
+            children: [
+              Icon(icon, size: 19, color: color),
+              if (label != null) ...[
                 const shad.Gap(6),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.small.copyWith(
-                    color: palette.textColor.withValues(alpha: 0.78),
-                    fontWeight: FontWeight.w600,
+                Flexible(
+                  child: Text(
+                    label!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.small.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ],
-            ),
+            ],
           ),
-          const shad.Gap(12),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: canCreate ? onCreate : null,
-              child: Ink(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: canCreate
-                      ? palette.iconBackground
-                      : palette.iconBackground.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: palette.border.withValues(alpha: 0.48),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.add_rounded,
-                      size: 16,
-                      color: canCreate
-                          ? palette.iconColor
-                          : palette.iconColor.withValues(alpha: 0.6),
-                    ),
-                    const shad.Gap(6),
-                    Text(
-                      createLabel,
-                      style: theme.typography.small.copyWith(
-                        color: canCreate
-                            ? palette.textColor
-                            : palette.textColor.withValues(alpha: 0.6),
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -409,36 +682,13 @@ class _WorkspacePickerSection extends StatelessWidget {
           ),
         ),
         const shad.Gap(10),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: palette.background,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: palette.border.withValues(alpha: 0.9),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: palette.shadow,
-                blurRadius: 14,
-                offset: const Offset(0, 8),
-              ),
+        Column(
+          children: [
+            for (var index = 0; index < children.length; index++) ...[
+              if (index > 0) const shad.Gap(10),
+              children[index],
             ],
-          ),
-          child: Column(
-            children: [
-              for (var index = 0; index < children.length; index++) ...[
-                if (index > 0)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Container(
-                      height: 1,
-                      color: palette.border.withValues(alpha: 0.28),
-                    ),
-                  ),
-                children[index],
-              ],
-            ],
-          ),
+          ],
         ),
       ],
     );
@@ -474,25 +724,43 @@ class _WorkspaceTile extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             color: isSelected
-                ? palette.iconBackground.withValues(alpha: 0.82)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(22),
+                ? palette.iconBackground.withValues(alpha: 0.9)
+                : palette.background,
+            gradient: isSelected
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      palette.iconBackground.withValues(alpha: 0.96),
+                      palette.background,
+                    ],
+                  )
+                : null,
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isSelected
-                  ? palette.border.withValues(alpha: 0.72)
-                  : Colors.transparent,
+                  ? palette.border.withValues(alpha: 0.9)
+                  : palette.border.withValues(alpha: 0.46),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: palette.shadow.withValues(
+                  alpha: isSelected ? 0.84 : 0.5,
+                ),
+                blurRadius: isSelected ? 16 : 10,
+                offset: const Offset(0, 7),
+              ),
+            ],
           ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _WorkspaceLeading(workspace: workspace, size: 42),
+              _WorkspaceLeading(workspace: workspace, size: 46),
               const shad.Gap(12),
               Expanded(
                 child: Column(
@@ -505,8 +773,8 @@ class _WorkspaceTile extends StatelessWidget {
                       style: theme.typography.large.copyWith(
                         color: palette.textColor,
                         fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.w600,
+                            ? FontWeight.w800
+                            : FontWeight.w700,
                       ),
                     ),
                     const shad.Gap(6),

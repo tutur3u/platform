@@ -156,7 +156,7 @@ class _PriorityBadge extends StatelessWidget {
     final style = _taskPriorityStyle(context, priority);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.fromLTRB(6, 4, 10, 4),
       decoration: BoxDecoration(
         color: style.background,
         borderRadius: BorderRadius.circular(999),
@@ -165,14 +165,22 @@ class _PriorityBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(style.icon, size: 12, color: style.foreground),
-          const shad.Gap(4),
+          Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              color: style.foreground.withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(style.icon, size: 12, color: style.foreground),
+          ),
+          const shad.Gap(5),
           Text(
             style.label,
             style: theme.typography.small.copyWith(
               color: style.foreground,
               fontSize: 11,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],

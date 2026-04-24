@@ -35,8 +35,8 @@ class _TaskCard extends StatelessWidget {
       ),
     );
     final listStyle = _taskBoardListVisualStyle(context, list);
-    final isOverdue = _taskIsOverdue(task);
-    final isCompleted = task.closedAt != null;
+    final isOverdue = _taskIsOverdueForList(task, list);
+    final isCompleted = _taskIsCompletedInBoard(task, list);
     final borderColor = isSelected
         ? theme.colorScheme.primary
         : theme.colorScheme.border.withValues(alpha: 0.35);
@@ -152,11 +152,9 @@ class _TaskStatusIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.dynamicColors;
 
-    // The model can carry both `task.closedAt` and `task.completed`.
-    // We treat `task.closedAt != null` as the authoritative completion signal,
-    // then only consult `task.completed` in the default branch when the list
-    // status value is unrecognized.
-    if (task.closedAt != null) {
+    // Board lists are the canonical workflow state, so tasks in done/closed
+    // lists should read as completed even when their task row still has dates.
+    if (_taskIsCompletedInBoard(task, list)) {
       return Icon(
         Icons.check_circle,
         color: colors.green,
@@ -164,7 +162,7 @@ class _TaskStatusIcon extends StatelessWidget {
       );
     }
 
-    return switch (list.status?.toLowerCase()) {
+    return switch (TaskBoardList.normalizeSupportedStatus(list.status)) {
       'done' => Icon(
         Icons.check_circle_outline,
         color: colors.green,
