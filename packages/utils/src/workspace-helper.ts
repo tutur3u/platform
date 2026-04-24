@@ -948,9 +948,7 @@ export async function getWorkspaceConfig(
       workspaceId: wsId,
       configId,
       errorCode:
-        error && typeof error === 'object' && 'code' in error
-          ? error.code
-          : undefined,
+        typeof error === 'object' && 'code' in error ? error.code : undefined,
     });
     return null;
   }
@@ -989,7 +987,7 @@ export async function resolveGuestSelfJoinCandidate(
   supabase: TypedSupabaseClient,
   params: {
     authEmail: string | null;
-    rpcSupabase?: TypedSupabaseClient;
+    rpcSupabase: TypedSupabaseClient;
     privateEmail?: string | null;
     userId: string;
     workspaceId: string;
@@ -1063,16 +1061,15 @@ export async function resolveGuestSelfJoinCandidate(
     };
   }
 
-  const { data: guestCandidate, error: guestCandidateError } = await (
-    rpcSupabase ?? supabase
-  ).rpc('resolve_guest_self_join_candidate', {
-    p_user_id: userId,
-    p_ws_id: workspaceId,
-  });
+  const { data: guestCandidate, error: guestCandidateError } =
+    await rpcSupabase.rpc('resolve_guest_self_join_candidate', {
+      p_user_id: userId,
+      p_ws_id: workspaceId,
+    });
 
   if (guestCandidateError) {
-    console.error(
-      'Failed to resolve guest self-join candidate:',
+    logWorkspaceError(
+      'Failed to resolve guest self-join candidate',
       guestCandidateError,
       {
         userId,
@@ -1086,6 +1083,21 @@ export async function resolveGuestSelfJoinCandidate(
 
   const candidate = (guestCandidate?.[0] ??
     null) as GuestSelfJoinCandidateRpcRow | null;
+
+  if (
+    candidate?.reason === 'unauthorized' ||
+    candidate?.reason === 'forbidden'
+  ) {
+    logWorkspaceError(
+      'Guest self-join candidate RPC denied authorization',
+      new Error(candidate.reason),
+      {
+        userId,
+        workspaceId,
+        reason: candidate.reason,
+      }
+    );
+  }
 
   return {
     allowGuestSelfJoin: candidate?.eligible === true,
@@ -1120,7 +1132,8 @@ export async function getWorkspaceNonMemberInviteEligibility(
     workspaceId: string;
     userId: string;
     authEmail: string | null;
-    rpcSupabase?: TypedSupabaseClient;
+    /** Authenticated request-scoped client used for RPCs that depend on auth.uid(). */
+    rpcSupabase: TypedSupabaseClient;
   }
 ): Promise<WorkspaceNonMemberInviteEligibility> {
   const { workspaceId, userId, authEmail, rpcSupabase } = params;

@@ -135,13 +135,15 @@ export function WorkspaceJoinLogoBlock({
       : 'ring-dynamic-blue/20 group-hover:ring-dynamic-blue/30';
 
   const rawBrandImage = workspace.logo_url || workspace.avatar_url;
+  const isUsableBrandImage =
+    typeof rawBrandImage === 'string' && isUsableNextImageSrc(rawBrandImage);
+  const brandImageSrc = isUsableBrandImage ? rawBrandImage : null;
 
-  if (
-    process.env.NODE_ENV !== 'production' &&
-    rawBrandImage &&
-    !isUsableNextImageSrc(rawBrandImage) &&
-    !warnedInvalidBrandImageSources.has(rawBrandImage)
-  ) {
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return;
+    if (!rawBrandImage || isUsableBrandImage) return;
+    if (warnedInvalidBrandImageSources.has(rawBrandImage)) return;
+
     warnedInvalidBrandImageSources.add(rawBrandImage);
     console.warn(
       '[workspace-join-experience] Invalid workspace brand image source. Resolve branding URLs first via resolveWorkspaceBrandingUrlsForNext.',
@@ -150,10 +152,7 @@ export function WorkspaceJoinLogoBlock({
         workspaceId: workspace.id,
       }
     );
-  }
-
-  const brandImageSrc =
-    rawBrandImage && isUsableNextImageSrc(rawBrandImage) ? rawBrandImage : null;
+  }, [rawBrandImage, isUsableBrandImage, workspace.id]);
 
   return (
     <div className="mb-8 flex justify-center">
@@ -161,6 +160,7 @@ export function WorkspaceJoinLogoBlock({
         {brandImageSrc ? (
           <div
             className={`relative overflow-hidden rounded-2xl ring-4 ring-offset-4 ring-offset-background transition-all duration-300 group-hover:scale-110 ${ringClass}`}
+            style={{ width: wh, height: wh }}
           >
             <Image
               src={brandImageSrc}

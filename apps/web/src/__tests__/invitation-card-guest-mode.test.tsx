@@ -74,7 +74,9 @@ describe('InvitationCard guest self-join mode', () => {
     });
 
     expect(screen.getByText('invite.workspace-guest-join')).toBeTruthy();
-    expect(screen.getByText('invite.join-as-guest-button')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'invite.join-as-guest-button' })
+    ).toBeTruthy();
   });
 
   it('shows guest-specific error when guest match fails', async () => {
@@ -82,7 +84,9 @@ describe('InvitationCard guest self-join mode', () => {
       wrapper: createWrapper(),
     });
 
-    fireEvent.click(screen.getByText('invite.join-as-guest-button'));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'invite.join-as-guest-button' })
+    );
 
     await vi.waitFor(() => {
       expect(toastError).toHaveBeenCalledWith(

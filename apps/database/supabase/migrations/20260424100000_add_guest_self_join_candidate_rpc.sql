@@ -72,7 +72,6 @@ begin
     select
       wu.id,
       lower(trim(wu.email)) as email_norm,
-      wu.archived,
       coalesce(wu.updated_at, wu.created_at) as freshness,
       exists (
         select 1
@@ -110,7 +109,6 @@ begin
       when not rc.linked_to_any_user then 1
       else 2
     end,
-    case when rc.archived then 1 else 0 end,
     rc.freshness desc,
     rc.id
   limit 1;

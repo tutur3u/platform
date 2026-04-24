@@ -5814,8 +5814,7 @@
     "workspace-full": "Workspace Full",
     "workspace-guest-join": "Guest workspace access",
     "workspace-invitation": "Workspace invitation",
-    "you-been-invited-to-join-the": "You've been invited to join {workspace}. Accept to start collaborating!",
-    "you-can-join-as-guest": "You can join {workspace} as a guest with limited access."
+    "you-been-invited-to-join-the": "You've been invited to join {workspace}. Accept to start collaborating!"
   },
   "invoice-analytics": {
     "active_filters": "Active Filters",

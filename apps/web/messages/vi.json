@@ -5814,8 +5814,7 @@
     "workspace-full": "Đã Đầy",
     "workspace-guest-join": "Truy cập không gian làm việc với tư cách khách",
     "workspace-invitation": "Lời mời vào không gian làm việc",
-    "you-been-invited-to-join-the": "Bạn đã được mời tham gia {workspace}. Hãy chấp nhận lời mời để bắt đầu cộng tác!",
-    "you-can-join-as-guest": "Bạn có thể tham gia {workspace} với quyền hạn chế."
+    "you-been-invited-to-join-the": "Bạn đã được mời tham gia {workspace}. Hãy chấp nhận lời mời để bắt đầu cộng tác!"
   },
   "invoice-analytics": {
     "active_filters": "Bộ lọc đang áp dụng",
@@ -13547,7 +13546,7 @@
     "from_roles": "Từ vai trò",
     "granted_by": "Được cấp bởi",
     "guest_badge": "Khách",
-    "guest_self_join_description": "Cho phép người dùng đã đăng nhập có email khớp hồ sơ trong workspace tham gia với vai trò khách.",
+    "guest_self_join_description": "Cho phép người dùng đã đăng nhập có email khớp hồ sơ trong không gian làm việc tham gia với vai trò khách.",
     "guest_self_join_label": "Bật tham gia khách bằng khớp email",
     "guest_self_join_update_error": "Không thể cập nhật cài đặt tham gia khách.",
     "guest_self_join_update_success": "Đã cập nhật cài đặt tham gia khách.",
@@ -13588,7 +13587,7 @@
     "member_since": "Thành viên từ",
     "member-settings": "Cài đặt thành viên",
     "member-updated": "Thành viên đã được cập nhật",
-    "members_workspace_settings_description": "Tùy chọn cấp workspace cho thành viên và quyền truy cập khách.",
+    "members_workspace_settings_description": "Tùy chọn cấp không gian làm việc cho thành viên và quyền truy cập khách.",
     "no_invited_members_found": "Chưa có thành viên nào được mời",
     "no_members_found": "Không tìm thấy thành viên",
     "no_members_match": "Không có thành viên nào phù hợp với tìm kiếm của bạn",
