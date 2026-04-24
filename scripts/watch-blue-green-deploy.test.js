@@ -72,6 +72,24 @@ const {
 const ROOT_DIR = path.resolve(__dirname, '..');
 const PROD_COMPOSE_FILE = path.join(ROOT_DIR, 'docker-compose.web.prod.yml');
 
+test('watcher restart globs include blue-green service wiring files', () => {
+  assert.ok(SELF_WATCHED_FILES.includes('scripts/docker-web/blue-green.js'));
+  assert.ok(SELF_WATCHED_FILES.includes('scripts/docker-web/env.js'));
+  assert.ok(
+    CONTAINER_REFRESH_WATCHED_FILES.includes('docker-compose.web.prod.yml')
+  );
+  assert.ok(
+    CONTAINER_REFRESH_WATCHED_FILES.includes(
+      'apps/discord/Dockerfile.markitdown'
+    )
+  );
+  assert.ok(
+    CONTAINER_REFRESH_WATCHED_FILES.includes(
+      'apps/storage-unzip-proxy/Dockerfile'
+    )
+  );
+});
+
 function createResult(stdout = '', { code = 0, stderr = '' } = {}) {
   return {
     code,
@@ -2056,11 +2074,27 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         createResult(''),
       ],
       [
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue redis serverless-redis-http`,
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue markitdown storage-unzip-proxy redis serverless-redis-http`,
         createResult(''),
       ],
       [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q markitdown`,
+        createResult('markitdown-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q storage-unzip-proxy`,
+        createResult('storage-unzip-123\n'),
+      ],
+      [
         `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} markitdown-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} storage-unzip-123`,
         createResult('healthy\n'),
       ],
       [
@@ -2137,7 +2171,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f web-blue`
       ) <
         calls.indexOf(
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue redis serverless-redis-http`
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue markitdown storage-unzip-proxy redis serverless-redis-http`
         )
     );
     assert.ok(
@@ -2255,11 +2289,27 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
           createResult(''),
         ],
         [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue redis serverless-redis-http`,
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue markitdown storage-unzip-proxy redis serverless-redis-http`,
           createResult(''),
         ],
         [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q markitdown`,
+          createResult('markitdown-123\n'),
+        ],
+        [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q storage-unzip-proxy`,
+          createResult('storage-unzip-123\n'),
+        ],
+        [
           `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123`,
+          createResult('healthy\n'),
+        ],
+        [
+          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} markitdown-123`,
+          createResult('healthy\n'),
+        ],
+        [
+          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} storage-unzip-123`,
           createResult('healthy\n'),
         ],
         [
@@ -2776,9 +2826,11 @@ test('streamBlueGreenWatcherLogs follows the watcher service output', async () =
       existsSync() {
         return true;
       },
+      mkdirSync() {},
       readFileSync() {
         return '';
       },
+      writeFileSync() {},
     },
     runCommand: async (command, args) => {
       calls.push(`${command} ${args.join(' ')}`);

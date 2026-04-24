@@ -128,29 +128,44 @@ Blue/green deploy does this:
 2. Ignores that state if the corresponding container no longer exists.
 3. Stops and removes the old inactive-color container, then builds and starts
    its fresh replacement.
-4. Waits for the new container healthcheck to pass.
-5. Keeps the stable `web-proxy` container running in place during ordinary
+4. Builds and starts the shared `markitdown` and `storage-unzip-proxy`
+   helper containers alongside the target color.
+5. Injects Docker-internal helper URLs into `apps/web`:
+   `MARKITDOWN_ENDPOINT_URL=http://markitdown:8000/markitdown`,
+   `DISCORD_APP_DEPLOYMENT_URL=http://markitdown:8000`,
+   `DRIVE_AUTO_EXTRACT_PROXY_URL=http://storage-unzip-proxy:8788/extract`,
+   and `INTERNAL_WEB_API_ORIGIN=http://web-proxy:7803`.
+6. Waits for the new web container and helper container healthchecks to pass.
+7. Keeps the stable `web-proxy` container running in place during ordinary
    promotions instead of re-running `compose up` against the public `:7803`
    listener.
-6. Validates the generated nginx config with `nginx -t`, then reloads nginx
+8. Validates the generated nginx config with `nginx -t`, then reloads nginx
    inside that existing proxy only after the new color is healthy.
-7. Immediately verifies the proxy can serve the internal
+9. Immediately verifies the proxy can serve the internal
    `/__platform/drain-status` endpoint through the newly promoted color before
    marking the new color active. This avoids false deployment failures from
    public API middleware or rate limits.
-8. Polls an internal drain-status endpoint on the old color and waits until it
+10. Polls an internal drain-status endpoint on the old color and waits until it
    has no in-flight HTTP work left before demoting it to standby. This keeps
    long-running server actions, route handlers, and other open requests from
    being cut off mid-flight.
-9. Falls back to the short fixed drain window only when the old image predates
+11. Falls back to the short fixed drain window only when the old image predates
    the drain-status endpoint and cannot report its active requests yet.
-10. Keeps the demoted color online as a warm nginx backup target instead of
+12. Keeps the demoted color online as a warm nginx backup target instead of
     removing it immediately, so stale keepalive workers and Cloudflare Tunnel
     connections can still fail over cleanly during the post-promotion window.
-11. If the demoted standby color is still on the previous revision after 15
+13. If the demoted standby color is still on the previous revision after 15
     minutes, the watcher automatically rebuilds that stale standby in place so
     both colors converge on the latest checked-out code without flipping the
     active port or promoting traffic again.
+
+`scripts/docker-web/env.js` persists generated helper tokens under
+`tmp/docker-web/markitdown-token` and `tmp/docker-web/storage-unzip-token`.
+Override them with `DOCKER_MARKITDOWN_ENDPOINT_SECRET` or
+`DOCKER_DRIVE_UNZIP_PROXY_SHARED_TOKEN` when an operator needs fixed values.
+Workspace ZIP auto-extract still requires the workspace-level
+`DRIVE_AUTO_EXTRACT_ZIP` secret to opt in; the Docker-internal URL and token are
+fallbacks for workspaces that have not supplied custom proxy secrets.
 
 The stable nginx proxy also raises its request-header buffer limits so larger
 session/auth cookies do not fail at the proxy layer with `400 Request Header Or
@@ -352,20 +367,27 @@ Behavior:
     host-side install churn does not stop subsequent polling cycles.
 11. Runs `bun serve:web:docker:bg` automatically after a successful fast-forward
    pull.
-12. If `scripts/watch-blue-green-deploy.js` itself changed in the pulled
-   revision, the current watcher does not deploy from the old process. It
-   releases its lock, spawns a replacement watcher with the same CLI args, and
-   exits first.
+12. If watcher runtime code such as `scripts/watch-blue-green-deploy.js`,
+   `scripts/docker-web/blue-green.js`, or `scripts/docker-web/env.js` changed
+   in the pulled revision, the current watcher does not deploy from the old
+   process. It releases its lock, spawns a replacement watcher with the same
+   CLI args, and exits first.
 13. The replacement watcher refreshes the live `web-proxy` nginx config and
    workers in place if blue/green is already serving traffic, verifies proxy
    routing through `/__platform/drain-status`, and only then starts the new
    blue/green build/promotion.
-14. Retries recoverable Git command failures instead of exiting. The first retry
+14. If compose or helper-image wiring changed, including
+    `docker-compose.web.prod.yml`, `apps/discord/Dockerfile.markitdown`, or
+    `apps/storage-unzip-proxy/Dockerfile`, the containerized watcher recreates
+    its own compose service before the pending deploy handoff. That lets a
+    running watcher pull this update and then launch `markitdown` plus
+    `storage-unzip-proxy` through the refreshed blue/green workflow.
+15. Retries recoverable Git command failures instead of exiting. The first retry
     waits 1 minute, then the watcher backs off exponentially on consecutive Git
     failures up to a 15 minute ceiling.
-15. Stops immediately if the checked-out branch changes while the watcher is
+16. Stops immediately if the checked-out branch changes while the watcher is
     running.
-16. If another watcher already owns the lock, a new invocation can fail with
+17. If another watcher already owns the lock, a new invocation can fail with
     guidance, mirror the active watcher with `--resume-if-running`, or replace
     it with `--replace-existing`.
 

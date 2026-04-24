@@ -6,9 +6,13 @@ const path = require('node:path');
 
 const {
   BLUE_GREEN_PROXY_SERVICE,
+  BLUE_GREEN_SUPPORT_SERVICES,
   COMPOSE_FILE,
   DEFAULT_BUILDER_NAME,
   DOCKER_HOST_ALIAS,
+  DOCKER_MARKITDOWN_ENDPOINT_URL,
+  DOCKER_MARKITDOWN_SERVICE_URL,
+  DOCKER_STORAGE_UNZIP_PROXY_URL,
   PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
   clearBlueGreenRuntime,
@@ -202,6 +206,9 @@ test('getComposeEnvironment derives a server-side Supabase URL for Docker', () =
     assert.equal(env.COMPOSE_DOCKER_CLI_BUILD, '1');
     assert.equal(env.SUPABASE_SERVER_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
     assert.equal(env.DOCKER_BUILDKIT, '1');
+    assert.equal(env.MARKITDOWN_ENDPOINT_URL, undefined);
+    assert.equal(env.DRIVE_AUTO_EXTRACT_PROXY_URL, undefined);
+    assert.equal(env.INTERNAL_WEB_API_ORIGIN, undefined);
     assert.equal(env.UPSTASH_REDIS_REST_URL, 'http://serverless-redis-http:80');
     assert.match(env.UPSTASH_REDIS_REST_TOKEN, /^[a-f0-9]{64}$/u);
     assert.equal(env.SRH_TOKEN, env.UPSTASH_REDIS_REST_TOKEN);
@@ -213,6 +220,62 @@ test('getComposeEnvironment derives a server-side Supabase URL for Docker', () =
         )
         .trim(),
       env.UPSTASH_REDIS_REST_TOKEN
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getComposeEnvironment injects blue-green support service URLs when requested', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-support-env-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:8001\n'
+    );
+
+    const env = getComposeEnvironment({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath,
+      rootDir: tempDir,
+      withSupportServices: true,
+    });
+
+    assert.equal(env.DISCORD_APP_DEPLOYMENT_URL, DOCKER_MARKITDOWN_SERVICE_URL);
+    assert.equal(env.MARKITDOWN_ENDPOINT_URL, DOCKER_MARKITDOWN_ENDPOINT_URL);
+    assert.match(env.MARKITDOWN_ENDPOINT_SECRET, /^[a-f0-9]{64}$/u);
+    assert.equal(
+      env.DRIVE_AUTO_EXTRACT_PROXY_URL,
+      DOCKER_STORAGE_UNZIP_PROXY_URL
+    );
+    assert.match(env.DRIVE_AUTO_EXTRACT_PROXY_TOKEN, /^[a-f0-9]{64}$/u);
+    assert.equal(
+      env.DRIVE_UNZIP_PROXY_SHARED_TOKEN,
+      env.DRIVE_AUTO_EXTRACT_PROXY_TOKEN
+    );
+    assert.equal(env.INTERNAL_WEB_API_ORIGIN, 'http://web-proxy:7803');
+    assert.equal(
+      fs
+        .readFileSync(
+          path.join(tempDir, 'tmp', 'docker-web', 'markitdown-token'),
+          'utf8'
+        )
+        .trim(),
+      env.MARKITDOWN_ENDPOINT_SECRET
+    );
+    assert.equal(
+      fs
+        .readFileSync(
+          path.join(tempDir, 'tmp', 'docker-web', 'storage-unzip-token'),
+          'utf8'
+        )
+        .trim(),
+      env.DRIVE_AUTO_EXTRACT_PROXY_TOKEN
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -737,6 +800,18 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
       return { code: 0, signal: null, stderr: '', stdout: 'container-blue\n' };
     }
 
+    if (
+      args.includes('ps') &&
+      BLUE_GREEN_SUPPORT_SERVICES.includes(args.at(-1))
+    ) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: `container-${args.at(-1)}\n`,
+      };
+    }
+
     if (args[0] === 'inspect') {
       return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
     }
@@ -791,7 +866,8 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
           args[2] === PROD_COMPOSE_FILE &&
           args.includes('up') &&
           args.includes(BLUE_GREEN_PROXY_SERVICE) &&
-          args.includes('web-blue')
+          args.includes('web-blue') &&
+          BLUE_GREEN_SUPPORT_SERVICES.every((service) => args.includes(service))
       )
     );
     assert.ok(
@@ -842,6 +918,18 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
 
     if (args.includes('ps') && args.at(-1) === 'web-blue') {
       return { code: 0, signal: null, stderr: '', stdout: 'container-blue\n' };
+    }
+
+    if (
+      args.includes('ps') &&
+      BLUE_GREEN_SUPPORT_SERVICES.includes(args.at(-1))
+    ) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: `container-${args.at(-1)}\n`,
+      };
     }
 
     if (args[0] === 'inspect') {
@@ -1053,6 +1141,18 @@ test('runDockerWebWorkflow ignores stale active colors without live containers',
         signal: null,
         stderr: '',
         stdout: webBluePsCalls === 1 ? '' : 'container-blue\n',
+      };
+    }
+
+    if (
+      args.includes('ps') &&
+      BLUE_GREEN_SUPPORT_SERVICES.includes(args.at(-1))
+    ) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: `container-${args.at(-1)}\n`,
       };
     }
 

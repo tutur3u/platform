@@ -21,6 +21,11 @@ class MarkitdownRequest(BaseModel):
     enable_plugins: bool = True
 
 
+@app.get("/health")
+async def health_endpoint():
+    return {"ok": True}
+
+
 @app.post("/markitdown")
 async def markitdown_endpoint(payload: MarkitdownRequest):
     """Convert a Supabase signed file URL into markdown using MarkItDown."""

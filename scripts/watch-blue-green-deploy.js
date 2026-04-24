@@ -75,8 +75,17 @@ const PROD_COMPOSE_FILE = getComposeFile('prod');
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const BLUE_GREEN_WATCHER_SERVICE = 'web-blue-green-watcher';
 const HOST_WORKSPACE_DIR_ENV = 'PLATFORM_HOST_WORKSPACE_DIR';
-const SELF_WATCHED_FILES = [path.relative(ROOT_DIR, __filename)];
+const SELF_WATCHED_FILES = [
+  path.relative(ROOT_DIR, __filename),
+  'scripts/docker-web.js',
+  'scripts/docker-web/blue-green.js',
+  'scripts/docker-web/compose.js',
+  'scripts/docker-web/env.js',
+];
 const CONTAINER_REFRESH_WATCHED_FILES = [
+  'docker-compose.web.prod.yml',
+  'apps/discord/Dockerfile.markitdown',
+  'apps/storage-unzip-proxy/Dockerfile',
   'apps/web/docker/blue-green-watcher-entrypoint.js',
   'apps/web/docker/blue-green-watcher.Dockerfile',
 ];

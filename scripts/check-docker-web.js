@@ -12,6 +12,12 @@ const WATCHER_DOCKERFILE_PATH = path.join(
   'docker',
   'blue-green-watcher.Dockerfile'
 );
+const MARKITDOWN_DOCKERFILE_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'discord',
+  'Dockerfile.markitdown'
+);
 const WEB_COMPOSE_FILE_PATH = path.join(ROOT_DIR, 'docker-compose.web.yml');
 const WEB_PROD_COMPOSE_FILE_PATH = path.join(
   ROOT_DIR,
@@ -332,8 +338,12 @@ function validateDockerProdCompose(composeContent) {
     '  web-blue:',
     '  web-green:',
     '  web-blue-green-watcher:',
+    '  markitdown:',
+    '  storage-unzip-proxy:',
     '  web-proxy:',
+    '      dockerfile: Dockerfile.markitdown',
     '      dockerfile: apps/web/docker/blue-green-watcher.Dockerfile',
+    '      context: apps/storage-unzip-proxy',
     '      - PLATFORM_HOST_WORKSPACE_DIR',
     '      - .:' + '${' + 'PLATFORM_HOST_WORKSPACE_DIR' + '}',
     '      - /var/run/docker.sock:/var/run/docker.sock',
@@ -346,8 +356,15 @@ function validateDockerProdCompose(composeContent) {
       '/node_modules',
     '    image: nginx:1.27-alpine',
     'http://127.0.0.1:7803/__platform/drain-status',
+    'http://127.0.0.1:8000/health',
     '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',
     '      required: true',
+    '    - DISCORD_APP_DEPLOYMENT_URL',
+    '    - DRIVE_AUTO_EXTRACT_PROXY_TOKEN',
+    '    - DRIVE_AUTO_EXTRACT_PROXY_URL',
+    '    - INTERNAL_WEB_API_ORIGIN',
+    '    - MARKITDOWN_ENDPOINT_SECRET',
+    '    - MARKITDOWN_ENDPOINT_URL',
     '    - PLATFORM_BLUE_GREEN_COLOR',
     '    - PLATFORM_BLUE_GREEN_CONTROL_DIR=/app/runtime/docker-web-control',
     '    - PLATFORM_BLUE_GREEN_MONITORING_DIR=/app/runtime/docker-web',
@@ -357,6 +374,7 @@ function validateDockerProdCompose(composeContent) {
     '    - UPSTASH_REDIS_REST_URL',
     '    - ./tmp/docker-web/watch/control:/app/runtime/docker-web-control',
     '    - ./tmp/docker-web:/app/runtime/docker-web:ro',
+    '      - DRIVE_UNZIP_PROXY_SHARED_TOKEN',
     '      SRH_TOKEN: ' +
       '${' +
       'UPSTASH_REDIS_REST_TOKEN:?UPSTASH_REDIS_REST_TOKEN must be set when enabling the redis profile' +
@@ -394,6 +412,29 @@ function validateWatcherDockerfile(dockerfileContent) {
   return errors;
 }
 
+function validateMarkitdownDockerfile(dockerfileContent) {
+  const errors = [];
+  const requiredSnippets = [
+    'FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS deps',
+    'RUN uv sync --locked --no-dev',
+    'COPY --chown=app:app local_server.py markitdown_service.py ./',
+    'CMD ["sh", "-c", "uvicorn local_server:app --host 0.0.0.0 --port ' +
+      '${' +
+      'PORT:-8000' +
+      '}"]',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!dockerfileContent.includes(snippet)) {
+      errors.push(
+        `apps/discord/Dockerfile.markitdown is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
 function checkDockerWebSetup({
   rootDir = ROOT_DIR,
   fsImpl = fs,
@@ -419,6 +460,10 @@ function checkDockerWebSetup({
     ),
     'utf8'
   ),
+  markitdownDockerfileContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'discord', 'Dockerfile.markitdown'),
+    'utf8'
+  ),
   workspacePackageJsonPaths = listWorkspacePackageJsonPaths(rootDir, fsImpl),
   fileDependencyPaths = listFileDependencyPaths(rootDir, fsImpl),
 } = {}) {
@@ -431,6 +476,7 @@ function checkDockerWebSetup({
     ...validateDockerCompose(composeContent, { workspacePackageJsonPaths }),
     ...validateDockerProdCompose(prodComposeContent),
     ...validateWatcherDockerfile(watcherDockerfileContent),
+    ...validateMarkitdownDockerfile(markitdownDockerfileContent),
   ];
 }
 
@@ -455,6 +501,7 @@ if (require.main === module) {
 
 module.exports = {
   ROOT_DIR,
+  MARKITDOWN_DOCKERFILE_PATH,
   WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
@@ -468,5 +515,6 @@ module.exports = {
   validateDockerCompose,
   validateDockerProdCompose,
   validateDockerfile,
+  validateMarkitdownDockerfile,
   validateWatcherDockerfile,
 };

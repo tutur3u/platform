@@ -5,6 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 
 const {
+  MARKITDOWN_DOCKERFILE_PATH,
   ROOT_DIR,
   WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
@@ -19,6 +20,7 @@ const {
   validateDockerCompose,
   validateDockerProdCompose,
   validateDockerfile,
+  validateMarkitdownDockerfile,
   validateWatcherDockerfile,
 } = require('./check-docker-web.js');
 
@@ -259,6 +261,12 @@ test('validateWatcherDockerfile accepts the current watcher Dockerfile', () => {
   assert.deepEqual(validateWatcherDockerfile(dockerfileContent), []);
 });
 
+test('validateMarkitdownDockerfile accepts the current MarkItDown Dockerfile', () => {
+  const dockerfileContent = fs.readFileSync(MARKITDOWN_DOCKERFILE_PATH, 'utf8');
+
+  assert.deepEqual(validateMarkitdownDockerfile(dockerfileContent), []);
+});
+
 test('validateWatcherDockerfile reports missing docker cli tooling', () => {
   const dockerfileContent = fs
     .readFileSync(WATCHER_DOCKERFILE_PATH, 'utf8')
@@ -288,6 +296,9 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.mkdirSync(path.join(tempDir, 'apps', 'web', 'docker'), {
       recursive: true,
     });
+    fs.mkdirSync(path.join(tempDir, 'apps', 'discord'), {
+      recursive: true,
+    });
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'web', 'Dockerfile'),
       'FROM scratch AS deps\n'
@@ -300,6 +311,10 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
         'docker',
         'blue-green-watcher.Dockerfile'
       ),
+      'FROM scratch\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'apps', 'discord', 'Dockerfile.markitdown'),
       'FROM scratch\n'
     );
     fs.writeFileSync(

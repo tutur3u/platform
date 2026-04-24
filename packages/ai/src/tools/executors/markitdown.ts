@@ -22,11 +22,14 @@ function parseBaseUrl(value: string): string | null {
     const parsed = new URL(value);
     const isLocalhost =
       parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+    const isDockerInternalHost =
+      parsed.hostname === 'markitdown' ||
+      parsed.hostname === 'host.docker.internal';
 
-    // Require HTTPS, except for local testing
+    // Require HTTPS, except for local and Docker-internal service calls.
     if (
       parsed.protocol !== 'https:' &&
-      !(isLocalhost && parsed.protocol === 'http:')
+      !((isLocalhost || isDockerInternalHost) && parsed.protocol === 'http:')
     ) {
       return null;
     }
@@ -37,6 +40,15 @@ function parseBaseUrl(value: string): string | null {
   } catch {
     return null;
   }
+}
+
+function resolveConfiguredMarkitdownUrl(): string | null {
+  const endpointUrl = process.env.MARKITDOWN_ENDPOINT_URL?.trim();
+  if (!endpointUrl) return null;
+
+  const normalizedEndpointUrl = parseBaseUrl(endpointUrl);
+  if (!normalizedEndpointUrl) return null;
+  return normalizedEndpointUrl;
 }
 
 function resolveDiscordMarkitdownUrl(): string | null {
@@ -174,14 +186,15 @@ export async function executeConvertFileToMarkdown(
   ctx: MiraToolContext
 ) {
   const billingWsId = ctx.creditWsId ?? ctx.wsId;
-  const markitdownUrl = resolveDiscordMarkitdownUrl();
+  const markitdownUrl =
+    resolveConfiguredMarkitdownUrl() ?? resolveDiscordMarkitdownUrl();
   const markitdownSecret = resolveDiscordMarkitdownSecret();
 
   if (!markitdownUrl) {
     return {
       ok: false,
       error:
-        'MarkItDown endpoint is not configured. Missing DISCORD_APP_DEPLOYMENT_URL.',
+        'MarkItDown endpoint is not configured. Set MARKITDOWN_ENDPOINT_URL or DISCORD_APP_DEPLOYMENT_URL.',
     };
   }
 
