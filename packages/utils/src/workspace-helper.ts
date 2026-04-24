@@ -1,8 +1,9 @@
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   PermissionId,
   Workspace,
@@ -912,10 +913,10 @@ export async function normalizeWorkspaceId(
  * @param configId - The configuration ID
  * @returns The configuration value or null if not found
  */
-export async function getWorkspaceConfig(
+async function fetchWorkspaceConfigValue(
   wsId: string,
   configId: string
-): Promise<string | null> {
+): Promise<{ error: unknown; value: string | null }> {
   const sbAdmin = await createAdminClient();
 
   // Skip normalization if already a valid UUID (avoids auth check in admin context)
@@ -930,14 +931,271 @@ export async function getWorkspaceConfig(
     .eq('id', configId)
     .maybeSingle();
 
+  return {
+    error,
+    value: data?.value || null,
+  };
+}
+
+export async function getWorkspaceConfig(
+  wsId: string,
+  configId: string
+): Promise<string | null> {
+  const { error, value } = await fetchWorkspaceConfigValue(wsId, configId);
+
   if (error) {
     logWorkspaceError('Failed to fetch workspace config', error, {
       workspaceId: wsId,
       configId,
-      errorCode: error.code,
+      errorCode:
+        typeof error === 'object' && 'code' in error ? error.code : undefined,
     });
     return null;
   }
 
-  return data?.value || null;
+  return value;
+}
+
+/** Result of {@link getWorkspaceNonMemberInviteEligibility} (user not in `workspace_members` yet). */
+export type WorkspaceNonMemberInviteEligibility = {
+  /** Set when `workspace_invites` or `workspace_email_invites` has a row for this user. */
+  hasPendingInvite: boolean;
+  /**
+   * Guest self-join is allowed: workspace config is on and
+   * `resolve_guest_self_join_candidate` returns eligible.
+   */
+  allowGuestSelfJoin: boolean;
+};
+
+type GuestSelfJoinCandidateRpcRow = {
+  eligible: boolean;
+  matched_email_source: string | null;
+  reason: string | null;
+  virtual_user_id: string | null;
+};
+
+export type GuestSelfJoinCandidateResult = {
+  allowGuestSelfJoin: boolean;
+  candidateEmails: string[];
+  guestSelfJoinEnabled: boolean;
+  matchedEmailSource: string | null;
+  reason: string | null;
+  virtualUserId: string | null;
+};
+
+export async function resolveGuestSelfJoinCandidate(
+  supabase: TypedSupabaseClient,
+  params: {
+    authEmail: string | null;
+    rpcSupabase: TypedSupabaseClient;
+    privateEmail?: string | null;
+    userId: string;
+    workspaceId: string;
+  }
+): Promise<GuestSelfJoinCandidateResult> {
+  const { authEmail, privateEmail, rpcSupabase, userId, workspaceId } = params;
+  const authEmailNorm = authEmail?.trim().toLowerCase() || null;
+
+  let privateEmailNorm =
+    typeof privateEmail === 'string'
+      ? privateEmail.trim().toLowerCase() || null
+      : null;
+
+  if (privateEmail === undefined) {
+    const { data: privateDetails, error: privateDetailsError } = await supabase
+      .from('user_private_details')
+      .select('email')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (privateDetailsError) {
+      logWorkspaceError(
+        'Failed to fetch private email for guest self-join candidate',
+        privateDetailsError,
+        {
+          userId,
+          workspaceId,
+          errorCode: privateDetailsError.code,
+        }
+      );
+      throw privateDetailsError;
+    }
+
+    privateEmailNorm = privateDetails?.email?.trim().toLowerCase() || null;
+  }
+
+  const candidateEmails = [
+    ...new Set([authEmailNorm, privateEmailNorm]),
+  ].filter(
+    (email): email is string => typeof email === 'string' && email.length > 0
+  );
+
+  const guestSelfJoinConfig = await fetchWorkspaceConfigValue(
+    workspaceId,
+    ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID
+  );
+
+  if (guestSelfJoinConfig.error) {
+    logWorkspaceError(
+      'Failed to fetch guest self-join workspace config',
+      guestSelfJoinConfig.error,
+      {
+        workspaceId,
+        configId: ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID,
+      }
+    );
+    throw guestSelfJoinConfig.error;
+  }
+
+  const guestSelfJoinEnabled =
+    guestSelfJoinConfig.value?.trim().toLowerCase() === 'true';
+
+  if (!guestSelfJoinEnabled) {
+    return {
+      allowGuestSelfJoin: false,
+      candidateEmails,
+      guestSelfJoinEnabled,
+      matchedEmailSource: null,
+      reason: null,
+      virtualUserId: null,
+    };
+  }
+
+  const { data: guestCandidate, error: guestCandidateError } =
+    await rpcSupabase.rpc('resolve_guest_self_join_candidate', {
+      p_user_id: userId,
+      p_ws_id: workspaceId,
+    });
+
+  if (guestCandidateError) {
+    logWorkspaceError(
+      'Failed to resolve guest self-join candidate',
+      guestCandidateError,
+      {
+        userId,
+        workspaceId,
+        hasAuthEmail: authEmailNorm !== null,
+        hasPrivateEmail: privateEmailNorm !== null,
+      }
+    );
+    throw guestCandidateError;
+  }
+
+  const candidate = (guestCandidate?.[0] ??
+    null) as GuestSelfJoinCandidateRpcRow | null;
+
+  if (
+    candidate?.reason === 'unauthorized' ||
+    candidate?.reason === 'forbidden'
+  ) {
+    logWorkspaceError(
+      'Guest self-join candidate RPC denied authorization',
+      new Error(candidate.reason),
+      {
+        userId,
+        workspaceId,
+        reason: candidate.reason,
+      }
+    );
+  }
+
+  return {
+    allowGuestSelfJoin: candidate?.eligible === true,
+    candidateEmails,
+    guestSelfJoinEnabled,
+    matchedEmailSource: candidate?.matched_email_source ?? null,
+    reason: candidate?.reason ?? null,
+    virtualUserId: candidate?.virtual_user_id ?? null,
+  };
+}
+
+/**
+ * Whether the workspace invite/accept flow may be shown (matches what
+ * `POST /api/workspaces/:wsId/accept-invite` can accept without `NO_PENDING_INVITE_FOUND`).
+ */
+export function canShowWorkspaceInviteForNonMember(
+  eligibility: WorkspaceNonMemberInviteEligibility
+): boolean {
+  return eligibility.hasPendingInvite || eligibility.allowGuestSelfJoin;
+}
+
+/**
+ * For a user who is not yet a member of the workspace, determines if they have a pending
+ * direct/email invite and/or are eligible for guest self-join. Use with
+ * {@link canShowWorkspaceInviteForNonMember} before rendering the invite card.
+ *
+ * @param supabase - Prefer the service-role / admin client so invite rows are visible regardless of RLS.
+ */
+export async function getWorkspaceNonMemberInviteEligibility(
+  supabase: TypedSupabaseClient,
+  params: {
+    workspaceId: string;
+    userId: string;
+    authEmail: string | null;
+    /** Authenticated request-scoped client used for RPCs that depend on auth.uid(). */
+    rpcSupabase: TypedSupabaseClient;
+  }
+): Promise<WorkspaceNonMemberInviteEligibility> {
+  const { workspaceId, userId, authEmail, rpcSupabase } = params;
+  const guestSelfJoinCandidate = await resolveGuestSelfJoinCandidate(supabase, {
+    authEmail,
+    rpcSupabase,
+    userId,
+    workspaceId,
+  });
+
+  const { data: pendingUserInvite, error: pendingUserInviteError } =
+    await supabase
+      .from('workspace_invites')
+      .select('ws_id')
+      .eq('ws_id', workspaceId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+  if (pendingUserInviteError) {
+    logWorkspaceError(
+      'Failed to fetch pending workspace invite',
+      pendingUserInviteError,
+      {
+        userId,
+        workspaceId,
+        errorCode: pendingUserInviteError.code,
+      }
+    );
+    throw pendingUserInviteError;
+  }
+
+  const candidateEmails = guestSelfJoinCandidate.candidateEmails;
+
+  const { data: pendingEmailInvites, error: pendingEmailInvitesError } =
+    candidateEmails.length
+      ? await supabase
+          .from('workspace_email_invites')
+          .select('ws_id')
+          .eq('ws_id', workspaceId)
+          .in('email', candidateEmails)
+      : { data: null, error: null };
+
+  if (pendingEmailInvitesError) {
+    logWorkspaceError(
+      'Failed to fetch pending workspace email invites',
+      pendingEmailInvitesError,
+      {
+        workspaceId,
+        candidateEmailCount: candidateEmails.length,
+        errorCode: pendingEmailInvitesError.code,
+      }
+    );
+    throw pendingEmailInvitesError;
+  }
+
+  const hasPendingEmailInvite =
+    Array.isArray(pendingEmailInvites) && pendingEmailInvites.length > 0;
+
+  const hasPendingInvite = !!(pendingUserInvite || hasPendingEmailInvite);
+
+  return {
+    allowGuestSelfJoin: guestSelfJoinCandidate.allowGuestSelfJoin,
+    hasPendingInvite,
+  };
 }

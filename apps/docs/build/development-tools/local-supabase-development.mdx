@@ -255,6 +255,13 @@ Five seed accounts are pre-configured for local development:
 
 These accounts are already set up with the necessary data, allowing you to quickly test the app's functionality. However, you can register any new email address and the authentication emails will be captured by InBucket for you to inspect.
 
+<Warning>
+  OTP send limits include email-scoped cooldowns in the web process. Playwright
+  tests that only need to assert the OTP stage should use a dedicated throwaway
+  email address instead of a seed login account. Reserve seed accounts for tests
+  that must complete authentication.
+</Warning>
+
 ## Further Information
 
 For more details about Supabase CLI usage, refer to the [Supabase CLI documentation](https://supabase.com/docs/guides/local-development/cli/getting-started).

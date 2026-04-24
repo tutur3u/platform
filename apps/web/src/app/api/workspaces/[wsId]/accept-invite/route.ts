@@ -3,7 +3,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  resolveGuestSelfJoinCandidate,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import {
   assignSeatToMember,
@@ -15,6 +18,28 @@ interface Params {
   params: Promise<{
     wsId: string;
   }>;
+}
+
+const guestJoinReasonToErrorCodeMap: Record<string, string> = {
+  already_member: 'ALREADY_MEMBER',
+  no_email: 'NO_EMAIL',
+  no_matching_workspace_user: 'NO_MATCHING_WORKSPACE_USER',
+  workspace_user_linked_to_other_platform_user:
+    'WORKSPACE_USER_LINKED_TO_OTHER_PLATFORM_USER',
+};
+
+function normalizeGuestJoinErrorCode(
+  reason: string | null | undefined
+): string {
+  if (!reason) return 'NO_GUEST_SELF_JOIN_MATCH';
+  const mapped = guestJoinReasonToErrorCodeMap[reason];
+  if (mapped) return mapped;
+
+  return reason
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toUpperCase();
 }
 
 export async function POST(request: Request, { params }: Params) {
@@ -46,20 +71,16 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  // Get email from auth first so we can validate direct + email invites.
-  let userEmail = user.email?.toLowerCase();
-
-  if (!userEmail) {
-    const { data: userData } = await supabase
-      .from('users')
-      .select('email:user_private_details(email)')
-      .eq('id', user.id)
-      .single();
-
-    userEmail = (
-      userData?.email as { email?: string }[] | null
-    )?.[0]?.email?.toLowerCase();
-  }
+  const authEmail = user.email?.trim().toLowerCase() || null;
+  const { data: privateDetails } = await sbAdmin
+    .from('user_private_details')
+    .select('email')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  const privateEmail = privateDetails?.email?.trim().toLowerCase() || null;
+  const candidateEmails = [...new Set([authEmail, privateEmail])].filter(
+    (email): email is string => typeof email === 'string' && email.length > 0
+  );
 
   // Validate that user has a pending direct or email invite; read type for membership row.
   const { data: pendingInvite } = await supabase
@@ -69,27 +90,81 @@ export async function POST(request: Request, { params }: Params) {
     .eq('user_id', user.id)
     .maybeSingle();
 
-  const { data: pendingEmailInvite } = userEmail
+  const { data: pendingEmailInviteRows } = candidateEmails.length
     ? await supabase
         .from('workspace_email_invites')
-        .select('ws_id, type')
+        .select('ws_id, type, email')
         .eq('ws_id', wsId)
-        .eq('email', userEmail)
-        .maybeSingle()
+        .in('email', candidateEmails)
     : { data: null };
 
-  if (!pendingInvite && !pendingEmailInvite) {
-    return NextResponse.json(
-      { error: 'No pending invite found' },
-      { status: 404 }
-    );
-  }
+  const pendingEmailInvite = Array.isArray(pendingEmailInviteRows)
+    ? (pendingEmailInviteRows.find(
+        (row) =>
+          typeof row.email === 'string' &&
+          row.email.trim().toLowerCase() === candidateEmails[0]
+      ) ??
+      pendingEmailInviteRows[0] ??
+      null)
+    : null;
 
-  const inviteMemberType =
+  let inviteMemberType: 'MEMBER' | 'GUEST' =
     pendingInvite?.type ?? pendingEmailInvite?.type ?? 'MEMBER';
+  let matchedWorkspaceUserId: string | null = null;
+
+  if (!pendingInvite && !pendingEmailInvite) {
+    let guestSelfJoinCandidate: Awaited<
+      ReturnType<typeof resolveGuestSelfJoinCandidate>
+    >;
+    try {
+      guestSelfJoinCandidate = await resolveGuestSelfJoinCandidate(sbAdmin, {
+        authEmail,
+        rpcSupabase: supabase,
+        privateEmail,
+        userId: user.id,
+        workspaceId: wsId,
+      });
+    } catch (guestCandidateError) {
+      console.error(
+        'Failed to resolve guest self-join candidate:',
+        guestCandidateError
+      );
+      return NextResponse.json(
+        { error: 'Failed to resolve guest self-join eligibility' },
+        { status: 500 }
+      );
+    }
+
+    if (!guestSelfJoinCandidate.guestSelfJoinEnabled) {
+      return NextResponse.json(
+        {
+          error: 'No pending invite found',
+          errorCode: 'NO_PENDING_INVITE_FOUND',
+        },
+        { status: 404 }
+      );
+    }
+
+    if (
+      !guestSelfJoinCandidate.allowGuestSelfJoin ||
+      !guestSelfJoinCandidate.virtualUserId
+    ) {
+      return NextResponse.json(
+        {
+          error: 'No pending invite found',
+          errorCode: normalizeGuestJoinErrorCode(guestSelfJoinCandidate.reason),
+        },
+        { status: 404 }
+      );
+    }
+
+    inviteMemberType = 'GUEST';
+    matchedWorkspaceUserId = guestSelfJoinCandidate.virtualUserId;
+  }
 
   // Make acceptance idempotent for stale invites or partially completed flows.
   const existingMember = await verifyWorkspaceMembershipType({
+    requiredType: 'ANY',
     wsId: wsId,
     userId: user.id,
     supabase: sbAdmin,
@@ -109,12 +184,12 @@ export async function POST(request: Request, { params }: Params) {
       .eq('ws_id', wsId)
       .eq('user_id', user.id);
 
-    if (userEmail) {
+    if (candidateEmails.length) {
       await sbAdmin
         .from('workspace_email_invites')
         .delete()
         .eq('ws_id', wsId)
-        .eq('email', userEmail);
+        .in('email', candidateEmails);
     }
 
     return NextResponse.json({ message: 'success' });
@@ -151,6 +226,37 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
+  if (matchedWorkspaceUserId) {
+    const { error: linkError } = await sbAdmin
+      .from('workspace_user_linked_users')
+      .upsert(
+        {
+          platform_user_id: user.id,
+          ws_id: wsId,
+          virtual_user_id: matchedWorkspaceUserId,
+        },
+        {
+          onConflict: 'platform_user_id,ws_id',
+          ignoreDuplicates: false,
+        }
+      );
+
+    if (linkError) {
+      if (seatAssignment.required && seatAssignment.success) {
+        await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
+      }
+
+      console.error(
+        'Failed to link platform user to workspace user:',
+        linkError
+      );
+      return NextResponse.json(
+        { error: 'Failed to prepare guest workspace link' },
+        { status: 500 }
+      );
+    }
+  }
+
   // Insert user as workspace member (preserve MEMBER vs GUEST from the invite)
   const { error } = await sbAdmin.from('workspace_members').insert({
     ws_id: wsId,
@@ -166,12 +272,12 @@ export async function POST(request: Request, { params }: Params) {
         .eq('ws_id', wsId)
         .eq('user_id', user.id);
 
-      if (userEmail) {
+      if (candidateEmails.length) {
         await sbAdmin
           .from('workspace_email_invites')
           .delete()
           .eq('ws_id', wsId)
-          .eq('email', userEmail);
+          .in('email', candidateEmails);
       }
 
       return NextResponse.json({ message: 'success' });
@@ -180,6 +286,15 @@ export async function POST(request: Request, { params }: Params) {
     // Rollback: revoke the Polar seat if it was assigned
     if (seatAssignment.required && seatAssignment.success) {
       await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
+    }
+
+    if (matchedWorkspaceUserId) {
+      await sbAdmin
+        .from('workspace_user_linked_users')
+        .delete()
+        .eq('platform_user_id', user.id)
+        .eq('ws_id', wsId)
+        .eq('virtual_user_id', matchedWorkspaceUserId);
     }
 
     console.error('Error accepting invite:', error);
@@ -194,12 +309,12 @@ export async function POST(request: Request, { params }: Params) {
     .eq('user_id', user.id);
 
   // Also delete email invite if exists
-  if (userEmail) {
+  if (candidateEmails.length) {
     await sbAdmin
       .from('workspace_email_invites')
       .delete()
       .eq('ws_id', wsId)
-      .eq('email', userEmail);
+      .in('email', candidateEmails);
   }
 
   return NextResponse.json({ message: 'success' });

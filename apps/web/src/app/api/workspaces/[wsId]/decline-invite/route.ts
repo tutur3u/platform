@@ -18,7 +18,10 @@ export async function POST(request: Request, { params }: Params) {
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json(
+      { error: 'Unauthorized', errorCode: 'UNAUTHORIZED' },
+      { status: 401 }
+    );
   }
 
   // Delete workspace_invites for this user
@@ -63,8 +66,9 @@ export async function POST(request: Request, { params }: Params) {
       {
         error:
           workspaceInvitesError?.message || workspaceEmailInvitesError?.message,
+        errorCode: 'DECLINE_INVITE_FAILED',
       },
-      { status: 401 }
+      { status: 500 }
     );
   }
 

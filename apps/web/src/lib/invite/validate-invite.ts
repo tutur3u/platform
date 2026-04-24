@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { resolveWorkspaceBrandingUrlsForNext } from '@/lib/workspace-branding-image-url';
 import { memberTypeFromInviteStatsRow } from '@/lib/workspace-invite-links';
 import { enforceSeatLimit } from '@/utils/seat-limits';
 import type { ValidateInviteResult, Workspace, WorkspaceInfo } from './types';
@@ -82,12 +83,17 @@ export async function validateInvite(
       };
     }
 
-    // Cast to Workspace after validation
+    const branding = await resolveWorkspaceBrandingUrlsForNext(sbAdmin, {
+      logo_url: workspaceData.logo_url,
+      avatar_url: workspaceData.avatar_url,
+    });
+
+    // Cast to Workspace after validation (image fields are URLs safe for next/image)
     const workspace: Workspace = {
       id: workspaceData.id,
       name: workspaceData.name,
-      avatar_url: workspaceData.avatar_url,
-      logo_url: workspaceData.logo_url,
+      avatar_url: branding.avatar_url ?? undefined,
+      logo_url: branding.logo_url ?? undefined,
     };
 
     // Block invites to personal workspaces

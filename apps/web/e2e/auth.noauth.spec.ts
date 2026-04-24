@@ -97,6 +97,8 @@ test.describe('Authentication (unauthenticated)', () => {
     const previousOtpState = await setWebOtpEnabled(true);
 
     try {
+      const otpStageOnlyEmail = `otp-stage-only-${Date.now()}@tuturuuu.com`;
+
       await page.goto(`/${DEFAULT_LOCALE}/login`, {
         waitUntil: 'domcontentloaded',
       });
@@ -106,7 +108,7 @@ test.describe('Authentication (unauthenticated)', () => {
         .first();
       await expect(emailInput).toBeVisible({ timeout: 30_000 });
       await emailInput.clear();
-      await emailInput.fill(TEST_USER.email);
+      await emailInput.fill(otpStageOnlyEmail);
 
       const continueButton = page
         .locator('form button[type="submit"]')

@@ -322,6 +322,7 @@ export {
   DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
   DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
   DATABASE_FEATURED_GROUPS_CONFIG_ID,
+  ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID,
   getOptionalWorkspaceConfig,
   getWorkspaceConfig,
   getWorkspaceConfigIdList,
@@ -339,6 +340,8 @@ export {
   type WorkspaceUserAuditLogsResponse,
 } from './workspace-user-audit';
 export {
+  acceptWorkspaceInvite,
+  declineWorkspaceInvite,
   getWorkspace,
   getWorkspaceExternalProjectMembersContext,
   inviteWorkspaceMember,

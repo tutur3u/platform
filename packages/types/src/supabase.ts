@@ -28471,6 +28471,20 @@ export type Database = {
           success: boolean;
         }[];
       };
+      resolve_guest_self_join_candidate: {
+        Args: {
+          p_auth_email?: string;
+          p_private_email?: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          eligible: boolean;
+          matched_email_source: string;
+          reason: string;
+          virtual_user_id: string;
+        }[];
+      };
       revoke_all_cross_app_tokens: {
         Args: { p_user_id: string };
         Returns: undefined;

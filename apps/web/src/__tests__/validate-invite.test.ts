@@ -148,8 +148,8 @@ describe('validateInvite', () => {
         workspace: {
           id: 'ws-1',
           name: 'Acme',
-          avatar_url: null,
-          logo_url: null,
+          avatar_url: undefined,
+          logo_url: undefined,
         },
         memberCount: 5,
         memberType: 'MEMBER',

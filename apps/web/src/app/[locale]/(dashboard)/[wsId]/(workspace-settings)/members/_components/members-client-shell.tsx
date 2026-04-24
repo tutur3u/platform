@@ -1,9 +1,20 @@
 'use client';
 
+import { Settings } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types';
 import type { User } from '@tuturuuu/types/primitives/User';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
+import { GuestSelfJoinSetting } from './guest-self-join-setting';
 import InviteLinksSection from './invite-links-section';
 import InviteMemberButton from './invite-member-button';
 import MemberList from './member-list';
@@ -26,6 +37,7 @@ export default function MembersClientShell({
   disableInvite,
 }: Props) {
   const t = useTranslations();
+  const tMembers = useTranslations('ws-members');
   const [status] = useQueryState(
     'status',
     parseAsStringLiteral(memberStatusValues)
@@ -72,6 +84,30 @@ export default function MembersClientShell({
           </div>
 
           <div className="flex shrink-0 flex-col items-stretch gap-3 md:flex-row md:items-center">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="default" className="gap-2">
+                  <Settings className="h-4 w-4" />
+                  {tMembers('member-settings')}
+                </Button>
+              </DialogTrigger>
+              <DialogContent
+                className="sm:max-w-lg"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
+                <DialogHeader>
+                  <DialogTitle>{tMembers('member-settings')}</DialogTitle>
+                  <DialogDescription>
+                    {tMembers('members_workspace_settings_description')}
+                  </DialogDescription>
+                </DialogHeader>
+                <GuestSelfJoinSetting
+                  wsId={wsId}
+                  disabled={!canManageMembers}
+                  embedded
+                />
+              </DialogContent>
+            </Dialog>
             <MemberTabs value={status} />
             <InviteMemberButton
               wsId={wsId}

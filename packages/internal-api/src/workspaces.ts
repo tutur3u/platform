@@ -10,6 +10,31 @@ import {
   type InternalApiClientOptions,
 } from './client';
 
+type InternalApiErrorPayload = {
+  error?: string;
+  errorCode?: string;
+  message?: string;
+};
+
+async function parseAndThrowInternalApiError(
+  response: Response
+): Promise<never> {
+  const fallbackMessage = `Internal API request failed: ${response.status}`;
+  let data: InternalApiErrorPayload | null = null;
+
+  try {
+    data = (await response.json()) as InternalApiErrorPayload;
+  } catch {
+    data = null;
+  }
+
+  const error = new Error(
+    data?.message || data?.error || fallbackMessage
+  ) as Error & { errorCode?: string };
+  error.errorCode = data?.errorCode;
+  throw error;
+}
+
 export async function listWorkspaces(options?: InternalApiClientOptions) {
   const client = getInternalApiClient(options);
   return client.json<InternalApiWorkspaceSummary[]>('/api/v1/workspaces', {
@@ -135,29 +160,53 @@ export async function inviteWorkspaceMember(
   );
 
   if (!response.ok) {
-    const fallbackMessage = `Internal API request failed: ${response.status}`;
-    let data: { errorCode?: string; message?: string } | null = null;
-
-    try {
-      data = (await response.json()) as {
-        errorCode?: string;
-        message?: string;
-      };
-    } catch {
-      data = null;
-    }
-
-    const error = new Error(data?.message || fallbackMessage) as Error & {
-      errorCode?: string;
-    };
-    error.errorCode = data?.errorCode;
-    throw error;
+    await parseAndThrowInternalApiError(response);
   }
 
   return (await response.json()) as {
     message?: string;
     errorCode?: string;
   };
+}
+
+export async function acceptWorkspaceInvite(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.fetch(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/accept-invite`,
+    {
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
+
+  if (!response.ok) {
+    await parseAndThrowInternalApiError(response);
+  }
+
+  return (await response.json().catch(() => ({}))) as { message?: string };
+}
+
+export async function declineWorkspaceInvite(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.fetch(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/decline-invite`,
+    {
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
+
+  if (!response.ok) {
+    await parseAndThrowInternalApiError(response);
+  }
+
+  return (await response.json().catch(() => ({}))) as { message?: string };
 }
 
 export async function removeWorkspaceMember(

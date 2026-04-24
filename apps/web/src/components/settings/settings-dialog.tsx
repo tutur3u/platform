@@ -49,6 +49,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import { apiFetch } from '@/lib/api-fetch';
+import { GuestSelfJoinSetting } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/_components/guest-self-join-setting';
 import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
 import BasicInfo from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/basic-info';
 import AccountManagementSettings from './account/account-management-settings';
@@ -159,6 +160,7 @@ export function SettingsDialog({
         apiFetch<{
           manage_subscription: boolean;
           manage_workspace_settings: boolean;
+          manage_workspace_members: boolean;
         }>(`/api/v1/workspaces/${wsId}/settings/permissions`, {
           cache: 'no-store',
         }),
@@ -170,6 +172,8 @@ export function SettingsDialog({
     workspacePermissions?.manage_subscription ?? false;
   const canManageWorkspaceSettings =
     workspacePermissions?.manage_workspace_settings ?? false;
+  const canManageWorkspaceMembers =
+    workspacePermissions?.manage_workspace_members ?? false;
   const autoAddNewGroupsToDefaultIncludedGroups =
     workspaceCustomConfigs[
       DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID
@@ -813,7 +817,14 @@ export function SettingsDialog({
                 </p>
               </div>
             ) : workspace ? (
-              <MembersSettings workspace={workspace} />
+              <div className="space-y-6">
+                <GuestSelfJoinSetting
+                  wsId={workspace.id}
+                  disabled={!canManageWorkspaceMembers}
+                  embedded
+                />
+                <MembersSettings workspace={workspace} />
+              </div>
             ) : (
               <div className="rounded-lg border p-4">
                 <p className="text-muted-foreground text-sm">

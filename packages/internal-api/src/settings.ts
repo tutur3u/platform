@@ -11,6 +11,7 @@ export interface WorkspacePermissionSetupStatus {
 export interface WorkspacePermissionsSummary {
   manage_subscription: boolean;
   manage_workspace_settings: boolean;
+  manage_workspace_members: boolean;
 }
 
 export async function getWorkspacePermissionSetupStatus(
