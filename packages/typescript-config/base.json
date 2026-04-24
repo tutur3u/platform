@@ -12,14 +12,13 @@
     "preserveWatchOutput": true,
     "strictNullChecks": true,
     "allowJs": false,
-    "lib": ["es2022", "DOM", "DOM.Iterable"],
+    "lib": ["esnext", "DOM", "DOM.Iterable"],
     "module": "NodeNext",
     "moduleDetection": "force",
     "moduleResolution": "NodeNext",
-    "noUncheckedIndexedAccess": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "ES2022"
+    "target": "ESNext"
   }
 }
