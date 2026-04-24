@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { Workspace } from '@tuturuuu/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import InvitationCard from '@/app/[locale]/(dashboard)/[wsId]/invitation-card';
 
 const testWorkspace: Workspace = {
@@ -52,11 +52,16 @@ const createWrapper = () => {
 describe('InvitationCard guest self-join mode', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 404,
-      json: async () => ({ errorCode: 'no_matching_workspace_user' }),
+      json: async () => ({ errorCode: 'NO_MATCHING_WORKSPACE_USER' }),
     }) as unknown as typeof fetch;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('renders guest copy and button label', () => {
@@ -64,7 +69,7 @@ describe('InvitationCard guest self-join mode', () => {
       wrapper: createWrapper(),
     });
 
-    expect(screen.getByText('invite.workspace-guest-join.')).toBeTruthy();
+    expect(screen.getByText('invite.workspace-guest-join')).toBeTruthy();
     expect(screen.getByText('invite.join-as-guest-button')).toBeTruthy();
   });
 

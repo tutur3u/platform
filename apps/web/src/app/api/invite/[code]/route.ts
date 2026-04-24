@@ -104,12 +104,24 @@ export async function GET(_: Request, { params }: Params) {
       inviteLink.ws_id as string
     );
 
-    const wsRaw = inviteLink.workspaces as {
-      id: string;
-      name: string;
-      avatar_url?: string | null;
-      logo_url?: string | null;
-    } | null;
+    const wsRawValue = inviteLink.workspaces as
+      | {
+          id: string;
+          name: string;
+          avatar_url?: string | null;
+          logo_url?: string | null;
+        }
+      | {
+          id: string;
+          name: string;
+          avatar_url?: string | null;
+          logo_url?: string | null;
+        }[]
+      | null;
+
+    const wsRaw = Array.isArray(wsRawValue)
+      ? (wsRawValue[0] ?? null)
+      : wsRawValue;
 
     let workspacePayload = wsRaw;
     if (wsRaw) {
@@ -321,10 +333,22 @@ export async function POST(_: Request, { params }: Params) {
       .eq('id', inviteLink.ws_id as string)
       .single();
 
+    let workspacePayload = workspace;
+    if (workspace) {
+      const branding = await resolveWorkspaceBrandingUrlsForNext(sbAdmin, {
+        avatar_url: workspace.avatar_url,
+        logo_url: null,
+      });
+      workspacePayload = {
+        ...workspace,
+        avatar_url: branding.avatar_url,
+      };
+    }
+
     return NextResponse.json(
       {
         message: 'Successfully joined workspace',
-        workspace,
+        workspace: workspacePayload,
       },
       { status: 200 }
     );

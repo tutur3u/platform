@@ -5763,7 +5763,7 @@
     "error-unauthorized": "Bạn phải đăng nhập để tham gia không gian làm việc",
     "go-to-workspace": "Đến Không Gian Làm Việc",
     "guest-join-error-msg": "Email tài khoản của bạn không khớp hồ sơ khách hợp lệ trong không gian làm việc này.",
-    "guest-join-error-title": "Không thể tham gia với tư cách khách.",
+    "guest-join-error-title": "Không thể tham gia với tư cách khách",
     "invalid-invite-message": "Liên kết lời mời này không hợp lệ hoặc đã hết hạn.",
     "invalid-invite-title": "Lời mời không hợp lệ",
     "invited-to": "Bạn được mời vào",
@@ -5771,7 +5771,7 @@
     "invited-you": "đã mời bạn",
     "join-agreement": "Bằng việc tham gia, bạn đồng ý trở thành thành viên của không gian làm việc này và tuân thủ các quy định của nó",
     "join-as-guest-button": "Tham gia với tư cách khách",
-    "join-as-guest-description": " không gian làm việc này với quyền hạn chế.",
+    "join-as-guest-description": "Bạn có thể tham gia {workspace} với quyền hạn chế.",
     "join-as-guest-hint": "Bạn sẽ tham gia với tư cách khách với quyền truy cập hạn chế.",
     "join-as-member-hint": "Bạn sẽ tham gia với tư cách thành viên đầy đủ.",
     "join-error-toast": "Không thể tham gia không gian làm việc",
@@ -5789,10 +5789,10 @@
     "unexpected-error-toast": "Đã xảy ra lỗi không mong muốn",
     "welcome-aboard": "Chào mừng bạn!",
     "workspace-full": "Đã Đầy",
-    "workspace-guest-join": "Truy cập không gian làm việc với tư cách khách",
+    "workspace-guest-join": "Truy cập không gian làm việc với tư cách khách.",
     "workspace-invitation": "Lời mời vào không gian làm việc",
-    "you-been-invited-to-join-the": "Bạn đã được mời tham gia vào không gian làm việc",
-    "you-can-join-as-guest": "Bạn có thể tham gia"
+    "you-been-invited-to-join-the": "Bạn đã được mời tham gia {workspace}. Hãy chấp nhận lời mời để bắt đầu cộng tác!",
+    "you-can-join-as-guest": "Bạn có thể tham gia {workspace} với quyền hạn chế."
   },
   "invoice-analytics": {
     "active_filters": "Bộ lọc đang áp dụng",

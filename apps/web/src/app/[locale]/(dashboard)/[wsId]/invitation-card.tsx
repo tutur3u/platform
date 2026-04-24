@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import { ArrowRight, Users } from '@tuturuuu/icons';
+import { ArrowRight } from '@tuturuuu/icons';
 import {
   acceptWorkspaceInvite,
   declineWorkspaceInvite,
@@ -19,19 +19,23 @@ import {
   WorkspaceJoinSparkles,
 } from '@/components/workspace-invite/workspace-join-experience';
 
+const guestJoinErrorCodeSet = new Set([
+  'NO_EMAIL',
+  'NO_MATCHING_WORKSPACE_USER',
+  'WORKSPACE_USER_LINKED_TO_OTHER_PLATFORM_USER',
+  'NO_GUEST_SELF_JOIN_MATCH',
+]);
+
 interface WorkspaceInvitationProps {
   workspace: Workspace;
   inviterName?: string;
   allowGuestSelfJoin?: boolean;
-  /** Workspace member total (optional; matches invite-link join screen) */
-  memberCount?: number;
 }
 
 export default function InvitationCard({
   workspace,
   inviterName,
   allowGuestSelfJoin = false,
-  memberCount,
 }: WorkspaceInvitationProps) {
   const router = useRouter();
   const t = useTranslations();
@@ -49,13 +53,6 @@ export default function InvitationCard({
 
   const declineInviteErrorTitle = t('invite.decline-invite-error-title');
   const declineInviteErrorMessage = t('invite.decline-invite-error-msg');
-
-  const guestJoinErrorCodeSet = new Set([
-    'no_email',
-    'no_matching_workspace_user',
-    'workspace_user_linked_to_other_platform_user',
-    'NO_GUEST_SELF_JOIN_MATCH',
-  ]);
 
   const acceptMutation = useMutation({
     mutationFn: () => acceptWorkspaceInvite(workspace.id),
@@ -103,7 +100,7 @@ export default function InvitationCard({
     (declineMutation.isPending && 'decline') ||
     undefined;
 
-  const displayName = workspace.name?.trim() || 'Workspace';
+  const displayName = workspace.name?.trim() || t('common.workspace');
 
   return (
     <WorkspaceJoinExperienceRoot>
@@ -126,43 +123,21 @@ export default function InvitationCard({
                   {t('invite.invited-you')}.
                 </>
               ) : allowGuestSelfJoin ? (
-                <>{t('invite.workspace-guest-join')}.</>
+                t('invite.workspace-guest-join')
               ) : (
                 <>{t('invite.workspace-invitation')}.</>
               )}
             </p>
           </div>
 
-          {typeof memberCount === 'number' && (
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <div className="flex items-center gap-1.5 rounded-full bg-dynamic-purple/10 px-3 py-1.5 text-sm">
-                <Users className="h-4 w-4 text-dynamic-purple" />
-                <span className="font-medium text-foreground/80">
-                  {memberCount}{' '}
-                  {memberCount === 1 ? t('invite.member') : t('invite.members')}
-                </span>
-              </div>
-            </div>
-          )}
-
           <p className="mx-auto max-w-sm text-foreground/65 text-sm leading-relaxed">
-            {allowGuestSelfJoin ? (
-              <>
-                {t('invite.you-can-join-as-guest')}{' '}
-                <span className="font-semibold text-foreground">
-                  {displayName}
-                </span>
-                {t('invite.join-as-guest-description')}
-              </>
-            ) : (
-              <>
-                {t('invite.you-been-invited-to-join-the')}{' '}
-                <span className="font-semibold text-foreground">
-                  {displayName}
-                </span>
-                {t('invite.accept-to-start-collaborating')}
-              </>
-            )}
+            {allowGuestSelfJoin
+              ? t('invite.join-as-guest-description', {
+                  workspace: displayName,
+                })
+              : t('invite.you-been-invited-to-join-the', {
+                  workspace: displayName,
+                })}
           </p>
         </div>
 

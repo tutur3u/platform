@@ -954,6 +954,107 @@ export type WorkspaceNonMemberInviteEligibility = {
   allowGuestSelfJoin: boolean;
 };
 
+type GuestSelfJoinCandidateRpcRow = {
+  eligible: boolean;
+  matched_email_source: string | null;
+  reason: string | null;
+  virtual_user_id: string | null;
+};
+
+export type GuestSelfJoinCandidateResult = {
+  allowGuestSelfJoin: boolean;
+  candidateEmails: string[];
+  guestSelfJoinEnabled: boolean;
+  matchedEmailSource: string | null;
+  reason: string | null;
+  virtualUserId: string | null;
+};
+
+export async function resolveGuestSelfJoinCandidate(
+  supabase: TypedSupabaseClient,
+  params: {
+    authEmail: string | null;
+    rpcSupabase?: TypedSupabaseClient;
+    privateEmail?: string | null;
+    userId: string;
+    workspaceId: string;
+  }
+): Promise<GuestSelfJoinCandidateResult> {
+  const { authEmail, privateEmail, rpcSupabase, userId, workspaceId } = params;
+  const authEmailNorm = authEmail?.trim().toLowerCase() || null;
+
+  let privateEmailNorm =
+    typeof privateEmail === 'string'
+      ? privateEmail.trim().toLowerCase() || null
+      : null;
+
+  if (privateEmail === undefined) {
+    const { data: privateDetails } = await supabase
+      .from('user_private_details')
+      .select('email')
+      .eq('user_id', userId)
+      .maybeSingle();
+    privateEmailNorm = privateDetails?.email?.trim().toLowerCase() || null;
+  }
+
+  const candidateEmails = [
+    ...new Set([authEmailNorm, privateEmailNorm]),
+  ].filter(
+    (email): email is string => typeof email === 'string' && email.length > 0
+  );
+
+  const guestSelfJoinEnabled =
+    (
+      await getWorkspaceConfig(
+        workspaceId,
+        ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID
+      )
+    )
+      ?.trim()
+      .toLowerCase() === 'true';
+
+  if (!guestSelfJoinEnabled) {
+    return {
+      allowGuestSelfJoin: false,
+      candidateEmails,
+      guestSelfJoinEnabled,
+      matchedEmailSource: null,
+      reason: null,
+      virtualUserId: null,
+    };
+  }
+
+  const { data: guestCandidate, error: guestCandidateError } =
+    await (rpcSupabase ?? supabase).rpc('resolve_guest_self_join_candidate', {
+      p_auth_email: authEmailNorm ?? undefined,
+      p_private_email: privateEmailNorm ?? undefined,
+      p_user_id: userId,
+      p_ws_id: workspaceId,
+    });
+
+  if (guestCandidateError) {
+    console.error('Failed to resolve guest self-join candidate:', guestCandidateError, {
+      userId,
+      workspaceId,
+      authEmail: authEmailNorm,
+      privateEmail: privateEmailNorm,
+    });
+    throw guestCandidateError;
+  }
+
+  const candidate = (guestCandidate?.[0] ??
+    null) as GuestSelfJoinCandidateRpcRow | null;
+
+  return {
+    allowGuestSelfJoin: candidate?.eligible === true,
+    candidateEmails,
+    guestSelfJoinEnabled,
+    matchedEmailSource: candidate?.matched_email_source ?? null,
+    reason: candidate?.reason ?? null,
+    virtualUserId: candidate?.virtual_user_id ?? null,
+  };
+}
+
 /**
  * Whether the workspace invite/accept flow may be shown (matches what
  * `POST /api/workspaces/:wsId/accept-invite` can accept without `NO_PENDING_INVITE_FOUND`).
@@ -977,42 +1078,16 @@ export async function getWorkspaceNonMemberInviteEligibility(
     workspaceId: string;
     userId: string;
     authEmail: string | null;
+    rpcSupabase?: TypedSupabaseClient;
   }
 ): Promise<WorkspaceNonMemberInviteEligibility> {
-  const { workspaceId, userId, authEmail } = params;
-  const authEmailNorm = authEmail?.trim().toLowerCase() || null;
-
-  const { data: privateDetails } = await supabase
-    .from('user_private_details')
-    .select('email')
-    .eq('user_id', userId)
-    .maybeSingle();
-  const privateEmail = privateDetails?.email?.trim().toLowerCase() || null;
-
-  const guestSelfJoinEnabled =
-    (
-      await getWorkspaceConfig(
-        workspaceId,
-        ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID
-      )
-    )
-      ?.trim()
-      .toLowerCase() === 'true';
-
-  let allowGuestSelfJoin = false;
-  if (guestSelfJoinEnabled) {
-    const { data: guestCandidate } = await supabase.rpc(
-      'resolve_guest_self_join_candidate',
-      {
-        p_ws_id: workspaceId,
-        p_user_id: userId,
-        p_auth_email: authEmailNorm ?? undefined,
-        p_private_email: privateEmail ?? undefined,
-      }
-    );
-
-    allowGuestSelfJoin = guestCandidate?.[0]?.eligible === true;
-  }
+  const { workspaceId, userId, authEmail, rpcSupabase } = params;
+  const guestSelfJoinCandidate = await resolveGuestSelfJoinCandidate(supabase, {
+    authEmail,
+    rpcSupabase,
+    userId,
+    workspaceId,
+  });
 
   const { data: pendingUserInvite } = await supabase
     .from('workspace_invites')
@@ -1021,20 +1096,23 @@ export async function getWorkspaceNonMemberInviteEligibility(
     .eq('user_id', userId)
     .maybeSingle();
 
-  const candidateEmails = [...new Set([authEmailNorm, privateEmail])].filter(
-    (e): e is string => Boolean(e)
-  );
+  const candidateEmails = guestSelfJoinCandidate.candidateEmails;
 
-  const { data: pendingEmailInvite } = candidateEmails.length
+  const { data: pendingEmailInvites } = candidateEmails.length
     ? await supabase
         .from('workspace_email_invites')
         .select('ws_id')
         .eq('ws_id', workspaceId)
         .in('email', candidateEmails)
-        .maybeSingle()
     : { data: null };
 
-  const hasPendingInvite = !!(pendingUserInvite || pendingEmailInvite);
+  const hasPendingEmailInvite =
+    Array.isArray(pendingEmailInvites) && pendingEmailInvites.length > 0;
 
-  return { hasPendingInvite, allowGuestSelfJoin };
+  const hasPendingInvite = !!(pendingUserInvite || hasPendingEmailInvite);
+
+  return {
+    allowGuestSelfJoin: guestSelfJoinCandidate.allowGuestSelfJoin,
+    hasPendingInvite,
+  };
 }

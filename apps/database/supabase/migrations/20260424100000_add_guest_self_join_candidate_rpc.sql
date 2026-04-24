@@ -15,12 +15,27 @@ security definer
 set search_path = public
 as $$
 declare
+  v_request_user_id uuid;
   v_auth_email text;
   v_private_email text;
   v_selected_email text;
   v_candidate_id uuid;
   v_candidate_linked_to_other boolean;
 begin
+  v_request_user_id := auth.uid();
+
+  if v_request_user_id is null then
+    return query
+    select false, 'unauthorized', null::uuid, null::text;
+    return;
+  end if;
+
+  if p_user_id is distinct from v_request_user_id then
+    return query
+    select false, 'forbidden', null::uuid, null::text;
+    return;
+  end if;
+
   if exists (
     select 1
     from workspace_members wm
@@ -32,8 +47,13 @@ begin
     return;
   end if;
 
-  v_auth_email := nullif(lower(trim(p_auth_email)), '');
-  v_private_email := nullif(lower(trim(p_private_email)), '');
+  v_auth_email := nullif(lower(trim(coalesce(auth.jwt() ->> 'email', ''))), '');
+
+  select nullif(lower(trim(upd.email)), '')
+  into v_private_email
+  from user_private_details upd
+  where upd.user_id = v_request_user_id
+  limit 1;
 
   if v_auth_email is null and v_private_email is null then
     return query
@@ -119,3 +139,7 @@ begin
     end;
 end;
 $$;
+
+revoke all on function public.resolve_guest_self_join_candidate(uuid, uuid, text, text) from public;
+revoke all on function public.resolve_guest_self_join_candidate(uuid, uuid, text, text) from anon;
+grant execute on function public.resolve_guest_self_join_candidate(uuid, uuid, text, text) to authenticated;

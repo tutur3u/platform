@@ -5763,7 +5763,7 @@
     "error-unauthorized": "You must be signed in to join a workspace",
     "go-to-workspace": "Go to Workspace",
     "guest-join-error-msg": "Your account email does not match an eligible guest profile for this workspace.",
-    "guest-join-error-title": "Unable to join as guest.",
+    "guest-join-error-title": "Unable to join as guest",
     "invalid-invite-message": "This invite link is invalid or has expired.",
     "invalid-invite-title": "Invalid Invite",
     "invited-to": "You have been invited to join",
@@ -5771,7 +5771,7 @@
     "invited-you": "invited you",
     "join-agreement": "By joining, you agree to be part of this workspace and follow its guidelines",
     "join-as-guest-button": "Join as Guest",
-    "join-as-guest-description": " workspace as a guest with limited access.",
+    "join-as-guest-description": "You can join {workspace} as a guest with limited access.",
     "join-as-guest-hint": "You will join as a guest with limited access.",
     "join-as-member-hint": "You will join as a full member with workspace access.",
     "join-error-toast": "Failed to join workspace",
@@ -5789,10 +5789,10 @@
     "unexpected-error-toast": "An unexpected error occurred",
     "welcome-aboard": "Welcome aboard!",
     "workspace-full": "Workspace Full",
-    "workspace-guest-join": "Guest workspace access",
+    "workspace-guest-join": "Guest workspace access.",
     "workspace-invitation": "Workspace invitation",
-    "you-been-invited-to-join-the": "You've been invited to join the",
-    "you-can-join-as-guest": "You can join the"
+    "you-been-invited-to-join-the": "You've been invited to join {workspace}. Accept to start collaborating!",
+    "you-can-join-as-guest": "You can join {workspace} as a guest with limited access."
   },
   "invoice-analytics": {
     "active_filters": "Active Filters",

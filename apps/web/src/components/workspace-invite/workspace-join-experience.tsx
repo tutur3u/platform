@@ -6,6 +6,8 @@ import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { isUsableNextImageSrc } from '@/lib/workspace-branding-image-url';
 
+const warnedInvalidBrandImageSources = new Set<string>();
+
 export type WorkspaceJoinBrand = {
   name: string | null | undefined;
   logo_url?: string | null;
@@ -132,6 +134,23 @@ export function WorkspaceJoinLogoBlock({
       : 'ring-dynamic-blue/20 group-hover:ring-dynamic-blue/30';
 
   const rawBrandImage = workspace.logo_url || workspace.avatar_url;
+
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    rawBrandImage &&
+    !isUsableNextImageSrc(rawBrandImage) &&
+    !warnedInvalidBrandImageSources.has(rawBrandImage)
+  ) {
+    warnedInvalidBrandImageSources.add(rawBrandImage);
+    console.warn(
+      '[workspace-join-experience] Invalid workspace brand image source. Resolve branding URLs first via resolveWorkspaceBrandingUrlsForNext.',
+      {
+        rawBrandImage,
+        workspaceId: (workspace as { id?: string }).id,
+      }
+    );
+  }
+
   const brandImageSrc =
     rawBrandImage && isUsableNextImageSrc(rawBrandImage) ? rawBrandImage : null;
 
@@ -148,6 +167,7 @@ export function WorkspaceJoinLogoBlock({
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
               width={wh}
               height={wh}
+              unoptimized
             />
           </div>
         ) : (

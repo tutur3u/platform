@@ -63,7 +63,6 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!user?.id) redirect('/login');
 
   const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
 
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
   const behaviorCookie = (await cookies()).get(SIDEBAR_BEHAVIOR_COOKIE_NAME);
@@ -94,12 +93,15 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!workspace) redirect('/onboarding');
 
   if (!workspace.joined) {
+    const sbAdmin = await createAdminClient();
+
     const inviteEligibility = await getWorkspaceNonMemberInviteEligibility(
       sbAdmin,
       {
         workspaceId: workspace.id,
         userId: user.id,
         authEmail: user.email?.trim().toLowerCase() ?? null,
+        rpcSupabase: supabase,
       }
     );
 

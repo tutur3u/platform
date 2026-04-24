@@ -1,11 +1,10 @@
-import { ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import {
-  getWorkspaceConfig,
+  resolveGuestSelfJoinCandidate,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -19,6 +18,28 @@ interface Params {
   params: Promise<{
     wsId: string;
   }>;
+}
+
+const guestJoinReasonToErrorCodeMap: Record<string, string> = {
+  already_member: 'ALREADY_MEMBER',
+  no_email: 'NO_EMAIL',
+  no_matching_workspace_user: 'NO_MATCHING_WORKSPACE_USER',
+  workspace_user_linked_to_other_platform_user:
+    'WORKSPACE_USER_LINKED_TO_OTHER_PLATFORM_USER',
+};
+
+function normalizeGuestJoinErrorCode(
+  reason: string | null | undefined
+): string {
+  if (!reason) return 'NO_GUEST_SELF_JOIN_MATCH';
+  const mapped = guestJoinReasonToErrorCodeMap[reason];
+  if (mapped) return mapped;
+
+  return reason
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toUpperCase();
 }
 
 export async function POST(request: Request, { params }: Params) {
@@ -69,49 +90,41 @@ export async function POST(request: Request, { params }: Params) {
     .eq('user_id', user.id)
     .maybeSingle();
 
-  const { data: pendingEmailInvite } = candidateEmails.length
+  const { data: pendingEmailInviteRows } = candidateEmails.length
     ? await supabase
         .from('workspace_email_invites')
         .select('ws_id, type, email')
         .eq('ws_id', wsId)
         .in('email', candidateEmails)
-        .maybeSingle()
     : { data: null };
+
+  const pendingEmailInvite = Array.isArray(pendingEmailInviteRows)
+    ? (pendingEmailInviteRows.find(
+        (row) =>
+          typeof row.email === 'string' &&
+          row.email.trim().toLowerCase() === candidateEmails[0]
+      ) ??
+      pendingEmailInviteRows[0] ??
+      null)
+    : null;
 
   let inviteMemberType: 'MEMBER' | 'GUEST' =
     pendingInvite?.type ?? pendingEmailInvite?.type ?? 'MEMBER';
   let matchedWorkspaceUserId: string | null = null;
 
   if (!pendingInvite && !pendingEmailInvite) {
-    const guestSelfJoinEnabled =
-      (
-        await getWorkspaceConfig(
-          wsId,
-          ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID
-        )
-      )
-        ?.trim()
-        .toLowerCase() === 'true';
-
-    if (!guestSelfJoinEnabled) {
-      return NextResponse.json(
-        {
-          error: 'No pending invite found',
-          errorCode: 'NO_PENDING_INVITE_FOUND',
-        },
-        { status: 404 }
-      );
-    }
-
-    const { data: guestCandidate, error: guestCandidateError } =
-      await sbAdmin.rpc('resolve_guest_self_join_candidate', {
-        p_ws_id: wsId,
-        p_user_id: user.id,
-        p_auth_email: authEmail ?? undefined,
-        p_private_email: privateEmail ?? undefined,
+    let guestSelfJoinCandidate: Awaited<
+      ReturnType<typeof resolveGuestSelfJoinCandidate>
+    >;
+    try {
+      guestSelfJoinCandidate = await resolveGuestSelfJoinCandidate(sbAdmin, {
+        authEmail,
+        rpcSupabase: supabase,
+        privateEmail,
+        userId: user.id,
+        workspaceId: wsId,
       });
-
-    if (guestCandidateError) {
+    } catch (guestCandidateError) {
       console.error(
         'Failed to resolve guest self-join candidate:',
         guestCandidateError
@@ -122,24 +135,36 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const candidateRow = guestCandidate?.[0];
-
-    if (!candidateRow?.eligible || !candidateRow.virtual_user_id) {
+    if (!guestSelfJoinCandidate.guestSelfJoinEnabled) {
       return NextResponse.json(
         {
           error: 'No pending invite found',
-          errorCode: candidateRow?.reason || 'NO_GUEST_SELF_JOIN_MATCH',
+          errorCode: 'NO_PENDING_INVITE_FOUND',
+        },
+        { status: 404 }
+      );
+    }
+
+    if (
+      !guestSelfJoinCandidate.allowGuestSelfJoin ||
+      !guestSelfJoinCandidate.virtualUserId
+    ) {
+      return NextResponse.json(
+        {
+          error: 'No pending invite found',
+          errorCode: normalizeGuestJoinErrorCode(guestSelfJoinCandidate.reason),
         },
         { status: 404 }
       );
     }
 
     inviteMemberType = 'GUEST';
-    matchedWorkspaceUserId = candidateRow.virtual_user_id;
+    matchedWorkspaceUserId = guestSelfJoinCandidate.virtualUserId;
   }
 
   // Make acceptance idempotent for stale invites or partially completed flows.
   const existingMember = await verifyWorkspaceMembershipType({
+    requiredType: 'ANY',
     wsId: wsId,
     userId: user.id,
     supabase: sbAdmin,
@@ -261,6 +286,15 @@ export async function POST(request: Request, { params }: Params) {
     // Rollback: revoke the Polar seat if it was assigned
     if (seatAssignment.required && seatAssignment.success) {
       await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
+    }
+
+    if (matchedWorkspaceUserId) {
+      await sbAdmin
+        .from('workspace_user_linked_users')
+        .delete()
+        .eq('platform_user_id', user.id)
+        .eq('ws_id', wsId)
+        .eq('virtual_user_id', matchedWorkspaceUserId);
     }
 
     console.error('Error accepting invite:', error);

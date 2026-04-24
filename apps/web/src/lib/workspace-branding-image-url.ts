@@ -6,6 +6,7 @@ export function isUsableNextImageSrc(
 ): boolean {
   if (!value?.trim()) return false;
   const s = value.trim();
+  if (s.startsWith('//')) return false;
   return /^https?:\/\//i.test(s) || s.startsWith('/');
 }
 
@@ -27,6 +28,11 @@ export async function resolveWorkspaceImageSrcForNext(
     .createSignedUrl(s, 60 * 15);
 
   if (error || !data?.signedUrl) {
+    console.error('[workspace-branding-image-url] createSignedUrl failed', {
+      bucket: 'workspaces',
+      error,
+      path: s,
+    });
     return null;
   }
   return data.signedUrl;

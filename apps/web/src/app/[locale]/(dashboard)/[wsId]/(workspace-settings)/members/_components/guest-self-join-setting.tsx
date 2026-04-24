@@ -39,14 +39,30 @@ export function GuestSelfJoinSetting({
     mutationFn: async (nextChecked: boolean) => {
       await updateWorkspaceConfig(wsId, configId, String(nextChecked));
     },
+    onMutate: async (nextChecked: boolean) => {
+      const queryKey = ['workspace-config', wsId, configId] as const;
+
+      await queryClient.cancelQueries({ queryKey });
+
+      const previousValue = queryClient.getQueryData<string | null>(queryKey);
+
+      queryClient.setQueryData<string | null>(queryKey, String(nextChecked));
+
+      return { previousValue, queryKey };
+    },
     onSuccess: () => {
+      toast.success(t('guest_self_join_update_success'));
+    },
+    onError: (_, __, context) => {
+      if (context) {
+        queryClient.setQueryData(context.queryKey, context.previousValue);
+      }
+      toast.error(t('guest_self_join_update_error'));
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({
         queryKey: ['workspace-config', wsId, configId],
       });
-      toast.success(t('guest_self_join_update_success'));
-    },
-    onError: () => {
-      toast.error(t('guest_self_join_update_error'));
     },
   });
 
