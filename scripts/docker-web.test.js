@@ -24,6 +24,7 @@ const {
   readBlueGreenActiveColor,
   renderBlueGreenProxyConfig,
   rewriteLocalhostUrl,
+  runComposeUpWithNameConflictRecovery,
   runDockerWebWorkflow,
   usesBlueGreenStrategy,
   writeBlueGreenActiveColor,
@@ -1054,6 +1055,61 @@ test('runDockerWebWorkflow recovers from stale blue-green container name conflic
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
+});
+
+test('runComposeUpWithNameConflictRecovery removes stale Compose recreate temp containers', async () => {
+  const calls = [];
+  let upAttempts = 0;
+  const tempName = '50824ff4b149_platform-markitdown-1';
+
+  const runCommand = async (command, args) => {
+    calls.push([command, args]);
+
+    if (command === 'docker' && args[0] === 'compose' && args.includes('up')) {
+      upAttempts += 1;
+
+      if (upAttempts === 1) {
+        return {
+          code: 1,
+          signal: null,
+          stderr: `Error response from daemon: Conflict. The container name "/${tempName}" is already in use by container "stale-markitdown". You have to remove (or rename) that container to be able to reuse that name.`,
+          stdout: '',
+        };
+      }
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  await runComposeUpWithNameConflictRecovery({
+    composeFile: PROD_COMPOSE_FILE,
+    env: {
+      COMPOSE_PROJECT_NAME: 'platform',
+      PATH: 'test-path',
+    },
+    runCommand,
+    services: ['web-green', 'markitdown', 'storage-unzip-proxy'],
+    upArgs: [
+      'up',
+      '--build',
+      '--detach',
+      '--remove-orphans',
+      'web-green',
+      'markitdown',
+      'storage-unzip-proxy',
+    ],
+  });
+
+  assert.equal(upAttempts, 2);
+  assert.ok(
+    calls.some(
+      ([command, args]) =>
+        command === 'docker' &&
+        args[0] === 'rm' &&
+        args[1] === '-f' &&
+        args[2] === tempName
+    )
+  );
 });
 
 test('runDockerWebWorkflow switches traffic to the new color after it becomes healthy', async () => {

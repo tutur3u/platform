@@ -110,6 +110,29 @@ function getComposeServiceContainerName(serviceName, { composeFile, env }) {
   return `${getComposeProjectName(composeFile, env)}-${serviceName}-1`;
 }
 
+function isExpectedComposeContainerName(containerName, expectedContainerNames) {
+  if (expectedContainerNames.has(containerName)) {
+    return true;
+  }
+
+  for (const expectedContainerName of expectedContainerNames) {
+    if (
+      new RegExp(
+        `^[0-9a-f]{12,64}_${escapeRegExp(expectedContainerName)}$`,
+        'iu'
+      ).test(containerName)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+}
+
 function parseDockerContainerNameConflicts(error) {
   const message = error instanceof Error ? error.message : String(error);
   const conflicts = [];
@@ -151,8 +174,10 @@ async function runComposeUpWithNameConflictRecovery({
     } catch (error) {
       const conflictNames = parseDockerContainerNameConflicts(error).filter(
         (containerName) =>
-          expectedContainerNames.has(containerName) &&
-          !removedContainerNames.has(containerName)
+          isExpectedComposeContainerName(
+            containerName,
+            expectedContainerNames
+          ) && !removedContainerNames.has(containerName)
       );
 
       if (conflictNames.length === 0 || attempt === maxAttempts - 1) {

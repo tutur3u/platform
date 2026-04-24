@@ -173,6 +173,12 @@ the `url` field. Direct URL conversion is intentionally limited to YouTube
 hosts, so Mira can summarize YouTube links through MarkItDown without falling
 back to Google Search or broad URL fetching.
 
+Interrupted Docker Compose recreates can leave temporary container names such
+as `<hex>_platform-markitdown-1`. The Docker helper treats those as recoverable
+only when the suffix matches one of the services in the current `compose up`
+request, removes that stale temp container, and retries the same narrow up
+operation.
+
 The stable nginx proxy also raises its request-header buffer limits so larger
 session/auth cookies do not fail at the proxy layer with `400 Request Header Or
 Cookie Too Large` before the active web container sees the request. It now also
