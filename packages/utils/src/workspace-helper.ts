@@ -1024,21 +1024,26 @@ export async function resolveGuestSelfJoinCandidate(
     };
   }
 
-  const { data: guestCandidate, error: guestCandidateError } =
-    await (rpcSupabase ?? supabase).rpc('resolve_guest_self_join_candidate', {
-      p_auth_email: authEmailNorm ?? undefined,
-      p_private_email: privateEmailNorm ?? undefined,
-      p_user_id: userId,
-      p_ws_id: workspaceId,
-    });
+  const { data: guestCandidate, error: guestCandidateError } = await (
+    rpcSupabase ?? supabase
+  ).rpc('resolve_guest_self_join_candidate', {
+    p_auth_email: authEmailNorm ?? undefined,
+    p_private_email: privateEmailNorm ?? undefined,
+    p_user_id: userId,
+    p_ws_id: workspaceId,
+  });
 
   if (guestCandidateError) {
-    console.error('Failed to resolve guest self-join candidate:', guestCandidateError, {
-      userId,
-      workspaceId,
-      authEmail: authEmailNorm,
-      privateEmail: privateEmailNorm,
-    });
+    console.error(
+      'Failed to resolve guest self-join candidate:',
+      guestCandidateError,
+      {
+        userId,
+        workspaceId,
+        authEmail: authEmailNorm,
+        privateEmail: privateEmailNorm,
+      }
+    );
     throw guestCandidateError;
   }
 
