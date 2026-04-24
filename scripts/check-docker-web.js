@@ -359,7 +359,7 @@ function validateDockerProdCompose(composeContent) {
     'http://127.0.0.1:8000/health',
     'http://127.0.0.1:8788/health',
     '      - SUPABASE_URL',
-    'wget -q --spider --header="Authorization: Bearer $$SRH_TOKEN" http://127.0.0.1:80/ping || exit 1',
+    'wget -q -O - --header="Authorization: Bearer $$SRH_TOKEN" --header="Content-Type: application/json" --post-data=\'\'["PING"]\'\' http://127.0.0.1:80/ | grep -q \'\'"PONG"\'\'',
     "ps | grep -q '[w]atch-blue-green-deploy.js'",
     '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',
     '      required: true',

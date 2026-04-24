@@ -498,8 +498,9 @@ Dashboard details:
   derives total CPU and memory from those rows when present, so the summary
   cards stay aligned with the detailed container inventory.
 - The bundled `serverless-redis-http` companion uses an in-container `wget`
-  `/ping` health check with the generated `SRH_TOKEN`; do not use a Node-based
-  probe for that image because it is an Erlang release image.
+  health check that posts `["PING"]` to `/` with the generated `SRH_TOKEN`;
+  do not use a Node-based probe for that image because it is an Erlang release
+  image, and do not probe `/ping` because SRH does not expose that route.
 - Request counters now come from a persisted local proxy-log drain under
   `tmp/docker-web/watch/blue-green-request-telemetry.*`, not from one-off
   `docker logs` scrapes in the dashboard. The watcher continuously drains

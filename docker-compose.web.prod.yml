@@ -146,7 +146,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          'wget -q --spider --header="Authorization: Bearer $$SRH_TOKEN" http://127.0.0.1:80/ping || exit 1',
+          'wget -q -O - --header="Authorization: Bearer $$SRH_TOKEN" --header="Content-Type: application/json" --post-data=''["PING"]'' http://127.0.0.1:80/ | grep -q ''"PONG"''',
         ]
       interval: 30s
       timeout: 5s
