@@ -53,15 +53,19 @@ describe('InvitationCard guest self-join mode', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 404,
-      json: async () => ({ errorCode: 'NO_MATCHING_WORKSPACE_USER' }),
-    }) as unknown as typeof fetch;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: async () => ({ errorCode: 'NO_MATCHING_WORKSPACE_USER' }),
+      })
+    );
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('renders guest copy and button label', () => {

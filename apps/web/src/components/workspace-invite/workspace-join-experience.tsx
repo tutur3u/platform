@@ -9,6 +9,7 @@ import { isUsableNextImageSrc } from '@/lib/workspace-branding-image-url';
 const warnedInvalidBrandImageSources = new Set<string>();
 
 export type WorkspaceJoinBrand = {
+  id?: string;
   name: string | null | undefined;
   logo_url?: string | null;
   avatar_url?: string | null;
@@ -146,7 +147,7 @@ export function WorkspaceJoinLogoBlock({
       '[workspace-join-experience] Invalid workspace brand image source. Resolve branding URLs first via resolveWorkspaceBrandingUrlsForNext.',
       {
         rawBrandImage,
-        workspaceId: (workspace as { id?: string }).id,
+        workspaceId: workspace.id,
       }
     );
   }

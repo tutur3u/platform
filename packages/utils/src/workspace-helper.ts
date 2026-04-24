@@ -1,9 +1,9 @@
 import { ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   PermissionId,
   Workspace,
@@ -913,10 +913,10 @@ export async function normalizeWorkspaceId(
  * @param configId - The configuration ID
  * @returns The configuration value or null if not found
  */
-export async function getWorkspaceConfig(
+async function fetchWorkspaceConfigValue(
   wsId: string,
   configId: string
-): Promise<string | null> {
+): Promise<{ error: unknown; value: string | null }> {
   const sbAdmin = await createAdminClient();
 
   // Skip normalization if already a valid UUID (avoids auth check in admin context)
@@ -931,16 +931,31 @@ export async function getWorkspaceConfig(
     .eq('id', configId)
     .maybeSingle();
 
+  return {
+    error,
+    value: data?.value || null,
+  };
+}
+
+export async function getWorkspaceConfig(
+  wsId: string,
+  configId: string
+): Promise<string | null> {
+  const { error, value } = await fetchWorkspaceConfigValue(wsId, configId);
+
   if (error) {
     logWorkspaceError('Failed to fetch workspace config', error, {
       workspaceId: wsId,
       configId,
-      errorCode: error.code,
+      errorCode:
+        typeof error === 'object' && error && 'code' in error
+          ? error.code
+          : undefined,
     });
     return null;
   }
 
-  return data?.value || null;
+  return value;
 }
 
 /** Result of {@link getWorkspaceNonMemberInviteEligibility} (user not in `workspace_members` yet). */
@@ -989,11 +1004,25 @@ export async function resolveGuestSelfJoinCandidate(
       : null;
 
   if (privateEmail === undefined) {
-    const { data: privateDetails } = await supabase
+    const { data: privateDetails, error: privateDetailsError } = await supabase
       .from('user_private_details')
       .select('email')
       .eq('user_id', userId)
       .maybeSingle();
+
+    if (privateDetailsError) {
+      logWorkspaceError(
+        'Failed to fetch private email for guest self-join candidate',
+        privateDetailsError,
+        {
+          userId,
+          workspaceId,
+          errorCode: privateDetailsError.code,
+        }
+      );
+      throw privateDetailsError;
+    }
+
     privateEmailNorm = privateDetails?.email?.trim().toLowerCase() || null;
   }
 
@@ -1003,15 +1032,25 @@ export async function resolveGuestSelfJoinCandidate(
     (email): email is string => typeof email === 'string' && email.length > 0
   );
 
-  const guestSelfJoinEnabled =
-    (
-      await getWorkspaceConfig(
+  const guestSelfJoinConfig = await fetchWorkspaceConfigValue(
+    workspaceId,
+    ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID
+  );
+
+  if (guestSelfJoinConfig.error) {
+    logWorkspaceError(
+      'Failed to fetch guest self-join workspace config',
+      guestSelfJoinConfig.error,
+      {
         workspaceId,
-        ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID
-      )
-    )
-      ?.trim()
-      .toLowerCase() === 'true';
+        configId: ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID,
+      }
+    );
+    throw guestSelfJoinConfig.error;
+  }
+
+  const guestSelfJoinEnabled =
+    guestSelfJoinConfig.value?.trim().toLowerCase() === 'true';
 
   if (!guestSelfJoinEnabled) {
     return {
@@ -1027,8 +1066,6 @@ export async function resolveGuestSelfJoinCandidate(
   const { data: guestCandidate, error: guestCandidateError } = await (
     rpcSupabase ?? supabase
   ).rpc('resolve_guest_self_join_candidate', {
-    p_auth_email: authEmailNorm ?? undefined,
-    p_private_email: privateEmailNorm ?? undefined,
     p_user_id: userId,
     p_ws_id: workspaceId,
   });
@@ -1040,8 +1077,8 @@ export async function resolveGuestSelfJoinCandidate(
       {
         userId,
         workspaceId,
-        authEmail: authEmailNorm,
-        privateEmail: privateEmailNorm,
+        hasAuthEmail: authEmailNorm !== null,
+        hasPrivateEmail: privateEmailNorm !== null,
       }
     );
     throw guestCandidateError;
@@ -1094,22 +1131,50 @@ export async function getWorkspaceNonMemberInviteEligibility(
     workspaceId,
   });
 
-  const { data: pendingUserInvite } = await supabase
-    .from('workspace_invites')
-    .select('ws_id')
-    .eq('ws_id', workspaceId)
-    .eq('user_id', userId)
-    .maybeSingle();
+  const { data: pendingUserInvite, error: pendingUserInviteError } =
+    await supabase
+      .from('workspace_invites')
+      .select('ws_id')
+      .eq('ws_id', workspaceId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+  if (pendingUserInviteError) {
+    logWorkspaceError(
+      'Failed to fetch pending workspace invite',
+      pendingUserInviteError,
+      {
+        userId,
+        workspaceId,
+        errorCode: pendingUserInviteError.code,
+      }
+    );
+    throw pendingUserInviteError;
+  }
 
   const candidateEmails = guestSelfJoinCandidate.candidateEmails;
 
-  const { data: pendingEmailInvites } = candidateEmails.length
-    ? await supabase
-        .from('workspace_email_invites')
-        .select('ws_id')
-        .eq('ws_id', workspaceId)
-        .in('email', candidateEmails)
-    : { data: null };
+  const { data: pendingEmailInvites, error: pendingEmailInvitesError } =
+    candidateEmails.length
+      ? await supabase
+          .from('workspace_email_invites')
+          .select('ws_id')
+          .eq('ws_id', workspaceId)
+          .in('email', candidateEmails)
+      : { data: null, error: null };
+
+  if (pendingEmailInvitesError) {
+    logWorkspaceError(
+      'Failed to fetch pending workspace email invites',
+      pendingEmailInvitesError,
+      {
+        workspaceId,
+        candidateEmailCount: candidateEmails.length,
+        errorCode: pendingEmailInvitesError.code,
+      }
+    );
+    throw pendingEmailInvitesError;
+  }
 
   const hasPendingEmailInvite =
     Array.isArray(pendingEmailInvites) && pendingEmailInvites.length > 0;

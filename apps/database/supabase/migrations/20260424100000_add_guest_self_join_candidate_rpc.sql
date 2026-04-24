@@ -1,8 +1,8 @@
+drop function if exists public.resolve_guest_self_join_candidate(uuid, uuid, text, text);
+
 create or replace function public.resolve_guest_self_join_candidate(
   p_ws_id uuid,
-  p_user_id uuid,
-  p_auth_email text default null,
-  p_private_email text default null
+  p_user_id uuid
 )
 returns table(
   eligible boolean,
@@ -93,6 +93,7 @@ begin
     where wu.ws_id = p_ws_id
       and wu.email is not null
       and trim(wu.email) <> ''
+      and coalesce(wu.archived, false) = false
   )
   select
     rc.id,
@@ -140,6 +141,6 @@ begin
 end;
 $$;
 
-revoke all on function public.resolve_guest_self_join_candidate(uuid, uuid, text, text) from public;
-revoke all on function public.resolve_guest_self_join_candidate(uuid, uuid, text, text) from anon;
-grant execute on function public.resolve_guest_self_join_candidate(uuid, uuid, text, text) to authenticated;
+revoke all on function public.resolve_guest_self_join_candidate(uuid, uuid) from public;
+revoke all on function public.resolve_guest_self_join_candidate(uuid, uuid) from anon;
+grant execute on function public.resolve_guest_self_join_candidate(uuid, uuid) to authenticated;
