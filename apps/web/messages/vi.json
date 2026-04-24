@@ -1562,6 +1562,27 @@
       "unknown": "Không xác định"
     },
     "description": "Theo dõi watcher blue/green, nhịp rollout, lưu lượng request và tải container từ một dashboard vận hành duy nhất.",
+    "docker": {
+      "all_containers": "Tất cả container đang chạy",
+      "cpu": "CPU",
+      "empty_containers": "Snapshot mới nhất của watcher chưa ghi nhận container Docker nào đang chạy.",
+      "empty_services": "Snapshot mới nhất của watcher chưa ghi nhận dòng tình trạng dịch vụ compose nào.",
+      "inventory_title": "Kiểm Kê Runtime Docker",
+      "kicker": "Runtime Docker",
+      "memory": "Bộ nhớ",
+      "monitored": "Đang giám sát",
+      "running_count": "{count} đang chạy",
+      "running_for": "Đã Chạy Trong",
+      "service": "Dịch vụ",
+      "services_health": "Tình trạng dịch vụ"
+    },
+    "docker_health": {
+      "healthy": "Khỏe",
+      "none": "Không có healthcheck",
+      "starting": "Đang khởi động",
+      "unhealthy": "Không khỏe",
+      "unknown": "Không xác định"
+    },
     "empty": {
       "containers": "Chưa có số liệu container trực tiếp.",
       "deployments": "Chưa có lịch sử triển khai.",
@@ -1795,6 +1816,7 @@
     },
     "stats": {
       "active_color": "Màu hoạt động",
+      "all_running_containers": "Tất cả container Docker watcher nhìn thấy",
       "avg_build": "Build trung bình",
       "avg_latency": "Độ Trễ TB",
       "cpu": "CPU",
@@ -1806,6 +1828,7 @@
       "network": "Mạng",
       "persisted_logs": "Nhật Ký Đã Lưu",
       "requests_per_minute": "Request mỗi phút",
+      "running_containers": "Container Đang Chạy",
       "served_requests": "Request đã phục vụ",
       "total_container_cpu": "Tổng CPU container",
       "total_container_memory": "Tổng bộ nhớ container",

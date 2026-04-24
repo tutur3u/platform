@@ -8,6 +8,7 @@ import {
   HardDrive,
   Network,
   Radio,
+  ServerCog,
   SquareStack,
   TriangleAlert,
 } from '@tuturuuu/icons';
@@ -15,6 +16,7 @@ import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrast
 import { Badge } from '@tuturuuu/ui/badge';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import {
   MetricBlock,
   StatusBadge,
@@ -27,9 +29,11 @@ export {
 } from './blue-green-monitoring-rollout-panels';
 
 import {
+  formatBytes,
   formatClockTime,
   formatDateTime,
   formatDuration,
+  formatPercent,
   formatRelativeTime,
   getColorTranslationKey,
   getRuntimeStateTranslationKey,
@@ -195,6 +199,174 @@ export function WatcherCadencePanel({
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function DockerHealthBadge({
+  health,
+}: {
+  health: BlueGreenMonitoringSnapshot['dockerResources']['serviceHealth'][number]['health'];
+}) {
+  const t = useTranslations('blue-green-monitoring');
+  const variant =
+    health === 'healthy'
+      ? 'default'
+      : health === 'unhealthy'
+        ? 'destructive'
+        : health === 'starting'
+          ? 'secondary'
+          : 'outline';
+
+  return (
+    <Badge variant={variant} className="rounded-full">
+      {t(`docker_health.${health}`)}
+    </Badge>
+  );
+}
+
+export function DockerInventoryPanel({
+  dockerResources,
+}: {
+  dockerResources: BlueGreenMonitoringSnapshot['dockerResources'];
+}) {
+  const t = useTranslations('blue-green-monitoring');
+  const runningContainers = dockerResources.allContainers;
+  const serviceHealth = dockerResources.serviceHealth;
+
+  return (
+    <section className="rounded-[2rem] border border-border/60 bg-background/70 p-5 backdrop-blur-sm">
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
+            {t('docker.kicker')}
+          </p>
+          <h3 className="mt-1 font-semibold text-lg">
+            {t('docker.inventory_title')}
+          </h3>
+        </div>
+        <Badge variant="outline" className="rounded-full">
+          {t('docker.running_count', { count: runningContainers.length })}
+        </Badge>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[0.72fr_1.28fr]">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+            <ServerCog className="h-4 w-4" />
+            <span>{t('docker.services_health')}</span>
+          </div>
+
+          {serviceHealth.length === 0 ? (
+            <div className="rounded-2xl border border-border/60 border-dashed bg-background/60 p-4 text-muted-foreground text-sm">
+              {t('docker.empty_services')}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {serviceHealth.map((service) => (
+                <div
+                  key={`${service.serviceName}-${service.containerId}`}
+                  className="rounded-2xl border border-border/50 bg-background/80 px-3 py-2.5"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-sm">
+                        {service.serviceName}
+                      </p>
+                      <p className="mt-1 truncate text-muted-foreground text-xs">
+                        {service.name}
+                      </p>
+                    </div>
+                    <DockerHealthBadge health={service.health} />
+                  </div>
+                  <p className="mt-2 truncate text-muted-foreground text-xs">
+                    {service.status ?? t('states.none')}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="min-w-0 space-y-3">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+            <SquareStack className="h-4 w-4" />
+            <span>{t('docker.all_containers')}</span>
+          </div>
+
+          {runningContainers.length === 0 ? (
+            <div className="rounded-2xl border border-border/60 border-dashed bg-background/60 p-4 text-muted-foreground text-sm">
+              {t('docker.empty_containers')}
+            </div>
+          ) : (
+            <ScrollArea className="h-[420px] pr-3">
+              <div className="space-y-2">
+                {runningContainers.map((container) => (
+                  <div
+                    key={container.containerId}
+                    className="rounded-2xl border border-border/50 bg-background/80 p-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="truncate font-medium text-sm">
+                            {container.name}
+                          </p>
+                          {container.isMonitored ? (
+                            <Badge variant="secondary" className="rounded-full">
+                              {t('docker.monitored')}
+                            </Badge>
+                          ) : null}
+                        </div>
+                        <p className="mt-1 truncate text-muted-foreground text-xs">
+                          {container.image ?? t('states.none')}
+                        </p>
+                      </div>
+                      <DockerHealthBadge health={container.health} />
+                    </div>
+
+                    <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2 xl:grid-cols-4">
+                      <DockerMeta label={t('docker.service')}>
+                        {container.serviceName ?? t('states.none')}
+                      </DockerMeta>
+                      <DockerMeta label={t('docker.cpu')}>
+                        {formatPercent(container.cpuPercent)}
+                      </DockerMeta>
+                      <DockerMeta label={t('docker.memory')}>
+                        {formatBytes(container.memoryBytes)}
+                      </DockerMeta>
+                      <DockerMeta label={t('docker.running_for')}>
+                        {container.runningFor ?? t('states.none')}
+                      </DockerMeta>
+                    </div>
+
+                    {container.ports ? (
+                      <p className="mt-3 truncate rounded-xl bg-muted/40 px-2 py-1 font-mono text-muted-foreground text-xs">
+                        {container.ports}
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DockerMeta({
+  children,
+  label,
+}: {
+  children: ReactNode;
+  label: string;
+}) {
+  return (
+    <div className="min-w-0 rounded-xl bg-muted/30 px-2 py-1.5">
+      <p className="text-muted-foreground">{label}</p>
+      <p className="mt-0.5 truncate font-medium">{children}</p>
     </div>
   );
 }

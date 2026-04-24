@@ -1,9 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type {
+  BlueGreenMonitoringDockerContainer,
+  BlueGreenMonitoringDockerHealth,
   BlueGreenMonitoringPaginatedResult,
   BlueGreenMonitoringPeriodMetric,
   BlueGreenMonitoringRequestLog,
+  BlueGreenMonitoringServiceHealth,
   BlueGreenMonitoringSnapshot,
   BlueGreenMonitoringStatus,
   BlueGreenMonitoringWatcherHealth,
@@ -394,6 +397,92 @@ function normalizeWatcherLogs(
   });
 }
 
+function normalizeDockerHealth(
+  value: unknown
+): BlueGreenMonitoringDockerHealth {
+  return value === 'healthy' ||
+    value === 'none' ||
+    value === 'starting' ||
+    value === 'unknown' ||
+    value === 'unhealthy'
+    ? value
+    : 'unknown';
+}
+
+function normalizeDockerContainers(
+  entries: unknown
+): BlueGreenMonitoringDockerContainer[] {
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+
+  return entries.flatMap((entry) => {
+    const record = toRecord(entry);
+    const containerId =
+      typeof record?.containerId === 'string' ? record.containerId : null;
+    const name = typeof record?.name === 'string' ? record.name : null;
+
+    if (!containerId || !name) {
+      return [];
+    }
+
+    return [
+      {
+        containerId,
+        cpuPercent: toFiniteNumber(record?.cpuPercent),
+        health: normalizeDockerHealth(record?.health),
+        image: typeof record?.image === 'string' ? record.image : null,
+        isMonitored: record?.isMonitored === true,
+        memoryBytes: toFiniteNumber(record?.memoryBytes),
+        name,
+        ports: typeof record?.ports === 'string' ? record.ports : null,
+        projectName:
+          typeof record?.projectName === 'string' ? record.projectName : null,
+        runningFor:
+          typeof record?.runningFor === 'string' ? record.runningFor : null,
+        rxBytes: toFiniteNumber(record?.rxBytes),
+        serviceName:
+          typeof record?.serviceName === 'string' ? record.serviceName : null,
+        status: typeof record?.status === 'string' ? record.status : null,
+        txBytes: toFiniteNumber(record?.txBytes),
+      },
+    ];
+  });
+}
+
+function normalizeServiceHealth(
+  entries: unknown
+): BlueGreenMonitoringServiceHealth[] {
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+
+  return entries.flatMap((entry) => {
+    const record = toRecord(entry);
+    const containerId =
+      typeof record?.containerId === 'string' ? record.containerId : null;
+    const serviceName =
+      typeof record?.serviceName === 'string' ? record.serviceName : null;
+    const name = typeof record?.name === 'string' ? record.name : null;
+
+    if (!containerId || !serviceName || !name) {
+      return [];
+    }
+
+    return [
+      {
+        containerId,
+        health: normalizeDockerHealth(record?.health),
+        name,
+        projectName:
+          typeof record?.projectName === 'string' ? record.projectName : null,
+        serviceName,
+        status: typeof record?.status === 'string' ? record.status : null,
+      },
+    ];
+  });
+}
+
 function readNormalizedWatcherLogs(
   watchDir: string,
   fsImpl: FsLike = fs
@@ -688,6 +777,7 @@ export function readBlueGreenMonitoringSnapshot({
       },
     },
     dockerResources: {
+      allContainers: normalizeDockerContainers(dockerResources?.allContainers),
       containers: Array.isArray(dockerResources?.containers)
         ? (dockerResources?.containers as BlueGreenMonitoringSnapshot['dockerResources']['containers'])
         : [],
@@ -695,6 +785,7 @@ export function readBlueGreenMonitoringSnapshot({
         typeof dockerResources?.message === 'string'
           ? dockerResources.message
           : null,
+      serviceHealth: normalizeServiceHealth(dockerResources?.serviceHealth),
       state:
         typeof dockerResources?.state === 'string'
           ? dockerResources.state

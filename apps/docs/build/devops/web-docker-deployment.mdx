@@ -419,6 +419,11 @@ Dashboard details:
 - The watcher parser also normalizes locale-style decimal commas from
   `docker stats`, so hosts that emit values like `0,10%` or `24,0MiB` no
   longer collapse into zeroed metrics.
+- Each watcher snapshot now includes `docker ps` metadata for every running
+  container visible through the host Docker socket, plus compose service health
+  for containers in the production project. The monitoring overview uses that
+  persisted snapshot to show service health and a full running-container
+  inventory without mounting the Docker socket into `apps/web`.
 - Host dependency refreshes can rewrite `bun.lock`; the watcher now ignores
   that file as a sole dirty-worktree signal so polling continues after the
   automatic `bun upgrade` / `bun i` step.

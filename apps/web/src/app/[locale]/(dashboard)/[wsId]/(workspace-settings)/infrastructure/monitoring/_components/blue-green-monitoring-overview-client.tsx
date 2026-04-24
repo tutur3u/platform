@@ -14,6 +14,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
+  DockerInventoryPanel,
   RuntimeTopologyPanel,
   WatcherCadencePanel,
 } from './blue-green-monitoring-panels';
@@ -93,6 +94,12 @@ export function BlueGreenMonitoringOverviewClient() {
       label: t('stats.memory'),
       meta: t('stats.total_container_memory'),
       value: formatBytes(snapshot.dockerResources.totalMemoryBytes),
+    },
+    {
+      icon: <Network className="h-4 w-4" />,
+      label: t('stats.running_containers'),
+      meta: t('stats.all_running_containers'),
+      value: formatCompactNumber(snapshot.dockerResources.allContainers.length),
     },
     {
       icon: <Network className="h-4 w-4" />,
@@ -228,6 +235,8 @@ export function BlueGreenMonitoringOverviewClient() {
         <RuntimeTopologyPanel snapshot={snapshot} />
         <WatcherCadencePanel watcher={snapshot.watcher} />
       </div>
+
+      <DockerInventoryPanel dockerResources={snapshot.dockerResources} />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <PreviewCard

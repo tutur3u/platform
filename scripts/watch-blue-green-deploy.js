@@ -2332,11 +2332,83 @@ function parseDockerStatsLine(line) {
   };
 }
 
+function parseDockerHealthFromStatus(status) {
+  if (typeof status !== 'string' || status.trim().length === 0) {
+    return 'unknown';
+  }
+
+  const normalized = status.toLowerCase();
+
+  if (normalized.includes('(healthy)')) {
+    return 'healthy';
+  }
+
+  if (normalized.includes('(unhealthy)')) {
+    return 'unhealthy';
+  }
+
+  if (normalized.includes('(health: starting)')) {
+    return 'starting';
+  }
+
+  return normalized.startsWith('up') ? 'none' : 'unknown';
+}
+
+function parseDockerPsLine(line) {
+  const [
+    containerId = '',
+    name = '',
+    image = '',
+    status = '',
+    runningFor = '',
+    ports = '',
+    serviceName = '',
+    projectName = '',
+  ] = String(line).split('\t');
+
+  return {
+    containerId: containerId.trim(),
+    health: parseDockerHealthFromStatus(status),
+    image: image.trim() || null,
+    name: name.trim(),
+    ports: ports.trim() || null,
+    projectName: projectName.trim() || null,
+    runningFor: runningFor.trim() || null,
+    serviceName: serviceName.trim() || null,
+    status: status.trim() || null,
+  };
+}
+
+async function listRunningDockerContainers({ env, runCommand: run }) {
+  const result = await runChecked(
+    'docker',
+    [
+      'ps',
+      '--format',
+      '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}\t{{.Ports}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project"}}',
+    ],
+    {
+      env,
+      runCommand: run,
+      stdio: 'pipe',
+    }
+  );
+
+  return result.stdout
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map(parseDockerPsLine)
+    .filter((container) => container.containerId && container.name);
+}
+
 async function collectDockerResources(
   currentBlueGreen,
-  { env, runCommand: run = runCommand } = {}
+  { env, rootDir = ROOT_DIR, runCommand: run = runCommand } = {}
 ) {
-  const containers = Object.entries(currentBlueGreen?.serviceContainers ?? {})
+  const monitoredContainers = Object.entries(
+    currentBlueGreen?.serviceContainers ?? {}
+  )
     .filter(
       ([, containerId]) =>
         typeof containerId === 'string' && containerId.length > 0
@@ -2360,9 +2432,29 @@ async function collectDockerResources(
       serviceName,
     }));
 
-  if (containers.length === 0) {
+  let runningContainers = [];
+
+  try {
+    runningContainers = await listRunningDockerContainers({
+      env,
+      runCommand: run,
+    });
+  } catch {}
+
+  const statsContainerIds = [
+    ...new Set(
+      [
+        ...monitoredContainers.map((container) => container.containerId),
+        ...runningContainers.map((container) => container.containerId),
+      ].filter(Boolean)
+    ),
+  ];
+
+  if (statsContainerIds.length === 0) {
     return {
+      allContainers: [],
       containers: [],
+      serviceHealth: [],
       state: 'idle',
       totalCpuPercent: 0,
       totalMemoryBytes: 0,
@@ -2379,7 +2471,7 @@ async function collectDockerResources(
         '--no-stream',
         '--format',
         '{{.ID}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.Name}}',
-        ...containers.map((container) => container.containerId),
+        ...statsContainerIds,
       ],
       {
         env,
@@ -2399,7 +2491,7 @@ async function collectDockerResources(
         })
     );
 
-    const resourceContainers = containers
+    const resourceContainers = monitoredContainers
       .map((container) => {
         const stats = statsById.get(container.containerId);
         if (!stats) {
@@ -2415,9 +2507,41 @@ async function collectDockerResources(
         };
       })
       .filter(Boolean);
+    const monitoredContainerIds = new Set(
+      monitoredContainers.map((container) => container.containerId)
+    );
+    const projectName = path.basename(rootDir);
+    const allContainers = runningContainers.map((container) => {
+      const stats = statsById.get(container.containerId);
+
+      return {
+        ...container,
+        cpuPercent: stats?.cpuPercent ?? null,
+        isMonitored: monitoredContainerIds.has(container.containerId),
+        memoryBytes: stats?.memoryBytes ?? null,
+        rxBytes: stats?.rxBytes ?? null,
+        txBytes: stats?.txBytes ?? null,
+      };
+    });
+    const serviceHealth = allContainers
+      .filter(
+        (container) =>
+          container.projectName === projectName && container.serviceName
+      )
+      .map((container) => ({
+        containerId: container.containerId,
+        health: container.health,
+        name: container.name,
+        projectName: container.projectName,
+        serviceName: container.serviceName,
+        status: container.status,
+      }))
+      .sort((a, b) => a.serviceName.localeCompare(b.serviceName));
 
     return {
+      allContainers,
       containers: resourceContainers,
+      serviceHealth,
       state: 'live',
       totalCpuPercent: resourceContainers.reduce(
         (sum, container) =>
@@ -2444,11 +2568,20 @@ async function collectDockerResources(
     };
   } catch (error) {
     return {
+      allContainers: runningContainers.map((container) => ({
+        ...container,
+        cpuPercent: null,
+        isMonitored: false,
+        memoryBytes: null,
+        rxBytes: null,
+        txBytes: null,
+      })),
       containers: [],
       message:
         error instanceof Error
           ? error.message
           : 'Unable to inspect docker stats',
+      serviceHealth: [],
       state: 'unavailable',
       totalCpuPercent: 0,
       totalMemoryBytes: 0,
@@ -2541,6 +2674,7 @@ async function loadRuntimeSnapshot({
   });
   const dockerResources = await collectDockerResources(currentBlueGreen, {
     env,
+    rootDir,
     runCommand: run,
   });
   const deployments = await collectDeploymentTraffic(
