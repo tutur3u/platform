@@ -269,6 +269,16 @@ test('validateDockerProdCompose reports missing sidecar healthchecks', () => {
   assert.match(errors, /\[w\]atch-blue-green-deploy\.js/);
 });
 
+test('validateDockerProdCompose reports missing MarkItDown Supabase URL env', () => {
+  const composeContent = fs
+    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
+    .replace('      - SUPABASE_URL\n', '');
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(errors.join('\n'), /SUPABASE_URL/);
+});
+
 test('validateWatcherDockerfile accepts the current watcher Dockerfile', () => {
   const dockerfileContent = fs.readFileSync(WATCHER_DOCKERFILE_PATH, 'utf8');
 

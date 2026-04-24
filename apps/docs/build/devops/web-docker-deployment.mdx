@@ -428,6 +428,10 @@ Dashboard details:
   healthcheck, either directly in compose or in the image. The monitoring page
   treats containers without Docker health metadata as external or incomplete
   runtime entries, so add a probe when adding new prod services or sidecars.
+- The MarkItDown sidecar needs `SUPABASE_URL` set to the same Docker-internal
+  Supabase URL used by the web container. The service validates signed Storage
+  URLs before downloading attachments, and local Docker runs may use
+  `host.docker.internal` over HTTP.
 - Host dependency refreshes can rewrite `bun.lock`; the watcher now ignores
   that file as a sole dirty-worktree signal so polling continues after the
   automatic `bun upgrade` / `bun i` step.

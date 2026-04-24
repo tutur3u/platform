@@ -71,6 +71,7 @@ services:
       dockerfile: Dockerfile.markitdown
     environment:
       - PORT=8000
+      - SUPABASE_URL
     expose:
       - "8000"
     healthcheck:

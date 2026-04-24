@@ -84,6 +84,14 @@ test('watcher restart globs include blue-green service wiring files', () => {
     )
   );
   assert.ok(
+    CONTAINER_REFRESH_WATCHED_FILES.includes('apps/discord/local_server.py')
+  );
+  assert.ok(
+    CONTAINER_REFRESH_WATCHED_FILES.includes(
+      'apps/discord/markitdown_service.py'
+    )
+  );
+  assert.ok(
     CONTAINER_REFRESH_WATCHED_FILES.includes(
       'apps/storage-unzip-proxy/Dockerfile'
     )

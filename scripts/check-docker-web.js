@@ -358,6 +358,7 @@ function validateDockerProdCompose(composeContent) {
     'http://127.0.0.1:7803/__platform/drain-status',
     'http://127.0.0.1:8000/health',
     'http://127.0.0.1:8788/health',
+    '      - SUPABASE_URL',
     "path: '/ping'",
     "ps | grep -q '[w]atch-blue-green-deploy.js'",
     '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',

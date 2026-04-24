@@ -85,6 +85,8 @@ const SELF_WATCHED_FILES = [
 const CONTAINER_REFRESH_WATCHED_FILES = [
   'docker-compose.web.prod.yml',
   'apps/discord/Dockerfile.markitdown',
+  'apps/discord/local_server.py',
+  'apps/discord/markitdown_service.py',
   'apps/storage-unzip-proxy/Dockerfile',
   'apps/web/docker/blue-green-watcher-entrypoint.js',
   'apps/web/docker/blue-green-watcher.Dockerfile',

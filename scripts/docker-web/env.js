@@ -127,6 +127,7 @@ function getComposeEnvironment({
   };
 
   if (dockerInternalSupabaseUrl) {
+    composeEnv.SUPABASE_URL = dockerInternalSupabaseUrl;
     composeEnv.SUPABASE_SERVER_URL = dockerInternalSupabaseUrl;
   }
 

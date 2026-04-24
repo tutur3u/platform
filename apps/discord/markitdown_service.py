@@ -16,7 +16,13 @@ logger = logging.getLogger(__name__)
 
 
 def _resolve_supabase_hostname() -> str | None:
-    supabase_url = (os.getenv("SUPABASE_URL") or "").strip()
+    supabase_url = (
+        os.getenv("SUPABASE_URL")
+        or os.getenv("SUPABASE_SERVER_URL")
+        or os.getenv("DOCKER_INTERNAL_SUPABASE_URL")
+        or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+        or ""
+    ).strip()
     if not supabase_url:
         return None
 
@@ -43,7 +49,11 @@ def _require_supabase_hostname() -> str:
 def _validate_signed_url(signed_url: str, configured_supabase_host: str) -> None:
     parsed = urlparse(signed_url)
 
-    is_local_host = configured_supabase_host in ("127.0.0.1", "localhost")
+    is_local_host = configured_supabase_host in (
+        "127.0.0.1",
+        "localhost",
+        "host.docker.internal",
+    )
     allowed_schemes = ("http", "https") if is_local_host else ("https",)
 
     if parsed.scheme not in allowed_schemes:

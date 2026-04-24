@@ -204,6 +204,7 @@ test('getComposeEnvironment derives a server-side Supabase URL for Docker', () =
 
     assert.equal(env.PATH, 'test-path');
     assert.equal(env.COMPOSE_DOCKER_CLI_BUILD, '1');
+    assert.equal(env.SUPABASE_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
     assert.equal(env.SUPABASE_SERVER_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
     assert.equal(env.DOCKER_BUILDKIT, '1');
     assert.equal(env.MARKITDOWN_ENDPOINT_URL, undefined);
@@ -259,6 +260,7 @@ test('getComposeEnvironment injects blue-green support service URLs when request
       env.DRIVE_AUTO_EXTRACT_PROXY_TOKEN
     );
     assert.equal(env.INTERNAL_WEB_API_ORIGIN, 'http://web-proxy:7803');
+    assert.equal(env.SUPABASE_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
     assert.equal(
       fs
         .readFileSync(
@@ -302,6 +304,7 @@ test('getComposeEnvironment preserves the configured cloud Supabase URL', () => 
     });
 
     assert.equal(env.SUPABASE_SERVER_URL, 'https://project-ref.supabase.co');
+    assert.equal(env.SUPABASE_URL, 'https://project-ref.supabase.co');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -327,6 +330,7 @@ test('getComposeEnvironment rewrites an explicit localhost SUPABASE_SERVER_URL',
     });
 
     assert.equal(env.SUPABASE_SERVER_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
+    assert.equal(env.SUPABASE_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
