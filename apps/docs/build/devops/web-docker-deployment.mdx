@@ -167,11 +167,12 @@ Workspace ZIP auto-extract still requires the workspace-level
 `DRIVE_AUTO_EXTRACT_ZIP` secret to opt in; the Docker-internal URL and token are
 fallbacks for workspaces that have not supplied custom proxy secrets.
 
-The MarkItDown endpoint accepts exactly one conversion source per request:
-either a signed Storage URL for uploaded files or a direct HTTPS YouTube URL in
-the `url` field. Direct URL conversion is intentionally limited to YouTube
-hosts, so Mira can summarize YouTube links through MarkItDown without falling
-back to Google Search or broad URL fetching.
+The MarkItDown endpoint is the conversion path for uploaded workspace files.
+Do not route YouTube summaries through MarkItDown or Google Search. Google
+Gemini chat requests attach one public or unlisted YouTube URL directly as a
+native `video/mp4` file input, so the model can summarize the video through the
+provider-supported video path. Playlist/query parameters are stripped before
+the URL is attached so each request references only one video.
 
 Interrupted Docker Compose recreates can leave temporary container names such
 as `<hex>_platform-markitdown-1`. The Docker helper treats those as recoverable

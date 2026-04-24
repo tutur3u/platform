@@ -69,10 +69,10 @@ export const metaToolDefinitions = {
 
   convert_file_to_markdown: tool({
     description:
-      'Convert an attached chat file (Excel, Word, PowerPoint, PDF, etc.) or a direct YouTube URL to markdown via MarkItDown. Use this for YouTube links instead of google_search.',
+      'Convert an attached chat file (Excel, Word, PowerPoint, PDF, etc.) to markdown via MarkItDown. Do not use this for YouTube links; Google/Gemini models receive YouTube URLs as native video input.',
     inputSchema: z.object({
       url: optionalTrimmedString(2048, 'url').describe(
-        'Optional direct YouTube URL to convert via MarkItDown. Use this for youtube.com or youtu.be links; do not use google_search for YouTube summaries.'
+        'Deprecated. Do not use for YouTube summaries; the chat request pipeline attaches YouTube URLs directly to Google/Gemini models as video input.'
       ),
       storagePath: optionalTrimmedString(1024, 'storagePath').describe(
         'Optional full storage path. If omitted, the latest file from the current chat is converted.'

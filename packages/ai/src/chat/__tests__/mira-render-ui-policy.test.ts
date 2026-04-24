@@ -83,7 +83,7 @@ describe('mira render_ui policy', () => {
       {
         role: 'user',
         content:
-          'Give me a summary of https://youtu.be/dQw4w9WgXcQ using markitdown service',
+          'Give me a summary of https://youtu.be/dQw4w9WgXcQ using the video input',
       },
     ];
 

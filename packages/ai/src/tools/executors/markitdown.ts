@@ -291,6 +291,81 @@ export async function executeConvertFileToMarkdown(
     }
   }
 
+  if (sourceUrl) {
+    const markitdownTimeoutMs = resolveMarkitdownTimeoutMs();
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(
+      () => abortController.abort(),
+      markitdownTimeoutMs
+    );
+
+    let metadataResponse: Response;
+    try {
+      metadataResponse = await fetch(markitdownUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${markitdownSecret}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: sourceUrl,
+          filename: fileNameArg || 'youtube.md',
+          enable_plugins: true,
+        }),
+        signal: abortController.signal,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error && error.name === 'AbortError'
+          ? `YouTube metadata lookup timed out after ${markitdownTimeoutMs}ms.`
+          : 'Failed to reach YouTube metadata service.';
+      console.error('YouTube metadata request failed:', error);
+      return { ok: false, error: message };
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!metadataResponse.ok) {
+      const rawBody = await metadataResponse.text().catch(() => '');
+      const safeMessage = rawBody.replace(/\s+/g, ' ').trim().slice(0, 300);
+      console.error('YouTube metadata lookup failed:', {
+        status: metadataResponse.status,
+        body: safeMessage,
+      });
+      return {
+        ok: false,
+        error: `YouTube metadata lookup failed (status ${metadataResponse.status}).`,
+      };
+    }
+
+    let payload: { title?: unknown };
+    try {
+      payload = (await metadataResponse.json()) as { title?: unknown };
+    } catch (error) {
+      console.error('YouTube metadata service returned invalid JSON:', error);
+      return { ok: false, error: 'YouTube metadata lookup failed.' };
+    }
+
+    const title =
+      typeof payload.title === 'string' && payload.title.trim()
+        ? payload.title.trim()
+        : null;
+
+    return {
+      ok: true,
+      title,
+      fileName: fileNameArg || null,
+      storagePath: null,
+      url: sourceUrl,
+      metadataOnly: true,
+      supportedCapabilities: ['youtube_title_metadata'],
+      unsupportedCapabilities: ['youtube_transcription', 'youtube_summary'],
+      message: title
+        ? `Only YouTube metadata is supported. Title: ${title}. YouTube transcripts and summaries are not supported.`
+        : 'Only YouTube metadata is supported. YouTube transcripts and summaries are not supported.',
+    };
+  }
+
   const sbAdmin = await createAdminClient();
 
   if (!sourceUrl && targetPath) {

@@ -115,7 +115,7 @@ describe('executeConvertFileToMarkdown', () => {
     );
   });
 
-  it('converts a direct YouTube URL without looking up chat files', async () => {
+  it('returns metadata-only output for direct YouTube URLs without charging conversion credits', async () => {
     const list = vi.fn();
     const createSignedUrl = vi.fn();
     createAdminClientMock.mockResolvedValue({
@@ -132,7 +132,6 @@ describe('executeConvertFileToMarkdown', () => {
       new Response(
         JSON.stringify({
           ok: true,
-          markdown: '# Video transcript',
           title: 'Video title',
         }),
         { status: 200 }
@@ -147,7 +146,15 @@ describe('executeConvertFileToMarkdown', () => {
 
     expect(result.ok).toBe(true);
     expect(result.url).toBe('https://youtu.be/dQw4w9WgXcQ');
+    expect(result.title).toBe('Video title');
+    expect(result.metadataOnly).toBe(true);
+    expect(result.supportedCapabilities).toEqual(['youtube_title_metadata']);
+    expect(result.unsupportedCapabilities).toEqual([
+      'youtube_transcription',
+      'youtube_summary',
+    ]);
     expect(result.storagePath).toBeNull();
+    expect(createAdminClientMock).not.toHaveBeenCalled();
     expect(list).not.toHaveBeenCalled();
     expect(createSignedUrl).not.toHaveBeenCalled();
     expect(fetchMock).toHaveBeenCalledWith(
@@ -156,15 +163,7 @@ describe('executeConvertFileToMarkdown', () => {
         body: expect.stringContaining('"url":"https://youtu.be/dQw4w9WgXcQ"'),
       })
     );
-    expect(reserveFixedAiCreditsMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        metadata: expect.objectContaining({
-          sourceType: 'youtube_url',
-          sourceUrl: 'https://youtu.be/dQw4w9WgXcQ',
-        }),
-      }),
-      expect.anything()
-    );
+    expect(reserveFixedAiCreditsMock).not.toHaveBeenCalled();
   });
 
   it('treats a YouTube URL passed as storagePath as a direct URL', async () => {
@@ -179,7 +178,7 @@ describe('executeConvertFileToMarkdown', () => {
       new Response(
         JSON.stringify({
           ok: true,
-          markdown: '# Converted video',
+          title: 'Video title',
         }),
         { status: 200 }
       )
@@ -193,6 +192,7 @@ describe('executeConvertFileToMarkdown', () => {
 
     expect(result.ok).toBe(true);
     expect(result.url).toBe('https://youtu.be/dQw4w9WgXcQ');
+    expect(result.metadataOnly).toBe(true);
     expect(fetchMock).toHaveBeenCalledWith(
       'http://markitdown:8000/markitdown',
       expect.objectContaining({
