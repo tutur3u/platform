@@ -5761,9 +5761,9 @@
     "error-join-failed": "Không thể tham gia không gian làm việc",
     "error-seat-limit-reached": "Không gian làm việc này đã đạt giới hạn số ghế",
     "error-unauthorized": "Bạn phải đăng nhập để tham gia không gian làm việc",
+    "go-to-workspace": "Đến Không Gian Làm Việc",
     "guest-join-error-msg": "Email tài khoản của bạn không khớp hồ sơ khách hợp lệ trong không gian làm việc này.",
     "guest-join-error-title": "Không thể tham gia với tư cách khách.",
-    "go-to-workspace": "Đến Không Gian Làm Việc",
     "invalid-invite-message": "Liên kết lời mời này không hợp lệ hoặc đã hết hạn.",
     "invalid-invite-title": "Lời mời không hợp lệ",
     "invited-to": "Bạn được mời vào",
@@ -5791,8 +5791,8 @@
     "workspace-full": "Đã Đầy",
     "workspace-guest-join": "Truy cập không gian làm việc với tư cách khách",
     "workspace-invitation": "Lời mời vào không gian làm việc",
-    "you-can-join-as-guest": "Bạn có thể tham gia",
-    "you-been-invited-to-join-the": "Bạn đã được mời tham gia vào không gian làm việc"
+    "you-been-invited-to-join-the": "Bạn đã được mời tham gia vào không gian làm việc",
+    "you-can-join-as-guest": "Bạn có thể tham gia"
   },
   "invoice-analytics": {
     "active_filters": "Bộ lọc đang áp dụng",
@@ -13565,6 +13565,7 @@
     "member_since": "Thành viên từ",
     "member-settings": "Cài đặt thành viên",
     "member-updated": "Thành viên đã được cập nhật",
+    "members_workspace_settings_description": "Tùy chọn cấp workspace cho thành viên và quyền truy cập khách.",
     "no_invited_members_found": "Chưa có thành viên nào được mời",
     "no_members_found": "Không tìm thấy thành viên",
     "no_members_match": "Không có thành viên nào phù hợp với tìm kiếm của bạn",

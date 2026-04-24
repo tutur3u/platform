@@ -181,30 +181,26 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     mocks.adminEmailInviteDeleteIn.mockResolvedValue({ error: null });
   });
 
-  it(
-    'returns 404 when no invite and guest self-join disabled',
-    async () => {
-      const { getWorkspaceConfig } = await import(
-        '@tuturuuu/utils/workspace-helper'
-      );
-      vi.mocked(getWorkspaceConfig).mockResolvedValue('false');
+  it('returns 404 when no invite and guest self-join disabled', async () => {
+    const { getWorkspaceConfig } = await import(
+      '@tuturuuu/utils/workspace-helper'
+    );
+    vi.mocked(getWorkspaceConfig).mockResolvedValue('false');
 
-      const { POST } = await import(
-        '@/app/api/workspaces/[wsId]/accept-invite/route'
-      );
+    const { POST } = await import(
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
+    );
 
-      const response = await POST(new NextRequest('http://localhost/test'), {
-        params: Promise.resolve({ wsId: 'ws-1' }),
-      });
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: 'ws-1' }),
+    });
 
-      expect(response.status).toBe(404);
-      await expect(response.json()).resolves.toMatchObject({
-        errorCode: 'NO_PENDING_INVITE_FOUND',
-      });
-      expect(mocks.adminRpc).not.toHaveBeenCalled();
-    },
-    20000
-  );
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toMatchObject({
+      errorCode: 'NO_PENDING_INVITE_FOUND',
+    });
+    expect(mocks.adminRpc).not.toHaveBeenCalled();
+  }, 20000);
 
   it('joins as guest via RPC candidate when enabled', async () => {
     const { getWorkspaceConfig } = await import(

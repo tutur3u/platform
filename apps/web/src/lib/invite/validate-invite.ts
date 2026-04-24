@@ -92,8 +92,8 @@ export async function validateInvite(
     const workspace: Workspace = {
       id: workspaceData.id,
       name: workspaceData.name,
-      avatar_url: branding.avatar_url,
-      logo_url: branding.logo_url,
+      avatar_url: branding.avatar_url ?? undefined,
+      logo_url: branding.logo_url ?? undefined,
     };
 
     // Block invites to personal workspaces

@@ -1,23 +1,23 @@
 'use client';
 
-import type { Workspace } from '@tuturuuu/types';
 import { useMutation } from '@tanstack/react-query';
 import { ArrowRight, Users } from '@tuturuuu/icons';
 import {
   acceptWorkspaceInvite,
   declineWorkspaceInvite,
 } from '@tuturuuu/internal-api';
+import type { Workspace } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   WorkspaceJoinCardSurface,
   WorkspaceJoinExperienceRoot,
   WorkspaceJoinLogoBlock,
   WorkspaceJoinSparkles,
 } from '@/components/workspace-invite/workspace-join-experience';
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 
 interface WorkspaceInvitationProps {
   workspace: Workspace;

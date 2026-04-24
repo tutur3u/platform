@@ -1,7 +1,9 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
 /** Values suitable for `next/image` `src` (absolute URL or app-relative path). */
-export function isUsableNextImageSrc(value: string | null | undefined): boolean {
+export function isUsableNextImageSrc(
+  value: string | null | undefined
+): boolean {
   if (!value?.trim()) return false;
   const s = value.trim();
   return /^https?:\/\//i.test(s) || s.startsWith('/');

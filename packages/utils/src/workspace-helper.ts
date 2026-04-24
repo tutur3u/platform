@@ -995,7 +995,8 @@ export async function getWorkspaceNonMemberInviteEligibility(
         workspaceId,
         ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID
       )
-    )?.trim()
+    )
+      ?.trim()
       .toLowerCase() === 'true';
 
   let allowGuestSelfJoin = false;

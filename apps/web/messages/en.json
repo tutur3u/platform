@@ -5761,9 +5761,9 @@
     "error-join-failed": "Failed to join workspace",
     "error-seat-limit-reached": "This workspace has reached its seat limit",
     "error-unauthorized": "You must be signed in to join a workspace",
+    "go-to-workspace": "Go to Workspace",
     "guest-join-error-msg": "Your account email does not match an eligible guest profile for this workspace.",
     "guest-join-error-title": "Unable to join as guest.",
-    "go-to-workspace": "Go to Workspace",
     "invalid-invite-message": "This invite link is invalid or has expired.",
     "invalid-invite-title": "Invalid Invite",
     "invited-to": "You have been invited to join",
@@ -5791,8 +5791,8 @@
     "workspace-full": "Workspace Full",
     "workspace-guest-join": "Guest workspace access",
     "workspace-invitation": "Workspace invitation",
-    "you-can-join-as-guest": "You can join the",
-    "you-been-invited-to-join-the": "You've been invited to join the"
+    "you-been-invited-to-join-the": "You've been invited to join the",
+    "you-can-join-as-guest": "You can join the"
   },
   "invoice-analytics": {
     "active_filters": "Active Filters",
@@ -13565,6 +13565,7 @@
     "member_since": "Member since",
     "member-settings": "Member settings",
     "member-updated": "Member updated",
+    "members_workspace_settings_description": "Workspace-wide options for membership and guest access.",
     "no_invited_members_found": "No pending invitations found",
     "no_members_found": "No members found",
     "no_members_match": "No members match your search",

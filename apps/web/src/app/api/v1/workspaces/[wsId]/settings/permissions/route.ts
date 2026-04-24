@@ -21,6 +21,9 @@ export const GET = withSessionAuth<{ wsId: string }>(
         manage_workspace_settings: permissions.containsPermission(
           'manage_workspace_settings'
         ),
+        manage_workspace_members: permissions.containsPermission(
+          'manage_workspace_members'
+        ),
       });
     } catch (error) {
       console.error('Error loading workspace permissions:', error);

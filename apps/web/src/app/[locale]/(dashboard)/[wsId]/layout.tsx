@@ -12,7 +12,6 @@ import {
   getWorkspace,
   getWorkspaceNonMemberInviteEligibility,
 } from '@tuturuuu/utils/workspace-helper';
-import { resolveWorkspaceBrandingUrlsForNext } from '@/lib/workspace-branding-image-url';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -23,6 +22,7 @@ import {
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/common';
 import { SidebarProvider } from '@/context/sidebar-context';
+import { resolveWorkspaceBrandingUrlsForNext } from '@/lib/workspace-branding-image-url';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import InvitationCard from './invitation-card';
@@ -108,7 +108,6 @@ export default async function Layout({ children, params }: LayoutProps) {
     }
 
     const { allowGuestSelfJoin } = inviteEligibility;
-
 
     const branding = await resolveWorkspaceBrandingUrlsForNext(sbAdmin, {
       logo_url: workspace.logo_url,

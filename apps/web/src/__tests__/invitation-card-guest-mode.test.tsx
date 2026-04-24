@@ -1,7 +1,24 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { Workspace } from '@tuturuuu/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import InvitationCard from '@/app/[locale]/(dashboard)/[wsId]/invitation-card';
+
+const testWorkspace: Workspace = {
+  id: 'ws-1',
+  name: 'Workspace One',
+  avatar_url: null,
+  logo_url: null,
+  created_at: null,
+  creator_id: 'user-1',
+  deleted: null,
+  energy_profile: null,
+  first_day_of_week: null,
+  handle: null,
+  personal: false,
+  scheduling_settings: null,
+  timezone: null,
+};
 
 const refreshMock = vi.fn();
 const pushMock = vi.fn();
@@ -43,36 +60,18 @@ describe('InvitationCard guest self-join mode', () => {
   });
 
   it('renders guest copy and button label', () => {
-    render(
-      <InvitationCard
-        workspace={{
-          id: 'ws-1',
-          name: 'Workspace One',
-          avatar_url: null,
-          logo_url: null,
-        } as any}
-        allowGuestSelfJoin
-      />,
-      { wrapper: createWrapper() }
-    );
+    render(<InvitationCard workspace={testWorkspace} allowGuestSelfJoin />, {
+      wrapper: createWrapper(),
+    });
 
     expect(screen.getByText('invite.workspace-guest-join.')).toBeTruthy();
     expect(screen.getByText('invite.join-as-guest-button')).toBeTruthy();
   });
 
   it('shows guest-specific error when guest match fails', async () => {
-    render(
-      <InvitationCard
-        workspace={{
-          id: 'ws-1',
-          name: 'Workspace One',
-          avatar_url: null,
-          logo_url: null,
-        } as any}
-        allowGuestSelfJoin
-      />,
-      { wrapper: createWrapper() }
-    );
+    render(<InvitationCard workspace={testWorkspace} allowGuestSelfJoin />, {
+      wrapper: createWrapper(),
+    });
 
     fireEvent.click(screen.getByText('invite.join-as-guest-button'));
 

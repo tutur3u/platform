@@ -223,10 +223,7 @@ export default function JoinWorkspaceClient({
           <span className="relative z-10 flex items-center justify-center gap-2 font-semibold">
             {joined ? (
               <>
-                <Check
-                  className="zoom-in h-5 w-5 animate-in"
-                  strokeWidth={3}
-                />
+                <Check className="zoom-in h-5 w-5 animate-in" strokeWidth={3} />
                 {t('joined-successfully')}
               </>
             ) : joining ? (

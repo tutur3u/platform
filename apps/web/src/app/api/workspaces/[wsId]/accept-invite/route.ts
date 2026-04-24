@@ -1,3 +1,4 @@
+import { ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import {
   createAdminClient,
@@ -8,7 +9,6 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
 import {
   assignSeatToMember,
   revokeSeatFromMember,
@@ -89,7 +89,8 @@ export async function POST(request: Request, { params }: Params) {
           wsId,
           ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID
         )
-      )?.trim()
+      )
+        ?.trim()
         .toLowerCase() === 'true';
 
     if (!guestSelfJoinEnabled) {
@@ -220,7 +221,10 @@ export async function POST(request: Request, { params }: Params) {
         await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
       }
 
-      console.error('Failed to link platform user to workspace user:', linkError);
+      console.error(
+        'Failed to link platform user to workspace user:',
+        linkError
+      );
       return NextResponse.json(
         { error: 'Failed to prepare guest workspace link' },
         { status: 500 }

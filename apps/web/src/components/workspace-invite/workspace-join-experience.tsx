@@ -1,10 +1,10 @@
 'use client';
 
 import { Check, Sparkles } from '@tuturuuu/icons';
-import { isUsableNextImageSrc } from '@/lib/workspace-branding-image-url';
 import Image from 'next/image';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
+import { isUsableNextImageSrc } from '@/lib/workspace-branding-image-url';
 
 export type WorkspaceJoinBrand = {
   name: string | null | undefined;
@@ -125,8 +125,7 @@ export function WorkspaceJoinLogoBlock({
 }) {
   const wh = size === 'lg' ? 96 : 72;
   const textClass = size === 'lg' ? 'text-4xl' : 'text-3xl';
-  const initial =
-    (workspace.name?.trim()?.charAt(0) || 'W').toUpperCase();
+  const initial = (workspace.name?.trim()?.charAt(0) || 'W').toUpperCase();
   const ringClass =
     ringAccent === 'green'
       ? 'ring-dynamic-green/20'
@@ -134,9 +133,7 @@ export function WorkspaceJoinLogoBlock({
 
   const rawBrandImage = workspace.logo_url || workspace.avatar_url;
   const brandImageSrc =
-    rawBrandImage && isUsableNextImageSrc(rawBrandImage)
-      ? rawBrandImage
-      : null;
+    rawBrandImage && isUsableNextImageSrc(rawBrandImage) ? rawBrandImage : null;
 
   return (
     <div className="mb-8 flex justify-center">
