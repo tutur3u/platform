@@ -28,6 +28,12 @@ x-web-service: &web-service
     - UPSTASH_REDIS_REST_URL
   extra_hosts:
     - "host.docker.internal:host-gateway"
+  healthcheck:
+    test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:' + (process.env.PORT || 7803) + '/__platform/drain-status').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+    interval: 30s
+    timeout: 5s
+    start_period: 10s
+    retries: 3
   init: true
   volumes:
     - ./tmp/docker-web/watch/control:/app/runtime/docker-web-control
@@ -83,6 +89,12 @@ services:
       - PORT=8788
     expose:
       - "8788"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:8788/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
     init: true
 
   web-blue-green-watcher:
@@ -91,6 +103,12 @@ services:
       dockerfile: apps/web/docker/blue-green-watcher.Dockerfile
     environment:
       - PLATFORM_HOST_WORKSPACE_DIR
+    healthcheck:
+      test: ["CMD-SHELL", "ps | grep -q '[w]atch-blue-green-deploy.js'"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
     init: true
     volumes:
       - .:/workspace
@@ -123,6 +141,12 @@ services:
     image: hiett/serverless-redis-http:latest
     ports:
       - "8079:80"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get({ host: '127.0.0.1', port: 80, path: '/ping', headers: { authorization: 'Bearer ' + process.env.SRH_TOKEN } }, (response) => process.exit(response.statusCode >= 200 && response.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
 
 secrets:
   web_env:

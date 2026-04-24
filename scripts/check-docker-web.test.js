@@ -245,7 +245,7 @@ test('validateDockerProdCompose reports missing monitoring env wiring', () => {
 test('validateDockerProdCompose reports a drifted proxy healthcheck path', () => {
   const composeContent = fs
     .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
-    .replace('/__platform/drain-status', '/api/health');
+    .replaceAll('/__platform/drain-status', '/api/health');
 
   const errors = validateDockerProdCompose(composeContent);
 
@@ -253,6 +253,20 @@ test('validateDockerProdCompose reports a drifted proxy healthcheck path', () =>
     errors.join('\n'),
     /http:\/\/127\.0\.0\.1:7803\/__platform\/drain-status/
   );
+});
+
+test('validateDockerProdCompose reports missing sidecar healthchecks', () => {
+  const composeContent = fs
+    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
+    .replace('http://127.0.0.1:8788/health', 'http://127.0.0.1:8788/')
+    .replace("path: '/ping'", "path: '/'")
+    .replace("ps | grep -q '[w]atch-blue-green-deploy.js'", 'ps');
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /http:\/\/127\.0\.0\.1:8788\/health/);
+  assert.match(errors, /path: '\/ping'/);
+  assert.match(errors, /\[w\]atch-blue-green-deploy\.js/);
 });
 
 test('validateWatcherDockerfile accepts the current watcher Dockerfile', () => {
