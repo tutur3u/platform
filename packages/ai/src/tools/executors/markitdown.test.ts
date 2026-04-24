@@ -115,6 +115,107 @@ describe('executeConvertFileToMarkdown', () => {
     );
   });
 
+  it('converts a direct YouTube URL without looking up chat files', async () => {
+    const list = vi.fn();
+    const createSignedUrl = vi.fn();
+    createAdminClientMock.mockResolvedValue({
+      rpc: vi.fn(),
+      storage: {
+        from: vi.fn().mockReturnValue({
+          createSignedUrl,
+          list,
+        }),
+      },
+    });
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          markdown: '# Video transcript',
+          title: 'Video title',
+        }),
+        { status: 200 }
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = (await executeConvertFileToMarkdown(
+      { url: 'https://youtu.be/dQw4w9WgXcQ' },
+      createContext()
+    )) as Record<string, unknown>;
+
+    expect(result.ok).toBe(true);
+    expect(result.url).toBe('https://youtu.be/dQw4w9WgXcQ');
+    expect(result.storagePath).toBeNull();
+    expect(list).not.toHaveBeenCalled();
+    expect(createSignedUrl).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://markitdown:8000/markitdown',
+      expect.objectContaining({
+        body: expect.stringContaining('"url":"https://youtu.be/dQw4w9WgXcQ"'),
+      })
+    );
+    expect(reserveFixedAiCreditsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          sourceType: 'youtube_url',
+          sourceUrl: 'https://youtu.be/dQw4w9WgXcQ',
+        }),
+      }),
+      expect.anything()
+    );
+  });
+
+  it('treats a YouTube URL passed as storagePath as a direct URL', async () => {
+    createAdminClientMock.mockResolvedValue({
+      rpc: vi.fn(),
+      storage: {
+        from: vi.fn(),
+      },
+    });
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          markdown: '# Converted video',
+        }),
+        { status: 200 }
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = (await executeConvertFileToMarkdown(
+      { storagePath: 'https://youtu.be/dQw4w9WgXcQ' },
+      createContext()
+    )) as Record<string, unknown>;
+
+    expect(result.ok).toBe(true);
+    expect(result.url).toBe('https://youtu.be/dQw4w9WgXcQ');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://markitdown:8000/markitdown',
+      expect.objectContaining({
+        body: expect.stringContaining('"url":"https://youtu.be/dQw4w9WgXcQ"'),
+      })
+    );
+  });
+
+  it('rejects non-YouTube direct URLs before reserving credits', async () => {
+    const result = (await executeConvertFileToMarkdown(
+      { url: 'https://example.com/article' },
+      createContext()
+    )) as Record<string, unknown>;
+
+    expect(result).toEqual({
+      ok: false,
+      error:
+        'Invalid URL for MarkItDown. Direct URL conversion currently supports HTTPS YouTube links only.',
+    });
+    expect(createAdminClientMock).not.toHaveBeenCalled();
+    expect(reserveFixedAiCreditsMock).not.toHaveBeenCalled();
+  });
+
   it('still rejects full storage paths outside the current workspace', async () => {
     createAdminClientMock.mockResolvedValue({
       rpc: vi.fn(),

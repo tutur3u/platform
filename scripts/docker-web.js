@@ -34,9 +34,11 @@ const {
   getComposeCommandArgs,
   getComposeFile,
   getComposeServiceContainerId,
+  getComposeServiceContainerName,
   getContainerHealthStatus,
   hasComposeProfile,
   hasComposeServiceContainer,
+  runComposeUpWithNameConflictRecovery,
   runChecked,
   runCommand,
   stopComposeServicesIfPresent,
@@ -444,23 +446,21 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     );
   }
 
-  await runChecked(
-    'docker',
-    getComposeCommandArgs(
-      composeFile,
-      parsed.composeGlobalArgs,
+  await runComposeUpWithNameConflictRecovery({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: composeEnv,
+    fsImpl,
+    runCommand: run,
+    services: parsed.mode === 'prod' ? getInPlaceProdServices(parsed) : [],
+    upArgs: [
       'up',
       '--build',
       '--remove-orphans',
       ...parsed.composeArgs,
-      ...(parsed.mode === 'prod' ? getInPlaceProdServices(parsed) : [])
-    ),
-    {
-      env: composeEnv,
-      fsImpl,
-      runCommand: run,
-    }
-  );
+      ...(parsed.mode === 'prod' ? getInPlaceProdServices(parsed) : []),
+    ],
+  });
 }
 
 async function main(argv = process.argv.slice(2), options = {}) {
@@ -508,6 +508,7 @@ module.exports = {
   getComposeEnvironment,
   getComposeFile,
   getComposeServiceContainerId,
+  getComposeServiceContainerName,
   getContainerHealthStatus,
   getInPlaceProdServices,
   getNextBlueGreenColor,
@@ -523,6 +524,7 @@ module.exports = {
   resolveBlueGreenActiveColor,
   rewriteLocalhostUrl,
   runDockerWebWorkflow,
+  runComposeUpWithNameConflictRecovery,
   runChecked,
   stripUnquotedInlineComment,
   testBlueGreenProxyRouting,

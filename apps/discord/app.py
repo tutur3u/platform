@@ -1218,7 +1218,8 @@ def web_app():
         return {"status": "ok", **result}
 
     class MarkitdownRequest(BaseModel):
-        signed_url: str
+        signed_url: str | None = None
+        url: str | None = None
         filename: str | None = None
         enable_plugins: bool = True
 
@@ -1230,9 +1231,10 @@ def web_app():
 
         try:
             return await handle_markitdown(
-                payload.signed_url.strip(),
+                payload.signed_url.strip() if payload.signed_url else None,
                 payload.filename,
                 payload.enable_plugins,
+                url=payload.url.strip() if payload.url else None,
             )
         except HTTPException:
             raise

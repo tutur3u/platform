@@ -11,6 +11,16 @@ const CREDIT_FEATURE = 'chat' as const;
 const MARKITDOWN_LEDGER_MODEL = 'markitdown/conversion';
 const DEFAULT_MARKITDOWN_TIMEOUT_MS = 30_000;
 const MIN_MARKITDOWN_TIMEOUT_MS = 1_000;
+const YOUTUBE_HOSTS = new Set([
+  'youtube.com',
+  'www.youtube.com',
+  'm.youtube.com',
+  'music.youtube.com',
+  'youtube-nocookie.com',
+  'www.youtube-nocookie.com',
+  'youtu.be',
+  'www.youtu.be',
+]);
 
 function stripTimestampPrefix(name: string): string {
   const match = name.match(/^\d+_(.+)$/);
@@ -27,6 +37,34 @@ function isLikelyBareFileName(value: string): boolean {
 
 function getStoragePathFileName(value: string): string {
   return value.split('/').pop() ?? value;
+}
+
+function normalizeYoutubeUrl(value: string): string | null {
+  try {
+    const parsed = new URL(value);
+    const hostname = parsed.hostname.toLowerCase();
+    if (parsed.protocol !== 'https:') return null;
+    if (!YOUTUBE_HOSTS.has(hostname)) return null;
+
+    if (hostname === 'youtu.be' || hostname === 'www.youtu.be') {
+      return parsed.pathname.length > 1 ? parsed.toString() : null;
+    }
+
+    const isKnownYoutubePath =
+      parsed.pathname === '/watch' ||
+      parsed.pathname.startsWith('/shorts/') ||
+      parsed.pathname.startsWith('/embed/') ||
+      parsed.pathname.startsWith('/live/');
+
+    if (!isKnownYoutubePath) return null;
+    if (parsed.pathname === '/watch' && !parsed.searchParams.get('v')) {
+      return null;
+    }
+
+    return parsed.toString();
+  } catch {
+    return null;
+  }
 }
 
 function parseBaseUrl(value: string): string | null {
@@ -220,6 +258,7 @@ export async function executeConvertFileToMarkdown(
 
   const storagePathArg =
     typeof args.storagePath === 'string' ? args.storagePath.trim() : '';
+  const sourceUrlArg = typeof args.url === 'string' ? args.url.trim() : '';
   const fileNameArg =
     typeof args.fileName === 'string' ? args.fileName.trim() : '';
   const maxCharactersRaw =
@@ -234,11 +273,27 @@ export async function executeConvertFileToMarkdown(
     ? `${ctx.wsId}/chats/ai/resources/${ctx.chatId}`
     : '';
   let targetPath = storagePathArg;
+  let sourceUrl = sourceUrlArg ? normalizeYoutubeUrl(sourceUrlArg) : null;
   let selectedFileName = '';
+
+  if (sourceUrlArg && !sourceUrl) {
+    return {
+      ok: false,
+      error:
+        'Invalid URL for MarkItDown. Direct URL conversion currently supports HTTPS YouTube links only.',
+    };
+  }
+
+  if (!sourceUrl && targetPath) {
+    sourceUrl = normalizeYoutubeUrl(targetPath);
+    if (sourceUrl) {
+      targetPath = '';
+    }
+  }
 
   const sbAdmin = await createAdminClient();
 
-  if (targetPath) {
+  if (!sourceUrl && targetPath) {
     if (isUnsafeStoragePath(targetPath)) {
       return { ok: false, error: 'Invalid storagePath for current workspace.' };
     }
@@ -257,11 +312,11 @@ export async function executeConvertFileToMarkdown(
     } else {
       return { ok: false, error: 'Invalid storagePath for current workspace.' };
     }
-  } else {
+  } else if (!sourceUrl) {
     selectedFileName = fileNameArg;
   }
 
-  if (!targetPath) {
+  if (!sourceUrl && !targetPath) {
     if (!ctx.chatId) {
       return {
         ok: false,
@@ -312,13 +367,22 @@ export async function executeConvertFileToMarkdown(
     targetPath = `${chatFolder}/${pickedFile.name}`;
   }
 
+  const sourceLabel = sourceUrl
+    ? sourceUrl
+    : stripTimestampPrefix(selectedFileName);
+
   const reservation = await reserveMarkitdownCredits(
     sbAdmin,
     billingWsId,
     ctx,
     {
-      targetPath,
-      selectedFileName: stripTimestampPrefix(selectedFileName),
+      ...(sourceUrl
+        ? { sourceType: 'youtube_url', sourceUrl }
+        : {
+            sourceType: 'storage_file',
+            targetPath,
+            selectedFileName: stripTimestampPrefix(selectedFileName),
+          }),
     }
   );
 
@@ -333,16 +397,21 @@ export async function executeConvertFileToMarkdown(
   let shouldReleaseReservation = true;
 
   try {
-    const { data: signedReadData, error: signedReadError } =
-      await sbAdmin.storage.from('workspaces').createSignedUrl(targetPath, 120);
+    let signedReadUrl = '';
+    if (!sourceUrl) {
+      const { data: signedReadData, error: signedReadError } =
+        await sbAdmin.storage
+          .from('workspaces')
+          .createSignedUrl(targetPath, 120);
 
-    const signedReadUrl = signedReadData?.signedUrl;
+      signedReadUrl = signedReadData?.signedUrl ?? '';
 
-    if (signedReadError || !signedReadUrl) {
-      return {
-        ok: false,
-        error: `Failed to create signed download URL: ${signedReadError?.message ?? 'No URL returned'}`,
-      };
+      if (signedReadError || !signedReadUrl) {
+        return {
+          ok: false,
+          error: `Failed to create signed download URL: ${signedReadError?.message ?? 'No URL returned'}`,
+        };
+      }
     }
 
     const markitdownTimeoutMs = resolveMarkitdownTimeoutMs();
@@ -360,11 +429,19 @@ export async function executeConvertFileToMarkdown(
           Authorization: `Bearer ${markitdownSecret}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          signed_url: signedReadUrl,
-          filename: stripTimestampPrefix(selectedFileName),
-          enable_plugins: true,
-        }),
+        body: JSON.stringify(
+          sourceUrl
+            ? {
+                url: sourceUrl,
+                filename: fileNameArg || 'youtube.md',
+                enable_plugins: true,
+              }
+            : {
+                signed_url: signedReadUrl,
+                filename: stripTimestampPrefix(selectedFileName),
+                enable_plugins: true,
+              }
+        ),
         signal: abortController.signal,
       });
     } catch (error) {
@@ -417,8 +494,13 @@ export async function executeConvertFileToMarkdown(
     const deduction = await commitMarkitdownCredits(sbAdmin, reservationId, {
       wsId: ctx.wsId,
       userId: ctx.userId,
-      targetPath,
-      selectedFileName: stripTimestampPrefix(selectedFileName),
+      ...(sourceUrl
+        ? { sourceType: 'youtube_url', sourceUrl }
+        : {
+            sourceType: 'storage_file',
+            targetPath,
+            selectedFileName: stripTimestampPrefix(selectedFileName),
+          }),
       markdownLength: markdown.length,
       maxCharacters,
       truncated: wasTruncated,
@@ -430,7 +512,7 @@ export async function executeConvertFileToMarkdown(
         {
           wsId: ctx.wsId,
           userId: ctx.userId,
-          targetPath,
+          source: sourceLabel,
           reservationId,
           error: deduction.error,
         }
@@ -440,8 +522,11 @@ export async function executeConvertFileToMarkdown(
         ok: false,
         error: deduction.error,
         title: typeof payload.title === 'string' ? payload.title : null,
-        fileName: stripTimestampPrefix(selectedFileName),
-        storagePath: targetPath,
+        fileName: sourceUrl
+          ? fileNameArg || null
+          : stripTimestampPrefix(selectedFileName),
+        storagePath: sourceUrl ? null : targetPath,
+        url: sourceUrl,
         truncated: wasTruncated,
         creditDeductionError: deduction.error,
       };
@@ -453,8 +538,11 @@ export async function executeConvertFileToMarkdown(
       ok: true,
       markdown: finalMarkdown,
       title: typeof payload.title === 'string' ? payload.title : null,
-      fileName: stripTimestampPrefix(selectedFileName),
-      storagePath: targetPath,
+      fileName: sourceUrl
+        ? fileNameArg || null
+        : stripTimestampPrefix(selectedFileName),
+      storagePath: sourceUrl ? null : targetPath,
+      url: sourceUrl,
       creditsCharged: MARKITDOWN_COST_CREDITS,
       remainingCredits: deduction.remainingCredits,
       truncated: wasTruncated,
@@ -464,8 +552,13 @@ export async function executeConvertFileToMarkdown(
       await releaseMarkitdownCredits(sbAdmin, reservationId, {
         wsId: ctx.wsId,
         userId: ctx.userId,
-        targetPath,
-        selectedFileName: stripTimestampPrefix(selectedFileName),
+        ...(sourceUrl
+          ? { sourceType: 'youtube_url', sourceUrl }
+          : {
+              sourceType: 'storage_file',
+              targetPath,
+              selectedFileName: stripTimestampPrefix(selectedFileName),
+            }),
         reason: 'markitdown_execution_failed',
       });
     }

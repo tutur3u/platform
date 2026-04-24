@@ -930,6 +930,132 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
   }
 });
 
+test('runDockerWebWorkflow recovers from stale blue-green container name conflicts', async () => {
+  const calls = [];
+  let upSucceeded = false;
+  let webProxyPsCalls = 0;
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-bg-conflict-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+
+  const runCommand = async (command, args) => {
+    calls.push([command, args]);
+
+    if (args.includes('ps') && args.at(-1) === 'web') {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === BLUE_GREEN_PROXY_SERVICE) {
+      webProxyPsCalls += 1;
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: upSucceeded && webProxyPsCalls > 1 ? 'proxy-123\n' : '',
+      };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'web-blue') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: upSucceeded ? 'container-blue\n' : '',
+      };
+    }
+
+    if (
+      args.includes('ps') &&
+      BLUE_GREEN_SUPPORT_SERVICES.includes(args.at(-1))
+    ) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: upSucceeded ? `container-${args.at(-1)}\n` : '',
+      };
+    }
+
+    if (
+      command === 'docker' &&
+      args[0] === 'compose' &&
+      args.includes('up') &&
+      args.includes('web-blue')
+    ) {
+      if (!upSucceeded) {
+        upSucceeded = true;
+        return {
+          code: 1,
+          signal: null,
+          stderr:
+            'Error response from daemon: Conflict. The container name "/platform-web-blue-1" is already in use by container "stale-blue". You have to remove (or rename) that container to be able to reuse that name.',
+          stdout: '',
+        };
+      }
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (
+      command === 'docker' &&
+      args[0] === 'rm' &&
+      args[1] === '-f' &&
+      args[2] === 'platform-web-blue-1'
+    ) {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (args[0] === 'inspect') {
+      return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  try {
+    await runDockerWebWorkflow(
+      parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green']),
+      {
+        env: {
+          DOCKER_WEB_COMPOSE_PROJECT_NAME: 'platform',
+          PATH: 'test-path',
+        },
+        envFilePath,
+        proxyDrainMs: 0,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'rm' &&
+          args[1] === '-f' &&
+          args[2] === 'platform-web-blue-1'
+      )
+    );
+    assert.equal(
+      calls.filter(
+        ([command, args]) =>
+          command === 'docker' && args[0] === 'compose' && args.includes('up')
+      ).length,
+      2
+    );
+    assert.equal(readBlueGreenActiveColor(getBlueGreenPaths(tempDir)), 'blue');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('runDockerWebWorkflow switches traffic to the new color after it becomes healthy', async () => {
   const calls = [];
   let drainChecks = 0;

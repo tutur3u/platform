@@ -78,6 +78,30 @@ describe('mira render_ui policy', () => {
     expect(shouldForceGoogleSearchForLatestUserMessage(messages)).toBe(true);
   });
 
+  it('does not force google_search for direct YouTube links', () => {
+    const messages: ModelMessage[] = [
+      {
+        role: 'user',
+        content:
+          'Give me a summary of https://youtu.be/dQw4w9WgXcQ using markitdown service',
+      },
+    ];
+
+    expect(shouldForceGoogleSearchForLatestUserMessage(messages)).toBe(false);
+  });
+
+  it('does not force google_search when the user explicitly says no google search', () => {
+    const messages: ModelMessage[] = [
+      {
+        role: 'user',
+        content:
+          'Give me a summary of https://youtu.be/dQw4w9WgXcQ using markitdown service (no google search)',
+      },
+    ];
+
+    expect(shouldForceGoogleSearchForLatestUserMessage(messages)).toBe(false);
+  });
+
   it('returns false for google_search forcing when there is no user message', () => {
     const assistantOnly: ModelMessage[] = [
       { role: 'assistant', content: 'hello' },

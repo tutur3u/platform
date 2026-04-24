@@ -97,6 +97,16 @@ test('watcher restart globs include blue-green service wiring files', () => {
       'apps/storage-unzip-proxy/Dockerfile'
     )
   );
+  assert.ok(
+    CONTAINER_REFRESH_WATCHED_FILES.includes(
+      'apps/storage-unzip-proxy/package.json'
+    )
+  );
+  assert.ok(
+    CONTAINER_REFRESH_WATCHED_FILES.includes(
+      'apps/storage-unzip-proxy/src/server.js'
+    )
+  );
 });
 
 function createResult(stdout = '', { code = 0, stderr = '' } = {}) {

@@ -7,6 +7,7 @@ const {
   hasComposeProfile,
   hasComposeServiceContainer,
   removeComposeServicesIfPresent,
+  runComposeUpWithNameConflictRecovery,
   runChecked,
   runCommand,
   stopComposeServicesIfPresent,
@@ -601,28 +602,28 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     runCommand: run,
   });
 
-  await runChecked(
-    'docker',
-    getComposeCommandArgs(
-      composeFile,
-      parsed.composeGlobalArgs,
+  const targetServices = getBlueGreenProdServicesWithProxyOption(
+    parsed,
+    targetColor,
+    needsProxyBootstrap
+  );
+
+  await runComposeUpWithNameConflictRecovery({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: targetEnv,
+    fsImpl,
+    runCommand: run,
+    services: targetServices,
+    upArgs: [
       'up',
       '--build',
       '--detach',
       '--remove-orphans',
       ...parsed.composeArgs,
-      ...getBlueGreenProdServicesWithProxyOption(
-        parsed,
-        targetColor,
-        needsProxyBootstrap
-      )
-    ),
-    {
-      env: targetEnv,
-      fsImpl,
-      runCommand: run,
-    }
-  );
+      ...targetServices,
+    ],
+  });
 
   await waitForComposeServiceHealthy(getBlueGreenServiceName(targetColor), {
     composeFile,
@@ -767,24 +768,28 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     }
   );
 
-  await runChecked(
-    'docker',
-    getComposeCommandArgs(
-      composeFile,
-      parsed.composeGlobalArgs,
+  const standbyServices = getBlueGreenProdServicesWithProxyOption(
+    parsed,
+    standbyColor,
+    false
+  );
+
+  await runComposeUpWithNameConflictRecovery({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: standbyEnv,
+    fsImpl,
+    runCommand: run,
+    services: standbyServices,
+    upArgs: [
       'up',
       '--build',
       '--detach',
       '--remove-orphans',
       ...parsed.composeArgs,
-      ...getBlueGreenProdServicesWithProxyOption(parsed, standbyColor, false)
-    ),
-    {
-      env: standbyEnv,
-      fsImpl,
-      runCommand: run,
-    }
-  );
+      ...standbyServices,
+    ],
+  });
 
   await waitForComposeServiceHealthy(getBlueGreenServiceName(standbyColor), {
     composeFile,

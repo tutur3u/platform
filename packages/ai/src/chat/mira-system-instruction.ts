@@ -197,6 +197,7 @@ ${
 - "What's the weather today?" → \`["google_search"]\` (Real-time info needs web search)
 - "Latest news about AI" → \`["google_search"]\` (Search + concise markdown summary with sources)
 - "Analyze this attached .xlsx/.pptx/.docx file" → \`["convert_file_to_markdown"]\` (Convert attachment to markdown first)
+- "Summarize this YouTube link" → \`["convert_file_to_markdown"]\` (Use MarkItDown with the direct YouTube URL. DO NOT use \`google_search\` for YouTube links, even if the user says "no google search".)
 - "Create a QR code for this text" → \`["create_qr_code"]\`
 - "Show me a table of useful content" → \`["no_action_needed"]\` (Respond directly with a native markdown table)
 - "What workspace are you using for my tasks?" → \`["get_workspace_context"]\`

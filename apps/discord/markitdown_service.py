@@ -12,6 +12,16 @@ from fastapi import HTTPException
 from markitdown import MarkItDown
 
 MAX_MARKITDOWN_BYTES = 50 * 1024 * 1024
+YOUTUBE_HOSTS = {
+    "youtube.com",
+    "www.youtube.com",
+    "m.youtube.com",
+    "music.youtube.com",
+    "youtube-nocookie.com",
+    "www.youtube-nocookie.com",
+    "youtu.be",
+    "www.youtu.be",
+}
 logger = logging.getLogger(__name__)
 
 
@@ -68,6 +78,33 @@ def _validate_signed_url(signed_url: str, configured_supabase_host: str) -> None
     )
     if not token:
         raise HTTPException(status_code=400, detail="Invalid signed URL token")
+
+
+def _validate_direct_youtube_url(url: str) -> str:
+    parsed = urlparse(url)
+    host = parsed.hostname.lower() if parsed.hostname else ""
+
+    if parsed.scheme != "https":
+        raise HTTPException(status_code=400, detail="Invalid YouTube URL scheme")
+    if host not in YOUTUBE_HOSTS:
+        raise HTTPException(status_code=400, detail="Unsupported direct URL host")
+    if host in {"youtu.be", "www.youtu.be"}:
+        if parsed.path.strip("/") == "":
+            raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+        return url
+
+    is_known_youtube_path = (
+        parsed.path == "/watch"
+        or parsed.path.startswith("/shorts/")
+        or parsed.path.startswith("/embed/")
+        or parsed.path.startswith("/live/")
+    )
+    if not is_known_youtube_path:
+        raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+    if parsed.path == "/watch" and not parse_qs(parsed.query).get("v"):
+        raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+
+    return url
 
 
 def _normalize_original_name(filename: str | None) -> str:
@@ -151,11 +188,29 @@ def _convert_temp_file_sync(
     return markdown, title
 
 
+def _convert_url_sync(
+    url: str,
+    enable_plugins: bool,
+) -> tuple[str, str | None]:
+    converter = MarkItDown(enable_plugins=enable_plugins)
+    result = converter.convert_uri(url)
+    markdown = (getattr(result, "text_content", "") or "").strip()
+    title = getattr(result, "title", None)
+    return markdown, title
+
+
 async def _convert_temp_file(
     temp_path: str,
     enable_plugins: bool,
 ) -> tuple[str, str | None]:
     return await asyncio.to_thread(_convert_temp_file_sync, temp_path, enable_plugins)
+
+
+async def _convert_url(
+    url: str,
+    enable_plugins: bool,
+) -> tuple[str, str | None]:
+    return await asyncio.to_thread(_convert_url_sync, url, enable_plugins)
 
 
 def _cleanup_temp_file(temp_path: str) -> None:
@@ -168,22 +223,47 @@ def _cleanup_temp_file(temp_path: str) -> None:
 
 
 async def handle_markitdown(
-    signed_url: str,
+    signed_url: str | None,
     filename: str | None,
     enable_plugins: bool,
+    url: str | None = None,
 ) -> dict[str, object]:
-    """Download a signed Supabase URL and convert the file to markdown."""
-    if not signed_url:
-        raise HTTPException(status_code=400, detail="signed_url is required")
+    """Convert a signed Supabase file URL or direct YouTube URL to markdown."""
+    signed_url = (signed_url or "").strip()
+    url = (url or "").strip()
 
-    configured_supabase_host = _require_supabase_hostname()
-    _validate_signed_url(signed_url, configured_supabase_host)
+    if bool(signed_url) == bool(url):
+        raise HTTPException(
+            status_code=400,
+            detail="Provide exactly one of signed_url or url",
+        )
 
     original_name = _normalize_original_name(filename)
     suffix = Path(original_name).suffix
     temp_path = ""
 
     try:
+        if url:
+            source_url = _validate_direct_youtube_url(url)
+            markdown, title = await _convert_url(source_url, enable_plugins)
+
+            if not markdown:
+                raise HTTPException(
+                    status_code=422,
+                    detail="MarkItDown returned empty markdown",
+                )
+
+            return {
+                "ok": True,
+                "markdown": markdown,
+                "title": title,
+                "filename": original_name,
+                "url": source_url,
+            }
+
+        configured_supabase_host = _require_supabase_hostname()
+        _validate_signed_url(signed_url, configured_supabase_host)
+
         temp_path, downloaded_bytes = await _download_signed_url_to_temp(
             signed_url,
             suffix,

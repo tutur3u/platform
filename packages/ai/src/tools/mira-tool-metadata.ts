@@ -92,7 +92,7 @@ export const MIRA_TOOL_DIRECTORY: Record<MiraToolName, string> = {
   google_search:
     'Search the web for real-time info (news, prices, weather, facts).',
   convert_file_to_markdown:
-    'Convert attached files (Excel, Word, PowerPoint, PDF, etc.) into markdown via MarkItDown. Costs 100 credits per request.',
+    'Convert attached files (Excel, Word, PowerPoint, PDF, etc.) or direct YouTube URLs into markdown via MarkItDown. Use for YouTube links instead of Google Search. Costs 100 credits per request.',
   list_accessible_workspaces:
     'List every workspace you can access, with member counts',
   get_workspace_context:
