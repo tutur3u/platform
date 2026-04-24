@@ -829,6 +829,12 @@ abstract class AppLocalizations {
   /// **'See your agenda, upcoming events, and calendar views.'**
   String get appsHubCalendarDescription;
 
+  /// No description provided for @appsHubCmsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage CMS collections, entries, queues, and publishing.'**
+  String get appsHubCmsDescription;
+
   /// No description provided for @appsHubCrmDescription.
   ///
   /// In en, this message translates to:
@@ -840,6 +846,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Browse workspace files, folders, uploads, and secure share links.'**
   String get appsHubDriveDescription;
+
+  /// No description provided for @appsHubDocumentsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Write, edit, and publish workspace notes from your phone.'**
+  String get appsHubDocumentsDescription;
 
   /// No description provided for @appsHubEducationDescription.
   ///
@@ -858,6 +870,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Run products, stock, sales, and booth operations in one place.'**
   String get appsHubInventoryDescription;
+
+  /// No description provided for @appsHubMeetDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan meetings, review schedules, and keep recordings visible.'**
+  String get appsHubMeetDescription;
 
   /// No description provided for @appsHubNotificationsDescription.
   ///
@@ -11413,6 +11431,12 @@ abstract class AppLocalizations {
   /// **'Open'**
   String get commonOpen;
 
+  /// No description provided for @commonRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get commonRefresh;
+
   /// No description provided for @commonReactivated.
   ///
   /// In en, this message translates to:
@@ -12264,6 +12288,414 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Used'**
   String get driveUsedLabel;
+
+  /// No description provided for @documentsContentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Start writing...'**
+  String get documentsContentHint;
+
+  /// No description provided for @documentsCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Document created.'**
+  String get documentsCreated;
+
+  /// No description provided for @documentsDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Document deleted.'**
+  String get documentsDeleted;
+
+  /// No description provided for @documentsDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete document'**
+  String get documentsDelete;
+
+  /// No description provided for @documentsDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this document? This cannot be undone.'**
+  String get documentsDeleteConfirm;
+
+  /// No description provided for @documentsDocumentName.
+  ///
+  /// In en, this message translates to:
+  /// **'Document name'**
+  String get documentsDocumentName;
+
+  /// No description provided for @documentsEditor.
+  ///
+  /// In en, this message translates to:
+  /// **'Editor'**
+  String get documentsEditor;
+
+  /// No description provided for @documentsEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'No documents yet. Create one to capture decisions, notes, or plans.'**
+  String get documentsEmptyDescription;
+
+  /// No description provided for @documentsNewDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'New document'**
+  String get documentsNewDocument;
+
+  /// No description provided for @documentsPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Public document'**
+  String get documentsPublic;
+
+  /// No description provided for @documentsSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search documents'**
+  String get documentsSearchHint;
+
+  /// No description provided for @documentsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft and maintain workspace knowledge.'**
+  String get documentsSubtitle;
+
+  /// No description provided for @documentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get documentsTitle;
+
+  /// No description provided for @documentsUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Document saved.'**
+  String get documentsUpdated;
+
+  /// No description provided for @cmsAllCollections.
+  ///
+  /// In en, this message translates to:
+  /// **'All collections'**
+  String get cmsAllCollections;
+
+  /// No description provided for @cmsArchivedBacklog.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived backlog'**
+  String get cmsArchivedBacklog;
+
+  /// No description provided for @cmsCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection'**
+  String get cmsCollection;
+
+  /// No description provided for @cmsCollectionCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection created.'**
+  String get cmsCollectionCreated;
+
+  /// No description provided for @cmsCollectionDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection deleted.'**
+  String get cmsCollectionDeleted;
+
+  /// No description provided for @cmsCollectionEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get cmsCollectionEnabled;
+
+  /// No description provided for @cmsCollectionType.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection type'**
+  String get cmsCollectionType;
+
+  /// No description provided for @cmsCollectionUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection saved.'**
+  String get cmsCollectionUpdated;
+
+  /// No description provided for @cmsCollections.
+  ///
+  /// In en, this message translates to:
+  /// **'Collections'**
+  String get cmsCollections;
+
+  /// No description provided for @cmsDeleteCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete collection'**
+  String get cmsDeleteCollection;
+
+  /// No description provided for @cmsDeleteCollectionConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this collection? Entries in the collection may also be affected.'**
+  String get cmsDeleteCollectionConfirm;
+
+  /// No description provided for @cmsDeleteEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete entry'**
+  String get cmsDeleteEntry;
+
+  /// No description provided for @cmsDeleteEntryConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this entry? This cannot be undone.'**
+  String get cmsDeleteEntryConfirm;
+
+  /// No description provided for @cmsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get cmsDescription;
+
+  /// No description provided for @cmsEditCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit collection'**
+  String get cmsEditCollection;
+
+  /// No description provided for @cmsEditEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit entry'**
+  String get cmsEditEntry;
+
+  /// No description provided for @cmsEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'Entries'**
+  String get cmsEntries;
+
+  /// No description provided for @cmsEntryCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry created.'**
+  String get cmsEntryCreated;
+
+  /// No description provided for @cmsEntryDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry deleted.'**
+  String get cmsEntryDeleted;
+
+  /// No description provided for @cmsEntryUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry saved.'**
+  String get cmsEntryUpdated;
+
+  /// No description provided for @cmsLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get cmsLibrary;
+
+  /// No description provided for @cmsNeedsAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get cmsNeedsAttention;
+
+  /// No description provided for @cmsNewCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'New collection'**
+  String get cmsNewCollection;
+
+  /// No description provided for @cmsNewEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'New entry'**
+  String get cmsNewEntry;
+
+  /// No description provided for @cmsNoAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'CMS is not available for this workspace.'**
+  String get cmsNoAccess;
+
+  /// No description provided for @cmsNoCollections.
+  ///
+  /// In en, this message translates to:
+  /// **'No collections yet.'**
+  String get cmsNoCollections;
+
+  /// No description provided for @cmsNoEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'No entries yet.'**
+  String get cmsNoEntries;
+
+  /// No description provided for @cmsOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get cmsOverview;
+
+  /// No description provided for @cmsQueueEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing waiting here.'**
+  String get cmsQueueEmpty;
+
+  /// No description provided for @cmsScheduledSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled soon'**
+  String get cmsScheduledSoon;
+
+  /// No description provided for @cmsSlug.
+  ///
+  /// In en, this message translates to:
+  /// **'Slug'**
+  String get cmsSlug;
+
+  /// No description provided for @cmsStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get cmsStatus;
+
+  /// No description provided for @cmsStatusArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get cmsStatusArchived;
+
+  /// No description provided for @cmsStatusDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get cmsStatusDraft;
+
+  /// No description provided for @cmsStatusPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Published'**
+  String get cmsStatusPublished;
+
+  /// No description provided for @cmsStatusScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get cmsStatusScheduled;
+
+  /// No description provided for @cmsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtitle'**
+  String get cmsSubtitle;
+
+  /// No description provided for @cmsSubtitleApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage content collections, entries, and publish queues.'**
+  String get cmsSubtitleApp;
+
+  /// No description provided for @cmsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get cmsSummary;
+
+  /// No description provided for @cmsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get cmsTitle;
+
+  /// No description provided for @cmsTitleApp.
+  ///
+  /// In en, this message translates to:
+  /// **'CMS'**
+  String get cmsTitleApp;
+
+  /// No description provided for @meetCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting created.'**
+  String get meetCreated;
+
+  /// No description provided for @meetDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting deleted.'**
+  String get meetDeleted;
+
+  /// No description provided for @meetDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete meeting'**
+  String get meetDelete;
+
+  /// No description provided for @meetDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this meeting? This cannot be undone.'**
+  String get meetDeleteConfirm;
+
+  /// No description provided for @meetEditMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit meeting'**
+  String get meetEditMeeting;
+
+  /// No description provided for @meetEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'No meetings yet. Schedule one to keep the team aligned.'**
+  String get meetEmptyDescription;
+
+  /// No description provided for @meetMeetingName.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting name'**
+  String get meetMeetingName;
+
+  /// No description provided for @meetNewMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'New meeting'**
+  String get meetNewMeeting;
+
+  /// No description provided for @meetRecordingSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 recording} other{{count} recordings}}'**
+  String meetRecordingSessions(int count);
+
+  /// No description provided for @meetSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search meetings'**
+  String get meetSearchHint;
+
+  /// No description provided for @meetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule meetings and keep recordings in reach.'**
+  String get meetSubtitle;
+
+  /// No description provided for @meetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meet'**
+  String get meetTitle;
+
+  /// No description provided for @meetUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting saved.'**
+  String get meetUpdated;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

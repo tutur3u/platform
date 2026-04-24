@@ -32,7 +32,10 @@ abstract final class Routes {
   static const education = '/education';
   static const inventory = '/inventory';
   static const drive = '/drive';
+  static const documents = '/documents';
+  static const cms = '/cms';
   static const crm = '/crm';
+  static const meet = '/meet';
   static const timer = '/timer';
   static const settings = '/settings';
   static const settingsWorkspace = '/settings/workspace';
@@ -57,6 +60,7 @@ abstract final class Routes {
   static const inventoryManage = '/inventory/manage';
   static const inventoryAuditLogs = '/inventory/audit-logs';
   static const inventoryCheckout = '/inventory/checkout';
+  static const documentDetail = '/documents/:documentId';
   static const timerHistory = '/timer/history';
   static const timerStats = '/timer/stats';
   static const timerRequests = '/timer/requests';
@@ -72,6 +76,9 @@ abstract final class Routes {
       '/tasks/portfolio/projects/$projectId';
 
   static String taskBoardDetailPath(String boardId) => '/tasks/boards/$boardId';
+
+  static String documentDetailPath(String documentId) =>
+      '/documents/$documentId';
 
   static String taskBoardTaskDetailPath(String boardId, String taskId) => Uri(
     path: taskBoardDetailPath(boardId),
@@ -122,8 +129,17 @@ abstract final class Routes {
     if (normalized == drive || normalized.startsWith('$drive/')) {
       return drive;
     }
+    if (normalized == documents || normalized.startsWith('$documents/')) {
+      return documents;
+    }
+    if (normalized == cms || normalized.startsWith('$cms/')) {
+      return cms;
+    }
     if (normalized == crm || normalized.startsWith('$crm/')) {
       return crm;
+    }
+    if (normalized == meet || normalized.startsWith('$meet/')) {
+      return meet;
     }
     if (normalized == timer || normalized.startsWith('$timer/')) {
       return timer;

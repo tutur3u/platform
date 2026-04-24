@@ -16,6 +16,8 @@ import 'package:mobile/features/auth/view/login_page.dart';
 import 'package:mobile/features/auth/view/mfa_verify_page.dart';
 import 'package:mobile/features/auth/view/signup_page.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
+import 'package:mobile/features/documents/view/document_detail_page.dart';
+import 'package:mobile/features/documents/view/documents_page.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
 import 'package:mobile/features/finance/view/transaction_list_page.dart';
 import 'package:mobile/features/finance/view/wallet_detail_page.dart';
@@ -398,6 +400,16 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.inventoryCheckout,
             builder: (context, state) => const InventoryCheckoutPage(),
+          ),
+          GoRoute(
+            path: Routes.documentDetail,
+            builder: (context, state) {
+              final documentId = state.pathParameters['documentId'];
+              if (documentId == null || documentId.isEmpty) {
+                return const DocumentsPage();
+              }
+              return DocumentDetailPage(documentId: documentId);
+            },
           ),
           GoRoute(
             path: Routes.transactions,
