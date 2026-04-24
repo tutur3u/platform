@@ -160,6 +160,58 @@ export async function inviteWorkspaceMember(
   };
 }
 
+export async function acceptWorkspaceInvite(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.fetch(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/accept-invite`,
+    {
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
+
+  if (!response.ok) {
+    const fallbackMessage = `Internal API request failed: ${response.status}`;
+    let data: { errorCode?: string; error?: string; message?: string } | null =
+      null;
+
+    try {
+      data = (await response.json()) as {
+        errorCode?: string;
+        error?: string;
+        message?: string;
+      };
+    } catch {
+      data = null;
+    }
+
+    const error = new Error(
+      data?.message || data?.error || fallbackMessage
+    ) as Error & { errorCode?: string };
+    error.errorCode = data?.errorCode;
+    throw error;
+  }
+
+  return (await response.json().catch(() => ({}))) as { message?: string };
+}
+
+export async function declineWorkspaceInvite(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/decline-invite`,
+    {
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
+}
+
 export async function removeWorkspaceMember(
   workspaceId: string,
   payload: { email?: string | null; userId?: string | null },

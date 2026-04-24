@@ -25585,6 +25585,10 @@ export type Database = {
         Args: { p_now: string; p_ws_id: string };
         Returns: undefined;
       };
+      ensure_sepay_fallback_transaction_category: {
+        Args: { p_is_expense: boolean; p_name: string; p_ws_id: string };
+        Returns: string;
+      };
       ensure_workspace_user_link: {
         Args: { target_user_id: string; target_ws_id: string };
         Returns: string;
@@ -28489,6 +28493,20 @@ export type Database = {
           remaining_credits: number;
           reservation_id: string;
           success: boolean;
+        }[];
+      };
+      resolve_guest_self_join_candidate: {
+        Args: {
+          p_auth_email?: string;
+          p_private_email?: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          eligible: boolean;
+          matched_email_source: string;
+          reason: string;
+          virtual_user_id: string;
         }[];
       };
       revoke_all_cross_app_tokens: {

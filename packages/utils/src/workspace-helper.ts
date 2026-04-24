@@ -1,3 +1,4 @@
+import { ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
   createAdminClient,
@@ -940,4 +941,99 @@ export async function getWorkspaceConfig(
   }
 
   return data?.value || null;
+}
+
+/** Result of {@link getWorkspaceNonMemberInviteEligibility} (user not in `workspace_members` yet). */
+export type WorkspaceNonMemberInviteEligibility = {
+  /** Set when `workspace_invites` or `workspace_email_invites` has a row for this user. */
+  hasPendingInvite: boolean;
+  /**
+   * Guest self-join is allowed: workspace config is on and
+   * `resolve_guest_self_join_candidate` returns eligible.
+   */
+  allowGuestSelfJoin: boolean;
+};
+
+/**
+ * Whether the workspace invite/accept flow may be shown (matches what
+ * `POST /api/workspaces/:wsId/accept-invite` can accept without `NO_PENDING_INVITE_FOUND`).
+ */
+export function canShowWorkspaceInviteForNonMember(
+  eligibility: WorkspaceNonMemberInviteEligibility
+): boolean {
+  return eligibility.hasPendingInvite || eligibility.allowGuestSelfJoin;
+}
+
+/**
+ * For a user who is not yet a member of the workspace, determines if they have a pending
+ * direct/email invite and/or are eligible for guest self-join. Use with
+ * {@link canShowWorkspaceInviteForNonMember} before rendering the invite card.
+ *
+ * @param supabase - Prefer the service-role / admin client so invite rows are visible regardless of RLS.
+ */
+export async function getWorkspaceNonMemberInviteEligibility(
+  supabase: TypedSupabaseClient,
+  params: {
+    workspaceId: string;
+    userId: string;
+    authEmail: string | null;
+  }
+): Promise<WorkspaceNonMemberInviteEligibility> {
+  const { workspaceId, userId, authEmail } = params;
+  const authEmailNorm = authEmail?.trim().toLowerCase() || null;
+
+  const { data: privateDetails } = await supabase
+    .from('user_private_details')
+    .select('email')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const privateEmail = privateDetails?.email?.trim().toLowerCase() || null;
+
+  const guestSelfJoinEnabled =
+    (
+      await getWorkspaceConfig(
+        workspaceId,
+        ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID
+      )
+    )?.trim()
+      .toLowerCase() === 'true';
+
+  let allowGuestSelfJoin = false;
+  if (guestSelfJoinEnabled) {
+    const { data: guestCandidate } = await supabase.rpc(
+      'resolve_guest_self_join_candidate',
+      {
+        p_ws_id: workspaceId,
+        p_user_id: userId,
+        p_auth_email: authEmailNorm ?? undefined,
+        p_private_email: privateEmail ?? undefined,
+      }
+    );
+
+    allowGuestSelfJoin = guestCandidate?.[0]?.eligible === true;
+  }
+
+  const { data: pendingUserInvite } = await supabase
+    .from('workspace_invites')
+    .select('ws_id')
+    .eq('ws_id', workspaceId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  const candidateEmails = [...new Set([authEmailNorm, privateEmail])].filter(
+    (e): e is string => Boolean(e)
+  );
+
+  const { data: pendingEmailInvite } = candidateEmails.length
+    ? await supabase
+        .from('workspace_email_invites')
+        .select('ws_id')
+        .eq('ws_id', workspaceId)
+        .in('email', candidateEmails)
+        .maybeSingle()
+    : { data: null };
+
+  const hasPendingInvite = !!(pendingUserInvite || pendingEmailInvite);
+
+  return { hasPendingInvite, allowGuestSelfJoin };
 }

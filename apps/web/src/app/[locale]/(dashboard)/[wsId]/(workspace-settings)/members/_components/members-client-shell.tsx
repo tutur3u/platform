@@ -4,6 +4,7 @@ import type { Workspace } from '@tuturuuu/types';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { useTranslations } from 'next-intl';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
+import { GuestSelfJoinSetting } from './guest-self-join-setting';
 import InviteLinksSection from './invite-links-section';
 import InviteMemberButton from './invite-member-button';
 import MemberList from './member-list';
@@ -104,6 +105,8 @@ export default function MembersClientShell({
           />
         )}
       </div>
+
+      <GuestSelfJoinSetting wsId={wsId} disabled={!canManageMembers} />
 
       <InviteLinksSection wsId={wsId} canManageMembers={canManageMembers} />
     </div>

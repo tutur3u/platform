@@ -1,41 +1,48 @@
 'use client';
 
 import type { Workspace } from '@tuturuuu/types';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Button } from '@tuturuuu/ui/button';
+import { useMutation } from '@tanstack/react-query';
+import { ArrowRight, Users } from '@tuturuuu/icons';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
+  acceptWorkspaceInvite,
+  declineWorkspaceInvite,
+} from '@tuturuuu/internal-api';
+import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
+import {
+  WorkspaceJoinCardSurface,
+  WorkspaceJoinExperienceRoot,
+  WorkspaceJoinLogoBlock,
+  WorkspaceJoinSparkles,
+} from '@/components/workspace-invite/workspace-join-experience';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 
 interface WorkspaceInvitationProps {
   workspace: Workspace;
   inviterName?: string;
+  allowGuestSelfJoin?: boolean;
+  /** Workspace member total (optional; matches invite-link join screen) */
+  memberCount?: number;
 }
 
 export default function InvitationCard({
   workspace,
   inviterName,
+  allowGuestSelfJoin = false,
+  memberCount,
 }: WorkspaceInvitationProps) {
   const router = useRouter();
   const t = useTranslations();
-
-  const [loading, setLoading] = useState<'accept' | 'decline' | undefined>();
 
   const acceptInviteSuccessTitle = t('invite.accept-invite-success-title');
   const acceptInviteSuccessMessage = t('invite.accept-invite-success-msg');
 
   const acceptInviteErrorTitle = t('invite.accept-invite-error-title');
   const acceptInviteErrorMessage = t('invite.accept-invite-error-msg');
+  const guestJoinErrorTitle = t('invite.guest-join-error-title');
+  const guestJoinErrorMessage = t('invite.guest-join-error-msg');
 
   const declineInviteSuccessTitle = t('invite.decline-invite-success-title');
   const declineInviteSuccessMessage = t('invite.decline-invite-success-msg');
@@ -43,113 +50,162 @@ export default function InvitationCard({
   const declineInviteErrorTitle = t('invite.decline-invite-error-title');
   const declineInviteErrorMessage = t('invite.decline-invite-error-msg');
 
-  const acceptInvite = async (ws: Workspace) => {
-    setLoading('accept');
-    const response = await fetch(`/api/workspaces/${ws.id}/accept-invite`, {
-      method: 'POST',
-    });
+  const guestJoinErrorCodeSet = new Set([
+    'no_email',
+    'no_matching_workspace_user',
+    'workspace_user_linked_to_other_platform_user',
+    'NO_GUEST_SELF_JOIN_MATCH',
+  ]);
 
-    if (response.ok) {
-      toast({
-        title: acceptInviteSuccessTitle,
+  const acceptMutation = useMutation({
+    mutationFn: () => acceptWorkspaceInvite(workspace.id),
+    onSuccess: () => {
+      toast.success(acceptInviteSuccessTitle, {
         description: acceptInviteSuccessMessage,
-        color: 'teal',
       });
       router.refresh();
-    } else {
-      setLoading(undefined);
-      toast({
-        title: acceptInviteErrorTitle,
-        description: acceptInviteErrorMessage,
-        color: 'red',
-      });
-    }
-  };
+    },
+    onError: (error) => {
+      const err = error as Error & { errorCode?: string };
+      const shouldShowGuestError =
+        allowGuestSelfJoin &&
+        err.errorCode &&
+        guestJoinErrorCodeSet.has(err.errorCode);
+      toast.error(
+        shouldShowGuestError ? guestJoinErrorTitle : acceptInviteErrorTitle,
+        {
+          description: shouldShowGuestError
+            ? guestJoinErrorMessage
+            : acceptInviteErrorMessage,
+        }
+      );
+    },
+  });
 
-  const declineInvite = async (ws: Workspace) => {
-    setLoading('decline');
-    const response = await fetch(`/api/workspaces/${ws.id}/decline-invite`, {
-      method: 'POST',
-    });
-
-    if (response.ok) {
-      toast({
-        title: declineInviteSuccessTitle,
+  const declineMutation = useMutation({
+    mutationFn: () => declineWorkspaceInvite(workspace.id),
+    onSuccess: () => {
+      toast.success(declineInviteSuccessTitle, {
         description: declineInviteSuccessMessage,
-        color: 'teal',
       });
       router.push('/onboarding');
       router.refresh();
-    } else {
-      setLoading(undefined);
-      toast({
-        title: declineInviteErrorTitle,
+    },
+    onError: () => {
+      toast.error(declineInviteErrorTitle, {
         description: declineInviteErrorMessage,
-        color: 'red',
       });
-    }
-  };
+    },
+  });
+
+  const loading =
+    (acceptMutation.isPending && 'accept') ||
+    (declineMutation.isPending && 'decline') ||
+    undefined;
+
+  const displayName = workspace.name?.trim() || 'Workspace';
 
   return (
-    <Card className="w-full max-w-2xl">
-      <CardHeader className="flex flex-row items-center gap-2">
-        <Avatar className="h-12 w-12">
-          <AvatarImage
-            src={
-              workspace.logo_url ||
-              workspace.avatar_url ||
-              (workspace.name
-                ? `https://avatar.vercel.sh/${workspace.name}.png`
-                : undefined)
-            }
-            alt={workspace.name ?? ''}
-          />
-          <AvatarFallback>
-            {workspace.name?.slice(0, 2).toUpperCase() || 'WS'}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <CardTitle>{workspace.name}</CardTitle>
-          <CardDescription>
-            {inviterName
-              ? `${inviterName} ${t('invite.invited-you')}`
-              : t('invite.workspace-invitation')}
-            .
-          </CardDescription>
+    <WorkspaceJoinExperienceRoot>
+      <WorkspaceJoinCardSurface hoverShadow="blue">
+        <WorkspaceJoinSparkles />
+
+        <WorkspaceJoinLogoBlock workspace={workspace} />
+
+        <div className="relative mb-8 space-y-4 text-center">
+          <div className="space-y-2">
+            <h1 className="bg-linear-to-br from-foreground to-foreground/70 bg-clip-text font-bold text-3xl text-transparent">
+              {displayName}
+            </h1>
+            <p className="text-foreground/70 text-lg">
+              {inviterName ? (
+                <>
+                  <span className="font-medium text-foreground">
+                    {inviterName}
+                  </span>{' '}
+                  {t('invite.invited-you')}.
+                </>
+              ) : allowGuestSelfJoin ? (
+                <>{t('invite.workspace-guest-join')}.</>
+              ) : (
+                <>{t('invite.workspace-invitation')}.</>
+              )}
+            </p>
+          </div>
+
+          {typeof memberCount === 'number' && (
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <div className="flex items-center gap-1.5 rounded-full bg-dynamic-purple/10 px-3 py-1.5 text-sm">
+                <Users className="h-4 w-4 text-dynamic-purple" />
+                <span className="font-medium text-foreground/80">
+                  {memberCount}{' '}
+                  {memberCount === 1 ? t('invite.member') : t('invite.members')}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <p className="mx-auto max-w-sm text-foreground/65 text-sm leading-relaxed">
+            {allowGuestSelfJoin ? (
+              <>
+                {t('invite.you-can-join-as-guest')}{' '}
+                <span className="font-semibold text-foreground">
+                  {displayName}
+                </span>
+                {t('invite.join-as-guest-description')}
+              </>
+            ) : (
+              <>
+                {t('invite.you-been-invited-to-join-the')}{' '}
+                <span className="font-semibold text-foreground">
+                  {displayName}
+                </span>
+                {t('invite.accept-to-start-collaborating')}
+              </>
+            )}
+          </p>
         </div>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground text-sm">
-          {t('invite.you-been-invited-to-join-the')}{' '}
-          <span className="text-foreground underline">{workspace.name}</span>
-          {t('invite.accept-to-start-collaborating')}
-        </p>
-      </CardContent>
-      <CardFooter className="flex justify-end gap-2">
-        <Button
-          variant="outline"
-          onClick={() => declineInvite(workspace)}
-          className="transition-colors hover:bg-destructive hover:text-destructive-foreground"
-          disabled={!!loading}
-        >
-          {loading === 'decline' ? (
-            <LoadingIndicator />
-          ) : (
-            t('invite.decline-invite')
-          )}
-        </Button>
-        <Button
-          onClick={() => acceptInvite(workspace)}
-          className="transition-colors"
-          disabled={!!loading}
-        >
-          {loading === 'accept' ? (
-            <LoadingIndicator className="text-background" />
-          ) : (
-            t('invite.accept-invite')
-          )}
-        </Button>
-      </CardFooter>
-    </Card>
+
+        <div className="relative mt-2 flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-stretch">
+          <Button
+            variant="outline"
+            size="lg"
+            className="border-foreground/15 transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive sm:flex-1"
+            onClick={() => declineMutation.mutate()}
+            disabled={!!loading}
+          >
+            {loading === 'decline' ? (
+              <LoadingIndicator />
+            ) : (
+              t('invite.decline-invite')
+            )}
+          </Button>
+          <Button
+            size="lg"
+            className="group/btn relative overflow-hidden bg-linear-to-r from-dynamic-blue to-dynamic-purple shadow-lg transition-all duration-300 hover:shadow-dynamic-blue/20 hover:shadow-xl sm:flex-[1.35]"
+            onClick={() => acceptMutation.mutate()}
+            disabled={!!loading}
+          >
+            <span className="relative z-10 flex items-center justify-center gap-2 font-semibold">
+              {loading === 'accept' ? (
+                <LoadingIndicator className="text-background" />
+              ) : (
+                <>
+                  {allowGuestSelfJoin
+                    ? t('invite.join-as-guest-button')
+                    : t('invite.accept-invite')}
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover/btn:translate-x-1" />
+                </>
+              )}
+            </span>
+            <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-dynamic-purple to-dynamic-pink opacity-0 transition-opacity group-hover/btn:opacity-100" />
+          </Button>
+        </div>
+      </WorkspaceJoinCardSurface>
+
+      <p className="text-center text-foreground/50 text-sm leading-relaxed">
+        {t('invite.join-agreement')}
+      </p>
+    </WorkspaceJoinExperienceRoot>
   );
 }

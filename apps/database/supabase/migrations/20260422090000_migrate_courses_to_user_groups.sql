@@ -6,29 +6,35 @@ alter table "public"."workspace_user_groups"
   add column if not exists "cert_template" certificate_templates not null default 'original'::certificate_templates;
 
 -- 2. Materialize every course as a workspace user group before rewiring child rows.
-insert into "public"."workspace_user_groups" (
-  "id",
-  "ws_id",
-  "name",
-  "description",
-  "cert_template",
-  "created_at",
-  "is_guest"
-)
-select
-  wc.id,
-  wc.ws_id,
-  wc.name,
-  wc.description,
-  wc.cert_template,
-  wc.created_at,
-  false
-from "public"."workspace_courses" wc
-on conflict ("id") do update
-set
-  "description" = excluded."description",
-  "cert_template" = excluded."cert_template",
-  "created_at" = coalesce("workspace_user_groups"."created_at", excluded."created_at");
+--    Guarded for environments where workspace_courses was already dropped.
+do $$
+begin
+  if to_regclass('public.workspace_courses') is not null then
+    insert into "public"."workspace_user_groups" (
+      "id",
+      "ws_id",
+      "name",
+      "description",
+      "cert_template",
+      "created_at",
+      "is_guest"
+    )
+    select
+      wc.id,
+      wc.ws_id,
+      wc.name,
+      wc.description,
+      wc.cert_template,
+      wc.created_at,
+      false
+    from "public"."workspace_courses" wc
+    on conflict ("id") do update
+    set
+      "description" = excluded."description",
+      "cert_template" = excluded."cert_template",
+      "created_at" = coalesce("workspace_user_groups"."created_at", excluded."created_at");
+  end if;
+end $$;
 
 -- 3. Rewire workspace_course_modules without dropping legacy mappings first.
 drop policy if exists "Allow all access for workspace member" on "public"."workspace_course_modules";
@@ -40,8 +46,24 @@ alter table "public"."workspace_course_modules"
 alter table "public"."workspace_course_modules"
   add column if not exists "group_id" uuid;
 
-update "public"."workspace_course_modules"
-set "group_id" = "course_id"
+--    Backfill from course_id only when the legacy column still exists.
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'workspace_course_modules'
+      and column_name = 'course_id'
+  ) then
+    update "public"."workspace_course_modules"
+    set "group_id" = "course_id"
+    where "group_id" is null;
+  end if;
+end $$;
+
+--    Clean up orphaned modules that have no resolvable parent.
+delete from "public"."workspace_course_modules"
 where "group_id" is null;
 
 do $$
@@ -101,9 +123,21 @@ drop index if exists "public"."uq_user_certificate";
 alter table "public"."course_certificates"
   add column if not exists "group_id" uuid;
 
-update "public"."course_certificates"
-set "group_id" = "course_id"
-where "group_id" is null;
+--    Backfill from course_id only when the legacy column still exists.
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'course_certificates'
+      and column_name = 'course_id'
+  ) then
+    update "public"."course_certificates"
+    set "group_id" = "course_id"
+    where "group_id" is null;
+  end if;
+end $$;
 
 do $$
 begin

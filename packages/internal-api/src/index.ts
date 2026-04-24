@@ -339,6 +339,8 @@ export {
   type WorkspaceUserAuditLogsResponse,
 } from './workspace-user-audit';
 export {
+  acceptWorkspaceInvite,
+  declineWorkspaceInvite,
   getWorkspace,
   getWorkspaceExternalProjectMembersContext,
   inviteWorkspaceMember,

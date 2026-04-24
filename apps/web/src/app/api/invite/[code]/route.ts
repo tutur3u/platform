@@ -4,6 +4,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { resolveWorkspaceBrandingUrlsForNext } from '@/lib/workspace-branding-image-url';
 import { memberTypeFromInviteStatsRow } from '@/lib/workspace-invite-links';
 import {
   assignSeatToMember,
@@ -103,9 +104,25 @@ export async function GET(_: Request, { params }: Params) {
       inviteLink.ws_id as string
     );
 
+    const wsRaw = inviteLink.workspaces as {
+      id: string;
+      name: string;
+      avatar_url?: string | null;
+      logo_url?: string | null;
+    } | null;
+
+    let workspacePayload = wsRaw;
+    if (wsRaw) {
+      const branding = await resolveWorkspaceBrandingUrlsForNext(sbAdmin, {
+        logo_url: wsRaw.logo_url,
+        avatar_url: wsRaw.avatar_url,
+      });
+      workspacePayload = { ...wsRaw, ...branding };
+    }
+
     return NextResponse.json(
       {
-        workspace: inviteLink.workspaces,
+        workspace: workspacePayload,
         memberCount: memberCount || 0,
         seatLimitReached: !seatCheck.allowed,
         seatStatus: seatCheck.status,

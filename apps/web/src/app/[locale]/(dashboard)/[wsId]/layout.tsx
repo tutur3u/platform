@@ -1,10 +1,18 @@
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { WorkspacePresenceProvider } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import {
+  canShowWorkspaceInviteForNonMember,
+  getWorkspace,
+  getWorkspaceNonMemberInviteEligibility,
+} from '@tuturuuu/utils/workspace-helper';
+import { resolveWorkspaceBrandingUrlsForNext } from '@/lib/workspace-branding-image-url';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -55,6 +63,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!user?.id) redirect('/login');
 
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
   const behaviorCookie = (await cookies()).get(SIDEBAR_BEHAVIOR_COOKIE_NAME);
@@ -83,12 +92,40 @@ export default async function Layout({ children, params }: LayoutProps) {
   }
 
   if (!workspace) redirect('/onboarding');
-  if (!workspace?.joined)
-    return (
-      <div className="flex h-screen w-screen items-center justify-center p-2 md:p-4">
-        <InvitationCard workspace={workspace} />
-      </div>
+
+  if (!workspace.joined) {
+    const inviteEligibility = await getWorkspaceNonMemberInviteEligibility(
+      sbAdmin,
+      {
+        workspaceId: workspace.id,
+        userId: user.id,
+        authEmail: user.email?.trim().toLowerCase() ?? null,
+      }
     );
+
+    if (!canShowWorkspaceInviteForNonMember(inviteEligibility)) {
+      redirect('/onboarding');
+    }
+
+    const { allowGuestSelfJoin } = inviteEligibility;
+
+
+    const branding = await resolveWorkspaceBrandingUrlsForNext(sbAdmin, {
+      logo_url: workspace.logo_url,
+      avatar_url: workspace.avatar_url,
+    });
+
+    return (
+      <InvitationCard
+        workspace={{
+          ...workspace,
+          logo_url: branding.logo_url,
+          avatar_url: branding.avatar_url,
+        }}
+        allowGuestSelfJoin={allowGuestSelfJoin}
+      />
+    );
+  }
 
   // Personal workspace prompt data
   const { data: existingPersonal } = await supabase

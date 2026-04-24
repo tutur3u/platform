@@ -158,9 +158,8 @@ function mergeHeaders(
 export function createInternalApiClient(
   options: InternalApiClientOptions = {}
 ) {
-  const fetchImpl = options.fetch || globalThis.fetch;
-
   const doFetch = (path: string, init: InternalApiFetchInit = {}) => {
+    const fetchImpl = options.fetch ?? globalThis.fetch;
     const { baseUrl, headers: requestHeaders, query, ...requestInit } = init;
     const requestPath = appendQuery(path, query);
     const url = resolveInternalApiUrl(requestPath, baseUrl || options.baseUrl);
