@@ -123,6 +123,9 @@ function getComposeEnvironment({
   const composeEnv = {
     ...baseEnv,
     COMPOSE_DOCKER_CLI_BUILD: baseEnv.COMPOSE_DOCKER_CLI_BUILD ?? '1',
+    COMPOSE_PROJECT_NAME:
+      getFirstNonBlank([baseEnv.DOCKER_WEB_COMPOSE_PROJECT_NAME]) ??
+      path.basename(rootDir),
     DOCKER_BUILDKIT: baseEnv.DOCKER_BUILDKIT ?? '1',
   };
 

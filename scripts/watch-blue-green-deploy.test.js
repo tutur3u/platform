@@ -63,6 +63,7 @@ const {
   readWatchStatus,
   terminateExistingWatcher,
   clearPendingDeployRequest,
+  getWatcherContainerState,
   getLatestSuccessfulDeploymentCommitHash,
   hasPersistedPendingDeployRequest,
   writePendingDeployRequest,
@@ -122,6 +123,10 @@ function createRunCommandMock(responses) {
 
 function prodComposePsKey(serviceName) {
   return `docker compose -f ${PROD_COMPOSE_FILE} ps -q ${serviceName}`;
+}
+
+function prodComposePsAllKey(serviceName) {
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q ${serviceName}`;
 }
 
 function prodComposeWatcherUpKey() {
@@ -2770,6 +2775,7 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
     assert.equal(fs.existsSync(paths.lockFile), false);
     assert.equal(fs.existsSync(paths.statusFile), false);
     assert.equal(envs[1][HOST_WORKSPACE_DIR_ENV], tempDir);
+    assert.equal(envs[1].COMPOSE_PROJECT_NAME, path.basename(tempDir));
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -2782,6 +2788,30 @@ test('getWatcherComposeEnv injects the mirrored host workspace path', () => {
   });
 
   assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], '/tmp/platform-worktree');
+  assert.equal(composeEnv.COMPOSE_PROJECT_NAME, 'platform-worktree');
+});
+
+test('getWatcherComposeEnv preserves the existing host workspace path when running in a container', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-host-path-'));
+  const hostWorkspaceDir = path.join(tempDir, 'home', 'sokora', 'platform');
+
+  try {
+    fs.mkdirSync(hostWorkspaceDir, { recursive: true });
+
+    const composeEnv = getWatcherComposeEnv({
+      baseEnv: {
+        PATH: 'test-path',
+        COMPOSE_PROJECT_NAME: 'bad-container-project',
+        [HOST_WORKSPACE_DIR_ENV]: hostWorkspaceDir,
+      },
+      rootDir: '/workspace',
+    });
+
+    assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], hostWorkspaceDir);
+    assert.equal(composeEnv.COMPOSE_PROJECT_NAME, 'platform');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('clearContainerManagedWatcherState removes persisted lock and status files', () => {
@@ -2843,7 +2873,7 @@ test('pending deploy requests persist across restarts and can be cleared explici
 test('streamBlueGreenWatcherLogs follows the watcher service output', async () => {
   const calls = [];
 
-  await streamBlueGreenWatcherLogs({
+  const result = await streamBlueGreenWatcherLogs({
     env: {
       PATH: process.env.PATH,
       NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:8001',
@@ -2867,7 +2897,33 @@ test('streamBlueGreenWatcherLogs follows the watcher service output', async () =
     },
   });
 
+  assert.deepEqual(result, { status: 'completed' });
   assert.deepEqual(calls, [prodComposeWatcherLogsKey()]);
+});
+
+test('streamBlueGreenWatcherLogs treats watcher self-recreate exits as reconnectable', async () => {
+  const result = await streamBlueGreenWatcherLogs({
+    env: {
+      PATH: process.env.PATH,
+      NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:8001',
+      SUPABASE_SERVER_URL: 'http://localhost:8001',
+      UPSTASH_REDIS_REST_TOKEN: 'token',
+      UPSTASH_REDIS_REST_URL: 'http://serverless-redis-http:80',
+    },
+    fsImpl: {
+      existsSync() {
+        return true;
+      },
+      mkdirSync() {},
+      readFileSync() {
+        return '';
+      },
+      writeFileSync() {},
+    },
+    runCommand: async () => createResult('', { code: 143 }),
+  });
+
+  assert.deepEqual(result, { status: 'recreated' });
 });
 
 test('runWatcherCommand boots the watcher container before tailing logs', async () => {
@@ -2897,6 +2953,119 @@ test('runWatcherCommand boots the watcher container before tailing logs', async 
     assert.deepEqual(calls, [
       'docker compose version',
       prodComposeWatcherUpKey(),
+      prodComposeWatcherLogsKey(),
+    ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getWatcherContainerState reads stopped watcher containers by compose service', async () => {
+  const calls = [];
+  const state = await getWatcherContainerState({
+    env: {
+      PATH: process.env.PATH,
+      NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:8001',
+      SUPABASE_SERVER_URL: 'http://localhost:8001',
+      UPSTASH_REDIS_REST_TOKEN: 'token',
+      UPSTASH_REDIS_REST_URL: 'http://serverless-redis-http:80',
+    },
+    fsImpl: {
+      existsSync() {
+        return true;
+      },
+      mkdirSync() {},
+      readFileSync() {
+        return '';
+      },
+      writeFileSync() {},
+    },
+    runCommand: async (command, args) => {
+      calls.push(`${command} ${args.join(' ')}`);
+
+      if (calls.at(-1) === prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE)) {
+        return createResult('watcher-123\n');
+      }
+
+      if (
+        calls.at(-1) ===
+        'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123'
+      ) {
+        return createResult('exited\n');
+      }
+
+      throw new Error(`Unexpected command: ${calls.at(-1)}`);
+    },
+  });
+
+  assert.equal(state, 'exited');
+  assert.deepEqual(calls, [
+    prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
+    'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123',
+  ]);
+});
+
+test('runWatcherCommand reconnects after watcher service recreation', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-command-loop-'));
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    await runWatcherCommand(['--once'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      reconnectDelayMs: 0,
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === 'docker compose version') {
+          return createResult('');
+        }
+
+        if (key === prodComposeWatcherUpKey()) {
+          return createResult('');
+        }
+
+        if (key === prodComposeWatcherLogsKey()) {
+          const logCallCount = calls.filter(
+            (call) => call === prodComposeWatcherLogsKey()
+          ).length;
+          return logCallCount === 1
+            ? createResult('', { code: 143 })
+            : createResult('');
+        }
+
+        if (key === prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE)) {
+          return createResult('watcher-123\n');
+        }
+
+        if (
+          key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123'
+        ) {
+          return createResult('healthy\n');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+    });
+
+    assert.deepEqual(calls, [
+      'docker compose version',
+      prodComposeWatcherUpKey(),
+      prodComposeWatcherLogsKey(),
+      prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
+      'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123',
       prodComposeWatcherLogsKey(),
     ]);
   } finally {

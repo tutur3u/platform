@@ -204,6 +204,7 @@ test('getComposeEnvironment derives a server-side Supabase URL for Docker', () =
 
     assert.equal(env.PATH, 'test-path');
     assert.equal(env.COMPOSE_DOCKER_CLI_BUILD, '1');
+    assert.equal(env.COMPOSE_PROJECT_NAME, path.basename(tempDir));
     assert.equal(env.SUPABASE_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
     assert.equal(env.SUPABASE_SERVER_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
     assert.equal(env.DOCKER_BUILDKIT, '1');
@@ -222,6 +223,46 @@ test('getComposeEnvironment derives a server-side Supabase URL for Docker', () =
         .trim(),
       env.UPSTASH_REDIS_REST_TOKEN
     );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getComposeEnvironment pins compose project names from the workspace path', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-project-env-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co\n'
+    );
+
+    const env = getComposeEnvironment({
+      baseEnv: {
+        PATH: 'test-path',
+        COMPOSE_PROJECT_NAME: 'bad-inherited-project',
+      },
+      envFilePath,
+      rootDir: tempDir,
+    });
+
+    assert.equal(env.COMPOSE_PROJECT_NAME, path.basename(tempDir));
+
+    const overriddenEnv = getComposeEnvironment({
+      baseEnv: {
+        PATH: 'test-path',
+        COMPOSE_PROJECT_NAME: 'bad-inherited-project',
+        DOCKER_WEB_COMPOSE_PROJECT_NAME: 'platform',
+      },
+      envFilePath,
+      rootDir: tempDir,
+    });
+
+    assert.equal(overriddenEnv.COMPOSE_PROJECT_NAME, 'platform');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

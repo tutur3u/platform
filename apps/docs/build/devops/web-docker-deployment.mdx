@@ -396,6 +396,9 @@ Operational notes for the containerized watcher:
 - Re-running `bun serve:web:docker:bg:watch` intentionally recreates the
   watcher container so it picks up local repo changes, new CLI args, and
   watcher-image updates in one path.
+- The host log follower treats Docker's `143` exit from an intentionally
+  recreated watcher container as a reconnect signal, then reattaches to the
+  replacement service instead of leaving the terminal dark.
 - Git fetch/pull credentials now need to be usable inside the watcher
   container because the watcher no longer runs directly on the host.
 - The watcher image lives at `apps/web/docker/blue-green-watcher.Dockerfile`.
@@ -534,6 +537,12 @@ Dashboard details:
   container-only path like `/workspace`. Otherwise Docker Desktop rejects bind
   mounts such as `./tmp/docker-web/prod/nginx.conf` with "mounts denied"
   because `/workspace/...` is not a real shared host path.
+- The watcher compose environment preserves `PLATFORM_HOST_WORKSPACE_DIR` and
+  pins `COMPOSE_PROJECT_NAME` from that host checkout path unless
+  `DOCKER_WEB_COMPOSE_PROJECT_NAME` is explicitly set. Do not inherit a
+  container-scoped Compose project name from the watcher container; doing so can
+  create duplicate service names such as nested `platform-markitdown-1`
+  containers during self-refresh.
 - Starting `bun serve:web:docker:bg:watch` now clears the persisted watcher
   lock/status snapshot before the watcher service is force-recreated, so a
   stale lock from the previous container cannot block the replacement watcher.

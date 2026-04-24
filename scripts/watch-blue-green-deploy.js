@@ -18,8 +18,10 @@ const {
   WEB_ENV_FILE,
 } = require('./docker-web/env.js');
 const {
+  getComposeServiceContainerId,
   getComposeCommandArgs,
   getComposeFile,
+  getContainerHealthStatus,
   runChecked,
   runCommand,
 } = require('./docker-web/compose.js');
@@ -179,15 +181,21 @@ function getWatcherComposeEnv({
   fsImpl = fs,
   rootDir = ROOT_DIR,
 } = {}) {
+  const hostWorkspaceDir =
+    typeof baseEnv[HOST_WORKSPACE_DIR_ENV] === 'string' &&
+    baseEnv[HOST_WORKSPACE_DIR_ENV].trim().length > 0
+      ? baseEnv[HOST_WORKSPACE_DIR_ENV].trim()
+      : rootDir;
+
   return {
     ...getComposeEnvironment({
       baseEnv,
       envFilePath,
       fsImpl,
-      rootDir,
+      rootDir: hostWorkspaceDir,
       withRedis: true,
     }),
-    [HOST_WORKSPACE_DIR_ENV]: rootDir,
+    [HOST_WORKSPACE_DIR_ENV]: hostWorkspaceDir,
   };
 }
 
@@ -292,6 +300,50 @@ async function startBlueGreenWatcherContainer(
   );
 }
 
+async function getWatcherContainerState({
+  env = process.env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+
+  let containerId = '';
+  try {
+    containerId = await getComposeServiceContainerId(
+      BLUE_GREEN_WATCHER_SERVICE,
+      {
+        composeFile: PROD_COMPOSE_FILE,
+        composeGlobalArgs: ['--profile', 'redis'],
+        env: composeEnv,
+        includeStopped: true,
+        runCommand: run,
+      }
+    );
+  } catch {
+    return 'missing';
+  }
+
+  if (!containerId) {
+    return 'missing';
+  }
+
+  try {
+    return await getContainerHealthStatus(containerId, {
+      env: composeEnv,
+      runCommand: run,
+    });
+  } catch {
+    return 'unknown';
+  }
+}
+
 async function streamBlueGreenWatcherLogs({
   env = process.env,
   envFilePath = WEB_ENV_FILE,
@@ -326,7 +378,11 @@ async function streamBlueGreenWatcherLogs({
     result.signal &&
     (result.signal === 'SIGINT' || result.signal === 'SIGTERM')
   ) {
-    return;
+    return { status: 'interrupted' };
+  }
+
+  if (result.code === 143) {
+    return { status: 'recreated' };
   }
 
   if (result.code !== 0) {
@@ -337,11 +393,27 @@ async function streamBlueGreenWatcherLogs({
         : 'Unable to stream watcher logs.'
     );
   }
+
+  return { status: 'completed' };
 }
 
 async function runWatcherCommand(argv = process.argv.slice(2), options = {}) {
   await startBlueGreenWatcherContainer(argv, options);
-  await streamBlueGreenWatcherLogs(options);
+
+  while (true) {
+    const result = await streamBlueGreenWatcherLogs(options);
+
+    if (result?.status !== 'recreated') {
+      return;
+    }
+
+    await sleep(options.reconnectDelayMs ?? 2_000);
+
+    const state = await getWatcherContainerState(options);
+    if (state === 'missing' || state === 'dead' || state === 'exited') {
+      await startBlueGreenWatcherContainer(argv, options);
+    }
+  }
 }
 
 function sleep(ms) {
@@ -3910,6 +3982,7 @@ module.exports = {
   getProdComposeServiceContainerId,
   getRevision,
   getTrackedUpstream,
+  getWatcherContainerState,
   getWatcherComposeEnv,
   getWatchPaths,
   hasDirtyWorktree,
