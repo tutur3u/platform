@@ -1562,6 +1562,27 @@
       "unknown": "Unknown"
     },
     "description": "Watch the blue/green watcher, rollout cadence, request flow, and container load from a single operator dashboard.",
+    "docker": {
+      "all_containers": "All running containers",
+      "cpu": "CPU",
+      "empty_containers": "No running Docker containers were captured in the latest watcher snapshot.",
+      "empty_services": "No compose service health rows were captured in the latest watcher snapshot.",
+      "inventory_title": "Docker Runtime Inventory",
+      "kicker": "Docker Runtime",
+      "memory": "Memory",
+      "monitored": "Monitored",
+      "running_count": "{count} running",
+      "running_for": "Running For",
+      "service": "Service",
+      "services_health": "Services health"
+    },
+    "docker_health": {
+      "healthy": "Healthy",
+      "none": "No healthcheck",
+      "starting": "Starting",
+      "unhealthy": "Unhealthy",
+      "unknown": "Unknown"
+    },
     "empty": {
       "containers": "No live container metrics are available yet.",
       "deployments": "No deployment history is available yet.",
@@ -1795,6 +1816,7 @@
     },
     "stats": {
       "active_color": "Active Color",
+      "all_running_containers": "All Docker containers seen by the watcher",
       "avg_build": "Average Build",
       "avg_latency": "Avg Latency",
       "cpu": "CPU",
@@ -1806,6 +1828,7 @@
       "network": "Network",
       "persisted_logs": "Persisted Logs",
       "requests_per_minute": "Requests per minute",
+      "running_containers": "Running Containers",
       "served_requests": "Served requests",
       "total_container_cpu": "Total container CPU",
       "total_container_memory": "Total container memory",

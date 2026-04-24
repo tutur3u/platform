@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -122,7 +122,7 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {

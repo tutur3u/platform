@@ -322,7 +322,12 @@ export function createPOST(
         normalizedMessages,
         normalizedWsId ?? undefined,
         chatId,
-        req
+        req,
+        {
+          attachYoutubeVideoInput:
+            resolvedModelId.toLowerCase().startsWith('google/') ||
+            resolvedModelId.toLowerCase().startsWith('google-vertex/'),
+        }
       );
       if ('error' in preparedMessages) {
         return preparedMessages.error;

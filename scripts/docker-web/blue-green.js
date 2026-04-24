@@ -7,6 +7,7 @@ const {
   hasComposeProfile,
   hasComposeServiceContainer,
   removeComposeServicesIfPresent,
+  runComposeUpWithNameConflictRecovery,
   runChecked,
   runCommand,
   stopComposeServicesIfPresent,
@@ -30,6 +31,7 @@ const BLUE_GREEN_DRAIN_STATUS_PATH = '/__platform/drain-status';
 const BLUE_GREEN_DRAIN_POLL_MS = 1_000;
 const BLUE_GREEN_DRAIN_TIMEOUT_MS = 5 * 60_000;
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
+const BLUE_GREEN_SUPPORT_SERVICES = ['markitdown', 'storage-unzip-proxy'];
 const BLUE_GREEN_COLORS = ['blue', 'green'];
 const BLUE_GREEN_PROXY_DRAIN_MS = 20_000;
 const BLUE_GREEN_PROXY_RESPONSE_BUFFER_SIZE = '128k';
@@ -223,7 +225,10 @@ function getBlueGreenProdServicesWithProxyOption(
   targetColor,
   includeProxy = true
 ) {
-  const services = [getBlueGreenServiceName(targetColor)];
+  const services = [
+    getBlueGreenServiceName(targetColor),
+    ...BLUE_GREEN_SUPPORT_SERVICES,
+  ];
 
   if (includeProxy) {
     services.unshift(BLUE_GREEN_PROXY_SERVICE);
@@ -525,6 +530,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     fsImpl: options.fsImpl ?? fs,
     rootDir: options.rootDir,
     withRedis: hasComposeProfile(parsed.composeGlobalArgs, 'redis'),
+    withSupportServices: true,
   });
   const fsImpl = options.fsImpl ?? fs;
   const paths = getBlueGreenPaths(options.rootDir ?? ROOT_DIR);
@@ -596,28 +602,28 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     runCommand: run,
   });
 
-  await runChecked(
-    'docker',
-    getComposeCommandArgs(
-      composeFile,
-      parsed.composeGlobalArgs,
+  const targetServices = getBlueGreenProdServicesWithProxyOption(
+    parsed,
+    targetColor,
+    needsProxyBootstrap
+  );
+
+  await runComposeUpWithNameConflictRecovery({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: targetEnv,
+    fsImpl,
+    runCommand: run,
+    services: targetServices,
+    upArgs: [
       'up',
       '--build',
       '--detach',
       '--remove-orphans',
       ...parsed.composeArgs,
-      ...getBlueGreenProdServicesWithProxyOption(
-        parsed,
-        targetColor,
-        needsProxyBootstrap
-      )
-    ),
-    {
-      env: targetEnv,
-      fsImpl,
-      runCommand: run,
-    }
-  );
+      ...targetServices,
+    ],
+  });
 
   await waitForComposeServiceHealthy(getBlueGreenServiceName(targetColor), {
     composeFile,
@@ -625,6 +631,15 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     env: targetEnv,
     runCommand: run,
   });
+
+  for (const serviceName of BLUE_GREEN_SUPPORT_SERVICES) {
+    await waitForComposeServiceHealthy(serviceName, {
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env: targetEnv,
+      runCommand: run,
+    });
+  }
 
   if (needsProxyBootstrap) {
     await waitForComposeServiceHealthy(BLUE_GREEN_PROXY_SERVICE, {
@@ -702,6 +717,7 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     fsImpl: options.fsImpl ?? fs,
     rootDir: options.rootDir,
     withRedis: hasComposeProfile(parsed.composeGlobalArgs, 'redis'),
+    withSupportServices: true,
   });
   const fsImpl = options.fsImpl ?? fs;
   const paths = getBlueGreenPaths(options.rootDir ?? ROOT_DIR);
@@ -752,24 +768,28 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     }
   );
 
-  await runChecked(
-    'docker',
-    getComposeCommandArgs(
-      composeFile,
-      parsed.composeGlobalArgs,
+  const standbyServices = getBlueGreenProdServicesWithProxyOption(
+    parsed,
+    standbyColor,
+    false
+  );
+
+  await runComposeUpWithNameConflictRecovery({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: standbyEnv,
+    fsImpl,
+    runCommand: run,
+    services: standbyServices,
+    upArgs: [
       'up',
       '--build',
       '--detach',
       '--remove-orphans',
       ...parsed.composeArgs,
-      ...getBlueGreenProdServicesWithProxyOption(parsed, standbyColor, false)
-    ),
-    {
-      env: standbyEnv,
-      fsImpl,
-      runCommand: run,
-    }
-  );
+      ...standbyServices,
+    ],
+  });
 
   await waitForComposeServiceHealthy(getBlueGreenServiceName(standbyColor), {
     composeFile,
@@ -777,6 +797,15 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     env: standbyEnv,
     runCommand: run,
   });
+
+  for (const serviceName of BLUE_GREEN_SUPPORT_SERVICES) {
+    await waitForComposeServiceHealthy(serviceName, {
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env: standbyEnv,
+      runCommand: run,
+    });
+  }
 
   writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
 
@@ -808,6 +837,7 @@ module.exports = {
   BLUE_GREEN_RUNTIME_DIR,
   BLUE_GREEN_STATE_FILE,
   BLUE_GREEN_STAMP_FILE,
+  BLUE_GREEN_SUPPORT_SERVICES,
   clearBlueGreenRuntime,
   ensureBlueGreenRuntime,
   generateBlueGreenDeploymentStamp,

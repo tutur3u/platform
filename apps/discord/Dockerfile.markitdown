@@ -1,0 +1,30 @@
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS deps
+
+WORKDIR /app
+
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+
+COPY pyproject.toml uv.lock README.md ./
+RUN uv sync --locked --no-dev
+
+FROM python:3.13-slim AS runner
+
+WORKDIR /app
+
+RUN addgroup --system app && adduser --system --ingroup app app
+
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PORT=8000
+
+COPY --from=deps --chown=app:app /app/.venv ./.venv
+COPY --chown=app:app local_server.py markitdown_service.py ./
+
+USER app
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD python -c "import os, urllib.request; urllib.request.urlopen(f'http://127.0.0.1:{os.environ.get(\"PORT\", \"8000\")}/health', timeout=3).read()" || exit 1
+
+CMD ["sh", "-c", "uvicorn local_server:app --host 0.0.0.0 --port ${PORT:-8000}"]

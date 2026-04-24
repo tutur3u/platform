@@ -30,6 +30,13 @@ export type BlueGreenMonitoringWatcherHealth =
 
 export type BlueGreenMonitoringStatus = 'degraded' | 'healthy' | 'offline';
 
+export type BlueGreenMonitoringDockerHealth =
+  | 'healthy'
+  | 'none'
+  | 'starting'
+  | 'unknown'
+  | 'unhealthy';
+
 export interface BlueGreenMonitoringEvent {
   level: string;
   message: string;
@@ -45,6 +52,32 @@ export interface BlueGreenMonitoringContainerResource {
   rxBytes: number | null;
   serviceName: string;
   txBytes: number | null;
+}
+
+export interface BlueGreenMonitoringDockerContainer {
+  containerId: string;
+  cpuPercent: number | null;
+  health: BlueGreenMonitoringDockerHealth;
+  image: string | null;
+  isMonitored: boolean;
+  memoryBytes: number | null;
+  name: string;
+  ports: string | null;
+  projectName: string | null;
+  runningFor: string | null;
+  rxBytes: number | null;
+  serviceName: string | null;
+  status: string | null;
+  txBytes: number | null;
+}
+
+export interface BlueGreenMonitoringServiceHealth {
+  containerId: string;
+  health: BlueGreenMonitoringDockerHealth;
+  name: string;
+  projectName: string | null;
+  serviceName: string;
+  status: string | null;
 }
 
 export interface BlueGreenMonitoringDeployment {
@@ -154,8 +187,10 @@ export interface BlueGreenMonitoringSnapshot {
   };
   deployments: BlueGreenMonitoringDeployment[];
   dockerResources: {
+    allContainers: BlueGreenMonitoringDockerContainer[];
     containers: BlueGreenMonitoringContainerResource[];
     message: string | null;
+    serviceHealth: BlueGreenMonitoringServiceHealth[];
     state: string;
     totalCpuPercent: number;
     totalMemoryBytes: number;

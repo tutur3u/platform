@@ -6,6 +6,8 @@ const COMPOSE_FILE = path.join(ROOT_DIR, 'docker-compose.web.yml');
 const PROD_COMPOSE_FILE = path.join(ROOT_DIR, 'docker-compose.web.prod.yml');
 const BLUE_GREEN_HEALTH_POLL_MS = 2_000;
 const BLUE_GREEN_HEALTH_TIMEOUT_MS = 180_000;
+const DOCKER_NAME_CONFLICT_PATTERN =
+  /container name\s+"\/?([^"]+)"\s+is already in use/giu;
 
 function getComposeFile(mode = 'dev') {
   return mode === 'prod' ? PROD_COMPOSE_FILE : COMPOSE_FILE;
@@ -91,6 +93,110 @@ async function runChecked(command, args, options = {}) {
   }
 
   return result;
+}
+
+function getComposeProjectName(composeFile, env = {}) {
+  if (
+    typeof env.COMPOSE_PROJECT_NAME === 'string' &&
+    env.COMPOSE_PROJECT_NAME.trim().length > 0
+  ) {
+    return env.COMPOSE_PROJECT_NAME.trim();
+  }
+
+  return path.basename(path.dirname(composeFile));
+}
+
+function getComposeServiceContainerName(serviceName, { composeFile, env }) {
+  return `${getComposeProjectName(composeFile, env)}-${serviceName}-1`;
+}
+
+function isExpectedComposeContainerName(containerName, expectedContainerNames) {
+  if (expectedContainerNames.has(containerName)) {
+    return true;
+  }
+
+  for (const expectedContainerName of expectedContainerNames) {
+    if (
+      new RegExp(
+        `^[0-9a-f]{12,64}_${escapeRegExp(expectedContainerName)}$`,
+        'iu'
+      ).test(containerName)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+}
+
+function parseDockerContainerNameConflicts(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  const conflicts = [];
+
+  for (const match of message.matchAll(DOCKER_NAME_CONFLICT_PATTERN)) {
+    if (match[1]) {
+      conflicts.push(match[1].replace(/^\/+/u, ''));
+    }
+  }
+
+  return conflicts;
+}
+
+async function runComposeUpWithNameConflictRecovery({
+  composeFile,
+  composeGlobalArgs = [],
+  env,
+  fsImpl,
+  runCommand: run,
+  services = [],
+  upArgs,
+}) {
+  const args = getComposeCommandArgs(composeFile, composeGlobalArgs, ...upArgs);
+  const expectedContainerNames = new Set(
+    services.map((serviceName) =>
+      getComposeServiceContainerName(serviceName, { composeFile, env })
+    )
+  );
+  const removedContainerNames = new Set();
+  const maxAttempts = Math.max(1, services.length + 1);
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      return await runChecked('docker', args, {
+        env,
+        fsImpl,
+        runCommand: run,
+      });
+    } catch (error) {
+      const conflictNames = parseDockerContainerNameConflicts(error).filter(
+        (containerName) =>
+          isExpectedComposeContainerName(
+            containerName,
+            expectedContainerNames
+          ) && !removedContainerNames.has(containerName)
+      );
+
+      if (conflictNames.length === 0 || attempt === maxAttempts - 1) {
+        throw error;
+      }
+
+      await runChecked('docker', ['rm', '-f', ...conflictNames], {
+        env,
+        fsImpl,
+        runCommand: run,
+      });
+
+      for (const containerName of conflictNames) {
+        removedContainerNames.add(containerName);
+      }
+    }
+  }
+
+  throw new Error('Unable to recover from Docker Compose name conflicts.');
 }
 
 async function getComposeServiceContainerId(
@@ -285,9 +391,11 @@ module.exports = {
   getComposeFile,
   getComposeServiceContainerId,
   getContainerHealthStatus,
+  getComposeServiceContainerName,
   hasComposeProfile,
   hasComposeServiceContainer,
   removeComposeServicesIfPresent,
+  runComposeUpWithNameConflictRecovery,
   runChecked,
   runCommand,
   stopComposeServicesIfPresent,

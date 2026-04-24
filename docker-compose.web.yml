@@ -111,6 +111,16 @@ services:
     image: hiett/serverless-redis-http:latest
     ports:
       - "8079:80"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'wget -q --spider --header="Authorization: Bearer $$SRH_TOKEN" http://127.0.0.1:80/ping || exit 1',
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
 
 volumes:
   platform-web-app-node_modules:

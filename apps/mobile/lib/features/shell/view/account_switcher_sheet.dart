@@ -48,8 +48,11 @@ class _AccountSwitcherSheet extends StatelessWidget {
 
         return AppDialogScaffold(
           title: context.l10n.authSwitchAccount,
-          description: context.l10n.authSwitchAccountDescription,
-          icon: Icons.swap_horiz_rounded,
+          headerTrailing: _AccountSwitcherActions(
+            onAddAccount: onAddAccount,
+            onManageAccounts: onManageAccounts,
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
           maxWidth: 420,
           maxHeightFactor: 0.76,
           actions: [
@@ -61,22 +64,6 @@ class _AccountSwitcherSheet extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                context.l10n.authSavedAccountsTitle,
-                style: shad.Theme.of(
-                  context,
-                ).typography.small.copyWith(fontWeight: FontWeight.w700),
-              ),
-              if (accounts.length > 1) ...[
-                const shad.Gap(4),
-                Text(
-                  context.l10n.authSavedAccountsDescription,
-                  style: shad.Theme.of(context).typography.textSmall.copyWith(
-                    color: shad.Theme.of(context).colorScheme.mutedForeground,
-                  ),
-                ),
-              ],
-              const shad.Gap(12),
               if (accounts.isEmpty)
                 _EmptyAccountsState(onAddAccount: onAddAccount)
               else
@@ -94,11 +81,6 @@ class _AccountSwitcherSheet extends StatelessWidget {
                     ],
                   ],
                 ),
-              const shad.Gap(12),
-              _AccountSwitcherActions(
-                onAddAccount: onAddAccount,
-                onManageAccounts: onManageAccounts,
-              ),
             ],
           ),
         );
@@ -162,12 +144,6 @@ class _AccountSelectionTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (isSelected) ...[
-                          const shad.Gap(8),
-                          _AccountStatusBadge(
-                            label: context.l10n.authCurrentAccountBadge,
-                          ),
-                        ],
                       ],
                     ),
                     if (subtitle != null) ...[
@@ -202,31 +178,6 @@ class _AccountSelectionTile extends StatelessWidget {
   }
 }
 
-class _AccountStatusBadge extends StatelessWidget {
-  const _AccountStatusBadge({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: theme.typography.xSmall.copyWith(
-          color: theme.colorScheme.primary,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}
-
 class _AccountSwitcherActions extends StatelessWidget {
   const _AccountSwitcherActions({
     required this.onAddAccount,
@@ -238,70 +189,37 @@ class _AccountSwitcherActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < 360;
-        final buttonWidth = isCompact
-            ? constraints.maxWidth
-            : (constraints.maxWidth - 10) / 2;
-
-        return Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            SizedBox(
-              width: buttonWidth,
-              child: shad.OutlineButton(
-                onPressed: onManageAccounts == null
-                    ? null
-                    : () async {
-                        Navigator.of(context).pop();
-                        await onManageAccounts?.call();
-                      },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.manage_accounts_rounded, size: 18),
-                    const shad.Gap(8),
-                    Flexible(
-                      child: Text(
-                        context.l10n.authManageAccounts,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(
-              width: buttonWidth,
-              child: shad.PrimaryButton(
-                onPressed: onAddAccount == null
-                    ? null
-                    : () async {
-                        Navigator.of(context).pop();
-                        await onAddAccount?.call();
-                      },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.add_rounded, size: 18),
-                    const shad.Gap(8),
-                    Flexible(
-                      child: Text(
-                        context.l10n.authAddAccount,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Tooltip(
+          message: context.l10n.authManageAccounts,
+          child: shad.OutlineButton(
+            density: shad.ButtonDensity.icon,
+            onPressed: onManageAccounts == null
+                ? null
+                : () async {
+                    Navigator.of(context).pop();
+                    await onManageAccounts?.call();
+                  },
+            child: const Icon(Icons.manage_accounts_rounded, size: 18),
+          ),
+        ),
+        const shad.Gap(10),
+        Tooltip(
+          message: context.l10n.authAddAccount,
+          child: shad.PrimaryButton(
+            density: shad.ButtonDensity.icon,
+            onPressed: onAddAccount == null
+                ? null
+                : () async {
+                    Navigator.of(context).pop();
+                    await onAddAccount?.call();
+                  },
+            child: const Icon(Icons.add_rounded, size: 18),
+          ),
+        ),
+      ],
     );
   }
 }

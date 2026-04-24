@@ -10,6 +10,7 @@ const {
   BLUE_GREEN_PROXY_SERVICE,
   BLUE_GREEN_RUNTIME_DIR,
   BLUE_GREEN_STATE_FILE,
+  BLUE_GREEN_SUPPORT_SERVICES,
   clearBlueGreenRuntime,
   ensureBlueGreenRuntime,
   getBlueGreenPaths,
@@ -33,9 +34,11 @@ const {
   getComposeCommandArgs,
   getComposeFile,
   getComposeServiceContainerId,
+  getComposeServiceContainerName,
   getContainerHealthStatus,
   hasComposeProfile,
   hasComposeServiceContainer,
+  runComposeUpWithNameConflictRecovery,
   runChecked,
   runCommand,
   stopComposeServicesIfPresent,
@@ -43,6 +46,9 @@ const {
 } = require('./docker-web/compose.js');
 const {
   DOCKER_HOST_ALIAS,
+  DOCKER_MARKITDOWN_ENDPOINT_URL,
+  DOCKER_MARKITDOWN_SERVICE_URL,
+  DOCKER_STORAGE_UNZIP_PROXY_URL,
   WEB_ENV_FILE,
   ensureProductionRedisToken,
   ensureRequiredComposeEnvironment,
@@ -440,23 +446,21 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     );
   }
 
-  await runChecked(
-    'docker',
-    getComposeCommandArgs(
-      composeFile,
-      parsed.composeGlobalArgs,
+  await runComposeUpWithNameConflictRecovery({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: composeEnv,
+    fsImpl,
+    runCommand: run,
+    services: parsed.mode === 'prod' ? getInPlaceProdServices(parsed) : [],
+    upArgs: [
       'up',
       '--build',
       '--remove-orphans',
       ...parsed.composeArgs,
-      ...(parsed.mode === 'prod' ? getInPlaceProdServices(parsed) : [])
-    ),
-    {
-      env: composeEnv,
-      fsImpl,
-      runCommand: run,
-    }
-  );
+      ...(parsed.mode === 'prod' ? getInPlaceProdServices(parsed) : []),
+    ],
+  });
 }
 
 async function main(argv = process.argv.slice(2), options = {}) {
@@ -483,8 +487,12 @@ module.exports = {
   BLUE_GREEN_PROXY_SERVICE,
   BLUE_GREEN_RUNTIME_DIR,
   BLUE_GREEN_STATE_FILE,
+  BLUE_GREEN_SUPPORT_SERVICES,
   COMPOSE_FILE,
   DOCKER_HOST_ALIAS,
+  DOCKER_MARKITDOWN_ENDPOINT_URL,
+  DOCKER_MARKITDOWN_SERVICE_URL,
+  DOCKER_STORAGE_UNZIP_PROXY_URL,
   DEFAULT_BUILDER_NAME,
   PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
@@ -500,6 +508,7 @@ module.exports = {
   getComposeEnvironment,
   getComposeFile,
   getComposeServiceContainerId,
+  getComposeServiceContainerName,
   getContainerHealthStatus,
   getInPlaceProdServices,
   getNextBlueGreenColor,
@@ -515,6 +524,7 @@ module.exports = {
   resolveBlueGreenActiveColor,
   rewriteLocalhostUrl,
   runDockerWebWorkflow,
+  runComposeUpWithNameConflictRecovery,
   runChecked,
   stripUnquotedInlineComment,
   testBlueGreenProxyRouting,

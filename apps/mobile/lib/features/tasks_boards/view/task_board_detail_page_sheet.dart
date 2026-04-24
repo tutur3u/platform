@@ -10,6 +10,11 @@ class _TaskBoardTaskEditorSheet extends StatefulWidget {
     required this.members,
     required this.projects,
     required this.isPersonalWorkspace,
+    this.embedded = false,
+    this.embeddedSection = _TaskBoardTaskDetailSection.information,
+    this.embeddedMinHeight,
+    this.onTaskChanged,
+    super.key,
   });
 
   final TaskBoardTask? task;
@@ -20,6 +25,10 @@ class _TaskBoardTaskEditorSheet extends StatefulWidget {
   final List<WorkspaceUserOption> members;
   final List<TaskProjectSummary> projects;
   final bool isPersonalWorkspace;
+  final bool embedded;
+  final _TaskBoardTaskDetailSection embeddedSection;
+  final double? embeddedMinHeight;
+  final ValueChanged<TaskBoardTask>? onTaskChanged;
 
   @override
   State<_TaskBoardTaskEditorSheet> createState() =>
@@ -37,13 +46,14 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
 
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
-  late final String _initialName;
-  late final String? _initialDescription;
-  late final String _initialPriority;
-  late final int? _initialEstimationPoints;
-  late final Set<String> _initialAssigneeIds;
-  late final Set<String> _initialLabelIds;
-  late final Set<String> _initialProjectIds;
+  late final TaskBoardDetailCubit _taskCubit;
+  late String _initialName;
+  late String? _initialDescription;
+  late String _initialPriority;
+  late int? _initialEstimationPoints;
+  late Set<String> _initialAssigneeIds;
+  late Set<String> _initialLabelIds;
+  late Set<String> _initialProjectIds;
   DateTime? _initialStartDate;
   DateTime? _initialEndDate;
   late String _priority;
@@ -66,12 +76,13 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
   bool _isSaving = false;
   bool _isMoving = false;
   bool _isDeleting = false;
+  Timer? _descriptionAutosaveTimer;
+  bool _isAutosavingDescription = false;
 
   bool get _isCreate => widget.task == null;
 
   bool get _isTaskDescriptionEditingEnabled {
-    return Env.isDevelopment ||
-        (Env.isTaskDescriptionEditingEnabled && widget.isPersonalWorkspace);
+    return true;
   }
 
   bool get _isBusy {
@@ -160,6 +171,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
   @override
   void initState() {
     super.initState();
+    _taskCubit = context.read<TaskBoardDetailCubit>();
     final task = widget.task;
     _nameController = TextEditingController(text: task?.name ?? '');
     final initialDescriptionText =
@@ -199,6 +211,8 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
 
   @override
   void dispose() {
+    _descriptionAutosaveTimer?.cancel();
+    _persistPendingDescriptionOnDispose();
     _nameController.removeListener(_handleFormFieldChanged);
     _descriptionController.removeListener(_handleFormFieldChanged);
     _nameController.dispose();
@@ -213,6 +227,10 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.embedded) {
+      return _buildEmbeddedEditor(context);
+    }
+
     final theme = shad.Theme.of(context);
     final sheetTitle = _isCreate
         ? context.l10n.taskBoardDetailCreateTask
@@ -329,10 +347,22 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
   }
 
   Widget _buildDetailsTab(BuildContext context) {
+    return _buildDetailsFields(
+      context,
+      includeListPicker: _isCreate,
+      includeDescriptionShortcut: true,
+    );
+  }
+
+  Widget _buildDetailsFields(
+    BuildContext context, {
+    required bool includeListPicker,
+    required bool includeDescriptionShortcut,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (_isCreate) ...[
+        if (includeListPicker) ...[
           _SelectionFieldButton(
             label: context.l10n.taskBoardDetailTaskListLabel,
             value: _selectedListLabel(context),
@@ -352,7 +382,8 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                 autofocus: _isCreate,
                 onSubmitted: (_) => unawaited(_saveTask()),
               ),
-              if (_isTaskDescriptionEditingEnabled) ...[
+              if (includeDescriptionShortcut &&
+                  _isTaskDescriptionEditingEnabled) ...[
                 const shad.Gap(10),
                 _EditFieldButton(
                   label: context.l10n.taskBoardDetailTaskEditDescription,
@@ -360,7 +391,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                       ? null
                       : () => unawaited(_openDescriptionEditor(context)),
                 ),
-              ] else ...[
+              ] else if (includeDescriptionShortcut) ...[
                 const shad.Gap(10),
                 Text(
                   Env.isTaskDescriptionEditingEnabled
@@ -446,6 +477,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                   _selectedAssigneeIds = nextSelectedIds;
                 }),
               ),
+              _SelectedAssigneesList(assignees: _selectedAssignees()),
               const shad.Gap(8),
               _FilterDropdownSection(
                 title: context.l10n.taskBoardDetailTaskLabels,
@@ -473,6 +505,124 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     );
   }
 
+  Widget _buildEmbeddedEditor(BuildContext context) {
+    final section = widget.embeddedSection;
+    final minHeight = widget.embeddedMinHeight;
+
+    final editor = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (section == _TaskBoardTaskDetailSection.description)
+          _buildEmbeddedSaveBar(context),
+        switch (section) {
+          _TaskBoardTaskDetailSection.information => _buildDetailsFields(
+            context,
+            includeListPicker: false,
+            includeDescriptionShortcut: false,
+          ),
+          _TaskBoardTaskDetailSection.description =>
+            _buildEmbeddedDescriptionEditor(context),
+          _TaskBoardTaskDetailSection.relationships => _buildRelationshipsTab(
+            context,
+          ),
+        },
+        if (section == _TaskBoardTaskDetailSection.information)
+          _buildEmbeddedSaveBar(context),
+      ],
+    );
+
+    if (minHeight == null || minHeight <= 0) {
+      return editor;
+    }
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(minHeight: minHeight),
+      child: editor,
+    );
+  }
+
+  Widget _buildEmbeddedDescriptionEditor(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    if (!_isTaskDescriptionEditingEnabled) {
+      return _EditorSectionCard(
+        child: Text(
+          Env.isTaskDescriptionEditingEnabled
+              ? context.l10n.taskBoardDetailTaskDescriptionPersonalOnly
+              : context.l10n.taskBoardDetailTaskDescriptionComingSoon,
+          style: theme.typography.small.copyWith(
+            color: theme.colorScheme.mutedForeground,
+          ),
+        ),
+      );
+    }
+
+    final fallbackHeight = MediaQuery.sizeOf(context).height - 260;
+    final editorHeight = math.max<double>(
+      460,
+      math.max<double>(fallbackHeight, widget.embeddedMinHeight ?? 0),
+    );
+
+    return SizedBox(
+      height: editorHeight,
+      child: _TaskDescriptionRichEditor(
+        initialValue: _descriptionController.text,
+        enabled: !_isBusy,
+        framed: false,
+        hintText: context.l10n.taskBoardDetailTaskDescriptionHint,
+        onChanged: (value) {
+          if (_descriptionController.text != value) {
+            _descriptionController.text = value;
+            _scheduleEmbeddedDescriptionAutosave();
+          }
+        },
+        onRequestImageUpload: _isBusy
+            ? null
+            : () => _uploadDescriptionInlineImage(context),
+      ),
+    );
+  }
+
+  Widget _buildEmbeddedSaveBar(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final canSave = _canSave;
+    final showBar = _hasTaskChanges || _isSaving;
+
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeInOut,
+      child: showBar
+          ? Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.secondary.withValues(alpha: 0.24),
+                  border: Border.all(color: theme.colorScheme.border),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Spacer(),
+                    shad.PrimaryButton(
+                      onPressed: canSave ? _saveTask : null,
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: shad.CircularProgressIndicator(),
+                            )
+                          : Text(context.l10n.commonSave),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : const SizedBox.shrink(),
+    );
+  }
+
   Widget _buildRelationshipsTab(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -496,6 +646,9 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
             if (_relationships.parentTask != null)
               _RelationshipTaskTile(
                 task: _relationships.parentTask!,
+                onNavigate: widget.embedded
+                    ? () => _navigateToRelatedTask(_relationships.parentTask!)
+                    : null,
                 onRemove: _isBusy
                     ? null
                     : () =>
@@ -530,6 +683,9 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                 padding: const EdgeInsets.only(top: 8),
                 child: _RelationshipTaskTile(
                   task: task,
+                  onNavigate: widget.embedded
+                      ? () => _navigateToRelatedTask(task)
+                      : null,
                   onRemove: _isBusy
                       ? null
                       : () => _removeChildRelationship(task),
@@ -560,6 +716,9 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                 padding: const EdgeInsets.only(top: 8),
                 child: _RelationshipTaskTile(
                   task: task,
+                  onNavigate: widget.embedded
+                      ? () => _navigateToRelatedTask(task)
+                      : null,
                   onRemove: _isBusy
                       ? null
                       : () => _removeBlockedByRelationship(task),
@@ -590,6 +749,9 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                 padding: const EdgeInsets.only(top: 8),
                 child: _RelationshipTaskTile(
                   task: task,
+                  onNavigate: widget.embedded
+                      ? () => _navigateToRelatedTask(task)
+                      : null,
                   onRemove: _isBusy
                       ? null
                       : () => _removeBlockingRelationship(task),
@@ -620,6 +782,9 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                 padding: const EdgeInsets.only(top: 8),
                 child: _RelationshipTaskTile(
                   task: task,
+                  onNavigate: widget.embedded
+                      ? () => _navigateToRelatedTask(task)
+                      : null,
                   onRemove: _isBusy
                       ? null
                       : () => _removeRelatedRelationship(task),
@@ -640,6 +805,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
   }
 
   Future<void> _saveTask() async {
+    _descriptionAutosaveTimer?.cancel();
     await _saveTaskEditorTask(this);
   }
 
@@ -721,6 +887,16 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
 
   Future<void> _closeEditor() async {
     await _closeTaskEditor(this);
+  }
+
+  void _navigateToRelatedTask(RelatedTaskInfo linkedTask) {
+    final linkedBoardId = linkedTask.boardId?.trim();
+    final targetBoardId = linkedBoardId?.isNotEmpty == true
+        ? linkedBoardId!
+        : widget.board.id;
+    GoRouter.of(
+      context,
+    ).go(Routes.taskBoardTaskDetailPath(targetBoardId, linkedTask.id));
   }
 
   Future<void> _openDescriptionEditor(BuildContext context) async {
@@ -844,6 +1020,100 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     setState(updates);
   }
 
+  void _markCurrentValuesSaved() {
+    _initialName = _nameController.text.trim();
+    _initialDescription = normalizeTaskDescriptionPayload(
+      _descriptionController.text,
+    );
+    _initialPriority = _priority;
+    _initialEstimationPoints = _estimationPoints;
+    _initialAssigneeIds = {..._selectedAssigneeIds};
+    _initialLabelIds = {..._selectedLabelIds};
+    _initialProjectIds = {..._selectedProjectIds};
+    _initialStartDate = _startDate;
+    _initialEndDate = _endDate;
+  }
+
+  void _markDescriptionSaved() {
+    _initialDescription = normalizeTaskDescriptionPayload(
+      _descriptionController.text,
+    );
+  }
+
+  void _scheduleEmbeddedDescriptionAutosave() {
+    if (!widget.embedded || widget.task == null) {
+      return;
+    }
+
+    _descriptionAutosaveTimer?.cancel();
+    _descriptionAutosaveTimer = Timer(
+      const Duration(seconds: 5),
+      () => unawaited(_persistEmbeddedDescriptionAutosave()),
+    );
+  }
+
+  Future<void> _persistEmbeddedDescriptionAutosave() async {
+    final task = widget.task;
+    if (task == null || _isAutosavingDescription || _isSaving) {
+      return;
+    }
+
+    final description = normalizeTaskDescriptionPayload(
+      _descriptionController.text,
+    );
+    if (description == _initialDescription) {
+      return;
+    }
+
+    _isAutosavingDescription = true;
+    try {
+      await _taskCubit.updateTaskDescriptionRealtime(
+        taskId: task.id,
+        description: description,
+      );
+      if (!mounted) return;
+      _markDescriptionSaved();
+      final refreshedTask = _findTaskEditorTaskInState(
+        _taskCubit.state,
+        task.id,
+      );
+      if (refreshedTask != null) {
+        widget.onTaskChanged?.call(refreshedTask);
+      }
+      setState(() {});
+    } on Exception catch (error) {
+      debugPrint('Task description autosave failed: $error');
+    } finally {
+      _isAutosavingDescription = false;
+    }
+  }
+
+  void _persistPendingDescriptionOnDispose() {
+    final task = widget.task;
+    if (!widget.embedded || task == null) {
+      return;
+    }
+
+    final description = normalizeTaskDescriptionPayload(
+      _descriptionController.text,
+    );
+    if (description == _initialDescription) {
+      return;
+    }
+
+    unawaited(
+      _taskCubit
+          .updateTaskDescriptionRealtime(
+            taskId: task.id,
+            description: description,
+          )
+          .catchError((Object error, StackTrace stackTrace) {
+            debugPrint('Task description close persist failed: $error');
+            return null;
+          }),
+    );
+  }
+
   String _normalizePriority(String? value) {
     return _normalizeTaskPriority(value, _priorityOptions);
   }
@@ -897,6 +1167,38 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
             avatarUrl: member.avatarUrl,
           ),
         )
+        .toList(growable: false);
+  }
+
+  List<TaskBoardTaskAssignee> _selectedAssignees() {
+    final membersById = {
+      for (final member in widget.members) member.id: member,
+    };
+    final taskAssigneesById = {
+      for (final assignee
+          in widget.task?.assignees ?? const <TaskBoardTaskAssignee>[])
+        assignee.id: assignee,
+    };
+
+    return _selectedAssigneeIds
+        .map((id) {
+          final member = membersById[id];
+          if (member != null) {
+            return TaskBoardTaskAssignee(
+              id: member.id,
+              displayName: member.label,
+              email: member.email,
+              avatarUrl: member.avatarUrl,
+            );
+          }
+
+          final assignee = taskAssigneesById[id];
+          if (assignee != null) {
+            return assignee;
+          }
+
+          return TaskBoardTaskAssignee(id: id);
+        })
         .toList(growable: false);
   }
 

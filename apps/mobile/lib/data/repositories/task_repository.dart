@@ -480,6 +480,7 @@ class TaskRepository {
                 (member) => TaskBoardTaskAssignee(
                   id: member.id,
                   displayName: member.displayName,
+                  email: member.email,
                   avatarUrl: member.avatarUrl,
                 ),
               )

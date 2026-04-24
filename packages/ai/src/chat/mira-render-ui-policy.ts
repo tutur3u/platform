@@ -185,6 +185,9 @@ const DISALLOWED_WORKSPACE_QUALIFIERS = new Set([
   'my',
 ]);
 
+const YOUTUBE_URL_REGEX =
+  /https?:\/\/(?:www\.|m\.|music\.)?(?:youtube\.com|youtube-nocookie\.com)\/\S+|https?:\/\/(?:www\.)?youtu\.be\/\S+/i;
+
 function normalizeWorkspaceQualifierCandidate(candidate: string): string {
   return candidate
     .trim()
@@ -257,6 +260,14 @@ export function shouldForceGoogleSearchForLatestUserMessage(
 
     const text = extractTextFromUserMessage(message).toLowerCase();
     if (!text) return false;
+
+    if (YOUTUBE_URL_REGEX.test(text)) {
+      return false;
+    }
+
+    if (/\b(no|without|don'?t|do not)\s+google\s+search\b/.test(text)) {
+      return false;
+    }
 
     const hasExplicitWebLookupRequest =
       /\b(google search|search (?:the )?(?:web|internet|online)|web search|internet search|look ?up (?:on )?(?:the )?(?:web|internet|online)|find (?:online|on the web))\b/.test(

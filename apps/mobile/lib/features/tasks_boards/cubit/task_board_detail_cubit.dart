@@ -379,6 +379,67 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     );
   }
 
+  Future<void> updateTaskDescriptionRealtime({
+    required String taskId,
+    required String? description,
+  }) async {
+    final wsId = state.workspaceId;
+    final boardId = state.boardId;
+    final board = state.board;
+    if (wsId == null || boardId == null || board == null) {
+      throw StateError('Board detail is not initialized');
+    }
+
+    await _taskRepository.updateTaskDescription(
+      wsId: wsId,
+      taskId: taskId,
+      description: description,
+    );
+
+    if (state.workspaceId != wsId || state.boardId != boardId) {
+      return;
+    }
+
+    final currentBoard = state.board;
+    if (currentBoard == null) {
+      return;
+    }
+
+    var taskFound = false;
+    final nextTasks = currentBoard.tasks
+        .map((task) {
+          if (task.id != taskId) {
+            return task;
+          }
+          taskFound = true;
+          return task.copyWith(description: description);
+        })
+        .toList(growable: false);
+
+    if (!taskFound) {
+      return;
+    }
+
+    final nextBoard = currentBoard.copyWith(tasks: nextTasks);
+    final nextTasksByList = _mergeCurrentBoardTaskSnapshots(
+      board: nextBoard,
+      tasksByList: state.listTasksByListId,
+    );
+    final finalBoard = nextBoard.copyWith(
+      tasks: _flattenTasks(nextBoard.lists, nextTasksByList),
+    );
+
+    emit(
+      state.copyWith(
+        board: finalBoard,
+        taskDescriptionSearchIndex: _buildTaskDescriptionSearchIndex(
+          finalBoard.tasks,
+        ),
+        listTasksByListId: nextTasksByList,
+      ),
+    );
+  }
+
   Future<void> moveTask({
     required String taskId,
     required String listId,

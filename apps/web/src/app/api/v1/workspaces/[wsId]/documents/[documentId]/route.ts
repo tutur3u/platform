@@ -93,6 +93,31 @@ export async function PATCH(req: Request, { params }: Params) {
   );
 }
 
+export async function GET(request: Request, { params }: Params) {
+  const sbAdmin = await createAdminClient();
+  const { wsId: wsIdParam, documentId } = await params;
+  const auth = await authorizeDocumentsRequest(request, wsIdParam);
+  if ('error' in auth) return auth.error;
+
+  const { data, error } = await sbAdmin
+    .from('workspace_documents')
+    .select('id, name, content, is_public, created_at')
+    .eq('id', documentId)
+    .eq('ws_id', auth.wsId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error loading document:', error.message);
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  if (!data) {
+    return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+  }
+
+  return NextResponse.json({ data });
+}
+
 export async function DELETE(request: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
   const { wsId: wsIdParam, documentId } = await params;

@@ -63,6 +63,7 @@ const {
   readWatchStatus,
   terminateExistingWatcher,
   clearPendingDeployRequest,
+  getWatcherContainerState,
   getLatestSuccessfulDeploymentCommitHash,
   hasPersistedPendingDeployRequest,
   writePendingDeployRequest,
@@ -71,6 +72,42 @@ const {
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const PROD_COMPOSE_FILE = path.join(ROOT_DIR, 'docker-compose.web.prod.yml');
+
+test('watcher restart globs include blue-green service wiring files', () => {
+  assert.ok(SELF_WATCHED_FILES.includes('scripts/docker-web/blue-green.js'));
+  assert.ok(SELF_WATCHED_FILES.includes('scripts/docker-web/env.js'));
+  assert.ok(
+    CONTAINER_REFRESH_WATCHED_FILES.includes('docker-compose.web.prod.yml')
+  );
+  assert.ok(
+    CONTAINER_REFRESH_WATCHED_FILES.includes(
+      'apps/discord/Dockerfile.markitdown'
+    )
+  );
+  assert.ok(
+    CONTAINER_REFRESH_WATCHED_FILES.includes('apps/discord/local_server.py')
+  );
+  assert.ok(
+    CONTAINER_REFRESH_WATCHED_FILES.includes(
+      'apps/discord/markitdown_service.py'
+    )
+  );
+  assert.ok(
+    CONTAINER_REFRESH_WATCHED_FILES.includes(
+      'apps/storage-unzip-proxy/Dockerfile'
+    )
+  );
+  assert.ok(
+    CONTAINER_REFRESH_WATCHED_FILES.includes(
+      'apps/storage-unzip-proxy/package.json'
+    )
+  );
+  assert.ok(
+    CONTAINER_REFRESH_WATCHED_FILES.includes(
+      'apps/storage-unzip-proxy/src/server.js'
+    )
+  );
+});
 
 function createResult(stdout = '', { code = 0, stderr = '' } = {}) {
   return {
@@ -96,6 +133,10 @@ function createRunCommandMock(responses) {
 
 function prodComposePsKey(serviceName) {
   return `docker compose -f ${PROD_COMPOSE_FILE} ps -q ${serviceName}`;
+}
+
+function prodComposePsAllKey(serviceName) {
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q ${serviceName}`;
 }
 
 function prodComposeWatcherUpKey() {
@@ -1431,12 +1472,24 @@ test('loadRuntimeSnapshot keeps both live colors marked active in deployment car
           [prodComposePsKey('web-green'), createResult('green-123\n')],
           [prodComposePsKey('web-blue'), createResult('blue-123\n')],
           [
-            'docker stats --no-stream --format {{.ID}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.Name}} proxy-123 blue-123 green-123',
+            'docker ps --format {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}\t{{.Ports}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project"}}',
+            createResult(
+              [
+                `proxy-123\tplatform-web-proxy-1\tnginx:1.27-alpine\tUp 4 minutes (healthy)\t4 minutes\t0.0.0.0:7803->7803/tcp\tweb-proxy\t${path.basename(tempDir)}`,
+                `blue-123\tplatform-web-blue-1\tplatform-web\tUp 3 minutes\t3 minutes\t\tweb-blue\t${path.basename(tempDir)}`,
+                `green-123\tplatform-web-green-1\tplatform-web\tUp 6 minutes (healthy)\t6 minutes\t\tweb-green\t${path.basename(tempDir)}`,
+                `markitdown-123\tplatform-markitdown-1\tplatform-markitdown\tUp 2 minutes (healthy)\t2 minutes\t\tmarkitdown\t${path.basename(tempDir)}`,
+              ].join('\n')
+            ),
+          ],
+          [
+            'docker stats --no-stream --format {{.ID}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.Name}} proxy-123 blue-123 green-123 markitdown-123',
             createResult(
               [
                 'proxy-123\t0.10%\t24.0MiB / 31.1GiB\t2.00MB / 3.00MB\tplatform-web-proxy-1',
                 'blue-123\t1.20%\t150MiB / 31.1GiB\t6.00MB / 4.00MB\tplatform-web-blue-1',
                 'green-123\t3.40%\t420MiB / 31.1GiB\t10.0MB / 8.00MB\tplatform-web-green-1',
+                'markitdown-123\t0.30%\t96MiB / 31.1GiB\t1.00MB / 1.00MB\tplatform-markitdown-1',
               ].join('\n')
             ),
           ],
@@ -1453,6 +1506,14 @@ test('loadRuntimeSnapshot keeps both live colors marked active in deployment car
     assert.equal(snapshot.deployments[2].runtimeState, null);
     assert.equal(snapshot.dockerResources.state, 'live');
     assert.equal(snapshot.dockerResources.containers.length, 3);
+    assert.equal(snapshot.dockerResources.allContainers.length, 4);
+    assert.equal(snapshot.dockerResources.serviceHealth.length, 4);
+    assert.equal(
+      snapshot.dockerResources.serviceHealth.find(
+        (service) => service.serviceName === 'markitdown'
+      )?.health,
+      'healthy'
+    );
     assert.equal(snapshot.dockerResources.totalCpuPercent, 4.7);
     assert.match(
       stripAnsi(
@@ -1604,6 +1665,7 @@ test('runDeployWatchIteration skips dirty worktrees before fetch and still repor
       'git status --porcelain',
       prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
       `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`,
+      'docker ps --format {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}\t{{.Ports}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project"}}',
       prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
       `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`,
     ]);
@@ -2056,11 +2118,27 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         createResult(''),
       ],
       [
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue redis serverless-redis-http`,
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue markitdown storage-unzip-proxy redis serverless-redis-http`,
         createResult(''),
       ],
       [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q markitdown`,
+        createResult('markitdown-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q storage-unzip-proxy`,
+        createResult('storage-unzip-123\n'),
+      ],
+      [
         `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} markitdown-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} storage-unzip-123`,
         createResult('healthy\n'),
       ],
       [
@@ -2137,7 +2215,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f web-blue`
       ) <
         calls.indexOf(
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue redis serverless-redis-http`
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue markitdown storage-unzip-proxy redis serverless-redis-http`
         )
     );
     assert.ok(
@@ -2255,11 +2333,27 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
           createResult(''),
         ],
         [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue redis serverless-redis-http`,
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue markitdown storage-unzip-proxy redis serverless-redis-http`,
           createResult(''),
         ],
         [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q markitdown`,
+          createResult('markitdown-123\n'),
+        ],
+        [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q storage-unzip-proxy`,
+          createResult('storage-unzip-123\n'),
+        ],
+        [
           `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123`,
+          createResult('healthy\n'),
+        ],
+        [
+          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} markitdown-123`,
+          createResult('healthy\n'),
+        ],
+        [
+          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} storage-unzip-123`,
           createResult('healthy\n'),
         ],
         [
@@ -2691,6 +2785,7 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
     assert.equal(fs.existsSync(paths.lockFile), false);
     assert.equal(fs.existsSync(paths.statusFile), false);
     assert.equal(envs[1][HOST_WORKSPACE_DIR_ENV], tempDir);
+    assert.equal(envs[1].COMPOSE_PROJECT_NAME, path.basename(tempDir));
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -2703,6 +2798,30 @@ test('getWatcherComposeEnv injects the mirrored host workspace path', () => {
   });
 
   assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], '/tmp/platform-worktree');
+  assert.equal(composeEnv.COMPOSE_PROJECT_NAME, 'platform-worktree');
+});
+
+test('getWatcherComposeEnv preserves the existing host workspace path when running in a container', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-host-path-'));
+  const hostWorkspaceDir = path.join(tempDir, 'home', 'sokora', 'platform');
+
+  try {
+    fs.mkdirSync(hostWorkspaceDir, { recursive: true });
+
+    const composeEnv = getWatcherComposeEnv({
+      baseEnv: {
+        PATH: 'test-path',
+        COMPOSE_PROJECT_NAME: 'bad-container-project',
+        [HOST_WORKSPACE_DIR_ENV]: hostWorkspaceDir,
+      },
+      rootDir: '/workspace',
+    });
+
+    assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], hostWorkspaceDir);
+    assert.equal(composeEnv.COMPOSE_PROJECT_NAME, 'platform');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('clearContainerManagedWatcherState removes persisted lock and status files', () => {
@@ -2764,7 +2883,7 @@ test('pending deploy requests persist across restarts and can be cleared explici
 test('streamBlueGreenWatcherLogs follows the watcher service output', async () => {
   const calls = [];
 
-  await streamBlueGreenWatcherLogs({
+  const result = await streamBlueGreenWatcherLogs({
     env: {
       PATH: process.env.PATH,
       NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:8001',
@@ -2776,9 +2895,11 @@ test('streamBlueGreenWatcherLogs follows the watcher service output', async () =
       existsSync() {
         return true;
       },
+      mkdirSync() {},
       readFileSync() {
         return '';
       },
+      writeFileSync() {},
     },
     runCommand: async (command, args) => {
       calls.push(`${command} ${args.join(' ')}`);
@@ -2786,7 +2907,33 @@ test('streamBlueGreenWatcherLogs follows the watcher service output', async () =
     },
   });
 
+  assert.deepEqual(result, { status: 'completed' });
   assert.deepEqual(calls, [prodComposeWatcherLogsKey()]);
+});
+
+test('streamBlueGreenWatcherLogs treats watcher self-recreate exits as reconnectable', async () => {
+  const result = await streamBlueGreenWatcherLogs({
+    env: {
+      PATH: process.env.PATH,
+      NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:8001',
+      SUPABASE_SERVER_URL: 'http://localhost:8001',
+      UPSTASH_REDIS_REST_TOKEN: 'token',
+      UPSTASH_REDIS_REST_URL: 'http://serverless-redis-http:80',
+    },
+    fsImpl: {
+      existsSync() {
+        return true;
+      },
+      mkdirSync() {},
+      readFileSync() {
+        return '';
+      },
+      writeFileSync() {},
+    },
+    runCommand: async () => createResult('', { code: 143 }),
+  });
+
+  assert.deepEqual(result, { status: 'recreated' });
 });
 
 test('runWatcherCommand boots the watcher container before tailing logs', async () => {
@@ -2816,6 +2963,119 @@ test('runWatcherCommand boots the watcher container before tailing logs', async 
     assert.deepEqual(calls, [
       'docker compose version',
       prodComposeWatcherUpKey(),
+      prodComposeWatcherLogsKey(),
+    ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getWatcherContainerState reads stopped watcher containers by compose service', async () => {
+  const calls = [];
+  const state = await getWatcherContainerState({
+    env: {
+      PATH: process.env.PATH,
+      NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:8001',
+      SUPABASE_SERVER_URL: 'http://localhost:8001',
+      UPSTASH_REDIS_REST_TOKEN: 'token',
+      UPSTASH_REDIS_REST_URL: 'http://serverless-redis-http:80',
+    },
+    fsImpl: {
+      existsSync() {
+        return true;
+      },
+      mkdirSync() {},
+      readFileSync() {
+        return '';
+      },
+      writeFileSync() {},
+    },
+    runCommand: async (command, args) => {
+      calls.push(`${command} ${args.join(' ')}`);
+
+      if (calls.at(-1) === prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE)) {
+        return createResult('watcher-123\n');
+      }
+
+      if (
+        calls.at(-1) ===
+        'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123'
+      ) {
+        return createResult('exited\n');
+      }
+
+      throw new Error(`Unexpected command: ${calls.at(-1)}`);
+    },
+  });
+
+  assert.equal(state, 'exited');
+  assert.deepEqual(calls, [
+    prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
+    'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123',
+  ]);
+});
+
+test('runWatcherCommand reconnects after watcher service recreation', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-command-loop-'));
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    await runWatcherCommand(['--once'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      reconnectDelayMs: 0,
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === 'docker compose version') {
+          return createResult('');
+        }
+
+        if (key === prodComposeWatcherUpKey()) {
+          return createResult('');
+        }
+
+        if (key === prodComposeWatcherLogsKey()) {
+          const logCallCount = calls.filter(
+            (call) => call === prodComposeWatcherLogsKey()
+          ).length;
+          return logCallCount === 1
+            ? createResult('', { code: 143 })
+            : createResult('');
+        }
+
+        if (key === prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE)) {
+          return createResult('watcher-123\n');
+        }
+
+        if (
+          key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123'
+        ) {
+          return createResult('healthy\n');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+    });
+
+    assert.deepEqual(calls, [
+      'docker compose version',
+      prodComposeWatcherUpKey(),
+      prodComposeWatcherLogsKey(),
+      prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
+      'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123',
       prodComposeWatcherLogsKey(),
     ]);
   } finally {

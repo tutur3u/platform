@@ -9,11 +9,13 @@ import {
   HardDrive,
   Network,
   Radio,
+  SquareStack,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
+  DockerInventoryPanel,
   RuntimeTopologyPanel,
   WatcherCadencePanel,
 } from './blue-green-monitoring-panels';
@@ -95,6 +97,18 @@ export function BlueGreenMonitoringOverviewClient() {
       value: formatBytes(snapshot.dockerResources.totalMemoryBytes),
     },
     {
+      icon: <SquareStack className="h-4 w-4" />,
+      label: t('stats.running_containers'),
+      meta: t('stats.all_running_containers'),
+      value: formatCompactNumber(snapshot.dockerResources.allContainers.length),
+    },
+    {
+      icon: <Network className="h-4 w-4" />,
+      label: t('stats.running_containers'),
+      meta: t('stats.all_running_containers'),
+      value: formatCompactNumber(snapshot.dockerResources.allContainers.length),
+    },
+    {
       icon: <Network className="h-4 w-4" />,
       label: t('stats.persisted_logs'),
       meta: t('stats.log_retention'),
@@ -132,7 +146,7 @@ export function BlueGreenMonitoringOverviewClient() {
     <div className="space-y-6">
       <BlueGreenMonitoringAlerts snapshot={snapshot} t={t} />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         {statCards.map((card) => (
           <div
             key={card.label}
@@ -228,6 +242,8 @@ export function BlueGreenMonitoringOverviewClient() {
         <RuntimeTopologyPanel snapshot={snapshot} />
         <WatcherCadencePanel watcher={snapshot.watcher} />
       </div>
+
+      <DockerInventoryPanel dockerResources={snapshot.dockerResources} />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <PreviewCard

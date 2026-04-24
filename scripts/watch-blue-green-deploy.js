@@ -18,8 +18,10 @@ const {
   WEB_ENV_FILE,
 } = require('./docker-web/env.js');
 const {
+  getComposeServiceContainerId,
   getComposeCommandArgs,
   getComposeFile,
+  getContainerHealthStatus,
   runChecked,
   runCommand,
 } = require('./docker-web/compose.js');
@@ -75,8 +77,21 @@ const PROD_COMPOSE_FILE = getComposeFile('prod');
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const BLUE_GREEN_WATCHER_SERVICE = 'web-blue-green-watcher';
 const HOST_WORKSPACE_DIR_ENV = 'PLATFORM_HOST_WORKSPACE_DIR';
-const SELF_WATCHED_FILES = [path.relative(ROOT_DIR, __filename)];
+const SELF_WATCHED_FILES = [
+  path.relative(ROOT_DIR, __filename),
+  'scripts/docker-web.js',
+  'scripts/docker-web/blue-green.js',
+  'scripts/docker-web/compose.js',
+  'scripts/docker-web/env.js',
+];
 const CONTAINER_REFRESH_WATCHED_FILES = [
+  'docker-compose.web.prod.yml',
+  'apps/discord/Dockerfile.markitdown',
+  'apps/discord/local_server.py',
+  'apps/discord/markitdown_service.py',
+  'apps/storage-unzip-proxy/Dockerfile',
+  'apps/storage-unzip-proxy/package.json',
+  'apps/storage-unzip-proxy/src/server.js',
   'apps/web/docker/blue-green-watcher-entrypoint.js',
   'apps/web/docker/blue-green-watcher.Dockerfile',
 ];
@@ -168,15 +183,21 @@ function getWatcherComposeEnv({
   fsImpl = fs,
   rootDir = ROOT_DIR,
 } = {}) {
+  const hostWorkspaceDir =
+    typeof baseEnv[HOST_WORKSPACE_DIR_ENV] === 'string' &&
+    baseEnv[HOST_WORKSPACE_DIR_ENV].trim().length > 0
+      ? baseEnv[HOST_WORKSPACE_DIR_ENV].trim()
+      : rootDir;
+
   return {
     ...getComposeEnvironment({
       baseEnv,
       envFilePath,
       fsImpl,
-      rootDir,
+      rootDir: hostWorkspaceDir,
       withRedis: true,
     }),
-    [HOST_WORKSPACE_DIR_ENV]: rootDir,
+    [HOST_WORKSPACE_DIR_ENV]: hostWorkspaceDir,
   };
 }
 
@@ -281,6 +302,50 @@ async function startBlueGreenWatcherContainer(
   );
 }
 
+async function getWatcherContainerState({
+  env = process.env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+
+  let containerId = '';
+  try {
+    containerId = await getComposeServiceContainerId(
+      BLUE_GREEN_WATCHER_SERVICE,
+      {
+        composeFile: PROD_COMPOSE_FILE,
+        composeGlobalArgs: ['--profile', 'redis'],
+        env: composeEnv,
+        includeStopped: true,
+        runCommand: run,
+      }
+    );
+  } catch {
+    return 'missing';
+  }
+
+  if (!containerId) {
+    return 'missing';
+  }
+
+  try {
+    return await getContainerHealthStatus(containerId, {
+      env: composeEnv,
+      runCommand: run,
+    });
+  } catch {
+    return 'unknown';
+  }
+}
+
 async function streamBlueGreenWatcherLogs({
   env = process.env,
   envFilePath = WEB_ENV_FILE,
@@ -315,7 +380,11 @@ async function streamBlueGreenWatcherLogs({
     result.signal &&
     (result.signal === 'SIGINT' || result.signal === 'SIGTERM')
   ) {
-    return;
+    return { status: 'interrupted' };
+  }
+
+  if (result.code === 143) {
+    return { status: 'recreated' };
   }
 
   if (result.code !== 0) {
@@ -326,11 +395,27 @@ async function streamBlueGreenWatcherLogs({
         : 'Unable to stream watcher logs.'
     );
   }
+
+  return { status: 'completed' };
 }
 
 async function runWatcherCommand(argv = process.argv.slice(2), options = {}) {
   await startBlueGreenWatcherContainer(argv, options);
-  await streamBlueGreenWatcherLogs(options);
+
+  while (true) {
+    const result = await streamBlueGreenWatcherLogs(options);
+
+    if (result?.status !== 'recreated') {
+      return;
+    }
+
+    await sleep(options.reconnectDelayMs ?? 2_000);
+
+    const state = await getWatcherContainerState(options);
+    if (state === 'missing' || state === 'dead' || state === 'exited') {
+      await startBlueGreenWatcherContainer(argv, options);
+    }
+  }
 }
 
 function sleep(ms) {
@@ -2323,11 +2408,83 @@ function parseDockerStatsLine(line) {
   };
 }
 
+function parseDockerHealthFromStatus(status) {
+  if (typeof status !== 'string' || status.trim().length === 0) {
+    return 'unknown';
+  }
+
+  const normalized = status.toLowerCase();
+
+  if (normalized.includes('(healthy)')) {
+    return 'healthy';
+  }
+
+  if (normalized.includes('(unhealthy)')) {
+    return 'unhealthy';
+  }
+
+  if (normalized.includes('(health: starting)')) {
+    return 'starting';
+  }
+
+  return normalized.startsWith('up') ? 'none' : 'unknown';
+}
+
+function parseDockerPsLine(line) {
+  const [
+    containerId = '',
+    name = '',
+    image = '',
+    status = '',
+    runningFor = '',
+    ports = '',
+    serviceName = '',
+    projectName = '',
+  ] = String(line).split('\t');
+
+  return {
+    containerId: containerId.trim(),
+    health: parseDockerHealthFromStatus(status),
+    image: image.trim() || null,
+    name: name.trim(),
+    ports: ports.trim() || null,
+    projectName: projectName.trim() || null,
+    runningFor: runningFor.trim() || null,
+    serviceName: serviceName.trim() || null,
+    status: status.trim() || null,
+  };
+}
+
+async function listRunningDockerContainers({ env, runCommand: run }) {
+  const result = await runChecked(
+    'docker',
+    [
+      'ps',
+      '--format',
+      '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}\t{{.Ports}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project"}}',
+    ],
+    {
+      env,
+      runCommand: run,
+      stdio: 'pipe',
+    }
+  );
+
+  return result.stdout
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map(parseDockerPsLine)
+    .filter((container) => container.containerId && container.name);
+}
+
 async function collectDockerResources(
   currentBlueGreen,
-  { env, runCommand: run = runCommand } = {}
+  { env, rootDir = ROOT_DIR, runCommand: run = runCommand } = {}
 ) {
-  const containers = Object.entries(currentBlueGreen?.serviceContainers ?? {})
+  const monitoredContainers = Object.entries(
+    currentBlueGreen?.serviceContainers ?? {}
+  )
     .filter(
       ([, containerId]) =>
         typeof containerId === 'string' && containerId.length > 0
@@ -2351,9 +2508,29 @@ async function collectDockerResources(
       serviceName,
     }));
 
-  if (containers.length === 0) {
+  let runningContainers = [];
+
+  try {
+    runningContainers = await listRunningDockerContainers({
+      env,
+      runCommand: run,
+    });
+  } catch {}
+
+  const statsContainerIds = [
+    ...new Set(
+      [
+        ...monitoredContainers.map((container) => container.containerId),
+        ...runningContainers.map((container) => container.containerId),
+      ].filter(Boolean)
+    ),
+  ];
+
+  if (statsContainerIds.length === 0) {
     return {
+      allContainers: [],
       containers: [],
+      serviceHealth: [],
       state: 'idle',
       totalCpuPercent: 0,
       totalMemoryBytes: 0,
@@ -2370,7 +2547,7 @@ async function collectDockerResources(
         '--no-stream',
         '--format',
         '{{.ID}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.Name}}',
-        ...containers.map((container) => container.containerId),
+        ...statsContainerIds,
       ],
       {
         env,
@@ -2390,7 +2567,7 @@ async function collectDockerResources(
         })
     );
 
-    const resourceContainers = containers
+    const resourceContainers = monitoredContainers
       .map((container) => {
         const stats = statsById.get(container.containerId);
         if (!stats) {
@@ -2406,9 +2583,41 @@ async function collectDockerResources(
         };
       })
       .filter(Boolean);
+    const monitoredContainerIds = new Set(
+      monitoredContainers.map((container) => container.containerId)
+    );
+    const projectName = path.basename(rootDir);
+    const allContainers = runningContainers.map((container) => {
+      const stats = statsById.get(container.containerId);
+
+      return {
+        ...container,
+        cpuPercent: stats?.cpuPercent ?? null,
+        isMonitored: monitoredContainerIds.has(container.containerId),
+        memoryBytes: stats?.memoryBytes ?? null,
+        rxBytes: stats?.rxBytes ?? null,
+        txBytes: stats?.txBytes ?? null,
+      };
+    });
+    const serviceHealth = allContainers
+      .filter(
+        (container) =>
+          container.projectName === projectName && container.serviceName
+      )
+      .map((container) => ({
+        containerId: container.containerId,
+        health: container.health,
+        name: container.name,
+        projectName: container.projectName,
+        serviceName: container.serviceName,
+        status: container.status,
+      }))
+      .sort((a, b) => a.serviceName.localeCompare(b.serviceName));
 
     return {
+      allContainers,
       containers: resourceContainers,
+      serviceHealth,
       state: 'live',
       totalCpuPercent: resourceContainers.reduce(
         (sum, container) =>
@@ -2435,11 +2644,20 @@ async function collectDockerResources(
     };
   } catch (error) {
     return {
+      allContainers: runningContainers.map((container) => ({
+        ...container,
+        cpuPercent: null,
+        isMonitored: false,
+        memoryBytes: null,
+        rxBytes: null,
+        txBytes: null,
+      })),
       containers: [],
       message:
         error instanceof Error
           ? error.message
           : 'Unable to inspect docker stats',
+      serviceHealth: [],
       state: 'unavailable',
       totalCpuPercent: 0,
       totalMemoryBytes: 0,
@@ -2532,6 +2750,7 @@ async function loadRuntimeSnapshot({
   });
   const dockerResources = await collectDockerResources(currentBlueGreen, {
     env,
+    rootDir,
     runCommand: run,
   });
   const deployments = await collectDeploymentTraffic(
@@ -3765,6 +3984,7 @@ module.exports = {
   getProdComposeServiceContainerId,
   getRevision,
   getTrackedUpstream,
+  getWatcherContainerState,
   getWatcherComposeEnv,
   getWatchPaths,
   hasDirtyWorktree,

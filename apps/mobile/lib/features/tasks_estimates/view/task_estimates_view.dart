@@ -158,6 +158,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
               SpeedDialFab(
                 label: context.l10n.taskPlanningTitle,
                 icon: Icons.add,
+                includeBottomSafeArea: false,
                 actions: [
                   FabAction(
                     icon: Icons.label_outline,

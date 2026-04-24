@@ -134,10 +134,12 @@ export async function resolveWorkspaceStorageAutoExtractConfig(
   const secrets = await getSecrets({ wsId, forceAdmin: true });
   const secretMap = createSecretsMap(secrets);
   const enabled = isTruthySecret(secretMap.get(DRIVE_AUTO_EXTRACT_ZIP_SECRET));
-  const proxyUrl = secretMap.get(DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET)?.trim();
-  const proxyToken = secretMap
-    .get(DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET)
-    ?.trim();
+  const proxyUrl =
+    secretMap.get(DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET)?.trim() ||
+    process.env.DRIVE_AUTO_EXTRACT_PROXY_URL?.trim();
+  const proxyToken =
+    secretMap.get(DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET)?.trim() ||
+    process.env.DRIVE_AUTO_EXTRACT_PROXY_TOKEN?.trim();
 
   return {
     enabled,

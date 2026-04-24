@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/calendar/view/calendar_page.dart';
+import 'package:mobile/features/cms/view/cms_page.dart';
 import 'package:mobile/features/crm/view/crm_page.dart';
+import 'package:mobile/features/documents/view/documents_page.dart';
 import 'package:mobile/features/drive/view/drive_page.dart';
 import 'package:mobile/features/education/view/education_page.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
@@ -11,6 +13,7 @@ import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/inventory/view/inventory_page.dart';
+import 'package:mobile/features/meet/view/meet_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/tasks/view/task_list_page.dart';
@@ -69,6 +72,22 @@ class AppRegistry {
       miniAppNavItems: _driveMiniNav,
     ),
     AppModule(
+      id: 'documents',
+      route: Routes.documents,
+      icon: Icons.description_outlined,
+      labelBuilder: _labelDocuments,
+      pageBuilder: _pageDocuments,
+      miniAppNavItems: _documentsMiniNav,
+    ),
+    AppModule(
+      id: 'cms',
+      route: Routes.cms,
+      icon: Icons.web_stories_outlined,
+      labelBuilder: _labelCms,
+      pageBuilder: _pageCms,
+      miniAppNavItems: _cmsMiniNav,
+    ),
+    AppModule(
       id: 'education',
       route: Routes.education,
       icon: Icons.school_outlined,
@@ -83,6 +102,14 @@ class AppRegistry {
       labelBuilder: _labelCrm,
       pageBuilder: _pageCrm,
       miniAppNavItems: _crmMiniNav,
+    ),
+    AppModule(
+      id: 'meet',
+      route: Routes.meet,
+      icon: Icons.video_call_outlined,
+      labelBuilder: _labelMeet,
+      pageBuilder: _pageMeet,
+      miniAppNavItems: _meetMiniNav,
     ),
     AppModule(
       id: 'inventory',
@@ -270,12 +297,39 @@ class AppRegistry {
     ),
   ];
 
+  static const List<MiniAppNavItem> _documentsMiniNav = [
+    MiniAppNavItem(
+      id: 'documents_home',
+      route: Routes.documents,
+      icon: Icons.description_outlined,
+      labelBuilder: _labelDocuments,
+    ),
+  ];
+
+  static const List<MiniAppNavItem> _cmsMiniNav = [
+    MiniAppNavItem(
+      id: 'cms_home',
+      route: Routes.cms,
+      icon: Icons.web_stories_outlined,
+      labelBuilder: _labelCms,
+    ),
+  ];
+
   static const List<MiniAppNavItem> _crmMiniNav = [
     MiniAppNavItem(
       id: 'crm_home',
       route: Routes.crm,
       icon: Icons.badge_outlined,
       labelBuilder: _labelCrm,
+    ),
+  ];
+
+  static const List<MiniAppNavItem> _meetMiniNav = [
+    MiniAppNavItem(
+      id: 'meet_home',
+      route: Routes.meet,
+      icon: Icons.video_call_outlined,
+      labelBuilder: _labelMeet,
     ),
   ];
 
@@ -426,8 +480,11 @@ class AppRegistry {
   static String _labelCalendar(AppLocalizations l10n) => l10n.navCalendar;
   static String _labelFinance(AppLocalizations l10n) => l10n.navFinance;
   static String _labelDrive(AppLocalizations l10n) => l10n.driveTitle;
+  static String _labelDocuments(AppLocalizations l10n) => l10n.documentsTitle;
+  static String _labelCms(AppLocalizations l10n) => l10n.cmsTitleApp;
   static String _labelEducation(AppLocalizations l10n) => l10n.educationTitle;
   static String _labelCrm(AppLocalizations l10n) => l10n.crmTitle;
+  static String _labelMeet(AppLocalizations l10n) => l10n.meetTitle;
   static String _labelInventory(AppLocalizations l10n) => l10n.inventoryTitle;
   static String _labelInventoryOverview(AppLocalizations l10n) =>
       l10n.inventoryOverviewLabel;
@@ -462,8 +519,11 @@ class AppRegistry {
   static Widget _pageHabits(BuildContext context) => const HabitsPage();
   static Widget _pageCalendar(BuildContext context) => const CalendarPage();
   static Widget _pageDrive(BuildContext context) => const DrivePage();
+  static Widget _pageDocuments(BuildContext context) => const DocumentsPage();
+  static Widget _pageCms(BuildContext context) => const CmsPage();
   static Widget _pageEducation(BuildContext context) => const EducationPage();
   static Widget _pageCrm(BuildContext context) => const CrmPage();
+  static Widget _pageMeet(BuildContext context) => const MeetPage();
   static Widget _pageFinance(BuildContext context) => const FinancePage();
   static Widget _pageInventory(BuildContext context) => const InventoryPage();
   static Widget _pageNotifications(BuildContext context) =>

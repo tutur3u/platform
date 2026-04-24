@@ -344,6 +344,93 @@ abstract final class DriveEndpoints {
       '/api/v1/workspaces/$wsId/storage/finalize-upload';
 }
 
+/// Workspace document endpoint paths.
+abstract final class DocumentsEndpoints {
+  static String documents(
+    String wsId, {
+    String? search,
+    int? limit,
+    int? offset,
+  }) {
+    final params = <String, String>{};
+    if (search != null && search.trim().isNotEmpty) {
+      params['search'] = search.trim();
+    }
+    if (limit != null) {
+      params['limit'] = '$limit';
+    }
+    if (offset != null) {
+      params['offset'] = '$offset';
+    }
+
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/documents$suffix';
+  }
+
+  static String document(String wsId, String documentId) =>
+      '/api/v1/workspaces/$wsId/documents/$documentId';
+}
+
+/// Meet endpoint paths.
+abstract final class MeetEndpoints {
+  static String meetings(
+    String wsId, {
+    String? search,
+    int? page,
+    int? pageSize,
+  }) {
+    final params = <String, String>{};
+    if (search != null && search.trim().isNotEmpty) {
+      params['search'] = search.trim();
+    }
+    if (page != null) {
+      params['page'] = '$page';
+    }
+    if (pageSize != null) {
+      params['pageSize'] = '$pageSize';
+    }
+
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/meetings$suffix';
+  }
+
+  static String meeting(String wsId, String meetingId) =>
+      '/api/v1/workspaces/$wsId/meetings/$meetingId';
+}
+
+/// CMS / external project endpoint paths.
+abstract final class CmsEndpoints {
+  static String summary(String wsId) =>
+      '/api/v1/workspaces/$wsId/external-projects/summary';
+
+  static String studio(String wsId) =>
+      '/api/v1/workspaces/$wsId/external-projects';
+
+  static String collections(String wsId) =>
+      '/api/v1/workspaces/$wsId/external-projects/collections';
+
+  static String collection(String wsId, String collectionId) =>
+      '/api/v1/workspaces/$wsId/external-projects/collections/$collectionId';
+
+  static String entries(String wsId, {String? collectionId}) {
+    final params = <String, String>{};
+    if (collectionId != null && collectionId.isNotEmpty) {
+      params['collectionId'] = collectionId;
+    }
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/external-projects/entries$suffix';
+  }
+
+  static String entry(String wsId, String entryId) =>
+      '/api/v1/workspaces/$wsId/external-projects/entries/$entryId';
+}
+
 /// CRM / users database endpoint paths.
 abstract final class CrmEndpoints {
   static String usersDatabase(

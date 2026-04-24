@@ -90,7 +90,7 @@ class _TaskMetadataRow extends StatelessWidget {
         );
     }
 
-    if (endDate != null) {
+    if (endDate != null && !isCompleted) {
       chips
         ..add(const shad.Gap(6))
         ..add(

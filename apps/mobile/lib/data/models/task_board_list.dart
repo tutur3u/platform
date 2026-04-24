@@ -74,7 +74,11 @@ class TaskBoardList extends Equatable {
   final int? position;
   final bool archived;
 
-  bool get isDone => status == 'done';
+  bool get isDone => normalizeSupportedStatus(status) == 'done';
+
+  bool get isClosed => normalizeSupportedStatus(status) == 'closed';
+
+  bool get completesWork => isDone || isClosed;
 
   static String? normalizeSupportedStatus(String? rawStatus) {
     final normalized = rawStatus?.trim().toLowerCase();

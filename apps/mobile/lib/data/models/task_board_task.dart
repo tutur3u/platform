@@ -2,10 +2,13 @@ import 'package:equatable/equatable.dart';
 import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/utils/date_utils.dart';
 
+const Object _taskBoardTaskUnset = Object();
+
 class TaskBoardTaskAssignee extends Equatable {
   const TaskBoardTaskAssignee({
     required this.id,
     this.displayName,
+    this.email,
     this.avatarUrl,
   });
 
@@ -21,16 +24,18 @@ class TaskBoardTaskAssignee extends Equatable {
     return TaskBoardTaskAssignee(
       id: rawId.trim(),
       displayName: (json['display_name'] as String?)?.trim(),
+      email: (json['email'] as String?)?.trim(),
       avatarUrl: (json['avatar_url'] as String?)?.trim(),
     );
   }
 
   final String id;
   final String? displayName;
+  final String? email;
   final String? avatarUrl;
 
   @override
-  List<Object?> get props => [id, displayName, avatarUrl];
+  List<Object?> get props => [id, displayName, email, avatarUrl];
 }
 
 class TaskBoardTaskLabel extends Equatable {
@@ -180,7 +185,7 @@ class TaskBoardTask extends Equatable {
     String? listId,
     int? displayNumber,
     String? name,
-    String? description,
+    Object? description = _taskBoardTaskUnset,
     String? priority,
     bool? completed,
     DateTime? startDate,
@@ -203,7 +208,9 @@ class TaskBoardTask extends Equatable {
       listId: listId ?? this.listId,
       displayNumber: displayNumber ?? this.displayNumber,
       name: name ?? this.name,
-      description: description ?? this.description,
+      description: identical(description, _taskBoardTaskUnset)
+          ? this.description
+          : description as String?,
       priority: priority ?? this.priority,
       completed: completed ?? this.completed,
       startDate: startDate ?? this.startDate,

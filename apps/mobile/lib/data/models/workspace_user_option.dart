@@ -5,6 +5,7 @@ class WorkspaceUserOption extends Equatable {
     required this.id,
     required this.displayName,
     this.fullName,
+    this.email,
     this.avatarUrl,
   });
 
@@ -16,6 +17,7 @@ class WorkspaceUserOption extends Equatable {
           (json['full_name'] as String?) ??
           '',
       fullName: json['full_name'] as String?,
+      email: json['email'] as String?,
       avatarUrl: json['avatar_url'] as String?,
     );
   }
@@ -23,6 +25,7 @@ class WorkspaceUserOption extends Equatable {
   final String id;
   final String displayName;
   final String? fullName;
+  final String? email;
   final String? avatarUrl;
 
   String get label {
@@ -34,5 +37,5 @@ class WorkspaceUserOption extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, displayName, fullName, avatarUrl];
+  List<Object?> get props => [id, displayName, fullName, email, avatarUrl];
 }

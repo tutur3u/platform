@@ -1,5 +1,4 @@
 import 'package:bloc_test/bloc_test.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
@@ -15,7 +14,6 @@ import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../../../helpers/helpers.dart';
 
@@ -250,9 +248,6 @@ void main() {
       await tester.tap(find.text('Alpha task').first);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.edit).first);
-      await tester.pumpAndSettle();
-
       final relationshipsTab = find.text('Relationships').last;
       await tester.ensureVisible(relationshipsTab);
       await tester.tap(relationshipsTab, warnIfMissed: false);
@@ -274,7 +269,6 @@ void main() {
         find.text('Beta task').evaluate().length,
         greaterThan(betaTaskTextCountBefore),
       );
-      expect(find.widgetWithText(shad.OutlineBadge, '1'), findsWidgets);
 
       await tester.pump(const Duration(milliseconds: 350));
       await tester.pumpAndSettle();
@@ -283,7 +277,6 @@ void main() {
         find.text('Beta task').evaluate().length,
         greaterThan(betaTaskTextCountBefore),
       );
-      expect(find.widgetWithText(shad.OutlineBadge, '1'), findsWidgets);
 
       await tester.drainShadToastTimers();
     });

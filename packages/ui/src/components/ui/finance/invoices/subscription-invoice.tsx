@@ -53,13 +53,12 @@ import { ProductSelection } from './product-selection';
 import type { SelectedProductItem } from './types';
 import {
   formatMonthValue,
-  getAttendanceStats,
   getAvailableMonths,
   getBillableAttendanceRecords,
   getBillableSessionsForGroups,
-  getEffectiveAttendanceDays,
   getGroupsDateRange,
   getMonthStartDate,
+  getSubscriptionAttendanceDisplayData,
 } from './utils';
 
 interface Props {
@@ -325,17 +324,49 @@ export function SubscriptionInvoice({
     ]
   );
 
-  const attendanceStats = useMemo(
-    () => getAttendanceStats(billableAttendance),
-    [billableAttendance]
+  const monthlyAttendance = useMemo(
+    () =>
+      getBillableAttendanceRecords(
+        userAttendance,
+        selectedGroupIds,
+        effectiveSelectedMonth
+      ),
+    [effectiveSelectedMonth, selectedGroupIds, userAttendance]
   );
 
-  const totalSessions = billableSessions.length;
+  const monthlySessions = useMemo(
+    () =>
+      getBillableSessionsForGroups(
+        userGroups,
+        selectedGroupIds,
+        effectiveSelectedMonth
+      ),
+    [effectiveSelectedMonth, selectedGroupIds, userGroups]
+  );
 
-  const attendanceRate = useMemo(() => {
-    const attendanceDays = getEffectiveAttendanceDays(billableAttendance);
-    return totalSessions > 0 ? (attendanceDays / totalSessions) * 100 : 0;
-  }, [billableAttendance, totalSessions]);
+  const {
+    displayAttendance,
+    displaySessions,
+    attendanceStats,
+    totalSessions,
+    attendanceRate,
+  } = useMemo(
+    () =>
+      getSubscriptionAttendanceDisplayData({
+        isSelectedMonthPaid,
+        billableAttendance,
+        billableSessions,
+        monthlyAttendance,
+        monthlySessions,
+      }),
+    [
+      billableAttendance,
+      billableSessions,
+      isSelectedMonthPaid,
+      monthlyAttendance,
+      monthlySessions,
+    ]
+  );
 
   const selectedPromotion =
     selectedPromotionId === 'none'
@@ -820,8 +851,8 @@ export function SubscriptionInvoice({
                 availableMonths={availableMonths}
                 latestSubscriptionInvoices={latestSubscriptionInvoices}
                 isLoadingSubscriptionData={isLoadingSubscriptionData}
-                userAttendance={billableAttendance}
-                billableSessions={billableSessions}
+                userAttendance={displayAttendance}
+                displaySessions={displaySessions}
                 userAttendanceError={userAttendanceError}
                 attendanceStats={attendanceStats}
                 totalSessions={totalSessions}

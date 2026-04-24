@@ -405,35 +405,42 @@ List<_TaskRelationshipIndicator> _taskRelationshipIndicators(
 _TaskPriorityStyle _taskPriorityStyle(BuildContext context, String? priority) {
   final normalized = (priority ?? 'normal').trim().toLowerCase();
   final label = _taskPriorityLabel(context, normalized);
+  final palette = context.dynamicColors;
+  final accent = switch (normalized) {
+    'critical' => palette.red,
+    'high' => palette.orange,
+    'low' => palette.gray,
+    _ => palette.blue,
+  };
 
   return switch (normalized) {
     'critical' => _TaskPriorityStyle(
       label: label,
       icon: Icons.priority_high_rounded,
-      foreground: const Color(0xFFB42318),
-      background: const Color(0xFFFEE4E2),
-      border: const Color(0xFFFDA29B),
+      foreground: accent,
+      background: accent.withValues(alpha: 0.12),
+      border: accent.withValues(alpha: 0.34),
     ),
     'high' => _TaskPriorityStyle(
       label: label,
       icon: Icons.keyboard_double_arrow_up_rounded,
-      foreground: const Color(0xFFB54708),
-      background: const Color(0xFFFFF6ED),
-      border: const Color(0xFFFCC17A),
+      foreground: accent,
+      background: accent.withValues(alpha: 0.12),
+      border: accent.withValues(alpha: 0.32),
     ),
     'low' => _TaskPriorityStyle(
       label: label,
       icon: Icons.keyboard_double_arrow_down_rounded,
-      foreground: const Color(0xFF175CD3),
-      background: const Color(0xFFEFF8FF),
-      border: const Color(0xFF84CAFF),
+      foreground: accent,
+      background: accent.withValues(alpha: 0.1),
+      border: accent.withValues(alpha: 0.26),
     ),
     _ => _TaskPriorityStyle(
       label: label,
       icon: Icons.remove_rounded,
-      foreground: const Color(0xFFB54708),
-      background: const Color(0xFFFFFAEB),
-      border: const Color(0xFFFEC84B),
+      foreground: accent,
+      background: accent.withValues(alpha: 0.1),
+      border: accent.withValues(alpha: 0.28),
     ),
   };
 }
@@ -483,9 +490,19 @@ String _taskSmartDate(BuildContext context, DateTime date) {
 }
 
 String? _taskDueLabel(BuildContext context, TaskBoardTask task) {
+  if (_taskIsCompletedInBoard(task)) return null;
   if (task.endDate == null) return null;
   final date = _taskSmartDate(context, task.endDate!);
   return context.l10n.taskBoardDetailDueAt(date);
+}
+
+String? _taskDueLabelForList(
+  BuildContext context,
+  TaskBoardTask task,
+  TaskBoardList? list,
+) {
+  if (_taskIsCompletedInBoard(task, list)) return null;
+  return _taskDueLabel(context, task);
 }
 
 String? _taskStartLabel(BuildContext context, TaskBoardTask task) {
@@ -498,6 +515,7 @@ String? _taskStartLabel(BuildContext context, TaskBoardTask task) {
 }
 
 bool _taskIsOverdue(TaskBoardTask task) {
+  if (_taskIsCompletedInBoard(task)) return false;
   if (task.endDate == null) return false;
   final dueDate = DateTime(
     task.endDate!.year,
@@ -508,6 +526,17 @@ bool _taskIsOverdue(TaskBoardTask task) {
   final today = DateTime(now.year, now.month, now.day);
   return dueDate.isBefore(today);
 }
+
+bool _taskIsOverdueForList(TaskBoardTask task, TaskBoardList? list) {
+  if (_taskIsCompletedInBoard(task, list)) return false;
+  return _taskIsOverdue(task);
+}
+
+bool _taskIsCompletedInBoard(TaskBoardTask task, [TaskBoardList? list]) {
+  return task.closedAt != null || task.completed == true || _taskListDone(list);
+}
+
+bool _taskListDone(TaskBoardList? list) => list?.completesWork ?? false;
 
 bool _hasChips(
   String? estimationLabel,

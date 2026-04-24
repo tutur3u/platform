@@ -386,10 +386,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsHubCalendarDescription => 'See your agenda, upcoming events, and calendar views.';
 
   @override
+  String get appsHubCmsDescription => 'Manage CMS collections, entries, queues, and publishing.';
+
+  @override
   String get appsHubCrmDescription => 'Manage people, feedback, imports, and audit activity in one place.';
 
   @override
   String get appsHubDriveDescription => 'Browse workspace files, folders, uploads, and secure share links.';
+
+  @override
+  String get appsHubDocumentsDescription => 'Write, edit, and publish workspace notes from your phone.';
 
   @override
   String get appsHubEducationDescription => 'Manage courses, question banks, flashcards, and learner attempts.';
@@ -399,6 +405,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appsHubInventoryDescription => 'Run products, stock, sales, and booth operations in one place.';
+
+  @override
+  String get appsHubMeetDescription => 'Plan meetings, review schedules, and keep recordings visible.';
 
   @override
   String get appsHubNotificationsDescription => 'Review inbox activity, alerts, and archived updates.';
@@ -1696,6 +1705,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailTaskActions => 'Task actions';
 
   @override
+  String get taskBoardDetailCollapseList => 'Collapse list';
+
+  @override
+  String get taskBoardDetailExpandList => 'Expand list';
+
+  @override
+  String get taskBoardDetailInformation => 'Information';
+
+  @override
   String get taskBoardDetailMoveTask => 'Move task';
 
   @override
@@ -1724,6 +1742,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailTaskDescriptionHint => 'Add description';
+
+  @override
+  String get taskBoardDetailTaskNoDescription => 'No description yet';
 
   @override
   String get taskBoardDetailTaskDescriptionComingSoon => 'Description editing is coming soon on mobile.';
@@ -5260,6 +5281,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspacePickerTitle => 'Workspaces';
 
   @override
+  String get workspacePickerSearchHint => 'Search workspaces';
+
+  @override
   String get workspaceDefaultPickerTitle => 'Default workspace';
 
   @override
@@ -5951,6 +5975,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonOpen => 'Open';
 
   @override
+  String get commonRefresh => 'Refresh';
+
+  @override
   String get commonReactivated => 'Reactivated';
 
   @override
@@ -6393,4 +6420,216 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get driveUsedLabel => 'Used';
+
+  @override
+  String get documentsContentHint => 'Start writing...';
+
+  @override
+  String get documentsCreated => 'Document created.';
+
+  @override
+  String get documentsDeleted => 'Document deleted.';
+
+  @override
+  String get documentsDelete => 'Delete document';
+
+  @override
+  String get documentsDeleteConfirm => 'Delete this document? This cannot be undone.';
+
+  @override
+  String get documentsDocumentName => 'Document name';
+
+  @override
+  String get documentsEditor => 'Editor';
+
+  @override
+  String get documentsEmptyDescription => 'No documents yet. Create one to capture decisions, notes, or plans.';
+
+  @override
+  String get documentsNewDocument => 'New document';
+
+  @override
+  String get documentsPublic => 'Public document';
+
+  @override
+  String get documentsSearchHint => 'Search documents';
+
+  @override
+  String get documentsSubtitle => 'Draft and maintain workspace knowledge.';
+
+  @override
+  String get documentsTitle => 'Documents';
+
+  @override
+  String get documentsUpdated => 'Document saved.';
+
+  @override
+  String get cmsAllCollections => 'All collections';
+
+  @override
+  String get cmsArchivedBacklog => 'Archived backlog';
+
+  @override
+  String get cmsCollection => 'Collection';
+
+  @override
+  String get cmsCollectionCreated => 'Collection created.';
+
+  @override
+  String get cmsCollectionDeleted => 'Collection deleted.';
+
+  @override
+  String get cmsCollectionEnabled => 'Enabled';
+
+  @override
+  String get cmsCollectionType => 'Collection type';
+
+  @override
+  String get cmsCollectionUpdated => 'Collection saved.';
+
+  @override
+  String get cmsCollections => 'Collections';
+
+  @override
+  String get cmsDeleteCollection => 'Delete collection';
+
+  @override
+  String get cmsDeleteCollectionConfirm => 'Delete this collection? Entries in the collection may also be affected.';
+
+  @override
+  String get cmsDeleteEntry => 'Delete entry';
+
+  @override
+  String get cmsDeleteEntryConfirm => 'Delete this entry? This cannot be undone.';
+
+  @override
+  String get cmsDescription => 'Description';
+
+  @override
+  String get cmsEditCollection => 'Edit collection';
+
+  @override
+  String get cmsEditEntry => 'Edit entry';
+
+  @override
+  String get cmsEntries => 'Entries';
+
+  @override
+  String get cmsEntryCreated => 'Entry created.';
+
+  @override
+  String get cmsEntryDeleted => 'Entry deleted.';
+
+  @override
+  String get cmsEntryUpdated => 'Entry saved.';
+
+  @override
+  String get cmsLibrary => 'Library';
+
+  @override
+  String get cmsNeedsAttention => 'Needs attention';
+
+  @override
+  String get cmsNewCollection => 'New collection';
+
+  @override
+  String get cmsNewEntry => 'New entry';
+
+  @override
+  String get cmsNoAccess => 'CMS is not available for this workspace.';
+
+  @override
+  String get cmsNoCollections => 'No collections yet.';
+
+  @override
+  String get cmsNoEntries => 'No entries yet.';
+
+  @override
+  String get cmsOverview => 'Overview';
+
+  @override
+  String get cmsQueueEmpty => 'Nothing waiting here.';
+
+  @override
+  String get cmsScheduledSoon => 'Scheduled soon';
+
+  @override
+  String get cmsSlug => 'Slug';
+
+  @override
+  String get cmsStatus => 'Status';
+
+  @override
+  String get cmsStatusArchived => 'Archived';
+
+  @override
+  String get cmsStatusDraft => 'Draft';
+
+  @override
+  String get cmsStatusPublished => 'Published';
+
+  @override
+  String get cmsStatusScheduled => 'Scheduled';
+
+  @override
+  String get cmsSubtitle => 'Subtitle';
+
+  @override
+  String get cmsSubtitleApp => 'Manage content collections, entries, and publish queues.';
+
+  @override
+  String get cmsSummary => 'Summary';
+
+  @override
+  String get cmsTitle => 'Title';
+
+  @override
+  String get cmsTitleApp => 'CMS';
+
+  @override
+  String get meetCreated => 'Meeting created.';
+
+  @override
+  String get meetDeleted => 'Meeting deleted.';
+
+  @override
+  String get meetDelete => 'Delete meeting';
+
+  @override
+  String get meetDeleteConfirm => 'Delete this meeting? This cannot be undone.';
+
+  @override
+  String get meetEditMeeting => 'Edit meeting';
+
+  @override
+  String get meetEmptyDescription => 'No meetings yet. Schedule one to keep the team aligned.';
+
+  @override
+  String get meetMeetingName => 'Meeting name';
+
+  @override
+  String get meetNewMeeting => 'New meeting';
+
+  @override
+  String meetRecordingSessions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count recordings',
+      one: '1 recording',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get meetSearchHint => 'Search meetings';
+
+  @override
+  String get meetSubtitle => 'Schedule meetings and keep recordings in reach.';
+
+  @override
+  String get meetTitle => 'Meet';
+
+  @override
+  String get meetUpdated => 'Meeting saved.';
 }

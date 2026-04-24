@@ -6,12 +6,14 @@ class _TaskBoardDescriptionAccordion extends StatelessWidget {
     required this.description,
     required this.isExpanded,
     required this.onToggle,
+    this.canCollapse = true,
   });
 
   final String label;
   final ParsedTipTapDescription description;
   final bool isExpanded;
   final VoidCallback onToggle;
+  final bool canCollapse;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +33,7 @@ class _TaskBoardDescriptionAccordion extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             child: InkWell(
               borderRadius: BorderRadius.circular(10),
-              onTap: onToggle,
+              onTap: canCollapse ? onToggle : null,
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -48,11 +50,12 @@ class _TaskBoardDescriptionAccordion extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Icon(
-                      isExpanded ? Icons.expand_less : Icons.expand_more,
-                      size: 18,
-                      color: theme.colorScheme.mutedForeground,
-                    ),
+                    if (canCollapse)
+                      Icon(
+                        isExpanded ? Icons.expand_less : Icons.expand_more,
+                        size: 18,
+                        color: theme.colorScheme.mutedForeground,
+                      ),
                   ],
                 ),
               ),
@@ -69,20 +72,21 @@ class _TaskBoardDescriptionAccordion extends StatelessWidget {
                       children: [
                         _buildDescriptionViewer(context),
                         const shad.Gap(8),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: Tooltip(
-                            message: label,
-                            child: shad.IconButton.ghost(
-                              onPressed: onToggle,
-                              icon: Icon(
-                                Icons.expand_less,
-                                size: 16,
-                                color: theme.colorScheme.mutedForeground,
+                        if (canCollapse)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Tooltip(
+                              message: label,
+                              child: shad.IconButton.ghost(
+                                onPressed: onToggle,
+                                icon: Icon(
+                                  Icons.expand_less,
+                                  size: 16,
+                                  color: theme.colorScheme.mutedForeground,
+                                ),
                               ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   )

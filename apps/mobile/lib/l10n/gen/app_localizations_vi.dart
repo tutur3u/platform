@@ -386,10 +386,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appsHubCalendarDescription => 'Xem lịch làm việc, sự kiện sắp tới và các chế độ xem lịch.';
 
   @override
+  String get appsHubCmsDescription => 'Quản lý bộ sưu tập CMS, mục nội dung, hàng đợi và xuất bản.';
+
+  @override
   String get appsHubCrmDescription => 'Quản lý khách hàng, phản hồi, nhập dữ liệu và nhật ký tại một nơi.';
 
   @override
   String get appsHubDriveDescription => 'Duyệt tệp, thư mục, tải lên và liên kết chia sẻ an toàn của workspace.';
+
+  @override
+  String get appsHubDocumentsDescription => 'Viết, chỉnh sửa và xuất bản ghi chú workspace trên điện thoại.';
 
   @override
   String get appsHubEducationDescription => 'Quản lý khóa học, ngân hàng câu hỏi, flashcard và lượt làm bài.';
@@ -399,6 +405,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get appsHubInventoryDescription => 'Quản lý sản phẩm, tồn kho, bán hàng và vận hành quầy tại một nơi.';
+
+  @override
+  String get appsHubMeetDescription => 'Lên lịch họp, xem lịch trình và theo dõi bản ghi.';
 
   @override
   String get appsHubNotificationsDescription => 'Xem hộp thư thông báo, cảnh báo và các cập nhật đã lưu trữ.';
@@ -1696,6 +1705,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailTaskActions => 'Thao tác công việc';
 
   @override
+  String get taskBoardDetailCollapseList => 'Thu gọn danh sách';
+
+  @override
+  String get taskBoardDetailExpandList => 'Mở rộng danh sách';
+
+  @override
+  String get taskBoardDetailInformation => 'Thông tin';
+
+  @override
   String get taskBoardDetailMoveTask => 'Di chuyển công việc';
 
   @override
@@ -1724,6 +1742,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailTaskDescriptionHint => 'Thêm mô tả';
+
+  @override
+  String get taskBoardDetailTaskNoDescription => 'Chưa có mô tả';
 
   @override
   String get taskBoardDetailTaskDescriptionComingSoon => 'Tính năng chỉnh sửa mô tả sẽ sớm có trên mobile.';
@@ -5230,6 +5251,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspacePickerTitle => 'Không gian làm việc';
 
   @override
+  String get workspacePickerSearchHint => 'Tìm không gian làm việc';
+
+  @override
   String get workspaceDefaultPickerTitle => 'Không gian mặc định';
 
   @override
@@ -5921,6 +5945,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get commonOpen => 'Mở';
 
   @override
+  String get commonRefresh => 'Làm mới';
+
+  @override
   String get commonReactivated => 'Kích hoạt lại';
 
   @override
@@ -6363,4 +6390,216 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get driveUsedLabel => 'Đã dùng';
+
+  @override
+  String get documentsContentHint => 'Bắt đầu viết...';
+
+  @override
+  String get documentsCreated => 'Đã tạo tài liệu.';
+
+  @override
+  String get documentsDeleted => 'Đã xóa tài liệu.';
+
+  @override
+  String get documentsDelete => 'Xóa tài liệu';
+
+  @override
+  String get documentsDeleteConfirm => 'Xóa tài liệu này? Thao tác này không thể hoàn tác.';
+
+  @override
+  String get documentsDocumentName => 'Tên tài liệu';
+
+  @override
+  String get documentsEditor => 'Trình soạn thảo';
+
+  @override
+  String get documentsEmptyDescription => 'Chưa có tài liệu nào. Tạo một tài liệu để ghi lại quyết định, ghi chú hoặc kế hoạch.';
+
+  @override
+  String get documentsNewDocument => 'Tài liệu mới';
+
+  @override
+  String get documentsPublic => 'Tài liệu công khai';
+
+  @override
+  String get documentsSearchHint => 'Tìm tài liệu';
+
+  @override
+  String get documentsSubtitle => 'Soạn thảo và duy trì tri thức workspace.';
+
+  @override
+  String get documentsTitle => 'Tài liệu';
+
+  @override
+  String get documentsUpdated => 'Đã lưu tài liệu.';
+
+  @override
+  String get cmsAllCollections => 'Tất cả bộ sưu tập';
+
+  @override
+  String get cmsArchivedBacklog => 'Nội dung lưu trữ';
+
+  @override
+  String get cmsCollection => 'Bộ sưu tập';
+
+  @override
+  String get cmsCollectionCreated => 'Đã tạo bộ sưu tập.';
+
+  @override
+  String get cmsCollectionDeleted => 'Đã xóa bộ sưu tập.';
+
+  @override
+  String get cmsCollectionEnabled => 'Đang bật';
+
+  @override
+  String get cmsCollectionType => 'Loại bộ sưu tập';
+
+  @override
+  String get cmsCollectionUpdated => 'Đã lưu bộ sưu tập.';
+
+  @override
+  String get cmsCollections => 'Bộ sưu tập';
+
+  @override
+  String get cmsDeleteCollection => 'Xóa bộ sưu tập';
+
+  @override
+  String get cmsDeleteCollectionConfirm => 'Xóa bộ sưu tập này? Các mục trong bộ sưu tập có thể bị ảnh hưởng.';
+
+  @override
+  String get cmsDeleteEntry => 'Xóa mục nội dung';
+
+  @override
+  String get cmsDeleteEntryConfirm => 'Xóa mục nội dung này? Thao tác này không thể hoàn tác.';
+
+  @override
+  String get cmsDescription => 'Mô tả';
+
+  @override
+  String get cmsEditCollection => 'Chỉnh sửa bộ sưu tập';
+
+  @override
+  String get cmsEditEntry => 'Chỉnh sửa mục nội dung';
+
+  @override
+  String get cmsEntries => 'Mục nội dung';
+
+  @override
+  String get cmsEntryCreated => 'Đã tạo mục nội dung.';
+
+  @override
+  String get cmsEntryDeleted => 'Đã xóa mục nội dung.';
+
+  @override
+  String get cmsEntryUpdated => 'Đã lưu mục nội dung.';
+
+  @override
+  String get cmsLibrary => 'Thư viện';
+
+  @override
+  String get cmsNeedsAttention => 'Cần xử lý';
+
+  @override
+  String get cmsNewCollection => 'Bộ sưu tập mới';
+
+  @override
+  String get cmsNewEntry => 'Mục nội dung mới';
+
+  @override
+  String get cmsNoAccess => 'CMS chưa khả dụng cho workspace này.';
+
+  @override
+  String get cmsNoCollections => 'Chưa có bộ sưu tập nào.';
+
+  @override
+  String get cmsNoEntries => 'Chưa có mục nội dung nào.';
+
+  @override
+  String get cmsOverview => 'Tổng quan';
+
+  @override
+  String get cmsQueueEmpty => 'Không có gì đang chờ ở đây.';
+
+  @override
+  String get cmsScheduledSoon => 'Sắp xuất bản';
+
+  @override
+  String get cmsSlug => 'Slug';
+
+  @override
+  String get cmsStatus => 'Trạng thái';
+
+  @override
+  String get cmsStatusArchived => 'Đã lưu trữ';
+
+  @override
+  String get cmsStatusDraft => 'Bản nháp';
+
+  @override
+  String get cmsStatusPublished => 'Đã xuất bản';
+
+  @override
+  String get cmsStatusScheduled => 'Đã lên lịch';
+
+  @override
+  String get cmsSubtitle => 'Phụ đề';
+
+  @override
+  String get cmsSubtitleApp => 'Quản lý bộ sưu tập nội dung, mục nội dung và hàng đợi xuất bản.';
+
+  @override
+  String get cmsSummary => 'Tóm tắt';
+
+  @override
+  String get cmsTitle => 'Tiêu đề';
+
+  @override
+  String get cmsTitleApp => 'CMS';
+
+  @override
+  String get meetCreated => 'Đã tạo cuộc họp.';
+
+  @override
+  String get meetDeleted => 'Đã xóa cuộc họp.';
+
+  @override
+  String get meetDelete => 'Xóa cuộc họp';
+
+  @override
+  String get meetDeleteConfirm => 'Xóa cuộc họp này? Thao tác này không thể hoàn tác.';
+
+  @override
+  String get meetEditMeeting => 'Chỉnh sửa cuộc họp';
+
+  @override
+  String get meetEmptyDescription => 'Chưa có cuộc họp nào. Lên lịch một cuộc họp để giữ cả nhóm đồng bộ.';
+
+  @override
+  String get meetMeetingName => 'Tên cuộc họp';
+
+  @override
+  String get meetNewMeeting => 'Cuộc họp mới';
+
+  @override
+  String meetRecordingSessions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count bản ghi',
+      one: '1 bản ghi',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get meetSearchHint => 'Tìm cuộc họp';
+
+  @override
+  String get meetSubtitle => 'Lên lịch họp và truy cập bản ghi nhanh chóng.';
+
+  @override
+  String get meetTitle => 'Meet';
+
+  @override
+  String get meetUpdated => 'Đã lưu cuộc họp.';
 }

@@ -91,5 +91,62 @@ void main() {
       expect(find.text('Enterprise'), findsOneWidget);
       expect(find.text('Free'), findsOneWidget);
     });
+
+    testWidgets('reveals search field only after tapping search', (
+      tester,
+    ) async {
+      const state = WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        workspaces: [personalWorkspace, proWorkspace, freeWorkspace],
+        currentWorkspace: proWorkspace,
+        defaultWorkspace: freeWorkspace,
+      );
+      when(() => workspaceCubit.state).thenReturn(state);
+      whenListen(
+        workspaceCubit,
+        const Stream<WorkspaceState>.empty(),
+        initialState: state,
+      );
+
+      await tester.pumpApp(
+        BlocProvider<WorkspaceCubit>.value(
+          value: workspaceCubit,
+          child: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () => showWorkspacePickerSheet(context),
+                  child: const Text('Open picker'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open picker'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(find.byType(EditableText), findsNothing);
+      expect(find.text('Product'), findsOneWidget);
+      expect(find.text('Design'), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.search_rounded).first);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EditableText), findsOneWidget);
+      await tester.enterText(find.byType(EditableText), 'Product');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Product'), findsNWidgets(2));
+      expect(find.text('Design'), findsNothing);
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EditableText), findsNothing);
+      expect(find.text('Design'), findsOneWidget);
+    });
   });
 }

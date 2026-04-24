@@ -103,6 +103,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
             SpeedDialFab(
               label: l10n.taskBoardsTitle,
               icon: Icons.add,
+              includeBottomSafeArea: false,
               actions: [
                 FabAction(
                   icon: Icons.add_box_outlined,

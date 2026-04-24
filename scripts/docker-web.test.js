@@ -6,9 +6,13 @@ const path = require('node:path');
 
 const {
   BLUE_GREEN_PROXY_SERVICE,
+  BLUE_GREEN_SUPPORT_SERVICES,
   COMPOSE_FILE,
   DEFAULT_BUILDER_NAME,
   DOCKER_HOST_ALIAS,
+  DOCKER_MARKITDOWN_ENDPOINT_URL,
+  DOCKER_MARKITDOWN_SERVICE_URL,
+  DOCKER_STORAGE_UNZIP_PROXY_URL,
   PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
   clearBlueGreenRuntime,
@@ -20,6 +24,7 @@ const {
   readBlueGreenActiveColor,
   renderBlueGreenProxyConfig,
   rewriteLocalhostUrl,
+  runComposeUpWithNameConflictRecovery,
   runDockerWebWorkflow,
   usesBlueGreenStrategy,
   writeBlueGreenActiveColor,
@@ -200,8 +205,13 @@ test('getComposeEnvironment derives a server-side Supabase URL for Docker', () =
 
     assert.equal(env.PATH, 'test-path');
     assert.equal(env.COMPOSE_DOCKER_CLI_BUILD, '1');
+    assert.equal(env.COMPOSE_PROJECT_NAME, path.basename(tempDir));
+    assert.equal(env.SUPABASE_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
     assert.equal(env.SUPABASE_SERVER_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
     assert.equal(env.DOCKER_BUILDKIT, '1');
+    assert.equal(env.MARKITDOWN_ENDPOINT_URL, undefined);
+    assert.equal(env.DRIVE_AUTO_EXTRACT_PROXY_URL, undefined);
+    assert.equal(env.INTERNAL_WEB_API_ORIGIN, undefined);
     assert.equal(env.UPSTASH_REDIS_REST_URL, 'http://serverless-redis-http:80');
     assert.match(env.UPSTASH_REDIS_REST_TOKEN, /^[a-f0-9]{64}$/u);
     assert.equal(env.SRH_TOKEN, env.UPSTASH_REDIS_REST_TOKEN);
@@ -213,6 +223,103 @@ test('getComposeEnvironment derives a server-side Supabase URL for Docker', () =
         )
         .trim(),
       env.UPSTASH_REDIS_REST_TOKEN
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getComposeEnvironment pins compose project names from the workspace path', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-project-env-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co\n'
+    );
+
+    const env = getComposeEnvironment({
+      baseEnv: {
+        PATH: 'test-path',
+        COMPOSE_PROJECT_NAME: 'bad-inherited-project',
+      },
+      envFilePath,
+      rootDir: tempDir,
+    });
+
+    assert.equal(env.COMPOSE_PROJECT_NAME, path.basename(tempDir));
+
+    const overriddenEnv = getComposeEnvironment({
+      baseEnv: {
+        PATH: 'test-path',
+        COMPOSE_PROJECT_NAME: 'bad-inherited-project',
+        DOCKER_WEB_COMPOSE_PROJECT_NAME: 'platform',
+      },
+      envFilePath,
+      rootDir: tempDir,
+    });
+
+    assert.equal(overriddenEnv.COMPOSE_PROJECT_NAME, 'platform');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getComposeEnvironment injects blue-green support service URLs when requested', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-support-env-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:8001\n'
+    );
+
+    const env = getComposeEnvironment({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath,
+      rootDir: tempDir,
+      withSupportServices: true,
+    });
+
+    assert.equal(env.DISCORD_APP_DEPLOYMENT_URL, DOCKER_MARKITDOWN_SERVICE_URL);
+    assert.equal(env.MARKITDOWN_ENDPOINT_URL, DOCKER_MARKITDOWN_ENDPOINT_URL);
+    assert.match(env.MARKITDOWN_ENDPOINT_SECRET, /^[a-f0-9]{64}$/u);
+    assert.equal(
+      env.DRIVE_AUTO_EXTRACT_PROXY_URL,
+      DOCKER_STORAGE_UNZIP_PROXY_URL
+    );
+    assert.match(env.DRIVE_AUTO_EXTRACT_PROXY_TOKEN, /^[a-f0-9]{64}$/u);
+    assert.equal(
+      env.DRIVE_UNZIP_PROXY_SHARED_TOKEN,
+      env.DRIVE_AUTO_EXTRACT_PROXY_TOKEN
+    );
+    assert.equal(env.INTERNAL_WEB_API_ORIGIN, 'http://web-proxy:7803');
+    assert.equal(env.SUPABASE_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
+    assert.equal(
+      fs
+        .readFileSync(
+          path.join(tempDir, 'tmp', 'docker-web', 'markitdown-token'),
+          'utf8'
+        )
+        .trim(),
+      env.MARKITDOWN_ENDPOINT_SECRET
+    );
+    assert.equal(
+      fs
+        .readFileSync(
+          path.join(tempDir, 'tmp', 'docker-web', 'storage-unzip-token'),
+          'utf8'
+        )
+        .trim(),
+      env.DRIVE_AUTO_EXTRACT_PROXY_TOKEN
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -239,6 +346,7 @@ test('getComposeEnvironment preserves the configured cloud Supabase URL', () => 
     });
 
     assert.equal(env.SUPABASE_SERVER_URL, 'https://project-ref.supabase.co');
+    assert.equal(env.SUPABASE_URL, 'https://project-ref.supabase.co');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -264,6 +372,7 @@ test('getComposeEnvironment rewrites an explicit localhost SUPABASE_SERVER_URL',
     });
 
     assert.equal(env.SUPABASE_SERVER_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
+    assert.equal(env.SUPABASE_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -737,6 +846,18 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
       return { code: 0, signal: null, stderr: '', stdout: 'container-blue\n' };
     }
 
+    if (
+      args.includes('ps') &&
+      BLUE_GREEN_SUPPORT_SERVICES.includes(args.at(-1))
+    ) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: `container-${args.at(-1)}\n`,
+      };
+    }
+
     if (args[0] === 'inspect') {
       return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
     }
@@ -791,7 +912,8 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
           args[2] === PROD_COMPOSE_FILE &&
           args.includes('up') &&
           args.includes(BLUE_GREEN_PROXY_SERVICE) &&
-          args.includes('web-blue')
+          args.includes('web-blue') &&
+          BLUE_GREEN_SUPPORT_SERVICES.every((service) => args.includes(service))
       )
     );
     assert.ok(
@@ -807,6 +929,187 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
+});
+
+test('runDockerWebWorkflow recovers from stale blue-green container name conflicts', async () => {
+  const calls = [];
+  let upSucceeded = false;
+  let webProxyPsCalls = 0;
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-bg-conflict-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+
+  const runCommand = async (command, args) => {
+    calls.push([command, args]);
+
+    if (args.includes('ps') && args.at(-1) === 'web') {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === BLUE_GREEN_PROXY_SERVICE) {
+      webProxyPsCalls += 1;
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: upSucceeded && webProxyPsCalls > 1 ? 'proxy-123\n' : '',
+      };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'web-blue') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: upSucceeded ? 'container-blue\n' : '',
+      };
+    }
+
+    if (
+      args.includes('ps') &&
+      BLUE_GREEN_SUPPORT_SERVICES.includes(args.at(-1))
+    ) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: upSucceeded ? `container-${args.at(-1)}\n` : '',
+      };
+    }
+
+    if (
+      command === 'docker' &&
+      args[0] === 'compose' &&
+      args.includes('up') &&
+      args.includes('web-blue')
+    ) {
+      if (!upSucceeded) {
+        upSucceeded = true;
+        return {
+          code: 1,
+          signal: null,
+          stderr:
+            'Error response from daemon: Conflict. The container name "/platform-web-blue-1" is already in use by container "stale-blue". You have to remove (or rename) that container to be able to reuse that name.',
+          stdout: '',
+        };
+      }
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (
+      command === 'docker' &&
+      args[0] === 'rm' &&
+      args[1] === '-f' &&
+      args[2] === 'platform-web-blue-1'
+    ) {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (args[0] === 'inspect') {
+      return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  try {
+    await runDockerWebWorkflow(
+      parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green']),
+      {
+        env: {
+          DOCKER_WEB_COMPOSE_PROJECT_NAME: 'platform',
+          PATH: 'test-path',
+        },
+        envFilePath,
+        proxyDrainMs: 0,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'rm' &&
+          args[1] === '-f' &&
+          args[2] === 'platform-web-blue-1'
+      )
+    );
+    assert.equal(
+      calls.filter(
+        ([command, args]) =>
+          command === 'docker' && args[0] === 'compose' && args.includes('up')
+      ).length,
+      2
+    );
+    assert.equal(readBlueGreenActiveColor(getBlueGreenPaths(tempDir)), 'blue');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runComposeUpWithNameConflictRecovery removes stale Compose recreate temp containers', async () => {
+  const calls = [];
+  let upAttempts = 0;
+  const tempName = '50824ff4b149_platform-markitdown-1';
+
+  const runCommand = async (command, args) => {
+    calls.push([command, args]);
+
+    if (command === 'docker' && args[0] === 'compose' && args.includes('up')) {
+      upAttempts += 1;
+
+      if (upAttempts === 1) {
+        return {
+          code: 1,
+          signal: null,
+          stderr: `Error response from daemon: Conflict. The container name "/${tempName}" is already in use by container "stale-markitdown". You have to remove (or rename) that container to be able to reuse that name.`,
+          stdout: '',
+        };
+      }
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  await runComposeUpWithNameConflictRecovery({
+    composeFile: PROD_COMPOSE_FILE,
+    env: {
+      COMPOSE_PROJECT_NAME: 'platform',
+      PATH: 'test-path',
+    },
+    runCommand,
+    services: ['web-green', 'markitdown', 'storage-unzip-proxy'],
+    upArgs: [
+      'up',
+      '--build',
+      '--detach',
+      '--remove-orphans',
+      'web-green',
+      'markitdown',
+      'storage-unzip-proxy',
+    ],
+  });
+
+  assert.equal(upAttempts, 2);
+  assert.ok(
+    calls.some(
+      ([command, args]) =>
+        command === 'docker' &&
+        args[0] === 'rm' &&
+        args[1] === '-f' &&
+        args[2] === tempName
+    )
+  );
 });
 
 test('runDockerWebWorkflow switches traffic to the new color after it becomes healthy', async () => {
@@ -842,6 +1145,18 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
 
     if (args.includes('ps') && args.at(-1) === 'web-blue') {
       return { code: 0, signal: null, stderr: '', stdout: 'container-blue\n' };
+    }
+
+    if (
+      args.includes('ps') &&
+      BLUE_GREEN_SUPPORT_SERVICES.includes(args.at(-1))
+    ) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: `container-${args.at(-1)}\n`,
+      };
     }
 
     if (args[0] === 'inspect') {
@@ -1053,6 +1368,18 @@ test('runDockerWebWorkflow ignores stale active colors without live containers',
         signal: null,
         stderr: '',
         stdout: webBluePsCalls === 1 ? '' : 'container-blue\n',
+      };
+    }
+
+    if (
+      args.includes('ps') &&
+      BLUE_GREEN_SUPPORT_SERVICES.includes(args.at(-1))
+    ) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: `container-${args.at(-1)}\n`,
       };
     }
 
