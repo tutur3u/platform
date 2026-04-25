@@ -464,6 +464,23 @@ export function CmsStudioClient({
     });
   };
 
+  const mergeCollection = (nextCollection: ExternalProjectCollection) => {
+    updateStudioCache((current) => {
+      const exists = current.collections.some(
+        (collection) => collection.id === nextCollection.id
+      );
+
+      return {
+        ...current,
+        collections: exists
+          ? current.collections.map((collection) =>
+              collection.id === nextCollection.id ? nextCollection : collection
+            )
+          : [nextCollection, ...current.collections],
+      };
+    });
+  };
+
   const openEntryEditor = (entryId: string) => {
     setSelectedEntryId(entryId);
     setEditorEntryId(entryId);
@@ -521,12 +538,28 @@ export function CmsStudioClient({
 
   const createEntryMutation = useMutation({
     mutationFn: async () => {
-      const collectionId = activeCollection?.id ?? collections[0]?.id ?? null;
-      if (!collectionId) {
-        throw new Error('Collection is required');
+      let createdCollection: ExternalProjectCollection | null = null;
+      let collectionId = activeCollection?.id ?? collections[0]?.id ?? null;
+
+      if (!collectionId && collectionScope === 'games') {
+        createdCollection = await createWorkspaceExternalProjectCollection(
+          workspaceId,
+          {
+            collection_type: 'game',
+            config: {},
+            description: strings.gamesCollectionDescription,
+            slug: 'games',
+            title: strings.gamesCollectionTitle,
+          }
+        );
+        collectionId = createdCollection.id;
       }
 
-      return createWorkspaceExternalProjectEntry(workspaceId, {
+      if (!collectionId) {
+        throw new Error(strings.emptyCollection);
+      }
+
+      const entry = await createWorkspaceExternalProjectEntry(workspaceId, {
         collection_id: collectionId,
         metadata: {},
         profile_data: {},
@@ -535,14 +568,25 @@ export function CmsStudioClient({
         status: 'draft',
         subtitle: null,
         summary: null,
-        title: 'Untitled entry',
+        title:
+          collectionScope === 'games'
+            ? strings.gamesUntitledEntryTitle
+            : 'Untitled entry',
       });
+
+      return {
+        collection: createdCollection,
+        entry,
+      };
     },
     onError: (error) =>
       toast.error(
         error instanceof Error ? error.message : strings.createEntryAction
       ),
-    onSuccess: (entry) => {
+    onSuccess: ({ collection, entry }) => {
+      if (collection) {
+        mergeCollection(collection);
+      }
       mergeEntry(entry);
       setSelectedCollectionId(entry.collection_id);
       setSelectedEntryId(entry.id);
@@ -565,7 +609,7 @@ export function CmsStudioClient({
       const title =
         newCollectionTitle.trim() ||
         (collectionScope === 'games'
-          ? 'Untitled game collection'
+          ? strings.gamesCollectionTitle
           : 'Untitled collection');
       const slug = slugifyLabel(title, `collection-${Date.now()}`);
 
@@ -873,6 +917,11 @@ export function CmsStudioClient({
     binding,
     collections,
     counts,
+    createEntryHint:
+      collectionScope === 'games' && !activeCollection
+        ? strings.gamesAutoCreateCollectionHint
+        : undefined,
+    createEntryPending: createEntryMutation.isPending,
     editSection,
     entries: visibleEntries,
     importPending: importMutation.isPending,

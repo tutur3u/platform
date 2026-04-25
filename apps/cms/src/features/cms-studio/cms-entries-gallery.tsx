@@ -67,6 +67,8 @@ function getEntryTags(entry: ExternalProjectEntry) {
 export function CmsEntriesGallery({
   activeCollection,
   assets,
+  createEntryHint,
+  createEntryPending = false,
   entries,
   onCreateEntry,
   onDeleteEntry,
@@ -82,6 +84,8 @@ export function CmsEntriesGallery({
 }: {
   activeCollection: ExternalProjectCollection | null;
   assets: ExternalProjectStudioAsset[];
+  createEntryHint?: string;
+  createEntryPending?: boolean;
   entries: ExternalProjectEntry[];
   onCreateEntry: () => void;
   onDeleteEntry: (entryId: string) => void;
@@ -109,13 +113,16 @@ export function CmsEntriesGallery({
     >
       <button
         type="button"
-        className="flex aspect-[5/6] h-full min-h-[19rem] flex-col items-center justify-center rounded-[1.2rem] border border-border/70 border-dashed bg-card/95 p-4 text-center transition-colors hover:bg-background"
+        className="flex aspect-[5/6] h-full min-h-[19rem] flex-col items-center justify-center rounded-[1.2rem] border border-border/70 border-dashed bg-card/95 p-4 text-center transition-colors hover:bg-background disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={createEntryPending}
         onClick={onCreateEntry}
       >
         <Plus className="mb-3 h-5 w-5" />
         <div className="font-medium text-sm">{strings.createEntryAction}</div>
         <div className="mt-1 text-muted-foreground text-xs">
-          {activeCollection?.title ?? strings.emptyCollection}
+          {createEntryHint ??
+            activeCollection?.title ??
+            strings.emptyCollection}
         </div>
       </button>
 

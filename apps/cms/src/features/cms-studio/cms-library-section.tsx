@@ -39,6 +39,8 @@ export function CmsLibrarySection({
   binding,
   collections,
   counts,
+  createEntryHint,
+  createEntryPending,
   editSection,
   entries,
   importPending,
@@ -112,6 +114,7 @@ export function CmsLibrarySection({
 
         {editSection === 'entries' && canShowEntries ? (
           <Select
+            disabled={collections.length === 0}
             value={activeCollection?.id ?? ''}
             onValueChange={onSelectCollection}
           >
@@ -146,7 +149,10 @@ export function CmsLibrarySection({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuItem onClick={onCreateEntry}>
+            <DropdownMenuItem
+              disabled={createEntryPending}
+              onClick={onCreateEntry}
+            >
               <Plus className="mr-2 h-4 w-4" />
               {strings.createEntryAction}
             </DropdownMenuItem>
@@ -186,6 +192,8 @@ export function CmsLibrarySection({
         <CmsEntriesGallery
           activeCollection={activeCollection}
           assets={assets}
+          createEntryHint={createEntryHint}
+          createEntryPending={createEntryPending}
           entries={entries}
           onCreateEntry={onCreateEntry}
           onDeleteEntry={onDeleteEntry}

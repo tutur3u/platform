@@ -104,6 +104,10 @@ export type CmsStrings = {
   focusVisual: string;
   focusWorkflow: string;
   fullscreenAction: string;
+  gamesAutoCreateCollectionHint: string;
+  gamesCollectionDescription: string;
+  gamesCollectionTitle: string;
+  gamesUntitledEntryTitle: string;
   importAction: string;
   importHint: string;
   loadingPreviewLabel: string;
@@ -344,6 +348,10 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     focusVisual: t('epm.focus_visual'),
     focusWorkflow: t('epm.focus_workflow'),
     fullscreenAction: t('epm.fullscreen_action'),
+    gamesAutoCreateCollectionHint: t('epm.games_auto_create_collection_hint'),
+    gamesCollectionDescription: t('epm.games_collection_description'),
+    gamesCollectionTitle: t('epm.games_collection_title'),
+    gamesUntitledEntryTitle: t('epm.games_untitled_entry_title'),
     importAction: t('epm.import_action'),
     importHint: t('epm.import_hint'),
     loadingPreviewLabel: t('epm.loading_preview_label'),

@@ -35,6 +35,8 @@ export type CmsLibrarySectionProps = {
   binding: WorkspaceExternalProjectBinding;
   collections: ExternalProjectCollection[];
   counts: CmsLibraryCounts;
+  createEntryHint?: string;
+  createEntryPending?: boolean;
   editSection: EditSection;
   entries: ExternalProjectEntry[];
   importPending: boolean;
