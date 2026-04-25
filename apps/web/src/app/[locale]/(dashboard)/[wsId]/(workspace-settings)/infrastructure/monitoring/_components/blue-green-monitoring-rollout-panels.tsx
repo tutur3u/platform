@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
 import { parseAsInteger, useQueryState } from 'nuqs';
+import { useEffect, useState } from 'react';
 import type { BlueGreenMonitoringDeploymentRollup } from './blue-green-monitoring-deployments';
 import {
   ExplorerPagination,
@@ -40,6 +41,20 @@ import {
   getDeploymentStatusTranslationKey,
   getRuntimeBadgeTranslationKey,
 } from './formatters';
+
+function useNow(intervalMs = 1000) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, intervalMs);
+
+    return () => window.clearInterval(timer);
+  }, [intervalMs]);
+
+  return now;
+}
 
 export function TrafficPeriodsPanel({
   analytics,
@@ -130,6 +145,7 @@ export function RolloutStagePanel({
   watcher: BlueGreenMonitoringSnapshot['watcher'];
 }) {
   const t = useTranslations('blue-green-monitoring');
+  const now = useNow();
   const latestDeployment = deployments[0] ?? null;
   const watcherStatus =
     typeof watcher.lastDeployStatus === 'string' && watcher.lastDeployStatus
@@ -148,7 +164,7 @@ export function RolloutStagePanel({
   const phaseDuration =
     status === 'building' || status === 'deploying'
       ? startedAt != null
-        ? formatDuration(Math.max(0, Date.now() - startedAt))
+        ? formatDuration(Math.max(0, now - startedAt))
         : '—'
       : formatDuration(latestDeployment?.buildDurationMs);
   const requestMeta =

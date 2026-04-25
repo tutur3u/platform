@@ -22,9 +22,11 @@ function t(key: string) {
 
 function createSnapshot(
   source: BlueGreenMonitoringSnapshot['source'],
-  watcherHealth: BlueGreenMonitoringSnapshot['watcher']['health']
+  watcherHealth: BlueGreenMonitoringSnapshot['watcher']['health'],
+  deployments: BlueGreenMonitoringSnapshot['deployments'] = []
 ) {
   return {
+    deployments,
     source,
     watcher: {
       health: watcherHealth,
@@ -71,5 +73,32 @@ describe('BlueGreenMonitoringAlerts', () => {
 
     expect(screen.getByText('Watcher needs attention')).toBeInTheDocument();
     expect(screen.queryByText('Waiting for watcher snapshot')).toBeNull();
+  });
+
+  it('does not show a stale watcher warning while a rollout is in progress', () => {
+    render(
+      <BlueGreenMonitoringAlerts
+        snapshot={createSnapshot(
+          {
+            historyAvailable: true,
+            monitoringDirAvailable: true,
+            statusAvailable: true,
+          },
+          'stale',
+          [
+            {
+              commitHash: 'deploying-commit',
+              commitShortHash: 'deploying',
+              runtimeState: null,
+              startedAt: 2000,
+              status: 'building',
+            },
+          ] as BlueGreenMonitoringSnapshot['deployments']
+        )}
+        t={t as never}
+      />
+    );
+
+    expect(screen.queryByText('Watcher needs attention')).toBeNull();
   });
 });

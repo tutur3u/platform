@@ -8,6 +8,15 @@ import type { useTranslations } from 'next-intl';
 
 type MonitoringTranslations = ReturnType<typeof useTranslations>;
 
+function hasInProgressDeployment(snapshot: BlueGreenMonitoringSnapshot) {
+  const latestDeployment = snapshot.deployments?.[0];
+
+  return (
+    latestDeployment?.status === 'building' ||
+    latestDeployment?.status === 'deploying'
+  );
+}
+
 export function BlueGreenMonitoringLoadingState({
   includeExplorer = false,
 }: {
@@ -65,6 +74,7 @@ export function BlueGreenMonitoringAlerts({
   const showWatcherDegradedAlert =
     snapshot.source.monitoringDirAvailable &&
     snapshot.source.statusAvailable &&
+    !hasInProgressDeployment(snapshot) &&
     snapshot.watcher.health !== 'live';
 
   return (
