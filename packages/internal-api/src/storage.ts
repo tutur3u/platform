@@ -512,18 +512,19 @@ export async function deleteWorkspaceStorageObjects(
   paths: string[],
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
-  return client.json<WorkspaceStorageDeleteResponse>(
-    `/api/v1/storage/delete?wsId=${encodePathSegment(workspaceId)}`,
-    {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ paths }),
-      cache: 'no-store',
-    }
+  await Promise.all(
+    paths.map((path) =>
+      deleteWorkspaceStorageObject(workspaceId, path, options)
+    )
   );
+
+  return {
+    message: `Successfully deleted ${paths.length} file(s)`,
+    data: {
+      deleted: paths.length,
+      paths,
+    },
+  } satisfies WorkspaceStorageDeleteResponse;
 }
 
 export async function createWorkspaceStorageFolder(

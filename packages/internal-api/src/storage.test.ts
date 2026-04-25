@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createWorkspaceStorageUploadUrl,
   createWorkspaceTaskUploadUrl,
+  deleteWorkspaceStorageObjects,
   uploadWorkspaceStorageFile,
   uploadWorkspaceTaskFile,
 } from './storage';
@@ -15,6 +16,47 @@ function createJsonResponse(payload: unknown) {
 }
 
 describe('workspace task upload helpers', () => {
+  it('deletes Drive files through workspace-scoped authenticated routes', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ success: true }));
+
+    const result = await deleteWorkspaceStorageObjects(
+      'ws-1',
+      ['documents/a.txt', 'documents/b.txt'],
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws-1/storage/object',
+      expect.objectContaining({
+        method: 'DELETE',
+        body: JSON.stringify({ path: 'documents/a.txt' }),
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws-1/storage/object',
+      expect.objectContaining({
+        method: 'DELETE',
+        body: JSON.stringify({ path: 'documents/b.txt' }),
+        cache: 'no-store',
+      })
+    );
+    expect(result).toEqual({
+      message: 'Successfully deleted 2 file(s)',
+      data: {
+        deleted: 2,
+        paths: ['documents/a.txt', 'documents/b.txt'],
+      },
+    });
+  });
+
   it('requests task upload URL from dedicated task endpoint', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({

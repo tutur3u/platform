@@ -163,8 +163,10 @@ Blue/green deploy does this:
 `tmp/docker-web/markitdown-token` and `tmp/docker-web/storage-unzip-token`.
 Override them with `DOCKER_MARKITDOWN_ENDPOINT_SECRET` or
 `DOCKER_DRIVE_UNZIP_PROXY_SHARED_TOKEN` when an operator needs fixed values.
-Workspace ZIP auto-extract still requires the workspace-level
-`DRIVE_AUTO_EXTRACT_ZIP` secret to opt in; the Docker-internal URL and token are
+Workspace ZIP auto-extract is enabled by the workspace-level
+`DRIVE_AUTO_EXTRACT_ZIP` secret. Workspaces with `EXTERNAL_PROJECT_ENABLED=true`
+also opt in automatically so CMS/WebGL workspaces can reuse the unzipper without
+duplicating storage automation setup. The Docker-internal URL and token are
 fallbacks for workspaces that have not supplied custom proxy secrets.
 
 CMS WebGL package uploads also use the `storage-unzip-proxy`, but they are a
@@ -172,7 +174,10 @@ first-class CMS upload path rather than generic Drive automation. They require a
 configured unzip proxy URL and token, but they do not require the
 `DRIVE_AUTO_EXTRACT_ZIP` workspace opt-in secret. The CMS finalize route unpacks
 the ZIP into workspace Drive, detects the playable `index.html`, and stores the
-same-origin artifact map on the CMS `webgl-package` asset.
+same-origin artifact map on the CMS `webgl-package` asset. Browser uploads go
+through a same-origin WebGL package proxy route before the server writes to
+Supabase Storage or R2, so CMS editors do not depend on object-storage CORS
+settings for ZIP uploads.
 
 The MarkItDown endpoint is the conversion path for uploaded workspace files.
 Do not route YouTube summaries through MarkItDown or Google Search. Google

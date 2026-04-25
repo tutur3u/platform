@@ -165,6 +165,9 @@ describe('WebGL package upload URL route', () => {
       archivePath: expect.stringContaining(
         'external-projects/yoola/games/mine/webgl-packages/'
       ),
+      proxyUploadUrl: expect.stringContaining(
+        '/api/v1/workspaces/ws-1/external-projects/webgl-packages/upload?'
+      ),
       signedUrl: 'https://upload.example.com',
       token: 'token-1',
     });

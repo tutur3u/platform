@@ -3,6 +3,7 @@ import 'server-only';
 import { posix } from 'node:path';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { getSecrets } from '@tuturuuu/utils/workspace-helper';
+import { EXTERNAL_PROJECT_ENABLED_SECRET } from './external-projects/constants';
 import {
   DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET,
   DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET,
@@ -133,7 +134,9 @@ export async function resolveWorkspaceStorageAutoExtractConfig(
 ): Promise<WorkspaceStorageAutoExtractConfig> {
   const secrets = await getSecrets({ wsId, forceAdmin: true });
   const secretMap = createSecretsMap(secrets);
-  const enabled = isTruthySecret(secretMap.get(DRIVE_AUTO_EXTRACT_ZIP_SECRET));
+  const enabled =
+    isTruthySecret(secretMap.get(DRIVE_AUTO_EXTRACT_ZIP_SECRET)) ||
+    isTruthySecret(secretMap.get(EXTERNAL_PROJECT_ENABLED_SECRET));
   const proxyUrl =
     secretMap.get(DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET)?.trim() ||
     process.env.DRIVE_AUTO_EXTRACT_PROXY_URL?.trim();

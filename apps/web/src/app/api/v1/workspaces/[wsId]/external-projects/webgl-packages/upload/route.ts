@@ -1,11 +1,10 @@
 import { posix } from 'node:path';
-import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { isWebglZipUpload } from '@/lib/external-projects/webgl-packages';
 import {
-  createWorkspaceStorageUploadPayload,
+  uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
 import {
@@ -15,14 +14,30 @@ import {
   sanitizeWebglZipFilename,
 } from '../shared';
 
-const uploadUrlSchema = z.object({
-  contentType: z.string().max(255).optional(),
+const uploadSchema = z.object({
+  archivePath: z.string().min(1).max(2048),
   entryId: z.string().uuid(),
   filename: z.string().min(1).max(255),
-  size: z.number().int().positive().optional(),
 });
 
-export async function POST(
+function normalizeArchivePath(path: string) {
+  const withoutLeadingSlash = path.trim().replace(/^\/+/u, '');
+  const normalized = posix.normalize(withoutLeadingSlash);
+
+  if (
+    !withoutLeadingSlash ||
+    normalized !== withoutLeadingSlash ||
+    normalized.includes('..') ||
+    normalized.startsWith('/') ||
+    posix.isAbsolute(normalized)
+  ) {
+    return null;
+  }
+
+  return normalized;
+}
+
+export async function PUT(
   request: Request,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
@@ -42,11 +57,18 @@ export async function POST(
       );
     }
 
-    const payload = uploadUrlSchema.parse(await request.json());
+    const url = new URL(request.url);
+    const payload = uploadSchema.parse({
+      archivePath: url.searchParams.get('archivePath'),
+      entryId: url.searchParams.get('entryId'),
+      filename: url.searchParams.get('filename'),
+    });
+    const contentType =
+      request.headers.get('content-type') || 'application/octet-stream';
 
     if (
       !isWebglZipUpload({
-        contentType: payload.contentType,
+        contentType,
         filename: payload.filename,
       })
     ) {
@@ -54,11 +76,6 @@ export async function POST(
         { error: 'WebGL package uploads must be ZIP archives.' },
         { status: 400 }
       );
-    }
-
-    const filename = sanitizeWebglZipFilename(payload.filename);
-    if (!filename) {
-      return NextResponse.json({ error: 'Invalid filename' }, { status: 400 });
     }
 
     const entry = await getWebglPackageEntryContext(
@@ -70,33 +87,48 @@ export async function POST(
       return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
     }
 
-    const uploadPath = buildWebglPackageUploadPath({
+    const expectedUploadPath = buildWebglPackageUploadPath({
       binding: access.binding,
       entry,
     });
-    const uploadFilename = `${generateRandomUUID()}-${filename}`;
-    const archivePath = posix.join(uploadPath, uploadFilename);
-    const upload = await createWorkspaceStorageUploadPayload(
+    const archivePath = normalizeArchivePath(payload.archivePath);
+    const archiveFilename = archivePath
+      ? sanitizeWebglZipFilename(posix.basename(archivePath))
+      : null;
+
+    if (
+      !archivePath ||
+      !archiveFilename ||
+      posix.dirname(archivePath) !== expectedUploadPath
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid WebGL package upload path.' },
+        { status: 400 }
+      );
+    }
+
+    const buffer = new Uint8Array(await request.arrayBuffer());
+    if (buffer.byteLength === 0) {
+      return NextResponse.json(
+        { error: 'WebGL package upload is empty.' },
+        { status: 400 }
+      );
+    }
+
+    const upload = await uploadWorkspaceStorageFileDirect(
       access.normalizedWorkspaceId,
-      uploadFilename,
+      archivePath,
+      buffer,
       {
-        contentType: payload.contentType || 'application/zip',
-        path: uploadPath,
-        size: payload.size,
+        contentType,
         upsert: false,
       }
     );
 
     return NextResponse.json({
-      ...upload,
-      archivePath,
-      proxyUploadUrl: `/api/v1/workspaces/${encodeURIComponent(wsId)}/external-projects/webgl-packages/upload?${new URLSearchParams(
-        {
-          archivePath,
-          entryId: payload.entryId,
-          filename,
-        }
-      ).toString()}`,
+      archivePath: upload.path,
+      fullPath: upload.fullPath,
+      path: upload.path,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -113,9 +145,9 @@ export async function POST(
       );
     }
 
-    console.error('Failed to create WebGL package upload URL', error);
+    console.error('Failed to upload WebGL package archive', error);
     return NextResponse.json(
-      { error: 'Failed to create WebGL package upload URL' },
+      { error: 'Failed to upload WebGL package archive' },
       { status: 500 }
     );
   }

@@ -18,6 +18,7 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  resolveInternalApiUrl,
 } from './client';
 
 type CanonicalExternalProjectUpsertPayload = {
@@ -73,6 +74,7 @@ type WorkspaceExternalProjectAssetPayload = {
 type ExternalProjectUploadUrlResponse = {
   archivePath?: string;
   headers?: Record<string, string>;
+  proxyUploadUrl?: string;
   signedUrl?: string;
   token?: string;
   path?: string;
@@ -82,6 +84,7 @@ type ExternalProjectUploadUrlResponse = {
 type ExternalProjectUploadUrlPayload = {
   archivePath?: string;
   headers?: Record<string, string>;
+  proxyUploadUrl?: string;
   signedUrl: string;
   token?: string;
   path: string;
@@ -124,6 +127,7 @@ function parseExternalProjectUploadPayload(
   return {
     archivePath: payload.archivePath,
     headers: payload.headers,
+    proxyUploadUrl: payload.proxyUploadUrl,
     signedUrl: payload.signedUrl,
     token: payload.token,
     path: payload.path,
@@ -134,13 +138,18 @@ function parseExternalProjectUploadPayload(
 async function uploadExternalProjectFileWithSignedUrl(
   file: File,
   uploadUrlResult: ExternalProjectUploadUrlPayload,
-  fetchImpl: typeof fetch
+  fetchImpl: typeof fetch,
+  baseUrl?: string
 ) {
+  const uploadUrl = uploadUrlResult.proxyUploadUrl
+    ? resolveInternalApiUrl(uploadUrlResult.proxyUploadUrl, baseUrl)
+    : uploadUrlResult.signedUrl;
+  const isProxyUpload = Boolean(uploadUrlResult.proxyUploadUrl);
   const headers: Record<string, string> = {
-    ...(uploadUrlResult.headers ?? {}),
+    ...(isProxyUpload ? {} : (uploadUrlResult.headers ?? {})),
   };
 
-  if (uploadUrlResult.token) {
+  if (!isProxyUpload && uploadUrlResult.token) {
     headers.Authorization = `Bearer ${uploadUrlResult.token}`;
   }
 
@@ -148,18 +157,18 @@ async function uploadExternalProjectFileWithSignedUrl(
     headers['Content-Type'] = file.type || 'application/octet-stream';
   }
 
-  let uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
+  let uploadResponse = await fetchImpl(uploadUrl, {
     method: 'PUT',
     cache: 'no-store',
     headers,
     body: file,
   });
 
-  if (!uploadResponse.ok) {
+  if (!uploadResponse.ok && !isProxyUpload) {
     const fallbackHeaders = { ...headers };
     delete fallbackHeaders['Content-Type'];
 
-    uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
+    uploadResponse = await fetchImpl(uploadUrl, {
       method: 'PUT',
       cache: 'no-store',
       headers: fallbackHeaders,
@@ -551,7 +560,8 @@ export async function uploadWorkspaceExternalProjectWebglPackageFile(
   const upload = await uploadExternalProjectFileWithSignedUrl(
     file,
     uploadUrl,
-    fetchImpl
+    fetchImpl,
+    options?.baseUrl
   );
 
   return finalizeWorkspaceExternalProjectWebglPackage(
