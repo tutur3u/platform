@@ -107,6 +107,18 @@ export interface BlueGreenMonitoringDeployment {
   status?: string | null;
 }
 
+export interface BlueGreenDeploymentPin {
+  activeColor: string | null;
+  commitHash: string;
+  commitShortHash: string | null;
+  commitSubject: string | null;
+  deploymentStamp: string | null;
+  kind: 'deployment-pin';
+  requestedAt: string;
+  requestedBy: string;
+  requestedByEmail: string | null;
+}
+
 export interface BlueGreenMonitoringPeriodMetric {
   averageLatencyMs: number | null;
   bucketLabel: string;
@@ -184,6 +196,9 @@ export interface BlueGreenMonitoringSnapshot {
       weekly: BlueGreenMonitoringPeriodMetric[];
       yearly: BlueGreenMonitoringPeriodMetric[];
     };
+  };
+  control: {
+    deploymentPin: BlueGreenDeploymentPin | null;
   };
   deployments: BlueGreenMonitoringDeployment[];
   dockerResources: {
@@ -268,6 +283,19 @@ export interface RequestBlueGreenInstantRolloutResponse {
     requestedBy: string;
     requestedByEmail: string | null;
   };
+}
+
+export interface PinBlueGreenDeploymentPayload {
+  commitHash: string;
+}
+
+export interface PinBlueGreenDeploymentResponse {
+  message: string;
+  pin: BlueGreenDeploymentPin;
+}
+
+export interface ClearBlueGreenDeploymentPinResponse {
+  message: string;
 }
 
 export interface SendInfrastructurePushTestPayload {
@@ -427,6 +455,37 @@ export async function requestBlueGreenInstantRollout(
     {
       cache: 'no-store',
       method: 'POST',
+    }
+  );
+}
+
+export async function pinBlueGreenDeployment(
+  payload: PinBlueGreenDeploymentPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<PinBlueGreenDeploymentResponse>(
+    '/api/v1/infrastructure/monitoring/blue-green/deployment-pin',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function clearBlueGreenDeploymentPin(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ClearBlueGreenDeploymentPinResponse>(
+    '/api/v1/infrastructure/monitoring/blue-green/deployment-pin',
+    {
+      cache: 'no-store',
+      method: 'DELETE',
     }
   );
 }

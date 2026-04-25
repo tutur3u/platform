@@ -13,7 +13,7 @@ export function MetricBlock({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border/50 bg-background/80 p-3">
+    <div className="rounded-lg border border-border/50 bg-background/80 p-3">
       <div className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-[0.16em]">
         {icon}
         <span>{label}</span>

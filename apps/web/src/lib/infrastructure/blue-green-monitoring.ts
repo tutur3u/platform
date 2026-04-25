@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type {
+  BlueGreenDeploymentPin,
   BlueGreenMonitoringDockerContainer,
   BlueGreenMonitoringDockerHealth,
   BlueGreenMonitoringPaginatedResult,
@@ -401,6 +402,54 @@ function normalizeWatcherLogs(
   });
 }
 
+function normalizeDeploymentPin(value: unknown): BlueGreenDeploymentPin | null {
+  const record = toRecord(value);
+  const commitHash =
+    typeof record?.commitHash === 'string' && record.commitHash.length >= 7
+      ? record.commitHash
+      : null;
+  const requestedAt =
+    typeof record?.requestedAt === 'string' && record.requestedAt.length > 0
+      ? record.requestedAt
+      : null;
+  const requestedBy =
+    typeof record?.requestedBy === 'string' && record.requestedBy.length > 0
+      ? record.requestedBy
+      : null;
+
+  if (
+    record?.kind !== 'deployment-pin' ||
+    !commitHash ||
+    !requestedAt ||
+    !requestedBy
+  ) {
+    return null;
+  }
+
+  return {
+    activeColor:
+      typeof record.activeColor === 'string' ? record.activeColor : null,
+    commitHash,
+    commitShortHash:
+      typeof record.commitShortHash === 'string'
+        ? record.commitShortHash
+        : null,
+    commitSubject:
+      typeof record.commitSubject === 'string' ? record.commitSubject : null,
+    deploymentStamp:
+      typeof record.deploymentStamp === 'string'
+        ? record.deploymentStamp
+        : null,
+    kind: 'deployment-pin',
+    requestedAt,
+    requestedBy,
+    requestedByEmail:
+      typeof record.requestedByEmail === 'string'
+        ? record.requestedByEmail
+        : null,
+  };
+}
+
 function normalizeDockerHealth(
   value: unknown
 ): BlueGreenMonitoringDockerHealth {
@@ -695,6 +744,12 @@ export function readBlueGreenMonitoringSnapshot({
       fsImpl
     ) ?? null;
   const watcherLogs = readNormalizedWatcherLogs(watchDir, fsImpl);
+  const deploymentPin = normalizeDeploymentPin(
+    readJsonFile<Record<string, unknown>>(
+      path.join(watchDir, 'control', 'blue-green-deployment-pin.json'),
+      fsImpl
+    )
+  );
 
   const activeColor = readTextFile(path.join(prodDir, 'active-color'), fsImpl);
   const deploymentStamp = readTextFile(
@@ -799,6 +854,9 @@ export function readBlueGreenMonitoringSnapshot({
         weekly: weeklyMetrics,
         yearly: yearlyMetrics,
       },
+    },
+    control: {
+      deploymentPin,
     },
     dockerResources: {
       allContainers,

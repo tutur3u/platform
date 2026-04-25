@@ -94,7 +94,7 @@ export function RuntimeTopologyPanel({
   ];
 
   return (
-    <div className="rounded-[2rem] border border-border/60 bg-background/70 p-5 backdrop-blur-sm">
+    <div className="rounded-lg border border-border/60 bg-muted/20 p-5">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
@@ -109,7 +109,7 @@ export function RuntimeTopologyPanel({
         {rows.map((row) => (
           <div
             key={row.label}
-            className="flex items-center justify-between gap-4 rounded-2xl border border-border/50 bg-background/80 px-3 py-2.5"
+            className="flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background px-3 py-2.5"
           >
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               {row.icon}
@@ -137,7 +137,7 @@ export function WatcherCadencePanel({
       : t('states.none');
 
   return (
-    <div className="rounded-[2rem] border border-border/60 bg-background/70 p-5 backdrop-blur-sm">
+    <div className="rounded-lg border border-border/60 bg-muted/20 p-5">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
@@ -186,7 +186,7 @@ export function WatcherCadencePanel({
       </div>
 
       {watcher.args.length > 0 ? (
-        <div className="mt-4 rounded-2xl border border-border/60 bg-background/80 p-3">
+        <div className="mt-4 rounded-lg border border-border/60 bg-background p-3">
           <p className="text-[11px] text-muted-foreground uppercase tracking-[0.18em]">
             {t('watcher.args')}
           </p>
@@ -235,7 +235,7 @@ export function DockerInventoryPanel({
   const serviceHealth = dockerResources.serviceHealth;
 
   return (
-    <section className="rounded-[2rem] border border-border/60 bg-background/70 p-5 backdrop-blur-sm">
+    <section className="rounded-lg border border-border/60 bg-muted/20 p-5">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
@@ -258,7 +258,7 @@ export function DockerInventoryPanel({
           </div>
 
           {serviceHealth.length === 0 ? (
-            <div className="rounded-2xl border border-border/60 border-dashed bg-background/60 p-4 text-muted-foreground text-sm">
+            <div className="rounded-lg border border-border/60 border-dashed bg-muted/20 p-4 text-muted-foreground text-sm">
               {t('docker.empty_services')}
             </div>
           ) : (
@@ -266,7 +266,7 @@ export function DockerInventoryPanel({
               {serviceHealth.map((service) => (
                 <div
                   key={`${service.serviceName}-${service.containerId}`}
-                  className="rounded-2xl border border-border/50 bg-background/80 px-3 py-2.5"
+                  className="rounded-lg border border-border/50 bg-background px-3 py-2.5"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
@@ -295,7 +295,7 @@ export function DockerInventoryPanel({
           </div>
 
           {runningContainers.length === 0 ? (
-            <div className="rounded-2xl border border-border/60 border-dashed bg-background/60 p-4 text-muted-foreground text-sm">
+            <div className="rounded-lg border border-border/60 border-dashed bg-muted/20 p-4 text-muted-foreground text-sm">
               {t('docker.empty_containers')}
             </div>
           ) : (
@@ -303,7 +303,7 @@ export function DockerInventoryPanel({
               {runningContainers.map((container) => (
                 <div
                   key={container.containerId}
-                  className="rounded-2xl border border-border/50 bg-background/80 p-3"
+                  className="rounded-lg border border-border/50 bg-background p-3"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -340,7 +340,7 @@ export function DockerInventoryPanel({
                   </div>
 
                   {container.ports ? (
-                    <p className="mt-3 truncate rounded-xl bg-muted/40 px-2 py-1 font-mono text-muted-foreground text-xs">
+                    <p className="mt-3 truncate rounded-lg bg-muted/40 px-2 py-1 font-mono text-muted-foreground text-xs">
                       {container.ports}
                     </p>
                   ) : null}
@@ -362,7 +362,7 @@ function DockerMeta({
   label: string;
 }) {
   return (
-    <div className="min-w-0 rounded-xl bg-muted/30 px-2 py-1.5">
+    <div className="min-w-0 rounded-lg bg-muted/30 px-2 py-1.5">
       <p className="text-muted-foreground">{label}</p>
       <p className="mt-0.5 truncate font-medium">{children}</p>
     </div>
@@ -377,7 +377,7 @@ export function EventStreamPanel({
   const t = useTranslations('blue-green-monitoring');
 
   return (
-    <div className="rounded-[2rem] border border-border/60 bg-background/70 p-5 backdrop-blur-sm">
+    <div className="rounded-lg border border-border/60 bg-muted/20 p-5">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
@@ -393,7 +393,7 @@ export function EventStreamPanel({
       </div>
 
       {watcher.events.length === 0 ? (
-        <div className="rounded-2xl border border-border/60 border-dashed bg-background/60 p-6 text-center text-muted-foreground text-sm">
+        <div className="rounded-lg border border-border/60 border-dashed bg-muted/20 p-6 text-center text-muted-foreground text-sm">
           {t('empty.events')}
         </div>
       ) : (
@@ -402,7 +402,7 @@ export function EventStreamPanel({
             {watcher.events.map((event, index) => (
               <div
                 key={`${event.time}-${index}`}
-                className="rounded-2xl border border-border/50 bg-background/80 p-3"
+                className="rounded-lg border border-border/50 bg-background p-3"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">

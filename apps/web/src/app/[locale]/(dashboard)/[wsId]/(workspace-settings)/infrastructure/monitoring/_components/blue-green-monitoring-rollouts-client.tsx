@@ -82,7 +82,7 @@ export function BlueGreenMonitoringRolloutsClient() {
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="rounded-[1.75rem] border border-border/60 bg-background/80 p-4"
+            className="rounded-lg border border-border/60 bg-background p-4"
           >
             <div className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-[0.16em]">
               {card.icon}
@@ -105,7 +105,7 @@ export function BlueGreenMonitoringRolloutsClient() {
 
       <div className="grid gap-6 2xl:grid-cols-[1.05fr_0.95fr]">
         <TrafficPeriodsPanel analytics={snapshot.analytics} />
-        <section className="rounded-[2rem] border border-border/60 bg-background/80 p-5">
+        <section className="rounded-lg border border-border/60 bg-background p-5">
           <div className="mb-4">
             <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
               {t('panels.traffic')}
@@ -119,7 +119,7 @@ export function BlueGreenMonitoringRolloutsClient() {
       </div>
 
       <div className="grid gap-6 2xl:grid-cols-[1.05fr_0.95fr]">
-        <section className="rounded-[2rem] border border-border/60 bg-background/80 p-5">
+        <section className="rounded-lg border border-border/60 bg-background p-5">
           <div className="mb-4">
             <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
               {t('panels.deployments')}
@@ -131,7 +131,7 @@ export function BlueGreenMonitoringRolloutsClient() {
           <DeploymentStoryChart deployments={snapshot.deployments} />
         </section>
 
-        <section className="rounded-[2rem] border border-border/60 bg-background/80 p-5">
+        <section className="rounded-lg border border-border/60 bg-background p-5">
           <div className="mb-4">
             <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
               {t('panels.deployments')}
@@ -144,7 +144,7 @@ export function BlueGreenMonitoringRolloutsClient() {
         </section>
       </div>
 
-      <section className="rounded-[2rem] border border-border/60 bg-background/80 p-5">
+      <section className="rounded-lg border border-border/60 bg-background p-5">
         <div className="mb-4">
           <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
             {t('panels.containers')}
@@ -159,7 +159,7 @@ export function BlueGreenMonitoringRolloutsClient() {
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <EventStreamPanel watcher={snapshot.watcher} />
 
-        <section className="space-y-4 rounded-[2rem] border border-border/60 bg-background/80 p-5">
+        <section className="space-y-4 rounded-lg border border-border/60 bg-background p-5">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">

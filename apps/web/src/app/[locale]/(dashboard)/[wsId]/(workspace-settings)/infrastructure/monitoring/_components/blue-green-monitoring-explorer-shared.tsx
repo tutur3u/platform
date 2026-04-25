@@ -35,7 +35,7 @@ export function FilterSelect({
         {label}
       </p>
       <Select onValueChange={onValueChange} value={value}>
-        <SelectTrigger className="h-11 rounded-2xl border-border/60 bg-background/90">
+        <SelectTrigger className="h-11 rounded-lg border-border/60 bg-background/90">
           <SelectValue placeholder={label} />
         </SelectTrigger>
         <SelectContent>
@@ -62,7 +62,7 @@ export function SummaryMetricCard({
   value: string;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-border/60 bg-background/75 p-4">
+    <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
       <div className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-[0.16em]">
         {icon}
         <span>{label}</span>
@@ -92,7 +92,7 @@ export function EmptyFilteredState({
   onReset: () => void;
 }) {
   return (
-    <div className="rounded-[1.75rem] border border-border/60 border-dashed bg-background/60 px-6 py-10 text-center">
+    <div className="rounded-lg border border-border/60 border-dashed bg-muted/20 px-6 py-10 text-center">
       <p className="text-muted-foreground text-sm">{description}</p>
       <Button className="mt-4 rounded-full" onClick={onReset} variant="outline">
         {actionLabel}
@@ -116,7 +116,7 @@ export function StatusBadge({
           ? 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red'
           : tone === 'warning'
             ? 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange'
-            : 'border-border/70 bg-background/80 text-foreground'
+            : 'border-border/70 bg-background text-foreground'
       )}
     >
       {children}

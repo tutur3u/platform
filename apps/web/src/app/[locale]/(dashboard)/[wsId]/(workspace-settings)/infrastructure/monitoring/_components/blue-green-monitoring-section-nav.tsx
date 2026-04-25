@@ -42,7 +42,7 @@ export function BlueGreenMonitoringSectionNav({
   ];
 
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
       {items.map((item) => {
         const Icon = item.icon;
         const isActive =
@@ -55,19 +55,19 @@ export function BlueGreenMonitoringSectionNav({
             key={item.href}
             href={item.href}
             className={cn(
-              'rounded-[1.6rem] border p-4 transition-colors',
+              'rounded-lg border p-3 transition-colors',
               isActive
-                ? 'border-dynamic-blue/35 bg-background/90 shadow-sm'
-                : 'border-border/60 bg-background/65 hover:border-dynamic-blue/25 hover:bg-background/80'
+                ? 'border-dynamic-blue/35 bg-dynamic-blue/5'
+                : 'border-border/60 bg-muted/20 hover:border-dynamic-blue/25 hover:bg-background'
             )}
           >
             <div className="flex items-start gap-3">
               <div
                 className={cn(
-                  'rounded-2xl border p-2.5',
+                  'rounded-md border p-2',
                   isActive
                     ? 'border-dynamic-blue/25 bg-dynamic-blue/10 text-dynamic-blue'
-                    : 'border-border/60 bg-background/80 text-muted-foreground'
+                    : 'border-border/60 bg-background text-muted-foreground'
                 )}
               >
                 <Icon className="h-4 w-4" />

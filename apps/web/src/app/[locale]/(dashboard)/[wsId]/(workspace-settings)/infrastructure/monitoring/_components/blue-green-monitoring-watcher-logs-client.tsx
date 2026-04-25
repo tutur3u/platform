@@ -213,7 +213,7 @@ export function BlueGreenMonitoringWatcherLogsClient() {
         />
       </div>
 
-      <section className="rounded-[2rem] border border-border/60 bg-background/80 p-5">
+      <section className="rounded-lg border border-border/60 bg-background p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
@@ -234,12 +234,12 @@ export function BlueGreenMonitoringWatcherLogsClient() {
           </Badge>
         </div>
 
-        <div className="mt-5 rounded-[1.75rem] border border-border/60 bg-background/70 p-4">
+        <div className="mt-5 rounded-lg border border-border/60 bg-muted/20 p-4">
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1.8fr)_repeat(4,minmax(0,1fr))]">
             <div className="relative">
               <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                className="h-11 rounded-2xl border-border/60 pl-10"
+                className="h-11 rounded-lg border-border/60 pl-10"
                 onChange={(event) => {
                   startTransition(() => {
                     setSearchValue(event.target.value);
@@ -308,7 +308,7 @@ export function BlueGreenMonitoringWatcherLogsClient() {
             />
           </div>
         ) : (
-          <div className="mt-5 overflow-hidden rounded-[1.75rem] border border-border/60 bg-background/75">
+          <div className="mt-5 overflow-hidden rounded-lg border border-border/60 bg-muted/20">
             <div className="border-border/60 border-b px-4 py-3">
               <p className="font-medium text-sm">
                 {t('logs_page.archive_range', {

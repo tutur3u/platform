@@ -1733,6 +1733,196 @@ test('runDeployWatchIteration reports git fetch failures without killing the wat
   }
 });
 
+test('runDeployWatchIteration deploys a pinned rollback without fetching upstream', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-pin-deploy-'));
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+  const pendingStates = [];
+  const nowValues = [1000, 2000, 5000, 6000];
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    calls.push(key);
+
+    if (key === 'git status --porcelain') {
+      return createResult('');
+    }
+
+    if (key === 'git rev-parse HEAD') {
+      return createResult('bad123456789\n');
+    }
+
+    if (key === 'git checkout --detach old123456789') {
+      return createResult('');
+    }
+
+    if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+      return createResult(
+        'old123456789\nold1234\nKnown good deployment\n2026-04-18T10:58:00.000Z\n'
+      );
+    }
+
+    if (
+      key ===
+      `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+    ) {
+      fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+      fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
+      fs.writeFileSync(
+        paths.blueGreen.deploymentStampFile,
+        'deploy-rollback\n',
+        'utf8'
+      );
+      return createResult('');
+    }
+
+    if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+      return createResult('');
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.controlDir, { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.writeFileSync(
+      paths.deploymentPinFile,
+      JSON.stringify(
+        {
+          commitHash: 'old123456789',
+          commitShortHash: 'old1234',
+          commitSubject: 'Known good deployment',
+          kind: 'deployment-pin',
+          requestedAt: '2026-04-23T10:00:00.000Z',
+          requestedBy: 'user-1',
+          requestedByEmail: 'ops@platform.test',
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        envFilePath,
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        now: () => nowValues.shift() ?? 6000,
+        onDeploymentStart: (state) => pendingStates.push(state),
+        paths,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(result.status, 'pinned-deployed');
+    assert.equal(result.deploymentPin.commitHash, 'old123456789');
+    assert.equal(result.deployments[0].deploymentKind, 'rollback-pin');
+    assert.equal(result.deployments[0].commitHash, 'old123456789');
+    assert.equal(
+      pendingStates[0].pendingDeployment.deploymentKind,
+      'rollback-pin'
+    );
+    assert.ok(!calls.includes('git fetch origin main'));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeployWatchIteration returns from detached HEAD when the deployment pin is cleared', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-pin-clear-'));
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+  let checkedOutBranch = false;
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    calls.push(key);
+
+    if (key === 'git rev-parse --abbrev-ref HEAD') {
+      return createResult(checkedOutBranch ? 'main\n' : 'HEAD\n');
+    }
+
+    if (key === 'git status --porcelain') {
+      return createResult('');
+    }
+
+    if (key === 'git checkout main') {
+      checkedOutBranch = true;
+      return createResult('');
+    }
+
+    if (key === 'git fetch origin main') {
+      return createResult('');
+    }
+
+    if (key === 'git rev-parse HEAD') {
+      return createResult('main123456789\n');
+    }
+
+    if (key === 'git rev-parse origin/main') {
+      return createResult('main123456789\n');
+    }
+
+    if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+      return createResult(
+        'main123456789\nmain123\nResume main\n2026-04-18T10:58:00.000Z\n'
+      );
+    }
+
+    if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+      return createResult('');
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        envFilePath,
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        paths,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(result.status, 'up-to-date');
+    assert.ok(calls.includes('git checkout main'));
+    assert.ok(calls.includes('git fetch origin main'));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('runDeployWatchIteration restarts before deployment when the watcher script changed', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-deploy-'));
   const paths = getWatchPaths(tempDir);

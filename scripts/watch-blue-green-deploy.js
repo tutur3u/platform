@@ -60,6 +60,7 @@ const {
 } = require('./watch-blue-green/logs.js');
 const {
   clearInstantRolloutRequest,
+  readDeploymentPin,
   readInstantRolloutRequest,
 } = require('./watch-blue-green/control.js');
 const DEFAULT_INTERVAL_MS = 1_000;
@@ -630,6 +631,12 @@ function summarizeResult(result) {
       return colorize('yellow', 'Branch diverged, waiting');
     case 'git-failed':
       return colorize('yellow', 'Git failed, retrying');
+    case 'pin-deploy-failed':
+      return colorize('red', 'Pinned rollback failed');
+    case 'pinned':
+      return colorize('yellow', 'Pinned to rollback');
+    case 'pinned-deployed':
+      return colorize('green', 'Pinned rollback deployed');
     case 'restarting':
       return colorize('magenta', 'Restarting watcher');
     case 'standby-refresh-failed':
@@ -1195,6 +1202,21 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
         state.target?.upstreamRef ?? 'unknown'
       )}`
     ),
+    ...(state.deploymentPin
+      ? [
+          formatRow(
+            'Pinned',
+            `${colorize(
+              'yellow',
+              state.deploymentPin.commitShortHash ??
+                state.deploymentPin.commitHash.slice(0, 12)
+            )} ${truncateText(
+              state.deploymentPin.commitSubject ?? 'Selected deployment',
+              Math.max(24, contentWidth - 34)
+            )}`
+          ),
+        ]
+      : []),
     formatRow('Status', summarizeResult(state.lastResult)),
     ...(failureLines.length > 0
       ? [
@@ -1484,16 +1506,25 @@ function parseUpstreamRef(upstreamRef) {
 }
 
 async function getCurrentBranch({ env, runCommand: run = runCommand } = {}) {
-  const branch = await gitStdout(['rev-parse', '--abbrev-ref', 'HEAD'], {
-    env,
-    runCommand: run,
-  });
+  const branch = await getCurrentBranchName({ env, runCommand: run });
 
   if (branch === 'HEAD') {
     throw new Error(
       'The auto-deploy watcher requires a named branch. Detached HEAD is not supported.'
     );
   }
+
+  return branch;
+}
+
+async function getCurrentBranchName({
+  env,
+  runCommand: run = runCommand,
+} = {}) {
+  const branch = await gitStdout(['rev-parse', '--abbrev-ref', 'HEAD'], {
+    env,
+    runCommand: run,
+  });
 
   return branch;
 }
@@ -1571,9 +1602,29 @@ async function hasWatchedScriptChanges(
 
 async function resolveLockedBranchTarget({
   env,
+  fsImpl = fs,
+  paths = getWatchPaths(),
   runCommand: run = runCommand,
 } = {}) {
-  const branch = await getCurrentBranch({ env, runCommand: run });
+  const branch = await getCurrentBranchName({ env, runCommand: run });
+
+  if (branch === 'HEAD') {
+    const existingLock = readWatchLock(paths, fsImpl);
+
+    if (existingLock?.branch && existingLock?.upstreamRef) {
+      return {
+        branch: existingLock.branch,
+        remote: existingLock.remote,
+        upstreamBranch: existingLock.upstreamBranch,
+        upstreamRef: existingLock.upstreamRef,
+      };
+    }
+
+    throw new Error(
+      'The auto-deploy watcher requires a named branch or an existing watcher lock when starting from detached HEAD.'
+    );
+  }
+
   const upstream = await getTrackedUpstream({ env, runCommand: run });
 
   return {
@@ -1911,6 +1962,26 @@ async function pullTrackedBranch(
   );
 }
 
+async function checkoutRevision(
+  ref,
+  { env, runCommand: run = runCommand } = {}
+) {
+  await runChecked('git', ['checkout', '--detach', ref], {
+    env,
+    runCommand: run,
+  });
+}
+
+async function checkoutBranch(
+  branch,
+  { env, runCommand: run = runCommand } = {}
+) {
+  await runChecked('git', ['checkout', branch], {
+    env,
+    runCommand: run,
+  });
+}
+
 async function runBlueGreenDeploy({
   deployCommand = DEFAULT_DEPLOY_COMMAND,
   env,
@@ -2143,6 +2214,7 @@ async function mirrorExistingWatchSession(
     if (status) {
       ui.update({
         ...status,
+        deploymentPin: readDeploymentPin(paths, fsImpl),
         lockFile: paths.lockFile,
       });
     } else {
@@ -2161,6 +2233,7 @@ async function mirrorExistingWatchSession(
 
       ui.update({
         currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+        deploymentPin: readDeploymentPin(paths, fsImpl),
         deployments: runtimeSnapshot.deployments,
         lastDeployAt: deploymentSummary.lastDeployAt,
         lastDeployStatus: deploymentSummary.lastDeployStatus,
@@ -2829,6 +2902,183 @@ async function loadRuntimeSnapshot({
   };
 }
 
+async function runPinnedDeploymentIteration(
+  target,
+  deploymentPin,
+  {
+    deployCommand = DEFAULT_DEPLOY_COMMAND,
+    env,
+    envFilePath = WEB_ENV_FILE,
+    fsImpl = fs,
+    log = console,
+    now = () => Date.now(),
+    onDeploymentStart = () => {},
+    paths = getWatchPaths(),
+    rootDir = ROOT_DIR,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  const checkedAt = now();
+  const attachRuntime = async (result, history = null) => {
+    const snapshotNow = now();
+
+    return {
+      ...result,
+      deploymentPin: readDeploymentPin(paths, fsImpl),
+      ...(await loadRuntimeSnapshot({
+        env,
+        envFilePath,
+        fsImpl,
+        history,
+        now: snapshotNow,
+        paths,
+        rootDir,
+        runCommand: run,
+      })),
+    };
+  };
+  const hasBlockingDirtyWorktree = await hasDirtyWorktree({
+    env,
+    ignoredPaths: ['bun.lock'],
+    runCommand: run,
+  });
+
+  if (hasBlockingDirtyWorktree) {
+    log.warn?.(
+      `Skipping pinned rollback because the worktree has uncommitted changes on ${target.branch}.`
+    );
+    return attachRuntime({
+      checkedAt,
+      status: 'dirty',
+    });
+  }
+
+  const currentHead = await getRevision('HEAD', { env, runCommand: run });
+  if (currentHead !== deploymentPin.commitHash) {
+    log.warn?.(
+      `Deployment pin is active. Checking out ${deploymentPin.commitShortHash ?? deploymentPin.commitHash.slice(0, 12)} in detached mode and pausing normal auto-pulls.`
+    );
+    await checkoutRevision(deploymentPin.commitHash, {
+      env,
+      runCommand: run,
+    });
+  }
+
+  const latestCommit = await getCommitMetadata('HEAD', {
+    env,
+    runCommand: run,
+  });
+  const latestDeployedCommitHash = getLatestSuccessfulDeploymentCommitHash(
+    readDeploymentHistory(paths, fsImpl)
+  );
+
+  if (latestCommit.hash && latestCommit.hash === latestDeployedCommitHash) {
+    return attachRuntime({
+      checkedAt,
+      latestCommit,
+      status: 'pinned',
+    });
+  }
+
+  const deployStartedAt = now();
+  onDeploymentStart({
+    checkedAt,
+    latestCommit,
+    pendingDeployment: createPendingDeploymentEntry({
+      deploymentKind: 'rollback-pin',
+      latestCommit,
+      startedAt: deployStartedAt,
+      status: 'deploying',
+    }),
+  });
+
+  try {
+    log.warn?.(
+      `Deploying pinned rollback ${latestCommit.shortHash}; auto-pulls remain paused until the pin is cleared.`
+    );
+    await runBlueGreenDeploy({
+      deployCommand,
+      env,
+      runCommand: run,
+    });
+
+    const deployFinishedAt = now();
+    const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+    const deploymentStamp = readBlueGreenDeploymentStamp(
+      paths.blueGreen,
+      fsImpl
+    );
+    const history = appendDeploymentHistory(
+      {
+        activatedAt: deployFinishedAt,
+        activeColor,
+        buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+        commitHash: latestCommit.hash,
+        commitShortHash: latestCommit.shortHash,
+        commitSubject: latestCommit.subject,
+        deploymentKind: 'rollback-pin',
+        deploymentStamp,
+        finishedAt: deployFinishedAt,
+        pinnedBy: deploymentPin.requestedBy,
+        pinnedByEmail: deploymentPin.requestedByEmail,
+        startedAt: deployStartedAt,
+        status: 'successful',
+      },
+      {
+        fsImpl,
+        paths,
+      }
+    );
+
+    log.info?.(`Pinned rollback deployed for ${latestCommit.shortHash}.`);
+
+    return attachRuntime(
+      {
+        checkedAt,
+        latestCommit,
+        pinnedFromCommitHash: latestDeployedCommitHash,
+        status: 'pinned-deployed',
+      },
+      history
+    );
+  } catch (error) {
+    const deployFinishedAt = now();
+    const history = appendDeploymentHistory(
+      {
+        buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+        commitHash: latestCommit.hash,
+        commitShortHash: latestCommit.shortHash,
+        commitSubject: latestCommit.subject,
+        deploymentKind: 'rollback-pin',
+        finishedAt: deployFinishedAt,
+        pinnedBy: deploymentPin.requestedBy,
+        pinnedByEmail: deploymentPin.requestedByEmail,
+        startedAt: deployStartedAt,
+        status: 'failed',
+      },
+      {
+        fsImpl,
+        paths,
+      }
+    );
+
+    log.error?.(
+      `Pinned rollback failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+    );
+
+    return attachRuntime(
+      {
+        checkedAt,
+        error,
+        latestCommit,
+        pinnedFromCommitHash: latestDeployedCommitHash,
+        status: 'pin-deploy-failed',
+      },
+      history
+    );
+  }
+}
+
 async function runDeployWatchIteration(
   target,
   {
@@ -2850,6 +3100,7 @@ async function runDeployWatchIteration(
 
     return {
       ...result,
+      deploymentPin: readDeploymentPin(paths, fsImpl),
       ...(await loadRuntimeSnapshot({
         env,
         envFilePath,
@@ -2862,7 +3113,51 @@ async function runDeployWatchIteration(
       })),
     };
   };
-  const currentBranch = await getCurrentBranch({ env, runCommand: run });
+  const deploymentPin = readDeploymentPin(paths, fsImpl);
+
+  if (deploymentPin) {
+    return runPinnedDeploymentIteration(target, deploymentPin, {
+      deployCommand,
+      env,
+      envFilePath,
+      fsImpl,
+      log,
+      now,
+      onDeploymentStart,
+      paths,
+      rootDir,
+      runCommand: run,
+    });
+  }
+
+  let currentBranch = await getCurrentBranchName({ env, runCommand: run });
+
+  if (currentBranch === 'HEAD') {
+    const hasBlockingDirtyWorktree = await hasDirtyWorktree({
+      env,
+      ignoredPaths: ['bun.lock'],
+      runCommand: run,
+    });
+
+    if (hasBlockingDirtyWorktree) {
+      log.warn?.(
+        `Skipping poll because the detached worktree has uncommitted changes before returning to ${target.branch}.`
+      );
+      return attachRuntime({
+        checkedAt,
+        status: 'dirty',
+      });
+    }
+
+    log.info?.(
+      `Deployment pin is clear. Checking out ${target.branch} and resuming normal auto-pulls.`
+    );
+    await checkoutBranch(target.branch, {
+      env,
+      runCommand: run,
+    });
+    currentBranch = await getCurrentBranchName({ env, runCommand: run });
+  }
 
   if (currentBranch !== target.branch) {
     throw new Error(
@@ -3524,6 +3819,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
       {
         currentBlueGreen: initialRuntimeSnapshot.currentBlueGreen,
         dockerResources: initialRuntimeSnapshot.dockerResources,
+        deploymentPin: readDeploymentPin(paths, fsImpl),
         deployments: initialRuntimeSnapshot.deployments,
         logs: readWatcherLogEntries(paths, fsImpl),
         intervalMs: parsed.intervalMs,
@@ -3583,6 +3879,8 @@ async function main(argv = process.argv.slice(2), options = {}) {
   try {
     const target = await resolveLockedBranchTarget({
       env,
+      fsImpl,
+      paths,
       runCommand: run,
     });
     const latestCommit = await getCommitMetadata('HEAD', {
@@ -3826,11 +4124,14 @@ async function main(argv = process.argv.slice(2), options = {}) {
             iterationResult.currentBlueGreen ?? ui.state.currentBlueGreen,
           dockerResources:
             iterationResult.dockerResources ?? ui.state.dockerResources,
+          deploymentPin: readDeploymentPin(paths, fsImpl),
           deployments: iterationResult.deployments ?? ui.state.deployments,
           lastCheckAt: iterationResult.checkedAt ?? Date.now(),
           lastDeployAt:
             iterationResult.status === 'deployed' ||
             iterationResult.status === 'deploy-failed' ||
+            iterationResult.status === 'pin-deploy-failed' ||
+            iterationResult.status === 'pinned-deployed' ||
             iterationResult.status === 'standby-refreshed' ||
             iterationResult.status === 'standby-refresh-failed' ||
             iterationResult.status === 'restarting'
@@ -3840,6 +4141,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
               : (ui.state.lastDeployAt ?? latestDeploymentSummary.lastDeployAt),
           lastDeployStatus:
             iterationResult.status === 'deploy-failed' ||
+            iterationResult.status === 'pin-deploy-failed' ||
             iterationResult.status === 'standby-refresh-failed'
               ? 'failed'
               : iterationResult.status === 'deploying'
@@ -3847,6 +4149,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
                 : iterationResult.status === 'building'
                   ? 'building'
                   : iterationResult.status === 'deployed' ||
+                      iterationResult.status === 'pinned-deployed' ||
                       iterationResult.status === 'standby-refreshed' ||
                       iterationResult.status === 'restarting'
                     ? 'successful'
@@ -3862,6 +4165,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
       },
       onIterationStart: (startedAt) => {
         ui.update({
+          deploymentPin: readDeploymentPin(paths, fsImpl),
           lastCheckAt: startedAt,
           nextCheckAt: startedAt + parsed.intervalMs,
         });

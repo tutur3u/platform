@@ -73,4 +73,45 @@ describe('readBlueGreenMonitoringSnapshot', () => {
       fs.rmSync(tempDir, { force: true, recursive: true });
     }
   });
+
+  it('reads the active deployment pin from the watcher control directory', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'blue-green-monitoring-pin-')
+    );
+
+    try {
+      fs.mkdirSync(path.join(tempDir, 'watch', 'control'), {
+        recursive: true,
+      });
+      fs.writeFileSync(
+        path.join(
+          tempDir,
+          'watch',
+          'control',
+          'blue-green-deployment-pin.json'
+        ),
+        JSON.stringify({
+          commitHash: 'old123456789',
+          commitShortHash: 'old1234',
+          commitSubject: 'Known good deployment',
+          deploymentStamp: 'deploy-2026-04-20T10-00-00Z',
+          kind: 'deployment-pin',
+          requestedAt: '2026-04-23T10:00:00.000Z',
+          requestedBy: 'user-1',
+          requestedByEmail: 'ops@platform.test',
+        })
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+
+      const snapshot = readBlueGreenMonitoringSnapshot({ now: 2000 });
+
+      expect(snapshot.control.deploymentPin).toMatchObject({
+        commitHash: 'old123456789',
+        kind: 'deployment-pin',
+        requestedBy: 'user-1',
+      });
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
 });

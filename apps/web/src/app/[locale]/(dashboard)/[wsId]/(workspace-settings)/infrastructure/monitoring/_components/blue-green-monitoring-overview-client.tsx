@@ -20,6 +20,7 @@ import {
   WatcherCadencePanel,
 } from './blue-green-monitoring-panels';
 import { useBlueGreenMonitoringSnapshot } from './blue-green-monitoring-query-hooks';
+import { BlueGreenMonitoringRolloutControls } from './blue-green-monitoring-rollout-controls';
 import {
   BlueGreenMonitoringAlerts,
   BlueGreenMonitoringErrorState,
@@ -35,7 +36,11 @@ import {
   getRuntimeStateTranslationKey,
 } from './formatters';
 
-export function BlueGreenMonitoringOverviewClient() {
+export function BlueGreenMonitoringOverviewClient({
+  showRollbackControls = false,
+}: {
+  showRollbackControls?: boolean;
+}) {
   const t = useTranslations('blue-green-monitoring');
   const query = useBlueGreenMonitoringSnapshot({
     requestPreviewLimit: 6,
@@ -104,12 +109,15 @@ export function BlueGreenMonitoringOverviewClient() {
     },
     {
       icon: <Network className="h-4 w-4" />,
-      label: t('stats.running_containers'),
-      meta: t('stats.all_running_containers'),
-      value: formatCompactNumber(snapshot.dockerResources.allContainers.length),
+      label: t('stats.network_io'),
+      meta: t('stats.rx_tx_total'),
+      value: formatBytes(
+        snapshot.dockerResources.totalRxBytes +
+          snapshot.dockerResources.totalTxBytes
+      ),
     },
     {
-      icon: <Network className="h-4 w-4" />,
+      icon: <SquareStack className="h-4 w-4" />,
       label: t('stats.persisted_logs'),
       meta: t('stats.log_retention'),
       value: formatCompactNumber(snapshot.analytics.totalPersistedLogs),
@@ -146,11 +154,15 @@ export function BlueGreenMonitoringOverviewClient() {
     <div className="space-y-6">
       <BlueGreenMonitoringAlerts snapshot={snapshot} t={t} />
 
+      {showRollbackControls ? (
+        <BlueGreenMonitoringRolloutControls snapshot={snapshot} />
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-3">
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="rounded-[1.75rem] border border-border/60 bg-background/80 p-4"
+            className="rounded-lg border border-border/60 bg-background p-4"
           >
             <div className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-[0.16em]">
               {card.icon}
@@ -165,7 +177,7 @@ export function BlueGreenMonitoringOverviewClient() {
       </div>
 
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="rounded-[2rem] border border-border/60 bg-background/80 p-5">
+        <div className="rounded-lg border border-border/60 bg-background p-5">
           <div className="mb-4">
             <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
               {t('overview.kicker')}
@@ -183,7 +195,7 @@ export function BlueGreenMonitoringOverviewClient() {
               <Link
                 key={card.href}
                 href={card.href}
-                className="rounded-[1.5rem] border border-border/60 bg-background/70 p-4 transition-colors hover:border-dynamic-blue/30 hover:bg-background/85"
+                className="rounded-lg border border-border/60 bg-muted/20 p-4 transition-colors hover:border-dynamic-blue/30 hover:bg-background"
               >
                 <p className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
                   {card.title}
@@ -197,7 +209,7 @@ export function BlueGreenMonitoringOverviewClient() {
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-border/60 bg-background/80 p-5">
+        <div className="rounded-lg border border-border/60 bg-background p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
@@ -257,7 +269,7 @@ export function BlueGreenMonitoringOverviewClient() {
           {snapshot.analytics.recentRequests.map((request) => (
             <div
               key={`${request.time}-${request.path}`}
-              className="rounded-[1.35rem] border border-border/60 bg-background/75 px-4 py-3"
+              className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -290,7 +302,7 @@ export function BlueGreenMonitoringOverviewClient() {
           {snapshot.watcher.logs.map((log, index) => (
             <div
               key={`${log.time}-${index}`}
-              className="rounded-[1.35rem] border border-border/60 bg-background/75 px-4 py-3"
+              className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -329,7 +341,7 @@ function SnapshotRow({
   value: string;
 }) {
   return (
-    <div className="rounded-[1.35rem] border border-border/60 bg-background/75 px-4 py-3">
+    <div className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
       <p className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
         {label}
       </p>
@@ -361,7 +373,7 @@ function PreviewCard({
   const hasChildren = children.length > 0;
 
   return (
-    <section className="rounded-[2rem] border border-border/60 bg-background/80 p-5">
+    <section className="rounded-lg border border-border/60 bg-background p-5">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
@@ -374,7 +386,7 @@ function PreviewCard({
         </div>
         <Link
           href={href}
-          className="rounded-full border border-border/60 px-3 py-1.5 font-medium text-sm transition-colors hover:border-dynamic-blue/30 hover:text-dynamic-blue"
+          className="rounded-md border border-border/60 px-3 py-1.5 font-medium text-sm transition-colors hover:border-dynamic-blue/30 hover:text-dynamic-blue"
         >
           {linkLabel}
         </Link>
@@ -384,7 +396,7 @@ function PreviewCard({
         {hasChildren ? (
           children
         ) : (
-          <div className="rounded-[1.5rem] border border-border/60 border-dashed bg-background/60 px-4 py-10 text-center text-muted-foreground text-sm">
+          <div className="rounded-lg border border-border/60 border-dashed bg-muted/20 px-4 py-10 text-center text-muted-foreground text-sm">
             {emptyLabel}
           </div>
         )}

@@ -225,7 +225,7 @@ export function BlueGreenMonitoringRequestsClient() {
         />
       </div>
 
-      <section className="rounded-[2rem] border border-border/60 bg-background/80 p-5">
+      <section className="rounded-lg border border-border/60 bg-background p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
@@ -246,12 +246,12 @@ export function BlueGreenMonitoringRequestsClient() {
           </Badge>
         </div>
 
-        <div className="mt-5 rounded-[1.75rem] border border-border/60 bg-background/70 p-4">
+        <div className="mt-5 rounded-lg border border-border/60 bg-muted/20 p-4">
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1.8fr)_repeat(5,minmax(0,1fr))]">
             <div className="relative">
               <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                className="h-11 rounded-2xl border-border/60 pl-10"
+                className="h-11 rounded-lg border-border/60 pl-10"
                 onChange={(event) => {
                   startTransition(() => {
                     setSearchValue(event.target.value);
@@ -334,7 +334,7 @@ export function BlueGreenMonitoringRequestsClient() {
         </div>
 
         {routeSummaries.length > 0 ? (
-          <div className="mt-5 rounded-[1.75rem] border border-border/60 bg-[radial-gradient(circle_at_top_left,rgba(24,144,255,0.12),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] p-4 dark:bg-[radial-gradient(circle_at_top_left,rgba(24,144,255,0.18),transparent_28%),linear-gradient(135deg,rgba(10,14,24,0.96),rgba(15,23,42,0.92))]">
+          <div className="mt-5 rounded-lg border border-border/60 bg-muted/20 p-4">
             <div className="mb-4">
               <p className="font-medium text-sm">{t('explorer.top_routes')}</p>
               <p className="text-muted-foreground text-xs">
@@ -352,7 +352,7 @@ export function BlueGreenMonitoringRequestsClient() {
                 return (
                   <div
                     key={summary.pathname}
-                    className="rounded-[1.5rem] border border-border/60 bg-background/75 p-4"
+                    className="rounded-lg border border-border/60 bg-muted/20 p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -434,7 +434,7 @@ export function BlueGreenMonitoringRequestsClient() {
             />
           </div>
         ) : (
-          <div className="mt-5 overflow-hidden rounded-[1.75rem] border border-border/60 bg-background/75">
+          <div className="mt-5 overflow-hidden rounded-lg border border-border/60 bg-muted/20">
             <div className="border-border/60 border-b px-4 py-3">
               <p className="font-medium text-sm">
                 {t('requests_page.archive_range', {

@@ -44,7 +44,7 @@ export function TrafficPeriodsPanel({
   ] as const;
 
   return (
-    <div className="rounded-[2rem] border border-border/60 bg-background/70 p-5 backdrop-blur-sm">
+    <div className="rounded-lg border border-border/60 bg-muted/20 p-5">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <p className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
@@ -63,7 +63,7 @@ export function TrafficPeriodsPanel({
         {periods.map(([periodKey, metric]) => (
           <div
             key={periodKey}
-            className="rounded-[1.7rem] border border-border/60 bg-background/85 p-4"
+            className="rounded-lg border border-border/60 bg-background/85 p-4"
           >
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -150,17 +150,15 @@ export function RolloutStagePanel({
       : null;
   const accentClass =
     status === 'failed'
-      ? 'border-dynamic-red/25 bg-[radial-gradient(circle_at_top_left,rgba(248,113,113,0.18),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.96),rgba(255,241,242,0.92))] dark:bg-[radial-gradient(circle_at_top_left,rgba(239,68,68,0.22),transparent_32%),linear-gradient(135deg,rgba(20,10,13,0.96),rgba(39,13,19,0.92))]'
+      ? 'border-dynamic-red/25 bg-dynamic-red/5'
       : status === 'building'
-        ? 'border-dynamic-orange/25 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.96),rgba(255,251,235,0.92))] dark:bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.24),transparent_32%),linear-gradient(135deg,rgba(21,14,6,0.96),rgba(39,25,8,0.92))]'
+        ? 'border-dynamic-orange/25 bg-dynamic-orange/5'
         : status === 'deploying'
-          ? 'border-dynamic-blue/25 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.18),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.96),rgba(239,246,255,0.92))] dark:bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.24),transparent_32%),linear-gradient(135deg,rgba(8,14,27,0.96),rgba(12,24,44,0.92))]'
-          : 'border-border/60 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.96),rgba(240,253,250,0.92))] dark:bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.18),transparent_32%),linear-gradient(135deg,rgba(8,18,16,0.96),rgba(11,27,23,0.92))]';
+          ? 'border-dynamic-blue/25 bg-dynamic-blue/5'
+          : 'border-border/60 bg-background';
 
   return (
-    <section
-      className={`overflow-hidden rounded-[2rem] border p-5 shadow-sm backdrop-blur-sm ${accentClass}`}
-    >
+    <section className={`overflow-hidden rounded-lg border p-5 ${accentClass}`}>
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-3xl space-y-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -245,7 +243,7 @@ export function RolloutStagePanel({
       </div>
 
       {failureDetail ? (
-        <Alert className="mt-5 rounded-[1.6rem] border-dynamic-red/25 bg-dynamic-red/5">
+        <Alert className="mt-5 rounded-lg border-dynamic-red/25 bg-dynamic-red/5">
           <TriangleAlert className="h-4 w-4" />
           <AlertTitle>{t('rollout.failure_title')}</AlertTitle>
           <AlertDescription>{failureDetail}</AlertDescription>
@@ -264,7 +262,7 @@ export function DeploymentLedger({
 
   if (deployments.length === 0) {
     return (
-      <div className="rounded-[2rem] border border-border/60 border-dashed bg-background/50 p-8 text-center text-muted-foreground text-sm">
+      <div className="rounded-lg border border-border/60 border-dashed bg-muted/20 p-8 text-center text-muted-foreground text-sm">
         {t('empty.ledger')}
       </div>
     );
@@ -284,7 +282,7 @@ export function DeploymentLedger({
         return (
           <div
             key={`${deployment.commitHash ?? deployment.startedAt ?? index}`}
-            className="rounded-[2rem] border border-border/60 bg-background/70 p-5 backdrop-blur-sm"
+            className="rounded-lg border border-border/60 bg-muted/20 p-5"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
