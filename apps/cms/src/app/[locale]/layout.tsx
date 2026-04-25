@@ -28,7 +28,7 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  return generateCommonMetadata({
+  const metadata = await generateCommonMetadata({
     config: {
       description: {
         en: 'Manage Tuturuuu CMS content, preview delivery, and control workspace publishing from a dedicated editorial workspace.',
@@ -40,6 +40,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     params,
   });
+
+  return {
+    ...metadata,
+    manifest: undefined,
+  };
 }
 
 export function generateStaticParams() {
@@ -67,7 +72,7 @@ export default async function RootLayout({ children, params }: Props) {
           font.className
         )}
       >
-        <SerwistProvider>
+        <SerwistProvider register={false}>
           <VercelAnalytics />
           <VercelInsights />
           <NuqsAdapter>
