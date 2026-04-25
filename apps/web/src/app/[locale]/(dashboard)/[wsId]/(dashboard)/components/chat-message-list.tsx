@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, Sparkles, UserIcon } from '@tuturuuu/icons';
+import { Sparkles, UserIcon } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -12,7 +12,13 @@ import {
 import 'katex/dist/katex.min.css';
 import mermaidParser from 'mermaid';
 import { useTranslations } from 'next-intl';
-import { type MutableRefObject, useCallback, useEffect, useRef } from 'react';
+import {
+  type MutableRefObject,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   getDisplayText,
   getErrorMessage,
@@ -37,6 +43,17 @@ import type { ChatMessageListProps } from './chat-message-list/types';
 import { UserMessageContent } from './chat-message-list/user-message-components';
 
 const MAX_AUTO_MERMAID_REPAIR_ATTEMPTS = 2;
+const RESPONSE_STATUS_INTERVAL_MS = 1800;
+const RESPONSE_DRAFTING_STATUS_KEYS = [
+  'response_status_starting',
+  'response_status_drafting',
+  'response_status_streaming',
+] as const;
+const RESPONSE_TOOL_STATUS_KEYS = [
+  'response_status_checking',
+  'response_status_using_tools',
+  'response_status_wrapping_up',
+] as const;
 let mermaidParserInitialized = false;
 
 function ensureMermaidParserInitialized(): void {
@@ -47,6 +64,70 @@ function ensureMermaidParserInitialized(): void {
     theme: 'default',
   });
   mermaidParserInitialized = true;
+}
+
+type AssistantActivityStatus = 'drafting' | 'tools' | null;
+
+export function getAssistantActivityStatus({
+  isStreaming,
+  lastMessage,
+}: {
+  isStreaming: boolean;
+  lastMessage?: ChatMessageListProps['messages'][number];
+}): AssistantActivityStatus {
+  if (!isStreaming || !lastMessage) return null;
+
+  if (lastMessage.role === 'user') return 'drafting';
+  if (lastMessage.role !== 'assistant') return null;
+  if (hasTextContent(lastMessage)) return null;
+
+  return hasToolParts(lastMessage) ? 'tools' : 'drafting';
+}
+
+function AssistantActivityBubble({
+  assistantName,
+  status,
+}: {
+  assistantName?: string;
+  status: Exclude<AssistantActivityStatus, null>;
+}) {
+  const t = useTranslations('dashboard.mira_chat');
+  const [statusIndex, setStatusIndex] = useState(0);
+  const keys =
+    status === 'tools'
+      ? RESPONSE_TOOL_STATUS_KEYS
+      : RESPONSE_DRAFTING_STATUS_KEYS;
+  const currentKey = keys[statusIndex % keys.length]!;
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setStatusIndex((value) => value + 1);
+    }, RESPONSE_STATUS_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="mt-3 flex gap-2.5">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dynamic-purple/15 text-dynamic-purple">
+        <Sparkles className="h-3.5 w-3.5" />
+      </div>
+      <div className="flex min-w-0 flex-col items-start">
+        <span className="mb-1 px-1 font-medium text-[11px] text-muted-foreground">
+          {assistantName ?? 'Mira'}
+        </span>
+        <div
+          className="flex max-w-full items-center gap-2 rounded-2xl border border-border/50 bg-muted/45 px-3.5 py-2.5 text-muted-foreground text-sm shadow-sm"
+          aria-live="polite"
+        >
+          <span className="relative flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+            <span className="absolute h-2.5 w-2.5 animate-ping rounded-full bg-dynamic-purple/35" />
+            <span className="h-1.5 w-1.5 rounded-full bg-dynamic-purple" />
+          </span>
+          <span className="truncate">{t(currentKey)}</span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function ChatMessageList({
@@ -379,31 +460,19 @@ export default function ChatMessageList({
         );
       })}
 
-      {/* Thinking indicator */}
-      {isStreaming &&
-        (() => {
-          const lastMsg = messages[messages.length - 1];
-          const showThinking =
-            lastMsg?.role === 'assistant' &&
-            !hasTextContent(lastMsg) &&
-            hasToolParts(lastMsg);
-          return showThinking ? (
-            <div className="mt-3 flex gap-2.5">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dynamic-purple/15 text-dynamic-purple">
-                <Sparkles className="h-3.5 w-3.5" />
-              </div>
-              <div className="flex flex-col items-start">
-                <span className="mb-1 px-1 font-medium text-[11px] text-muted-foreground">
-                  {assistantName ?? 'Mira'}
-                </span>
-                <div className="flex items-center gap-2 rounded-2xl bg-muted/50 px-3.5 py-2.5 text-muted-foreground text-sm">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  {t('using_tools')}
-                </div>
-              </div>
-            </div>
-          ) : null;
-        })()}
+      {(() => {
+        const status = getAssistantActivityStatus({
+          isStreaming,
+          lastMessage: messages[messages.length - 1],
+        });
+        return status ? (
+          <AssistantActivityBubble
+            key={status}
+            assistantName={assistantName}
+            status={status}
+          />
+        ) : null;
+      })()}
       <div
         ref={toolbarVisibilityAnchorRef}
         aria-hidden="true"

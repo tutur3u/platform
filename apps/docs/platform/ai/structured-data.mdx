@@ -59,6 +59,12 @@ assistant text surface on the shared Streamdown wrapper, including text rendered
 inside compact tool UIs, so code blocks, tables, Mermaid, math, and CJK spacing
 stay consistent.
 
+While the request is submitted but no assistant text has arrived yet, the chat
+should render a lightweight assistant activity bubble with rotating status copy.
+Hide that placeholder as soon as real assistant text streams, and keep it
+separate from markdown/tool rendering so status cycling does not re-render heavy
+message content.
+
 Do not force `select_tools` as the universal first step. Force tool selection
 only when the workflow cannot answer safely before a tool runs, such as current
 web lookups, workspace context switching, workspace member lookups, file
