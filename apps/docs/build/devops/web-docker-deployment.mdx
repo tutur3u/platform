@@ -265,6 +265,10 @@ Additional behavior:
   the same retained ledger, preserving the current two warm copies plus the
   prior successful deployment as the fastest rollback reference. If no retained
   image exists, the watcher falls back to the normal recovery build path.
+- The infrastructure monitoring rollback controls show the latest retained
+  cached recovery images separately from the general deployment history, so an
+  operator can quickly select a known cache-backed commit before pinning it for
+  rollback or smoke testing.
 - Successful active and standby builds tag the service image as
   `{compose-project}-web-cache:{commit}` and prune older retained cache tags
   beyond the three newest successful deployments. Pruning is idempotent:

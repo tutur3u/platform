@@ -151,4 +151,91 @@ describe('readBlueGreenMonitoringSnapshot', () => {
       fs.rmSync(tempDir, { force: true, recursive: true });
     }
   });
+
+  it('exposes the latest cached recoverable deployments from history', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'blue-green-monitoring-cache-')
+    );
+
+    try {
+      fs.mkdirSync(path.join(tempDir, 'watch'), { recursive: true });
+      fs.writeFileSync(
+        path.join(tempDir, 'watch', 'blue-green-auto-deploy.history.json'),
+        JSON.stringify([
+          {
+            commitHash: 'latest-cached',
+            commitShortHash: 'latest',
+            commitSubject: 'Latest cached deploy',
+            finishedAt: 4000,
+            imageTag: 'platform-web-cache:latest',
+            status: 'successful',
+          },
+          {
+            commitHash: 'failed-cached',
+            commitShortHash: 'failed',
+            finishedAt: 3500,
+            imageTag: 'platform-web-cache:failed',
+            status: 'failed',
+          },
+          {
+            commitHash: 'uncached-success',
+            commitShortHash: 'uncached',
+            finishedAt: 3000,
+            status: 'successful',
+          },
+          {
+            commitHash: 'middle-cached',
+            commitShortHash: 'middle',
+            commitSubject: 'Middle cached deploy',
+            finishedAt: 2000,
+            imageTag: 'platform-web-cache:middle',
+            status: 'successful',
+          },
+          {
+            commitHash: 'old-cached',
+            commitShortHash: 'old',
+            commitSubject: 'Old cached deploy',
+            finishedAt: 1000,
+            imageTag: 'platform-web-cache:old',
+            status: 'successful',
+          },
+          {
+            commitHash: 'older-cached',
+            commitShortHash: 'older',
+            commitSubject: 'Older cached deploy',
+            finishedAt: 500,
+            imageTag: 'platform-web-cache:older',
+            status: 'successful',
+          },
+        ])
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+
+      const snapshot = readBlueGreenMonitoringSnapshot({ now: 5000 });
+
+      expect(
+        snapshot.recoveryCache.deployments.map((deployment) => ({
+          commitHash: deployment.commitHash,
+          imageTag: deployment.imageTag,
+        }))
+      ).toEqual([
+        {
+          commitHash: 'latest-cached',
+          imageTag: 'platform-web-cache:latest',
+        },
+        {
+          commitHash: 'middle-cached',
+          imageTag: 'platform-web-cache:middle',
+        },
+        {
+          commitHash: 'old-cached',
+          imageTag: 'platform-web-cache:old',
+        },
+      ]);
+      expect(snapshot.recoveryCache.limit).toBe(3);
+      expect(snapshot.recoveryCache.total).toBe(4);
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
 });

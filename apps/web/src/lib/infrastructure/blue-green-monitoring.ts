@@ -23,6 +23,7 @@ type DockerAggregateContainer = {
 
 const DOCKER_WEB_ENV_KEY = 'PLATFORM_BLUE_GREEN_MONITORING_DIR';
 const DEFAULT_ARCHIVE_PAGE_SIZE = 25;
+const DEFAULT_RECOVERY_CACHE_LIMIT = 3;
 const MAX_ARCHIVE_PAGE_SIZE = 100;
 
 function resolveMonitoringDir(fsImpl: FsLike = fs) {
@@ -401,6 +402,48 @@ function normalizeWatcherLogs(
       },
     ];
   });
+}
+
+function getDeploymentSortTime(deployment: Record<string, unknown>) {
+  return (
+    toFiniteNumber(deployment.finishedAt) ??
+    toFiniteNumber(deployment.activatedAt) ??
+    toFiniteNumber(deployment.startedAt) ??
+    0
+  );
+}
+
+function getRecoverableCachedDeployments(
+  deployments: Array<Record<string, unknown>>,
+  limit = DEFAULT_RECOVERY_CACHE_LIMIT
+) {
+  const seenImageTags = new Set<string>();
+  const recoverableDeployments = deployments
+    .toSorted(
+      (left, right) =>
+        getDeploymentSortTime(right) - getDeploymentSortTime(left)
+    )
+    .filter((deployment) => {
+      const imageTag =
+        typeof deployment.imageTag === 'string' ? deployment.imageTag : null;
+
+      if (
+        deployment.status !== 'successful' ||
+        !imageTag ||
+        seenImageTags.has(imageTag)
+      ) {
+        return false;
+      }
+
+      seenImageTags.add(imageTag);
+      return true;
+    });
+
+  return {
+    deployments: recoverableDeployments.slice(0, limit),
+    limit,
+    total: recoverableDeployments.length,
+  };
 }
 
 function normalizeDeploymentPin(value: unknown): BlueGreenDeploymentPin | null {
@@ -819,6 +862,7 @@ export function readBlueGreenMonitoringSnapshot({
     telemetrySummary,
     now
   );
+  const recoveryCache = getRecoverableCachedDeployments(deployments);
   const successfulDeployments = deployments.filter(
     (entry) => entry.status === 'successful'
   );
@@ -918,6 +962,8 @@ export function readBlueGreenMonitoringSnapshot({
       totalTxBytes: toFiniteNumber(dockerResources?.totalTxBytes) ?? 0,
     },
     deployments: deployments as BlueGreenMonitoringSnapshot['deployments'],
+    recoveryCache:
+      recoveryCache as BlueGreenMonitoringSnapshot['recoveryCache'],
     overview: {
       averageBuildDurationMs:
         buildDurations.length > 0

@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   GitBranch,
+  HardDrive,
   Loader2,
   Pin,
   PinOff,
@@ -131,6 +132,8 @@ export function BlueGreenMonitoringRolloutControls({
     )
       ? [selectedRollbackDeployment, ...visibleRollbackCandidates]
       : visibleRollbackCandidates;
+  const cachedRecoverableDeployments =
+    snapshot.recoveryCache?.deployments ?? [];
   const mutation = useMutation({
     mutationFn: () => requestBlueGreenInstantRollout(),
     onSuccess: async (response) => {
@@ -384,6 +387,55 @@ export function BlueGreenMonitoringRolloutControls({
                   )}
                 />
               ) : null}
+
+              <div className="rounded-md border border-border/60 bg-background p-3">
+                <div className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-[0.16em]">
+                  <HardDrive className="h-3.5 w-3.5" />
+                  <span>{t('controls.recovery_cache_title')}</span>
+                </div>
+
+                <div className="mt-3 space-y-2">
+                  {cachedRecoverableDeployments.length > 0 ? (
+                    cachedRecoverableDeployments.map((deployment) => (
+                      <div
+                        className="flex flex-col gap-2 rounded-md border border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between"
+                        key={
+                          deployment.imageTag ??
+                          deployment.commitHash ??
+                          deployment.startedAt
+                        }
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-sm">
+                            {deployment.commitShortHash ??
+                              deployment.commitHash ??
+                              t('states.none')}{' '}
+                            {deployment.commitSubject ?? t('states.none')}
+                          </p>
+                          <p className="mt-1 truncate text-muted-foreground text-xs">
+                            {deployment.imageTag ?? t('states.none')}
+                          </p>
+                        </div>
+                        <Button
+                          className="shrink-0"
+                          disabled={!deployment.commitHash}
+                          onClick={() => {
+                            setSelectedCommitHash(deployment.commitHash ?? '');
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          {t('controls.recovery_cache_select')}
+                        </Button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="rounded-md border border-border/60 border-dashed bg-muted/20 px-3 py-4 text-center text-muted-foreground text-sm">
+                      {t('controls.recovery_cache_empty')}
+                    </p>
+                  )}
+                </div>
+              </div>
 
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button

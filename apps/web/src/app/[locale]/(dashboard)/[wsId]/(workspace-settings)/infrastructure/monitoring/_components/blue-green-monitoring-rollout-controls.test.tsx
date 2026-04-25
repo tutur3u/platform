@@ -48,6 +48,10 @@ const messages: Record<string, string> = {
   'controls.pin_title': 'Rollback and pin production',
   'controls.ready_hint':
     'The watcher is live. Trigger a standby rebuild now to make the warm backup match the live commit immediately.',
+  'controls.recovery_cache_empty':
+    'No cached recovery images are retained yet.',
+  'controls.recovery_cache_select': 'Select cached deployment',
+  'controls.recovery_cache_title': 'Cached recoverable builds',
   'controls.standby_commit_chip': 'Standby {commit}',
   'controls.standby_lane': 'Standby Lane',
   'controls.sync_action': 'Sync Standby Now',
@@ -112,6 +116,11 @@ function createSnapshot(
       standbyColor: 'green',
       standbyState: 'idle',
       state: 'serving',
+    },
+    recoveryCache: {
+      deployments: [],
+      limit: 3,
+      total: 0,
     },
     watcher: {
       args: [],
@@ -231,6 +240,36 @@ describe('BlueGreenMonitoringRolloutControls', () => {
     });
 
     expect(syncButton).toBeDisabled();
+  });
+
+  it('shows cached recoverable deployments and lets operators select one for pinning', () => {
+    renderControls(
+      createSnapshot({
+        recoveryCache: {
+          deployments: [
+            {
+              commitHash: 'cached-commit',
+              commitShortHash: 'cached',
+              commitSubject: 'Cached rollback target',
+              finishedAt: 4000,
+              imageTag: 'platform-web-cache:cached',
+              status: 'successful',
+            },
+          ],
+          limit: 3,
+          total: 1,
+        },
+      })
+    );
+
+    expect(screen.getByText('Cached recoverable builds')).toBeInTheDocument();
+    expect(screen.getByText('platform-web-cache:cached')).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /Select cached deployment/i })
+    );
+
+    expect(screen.getByText(/cached Cached rollback target/i)).toBeVisible();
   });
 
   it('allows sync when the active color is live but standby is missing', async () => {

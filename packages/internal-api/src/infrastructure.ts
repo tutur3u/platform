@@ -98,6 +98,7 @@ export interface BlueGreenMonitoringDeployment {
   errorCount?: number | null;
   finishedAt?: number | null;
   firstRequestAt?: number | null;
+  imageTag?: string | null;
   lastRequestAt?: number | null;
   lifetimeMs?: number | null;
   peakRequestsPerMinute?: number | null;
@@ -209,6 +210,11 @@ export interface BlueGreenMonitoringSnapshot {
     instantRolloutRequest: BlueGreenInstantRolloutRequest | null;
   };
   deployments: BlueGreenMonitoringDeployment[];
+  recoveryCache: {
+    deployments: BlueGreenMonitoringDeployment[];
+    limit: number;
+    total: number;
+  };
   dockerResources: {
     allContainers: BlueGreenMonitoringDockerContainer[];
     containers: BlueGreenMonitoringContainerResource[];
