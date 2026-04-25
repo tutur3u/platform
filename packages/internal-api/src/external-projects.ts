@@ -71,6 +71,8 @@ type WorkspaceExternalProjectAssetPayload = {
 };
 
 type ExternalProjectUploadUrlResponse = {
+  archivePath?: string;
+  headers?: Record<string, string>;
   signedUrl?: string;
   token?: string;
   path?: string;
@@ -78,20 +80,50 @@ type ExternalProjectUploadUrlResponse = {
 };
 
 type ExternalProjectUploadUrlPayload = {
+  archivePath?: string;
+  headers?: Record<string, string>;
   signedUrl: string;
-  token: string;
+  token?: string;
   path: string;
   fullPath: string | null;
+};
+
+export type WorkspaceExternalProjectWebglPackageArtifact = {
+  archivePath: string;
+  assetUrls: Record<string, string>;
+  entryRelativePath: string;
+  entryUrl: string;
+  files: Array<{
+    contentType: string | null;
+    relativePath: string;
+    size: number | null;
+  }>;
+  kind: 'webgl-package';
+  provider: 'supabase' | 'r2';
+  rootPath: string;
+  version: 1;
+};
+
+export type WorkspaceExternalProjectWebglPackageFinalizeResponse = {
+  artifact: WorkspaceExternalProjectWebglPackageArtifact;
+  asset: ExternalProjectAsset;
+  extract: {
+    files: number;
+    folders: number;
+    message: string;
+  };
 };
 
 function parseExternalProjectUploadPayload(
   payload: ExternalProjectUploadUrlResponse
 ) {
-  if (!payload.signedUrl || !payload.token || !payload.path) {
+  if (!payload.signedUrl || !payload.path) {
     throw new Error('Missing upload URL payload');
   }
 
   return {
+    archivePath: payload.archivePath,
+    headers: payload.headers,
     signedUrl: payload.signedUrl,
     token: payload.token,
     path: payload.path,
@@ -104,23 +136,33 @@ async function uploadExternalProjectFileWithSignedUrl(
   uploadUrlResult: ExternalProjectUploadUrlPayload,
   fetchImpl: typeof fetch
 ) {
+  const headers: Record<string, string> = {
+    ...(uploadUrlResult.headers ?? {}),
+  };
+
+  if (uploadUrlResult.token) {
+    headers.Authorization = `Bearer ${uploadUrlResult.token}`;
+  }
+
+  if (!headers['Content-Type']) {
+    headers['Content-Type'] = file.type || 'application/octet-stream';
+  }
+
   let uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
     method: 'PUT',
     cache: 'no-store',
-    headers: {
-      Authorization: `Bearer ${uploadUrlResult.token}`,
-      'Content-Type': file.type || 'application/octet-stream',
-    },
+    headers,
     body: file,
   });
 
   if (!uploadResponse.ok) {
+    const fallbackHeaders = { ...headers };
+    delete fallbackHeaders['Content-Type'];
+
     uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
       method: 'PUT',
       cache: 'no-store',
-      headers: {
-        Authorization: `Bearer ${uploadUrlResult.token}`,
-      },
+      headers: fallbackHeaders,
       body: file,
     });
   }
@@ -133,6 +175,7 @@ async function uploadExternalProjectFileWithSignedUrl(
   }
 
   return {
+    archivePath: uploadUrlResult.archivePath ?? uploadUrlResult.path,
     fullPath: uploadUrlResult.fullPath,
     path: uploadUrlResult.path,
   };
@@ -434,6 +477,93 @@ export async function uploadWorkspaceExternalProjectAssetFile(
   );
 
   return uploadExternalProjectFileWithSignedUrl(file, uploadUrl, fetchImpl);
+}
+
+export async function createWorkspaceExternalProjectWebglPackageUploadUrl(
+  workspaceId: string,
+  payload: {
+    contentType?: string;
+    entryId: string;
+    filename: string;
+    size?: number;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.json<ExternalProjectUploadUrlResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/webgl-packages/upload-url`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+
+  return parseExternalProjectUploadPayload(response);
+}
+
+export async function finalizeWorkspaceExternalProjectWebglPackage(
+  workspaceId: string,
+  payload: {
+    archivePath: string;
+    contentType?: string;
+    entryId: string;
+    originalFilename?: string;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceExternalProjectWebglPackageFinalizeResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/webgl-packages/finalize`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function uploadWorkspaceExternalProjectWebglPackageFile(
+  workspaceId: string,
+  file: File,
+  payload: {
+    entryId: string;
+  },
+  options?: InternalApiClientOptions
+) {
+  const fetchImpl = options?.fetch ?? globalThis.fetch;
+  const uploadUrl = await createWorkspaceExternalProjectWebglPackageUploadUrl(
+    workspaceId,
+    {
+      contentType: file.type || 'application/zip',
+      entryId: payload.entryId,
+      filename: file.name,
+      size: file.size,
+    },
+    options
+  );
+  const upload = await uploadExternalProjectFileWithSignedUrl(
+    file,
+    uploadUrl,
+    fetchImpl
+  );
+
+  return finalizeWorkspaceExternalProjectWebglPackage(
+    workspaceId,
+    {
+      archivePath: upload.archivePath,
+      contentType: file.type || 'application/zip',
+      entryId: payload.entryId,
+      originalFilename: file.name,
+    },
+    options
+  );
 }
 
 export async function listWorkspaceExternalProjectCollections(

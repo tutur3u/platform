@@ -14,6 +14,7 @@ import {
   updateWorkspaceExternalProjectBlock,
   updateWorkspaceExternalProjectEntry,
   uploadWorkspaceExternalProjectAssetFile,
+  uploadWorkspaceExternalProjectWebglPackageFile,
 } from '@tuturuuu/internal-api';
 import type {
   ExternalProjectEntry,
@@ -33,7 +34,11 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { optimizeCmsMediaUpload } from '../../cms-media-upload';
-import { getCmsEntryPath, getCmsLibraryPath } from '../../cms-paths';
+import {
+  getCmsEntryPath,
+  getCmsLibraryPath,
+  getCmsWorkspaceBasePath,
+} from '../../cms-paths';
 import type { CmsStrings } from '../../cms-strings';
 import { useCmsLivePreview } from '../../use-cms-live-preview';
 import { getCmsStudioQueryKey, useCmsStudio } from '../../use-cms-studio';
@@ -195,6 +200,7 @@ export function EntryDetailClient({
   const pathname = usePathname();
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const mediaInputRef = useRef<HTMLInputElement | null>(null);
+  const webglInputRef = useRef<HTMLInputElement | null>(null);
   const studioQuery = useCmsStudio({
     initialData: initialStudio ? { ...initialStudio, binding } : undefined,
     workspaceId,
@@ -221,6 +227,14 @@ export function EntryDetailClient({
     () => sortImageAssets(assets, entryId),
     [assets, entryId]
   );
+  const webglPackageAsset = useMemo(
+    () =>
+      assets.find(
+        (asset) =>
+          asset.entry_id === entryId && asset.asset_type === 'webgl-package'
+      ) ?? null,
+    [assets, entryId]
+  );
   const markdownBlock = useMemo(
     () =>
       blocks
@@ -232,6 +246,21 @@ export function EntryDetailClient({
     [blocks, entryId]
   );
   const coverAsset = imageAssets[0] ?? null;
+  const supportsWebglPackage = Boolean(
+    activeCollection &&
+      /game|webgl|playable/i.test(
+        [
+          activeCollection.slug,
+          activeCollection.collection_type,
+          activeCollection.title,
+        ]
+          .filter(Boolean)
+          .join(' ')
+      )
+  );
+  const webglPackagePlayerPath = webglPackageAsset
+    ? `${getCmsWorkspaceBasePath(pathname)}/library/entries/${entryId}/webgl/${webglPackageAsset.id}`
+    : null;
   const artworkCollection =
     collections.find((collection) => collection.slug === 'artworks') ?? null;
   const loreCollection =
@@ -1195,6 +1224,29 @@ export function EntryDetailClient({
     },
   });
 
+  const uploadWebglPackageMutation = useMutation({
+    mutationFn: async (file: File) =>
+      uploadWorkspaceExternalProjectWebglPackageFile(
+        workspaceId,
+        file,
+        {
+          entryId: activeEntry?.id ?? entryId,
+        },
+        { fetch }
+      ),
+    onSuccess: async (result) => {
+      mergeAsset(toStudioAsset(result.asset, webglPackageAsset));
+      setPreviewRefreshToken((value) => value + 1);
+      await refreshStudioFromBackend();
+      toast.success(strings.webglUploadSuccessToast);
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : strings.webglUploadFailedToast
+      );
+    },
+  });
+
   const deleteAssetsMutation = useMutation({
     mutationFn: async (assetIds: string[]) =>
       Promise.all(
@@ -1300,6 +1352,17 @@ export function EntryDetailClient({
     }
 
     uploadMediaMutation.mutate(files);
+  };
+
+  const handleWebglInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    uploadWebglPackageMutation.mutate(file);
   };
 
   const toggleAssetSelection = (assetId: string) => {
@@ -1517,6 +1580,7 @@ export function EntryDetailClient({
   const mediaProcessing =
     uploadCoverMutation.isPending ||
     uploadMediaMutation.isPending ||
+    uploadWebglPackageMutation.isPending ||
     saveCoverMutation.isPending ||
     saveAssetCaptionMutation.isPending ||
     deleteAssetsMutation.isPending ||
@@ -1572,6 +1636,13 @@ export function EntryDetailClient({
         className="hidden"
         type="file"
         onChange={handleMediaInputChange}
+      />
+      <input
+        ref={webglInputRef}
+        accept=".zip,application/zip,application/x-zip-compressed"
+        className="hidden"
+        type="file"
+        onChange={handleWebglInputChange}
       />
 
       <EntryDetailHeader
@@ -1652,6 +1723,7 @@ export function EntryDetailClient({
           }
           onToggleAssetSelection={toggleAssetSelection}
           onUploadMediaClick={() => mediaInputRef.current?.click()}
+          onUploadWebglClick={() => webglInputRef.current?.click()}
           saveAssetCaptionPending={saveAssetCaptionMutation.isPending}
           saveCoverPending={saveCoverMutation.isPending}
           selectedAssetCount={selectedAssetCount}
@@ -1660,8 +1732,12 @@ export function EntryDetailClient({
           strings={strings}
           subtitle={entryForm.subtitle}
           supportsMarkdownBody={supportsMarkdownBody}
+          supportsWebglPackage={supportsWebglPackage}
           uploadCoverPending={uploadCoverMutation.isPending}
           uploadMediaPending={uploadMediaMutation.isPending}
+          uploadWebglPending={uploadWebglPackageMutation.isPending}
+          webglPackageAsset={webglPackageAsset}
+          webglPackagePlayerPath={webglPackagePlayerPath}
         />
 
         <EntryDetailSidebar

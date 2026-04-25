@@ -167,6 +167,13 @@ Workspace ZIP auto-extract still requires the workspace-level
 `DRIVE_AUTO_EXTRACT_ZIP` secret to opt in; the Docker-internal URL and token are
 fallbacks for workspaces that have not supplied custom proxy secrets.
 
+CMS WebGL package uploads also use the `storage-unzip-proxy`, but they are a
+first-class CMS upload path rather than generic Drive automation. They require a
+configured unzip proxy URL and token, but they do not require the
+`DRIVE_AUTO_EXTRACT_ZIP` workspace opt-in secret. The CMS finalize route unpacks
+the ZIP into workspace Drive, detects the playable `index.html`, and stores the
+same-origin artifact map on the CMS `webgl-package` asset.
+
 The MarkItDown endpoint is the conversion path for uploaded workspace files.
 Do not route YouTube summaries through MarkItDown or Google Search. Google
 Gemini chat requests attach one public or unlisted YouTube URL directly as a

@@ -1,7 +1,16 @@
 'use client';
 
 import type { JSONContent } from '@tiptap/react';
-import { Eye, ImagePlus, Loader2, Pencil, Trash2 } from '@tuturuuu/icons';
+import {
+  Copy,
+  ExternalLink,
+  Eye,
+  ImagePlus,
+  Loader2,
+  PackageOpen,
+  Pencil,
+  Trash2,
+} from '@tuturuuu/icons';
 import type {
   ExternalProjectEntry,
   ExternalProjectStudioAsset,
@@ -34,6 +43,30 @@ function getAssetCaption(asset: ExternalProjectStudioAsset | null | undefined) {
   return typeof caption === 'string' ? caption : '';
 }
 
+function getWebglArtifactMetadata(
+  asset: ExternalProjectStudioAsset | null | undefined
+) {
+  const metadata = asset?.metadata;
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return null;
+  }
+
+  const record = metadata as Record<string, unknown>;
+  if (
+    record.kind !== 'webgl-package' ||
+    typeof record.entryUrl !== 'string' ||
+    !Array.isArray(record.files)
+  ) {
+    return null;
+  }
+
+  return {
+    entryUrl: record.entryUrl,
+    files: record.files,
+    rootPath: typeof record.rootPath === 'string' ? record.rootPath : '',
+  };
+}
+
 type EntryDetailMainColumnProps = {
   activeEntry: ExternalProjectEntry;
   assetCaptions: Record<string, string>;
@@ -63,6 +96,7 @@ type EntryDetailMainColumnProps = {
   onSubtitleChange: (value: string) => void;
   onToggleAssetSelection: (assetId: string) => void;
   onUploadMediaClick: () => void;
+  onUploadWebglClick: () => void;
   saveAssetCaptionPending: boolean;
   saveCoverPending: boolean;
   selectedAssetCount: number;
@@ -71,8 +105,12 @@ type EntryDetailMainColumnProps = {
   strings: CmsStrings;
   subtitle: string;
   supportsMarkdownBody: boolean;
+  supportsWebglPackage: boolean;
   uploadCoverPending: boolean;
   uploadMediaPending: boolean;
+  uploadWebglPending: boolean;
+  webglPackageAsset: ExternalProjectStudioAsset | null;
+  webglPackagePlayerPath: string | null;
 };
 
 export function EntryDetailMainColumn({
@@ -104,6 +142,7 @@ export function EntryDetailMainColumn({
   onSubtitleChange,
   onToggleAssetSelection,
   onUploadMediaClick,
+  onUploadWebglClick,
   saveAssetCaptionPending,
   saveCoverPending,
   selectedAssetCount,
@@ -112,9 +151,18 @@ export function EntryDetailMainColumn({
   strings,
   subtitle,
   supportsMarkdownBody,
+  supportsWebglPackage,
   uploadCoverPending,
   uploadMediaPending,
+  uploadWebglPending,
+  webglPackageAsset,
+  webglPackagePlayerPath,
 }: EntryDetailMainColumnProps) {
+  const webglArtifact = getWebglArtifactMetadata(webglPackageAsset);
+  const webglManifestText = webglPackageAsset
+    ? JSON.stringify(webglPackageAsset.metadata ?? {}, null, 2)
+    : '';
+
   return (
     <div className="space-y-6">
       <Card className="overflow-hidden border-border/70 bg-card/95 shadow-none">
@@ -285,6 +333,101 @@ export function EntryDetailMainColumn({
               writeLabel={bodyMarkdownWriteLabel}
               onChange={onBodyMarkdownChange}
             />
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {supportsWebglPackage ? (
+        <Card className="border-border/70 bg-card/95 shadow-none">
+          <CardHeader className="gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <PackageOpen className="h-4 w-4 text-dynamic-blue" />
+                {strings.webglPackageTitle}
+              </CardTitle>
+              <CardDescription>
+                {strings.webglPackageDescription}
+              </CardDescription>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant={webglPackageAsset ? 'outline' : 'default'}
+                disabled={uploadWebglPending}
+                onClick={onUploadWebglClick}
+              >
+                {uploadWebglPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <PackageOpen className="mr-2 h-4 w-4" />
+                )}
+                {uploadWebglPending
+                  ? strings.mediaProcessingLabel
+                  : strings.webglUploadAction}
+              </Button>
+              {webglArtifact && webglPackagePlayerPath ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    window.open(
+                      webglPackagePlayerPath,
+                      '_blank',
+                      'noopener,noreferrer'
+                    )
+                  }
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  {strings.webglOpenAction}
+                </Button>
+              ) : null}
+              {webglManifestText ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    void navigator.clipboard?.writeText(webglManifestText)
+                  }
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  {strings.webglCopyManifestAction}
+                </Button>
+              ) : null}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {webglArtifact ? (
+              <div className="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)]">
+                <div className="rounded-[1.2rem] border border-border/70 bg-background/75 p-4">
+                  <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                    {strings.webglAssetCountLabel}
+                  </div>
+                  <div className="mt-2 font-semibold text-3xl">
+                    {webglArtifact.files.length}
+                  </div>
+                </div>
+                <div className="min-w-0 rounded-[1.2rem] border border-border/70 bg-background/75 p-4">
+                  <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                    {strings.webglEntryUrlLabel}
+                  </div>
+                  <div className="mt-2 break-all font-mono text-muted-foreground text-xs leading-6">
+                    {webglArtifact.entryUrl}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="w-full rounded-[1.2rem] border border-border/70 border-dashed bg-background/50 p-6 text-left transition hover:border-border hover:bg-background/70"
+                disabled={uploadWebglPending}
+                onClick={onUploadWebglClick}
+              >
+                <div className="font-medium">{strings.webglUploadAction}</div>
+                <div className="mt-2 text-muted-foreground text-sm">
+                  {strings.webglEmptyDescription}
+                </div>
+              </button>
+            )}
           </CardContent>
         </Card>
       ) : null}

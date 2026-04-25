@@ -199,6 +199,16 @@ export type CmsStrings = {
   unpublishAction: string;
   uploadCoverAction: string;
   visualBoardTitle: string;
+  webglAssetCountLabel: string;
+  webglCopyManifestAction: string;
+  webglEmptyDescription: string;
+  webglEntryUrlLabel: string;
+  webglOpenAction: string;
+  webglPackageDescription: string;
+  webglPackageTitle: string;
+  webglUploadAction: string;
+  webglUploadFailedToast: string;
+  webglUploadSuccessToast: string;
   workflowTab: string;
   workspaceBindingLabel: string;
   workspaceStatusTitle: string;
@@ -424,6 +434,16 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     unpublishAction: t('epm.unpublish_action'),
     uploadCoverAction: t('epm.upload_cover_action'),
     visualBoardTitle: t('epm.visual_board_title'),
+    webglAssetCountLabel: t('epm.webgl_asset_count_label'),
+    webglCopyManifestAction: t('epm.webgl_copy_manifest_action'),
+    webglEmptyDescription: t('epm.webgl_empty_description'),
+    webglEntryUrlLabel: t('epm.webgl_entry_url_label'),
+    webglOpenAction: t('epm.webgl_open_action'),
+    webglPackageDescription: t('epm.webgl_package_description'),
+    webglPackageTitle: t('epm.webgl_package_title'),
+    webglUploadAction: t('epm.webgl_upload_action'),
+    webglUploadFailedToast: t('epm.webgl_upload_failed_toast'),
+    webglUploadSuccessToast: t('epm.webgl_upload_success_toast'),
     workflowTab: t('epm.workflow_tab'),
     workspaceBindingLabel: t('epm.workspace_binding_label'),
     workspaceStatusTitle: t('epm.workspace_status_title'),

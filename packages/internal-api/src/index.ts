@@ -94,6 +94,10 @@ export {
   updateWorkspaceQuiz,
   updateWorkspaceQuizSet,
 } from './education';
+export type {
+  WorkspaceExternalProjectWebglPackageArtifact,
+  WorkspaceExternalProjectWebglPackageFinalizeResponse,
+} from './external-projects';
 export {
   bulkUpdateWorkspaceExternalProjectEntries,
   createCanonicalExternalProject,
@@ -102,10 +106,12 @@ export {
   createWorkspaceExternalProjectBlock,
   createWorkspaceExternalProjectCollection,
   createWorkspaceExternalProjectEntry,
+  createWorkspaceExternalProjectWebglPackageUploadUrl,
   deleteWorkspaceExternalProjectAsset,
   deleteWorkspaceExternalProjectCollection,
   deleteWorkspaceExternalProjectEntry,
   duplicateWorkspaceExternalProjectEntry,
+  finalizeWorkspaceExternalProjectWebglPackage,
   getWorkspaceExternalProjectDelivery,
   getWorkspaceExternalProjectStudio,
   getWorkspaceExternalProjectSummary,
@@ -123,6 +129,7 @@ export {
   updateWorkspaceExternalProjectCollection,
   updateWorkspaceExternalProjectEntry,
   uploadWorkspaceExternalProjectAssetFile,
+  uploadWorkspaceExternalProjectWebglPackageFile,
 } from './external-projects';
 export type { FinanceBudgetUpsertPayload } from './finance';
 export {

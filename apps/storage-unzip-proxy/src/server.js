@@ -12,16 +12,24 @@ const MAX_EXTRACTED_ENTRY_BYTES = 50 * 1024 * 1024;
 const MAX_TOTAL_EXTRACTED_BYTES = 250 * 1024 * 1024;
 
 const MIME_TYPES = {
+  '.br': 'application/octet-stream',
+  '.css': 'text/css',
   '.csv': 'text/csv',
+  '.data': 'application/octet-stream',
   '.gif': 'image/gif',
+  '.gz': 'application/gzip',
+  '.html': 'text/html',
+  '.ico': 'image/x-icon',
   '.jpeg': 'image/jpeg',
   '.jpg': 'image/jpeg',
+  '.js': 'application/javascript',
   '.json': 'application/json',
   '.md': 'text/markdown',
   '.pdf': 'application/pdf',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
   '.txt': 'text/plain',
+  '.wasm': 'application/wasm',
   '.webp': 'image/webp',
 };
 
@@ -113,6 +121,23 @@ function joinArchivePath(prefix, value) {
 }
 
 function contentTypeForFile(filePath) {
+  const lowerPath = filePath.toLowerCase();
+  if (lowerPath.endsWith('.symbols.json')) {
+    return 'application/json';
+  }
+
+  if (lowerPath.endsWith('.js.br') || lowerPath.endsWith('.js.gz')) {
+    return 'application/javascript';
+  }
+
+  if (lowerPath.endsWith('.wasm.br') || lowerPath.endsWith('.wasm.gz')) {
+    return 'application/wasm';
+  }
+
+  if (lowerPath.endsWith('.data.br') || lowerPath.endsWith('.data.gz')) {
+    return 'application/octet-stream';
+  }
+
   const extension = path.extname(filePath).toLowerCase();
   return MIME_TYPES[extension] || 'application/octet-stream';
 }
