@@ -41,6 +41,7 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - `apps/cms` rewrites `/api/:path*` to `apps/web`.
 - New CMS backend behavior should be added in `apps/web`, then exposed through `packages/internal-api`.
 - The root linking console reads the workspace-indexed binding summary from `GET /api/v1/admin/external-project-bindings`.
+- The root linking console may load its initial server-render payload directly with the request-scoped CMS Supabase admin path after `getCmsWorkspaceAccess` proves root admin access. Avoid server-to-server Internal API fetches during that initial render, because production auth/origin forwarding failures turn `/internal/projects` into a hard RSC error page.
 - Backend naming stays on `external-project*` contracts even though the product surface is branded as Tuturuuu CMS.
 
 ## Client Architecture

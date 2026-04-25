@@ -1,13 +1,11 @@
-import {
-  listCanonicalExternalProjects,
-  listExternalProjectWorkspaceBindings,
-  listWorkspaceExternalProjectBindingAudits,
-  withForwardedInternalApiAuth,
-} from '@tuturuuu/internal-api';
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { RootExternalProjectsAdminClient } from '@/features/admin/root-admin-client';
 import { getCmsWorkspaceAccess } from '@/lib/external-projects/access';
+import {
+  listCanonicalExternalProjects,
+  listExternalProjectWorkspaceBindingSummaries,
+  listWorkspaceExternalProjectBindingAudits,
+} from '@/lib/external-projects/admin-store';
 
 interface Props {
   params: Promise<{
@@ -23,12 +21,10 @@ export default async function CmsProjectsPage({ params }: Props) {
     redirect('/no-access');
   }
 
-  const requestHeaders = await headers();
-  const internalApiOptions = withForwardedInternalApiAuth(requestHeaders);
   const [projects, bindings, audits] = await Promise.all([
-    listCanonicalExternalProjects(internalApiOptions),
-    listExternalProjectWorkspaceBindings(internalApiOptions),
-    listWorkspaceExternalProjectBindingAudits(internalApiOptions),
+    listCanonicalExternalProjects(),
+    listExternalProjectWorkspaceBindingSummaries(),
+    listWorkspaceExternalProjectBindingAudits(),
   ]);
 
   return (
