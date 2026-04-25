@@ -310,6 +310,17 @@ function mapR2FolderToStorageObject(name: string): StorageObject {
   };
 }
 
+function getSupabaseStorageObjectContentType(entry: StorageObject) {
+  const metadata = entry.metadata ?? {};
+  return (
+    metadata.mimetype ??
+    metadata.mimeType ??
+    metadata.mediaType ??
+    metadata.contentType ??
+    null
+  );
+}
+
 function buildR2CopySource(bucket: string, key: string) {
   return encodeURIComponent(`${bucket}/${key}`).replace(/%2F/g, '/');
 }
@@ -585,24 +596,11 @@ async function ensureWorkspaceCapacity(
       }
     } else {
       const supabase = await createDynamicAdminClient();
-      const { data, error } = await supabase
-        .schema('storage')
-        .from('objects')
-        .select('metadata')
-        .eq('bucket_id', 'workspaces')
-        .eq('name', options.fullPath)
-        .maybeSingle();
-
-      if (error) {
-        throw new WorkspaceStorageError(
-          error.message || 'Failed to inspect storage usage'
-        );
-      }
-
-      const metadata = (data?.metadata ?? {}) as {
-        size?: number | string | null;
-      };
-      existingBytes = toNumber(metadata.size);
+      const existingObject = await findSupabaseStorageObject(
+        supabase as TypedSupabaseClient,
+        options.fullPath
+      );
+      existingBytes = toNumber(existingObject?.metadata?.size);
     }
   }
 
@@ -732,6 +730,130 @@ async function listSupabaseFolderObjectPathsRecursively(
 
     if (page.length < SUPABASE_STORAGE_LIST_PAGE_SIZE) {
       return objectPaths;
+    }
+
+    offset += page.length;
+  }
+}
+
+async function findSupabaseStorageObject(
+  supabase: TypedSupabaseClient,
+  fullPath: string
+): Promise<StorageObject | null> {
+  const folderPath = posix.dirname(fullPath);
+  const objectName = posix.basename(fullPath);
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await supabase.storage
+      .from('workspaces')
+      .list(folderPath, {
+        limit: SUPABASE_STORAGE_LIST_PAGE_SIZE,
+        offset,
+        search: objectName,
+        sortBy: {
+          column: 'name',
+          order: 'asc',
+        },
+      });
+
+    if (error) {
+      throw new WorkspaceStorageError(
+        error.message || 'Failed to inspect destination object'
+      );
+    }
+
+    const page = (data ?? []) as StorageObject[];
+    const object = page.find((entry) => entry.id && entry.name === objectName);
+
+    if (object) {
+      return object;
+    }
+
+    if (page.length < SUPABASE_STORAGE_LIST_PAGE_SIZE) {
+      return null;
+    }
+
+    offset += page.length;
+  }
+}
+
+async function listSupabaseRawObjectsRecursively(
+  supabase: TypedSupabaseClient,
+  wsId: string,
+  folderPath: string,
+  limit?: number
+): Promise<WorkspaceStorageRawObject[]> {
+  const objects: WorkspaceStorageRawObject[] = [];
+  let offset = 0;
+
+  while (true) {
+    const remaining = limit ? limit - objects.length : undefined;
+    if (remaining !== undefined && remaining <= 0) {
+      return objects;
+    }
+
+    const { data, error } = await supabase.storage
+      .from('workspaces')
+      .list(folderPath, {
+        limit:
+          remaining !== undefined
+            ? Math.min(remaining, SUPABASE_STORAGE_LIST_PAGE_SIZE)
+            : SUPABASE_STORAGE_LIST_PAGE_SIZE,
+        offset,
+        sortBy: {
+          column: 'name',
+          order: 'asc',
+        },
+      });
+
+    if (error) {
+      throw new WorkspaceStorageError(
+        error.message || 'Failed to list Supabase storage objects'
+      );
+    }
+
+    const page = (data ?? []) as StorageObject[];
+
+    for (const entry of page) {
+      if (!entry.name) {
+        continue;
+      }
+
+      const entryPath = posix.join(folderPath, entry.name);
+
+      if (!entry.id) {
+        objects.push(
+          ...(await listSupabaseRawObjectsRecursively(
+            supabase,
+            wsId,
+            entryPath,
+            remaining
+          ))
+        );
+        if (limit && objects.length >= limit) {
+          return objects;
+        }
+        continue;
+      }
+
+      objects.push({
+        path: stripWorkspaceStoragePrefix(wsId, entryPath),
+        fullPath: entryPath,
+        size: toNumber(entry.metadata?.size),
+        contentType: getSupabaseStorageObjectContentType(entry),
+        updatedAt:
+          typeof entry.updated_at === 'string' ? entry.updated_at : null,
+        isFolderPlaceholder: entryPath.endsWith(EMPTY_FOLDER_PLACEHOLDER_NAME),
+      });
+
+      if (limit && objects.length >= limit) {
+        return objects;
+      }
+    }
+
+    if (page.length < SUPABASE_STORAGE_LIST_PAGE_SIZE) {
+      return objects;
     }
 
     offset += page.length;
@@ -893,58 +1015,12 @@ export async function listWorkspaceStorageRawObjectsForProvider(
 
   if (provider === WORKSPACE_STORAGE_PROVIDER_SUPABASE) {
     const supabase = await createDynamicAdminClient();
-    const objects: WorkspaceStorageRawObject[] = [];
-    let offset = 0;
-
-    while (true) {
-      const upperBound = offset + SUPABASE_STORAGE_LIST_PAGE_SIZE - 1;
-      const { data, error } = await supabase
-        .schema('storage')
-        .from('objects')
-        .select('name, metadata, updated_at')
-        .eq('bucket_id', 'workspaces')
-        .like('name', `${workspacePrefix}%`)
-        .order('name', { ascending: true })
-        .range(offset, upperBound);
-
-      if (error) {
-        throw new WorkspaceStorageError(
-          'Failed to list Supabase storage objects'
-        );
-      }
-
-      const page = data ?? [];
-      for (const entry of page) {
-        const metadata = (entry.metadata ?? {}) as {
-          mimetype?: string | null;
-          mimeType?: string | null;
-          size?: number | string | null;
-        };
-        const fullPath = entry.name;
-
-        objects.push({
-          path: stripWorkspaceStoragePrefix(wsId, fullPath),
-          fullPath,
-          size: toNumber(metadata.size),
-          contentType: metadata.mimetype ?? metadata.mimeType ?? null,
-          updatedAt:
-            typeof entry.updated_at === 'string' ? entry.updated_at : null,
-          isFolderPlaceholder: fullPath.endsWith(EMPTY_FOLDER_PLACEHOLDER_NAME),
-        });
-
-        if (options.limit && objects.length >= options.limit) {
-          return objects;
-        }
-      }
-
-      if (page.length < SUPABASE_STORAGE_LIST_PAGE_SIZE) {
-        break;
-      }
-
-      offset += page.length;
-    }
-
-    return objects;
+    return listSupabaseRawObjectsRecursively(
+      supabase as TypedSupabaseClient,
+      wsId,
+      workspacePrefix.replace(/\/$/, ''),
+      options.limit
+    );
   }
 
   const config = await resolveWorkspaceStorageBackendConfig(wsId, provider);
@@ -1133,19 +1209,10 @@ export async function uploadWorkspaceStorageFileDirectToProvider(
 
   const supabase = await createDynamicAdminClient();
   if (!(options?.upsert ?? false)) {
-    const { data: existingObject, error: existingObjectError } = await supabase
-      .schema('storage')
-      .from('objects')
-      .select('id')
-      .eq('bucket_id', 'workspaces')
-      .eq('name', fullPath)
-      .maybeSingle();
-
-    if (existingObjectError) {
-      throw new WorkspaceStorageError(
-        existingObjectError.message || 'Failed to inspect destination object'
-      );
-    }
+    const existingObject = await findSupabaseStorageObject(
+      supabase as TypedSupabaseClient,
+      fullPath
+    );
 
     if (existingObject) {
       throw new WorkspaceStorageError(
@@ -1300,19 +1367,10 @@ export async function createWorkspaceStorageUploadPayload(
   const supabase = await createDynamicAdminClient();
 
   if (!(options?.upsert ?? false)) {
-    const { data: existingObject, error: existingObjectError } = await supabase
-      .schema('storage')
-      .from('objects')
-      .select('id')
-      .eq('bucket_id', 'workspaces')
-      .eq('name', fullPath)
-      .maybeSingle();
-
-    if (existingObjectError) {
-      throw new WorkspaceStorageError(
-        existingObjectError.message || 'Failed to inspect destination object'
-      );
-    }
+    const existingObject = await findSupabaseStorageObject(
+      supabase as TypedSupabaseClient,
+      fullPath
+    );
 
     if (existingObject) {
       throw new WorkspaceStorageError(

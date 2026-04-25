@@ -2,10 +2,14 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
+  Activity,
+  ArrowRight,
   BriefcaseBusiness,
   CheckCircle2,
   Clock,
   Link,
+  Plus,
+  Search,
   Sparkles,
 } from '@tuturuuu/icons';
 import {
@@ -28,7 +32,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -39,13 +42,22 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useDeferredValue, useState } from 'react';
+import { useDeferredValue, useState } from 'react';
 import {
   DEFAULT_EXTERNAL_PROJECT_COLLECTIONS,
   EXTERNAL_PROJECT_ADAPTER_OPTIONS,
 } from '@/lib/external-projects/constants';
+import {
+  EmptyPanel,
+  formatAuditTime,
+  formatCanonicalToken,
+  getWorkspaceLabel,
+  MetricCard,
+  ProjectRegistryCard,
+  WorkspaceStatusBadge,
+  WorkspaceSummaryButton,
+} from './root-admin-components';
 
 function buildDefaultDeliveryProfile(
   adapter: CanonicalExternalProject['adapter']
@@ -68,206 +80,23 @@ function tryParseJson(value: string): Json | null {
   }
 }
 
-function formatCanonicalToken(value: string) {
-  return value
-    .split(/[-_]/g)
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(' ');
-}
-
-function formatAuditTime(value: string | null) {
-  if (!value) {
-    return '—';
+function workspaceMatchesQuery(
+  workspace: ExternalProjectWorkspaceBindingSummary,
+  query: string
+) {
+  if (!query) {
+    return true;
   }
 
-  return new Date(value).toLocaleString();
-}
-
-function getWorkspaceLabel(
-  workspace: Pick<ExternalProjectWorkspaceBindingSummary, 'name'>,
-  unnamedLabel: string
-) {
-  return workspace.name || unnamedLabel;
-}
-
-function MetricCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-border/70 bg-background/55 p-4">
-      <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/80 bg-background/80 text-muted-foreground">
-        {icon}
-      </div>
-      <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-        {label}
-      </div>
-      <div className="mt-1 font-semibold text-2xl">{value}</div>
-    </div>
-  );
-}
-
-function EmptyPanel({
-  description,
-  title,
-}: {
-  description: string;
-  title: string;
-}) {
-  return (
-    <div className="rounded-xl border border-border/80 border-dashed bg-background/30 px-4 py-10 text-center">
-      <div className="font-medium">{title}</div>
-      <div className="mx-auto mt-2 max-w-xl text-muted-foreground text-sm leading-6">
-        {description}
-      </div>
-    </div>
-  );
-}
-
-function WorkspaceStatusBadge({ enabled }: { enabled: boolean }) {
-  const t = useTranslations();
-
-  return (
-    <Badge variant={enabled ? 'default' : 'outline'} className="rounded-full">
-      {enabled ? t('common.enabled') : t('common.disabled')}
-    </Badge>
-  );
-}
-
-function ProjectRegistryCard({
-  onPrepareBinding,
-  onSave,
-  project,
-}: {
-  onPrepareBinding: () => void;
-  onSave: (
-    displayName: string,
-    isActive: boolean,
-    deliveryProfile: Json
-  ) => void;
-  project: CanonicalExternalProject;
-}) {
-  const tRoot = useTranslations('external-projects.root');
-  const [displayName, setDisplayName] = useState(project.display_name);
-  const [isActive, setIsActive] = useState(project.is_active);
-  const [deliveryProfileText, setDeliveryProfileText] = useState(
-    JSON.stringify(project.delivery_profile ?? {}, null, 2)
-  );
-
-  const deliveryProfileJson = tryParseJson(deliveryProfileText);
-
-  return (
-    <div className="rounded-2xl border border-border/70 bg-background/35 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-2">
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary" className="rounded-full">
-              {formatCanonicalToken(project.adapter)}
-            </Badge>
-            <Badge
-              variant={isActive ? 'default' : 'outline'}
-              className="rounded-full"
-            >
-              {isActive ? tRoot('active_label') : tRoot('inactive_label')}
-            </Badge>
-          </div>
-          <div>
-            <div className="font-medium text-lg">{project.display_name}</div>
-            <div className="text-muted-foreground text-sm">
-              {project.id} · {tRoot('adapter_label')}:{' '}
-              {formatCanonicalToken(project.adapter)}
-            </div>
-          </div>
-        </div>
-
-        <Button variant="outline" onClick={onPrepareBinding}>
-          {tRoot('use_for_binding_action')}
-        </Button>
-      </div>
-
-      <div className="mt-4 grid gap-4 xl:grid-cols-[0.62fr_0.38fr]">
-        <div className="space-y-4">
-          <div className="grid gap-2">
-            <Label>{tRoot('display_name_label')}</Label>
-            <Input
-              value={displayName}
-              onChange={(event) => setDisplayName(event.target.value)}
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <div className="flex items-center justify-between gap-3">
-              <Label>{tRoot('delivery_profile_label')}</Label>
-              <span className="text-muted-foreground text-xs">
-                {tRoot('delivery_profile_hint')}
-              </span>
-            </div>
-            <Textarea
-              rows={6}
-              value={deliveryProfileText}
-              onChange={(event) => setDeliveryProfileText(event.target.value)}
-              className={
-                deliveryProfileText.trim() && deliveryProfileJson === null
-                  ? 'border-destructive/70 focus-visible:ring-destructive/30'
-                  : undefined
-              }
-            />
-            {deliveryProfileText.trim() && deliveryProfileJson === null ? (
-              <p className="text-destructive text-xs">
-                {tRoot('invalid_json_label')}
-              </p>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="rounded-xl border border-border/70 bg-card/80 p-4">
-            <div className="mb-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
-              {tRoot('recommended_collections_label')}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {project.allowed_collections.map((collection) => (
-                <Badge
-                  key={collection}
-                  variant="secondary"
-                  className="rounded-full"
-                >
-                  {formatCanonicalToken(collection)}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card/80 px-4 py-3">
-            <Checkbox
-              checked={isActive}
-              onCheckedChange={(checked) => setIsActive(Boolean(checked))}
-              id={`active-${project.id}`}
-            />
-            <Label htmlFor={`active-${project.id}`}>
-              {tRoot('active_label')}
-            </Label>
-          </div>
-
-          <Button
-            className="w-full"
-            onClick={() =>
-              deliveryProfileJson &&
-              onSave(displayName, isActive, deliveryProfileJson)
-            }
-            disabled={!displayName.trim() || deliveryProfileJson === null}
-          >
-            {tRoot('save_action')}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
+  return [
+    workspace.id,
+    workspace.name,
+    workspace.binding.canonical_id,
+    workspace.binding.canonical_project?.display_name,
+    workspace.binding.adapter,
+  ]
+    .filter(Boolean)
+    .some((value) => value?.toLowerCase().includes(query));
 }
 
 export function RootExternalProjectsAdminClient({
@@ -291,18 +120,15 @@ export function RootExternalProjectsAdminClient({
   const [adapterFilter, setAdapterFilter] = useState('all');
   const [projectSearchQuery, setProjectSearchQuery] = useState('');
   const [workspaceSearchQuery, setWorkspaceSearchQuery] = useState('');
+  const [addWorkspaceSearchQuery, setAddWorkspaceSearchQuery] = useState('');
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(
-    initialBindings.find((workspace) => workspace.binding.canonical_id)?.id ??
-      initialBindings[0]?.id ??
-      ''
+    initialBindings.find((workspace) => workspace.binding.enabled)?.id ?? ''
   );
   const [bindingForm, setBindingForm] = useState(() => {
     const selectedWorkspace =
       initialBindings.find(
         (workspace) => workspace.id === selectedWorkspaceId
-      ) ??
-      initialBindings[0] ??
-      null;
+      ) ?? null;
 
     return {
       canonicalId: selectedWorkspace?.binding.canonical_id ?? '',
@@ -312,10 +138,16 @@ export function RootExternalProjectsAdminClient({
 
   const deferredProjectSearchQuery = useDeferredValue(projectSearchQuery);
   const deferredWorkspaceSearchQuery = useDeferredValue(workspaceSearchQuery);
+  const deferredAddWorkspaceSearchQuery = useDeferredValue(
+    addWorkspaceSearchQuery
+  );
   const normalizedProjectQuery = deferredProjectSearchQuery
     .trim()
     .toLowerCase();
   const normalizedWorkspaceQuery = deferredWorkspaceSearchQuery
+    .trim()
+    .toLowerCase();
+  const normalizedAddWorkspaceQuery = deferredAddWorkspaceSearchQuery
     .trim()
     .toLowerCase();
   const createPayloadJson = tryParseJson(createForm.deliveryProfile);
@@ -337,6 +169,9 @@ export function RootExternalProjectsAdminClient({
   const activeBindingCount = initialBindings.filter(
     (workspace) => workspace.binding.enabled
   ).length;
+  const enabledBindings = initialBindings.filter(
+    (workspace) => workspace.binding.enabled
+  );
   const adapterCoverageCount = new Set(
     initialProjects.map((project) => project.adapter)
   ).size;
@@ -350,33 +185,35 @@ export function RootExternalProjectsAdminClient({
 
     return matchesAdapter && matchesQuery;
   });
-  const filteredBindings = initialBindings.filter((workspace) => {
-    if (!normalizedWorkspaceQuery) {
-      return true;
-    }
-
-    return [
-      workspace.id,
-      workspace.name,
-      workspace.binding.canonical_id,
-      workspace.binding.canonical_project?.display_name,
-      workspace.binding.adapter,
-    ]
-      .filter(Boolean)
-      .some((value) => value?.toLowerCase().includes(normalizedWorkspaceQuery));
-  });
+  const filteredBindings = enabledBindings.filter((workspace) =>
+    workspaceMatchesQuery(workspace, normalizedWorkspaceQuery)
+  );
+  const addableWorkspaceMatches = normalizedAddWorkspaceQuery
+    ? initialBindings
+        .filter((workspace) => !workspace.binding.enabled)
+        .filter((workspace) =>
+          workspaceMatchesQuery(workspace, normalizedAddWorkspaceQuery)
+        )
+        .slice(0, 8)
+    : [];
   const selectedWorkspaceAudits = selectedWorkspace
     ? initialAudits.filter(
         (audit) => audit.destination_ws_id === selectedWorkspace.id
       )
     : [];
 
-  const selectWorkspace = (
-    workspace: ExternalProjectWorkspaceBindingSummary
-  ) => {
+  const selectWorkspace = ({
+    preferFirstActiveProject = false,
+    workspace,
+  }: {
+    preferFirstActiveProject?: boolean;
+    workspace: ExternalProjectWorkspaceBindingSummary;
+  }) => {
     setSelectedWorkspaceId(workspace.id);
     setBindingForm({
-      canonicalId: workspace.binding.canonical_id ?? '',
+      canonicalId: preferFirstActiveProject
+        ? (activeProjects[0]?.id ?? workspace.binding.canonical_id ?? '')
+        : (workspace.binding.canonical_id ?? ''),
       workspaceId: workspace.id,
     });
   };
@@ -450,15 +287,15 @@ export function RootExternalProjectsAdminClient({
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-3xl border border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(15,23,42,0.08),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(248,250,252,0.9))] shadow-sm">
+      <section className="overflow-hidden rounded-3xl border border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/10 via-background to-dynamic-green/10 shadow-sm">
         <div className="grid gap-6 p-6 xl:grid-cols-[1.1fr_0.9fr] xl:p-8">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground text-xs uppercase tracking-[0.24em]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-dynamic-blue/20 bg-background/70 px-3 py-1 text-dynamic-blue text-xs uppercase">
               <Sparkles className="h-3.5 w-3.5" />
               {tRoot('overview_title')}
             </div>
             <div className="space-y-2">
-              <h1 className="max-w-2xl font-semibold text-3xl tracking-tight">
+              <h1 className="max-w-2xl font-semibold text-3xl">
                 {tRoot('registry_title')}
               </h1>
               <p className="max-w-2xl text-muted-foreground text-sm leading-6">
@@ -472,120 +309,202 @@ export function RootExternalProjectsAdminClient({
               label={tRoot('total_projects_label')}
               value={String(initialProjects.length)}
               icon={<BriefcaseBusiness className="h-4 w-4" />}
+              tone="blue"
             />
             <MetricCard
               label={tRoot('active_projects_label')}
               value={String(activeProjects.length)}
               icon={<CheckCircle2 className="h-4 w-4" />}
+              tone="green"
             />
             <MetricCard
               label={tRoot('live_bindings_label')}
               value={String(activeBindingCount)}
               icon={<Link className="h-4 w-4" />}
+              tone="orange"
             />
             <MetricCard
               label={tRoot('adapter_coverage_label')}
               value={`${adapterCoverageCount}/${EXTERNAL_PROJECT_ADAPTER_OPTIONS.length}`}
               icon={<Sparkles className="h-4 w-4" />}
+              tone="purple"
             />
           </div>
         </div>
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
-        <Card className="border-border/70 bg-card/95 shadow-none">
-          <CardHeader>
-            <CardTitle>{tRoot('workspace_list_title')}</CardTitle>
-            <CardDescription>
-              {tRoot('workspace_list_description')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="cms-workspace-search">
-                {t('common.workspace')}
-              </Label>
-              <Input
-                id="cms-workspace-search"
-                value={workspaceSearchQuery}
-                onChange={(event) =>
-                  setWorkspaceSearchQuery(event.target.value)
-                }
-                placeholder={tRoot('workspace_search_placeholder')}
-              />
-            </div>
-
-            <div className="text-muted-foreground text-sm">
-              {filteredBindings.length} {t('common.workspaces')}
-            </div>
-
-            {filteredBindings.length === 0 ? (
-              <EmptyPanel
-                title={tRoot('workspace_empty_title')}
-                description={tRoot('workspace_empty_description')}
-              />
-            ) : (
-              <div className="space-y-3">
-                {filteredBindings.map((workspace) => (
-                  <button
-                    key={workspace.id}
-                    type="button"
-                    className={cn(
-                      'w-full rounded-[1.35rem] border p-4 text-left transition-colors',
-                      workspace.id === selectedWorkspaceId
-                        ? 'border-foreground/15 bg-background'
-                        : 'border-border/70 bg-background/75 hover:border-foreground/15'
-                    )}
-                    onClick={() => selectWorkspace(workspace)}
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <div className="font-medium">
-                            {getWorkspaceLabel(
-                              workspace,
-                              t('common.unnamed-workspace')
-                            )}
-                          </div>
-                          <WorkspaceStatusBadge
-                            enabled={workspace.binding.enabled}
-                          />
-                          {workspace.personal ? (
-                            <Badge variant="secondary" className="rounded-full">
-                              {t('common.personal_account')}
-                            </Badge>
-                          ) : null}
-                        </div>
-                        <div className="text-muted-foreground text-sm">
-                          {workspace.binding.canonical_project?.display_name ??
-                            workspace.binding.canonical_id ??
-                            tRoot('unbound_label')}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 text-right text-muted-foreground text-xs">
-                        <div>
-                          {workspace.binding.adapter
-                            ? formatCanonicalToken(workspace.binding.adapter)
-                            : tRoot('unbound_label')}
-                        </div>
-                        <div>{formatAuditTime(workspace.last_changed_at)}</div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
+        <div className="space-y-6">
+          <Card className="border-border/70 bg-card/95 shadow-none">
+            <CardHeader>
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <CardTitle>{tRoot('enabled_workspaces_title')}</CardTitle>
+                  <CardDescription>
+                    {tRoot('enabled_workspaces_description')}
+                  </CardDescription>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
+                >
+                  {activeBindingCount} {tRoot('live_bindings_label')}
+                </Badge>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="cms-workspace-search">
+                  {t('common.workspace')}
+                </Label>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="cms-workspace-search"
+                    value={workspaceSearchQuery}
+                    onChange={(event) =>
+                      setWorkspaceSearchQuery(event.target.value)
+                    }
+                    placeholder={tRoot('workspace_search_placeholder')}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-muted-foreground">
+                  {filteredBindings.length} {t('common.workspaces')}
+                </span>
+                <span className="text-dynamic-green">
+                  {tRoot('enabled_only_label')}
+                </span>
+              </div>
+
+              {filteredBindings.length === 0 ? (
+                <EmptyPanel
+                  title={
+                    enabledBindings.length === 0
+                      ? tRoot('enabled_workspace_empty_title')
+                      : tRoot('workspace_empty_title')
+                  }
+                  description={
+                    enabledBindings.length === 0
+                      ? tRoot('enabled_workspace_empty_description')
+                      : tRoot('workspace_empty_description')
+                  }
+                />
+              ) : (
+                <div className="space-y-3">
+                  {filteredBindings.map((workspace) => (
+                    <WorkspaceSummaryButton
+                      key={workspace.id}
+                      workspace={workspace}
+                      isSelected={workspace.id === selectedWorkspaceId}
+                      onClick={() => selectWorkspace({ workspace })}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-dynamic-orange/20 bg-dynamic-orange/5 shadow-none">
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <div className="rounded-full border border-dynamic-orange/25 bg-dynamic-orange/10 p-2 text-dynamic-orange">
+                  <Plus className="h-4 w-4" />
+                </div>
+                <div className="space-y-1">
+                  <CardTitle>{tRoot('add_workspace_title')}</CardTitle>
+                  <CardDescription>
+                    {tRoot('add_workspace_description')}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="cms-add-workspace-search">
+                  {tRoot('add_workspace_search_label')}
+                </Label>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="cms-add-workspace-search"
+                    value={addWorkspaceSearchQuery}
+                    onChange={(event) =>
+                      setAddWorkspaceSearchQuery(event.target.value)
+                    }
+                    placeholder={tRoot('add_workspace_search_placeholder')}
+                    className="bg-background pl-9"
+                  />
+                </div>
+              </div>
+
+              {!normalizedAddWorkspaceQuery ? (
+                <EmptyPanel
+                  title={tRoot('add_workspace_idle_title')}
+                  description={tRoot('add_workspace_idle_description')}
+                />
+              ) : addableWorkspaceMatches.length === 0 ? (
+                <EmptyPanel
+                  title={tRoot('add_workspace_empty_title')}
+                  description={tRoot('add_workspace_empty_description')}
+                />
+              ) : (
+                <div className="space-y-3">
+                  <div className="text-muted-foreground text-sm">
+                    {addableWorkspaceMatches.length} {tRoot('results_label')}
+                  </div>
+                  {addableWorkspaceMatches.map((workspace) => (
+                    <button
+                      key={workspace.id}
+                      type="button"
+                      className="group flex w-full items-center justify-between gap-4 rounded-2xl border border-border/70 bg-background/90 p-4 text-left transition hover:border-dynamic-orange/35 hover:bg-dynamic-orange/5"
+                      onClick={() =>
+                        selectWorkspace({
+                          preferFirstActiveProject: true,
+                          workspace,
+                        })
+                      }
+                    >
+                      <div className="min-w-0 space-y-1">
+                        <div className="truncate font-medium">
+                          {getWorkspaceLabel(
+                            workspace,
+                            t('common.unnamed-workspace')
+                          )}
+                        </div>
+                        <div className="truncate text-muted-foreground text-sm">
+                          {workspace.id}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2 text-dynamic-orange text-sm">
+                        {tRoot('select_to_bind_action')}
+                        <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="space-y-6">
           <Card className="border-border/70 bg-card/95 shadow-none">
             <CardHeader>
-              <CardTitle>{tRoot('selected_workspace_title')}</CardTitle>
-              <CardDescription>
-                {tRoot('selected_workspace_description')}
-              </CardDescription>
+              <div className="flex items-start gap-3">
+                <div className="rounded-full border border-dynamic-blue/25 bg-dynamic-blue/10 p-2 text-dynamic-blue">
+                  <Activity className="h-4 w-4" />
+                </div>
+                <div className="space-y-1">
+                  <CardTitle>{tRoot('selected_workspace_title')}</CardTitle>
+                  <CardDescription>
+                    {tRoot('selected_workspace_description')}
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
               {!selectedWorkspace ? (
@@ -596,8 +515,8 @@ export function RootExternalProjectsAdminClient({
               ) : (
                 <>
                   <div className="grid gap-4 md:grid-cols-3">
-                    <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                      <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                    <div className="rounded-2xl border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
+                      <div className="text-muted-foreground text-xs uppercase">
                         {t('common.workspace')}
                       </div>
                       <div className="mt-2 font-medium text-lg">
@@ -610,8 +529,8 @@ export function RootExternalProjectsAdminClient({
                         {selectedWorkspace.id}
                       </div>
                     </div>
-                    <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                      <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                    <div className="rounded-2xl border border-dynamic-green/20 bg-dynamic-green/5 p-4">
+                      <div className="text-muted-foreground text-xs uppercase">
                         {tRoot('binding_preview_label')}
                       </div>
                       <div className="mt-2 font-medium text-lg">
@@ -628,8 +547,8 @@ export function RootExternalProjectsAdminClient({
                           : tRoot('unbound_label')}
                       </div>
                     </div>
-                    <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                      <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                    <div className="rounded-2xl border border-dynamic-purple/20 bg-dynamic-purple/5 p-4">
+                      <div className="text-muted-foreground text-xs uppercase">
                         {tRoot('last_changed_label')}
                       </div>
                       <div className="mt-2 font-medium text-lg">
@@ -684,8 +603,8 @@ export function RootExternalProjectsAdminClient({
                     </div>
 
                     <div className="space-y-4">
-                      <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                        <div className="mb-2 text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                      <div className="rounded-2xl border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
+                        <div className="mb-2 text-muted-foreground text-xs uppercase">
                           {tRoot('binding_preview_label')}
                         </div>
                         <div className="space-y-2">
@@ -712,15 +631,16 @@ export function RootExternalProjectsAdminClient({
                       </div>
 
                       <Button
-                        className="w-full"
+                        className="w-full gap-2 bg-dynamic-blue text-white hover:bg-dynamic-blue/90"
                         disabled={bindDisabled}
                         onClick={() => bindMutation.mutate()}
                       >
+                        <CheckCircle2 className="h-4 w-4" />
                         {tRoot('save_action')}
                       </Button>
                       <Button
                         variant="outline"
-                        className="w-full"
+                        className="w-full border-dynamic-orange/30 text-dynamic-orange hover:bg-dynamic-orange/10"
                         disabled={unbindDisabled}
                         onClick={() =>
                           setBindingForm((current) => ({
@@ -804,11 +724,17 @@ export function RootExternalProjectsAdminClient({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
               <Label>{tRoot('root_search_placeholder')}</Label>
-              <Input
-                value={projectSearchQuery}
-                onChange={(event) => setProjectSearchQuery(event.target.value)}
-                placeholder={tRoot('root_search_placeholder')}
-              />
+              <div className="relative">
+                <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={projectSearchQuery}
+                  onChange={(event) =>
+                    setProjectSearchQuery(event.target.value)
+                  }
+                  placeholder={tRoot('root_search_placeholder')}
+                  className="pl-9"
+                />
+              </div>
             </div>
             <div className="grid gap-2">
               <Label>{tRoot('adapter_label')}</Label>
@@ -832,7 +758,7 @@ export function RootExternalProjectsAdminClient({
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid gap-6 xl:grid-cols-[0.38fr_0.62fr]">
-            <div className="rounded-[1.6rem] border border-border/70 bg-background/70 p-5">
+            <div className="rounded-2xl border border-dynamic-purple/20 bg-dynamic-purple/5 p-5">
               <div className="space-y-4">
                 <div className="space-y-1">
                   <div className="font-medium">{tRoot('create_title')}</div>
@@ -927,9 +853,11 @@ export function RootExternalProjectsAdminClient({
                   </div>
 
                   <Button
+                    className="gap-2 bg-dynamic-purple text-white hover:bg-dynamic-purple/90"
                     disabled={createDisabled}
                     onClick={() => createProjectMutation.mutate()}
                   >
+                    <Plus className="h-4 w-4" />
                     {tRoot('create_action')}
                   </Button>
                 </div>
