@@ -13,6 +13,7 @@ export type PrepareMiraToolStepInput = {
   steps: unknown[];
   forceGoogleSearch: boolean;
   forceRenderUi: boolean;
+  needsParallelChecks: boolean;
   needsWorkspaceContextResolution: boolean;
   needsWorkspaceMembersTool: boolean;
   preferMarkdownTables: boolean;
@@ -22,6 +23,7 @@ export function prepareMiraToolStep({
   steps,
   forceGoogleSearch,
   forceRenderUi,
+  needsParallelChecks,
   needsWorkspaceContextResolution,
   needsWorkspaceMembersTool,
   preferMarkdownTables,
@@ -30,9 +32,50 @@ export function prepareMiraToolStep({
   activeTools: string[];
 } {
   if (steps.length === 0) {
+    if (forceGoogleSearch) {
+      return {
+        toolChoice: 'required',
+        activeTools: ['google_search', 'select_tools'],
+      };
+    }
+
+    if (needsParallelChecks) {
+      return {
+        toolChoice: 'required',
+        activeTools: ['run_parallel_checks', 'select_tools'],
+      };
+    }
+
+    if (needsWorkspaceContextResolution) {
+      return {
+        toolChoice: 'required',
+        activeTools: [
+          'list_accessible_workspaces',
+          'get_workspace_context',
+          'set_workspace_context',
+          'select_tools',
+        ],
+      };
+    }
+
+    if (needsWorkspaceMembersTool) {
+      return {
+        toolChoice: 'required',
+        activeTools: [
+          'get_workspace_context',
+          'list_workspace_members',
+          'select_tools',
+        ],
+      };
+    }
+
     return {
-      toolChoice: 'required',
-      activeTools: ['select_tools'],
+      activeTools: [
+        'select_tools',
+        'no_action_needed',
+        'google_search',
+        'run_parallel_checks',
+      ],
     };
   }
 
@@ -103,6 +146,20 @@ export function prepareMiraToolStep({
     const active = buildActiveToolsFromSelected(toolsForBuild)
       .filter((toolName) => toolName !== 'no_action_needed')
       .concat('google_search', 'select_tools');
+
+    return {
+      toolChoice: 'required',
+      activeTools: Array.from(new Set(active)),
+    };
+  }
+
+  if (
+    needsParallelChecks &&
+    !hasToolCallInSteps(steps, 'run_parallel_checks')
+  ) {
+    const active = buildActiveToolsFromSelected(toolsForBuild)
+      .filter((toolName) => toolName !== 'no_action_needed')
+      .concat('run_parallel_checks', 'select_tools');
 
     return {
       toolChoice: 'required',

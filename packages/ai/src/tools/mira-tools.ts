@@ -156,8 +156,10 @@ export function createMiraStreamTools(
 
     tools[name] = {
       ...def,
-      execute: async (args: Record<string, unknown>) =>
-        executeMiraTool(name, args, ctx),
+      execute: async (
+        args: Record<string, unknown>,
+        options?: { abortSignal?: AbortSignal }
+      ) => executeMiraTool(name, args, ctx, options),
     } as Tool;
   }
 

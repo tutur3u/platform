@@ -21,6 +21,22 @@ describe('collapsible tool section helpers', () => {
     ).toBe(true);
   });
 
+  it('keeps parallel check subagent output collapsed as routine work', () => {
+    expect(
+      isVisualToolDescriptor({
+        kind: 'tool',
+        key: 'parallel-checks',
+        part: {
+          type: 'tool-run_parallel_checks',
+          toolCallId: 'call-parallel-checks',
+          state: 'output-available',
+          input: {},
+          output: {},
+        } as never,
+      })
+    ).toBe(false);
+  });
+
   it('shows the latest tool in a collapsed batch when parts do not expose toolName', () => {
     expect(
       getLatestActionName([

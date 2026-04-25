@@ -384,8 +384,9 @@ export default function ChatMessageList({
         (() => {
           const lastMsg = messages[messages.length - 1];
           const showThinking =
-            lastMsg?.role === 'user' ||
-            (lastMsg?.role === 'assistant' && !hasTextContent(lastMsg));
+            lastMsg?.role === 'assistant' &&
+            !hasTextContent(lastMsg) &&
+            hasToolParts(lastMsg);
           return showThinking ? (
             <div className="mt-3 flex gap-2.5">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dynamic-purple/15 text-dynamic-purple">
@@ -397,7 +398,7 @@ export default function ChatMessageList({
                 </span>
                 <div className="flex items-center gap-2 rounded-2xl bg-muted/50 px-3.5 py-2.5 text-muted-foreground text-sm">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  {t('thinking')}
+                  {t('using_tools')}
                 </div>
               </div>
             </div>

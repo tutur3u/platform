@@ -2,6 +2,56 @@ import { describe, expect, it } from 'vitest';
 import { prepareMiraToolStep } from './mira-step-preparation';
 
 describe('prepareMiraToolStep', () => {
+  it('allows the first step to stream text before optional tool selection', () => {
+    const result = prepareMiraToolStep({
+      steps: [],
+      forceGoogleSearch: false,
+      forceRenderUi: false,
+      needsParallelChecks: false,
+      needsWorkspaceContextResolution: false,
+      needsWorkspaceMembersTool: false,
+      preferMarkdownTables: false,
+    });
+
+    expect(result.toolChoice).toBeUndefined();
+    expect(result.activeTools).toEqual([
+      'select_tools',
+      'no_action_needed',
+      'google_search',
+      'run_parallel_checks',
+    ]);
+  });
+
+  it('forces web search immediately for current external information', () => {
+    const result = prepareMiraToolStep({
+      steps: [],
+      forceGoogleSearch: true,
+      forceRenderUi: false,
+      needsParallelChecks: false,
+      needsWorkspaceContextResolution: false,
+      needsWorkspaceMembersTool: false,
+      preferMarkdownTables: false,
+    });
+
+    expect(result.toolChoice).toBe('required');
+    expect(result.activeTools).toEqual(['google_search', 'select_tools']);
+  });
+
+  it('forces parallel checks for explicit verification requests', () => {
+    const result = prepareMiraToolStep({
+      steps: [],
+      forceGoogleSearch: false,
+      forceRenderUi: false,
+      needsParallelChecks: true,
+      needsWorkspaceContextResolution: false,
+      needsWorkspaceMembersTool: false,
+      preferMarkdownTables: false,
+    });
+
+    expect(result.toolChoice).toBe('required');
+    expect(result.activeTools).toEqual(['run_parallel_checks', 'select_tools']);
+  });
+
   it('forces workspace resolution tools before task tools for explicit workspace requests', () => {
     const result = prepareMiraToolStep({
       steps: [
@@ -16,6 +66,7 @@ describe('prepareMiraToolStep', () => {
       ],
       forceGoogleSearch: false,
       forceRenderUi: false,
+      needsParallelChecks: false,
       needsWorkspaceContextResolution: true,
       needsWorkspaceMembersTool: false,
       preferMarkdownTables: false,
@@ -52,6 +103,7 @@ describe('prepareMiraToolStep', () => {
       ],
       forceGoogleSearch: false,
       forceRenderUi: false,
+      needsParallelChecks: false,
       needsWorkspaceContextResolution: true,
       needsWorkspaceMembersTool: false,
       preferMarkdownTables: false,
@@ -104,6 +156,7 @@ describe('prepareMiraToolStep', () => {
       ],
       forceGoogleSearch: false,
       forceRenderUi: false,
+      needsParallelChecks: false,
       needsWorkspaceContextResolution: true,
       needsWorkspaceMembersTool: false,
       preferMarkdownTables: false,
@@ -159,6 +212,7 @@ describe('prepareMiraToolStep', () => {
       ],
       forceGoogleSearch: false,
       forceRenderUi: false,
+      needsParallelChecks: false,
       needsWorkspaceContextResolution: true,
       needsWorkspaceMembersTool: false,
       preferMarkdownTables: false,
@@ -186,6 +240,7 @@ describe('prepareMiraToolStep', () => {
       ],
       forceGoogleSearch: false,
       forceRenderUi: false,
+      needsParallelChecks: false,
       needsWorkspaceContextResolution: false,
       needsWorkspaceMembersTool: true,
       preferMarkdownTables: false,

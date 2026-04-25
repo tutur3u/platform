@@ -292,6 +292,31 @@ export function shouldForceGoogleSearchForLatestUserMessage(
   return false;
 }
 
+export function shouldUseParallelChecksForLatestUserMessage(
+  messages: ModelMessage[]
+): boolean {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
+    if (!message || message.role !== 'user') continue;
+
+    const text = extractTextFromUserMessage(message).toLowerCase();
+    if (!text) return false;
+
+    const explicitVerification =
+      /\b(verify|validate|double[- ]?check|cross[- ]?check|fact[- ]?check|review deeply|deep check)\b/.test(
+        text
+      );
+    const complexScenario =
+      /\b(complex|conflicting|assumptions?|trade[- ]?offs?|risk|risks|edge cases?|failure modes?|implementation plan|migration|architecture)\b/.test(
+        text
+      );
+
+    return explicitVerification && complexScenario;
+  }
+
+  return false;
+}
+
 export function shouldPreferMarkdownTablesForLatestUserMessage(
   messages: ModelMessage[]
 ): boolean {

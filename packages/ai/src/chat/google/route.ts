@@ -17,6 +17,7 @@ import {
   shouldForceWorkspaceMembersForLatestUserMessage,
   shouldPreferMarkdownTablesForLatestUserMessage,
   shouldResolveWorkspaceContextForLatestUserMessage,
+  shouldUseParallelChecksForLatestUserMessage,
 } from '../mira-render-ui-policy';
 import { ChatRequestBodySchema, mapToUIMessages } from './chat-request-schema';
 import { systemInstruction } from './default-system-instruction';
@@ -400,6 +401,8 @@ export function createPOST(
         shouldResolveWorkspaceContextForLatestUserMessage(processedMessages);
       const needsWorkspaceMembersTool =
         shouldForceWorkspaceMembersForLatestUserMessage(processedMessages);
+      const needsParallelChecks =
+        shouldUseParallelChecksForLatestUserMessage(processedMessages);
 
       // Provider-native Google Search tool for non-Mira mode.
       const googleSearchTool = {
@@ -417,6 +420,7 @@ export function createPOST(
           steps,
           forceGoogleSearch,
           forceRenderUi,
+          needsParallelChecks,
           needsWorkspaceContextResolution,
           needsWorkspaceMembersTool,
           preferMarkdownTables,

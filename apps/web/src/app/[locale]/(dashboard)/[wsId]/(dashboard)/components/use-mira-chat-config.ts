@@ -44,6 +44,13 @@ function toModelUi(modelId: string): AIModelUI {
   };
 }
 
+export function resolveInitialThinkingMode(
+  stored: string | null
+): ThinkingMode {
+  void stored;
+  return 'fast';
+}
+
 export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
   const [selectedModel, setSelectedModel] = useState<AIModelUI>(INITIAL_MODEL);
   const [thinkingMode, setThinkingMode] = useState<ThinkingMode>('fast');
@@ -249,11 +256,7 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
   useEffect(() => {
     const key = `${THINKING_MODE_STORAGE_KEY_PREFIX}${wsId}`;
     const stored = localStorage.getItem(key);
-    if (stored === 'fast' || stored === 'thinking') {
-      setThinkingMode(stored);
-      return;
-    }
-    setThinkingMode('fast');
+    setThinkingMode(resolveInitialThinkingMode(stored));
   }, [wsId]);
 
   useEffect(() => {

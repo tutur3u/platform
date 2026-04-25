@@ -37,6 +37,7 @@ import {
   executeRecall,
   executeRemember,
 } from './executors/memory';
+import { executeParallelChecks } from './executors/parallel-checks';
 import { executeCreateQrCode } from './executors/qr';
 import { executeGoogleSearch } from './executors/search';
 import { executeUpdateMySettings } from './executors/settings';
@@ -105,13 +106,16 @@ import type { MiraToolContext } from './mira-tool-types';
 
 type ToolHandler = (
   args: Record<string, unknown>,
-  ctx: MiraToolContext
+  ctx: MiraToolContext,
+  options?: { abortSignal?: AbortSignal }
 ) => Promise<unknown> | unknown;
 
 const toolHandlers = {
   select_tools: (args) => ({ ok: true, selectedTools: args.tools }),
   no_action_needed: () => ({ ok: true }),
   google_search: executeGoogleSearch,
+  run_parallel_checks: (args, _ctx, options) =>
+    executeParallelChecks(args, options),
 
   get_my_tasks: executeGetMyTasks,
   create_task: executeCreateTask,
@@ -209,7 +213,8 @@ const toolHandlers = {
 export async function executeMiraTool(
   toolName: string,
   args: Record<string, unknown>,
-  ctx: MiraToolContext
+  ctx: MiraToolContext,
+  options?: { abortSignal?: AbortSignal }
 ): Promise<unknown> {
   if (toolName === 'render_ui') {
     if (!isRenderableRenderUiSpec(args)) {
@@ -256,5 +261,5 @@ export async function executeMiraTool(
 
   const handler = toolHandlers[toolName as keyof typeof toolHandlers];
 
-  return handler(args, ctx);
+  return handler(args, ctx, options);
 }

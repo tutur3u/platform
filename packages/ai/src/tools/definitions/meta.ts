@@ -19,7 +19,7 @@ const optionalTrimmedString = (max: number, field: string) =>
 export const metaToolDefinitions = {
   select_tools: tool({
     description:
-      'Pick which tools you need for this request. You MUST call this as your FIRST action every turn. Choose from the available tool names listed in the system prompt. Use no_action_needed ONLY for truly conversational turns with no durable info to save and no real-world lookup needed.',
+      'Pick which tools you need for this request. You may stream a short text acknowledgement first when useful, then call this before using other Mira tools. Choose from the available tool names listed in the system prompt. Use no_action_needed ONLY for truly conversational turns with no durable info to save and no real-world lookup needed.',
     inputSchema: z.object({
       tools: z
         .array(z.string())
@@ -65,6 +65,66 @@ export const metaToolDefinitions = {
         'Search query for web lookup'
       ),
     }),
+  }),
+
+  run_parallel_checks: tool({
+    description:
+      'Run lightweight parallel subagents for complex verification, planning, risk review, or conflicting-assumption checks. Use this for explicit deep verification requests instead of enabling main-assistant reasoning by default.',
+    inputSchema: z.object({
+      question: requiredTrimmedString(2000, 'question').describe(
+        'The exact question, plan, claim, or scenario to verify.'
+      ),
+      context: z
+        .string()
+        .trim()
+        .max(8000)
+        .optional()
+        .describe(
+          'Optional relevant context from the conversation or tool results.'
+        ),
+      checks: z
+        .array(z.enum(['assumptions', 'factuality', 'risk', 'implementation']))
+        .min(1)
+        .max(4)
+        .optional()
+        .describe(
+          'Optional focused checks to run in parallel. Defaults to assumptions, factuality, and risk.'
+        ),
+    }),
+    toModelOutput: ({ output }) => {
+      if (!output || typeof output !== 'object') {
+        return { type: 'text', value: 'Parallel checks completed.' };
+      }
+
+      const result = output as {
+        ok?: boolean;
+        summary?: string;
+        checks?: Array<{ label?: string; finding?: string }>;
+        error?: string;
+      };
+
+      if (result.ok === false) {
+        return {
+          type: 'text',
+          value: result.error ?? 'Parallel checks failed.',
+        };
+      }
+
+      const checkLines =
+        result.checks
+          ?.map((check) =>
+            check.label && check.finding
+              ? `- ${check.label}: ${check.finding}`
+              : null
+          )
+          .filter((line): line is string => line !== null)
+          .join('\n') ?? '';
+
+      return {
+        type: 'text',
+        value: [result.summary, checkLines].filter(Boolean).join('\n'),
+      };
+    },
   }),
 
   convert_file_to_markdown: tool({

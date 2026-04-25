@@ -77,6 +77,7 @@ export const MIRA_TOOL_NAMES = [
   'create_image',
   'create_qr_code',
   'google_search',
+  'run_parallel_checks',
   'convert_file_to_markdown',
   'list_accessible_workspaces',
   'get_workspace_context',

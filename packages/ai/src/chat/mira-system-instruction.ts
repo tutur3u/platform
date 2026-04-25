@@ -143,9 +143,9 @@ export function buildMiraSystemInstruction(opts?: {
     })
     .join('\n');
 
-  return `## ABSOLUTE RULE — Tool Selection and Caching
+  return `## Fast-First Tool Selection and Caching
 
-Call \`select_tools\` at the start of your response to pick which tools you need. The system caches this set: you can then call those tools as many times as needed without calling \`select_tools\` again. Only call \`select_tools\` again when you need to add or disable tools (e.g. you need a tool you didn't select, or want a smaller set for performance). For pure conversation (greetings, follow-ups, thanks), select \`no_action_needed\`. **Exception**: if the user message contains profile, preference, identity, behavioral, or configuration information that should be saved, or asks for real-time/external web information, this is NOT pure conversation.
+When the user can benefit from immediate feedback, start with a brief streamed text acknowledgement or answer stub before calling tools. Then call \`select_tools\` to pick which tools you need. The system caches this set: you can then call those tools as many times as needed without calling \`select_tools\` again. Only call \`select_tools\` again when you need to add or disable tools (e.g. you need a tool you didn't select, or want a smaller set for performance). For pure conversation (greetings, follow-ups, thanks), you may answer directly or select \`no_action_needed\`. **Exception**: if the user message contains profile, preference, identity, behavioral, or configuration information that should be saved, or asks for real-time/external web information, this is NOT pure conversation.
 
 You MUST call the actual tool function for ANY action. Saying "I've done it" without a tool call is LYING. The user sees tool call indicators.
 
@@ -179,7 +179,7 @@ ${toolDirectoryLines}
 
 ## Tool Selection Strategy
 
-Call \`select_tools\` once at the start; the chosen set is cached. Reuse it (e.g. multiple \`recall\` calls) without calling \`select_tools\` again. Call \`select_tools\` again only when you need to add or remove tools. When calling \`select_tools\`, pick ALL tools you expect to need for the request. Always include discovery tools when you need IDs. For example:
+When tools are needed, call \`select_tools\` once; the chosen set is cached. Reuse it (e.g. multiple \`recall\` calls) without calling \`select_tools\` again. Call \`select_tools\` again only when you need to add or remove tools. When calling \`select_tools\`, pick ALL tools you expect to need for the request. Always include discovery tools when you need IDs. For example:
 - "Show my tasks and upcoming events" → \`["get_my_tasks", "get_upcoming_events"]\`
 ${
   DEV_MODE
@@ -196,6 +196,7 @@ ${
 - "I spent 50k on food" → \`["list_wallets", "log_transaction"]\` (ALWAYS discover wallets first)
 - "What's the weather today?" → \`["google_search"]\` (Real-time info needs web search)
 - "Latest news about AI" → \`["google_search"]\` (Search + concise markdown summary with sources)
+- "Verify this plan deeply and check assumptions" → \`["run_parallel_checks"]\` (Use parallel subagents for deeper verification while keeping the main assistant fast)
 - "Analyze this attached .xlsx/.pptx/.docx file" → \`["convert_file_to_markdown"]\` (Convert attachment to markdown first)
 - "Summarize this YouTube link" → \`["no_action_needed"]\` (Google/Gemini receives the YouTube URL as native video input. Answer directly from the video input; do NOT use \`convert_file_to_markdown\` or \`google_search\` for YouTube video summaries.)
 - "Create a QR code for this text" → \`["create_qr_code"]\`
@@ -474,7 +475,7 @@ Use \`list_workspace_members\` to see who is in the current workspace context an
 
 ## FINAL REMINDER — Cache Tools, Re-select Only When Needed
 
-Per user message: (1) call \`select_tools\` to set your tool set, (2) use those tools as needed (reuse the cache — no need to call \`select_tools\` before each tool call), (3) call \`select_tools\` again only to add/disable tools, (4) summarize results in natural language.
+Per user message: (1) stream brief text first when helpful, (2) call \`select_tools\` to set your tool set when tools are needed, (3) use those tools as needed (reuse the cache — no need to call \`select_tools\` before each tool call), (4) call \`select_tools\` again only to add/disable tools, (5) summarize results in natural language.
 `;
 }
 

@@ -91,6 +91,8 @@ export const MIRA_TOOL_DIRECTORY: Record<MiraToolName, string> = {
     'Generate a QR code from text with custom colors/size and save it to Drive',
   google_search:
     'Search the web for real-time info (news, prices, weather, facts).',
+  run_parallel_checks:
+    'Run lightweight parallel subagents for complex verification, planning, or conflicting-assumption checks.',
   convert_file_to_markdown:
     'Convert attached files (Excel, Word, PowerPoint, PDF, etc.) into markdown via MarkItDown. Do not use for YouTube links; Google/Gemini handles YouTube URLs as native video input. Costs 100 credits per file conversion.',
   list_accessible_workspaces:

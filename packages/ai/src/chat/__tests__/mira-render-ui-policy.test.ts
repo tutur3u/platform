@@ -10,6 +10,7 @@ import {
   shouldForceWorkspaceMembersForLatestUserMessage,
   shouldPreferMarkdownTablesForLatestUserMessage,
   shouldResolveWorkspaceContextForLatestUserMessage,
+  shouldUseParallelChecksForLatestUserMessage,
   wasToolEverSelectedInSteps,
 } from '../mira-render-ui-policy';
 
@@ -88,6 +89,26 @@ describe('mira render_ui policy', () => {
     ];
 
     expect(shouldForceGoogleSearchForLatestUserMessage(messages)).toBe(false);
+  });
+
+  it('uses parallel checks for explicit verification requests', () => {
+    const messages: ModelMessage[] = [
+      {
+        role: 'user',
+        content:
+          'Please verify this plan deeply and check for conflicting assumptions before answering.',
+      },
+    ];
+
+    expect(shouldUseParallelChecksForLatestUserMessage(messages)).toBe(true);
+  });
+
+  it('does not use parallel checks for ordinary conversation', () => {
+    const messages: ModelMessage[] = [
+      { role: 'user', content: 'Can you summarize my tasks for today?' },
+    ];
+
+    expect(shouldUseParallelChecksForLatestUserMessage(messages)).toBe(false);
   });
 
   it('does not force google_search when the user explicitly says no google search', () => {

@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import {
   AlertCircle,
   AlertTriangle,
+  Brain,
   Check,
   ChevronRight,
   ClipboardCopy,
@@ -21,6 +22,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { registry } from '@/components/json-render/dashboard-registry';
 import { resolveRenderUiSpecFromOutput } from '@/components/json-render/render-ui-spec';
 import { humanizeToolName, isObjectRecord } from '../helpers';
+import { AssistantMarkdown } from '../markdown-components';
 import type { RenderUiFailureMeta } from '../resolve-message-render-groups';
 import type { ToolPartData } from '../types';
 import {
@@ -257,6 +259,66 @@ export function ToolCallPart({
         {isDone && !isError && googleSearchSources.length > 0 && (
           <SourcesPart parts={googleSearchSources} />
         )}
+      </div>
+    );
+  }
+
+  if (rawToolName === 'run_parallel_checks' && !isError) {
+    const parallelChecks = Array.isArray(outputRecord?.checks)
+      ? outputRecord.checks
+      : [];
+    return (
+      <div className="flex items-start gap-2 rounded-lg border border-dynamic-indigo/30 bg-dynamic-indigo/5 px-3 py-2 text-xs">
+        {isRunning ? (
+          <Loader2 className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin text-dynamic-indigo" />
+        ) : (
+          <Brain className="mt-0.5 h-3.5 w-3.5 shrink-0 text-dynamic-indigo" />
+        )}
+        <span className="flex min-w-0 flex-col gap-1">
+          <span className="font-medium text-dynamic-indigo">
+            {isRunning
+              ? t('tool_checking_parallel')
+              : t('tool_checked_parallel')}
+          </span>
+          {isDone && typeof outputRecord?.summary === 'string' && (
+            <div className="text-muted-foreground">
+              <AssistantMarkdown
+                text={outputRecord.summary}
+                isAnimating={false}
+              />
+            </div>
+          )}
+          {isDone && parallelChecks.length > 0 && (
+            <details className="text-muted-foreground">
+              <summary className="cursor-pointer text-xs">
+                {t('show_more')}
+              </summary>
+              <div className="mt-1 flex flex-col gap-2">
+                {parallelChecks.map((check, index) => {
+                  if (!isObjectRecord(check)) return null;
+                  const label =
+                    typeof check.label === 'string'
+                      ? check.label
+                      : `check-${index + 1}`;
+                  const finding =
+                    typeof check.finding === 'string' ? check.finding : '';
+                  if (!finding) return null;
+                  return (
+                    <div
+                      key={label}
+                      className="rounded-md bg-background/40 p-2"
+                    >
+                      <p className="mb-1 font-medium text-foreground">
+                        {humanizeToolName(label)}
+                      </p>
+                      <AssistantMarkdown text={finding} isAnimating={false} />
+                    </div>
+                  );
+                })}
+              </div>
+            </details>
+          )}
+        </span>
       </div>
     );
   }
