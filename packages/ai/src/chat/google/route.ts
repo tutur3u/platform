@@ -429,7 +429,7 @@ export function createPOST(
 
       const result = streamText({
         abortSignal: req.signal,
-        experimental_transform: smoothStream(),
+        experimental_transform: smoothStream({ delayInMs: null }),
         model: resolvedGatewayModel,
         messages: processedMessages,
         system:

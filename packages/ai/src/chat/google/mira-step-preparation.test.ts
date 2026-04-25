@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { prepareMiraToolStep } from './mira-step-preparation';
 
 describe('prepareMiraToolStep', () => {
-  it('allows the first step to stream text before optional tool selection', () => {
+  it('keeps the first optional-tool step lean so text can stream quickly', () => {
     const result = prepareMiraToolStep({
       steps: [],
       forceGoogleSearch: false,
@@ -14,12 +14,7 @@ describe('prepareMiraToolStep', () => {
     });
 
     expect(result.toolChoice).toBeUndefined();
-    expect(result.activeTools).toEqual([
-      'select_tools',
-      'no_action_needed',
-      'google_search',
-      'run_parallel_checks',
-    ]);
+    expect(result.activeTools).toEqual(['select_tools', 'no_action_needed']);
   });
 
   it('forces web search immediately for current external information', () => {

@@ -70,12 +70,7 @@ export function prepareMiraToolStep({
     }
 
     return {
-      activeTools: [
-        'select_tools',
-        'no_action_needed',
-        'google_search',
-        'run_parallel_checks',
-      ],
+      activeTools: ['select_tools', 'no_action_needed'],
     };
   }
 

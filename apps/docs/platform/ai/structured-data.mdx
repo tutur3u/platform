@@ -65,6 +65,13 @@ Hide that placeholder as soon as real assistant text streams, and keep it
 separate from markdown/tool rendering so status cycling does not re-render heavy
 message content.
 
+Keep the first optional-tool model step lean. Unless a workflow must force a
+specific tool before answering, expose only `select_tools` and
+`no_action_needed` on the first step so the model can stream direct answers
+without carrying every tool schema. Stream smoothing should not add artificial
+per-chunk delay on the dashboard chat path; perceived smoothness belongs in the
+client activity state, not in delayed server chunks.
+
 Do not force `select_tools` as the universal first step. Force tool selection
 only when the workflow cannot answer safely before a tool runs, such as current
 web lookups, workspace context switching, workspace member lookups, file
