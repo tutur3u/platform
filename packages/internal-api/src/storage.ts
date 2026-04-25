@@ -148,10 +148,76 @@ interface SignedUploadPayload {
   fullPath: string | null;
 }
 
+export interface WorkspaceStorageUploadProgress {
+  loaded: number;
+  percent: number;
+  total: number | null;
+}
+
+type UploadProgressHandler = (progress: WorkspaceStorageUploadProgress) => void;
+
+function uploadFileWithXhr(
+  file: File,
+  uploadUrlResult: SignedUploadPayload,
+  headers: Record<string, string>,
+  onProgress: UploadProgressHandler
+) {
+  return new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.onprogress = (event) => {
+      const total = event.lengthComputable ? event.total : file.size || null;
+      const loaded = event.loaded;
+      const percent =
+        total && total > 0
+          ? Math.min(99, Math.round((loaded / total) * 100))
+          : 0;
+
+      onProgress({
+        loaded,
+        percent,
+        total,
+      });
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress({
+          loaded: file.size,
+          percent: 100,
+          total: file.size,
+        });
+        resolve();
+        return;
+      }
+
+      reject(
+        new Error(
+          `Failed to upload file (${xhr.status})${xhr.responseText ? `: ${xhr.responseText}` : ''}`
+        )
+      );
+    };
+
+    xhr.onerror = () => {
+      reject(new Error('Failed to upload file'));
+    };
+    xhr.onabort = () => {
+      reject(new Error('Upload aborted'));
+    };
+
+    xhr.open('PUT', uploadUrlResult.signedUrl);
+    for (const [key, value] of Object.entries(headers)) {
+      xhr.setRequestHeader(key, value);
+    }
+    xhr.send(file);
+  });
+}
+
 async function uploadFileWithSignedUrl(
   file: File,
   uploadUrlResult: SignedUploadPayload,
   fetchImpl: typeof fetch,
+  onProgress?: UploadProgressHandler,
   onUploaded?: (result: {
     path: string;
     fullPath: string | null;
@@ -171,30 +237,54 @@ async function uploadFileWithSignedUrl(
     headers.Authorization = `Bearer ${uploadUrlResult.token}`;
   }
 
-  let uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
-    method: 'PUT',
-    cache: 'no-store',
-    headers,
-    body: file,
-  });
+  if (onProgress && typeof XMLHttpRequest !== 'undefined') {
+    try {
+      await uploadFileWithXhr(file, uploadUrlResult, headers, onProgress);
+    } catch (error) {
+      const fallbackHeaders = { ...headers };
+      delete fallbackHeaders['Content-Type'];
 
-  if (!uploadResponse.ok) {
-    const fallbackHeaders = { ...headers };
-    delete fallbackHeaders['Content-Type'];
-
-    uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
+      await uploadFileWithXhr(
+        file,
+        uploadUrlResult,
+        fallbackHeaders,
+        onProgress
+      ).catch(() => {
+        throw error;
+      });
+    }
+  } else {
+    let uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
       method: 'PUT',
       cache: 'no-store',
-      headers: fallbackHeaders,
+      headers,
       body: file,
     });
-  }
 
-  if (!uploadResponse.ok) {
-    const message = await uploadResponse.text().catch(() => '');
-    throw new Error(
-      `Failed to upload file (${uploadResponse.status})${message ? `: ${message}` : ''}`
-    );
+    if (!uploadResponse.ok) {
+      const fallbackHeaders = { ...headers };
+      delete fallbackHeaders['Content-Type'];
+
+      uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
+        method: 'PUT',
+        cache: 'no-store',
+        headers: fallbackHeaders,
+        body: file,
+      });
+    }
+
+    if (!uploadResponse.ok) {
+      const message = await uploadResponse.text().catch(() => '');
+      throw new Error(
+        `Failed to upload file (${uploadResponse.status})${message ? `: ${message}` : ''}`
+      );
+    }
+
+    onProgress?.({
+      loaded: file.size,
+      percent: 100,
+      total: file.size,
+    });
   }
 
   const result = {
@@ -227,17 +317,19 @@ export async function uploadWorkspaceStorageFile(
   workspaceId: string,
   file: File,
   options?: {
+    onUploadProgress?: UploadProgressHandler;
     path?: string;
     upsert?: boolean;
   },
   clientOptions?: InternalApiClientOptions
 ): Promise<WorkspaceStorageUploadResult> {
   const fetchImpl = clientOptions?.fetch ?? globalThis.fetch;
+  const { onUploadProgress, ...uploadOptions } = options ?? {};
   const uploadUrlResult = await createWorkspaceStorageUploadUrl(
     workspaceId,
     file.name,
     {
-      ...options,
+      ...uploadOptions,
       size: file.size,
     },
     clientOptions
@@ -247,6 +339,7 @@ export async function uploadWorkspaceStorageFile(
     file,
     uploadUrlResult,
     fetchImpl,
+    onUploadProgress,
     async (result) => {
       try {
         const finalized = await finalizeWorkspaceStorageUpload(
@@ -284,19 +377,26 @@ export async function uploadWorkspaceTaskFile(
   workspaceId: string,
   file: File,
   options?: {
+    onUploadProgress?: UploadProgressHandler;
     taskId?: string;
   },
   clientOptions?: InternalApiClientOptions
 ) {
   const fetchImpl = clientOptions?.fetch ?? globalThis.fetch;
+  const { onUploadProgress, ...uploadOptions } = options ?? {};
   const uploadUrlResult = await createWorkspaceTaskUploadUrl(
     workspaceId,
     file.name,
-    options,
+    uploadOptions,
     clientOptions
   );
 
-  return uploadFileWithSignedUrl(file, uploadUrlResult, fetchImpl);
+  return uploadFileWithSignedUrl(
+    file,
+    uploadUrlResult,
+    fetchImpl,
+    onUploadProgress
+  );
 }
 
 async function finalizeWorkspaceStorageUpload(

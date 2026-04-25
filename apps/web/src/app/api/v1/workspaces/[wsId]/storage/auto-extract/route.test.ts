@@ -100,4 +100,64 @@ describe('storage auto-extract callback route', () => {
     );
     expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
+
+  it('returns signed upload URLs for extracted files to avoid large callback bodies', async () => {
+    mocks.createWorkspaceStorageUploadPayload.mockResolvedValue({
+      fullPath: 'ws-1/archive/Build/game.data',
+      headers: {
+        'x-amz-acl': 'private',
+      },
+      path: 'archive/Build/game.data',
+      signedUrl: 'https://storage.example.com/upload',
+      token: undefined,
+    });
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/storage/auto-extract/route'
+    );
+
+    const response = await POST(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/storage/auto-extract',
+        {
+          body: JSON.stringify({
+            contentType: 'application/octet-stream',
+            size: 23_000_000,
+          }),
+          headers: {
+            Authorization: 'Bearer token-1',
+            'Content-Type': 'application/json',
+            'x-drive-auto-extract-operation': 'file-upload-url',
+            'x-drive-auto-extract-path': 'archive/Build/game.data',
+          },
+          method: 'POST',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      fullPath: 'ws-1/archive/Build/game.data',
+      headers: {
+        'x-amz-acl': 'private',
+      },
+      path: 'archive/Build/game.data',
+      signedUrl: 'https://storage.example.com/upload',
+    });
+    expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalledWith(
+      'ws-1',
+      'game.data',
+      {
+        contentType: 'application/octet-stream',
+        path: 'archive/Build',
+        size: 23_000_000,
+        upsert: true,
+      }
+    );
+    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
+  });
 });

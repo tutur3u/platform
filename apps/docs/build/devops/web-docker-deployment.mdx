@@ -504,6 +504,11 @@ Dashboard details:
   page. The default timeframe is seven days, and the web API keeps a short
   in-process aggregate cache keyed by timeframe plus telemetry log file stats so
   pagination stays responsive while new proxy logs invalidate the cache.
+- Drive ZIP extraction does not stream extracted file bytes back through the web
+  app proxy. The unzip worker requests a per-entry signed upload URL from the
+  callback route and uploads extracted files directly to the active storage
+  backend, which avoids nginx body-size limits for large WebGL artifacts while
+  keeping folder creation and auth checks in the backend callback.
 - Every service owned by `docker-compose.web.prod.yml` should declare a
   healthcheck, either directly in compose or in the image. The monitoring page
   treats containers without Docker health metadata as external or incomplete

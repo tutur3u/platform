@@ -192,6 +192,90 @@ async function postExtractedEntry({
   }
 }
 
+async function requestExtractedFileUploadUrl({
+  callbackToken,
+  callbackUrl,
+  contentType,
+  filePath,
+  size,
+}) {
+  const response = await fetchWithTimeout(callbackUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${callbackToken}`,
+      'Content-Type': 'application/json',
+      'x-drive-auto-extract-operation': 'file-upload-url',
+      'x-drive-auto-extract-path': filePath,
+    },
+    body: JSON.stringify({
+      contentType: contentType || 'application/octet-stream',
+      size,
+    }),
+  });
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => '');
+    throw new HttpError(
+      response.status >= 400 && response.status < 500 ? response.status : 502,
+      message || `Callback upload URL failed with status ${response.status}`
+    );
+  }
+
+  const payload = await response.json().catch(() => null);
+
+  if (!payload?.signedUrl) {
+    throw new HttpError(
+      502,
+      'Callback did not return an extracted file upload URL.'
+    );
+  }
+
+  return payload;
+}
+
+async function putExtractedFileToSignedUrl({
+  body,
+  contentType,
+  uploadPayload,
+}) {
+  const headers = {
+    ...(uploadPayload.headers || {}),
+  };
+
+  if (!headers['Content-Type']) {
+    headers['Content-Type'] = contentType || 'application/octet-stream';
+  }
+
+  if (uploadPayload.token) {
+    headers.Authorization = `Bearer ${uploadPayload.token}`;
+  }
+
+  let response = await fetchWithTimeout(uploadPayload.signedUrl, {
+    method: 'PUT',
+    headers,
+    body,
+  });
+
+  if (!response.ok) {
+    const retryHeaders = { ...headers };
+    delete retryHeaders['Content-Type'];
+
+    response = await fetchWithTimeout(uploadPayload.signedUrl, {
+      method: 'PUT',
+      headers: retryHeaders,
+      body,
+    });
+  }
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => '');
+    throw new HttpError(
+      response.status >= 400 && response.status < 500 ? response.status : 502,
+      message || `Extracted file upload failed with status ${response.status}`
+    );
+  }
+}
+
 async function uploadExtractedFileThroughCallback({
   body,
   callbackToken,
@@ -199,13 +283,18 @@ async function uploadExtractedFileThroughCallback({
   contentType,
   filePath,
 }) {
-  await postExtractedEntry({
-    body,
+  const uploadPayload = await requestExtractedFileUploadUrl({
     callbackToken,
     callbackUrl,
     contentType,
     filePath,
-    operation: 'file',
+    size: body.byteLength,
+  });
+
+  await putExtractedFileToSignedUrl({
+    body,
+    contentType,
+    uploadPayload,
   });
 }
 

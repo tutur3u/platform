@@ -303,4 +303,38 @@ describe('workspace task upload helpers', () => {
       fullPath: 'ws-1/documents/file.txt',
     });
   });
+
+  it('reports upload progress completion for Drive uploads', async () => {
+    const file = new File(['hello'], 'file.txt', { type: 'text/plain' });
+    const uploadProgress = vi.fn();
+    const uploadFetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          signedUrl: 'https://upload.example.com/r2-signed',
+          path: 'documents/file.txt',
+          fullPath: 'ws-1/documents/file.txt',
+        })
+      )
+      .mockResolvedValueOnce({ ok: true, status: 200, text: async () => '' })
+      .mockResolvedValueOnce(createJsonResponse({}));
+
+    await uploadWorkspaceStorageFile(
+      'ws-1',
+      file,
+      {
+        onUploadProgress: uploadProgress,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: uploadFetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(uploadProgress).toHaveBeenCalledWith({
+      loaded: file.size,
+      percent: 100,
+      total: file.size,
+    });
+  });
 });

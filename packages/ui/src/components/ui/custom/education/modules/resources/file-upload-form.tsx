@@ -17,6 +17,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
+import { Progress } from '@tuturuuu/ui/progress';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -182,6 +183,8 @@ export function StorageObjectForm({
     },
   });
 
+  const [fileErrors, setFileErrors] = useState<Record<string, string>>({});
+  const [fileProgress, setFileProgress] = useState<Record<string, number>>({});
   const [fileStatuses, setFileStatuses] = useState<Record<string, string>>({});
 
   const [editingFile, setEditingFile] = useState<File | null>(null);
@@ -221,6 +224,15 @@ export function StorageObjectForm({
           ...prev,
           [file.name]: 'uploading',
         }));
+        setFileErrors((prev) => {
+          const next = { ...prev };
+          delete next[file.name];
+          return next;
+        });
+        setFileProgress((prev) => ({
+          ...prev,
+          [file.name]: 0,
+        }));
 
         const uploadFile = new File(
           [file],
@@ -236,6 +248,12 @@ export function StorageObjectForm({
             wsId,
             uploadFile,
             {
+              onUploadProgress: (progress) => {
+                setFileProgress((prev) => ({
+                  ...prev,
+                  [file.name]: progress.percent,
+                }));
+              },
               path: targetPath,
               upsert: false,
             },
@@ -258,8 +276,13 @@ export function StorageObjectForm({
               originalName: file.name,
             });
           }
-        } catch {
+        } catch (error) {
           hasErrors = true;
+          setFileErrors((prev) => ({
+            ...prev,
+            [file.name]:
+              error instanceof Error ? error.message : t('common.error'),
+          }));
           setFileStatuses((prev) => ({
             ...prev,
             [file.name]: 'error',
@@ -270,6 +293,10 @@ export function StorageObjectForm({
         setFileStatuses((prev) => ({
           ...prev,
           [file.name]: 'uploaded',
+        }));
+        setFileProgress((prev) => ({
+          ...prev,
+          [file.name]: 100,
         }));
       })
     );
@@ -385,7 +412,10 @@ export function StorageObjectForm({
                                   updateFiles(
                                     files.map((f) =>
                                       f.name === file.name
-                                        ? new File([file], newFileName)
+                                        ? new File([file], newFileName, {
+                                            lastModified: file.lastModified,
+                                            type: file.type,
+                                          })
                                         : f
                                     )
                                   );
@@ -414,6 +444,7 @@ export function StorageObjectForm({
                               {fileStatuses[file.name] === 'uploading' ? (
                                 <span className="opacity-70">
                                   {t('common.uploading')}...
+                                  {` ${fileProgress[file.name] ?? 0}%`}
                                 </span>
                               ) : fileStatuses[file.name] === 'uploaded' ? (
                                 <span>{t('common.uploaded')}</span>
@@ -425,6 +456,18 @@ export function StorageObjectForm({
                                 <span>{Math.round(file.size / 1024)} KB</span>
                               )}
                             </div>
+                            {fileStatuses[file.name] === 'uploading' ? (
+                              <Progress
+                                value={fileProgress[file.name] ?? 0}
+                                className="mt-2 h-1.5"
+                              />
+                            ) : null}
+                            {fileStatuses[file.name] === 'error' &&
+                            fileErrors[file.name] ? (
+                              <p className="mt-1 max-w-100 break-words text-destructive text-xs">
+                                {fileErrors[file.name]}
+                              </p>
+                            ) : null}
                           </div>
                           {uploadedAllFiles ||
                           fileStatuses[file.name] === 'uploaded' ? (
@@ -437,6 +480,16 @@ export function StorageObjectForm({
                               className="flex h-7 w-7 shrink-0 items-center justify-center"
                               onClick={() => {
                                 setFileStatuses((prev) => {
+                                  const next = { ...prev };
+                                  delete next[file.name];
+                                  return next;
+                                });
+                                setFileErrors((prev) => {
+                                  const next = { ...prev };
+                                  delete next[file.name];
+                                  return next;
+                                });
+                                setFileProgress((prev) => {
                                   const next = { ...prev };
                                   delete next[file.name];
                                   return next;
