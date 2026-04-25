@@ -112,13 +112,15 @@ export async function GET(
       storagePath
     );
     const inferred = inferWebglAssetHeaders(relativePath);
+    const contentType =
+      inferred.isKnownType ||
+      !downloaded.contentType ||
+      downloaded.contentType === 'application/octet-stream'
+        ? inferred.contentType
+        : downloaded.contentType;
     const headers = new Headers({
       'Cache-Control': 'no-store, max-age=0',
-      'Content-Type':
-        downloaded.contentType &&
-        downloaded.contentType !== 'application/octet-stream'
-          ? downloaded.contentType
-          : inferred.contentType,
+      'Content-Type': contentType,
       'X-Content-Type-Options': 'nosniff',
     });
 

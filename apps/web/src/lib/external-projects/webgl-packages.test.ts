@@ -115,10 +115,12 @@ describe('WebGL package helpers', () => {
     expect(inferWebglAssetHeaders('Build/game.framework.js.br')).toEqual({
       contentEncoding: 'br',
       contentType: 'application/javascript; charset=utf-8',
+      isKnownType: true,
     });
     expect(inferWebglAssetHeaders('index.html.gz')).toEqual({
       contentEncoding: 'gzip',
       contentType: 'text/html; charset=utf-8',
+      isKnownType: true,
     });
   });
 });

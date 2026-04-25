@@ -157,6 +157,24 @@ describe('WebGL package asset route', () => {
     );
   });
 
+  it('serves index.html as HTML even when storage metadata is text/plain', async () => {
+    mocks.createAdminClient.mockResolvedValue(createAdminWithAsset('draft'));
+    mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
+      ok: true,
+    });
+    mocks.downloadWorkspaceStorageObjectForProvider.mockResolvedValue({
+      buffer: new TextEncoder().encode('<!DOCTYPE html><html></html>'),
+      contentType: 'text/plain;charset=UTF-8',
+    });
+
+    const response = await callRoute(['index.html']);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe(
+      'text/html; charset=utf-8'
+    );
+  });
+
   it('prevents path traversal outside the WebGL package root', async () => {
     mocks.createAdminClient.mockResolvedValue(
       createAdminWithAsset('published')
