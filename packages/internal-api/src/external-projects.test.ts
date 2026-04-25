@@ -18,11 +18,10 @@ describe('external project upload helpers', () => {
     vi.unstubAllEnvs();
   });
 
-  it('uploads WebGL ZIP packages through the configured web proxy when provided', async () => {
+  it('uploads WebGL ZIP packages directly to the signed storage URL', async () => {
     const file = new File(['zip'], 'Mine Blast WebGL.zip', {
       type: 'application/zip',
     });
-    vi.stubEnv('NEXT_PUBLIC_WEB_APP_URL', 'https://web.example.com');
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
@@ -32,8 +31,6 @@ describe('external project upload helpers', () => {
           fullPath:
             'ws-1/external-projects/yoola/games/mine/webgl-packages/upload.zip',
           path: 'external-projects/yoola/games/mine/webgl-packages/upload.zip',
-          proxyUploadUrl:
-            '/api/v1/workspaces/ws-1/external-projects/webgl-packages/upload?entryId=00000000-0000-4000-8000-000000000001&archivePath=external-projects%2Fyoola%2Fgames%2Fmine%2Fwebgl-packages%2Fupload.zip&filename=Mine+Blast+WebGL.zip',
           signedUrl: 'https://r2.example.com/signed-upload',
           token: 'storage-token',
         })
@@ -79,20 +76,16 @@ describe('external project upload helpers', () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      'https://web.example.com/api/v1/workspaces/ws-1/external-projects/webgl-packages/upload?entryId=00000000-0000-4000-8000-000000000001&archivePath=external-projects%2Fyoola%2Fgames%2Fmine%2Fwebgl-packages%2Fupload.zip&filename=Mine+Blast+WebGL.zip',
+      'https://r2.example.com/signed-upload',
       expect.objectContaining({
         method: 'PUT',
         cache: 'no-store',
         headers: {
+          Authorization: 'Bearer storage-token',
           'Content-Type': 'application/zip',
         },
       })
     );
-
-    const uploadOptions = fetchMock.mock.calls[1]?.[1] as {
-      headers?: Record<string, string>;
-    };
-    expect(uploadOptions.headers?.Authorization).toBeUndefined();
   });
 
   it('uploads media assets through the workspace Drive signed-upload endpoints', async () => {

@@ -90,13 +90,6 @@ export async function POST(
     return NextResponse.json({
       ...upload,
       archivePath,
-      proxyUploadUrl: `/api/v1/workspaces/${encodeURIComponent(wsId)}/external-projects/webgl-packages/upload?${new URLSearchParams(
-        {
-          archivePath,
-          entryId: payload.entryId,
-          filename,
-        }
-      ).toString()}`,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

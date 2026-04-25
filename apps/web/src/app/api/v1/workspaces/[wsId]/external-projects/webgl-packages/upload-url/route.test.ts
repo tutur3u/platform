@@ -161,16 +161,15 @@ describe('WebGL package upload URL route', () => {
     );
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
+    const body = await response.json();
+    expect(body).toMatchObject({
       archivePath: expect.stringContaining(
         'external-projects/yoola/games/mine/webgl-packages/'
-      ),
-      proxyUploadUrl: expect.stringContaining(
-        '/api/v1/workspaces/ws-1/external-projects/webgl-packages/upload?'
       ),
       signedUrl: 'https://upload.example.com',
       token: 'token-1',
     });
+    expect(body).not.toHaveProperty('proxyUploadUrl');
     expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalled();
   });
 });

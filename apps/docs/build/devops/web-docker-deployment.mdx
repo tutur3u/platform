@@ -175,13 +175,11 @@ configured unzip proxy URL and token, but they do not require the
 `DRIVE_AUTO_EXTRACT_ZIP` workspace opt-in secret. The CMS finalize route unpacks
 the ZIP into workspace Drive, detects the playable `index.html`, and stores the
 same-origin artifact map on the CMS `webgl-package` asset. Browser uploads go
-through the self-hosted web app's WebGL package proxy route before the server
-writes to Supabase Storage or R2, so CMS editors do not depend on object-storage
-CORS settings or Vercel function body limits for ZIP uploads. The proxy upload
-route allows credentialed browser requests from the configured CMS origin,
-streams the request body into a backend-generated signed storage upload, and the
-CMS client reports per-file upload progress while the backend handles the
-storage write and extraction workflow.
+directly to the signed storage URL returned by the self-hosted web app's WebGL
+upload-url route, so large ZIPs do not pass through the Vercel-hosted CMS app or
+the web app proxy before reaching Supabase Storage or R2. The CMS client reports
+per-file upload progress during the signed upload, then calls the WebGL finalize
+route so the backend handles extraction and artifact-map persistence.
 
 The unzip proxy fans out one backend callback per extracted folder or file. File
 callbacks send the extracted bytes to the web backend, and the backend writes to
