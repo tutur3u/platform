@@ -1287,6 +1287,7 @@ export function ExternalProjectStudioClient({
         workspaceId,
         file,
         {
+          adapter: binding.adapter,
           collectionType: selectedCollection.collection_type,
           entrySlug: selectedEntry.slug,
         }
@@ -1332,6 +1333,7 @@ export function ExternalProjectStudioClient({
         workspaceId,
         file,
         {
+          adapter: binding.adapter,
           collectionType: activeCollection.collection_type,
           entrySlug:
             normalizeSlugSeed(genericEntryDraft.slug) || selectedEntry.slug,

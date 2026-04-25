@@ -1137,6 +1137,7 @@ describe('EntryDetailClient', () => {
         'ws_123',
         expect.any(File),
         {
+          adapter: 'yoola',
           collectionType: 'artworks',
           entrySlug: 'entry-one',
           upsert: true,

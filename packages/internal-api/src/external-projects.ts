@@ -21,7 +21,11 @@ import {
   type InternalApiClientOptions,
   resolveInternalApiUrl,
 } from './client';
-import type { WorkspaceStorageUploadProgress } from './storage';
+import {
+  createWorkspaceStorageUploadUrl,
+  uploadWorkspaceStorageFile,
+  type WorkspaceStorageUploadProgress,
+} from './storage';
 
 type CanonicalExternalProjectUpsertPayload = {
   adapter: CanonicalExternalProject['adapter'];
@@ -558,53 +562,90 @@ export async function deleteWorkspaceExternalProjectAsset(
 export async function createWorkspaceExternalProjectAssetUploadUrl(
   workspaceId: string,
   payload: {
+    adapter?: string | null;
     collectionType: string;
     entrySlug: string;
     filename: string;
+    size?: number;
     upsert?: boolean;
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
-  const response = await client.json<ExternalProjectUploadUrlResponse>(
-    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/assets/upload-url`,
+  return createWorkspaceStorageUploadUrl(
+    workspaceId,
+    payload.filename,
     {
-      body: JSON.stringify(payload),
-      cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
+      path: buildExternalProjectAssetStoragePath(payload),
+      size: payload.size,
+      upsert: payload.upsert,
+    },
+    options
+  );
+}
+
+function normalizeExternalProjectPathPart(value: string, label: string) {
+  const segments = value
+    .replace(/\\/g, '/')
+    .trim()
+    .replace(/^\/+|\/+$/g, '')
+    .split('/')
+    .filter(Boolean);
+
+  if (segments.length === 0) {
+    throw new Error(`Invalid ${label}`);
+  }
+
+  for (const segment of segments) {
+    if (segment === '.' || segment === '..' || segment.includes('..')) {
+      throw new Error(`Invalid ${label}`);
     }
+  }
+
+  return segments.join('/');
+}
+
+function buildExternalProjectAssetStoragePath(payload: {
+  adapter?: string | null;
+  collectionType: string;
+  entrySlug: string;
+}) {
+  const adapter = normalizeExternalProjectPathPart(
+    payload.adapter || 'shared',
+    'external project adapter'
+  );
+  const collectionType = normalizeExternalProjectPathPart(
+    payload.collectionType,
+    'collection type'
+  );
+  const entrySlug = normalizeExternalProjectPathPart(
+    payload.entrySlug,
+    'entry slug'
   );
 
-  return parseExternalProjectUploadPayload(response);
+  return `external-projects/${adapter}/${collectionType}/${entrySlug}`;
 }
 
 export async function uploadWorkspaceExternalProjectAssetFile(
   workspaceId: string,
   file: File,
   payload: {
+    adapter?: string | null;
     collectionType: string;
     entrySlug: string;
     upsert?: boolean;
   },
   options?: ExternalProjectUploadOptions
 ) {
-  const fetchImpl = options?.fetch ?? globalThis.fetch;
-  const uploadUrl = await createWorkspaceExternalProjectAssetUploadUrl(
+  return uploadWorkspaceStorageFile(
     workspaceId,
+    file,
     {
-      ...payload,
-      filename: file.name,
+      onUploadProgress: options?.onUploadProgress,
+      path: buildExternalProjectAssetStoragePath(payload),
+      upsert: payload.upsert,
     },
     options
   );
-
-  return uploadExternalProjectFileWithSignedUrl(file, uploadUrl, fetchImpl, {
-    baseUrl: options?.baseUrl,
-    onUploadProgress: options?.onUploadProgress,
-  });
 }
 
 export async function createWorkspaceExternalProjectWebglPackageUploadUrl(

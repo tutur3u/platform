@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { uploadWorkspaceExternalProjectWebglPackageFile } from './external-projects';
+import {
+  uploadWorkspaceExternalProjectAssetFile,
+  uploadWorkspaceExternalProjectWebglPackageFile,
+} from './external-projects';
 
 function createJsonResponse(payload: unknown) {
   return {
@@ -90,5 +93,63 @@ describe('external project upload helpers', () => {
       headers?: Record<string, string>;
     };
     expect(uploadOptions.headers?.Authorization).toBeUndefined();
+  });
+
+  it('uploads media assets through the workspace Drive signed-upload endpoints', async () => {
+    const file = new File(['cover'], 'cover.png', { type: 'image/png' });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          fullPath:
+            'ws-1/external-projects/yoola/artworks/mine/upload-cover.png',
+          path: 'external-projects/yoola/artworks/mine/upload-cover.png',
+          signedUrl: 'https://storage.example.com/signed-upload',
+        })
+      )
+      .mockResolvedValueOnce({ ok: true, status: 200, text: async () => '' })
+      .mockResolvedValueOnce(createJsonResponse({}));
+
+    await uploadWorkspaceExternalProjectAssetFile(
+      'ws-1',
+      file,
+      {
+        adapter: 'yoola',
+        collectionType: 'artworks',
+        entrySlug: 'mine',
+      },
+      {
+        baseUrl: 'https://web.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://web.example.com/api/v1/workspaces/ws-1/storage/upload-url',
+      expect.objectContaining({
+        body: JSON.stringify({
+          filename: 'cover.png',
+          path: 'external-projects/yoola/artworks/mine',
+          size: file.size,
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://web.example.com/api/v1/workspaces/ws-1/storage/finalize-upload',
+      expect.objectContaining({
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    const finalizeOptions = fetchMock.mock.calls[2]?.[1] as { body?: string };
+    expect(JSON.parse(finalizeOptions.body ?? '{}')).toEqual({
+      contentType: 'image/png',
+      originalFilename: 'cover.png',
+      path: 'external-projects/yoola/artworks/mine/upload-cover.png',
+    });
   });
 });

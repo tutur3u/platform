@@ -19,6 +19,24 @@ const uploadUrlSchema = z.object({
   size: z.number().int().min(0).optional(),
 });
 
+function canCreateUploadUrlForPath(
+  permissions: Awaited<ReturnType<typeof getPermissions>>,
+  path: string
+) {
+  if (!permissions) {
+    return false;
+  }
+
+  if (!permissions.withoutPermission('manage_drive')) {
+    return true;
+  }
+
+  return (
+    path.startsWith('external-projects/') &&
+    permissions.containsPermission('manage_external_projects')
+  );
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ wsId: string }> }
@@ -43,13 +61,6 @@ export async function POST(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    if (permissions.withoutPermission('manage_drive')) {
-      return NextResponse.json(
-        { message: 'Insufficient permissions' },
-        { status: 403 }
-      );
-    }
-
     let payload: unknown;
     try {
       payload = await request.json();
@@ -71,6 +82,13 @@ export async function POST(
     const sanitizedPath = sanitizePath(parsed.data.path || '');
     if (sanitizedPath === null) {
       return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
+    }
+
+    if (!canCreateUploadUrlForPath(permissions, sanitizedPath)) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions' },
+        { status: 403 }
+      );
     }
 
     const sanitizedFilename = sanitizeFilename(parsed.data.filename);

@@ -1113,6 +1113,7 @@ export function EntryDetailClient({
         workspaceId,
         optimizedFile,
         {
+          adapter: binding.adapter,
           collectionType: activeCollection.collection_type,
           entrySlug: entryForm?.slug.trim() || activeEntry?.slug || 'entry',
           upsert: true,
@@ -1160,6 +1161,7 @@ export function EntryDetailClient({
             workspaceId,
             optimizedFile,
             {
+              adapter: binding.adapter,
               collectionType: activeCollection.collection_type,
               entrySlug: entryForm?.slug.trim() || activeEntry?.slug || 'entry',
             }
