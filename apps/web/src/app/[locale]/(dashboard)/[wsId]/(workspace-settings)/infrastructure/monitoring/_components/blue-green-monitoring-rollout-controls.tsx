@@ -73,9 +73,7 @@ export function BlueGreenMonitoringRolloutControls({
     standbyDeployment?.commitHash ??
     t('states.none');
   const canSyncStandby =
-    snapshot.watcher.health === 'live' &&
-    snapshot.runtime.activeColor != null &&
-    snapshot.runtime.standbyColor != null;
+    snapshot.watcher.health === 'live' && snapshot.runtime.activeColor != null;
   const latestDeployment = snapshot.deployments[0] ?? null;
   const isStandbySyncBuilding =
     latestDeployment?.deploymentKind === 'standby-refresh' &&

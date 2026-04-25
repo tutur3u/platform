@@ -1568,7 +1568,7 @@
       "sync_queued_hint": "Queued at {time}. The watcher will pick up the standby rebuild on its next polling cycle.",
       "sync_success": "Queued the standby sync request.",
       "title": "Sync both colors to the same commit",
-      "unavailable_hint": "This control is available only while the watcher is live and both colors are discoverable."
+      "unavailable_hint": "This control is available only while the watcher is live and an active color is serving traffic."
     },
     "deployment_status": {
       "active": "Active",

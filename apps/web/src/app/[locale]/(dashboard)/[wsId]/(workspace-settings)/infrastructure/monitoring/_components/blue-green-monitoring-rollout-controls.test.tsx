@@ -61,7 +61,7 @@ const messages: Record<string, string> = {
   'controls.sync_success': 'Queued the standby sync request.',
   'controls.title': 'Sync both colors to the same commit',
   'controls.unavailable_hint':
-    'This control is available only while the watcher is live and both colors are discoverable.',
+    'This control is available only while the watcher is live and an active color is serving traffic.',
   'states.none': 'None',
   'watcher_health.live': 'Live',
 };
@@ -231,5 +231,51 @@ describe('BlueGreenMonitoringRolloutControls', () => {
     });
 
     expect(syncButton).toBeDisabled();
+  });
+
+  it('allows sync when the active color is live but standby is missing', async () => {
+    mocks.requestBlueGreenInstantRollout.mockResolvedValueOnce({
+      request: {
+        kind: 'sync-standby',
+        requestedAt: '2026-04-25T06:00:00.000Z',
+        requestedBy: 'user-1',
+        requestedByEmail: null,
+      },
+    });
+    renderControls(
+      createSnapshot({
+        deployments: [
+          {
+            commitHash: 'live-commit',
+            commitShortHash: 'live',
+            commitSubject: 'Live revision',
+            runtimeState: 'active',
+            startedAt: 2000,
+            status: 'successful',
+          },
+        ],
+        runtime: {
+          ...createSnapshot().runtime,
+          activeColor: 'blue',
+          standbyColor: null,
+          state: 'serving',
+        },
+      })
+    );
+
+    const syncButton = screen.getByRole('button', {
+      name: /Sync Standby Now/i,
+    });
+
+    expect(syncButton).toBeEnabled();
+    expect(
+      screen.getByText(/Trigger a standby rebuild now/i)
+    ).toBeInTheDocument();
+
+    fireEvent.click(syncButton);
+
+    await waitFor(() => {
+      expect(mocks.requestBlueGreenInstantRollout).toHaveBeenCalledTimes(1);
+    });
   });
 });

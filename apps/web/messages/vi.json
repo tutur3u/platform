@@ -1568,7 +1568,7 @@
       "sync_queued_hint": "Đã xếp lúc {time}. Watcher sẽ nhận lần rebuild standby ở chu kỳ thăm dò kế tiếp.",
       "sync_success": "Đã xếp yêu cầu đồng bộ standby.",
       "title": "Đồng bộ cả hai màu về cùng commit",
-      "unavailable_hint": "Tác vụ này chỉ khả dụng khi watcher đang hoạt động và cả hai màu đều được nhận diện."
+      "unavailable_hint": "Tác vụ này chỉ khả dụng khi watcher đang hoạt động và có một màu active đang phục vụ lưu lượng."
     },
     "deployment_status": {
       "active": "Đang hoạt động",
