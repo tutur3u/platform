@@ -158,6 +158,29 @@ export interface BlueGreenMonitoringRequestLog {
   time: number;
 }
 
+export interface BlueGreenMonitoringRouteSummary {
+  averageLatencyMs: number | null;
+  errorCount: number;
+  firstRequestAt: number | null;
+  hostnames: string[];
+  internalCount: number;
+  isServerComponentRoute: boolean;
+  lastRequestAt: number | null;
+  methods: string[];
+  pathname: string;
+  querySignatures: string[];
+  requestCount: number;
+  rscCount: number;
+  statusCounts: {
+    clientError: number;
+    informational: number;
+    redirect: number;
+    serverError: number;
+    success: number;
+    unknown: number;
+  };
+}
+
 export interface BlueGreenMonitoringWatcherLog {
   activeColor: string | null;
   commitHash: string | null;
@@ -186,6 +209,27 @@ export interface BlueGreenMonitoringPaginatedResult<T> {
   pageCount: number;
   total: number;
   window: BlueGreenMonitoringArchiveWindow;
+}
+
+export interface BlueGreenMonitoringRequestArchive
+  extends BlueGreenMonitoringPaginatedResult<BlueGreenMonitoringRequestLog> {
+  analytics: {
+    averageLatencyMs: number | null;
+    distinctRoutes: number;
+    errorRequestCount: number;
+    externalRequestCount: number;
+    internalRequestCount: number;
+    requestCount: number;
+    retainedRequestCount: number;
+    rscRequestCount: number;
+    statusCodes: number[];
+    timeframe: {
+      days: number | null;
+      endAt: number;
+      startAt: number | null;
+    };
+    topRoutes: BlueGreenMonitoringRouteSummary[];
+  };
 }
 
 export interface BlueGreenMonitoringSnapshot {
@@ -338,6 +382,7 @@ export interface GetBlueGreenMonitoringSnapshotParams {
 export interface GetBlueGreenMonitoringArchiveParams {
   page?: number;
   pageSize?: number;
+  timeframeDays?: number;
 }
 
 export async function sendInfrastructurePushTest(
@@ -416,9 +461,11 @@ export async function getBlueGreenMonitoringRequestArchive(
     searchParams.set('pageSize', String(params.pageSize));
   }
 
-  return client.json<
-    BlueGreenMonitoringPaginatedResult<BlueGreenMonitoringRequestLog>
-  >(
+  if (params?.timeframeDays != null) {
+    searchParams.set('timeframeDays', String(params.timeframeDays));
+  }
+
+  return client.json<BlueGreenMonitoringRequestArchive>(
     `/api/v1/infrastructure/monitoring/blue-green/requests${
       searchParams.size > 0 ? `?${searchParams.toString()}` : ''
     }`,

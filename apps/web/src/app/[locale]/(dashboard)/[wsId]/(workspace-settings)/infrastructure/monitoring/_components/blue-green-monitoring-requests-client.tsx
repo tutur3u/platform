@@ -2,12 +2,25 @@
 
 import {
   Activity,
+  Clock,
+  FileText,
   Network,
   Radio,
   Search,
   TriangleAlert,
 } from '@tuturuuu/icons';
+import type {
+  BlueGreenMonitoringRequestLog,
+  BlueGreenMonitoringWatcherLog,
+} from '@tuturuuu/internal-api/infrastructure';
 import { Badge } from '@tuturuuu/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Table,
@@ -18,7 +31,7 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 import { useTranslations } from 'next-intl';
-import { parseAsInteger, useQueryState } from 'nuqs';
+import { parseAsInteger, parseAsStringLiteral, useQueryState } from 'nuqs';
 import { startTransition, useDeferredValue, useState } from 'react';
 import {
   EmptyFilteredState,
@@ -29,7 +42,6 @@ import {
   SummaryMetricCard,
 } from './blue-green-monitoring-explorer-shared';
 import {
-  buildMonitoringRouteSummaries,
   getMonitoringStatusFamily,
   parseMonitoringRequestPath,
 } from './blue-green-monitoring-explorers.utils';
@@ -50,6 +62,9 @@ import {
   formatRelativeTime,
 } from './formatters';
 
+const requestTimeframeValues = ['1', '7', '14', '30', '0'] as const;
+type MonitoringTranslator = ReturnType<typeof useTranslations>;
+
 export function BlueGreenMonitoringRequestsClient() {
   const t = useTranslations('blue-green-monitoring');
   const [page, setPage] = useQueryState(
@@ -60,20 +75,30 @@ export function BlueGreenMonitoringRequestsClient() {
     'pageSize',
     parseAsInteger.withDefault(25).withOptions({ shallow: true })
   );
+  const [timeframe, setTimeframe] = useQueryState(
+    'timeframe',
+    parseAsStringLiteral(requestTimeframeValues)
+      .withDefault('7')
+      .withOptions({ shallow: true })
+  );
   const [searchValue, setSearchValue] = useState('');
   const deferredSearchValue = useDeferredValue(searchValue);
   const [statusFilter, setStatusFilter] = useState('all');
   const [routeFilter, setRouteFilter] = useState('all');
   const [renderFilter, setRenderFilter] = useState('all');
   const [trafficFilter, setTrafficFilter] = useState('all');
+  const [selectedRequest, setSelectedRequest] =
+    useState<BlueGreenMonitoringRequestLog | null>(null);
+  const timeframeDays = Number(timeframe);
 
   const archiveQuery = useBlueGreenMonitoringRequestArchive({
     page,
     pageSize,
+    timeframeDays,
   });
   const snapshotQuery = useBlueGreenMonitoringSnapshot({
     requestPreviewLimit: 0,
-    watcherLogLimit: 0,
+    watcherLogLimit: 50,
   });
 
   if (archiveQuery.isPending || snapshotQuery.isPending) {
@@ -99,6 +124,7 @@ export function BlueGreenMonitoringRequestsClient() {
 
   const archive = archiveQuery.data;
   const snapshot = snapshotQuery.data;
+  const archiveAnalytics = archive.analytics;
   const enrichedRequests = archive.items.map((request) => {
     const parsedPath = parseMonitoringRequestPath(request.path);
     const statusFamily = getMonitoringStatusFamily(request.status);
@@ -168,29 +194,58 @@ export function BlueGreenMonitoringRequestsClient() {
 
     return searchFields.some((value) => value.includes(query));
   });
-  const routeSummaries = buildMonitoringRouteSummaries(filteredRequests);
-  const distinctRoutes = new Set(
-    filteredRequests.map((request) => request.parsedPath.pathname)
-  );
-  const rscRequestCount = filteredRequests.filter(
-    (request) => request.parsedPath.isServerComponentRequest
-  ).length;
-  const errorRequestCount = filteredRequests.filter(
-    (request) => (request.status ?? 0) >= 400
-  ).length;
+  const globalRouteSummaries = archiveAnalytics.topRoutes.filter((summary) => {
+    if (routeFilter !== 'all' && summary.pathname !== routeFilter) {
+      return false;
+    }
+
+    if (renderFilter === 'rsc' && !summary.isServerComponentRoute) {
+      return false;
+    }
+
+    if (renderFilter === 'document' && summary.isServerComponentRoute) {
+      return false;
+    }
+
+    if (trafficFilter === 'internal' && summary.internalCount === 0) {
+      return false;
+    }
+
+    if (
+      trafficFilter === 'external' &&
+      summary.internalCount >= summary.requestCount
+    ) {
+      return false;
+    }
+
+    if (!query) {
+      return true;
+    }
+
+    return [
+      summary.pathname,
+      ...summary.querySignatures,
+      ...summary.hostnames,
+      ...summary.methods,
+    ]
+      .map((value) => value.toLowerCase())
+      .some((value) => value.includes(query));
+  });
   const statusOptions = [
     { label: t('explorer.all_statuses'), value: 'all' },
     { label: t('explorer.status_2xx'), value: '2xx' },
     { label: t('explorer.status_3xx'), value: '3xx' },
     { label: t('explorer.status_4xx'), value: '4xx' },
     { label: t('explorer.status_5xx'), value: '5xx' },
-    ...[...new Set(enrichedRequests.map((request) => request.statusValue))]
-      .filter(
-        (value) => !['unknown', '2xx', '3xx', '4xx', '5xx'].includes(value)
-      )
-      .sort((left, right) => Number(left) - Number(right))
-      .map((value) => ({ label: value, value })),
+    ...archiveAnalytics.statusCodes.map((value) => ({
+      label: String(value),
+      value: String(value),
+    })),
   ];
+  const routeOptions = archiveAnalytics.topRoutes.map((summary) => ({
+    label: summary.pathname,
+    value: summary.pathname,
+  }));
 
   return (
     <section className="space-y-6">
@@ -200,8 +255,10 @@ export function BlueGreenMonitoringRequestsClient() {
         <SummaryMetricCard
           icon={<Activity className="h-4 w-4" />}
           label={t('requests_page.cards.retained')}
-          meta={t('requests_page.cards.retained_description')}
-          value={formatCompactNumber(archive.total)}
+          meta={t('requests_page.cards.retained_description', {
+            total: formatCompactNumber(archiveAnalytics.retainedRequestCount),
+          })}
+          value={formatCompactNumber(archiveAnalytics.requestCount)}
         />
         <SummaryMetricCard
           icon={<Network className="h-4 w-4" />}
@@ -219,9 +276,9 @@ export function BlueGreenMonitoringRequestsClient() {
         />
         <SummaryMetricCard
           icon={<TriangleAlert className="h-4 w-4" />}
-          label={t('requests_page.cards.page_errors')}
-          meta={t('requests_page.cards.page_errors_description')}
-          value={formatCompactNumber(errorRequestCount)}
+          label={t('requests_page.cards.timeframe_errors')}
+          meta={t('requests_page.cards.timeframe_errors_description')}
+          value={formatCompactNumber(archiveAnalytics.errorRequestCount)}
         />
       </div>
 
@@ -238,16 +295,23 @@ export function BlueGreenMonitoringRequestsClient() {
               {t('requests_page.description')}
             </p>
           </div>
-          <Badge variant="secondary" className="rounded-full">
-            {t('requests_page.badge', {
-              current: archive.page,
-              total: archive.pageCount,
-            })}
-          </Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary" className="rounded-full">
+              {t('requests_page.badge', {
+                current: archive.page,
+                total: archive.pageCount,
+              })}
+            </Badge>
+            <Badge variant="outline" className="rounded-full">
+              {timeframeDays === 0
+                ? t('requests_page.timeframe_all')
+                : t('requests_page.timeframe_days', { days: timeframeDays })}
+            </Badge>
+          </div>
         </div>
 
         <div className="mt-5 rounded-lg border border-border/60 bg-muted/20 p-4">
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.8fr)_repeat(5,minmax(0,1fr))]">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.8fr)_repeat(6,minmax(0,1fr))]">
             <div className="relative">
               <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -263,6 +327,26 @@ export function BlueGreenMonitoringRequestsClient() {
             </div>
 
             <FilterSelect
+              label={t('requests_page.timeframe_filter')}
+              onValueChange={(value) => {
+                startTransition(() => {
+                  void setTimeframe(
+                    value as (typeof requestTimeframeValues)[number]
+                  );
+                  void setPage(1);
+                });
+              }}
+              options={[
+                { label: t('requests_page.timeframe_1d'), value: '1' },
+                { label: t('requests_page.timeframe_7d'), value: '7' },
+                { label: t('requests_page.timeframe_14d'), value: '14' },
+                { label: t('requests_page.timeframe_30d'), value: '30' },
+                { label: t('requests_page.timeframe_all'), value: '0' },
+              ]}
+              value={timeframe}
+            />
+
+            <FilterSelect
               label={t('explorer.status_filter')}
               onValueChange={setStatusFilter}
               options={statusOptions}
@@ -274,18 +358,7 @@ export function BlueGreenMonitoringRequestsClient() {
               onValueChange={setRouteFilter}
               options={[
                 { label: t('explorer.all_routes'), value: 'all' },
-                ...[
-                  ...new Set(
-                    enrichedRequests.map(
-                      (request) => request.parsedPath.pathname
-                    )
-                  ),
-                ]
-                  .sort()
-                  .map((pathname) => ({
-                    label: pathname,
-                    value: pathname,
-                  })),
+                ...routeOptions,
               ]}
               value={routeFilter}
             />
@@ -329,11 +402,13 @@ export function BlueGreenMonitoringRequestsClient() {
           </div>
 
           <p className="mt-3 text-muted-foreground text-xs">
-            {t('requests_page.page_refinement')}
+            {t('requests_page.global_refinement', {
+              count: formatCompactNumber(archiveAnalytics.requestCount),
+            })}
           </p>
         </div>
 
-        {routeSummaries.length > 0 ? (
+        {globalRouteSummaries.length > 0 ? (
           <div className="mt-5 rounded-lg border border-border/60 bg-muted/20 p-4">
             <div className="mb-4">
               <p className="font-medium text-sm">{t('explorer.top_routes')}</p>
@@ -343,16 +418,23 @@ export function BlueGreenMonitoringRequestsClient() {
             </div>
 
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {routeSummaries.slice(0, 8).map((summary) => {
+              {globalRouteSummaries.slice(0, 8).map((summary) => {
                 const rscShare =
                   summary.requestCount > 0
                     ? (summary.rscCount / summary.requestCount) * 100
                     : 0;
 
                 return (
-                  <div
+                  <button
                     key={summary.pathname}
-                    className="rounded-lg border border-border/60 bg-muted/20 p-4"
+                    className="rounded-lg border border-border/60 bg-muted/20 p-4 text-left transition-colors hover:border-dynamic-blue/60 hover:bg-dynamic-blue/5"
+                    onClick={() => {
+                      startTransition(() => {
+                        setRouteFilter(summary.pathname);
+                        void setPage(1);
+                      });
+                    }}
+                    type="button"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -379,11 +461,15 @@ export function BlueGreenMonitoringRequestsClient() {
                         value={formatCompactNumber(summary.errorCount)}
                       />
                       <MicroPill
+                        label={t('requests_page.internal_short')}
+                        value={formatCompactNumber(summary.internalCount)}
+                      />
+                      <MicroPill
                         label={t('explorer.rsc_short')}
                         value={`${Math.round(rscShare)}%`}
                       />
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -401,19 +487,19 @@ export function BlueGreenMonitoringRequestsClient() {
             icon={<Network className="h-4 w-4" />}
             label={t('explorer.total_routes')}
             meta={t('explorer.unique_routes')}
-            value={formatCompactNumber(distinctRoutes.size)}
+            value={formatCompactNumber(archiveAnalytics.distinctRoutes)}
           />
           <SummaryMetricCard
             icon={<Radio className="h-4 w-4" />}
             label={t('explorer.rsc_requests')}
             meta={t('explorer.rsc_hint')}
-            value={formatCompactNumber(rscRequestCount)}
+            value={formatCompactNumber(archiveAnalytics.rscRequestCount)}
           />
           <SummaryMetricCard
             icon={<TriangleAlert className="h-4 w-4" />}
             label={t('explorer.error_requests')}
             meta={t('explorer.error_hint')}
-            value={formatCompactNumber(errorRequestCount)}
+            value={formatCompactNumber(archiveAnalytics.errorRequestCount)}
           />
         </div>
 
@@ -465,6 +551,8 @@ export function BlueGreenMonitoringRequestsClient() {
                 {filteredRequests.map((request) => (
                   <TableRow
                     key={`${request.time}-${request.path}-${request.deploymentKey ?? 'none'}-${request.statusValue}`}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedRequest(request)}
                   >
                     <TableCell className="min-w-[300px]">
                       <div className="space-y-2">
@@ -589,6 +677,206 @@ export function BlueGreenMonitoringRequestsClient() {
           </div>
         )}
       </section>
+
+      <RequestDetailDialog
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedRequest(null);
+          }
+        }}
+        relatedLogs={snapshot.watcher.logs}
+        request={selectedRequest}
+        t={t}
+      />
     </section>
+  );
+}
+
+function RequestDetailDialog({
+  onOpenChange,
+  relatedLogs,
+  request,
+  t,
+}: {
+  onOpenChange: (open: boolean) => void;
+  relatedLogs: BlueGreenMonitoringWatcherLog[];
+  request: BlueGreenMonitoringRequestLog | null;
+  t: MonitoringTranslator;
+}) {
+  const parsedPath = request ? parseMonitoringRequestPath(request.path) : null;
+  const requestRelatedLogs = request
+    ? relatedLogs.filter((log) => {
+        const sameDeployment =
+          (request.deploymentKey &&
+            log.deploymentKey === request.deploymentKey) ||
+          (request.deploymentStamp &&
+            log.deploymentStamp === request.deploymentStamp) ||
+          (request.deploymentColor &&
+            log.activeColor === request.deploymentColor);
+        const nearRequest = Math.abs(log.time - request.time) <= 10 * 60 * 1000;
+
+        return sameDeployment || nearRequest;
+      })
+    : [];
+  const details = request
+    ? [
+        [t('explorer.table_route'), parsedPath?.pathname ?? request.path],
+        [t('requests_page.raw_path'), request.path],
+        [t('explorer.table_status'), request.status ?? t('states.none')],
+        [t('explorer.table_latency'), formatLatencyMs(request.requestTimeMs)],
+        [t('explorer.table_time'), formatDateTime(request.time)],
+        [t('requests_page.host'), request.host ?? t('states.none')],
+        [t('requests_page.method'), request.method ?? t('states.none')],
+        [
+          t('explorer.table_render'),
+          parsedPath?.isServerComponentRequest
+            ? t('explorer.render_rsc')
+            : t('explorer.render_document'),
+        ],
+        [
+          t('explorer.traffic_filter'),
+          request.isInternal
+            ? t('explorer.traffic_internal')
+            : t('explorer.traffic_external'),
+        ],
+        [
+          t('requests_page.query_signature'),
+          parsedPath?.querySignature || t('explorer.no_query_signature'),
+        ],
+        [
+          t('requests_page.deployment_color'),
+          request.deploymentColor ?? t('states.none'),
+        ],
+        [
+          t('requests_page.deployment_stamp'),
+          request.deploymentStamp ?? t('states.none'),
+        ],
+        [
+          t('requests_page.deployment_key'),
+          request.deploymentKey ?? t('states.none'),
+        ],
+      ]
+    : [];
+
+  return (
+    <Dialog open={Boolean(request)} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-dynamic-blue" />
+            {t('requests_page.request_details')}
+          </DialogTitle>
+          <DialogDescription>
+            {request ? request.path : t('states.none')}
+          </DialogDescription>
+        </DialogHeader>
+
+        {request ? (
+          <div className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-3">
+              <SummaryMetricCard
+                icon={<Activity className="h-4 w-4" />}
+                label={t('explorer.table_status')}
+                meta={t('requests_page.status_family')}
+                value={String(request.status ?? '—')}
+              />
+              <SummaryMetricCard
+                icon={<Clock className="h-4 w-4" />}
+                label={t('explorer.table_latency')}
+                meta={formatRelativeTime(request.time)}
+                value={formatLatencyMs(request.requestTimeMs)}
+              />
+              <SummaryMetricCard
+                icon={<Network className="h-4 w-4" />}
+                label={t('explorer.table_render')}
+                meta={
+                  request.isInternal
+                    ? t('explorer.traffic_internal')
+                    : t('explorer.traffic_external')
+                }
+                value={
+                  parsedPath?.isServerComponentRequest
+                    ? t('explorer.render_rsc')
+                    : t('explorer.render_document')
+                }
+              />
+            </div>
+
+            <div className="rounded-lg border border-border/60 bg-muted/20">
+              <div className="border-border/60 border-b px-4 py-3">
+                <p className="font-medium text-sm">
+                  {t('requests_page.request_metadata')}
+                </p>
+              </div>
+              <div className="grid gap-0 md:grid-cols-2">
+                {details.map(([label, value]) => (
+                  <div
+                    className="border-border/60 border-b px-4 py-3 md:odd:border-r"
+                    key={String(label)}
+                  >
+                    <p className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                      {label}
+                    </p>
+                    <p className="mt-1 break-words font-medium text-sm">
+                      {String(value)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
+              <p className="font-medium text-sm">
+                {t('requests_page.operator_context')}
+              </p>
+              <p className="mt-2 text-muted-foreground text-sm">
+                {t('requests_page.operator_context_description')}
+              </p>
+              <pre className="mt-3 max-h-72 overflow-auto rounded-md bg-background p-3 text-xs">
+                {JSON.stringify(request, null, 2)}
+              </pre>
+            </div>
+
+            <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
+              <p className="font-medium text-sm">
+                {t('requests_page.related_logs')}
+              </p>
+              <p className="mt-2 text-muted-foreground text-sm">
+                {t('requests_page.related_logs_description')}
+              </p>
+              <div className="mt-3 space-y-2">
+                {requestRelatedLogs.length > 0 ? (
+                  requestRelatedLogs.slice(0, 12).map((log) => (
+                    <div
+                      className="rounded-md border border-border/60 bg-background p-3"
+                      key={`${log.time}-${log.level}-${log.message}`}
+                    >
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <Badge variant="outline" className="rounded-full">
+                          {log.level}
+                        </Badge>
+                        <span className="text-muted-foreground">
+                          {formatDateTime(log.time)}
+                        </span>
+                        {log.deploymentStatus ? (
+                          <span className="text-muted-foreground">
+                            {log.deploymentStatus}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-2 break-words text-sm">{log.message}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="rounded-md border border-border/60 bg-background p-3 text-muted-foreground text-sm">
+                    {t('requests_page.no_related_logs')}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </DialogContent>
+    </Dialog>
   );
 }

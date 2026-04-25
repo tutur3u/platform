@@ -37,9 +37,11 @@ export function useBlueGreenMonitoringSnapshot({
 export function useBlueGreenMonitoringRequestArchive({
   page,
   pageSize,
+  timeframeDays,
 }: {
   page: number;
   pageSize: number;
+  timeframeDays: number;
 }) {
   return useQuery({
     queryKey: [
@@ -49,11 +51,13 @@ export function useBlueGreenMonitoringRequestArchive({
       'requests',
       page,
       pageSize,
+      timeframeDays,
     ],
     queryFn: () =>
       getBlueGreenMonitoringRequestArchive({
         page,
         pageSize,
+        timeframeDays,
       }),
     refetchInterval: 15000,
     staleTime: 5000,

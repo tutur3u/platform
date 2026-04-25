@@ -2,7 +2,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { readBlueGreenMonitoringSnapshot } from './blue-green-monitoring';
+import {
+  readBlueGreenMonitoringRequestArchive,
+  readBlueGreenMonitoringSnapshot,
+} from './blue-green-monitoring';
 
 const ORIGINAL_MONITORING_DIR = process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR;
 
@@ -234,6 +237,116 @@ describe('readBlueGreenMonitoringSnapshot', () => {
       ]);
       expect(snapshot.recoveryCache.limit).toBe(3);
       expect(snapshot.recoveryCache.total).toBe(4);
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+});
+
+describe('readBlueGreenMonitoringRequestArchive', () => {
+  afterEach(() => {
+    if (ORIGINAL_MONITORING_DIR === undefined) {
+      delete process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR;
+      return;
+    }
+
+    process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = ORIGINAL_MONITORING_DIR;
+  });
+
+  it('calculates request analytics globally across the selected timeframe', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'blue-green-monitoring-requests-')
+    );
+    const now = Date.UTC(2026, 3, 25, 12, 0, 0);
+
+    try {
+      const requestLogDir = path.join(
+        tempDir,
+        'watch',
+        'blue-green-request-logs'
+      );
+      fs.mkdirSync(requestLogDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(tempDir, 'watch', 'blue-green-request-telemetry.state.json'),
+        JSON.stringify({
+          chunks: [
+            {
+              count: 4,
+              file: 'requests-1.jsonl',
+              firstRequestAt: now - 8 * 24 * 60 * 60 * 1000,
+              lastRequestAt: now - 60_000,
+            },
+          ],
+          currentChunkCount: 4,
+          currentChunkFile: 'requests-1.jsonl',
+          totalRecords: 4,
+        })
+      );
+      fs.writeFileSync(
+        path.join(requestLogDir, 'requests-1.jsonl'),
+        [
+          {
+            host: 'tuturuuu.com',
+            isInternal: false,
+            method: 'GET',
+            path: '/old',
+            requestTimeMs: 10,
+            status: 200,
+            time: now - 8 * 24 * 60 * 60 * 1000,
+          },
+          {
+            host: 'tuturuuu.com',
+            isInternal: false,
+            method: 'GET',
+            path: '/games?_rsc=abc',
+            requestTimeMs: 100,
+            status: 200,
+            time: now - 60_000,
+          },
+          {
+            host: 'tuturuuu.com',
+            isInternal: false,
+            method: 'POST',
+            path: '/games',
+            requestTimeMs: 300,
+            status: 500,
+            time: now - 30_000,
+          },
+          {
+            host: '127.0.0.1',
+            isInternal: true,
+            method: 'GET',
+            path: '/__platform/drain-status',
+            requestTimeMs: 2,
+            status: 200,
+            time: now - 10_000,
+          },
+        ]
+          .map((entry) => JSON.stringify(entry))
+          .join('\n')
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+
+      const archive = readBlueGreenMonitoringRequestArchive({
+        now,
+        page: 1,
+        pageSize: 2,
+        timeframeDays: 7,
+      });
+
+      expect(archive.items).toHaveLength(2);
+      expect(archive.total).toBe(3);
+      expect(archive.analytics.requestCount).toBe(3);
+      expect(archive.analytics.retainedRequestCount).toBe(4);
+      expect(archive.analytics.errorRequestCount).toBe(1);
+      expect(archive.analytics.rscRequestCount).toBe(1);
+      expect(archive.analytics.distinctRoutes).toBe(2);
+      expect(archive.analytics.topRoutes[0]).toMatchObject({
+        errorCount: 1,
+        pathname: '/games',
+        requestCount: 2,
+        rscCount: 1,
+      });
     } finally {
       fs.rmSync(tempDir, { force: true, recursive: true });
     }

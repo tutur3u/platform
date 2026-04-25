@@ -499,6 +499,11 @@ Dashboard details:
   for containers in the production project. The monitoring overview uses that
   persisted snapshot to show service health and a full running-container
   inventory without mounting the Docker socket into `apps/web`.
+- The request archive view computes route summaries, status totals, RSC counts,
+  and error totals across the selected timeframe instead of only the visible
+  page. The default timeframe is seven days, and the web API keeps a short
+  in-process aggregate cache keyed by timeframe plus telemetry log file stats so
+  pagination stays responsive while new proxy logs invalidate the cache.
 - Every service owned by `docker-compose.web.prod.yml` should declare a
   healthcheck, either directly in compose or in the image. The monitoring page
   treats containers without Docker health metadata as external or incomplete

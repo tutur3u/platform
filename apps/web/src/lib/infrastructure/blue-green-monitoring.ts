@@ -7,7 +7,9 @@ import type {
   BlueGreenMonitoringDockerHealth,
   BlueGreenMonitoringPaginatedResult,
   BlueGreenMonitoringPeriodMetric,
+  BlueGreenMonitoringRequestArchive,
   BlueGreenMonitoringRequestLog,
+  BlueGreenMonitoringRouteSummary,
   BlueGreenMonitoringServiceHealth,
   BlueGreenMonitoringSnapshot,
   BlueGreenMonitoringStatus,
@@ -15,7 +17,8 @@ import type {
   BlueGreenMonitoringWatcherLog,
 } from '@tuturuuu/internal-api/infrastructure';
 
-type FsLike = Pick<typeof fs, 'existsSync' | 'readFileSync'>;
+type FsLike = Pick<typeof fs, 'existsSync' | 'readFileSync'> &
+  Partial<Pick<typeof fs, 'statSync'>>;
 type DockerAggregateContainer = {
   cpuPercent: number | null;
   memoryBytes: number | null;
@@ -23,8 +26,23 @@ type DockerAggregateContainer = {
 
 const DOCKER_WEB_ENV_KEY = 'PLATFORM_BLUE_GREEN_MONITORING_DIR';
 const DEFAULT_ARCHIVE_PAGE_SIZE = 25;
+const DEFAULT_REQUEST_ARCHIVE_TIMEFRAME_DAYS = 7;
 const DEFAULT_RECOVERY_CACHE_LIMIT = 3;
 const MAX_ARCHIVE_PAGE_SIZE = 100;
+const REQUEST_ARCHIVE_AGGREGATE_CACHE_TTL_MS = 10_000;
+const REQUEST_ARCHIVE_TOP_ROUTE_LIMIT = 100;
+
+interface RequestArchiveAggregateCacheEntry {
+  analytics: BlueGreenMonitoringRequestArchive['analytics'];
+  createdAt: number;
+  items: BlueGreenMonitoringRequestLog[];
+  signature: string;
+}
+
+const requestArchiveAggregateCache = new Map<
+  string,
+  RequestArchiveAggregateCacheEntry
+>();
 
 function resolveMonitoringDir(fsImpl: FsLike = fs) {
   const configuredDir = process.env[DOCKER_WEB_ENV_KEY]?.trim();
@@ -65,6 +83,19 @@ function readTextFile(filePath: string, fsImpl: FsLike = fs) {
     return value || null;
   } catch {
     return null;
+  }
+}
+
+function getFileSignature(filePath: string, fsImpl: FsLike = fs) {
+  if (!fsImpl.existsSync(filePath) || typeof fsImpl.statSync !== 'function') {
+    return 'missing';
+  }
+
+  try {
+    const stat = fsImpl.statSync(filePath);
+    return `${stat.mtimeMs}:${stat.size}`;
+  } catch {
+    return 'unreadable';
   }
 }
 
@@ -147,6 +178,342 @@ function buildArchiveWindow<T extends { time: number }>(items: T[]) {
     newestAt: items[0]?.time ?? null,
     oldestAt: items[items.length - 1]?.time ?? null,
   };
+}
+
+function getMonitoringStatusFamily(status: number | null | undefined) {
+  if (status == null || !Number.isFinite(status)) {
+    return 'unknown';
+  }
+
+  if (status >= 500) {
+    return 'serverError';
+  }
+
+  if (status >= 400) {
+    return 'clientError';
+  }
+
+  if (status >= 300) {
+    return 'redirect';
+  }
+
+  if (status >= 200) {
+    return 'success';
+  }
+
+  if (status >= 100) {
+    return 'informational';
+  }
+
+  return 'unknown';
+}
+
+function parseMonitoringRequestPath(rawPath: string) {
+  try {
+    const url = new URL(rawPath, 'http://127.0.0.1');
+    const pathname = url.pathname || '/';
+    const searchParamKeys = [...new Set(url.searchParams.keys())].sort();
+
+    return {
+      isServerComponentRequest: url.searchParams.has('_rsc'),
+      pathname,
+      querySignature:
+        searchParamKeys.length > 0 ? `?${searchParamKeys.join('&')}` : '',
+    };
+  } catch {
+    return {
+      isServerComponentRequest: rawPath.includes('_rsc='),
+      pathname: rawPath || '/',
+      querySignature: '',
+    };
+  }
+}
+
+function normalizeRequestTimeframe({
+  now,
+  timeframeDays,
+}: {
+  now: number;
+  timeframeDays?: number | null;
+}) {
+  const days =
+    typeof timeframeDays === 'number' &&
+    Number.isInteger(timeframeDays) &&
+    timeframeDays >= 0
+      ? timeframeDays
+      : DEFAULT_REQUEST_ARCHIVE_TIMEFRAME_DAYS;
+
+  return {
+    days: days === 0 ? null : days,
+    endAt: now,
+    startAt: days === 0 ? null : now - days * 24 * 60 * 60 * 1000,
+  };
+}
+
+function isRequestInTimeframe(
+  request: BlueGreenMonitoringRequestLog,
+  timeframe: ReturnType<typeof normalizeRequestTimeframe>
+) {
+  return (
+    request.time <= timeframe.endAt &&
+    (timeframe.startAt == null || request.time >= timeframe.startAt)
+  );
+}
+
+function buildRequestRouteSummaries(
+  requests: BlueGreenMonitoringRequestLog[]
+): BlueGreenMonitoringRouteSummary[] {
+  const summaryMap = new Map<
+    string,
+    BlueGreenMonitoringRouteSummary & {
+      hostSet: Set<string>;
+      latencyTotal: number;
+      latencySamples: number;
+      methodSet: Set<string>;
+      querySignatureSet: Set<string>;
+    }
+  >();
+
+  for (const request of requests) {
+    const parsedPath = parseMonitoringRequestPath(request.path);
+    const existing = summaryMap.get(parsedPath.pathname) ?? {
+      averageLatencyMs: null,
+      errorCount: 0,
+      firstRequestAt: null,
+      hostSet: new Set<string>(),
+      hostnames: [],
+      internalCount: 0,
+      isServerComponentRoute: false,
+      lastRequestAt: null,
+      latencySamples: 0,
+      latencyTotal: 0,
+      methodSet: new Set<string>(),
+      methods: [],
+      pathname: parsedPath.pathname,
+      querySignatureSet: new Set<string>(),
+      querySignatures: [],
+      requestCount: 0,
+      rscCount: 0,
+      statusCounts: {
+        clientError: 0,
+        informational: 0,
+        redirect: 0,
+        serverError: 0,
+        success: 0,
+        unknown: 0,
+      },
+    };
+
+    existing.requestCount += 1;
+    existing.firstRequestAt =
+      existing.firstRequestAt == null
+        ? request.time
+        : Math.min(existing.firstRequestAt, request.time);
+    existing.lastRequestAt =
+      existing.lastRequestAt == null
+        ? request.time
+        : Math.max(existing.lastRequestAt, request.time);
+    existing.isServerComponentRoute =
+      existing.isServerComponentRoute || parsedPath.isServerComponentRequest;
+
+    if (request.isInternal) {
+      existing.internalCount += 1;
+    }
+
+    if (parsedPath.isServerComponentRequest) {
+      existing.rscCount += 1;
+    }
+
+    if ((request.status ?? 0) >= 400) {
+      existing.errorCount += 1;
+    }
+
+    existing.statusCounts[getMonitoringStatusFamily(request.status)] += 1;
+
+    if (
+      request.requestTimeMs != null &&
+      Number.isFinite(request.requestTimeMs)
+    ) {
+      existing.latencyTotal += request.requestTimeMs;
+      existing.latencySamples += 1;
+    }
+
+    if (request.method) {
+      existing.methodSet.add(request.method);
+    }
+
+    if (request.host) {
+      existing.hostSet.add(request.host);
+    }
+
+    if (parsedPath.querySignature) {
+      existing.querySignatureSet.add(parsedPath.querySignature);
+    }
+
+    summaryMap.set(parsedPath.pathname, existing);
+  }
+
+  return [...summaryMap.values()]
+    .map(
+      ({
+        hostSet,
+        latencySamples,
+        latencyTotal,
+        methodSet,
+        querySignatureSet,
+        ...summary
+      }) => ({
+        ...summary,
+        averageLatencyMs:
+          latencySamples > 0 ? latencyTotal / latencySamples : null,
+        hostnames: [...hostSet].sort().slice(0, 8),
+        methods: [...methodSet].sort(),
+        querySignatures: [...querySignatureSet].sort().slice(0, 8),
+      })
+    )
+    .sort((left, right) => {
+      if (right.requestCount !== left.requestCount) {
+        return right.requestCount - left.requestCount;
+      }
+
+      return left.pathname.localeCompare(right.pathname);
+    });
+}
+
+function buildRequestArchiveAnalytics({
+  requests,
+  retainedRequestCount,
+  timeframe,
+}: {
+  requests: BlueGreenMonitoringRequestLog[];
+  retainedRequestCount: number;
+  timeframe: ReturnType<typeof normalizeRequestTimeframe>;
+}): BlueGreenMonitoringRequestArchive['analytics'] {
+  const latencySamples = requests
+    .map((request) => request.requestTimeMs)
+    .filter(
+      (value): value is number => value != null && Number.isFinite(value)
+    );
+  const statusCodes = [
+    ...new Set(
+      requests
+        .map((request) => request.status)
+        .filter(
+          (value): value is number => value != null && Number.isFinite(value)
+        )
+    ),
+  ].sort((left, right) => left - right);
+  const topRoutes = buildRequestRouteSummaries(requests);
+
+  return {
+    averageLatencyMs:
+      latencySamples.length > 0
+        ? latencySamples.reduce((sum, value) => sum + value, 0) /
+          latencySamples.length
+        : null,
+    distinctRoutes: topRoutes.length,
+    errorRequestCount: requests.filter(
+      (request) => (request.status ?? 0) >= 400
+    ).length,
+    externalRequestCount: requests.filter((request) => !request.isInternal)
+      .length,
+    internalRequestCount: requests.filter((request) => request.isInternal)
+      .length,
+    requestCount: requests.length,
+    retainedRequestCount,
+    rscRequestCount: requests.filter(
+      (request) =>
+        parseMonitoringRequestPath(request.path).isServerComponentRequest
+    ).length,
+    statusCodes,
+    timeframe,
+    topRoutes: topRoutes.slice(0, REQUEST_ARCHIVE_TOP_ROUTE_LIMIT),
+  };
+}
+
+function getRequestArchiveCacheSignature(
+  watchDir: string,
+  fsImpl: FsLike = fs
+) {
+  const statePath = path.join(
+    watchDir,
+    'blue-green-request-telemetry.state.json'
+  );
+  const state = toRecord(
+    readJsonFile<Record<string, unknown>>(statePath, fsImpl)
+  );
+  const currentChunkFile =
+    typeof state?.currentChunkFile === 'string' ? state.currentChunkFile : null;
+  const currentChunkSignature = currentChunkFile
+    ? getFileSignature(
+        path.join(watchDir, 'blue-green-request-logs', currentChunkFile),
+        fsImpl
+      )
+    : 'none';
+
+  return [
+    getFileSignature(statePath, fsImpl),
+    getFileSignature(
+      path.join(watchDir, 'blue-green-request-telemetry.summary.json'),
+      fsImpl
+    ),
+    currentChunkFile ?? 'none',
+    currentChunkSignature,
+  ].join('|');
+}
+
+function readCachedRequestArchiveAggregate({
+  fsImpl = fs,
+  now,
+  timeframe,
+  watchDir,
+}: {
+  fsImpl?: FsLike;
+  now: number;
+  timeframe: ReturnType<typeof normalizeRequestTimeframe>;
+  watchDir: string;
+}) {
+  const cacheKey = `${watchDir}:${timeframe.days ?? 'all'}`;
+  const signature = getRequestArchiveCacheSignature(watchDir, fsImpl);
+  const cached = requestArchiveAggregateCache.get(cacheKey);
+
+  if (
+    cached &&
+    cached.signature === signature &&
+    now - cached.createdAt <= REQUEST_ARCHIVE_AGGREGATE_CACHE_TTL_MS
+  ) {
+    return cached;
+  }
+
+  const allItems = readAllRequestArchiveItems(watchDir, fsImpl, timeframe);
+  const analytics = buildRequestArchiveAnalytics({
+    requests: allItems.items,
+    retainedRequestCount: allItems.totalRecords,
+    timeframe,
+  });
+  const nextEntry = {
+    analytics,
+    createdAt: now,
+    items: allItems.items,
+    signature,
+  };
+
+  requestArchiveAggregateCache.set(cacheKey, nextEntry);
+
+  for (const key of requestArchiveAggregateCache.keys()) {
+    if (key.startsWith(`${watchDir}:`) && key !== cacheKey) {
+      const entry = requestArchiveAggregateCache.get(key);
+      if (
+        entry &&
+        (entry.signature !== signature ||
+          now - entry.createdAt > REQUEST_ARCHIVE_AGGREGATE_CACHE_TTL_MS)
+      ) {
+        requestArchiveAggregateCache.delete(key);
+      }
+    }
+  }
+
+  return nextEntry;
 }
 
 function createArchiveResponse<T extends { time: number }>(
@@ -635,6 +1002,8 @@ function readNormalizedWatcherLogs(
 interface RequestLogChunkMetadata {
   count: number;
   file: string;
+  firstRequestAt: number | null;
+  lastRequestAt: number | null;
 }
 
 function readRequestLogChunkMetadata(
@@ -661,6 +1030,8 @@ function readRequestLogChunkMetadata(
           {
             count: toPositiveInteger(record?.count) ?? 0,
             file,
+            firstRequestAt: toFiniteNumber(record?.firstRequestAt),
+            lastRequestAt: toFiniteNumber(record?.lastRequestAt),
           },
         ];
       })
@@ -674,18 +1045,16 @@ function readRequestLogChunkMetadata(
   };
 }
 
-function readRequestArchiveItems(
+function readAllRequestArchiveItems(
   watchDir: string,
-  offset: number,
-  limit: number,
-  fsImpl: FsLike = fs
+  fsImpl: FsLike = fs,
+  timeframe?: ReturnType<typeof normalizeRequestTimeframe>
 ) {
   const { chunks, totalRecords } = readRequestLogChunkMetadata(
     watchDir,
     fsImpl
   );
   const requestLogDir = path.join(watchDir, 'blue-green-request-logs');
-  const items: BlueGreenMonitoringRequestLog[] = [];
 
   if (chunks.length === 0) {
     const summary = toRecord(
@@ -694,26 +1063,32 @@ function readRequestArchiveItems(
         fsImpl
       )
     );
+    const items = normalizeRecentRequests(summary?.recentRequests).filter(
+      (entry) => !timeframe || isRequestInTimeframe(entry, timeframe)
+    );
 
     return {
-      items: normalizeRecentRequests(summary?.recentRequests).slice(
-        offset,
-        offset + limit
-      ),
-      total: normalizeRecentRequests(summary?.recentRequests).length,
+      items,
+      totalRecords: normalizeRecentRequests(summary?.recentRequests).length,
     };
   }
 
-  let remainingOffset = offset;
-  let remainingLimit = limit;
+  const items: BlueGreenMonitoringRequestLog[] = [];
 
   for (const chunk of [...chunks].reverse()) {
-    if (remainingLimit <= 0) {
-      break;
+    if (
+      timeframe?.startAt != null &&
+      chunk.lastRequestAt != null &&
+      chunk.lastRequestAt < timeframe.startAt
+    ) {
+      continue;
     }
 
-    if (remainingOffset >= chunk.count) {
-      remainingOffset -= chunk.count;
+    if (
+      timeframe &&
+      chunk.firstRequestAt != null &&
+      chunk.firstRequestAt > timeframe.endAt
+    ) {
       continue;
     }
 
@@ -721,23 +1096,14 @@ function readRequestArchiveItems(
       path.join(requestLogDir, chunk.file),
       fsImpl
     );
-    const normalizedEntries = normalizeRecentRequests(rawEntries).reverse();
-
-    const chunkStart = remainingOffset;
-    const chunkItems = normalizedEntries.slice(
-      chunkStart,
-      chunkStart + remainingLimit
+    items.push(
+      ...normalizeRecentRequests(rawEntries)
+        .filter((entry) => !timeframe || isRequestInTimeframe(entry, timeframe))
+        .reverse()
     );
-
-    items.push(...chunkItems);
-    remainingLimit -= chunkItems.length;
-    remainingOffset = 0;
   }
 
-  return {
-    items,
-    total: totalRecords,
-  };
+  return { items, totalRecords };
 }
 
 function normalizeWatcherHealth(
@@ -1100,31 +1466,43 @@ export function readBlueGreenMonitoringSnapshot({
 
 export function readBlueGreenMonitoringRequestArchive({
   fsImpl = fs,
+  now = Date.now(),
   page = 1,
   pageSize = DEFAULT_ARCHIVE_PAGE_SIZE,
+  timeframeDays = DEFAULT_REQUEST_ARCHIVE_TIMEFRAME_DAYS,
 }: {
   fsImpl?: FsLike;
+  now?: number;
   page?: number;
   pageSize?: number;
-} = {}): BlueGreenMonitoringPaginatedResult<BlueGreenMonitoringRequestLog> {
+  timeframeDays?: number | null;
+} = {}): BlueGreenMonitoringRequestArchive {
   const monitoringDir = resolveMonitoringDir(fsImpl);
   const watchDir = path.join(monitoringDir.path, 'watch');
   const normalizedPageSize = clampArchivePageSize(pageSize);
-  const { total } = readRequestArchiveItems(watchDir, 0, 0, fsImpl);
-  const archivePage = getArchivePage(page, total, normalizedPageSize);
-  const { items } = readRequestArchiveItems(
+  const timeframe = normalizeRequestTimeframe({ now, timeframeDays });
+  const aggregate = readCachedRequestArchiveAggregate({
+    fsImpl,
+    now,
+    timeframe,
     watchDir,
+  });
+  const total = aggregate.items.length;
+  const archivePage = getArchivePage(page, total, normalizedPageSize);
+  const items = aggregate.items.slice(
     archivePage.offset,
-    normalizedPageSize,
-    fsImpl
+    archivePage.offset + normalizedPageSize
   );
 
-  return createArchiveResponse(
-    items,
-    archivePage.page,
-    normalizedPageSize,
-    total
-  );
+  return {
+    ...createArchiveResponse(
+      items,
+      archivePage.page,
+      normalizedPageSize,
+      total
+    ),
+    analytics: aggregate.analytics,
+  };
 }
 
 export function readBlueGreenMonitoringWatcherLogArchive({
