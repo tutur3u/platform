@@ -250,6 +250,33 @@ async function hasComposeServiceContainer(
   return containerId.length > 0;
 }
 
+async function isComposeServiceHealthy(
+  serviceName,
+  { composeFile, composeGlobalArgs = [], env, runCommand: run }
+) {
+  const containerId = await getComposeServiceContainerId(serviceName, {
+    composeFile,
+    composeGlobalArgs,
+    env,
+    runCommand: run,
+  });
+
+  if (!containerId) {
+    return false;
+  }
+
+  try {
+    return (
+      (await getContainerHealthStatus(containerId, {
+        env,
+        runCommand: run,
+      })) === 'healthy'
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function stopComposeServicesIfPresent(
   serviceNames,
   { composeFile, composeGlobalArgs = [], env, runCommand: run }
@@ -394,6 +421,7 @@ module.exports = {
   getComposeServiceContainerName,
   hasComposeProfile,
   hasComposeServiceContainer,
+  isComposeServiceHealthy,
   removeComposeServicesIfPresent,
   runComposeUpWithNameConflictRecovery,
   runChecked,

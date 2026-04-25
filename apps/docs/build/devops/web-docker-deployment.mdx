@@ -244,6 +244,13 @@ Additional behavior:
   the runtime can recover first and reconcile to `main` afterward. It then
   retags the same cached image into the opposite color and starts that as the
   warm standby, creating two ready copies without waiting for a fresh build.
+- Blue/green active and standby discovery uses Docker health, not just
+  container presence. If the persisted active color is unhealthy but the
+  opposite color is healthy, the watcher rewrites the active marker and proxy
+  to the healthy color before building or refreshing another lane.
+- Cached recoveries write a fresh nginx proxy config before the proxy is
+  started, so recovery never boots nginx with a stale upstream that points at a
+  missing or unhealthy color.
 - That standby catch-up path also stops and removes the stale standby
   container before rebuilding it, so health checks target the fresh
   replacement container rather than an outdated standby instance.
@@ -260,7 +267,9 @@ Additional behavior:
   image exists, the watcher falls back to the normal recovery build path.
 - Successful active and standby builds tag the service image as
   `{compose-project}-web-cache:{commit}` and prune older retained cache tags
-  beyond the three newest successful deployments.
+  beyond the three newest successful deployments. Pruning is idempotent:
+  already-removed cache tags are ignored instead of warning in the live watcher
+  log.
 
 ### Monitoring Surfaces
 

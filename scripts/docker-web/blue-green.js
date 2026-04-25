@@ -6,6 +6,7 @@ const {
   getComposeFile,
   hasComposeProfile,
   hasComposeServiceContainer,
+  isComposeServiceHealthy,
   removeComposeServicesIfPresent,
   runComposeUpWithNameConflictRecovery,
   runChecked,
@@ -389,15 +390,13 @@ async function refreshBlueGreenProxyIfRunning({
     rootDir,
     withRedis: true,
   });
-  const activeColor = await resolveBlueGreenActiveColor(
-    readBlueGreenActiveColor(paths, fsImpl),
-    {
-      composeFile,
-      composeGlobalArgs: [],
-      env: composeEnv,
-      runCommand: run,
-    }
-  );
+  const persistedActiveColor = readBlueGreenActiveColor(paths, fsImpl);
+  const activeColor = await resolveBlueGreenActiveColor(persistedActiveColor, {
+    composeFile,
+    composeGlobalArgs: [],
+    env: composeEnv,
+    runCommand: run,
+  });
 
   if (!activeColor) {
     return false;
@@ -415,6 +414,10 @@ async function refreshBlueGreenProxyIfRunning({
 
   if (!proxyRunning) {
     return false;
+  }
+
+  if (activeColor !== persistedActiveColor) {
+    writeBlueGreenActiveColor(activeColor, paths, fsImpl);
   }
 
   const standbyColor = await resolveBlueGreenStandbyColor(activeColor, {
@@ -565,21 +568,25 @@ async function resolveBlueGreenActiveColor(
   persistedActiveColor,
   { composeFile, composeGlobalArgs = [], env, runCommand: run }
 ) {
-  if (!persistedActiveColor) {
-    return null;
+  const candidateColors = [
+    persistedActiveColor,
+    persistedActiveColor ? getNextBlueGreenColor(persistedActiveColor) : null,
+  ].filter(Boolean);
+
+  for (const color of candidateColors) {
+    if (
+      await isComposeServiceHealthy(getBlueGreenServiceName(color), {
+        composeFile,
+        composeGlobalArgs,
+        env,
+        runCommand: run,
+      })
+    ) {
+      return color;
+    }
   }
 
-  return (await hasComposeServiceContainer(
-    getBlueGreenServiceName(persistedActiveColor),
-    {
-      composeFile,
-      composeGlobalArgs,
-      env,
-      runCommand: run,
-    }
-  ))
-    ? persistedActiveColor
-    : null;
+  return null;
 }
 
 async function resolveBlueGreenStandbyColor(
@@ -592,15 +599,12 @@ async function resolveBlueGreenStandbyColor(
 
   const standbyColor = getNextBlueGreenColor(activeColor);
 
-  return (await hasComposeServiceContainer(
-    getBlueGreenServiceName(standbyColor),
-    {
-      composeFile,
-      composeGlobalArgs,
-      env,
-      runCommand: run,
-    }
-  ))
+  return (await isComposeServiceHealthy(getBlueGreenServiceName(standbyColor), {
+    composeFile,
+    composeGlobalArgs,
+    env,
+    runCommand: run,
+  }))
     ? standbyColor
     : null;
 }
@@ -944,6 +948,13 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
   };
   const activeServices = [BLUE_GREEN_PROXY_SERVICE, activeServiceName];
 
+  writeBlueGreenProxyConfig(activeColor, {
+    deploymentStamp,
+    fsImpl,
+    paths,
+    standbyColor: null,
+  });
+
   await retagCachedImageForService(cachedImageTag, activeServiceName, {
     composeFile,
     env: activeEnv,
@@ -980,12 +991,6 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
 
   writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
   writeBlueGreenActiveColor(activeColor, paths, fsImpl);
-  writeBlueGreenProxyConfig(activeColor, {
-    deploymentStamp,
-    fsImpl,
-    paths,
-    standbyColor: null,
-  });
   await validateBlueGreenProxyConfig({
     composeFile,
     composeGlobalArgs: parsed.composeGlobalArgs,

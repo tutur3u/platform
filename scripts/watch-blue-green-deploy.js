@@ -1429,6 +1429,11 @@ function getPrunableRecoveryCacheImageTags(
   return prunable;
 }
 
+function isMissingDockerImageError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return /No such image:/iu.test(message);
+}
+
 function getFailedDeploymentCountForCommit(deployments = [], commitHash) {
   if (!commitHash) {
     return 0;
@@ -2143,6 +2148,10 @@ async function pruneBlueGreenRecoveryCacheImages(
         runCommand: run,
       });
     } catch (error) {
+      if (isMissingDockerImageError(error)) {
+        continue;
+      }
+
       log.warn?.(
         `Unable to prune old blue/green recovery cache image ${imageTag}: ${error instanceof Error ? error.message : String(error)}`
       );
@@ -2935,6 +2944,26 @@ async function getProdComposeServiceContainerId(
   }
 }
 
+async function isContainerHealthyForStatus(
+  containerId,
+  { env, runCommand: run = runCommand }
+) {
+  if (!containerId) {
+    return false;
+  }
+
+  try {
+    return (
+      (await getContainerHealthStatus(containerId, {
+        env,
+        runCommand: run,
+      })) === 'healthy'
+    );
+  } catch {
+    return true;
+  }
+}
+
 async function resolveCurrentBlueGreenStatus({
   env,
   envFilePath = WEB_ENV_FILE,
@@ -2983,14 +3012,37 @@ async function resolveCurrentBlueGreenStatus({
       Boolean(serviceStates[color])
     );
     const activeContainerId = activeColor ? serviceStates[activeColor] : '';
+    const activeServiceRunning = await isContainerHealthyForStatus(
+      activeContainerId,
+      {
+        env,
+        runCommand: run,
+      }
+    );
     const standbyColor =
-      liveColors.find((color) => color !== activeColor) ?? null;
+      (
+        await Promise.all(
+          liveColors
+            .filter((color) => color !== activeColor)
+            .map(async (color) => ({
+              color,
+              healthy: await isContainerHealthyForStatus(serviceStates[color], {
+                env,
+                runCommand: run,
+              }),
+            }))
+        )
+      ).find(({ healthy }) => healthy)?.color ?? null;
+    const proxyRunning = await isContainerHealthyForStatus(proxyContainerId, {
+      env,
+      runCommand: run,
+    });
 
     return {
       activeColor,
-      activeServiceRunning: Boolean(activeContainerId),
+      activeServiceRunning,
       liveColors,
-      proxyRunning: Boolean(proxyContainerId),
+      proxyRunning,
       serviceContainers: {
         proxy: proxyContainerId,
         'web-blue': serviceStates.blue,
@@ -2998,7 +3050,7 @@ async function resolveCurrentBlueGreenStatus({
       },
       standbyColor,
       state:
-        activeColor && proxyContainerId && activeContainerId
+        activeColor && proxyRunning && activeServiceRunning
           ? 'serving'
           : proxyContainerId || liveColors.length > 0 || activeColor
             ? 'degraded'

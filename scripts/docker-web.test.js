@@ -23,12 +23,16 @@ const {
   parseEnvFile,
   readBlueGreenActiveColor,
   renderBlueGreenProxyConfig,
+  resolveBlueGreenActiveColor,
   rewriteLocalhostUrl,
   runComposeUpWithNameConflictRecovery,
   runDockerWebWorkflow,
   usesBlueGreenStrategy,
   writeBlueGreenActiveColor,
 } = require('./docker-web.js');
+const {
+  runBlueGreenCachedRecoveryWorkflow,
+} = require('./docker-web/blue-green.js');
 const { getWatchPaths } = require('./watch-blue-green/paths.js');
 
 function createFsStub({ envFileContent = '', hasEnvFile = true } = {}) {
@@ -148,6 +152,42 @@ test('usesBlueGreenStrategy only enables blue-green for production', () => {
     usesBlueGreenStrategy(parseArgs(['up', '--strategy', 'blue-green'])),
     false
   );
+});
+
+test('resolveBlueGreenActiveColor promotes a healthy standby over an unhealthy persisted active color', async () => {
+  const activeColor = await resolveBlueGreenActiveColor('blue', {
+    composeFile: PROD_COMPOSE_FILE,
+    env: { PATH: 'test-path' },
+    runCommand: async (command, args) => {
+      const key = `${command} ${args.join(' ')}`;
+
+      if (key === `docker compose -f ${PROD_COMPOSE_FILE} ps -q web-blue`) {
+        return { code: 0, signal: null, stderr: '', stdout: 'blue-123\n' };
+      }
+
+      if (key === `docker compose -f ${PROD_COMPOSE_FILE} ps -q web-green`) {
+        return { code: 0, signal: null, stderr: '', stdout: 'green-123\n' };
+      }
+
+      if (
+        key ===
+        'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123'
+      ) {
+        return { code: 0, signal: null, stderr: '', stdout: 'unhealthy\n' };
+      }
+
+      if (
+        key ===
+        'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123'
+      ) {
+        return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+      }
+
+      throw new Error(`Unexpected command: ${key}`);
+    },
+  });
+
+  assert.equal(activeColor, 'green');
 });
 
 test('parseEnvFile ignores comments and unquotes values', () => {
@@ -1422,6 +1462,138 @@ test('runDockerWebWorkflow ignores stale active colors without live containers',
           args.includes('exec') &&
           args.includes(BLUE_GREEN_PROXY_SERVICE) &&
           args.includes('reload')
+      )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runBlueGreenCachedRecoveryWorkflow writes a valid proxy config before starting the proxy', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-bg-cache-recovery-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getBlueGreenPaths(tempDir);
+  const calls = [];
+  let activeBootstrapped = false;
+  let standbyBootstrapped = false;
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+  writeBlueGreenActiveColor('blue', paths);
+
+  const runCommand = async (command, args) => {
+    calls.push([command, args]);
+
+    if (command === 'docker' && args[0] === 'image') {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (command === 'docker' && args[0] === 'tag') {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (
+      command === 'docker' &&
+      args[0] === 'compose' &&
+      args.includes('up') &&
+      args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+      args.includes('web-blue')
+    ) {
+      activeBootstrapped = true;
+      assert.match(
+        fs.readFileSync(paths.proxyConfigFile, 'utf8'),
+        /server web-blue:7803 resolve max_fails=1 fail_timeout=5s;/
+      );
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (
+      command === 'docker' &&
+      args[0] === 'compose' &&
+      args.includes('up') &&
+      args.includes('web-green')
+    ) {
+      standbyBootstrapped = true;
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === BLUE_GREEN_PROXY_SERVICE) {
+      return { code: 0, signal: null, stderr: '', stdout: 'proxy-123\n' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'web-blue') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: activeBootstrapped ? 'blue-123\n' : '',
+      };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'web-green') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: standbyBootstrapped ? 'green-123\n' : '',
+      };
+    }
+
+    if (args[0] === 'inspect') {
+      return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+    }
+
+    if (
+      args.includes('exec') &&
+      (args.includes('nginx') || args.includes('wget'))
+    ) {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    throw new Error(`Unexpected command: ${command} ${args.join(' ')}`);
+  };
+
+  try {
+    await runBlueGreenCachedRecoveryWorkflow(
+      {
+        action: 'up',
+        composeArgs: [],
+        composeGlobalArgs: ['--profile', 'redis'],
+        mode: 'prod',
+        strategy: 'blue-green',
+      },
+      {
+        cachedImageTag: 'platform-web-cache:cached123',
+        env: { PATH: 'test-path' },
+        envFilePath,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(readBlueGreenActiveColor(paths), 'blue');
+    const proxyConfig = fs.readFileSync(paths.proxyConfigFile, 'utf8');
+    assert.match(
+      proxyConfig,
+      /server web-blue:7803 resolve max_fails=1 fail_timeout=5s;/
+    );
+    assert.match(
+      proxyConfig,
+      /server web-green:7803 backup resolve max_fails=1 fail_timeout=5s;/
+    );
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args.includes('up') &&
+          args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+          args.includes('web-blue')
       )
     );
   } finally {

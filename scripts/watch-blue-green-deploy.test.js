@@ -1316,6 +1316,73 @@ test('resolveCurrentBlueGreenStatus reflects the active color and running servic
   }
 });
 
+test('resolveCurrentBlueGreenStatus marks an unhealthy active lane as degraded', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-blue-green-unhealthy-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
+
+    const status = await resolveCurrentBlueGreenStatus({
+      envFilePath,
+      fsImpl: fs,
+      paths,
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('proxy-123\n');
+        }
+
+        if (key === prodComposePsKey('web-green')) {
+          return createResult('green-123\n');
+        }
+
+        if (key === prodComposePsKey('web-blue')) {
+          return createResult('blue-123\n');
+        }
+
+        if (
+          key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123'
+        ) {
+          return createResult('unhealthy\n');
+        }
+
+        if (
+          key ===
+            'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123' ||
+          key ===
+            'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} proxy-123'
+        ) {
+          return createResult('healthy\n');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+    });
+
+    assert.equal(status.activeColor, 'green');
+    assert.equal(status.activeServiceRunning, false);
+    assert.equal(status.proxyRunning, true);
+    assert.equal(status.standbyColor, 'blue');
+    assert.equal(status.state, 'degraded');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('resolveCurrentBlueGreenStatus falls back to docker ps when compose inspection fails', async () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'watch-runtime-compose-fallback-')
@@ -2326,6 +2393,10 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         createResult('healthy\n'),
       ],
       [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123`,
+        createResult('healthy\n'),
+      ],
+      [
         `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} markitdown-123`,
         createResult('healthy\n'),
       ],
@@ -2788,6 +2859,10 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
           createResult('healthy\n'),
         ],
         [
+          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123`,
+          createResult('healthy\n'),
+        ],
+        [
           `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} markitdown-123`,
           createResult('healthy\n'),
         ],
@@ -2946,6 +3021,13 @@ test('runPendingDeployAfterRestart refreshes the live proxy before running blue/
           return createResult('green-123\n');
         }
 
+        if (
+          key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123'
+        ) {
+          return createResult('healthy\n');
+        }
+
         if (key === prodComposePsKey('web-blue')) {
           return createResult('');
         }
@@ -2996,6 +3078,7 @@ test('runPendingDeployAfterRestart refreshes the live proxy before running blue/
 
     assert.deepEqual(calls, [
       prodComposePsKey('web-green'),
+      'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123',
       prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
       prodComposePsKey('web-blue'),
       `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -t`,
