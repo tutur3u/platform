@@ -12,6 +12,17 @@ import {
   deleteWorkspaceExternalProjectAsset as deleteWorkspaceExternalProjectAssetInStore,
   updateWorkspaceExternalProjectAsset,
 } from '@/lib/external-projects/store';
+import {
+  WORKSPACE_STORAGE_PROVIDER_OPTIONS,
+  WORKSPACE_STORAGE_PROVIDER_R2,
+  WORKSPACE_STORAGE_PROVIDER_SUPABASE,
+  type WorkspaceStorageProvider,
+} from '@/lib/workspace-storage-config';
+import {
+  createWorkspaceStorageSignedReadUrl,
+  resolveWorkspaceStorageProvider,
+  WorkspaceStorageError,
+} from '@/lib/workspace-storage-provider';
 
 function isStorageObjectMissing(message: string | null | undefined) {
   if (!message) {
@@ -19,6 +30,33 @@ function isStorageObjectMissing(message: string | null | undefined) {
   }
 
   return message.toLowerCase().includes('object not found');
+}
+
+function getAssetStorageProvider(metadata: unknown) {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return null;
+  }
+
+  const provider = (metadata as Record<string, unknown>).provider;
+  return typeof provider === 'string' &&
+    WORKSPACE_STORAGE_PROVIDER_OPTIONS.includes(
+      provider as WorkspaceStorageProvider
+    )
+    ? (provider as WorkspaceStorageProvider)
+    : null;
+}
+
+function getProviderCandidates(input: {
+  activeProvider: WorkspaceStorageProvider;
+  metadataProvider: WorkspaceStorageProvider | null;
+}) {
+  const primaryProvider = input.metadataProvider ?? input.activeProvider;
+  const fallbackProvider =
+    primaryProvider === WORKSPACE_STORAGE_PROVIDER_R2
+      ? WORKSPACE_STORAGE_PROVIDER_SUPABASE
+      : WORKSPACE_STORAGE_PROVIDER_R2;
+
+  return [primaryProvider, fallbackProvider] as const;
 }
 
 const updateAssetSchema = z.object({
@@ -87,7 +125,7 @@ export async function GET(
     const { data: asset, error } = await admin
       .from('workspace_external_project_assets')
       .select(
-        'id, ws_id, entry_id, source_url, storage_path, workspace_external_project_entries!inner(status)'
+        'id, ws_id, entry_id, metadata, source_url, storage_path, workspace_external_project_entries!inner(status)'
       )
       .eq('id', assetId)
       .eq('ws_id', resolvedWsId)
@@ -124,27 +162,63 @@ export async function GET(
       );
     }
 
-    const { data: signed, error: signedError } = await admin.storage
-      .from('workspaces')
-      .createSignedUrl(`${resolvedWsId}/${asset.storage_path}`, 60 * 60, {
-        transform: transform as never,
-      });
+    const { provider: activeProvider } =
+      await resolveWorkspaceStorageProvider(resolvedWsId);
+    const providerCandidates = getProviderCandidates({
+      activeProvider,
+      metadataProvider: getAssetStorageProvider(asset.metadata),
+    });
 
-    if (isStorageObjectMissing(signedError?.message)) {
-      return NextResponse.json(
-        { error: 'Asset not available' },
-        { status: 404 }
-      );
+    for (const provider of providerCandidates) {
+      if (provider === WORKSPACE_STORAGE_PROVIDER_SUPABASE) {
+        const { data: signed, error: signedError } = await admin.storage
+          .from('workspaces')
+          .createSignedUrl(`${resolvedWsId}/${asset.storage_path}`, 60 * 60, {
+            transform: transform as never,
+          });
+
+        if (isStorageObjectMissing(signedError?.message)) {
+          continue;
+        }
+
+        if (signedError || !signed?.signedUrl) {
+          return NextResponse.json(
+            { error: 'Failed to resolve asset URL' },
+            { status: 500 }
+          );
+        }
+
+        return NextResponse.redirect(signed.signedUrl, { status: 307 });
+      }
+
+      try {
+        const signedUrl = await createWorkspaceStorageSignedReadUrl(
+          resolvedWsId,
+          asset.storage_path,
+          {
+            expiresIn: 60 * 60,
+            provider,
+          }
+        );
+
+        return NextResponse.redirect(signedUrl, { status: 307 });
+      } catch (error) {
+        if (error instanceof WorkspaceStorageError && error.status === 404) {
+          continue;
+        }
+
+        if (
+          error instanceof WorkspaceStorageError &&
+          error.message.includes('not fully configured')
+        ) {
+          continue;
+        }
+
+        throw error;
+      }
     }
 
-    if (signedError || !signed?.signedUrl) {
-      return NextResponse.json(
-        { error: 'Failed to resolve asset URL' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.redirect(signed.signedUrl, { status: 307 });
+    return NextResponse.json({ error: 'Asset not available' }, { status: 404 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

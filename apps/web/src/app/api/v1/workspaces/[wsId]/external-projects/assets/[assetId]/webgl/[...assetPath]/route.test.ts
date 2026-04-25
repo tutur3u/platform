@@ -185,6 +185,7 @@ describe('WebGL package asset route', () => {
     expect(html).toContain(
       '"Build/Mine Blast WebGL.loader.js":"/api/v1/workspaces/ws-1/external-projects/assets/asset-1/webgl/Build/Mine%20Blast%20WebGL.loader.js"'
     );
+    expect(html).toContain('new URL(baseHref,window.location.href)');
     expect(html).toContain('HTMLScriptElement');
     expect(html).toContain('canvas.width');
     expect(html).toContain('tuturuuu-webgl-download-status');

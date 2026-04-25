@@ -73,6 +73,7 @@ var hideTimer=0;
 var originalFetch=window.fetch;
 var OriginalXhr=window.XMLHttpRequest;
 var baseHref=${JSON.stringify(baseHref)};
+var packageBaseUrl=new URL(baseHref,window.location.href);
 var assetUrls=${JSON.stringify(assetUrls)};
 var currentCreateUnityInstance=window.createUnityInstance;
 function decodePath(value){
@@ -81,8 +82,8 @@ catch(error){return value;}
 }
 function assetUrlFor(value){
 if(typeof value!=='string'||!value){return value;}
-var url=new URL(value,baseHref);
-var basePath=new URL(baseHref,window.location.href).pathname;
+var url=new URL(value,packageBaseUrl);
+var basePath=packageBaseUrl.pathname;
 var relativePath=url.pathname.indexOf(basePath)===0?url.pathname.slice(basePath.length):url.pathname.replace(/^\\/+/, '');
 relativePath=decodePath(relativePath);
 return assetUrls[relativePath]||assetUrls[relativePath.replace(/^\\/+/, '')]||url.pathname;
