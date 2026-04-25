@@ -114,4 +114,41 @@ describe('readBlueGreenMonitoringSnapshot', () => {
       fs.rmSync(tempDir, { force: true, recursive: true });
     }
   });
+
+  it('reads a queued instant rollout request from the watcher control directory', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'blue-green-monitoring-instant-')
+    );
+
+    try {
+      fs.mkdirSync(path.join(tempDir, 'watch', 'control'), {
+        recursive: true,
+      });
+      fs.writeFileSync(
+        path.join(
+          tempDir,
+          'watch',
+          'control',
+          'blue-green-instant-rollout.request.json'
+        ),
+        JSON.stringify({
+          kind: 'sync-standby',
+          requestedAt: '2026-04-25T06:00:00.000Z',
+          requestedBy: 'user-1',
+          requestedByEmail: 'ops@platform.test',
+        })
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+
+      const snapshot = readBlueGreenMonitoringSnapshot({ now: 2000 });
+
+      expect(snapshot.control.instantRolloutRequest).toMatchObject({
+        kind: 'sync-standby',
+        requestedAt: '2026-04-25T06:00:00.000Z',
+        requestedBy: 'user-1',
+      });
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
 });

@@ -28,7 +28,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { dedupeBlueGreenDeployments } from './blue-green-monitoring-deployments';
 import {
   ExplorerPagination,
@@ -36,6 +36,7 @@ import {
   getTotalPages,
   paginateItems,
 } from './blue-green-monitoring-explorer-shared';
+import { formatClockTime } from './formatters';
 
 const ROLLBACK_SELECT_PAGE_SIZE = 10;
 
@@ -75,6 +76,11 @@ export function BlueGreenMonitoringRolloutControls({
     snapshot.watcher.health === 'live' &&
     snapshot.runtime.activeColor != null &&
     snapshot.runtime.standbyColor != null;
+  const latestDeployment = snapshot.deployments[0] ?? null;
+  const isStandbySyncBuilding =
+    latestDeployment?.deploymentKind === 'standby-refresh' &&
+    (latestDeployment.status === 'building' ||
+      latestDeployment.status === 'deploying');
   const isAlreadySynchronized =
     activeDeployment?.commitHash != null &&
     standbyDeployment?.commitHash != null &&
@@ -99,6 +105,10 @@ export function BlueGreenMonitoringRolloutControls({
       ''
   );
   const [rollbackPage, setRollbackPage] = useState(1);
+  const [localQueuedSyncAt, setLocalQueuedSyncAt] = useState<string | null>(
+    null
+  );
+  const [hasObservedSyncProgress, setHasObservedSyncProgress] = useState(false);
   const safeRollbackPage = getSafePage(
     rollbackPage,
     rollbackCandidates.length,
@@ -125,7 +135,8 @@ export function BlueGreenMonitoringRolloutControls({
       : visibleRollbackCandidates;
   const mutation = useMutation({
     mutationFn: () => requestBlueGreenInstantRollout(),
-    onSuccess: async () => {
+    onSuccess: async (response) => {
+      setLocalQueuedSyncAt(response.request.requestedAt);
       toast.success(t('controls.sync_success'));
       await queryClient.invalidateQueries({
         queryKey: ['infrastructure', 'monitoring', 'blue-green'],
@@ -163,6 +174,53 @@ export function BlueGreenMonitoringRolloutControls({
     },
   });
   const deploymentPin = snapshot.control.deploymentPin;
+  const remoteQueuedSyncAt =
+    snapshot.control.instantRolloutRequest?.requestedAt ?? null;
+  const queuedSyncAt = remoteQueuedSyncAt ?? localQueuedSyncAt;
+  const isSyncQueued = queuedSyncAt != null;
+  const isSyncLocked =
+    mutation.isPending || isSyncQueued || isStandbySyncBuilding;
+  const syncHint = isStandbySyncBuilding
+    ? t('controls.sync_building_hint')
+    : isSyncQueued
+      ? t('controls.sync_queued_hint', {
+          time: formatClockTime(queuedSyncAt),
+        })
+      : isAlreadySynchronized
+        ? t('controls.already_synced')
+        : canSyncStandby
+          ? t('controls.ready_hint')
+          : t('controls.unavailable_hint');
+  const syncButtonLabel = isStandbySyncBuilding
+    ? t('controls.sync_building')
+    : isSyncQueued
+      ? t('controls.sync_queued')
+      : mutation.isPending
+        ? t('controls.sync_pending')
+        : t('controls.sync_action');
+  const SyncButtonIcon =
+    mutation.isPending || isSyncQueued || isStandbySyncBuilding
+      ? Loader2
+      : RefreshCw;
+
+  useEffect(() => {
+    if (remoteQueuedSyncAt || isStandbySyncBuilding) {
+      setHasObservedSyncProgress(true);
+      return;
+    }
+
+    if (mutation.isPending || !hasObservedSyncProgress) {
+      return;
+    }
+
+    setLocalQueuedSyncAt(null);
+    setHasObservedSyncProgress(false);
+  }, [
+    hasObservedSyncProgress,
+    isStandbySyncBuilding,
+    mutation.isPending,
+    remoteQueuedSyncAt,
+  ]);
 
   return (
     <section className="rounded-lg border border-border/60 bg-background p-4">
@@ -213,17 +271,21 @@ export function BlueGreenMonitoringRolloutControls({
                 <p className="font-medium text-sm">
                   {t('controls.instant_rollout')}
                 </p>
-                <p className="text-muted-foreground text-sm">
-                  {isAlreadySynchronized
-                    ? t('controls.already_synced')
-                    : canSyncStandby
-                      ? t('controls.ready_hint')
-                      : t('controls.unavailable_hint')}
-                </p>
+                <p className="text-muted-foreground text-sm">{syncHint}</p>
               </div>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
+              {isSyncLocked ? (
+                <StatusChip
+                  icon={<Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  text={
+                    isStandbySyncBuilding
+                      ? t('controls.sync_building')
+                      : t('controls.sync_queued')
+                  }
+                />
+              ) : null}
               <StatusChip
                 icon={<GitBranch className="h-3.5 w-3.5" />}
                 text={t(`watcher_health.${snapshot.watcher.health}`)}
@@ -245,21 +307,14 @@ export function BlueGreenMonitoringRolloutControls({
             <Button
               className="mt-5 w-full"
               disabled={
-                !canSyncStandby || isAlreadySynchronized || mutation.isPending
+                !canSyncStandby || isAlreadySynchronized || isSyncLocked
               }
               onClick={() => mutation.mutate()}
             >
-              {mutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('controls.sync_pending')}
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  {t('controls.sync_action')}
-                </>
-              )}
+              <SyncButtonIcon
+                className={`mr-2 h-4 w-4 ${isSyncLocked ? 'animate-spin' : ''}`}
+              />
+              {syncButtonLabel}
             </Button>
           </div>
 

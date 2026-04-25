@@ -119,6 +119,13 @@ export interface BlueGreenDeploymentPin {
   requestedByEmail: string | null;
 }
 
+export interface BlueGreenInstantRolloutRequest {
+  kind: 'sync-standby';
+  requestedAt: string;
+  requestedBy: string;
+  requestedByEmail: string | null;
+}
+
 export interface BlueGreenMonitoringPeriodMetric {
   averageLatencyMs: number | null;
   bucketLabel: string;
@@ -199,6 +206,7 @@ export interface BlueGreenMonitoringSnapshot {
   };
   control: {
     deploymentPin: BlueGreenDeploymentPin | null;
+    instantRolloutRequest: BlueGreenInstantRolloutRequest | null;
   };
   deployments: BlueGreenMonitoringDeployment[];
   dockerResources: {
@@ -277,12 +285,7 @@ export interface BlueGreenMonitoringSnapshot {
 
 export interface RequestBlueGreenInstantRolloutResponse {
   message: string;
-  request: {
-    kind: 'sync-standby';
-    requestedAt: string;
-    requestedBy: string;
-    requestedByEmail: string | null;
-  };
+  request: BlueGreenInstantRolloutRequest;
 }
 
 export interface PinBlueGreenDeploymentPayload {

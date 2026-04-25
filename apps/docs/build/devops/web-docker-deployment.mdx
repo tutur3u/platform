@@ -568,6 +568,10 @@ Dashboard details:
   failure, or no-op, and uses it to rebuild the standby color immediately so
   blue and green can converge on the same commit without waiting for the stale
   standby window.
+- The dashboard reads that pending instant-rollout request back from the
+  watcher control directory. While the request is queued, or while the latest
+  standby refresh is building/deploying, the sync button stays disabled and
+  shows a queued/building status instead of allowing duplicate control files.
 - The monitoring dashboard's rollback pin action writes
   `tmp/docker-web/watch/control/blue-green-deployment-pin.json`. The watcher
   treats that file as authoritative: it skips normal fetch/pull work, checks out

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type {
   BlueGreenDeploymentPin,
+  BlueGreenInstantRolloutRequest,
   BlueGreenMonitoringDockerContainer,
   BlueGreenMonitoringDockerHealth,
   BlueGreenMonitoringPaginatedResult,
@@ -450,6 +451,34 @@ function normalizeDeploymentPin(value: unknown): BlueGreenDeploymentPin | null {
   };
 }
 
+function normalizeInstantRolloutRequest(
+  value: unknown
+): BlueGreenInstantRolloutRequest | null {
+  const record = toRecord(value);
+  const requestedAt =
+    typeof record?.requestedAt === 'string' && record.requestedAt.length > 0
+      ? record.requestedAt
+      : null;
+  const requestedBy =
+    typeof record?.requestedBy === 'string' && record.requestedBy.length > 0
+      ? record.requestedBy
+      : null;
+
+  if (record?.kind !== 'sync-standby' || !requestedAt || !requestedBy) {
+    return null;
+  }
+
+  return {
+    kind: 'sync-standby',
+    requestedAt,
+    requestedBy,
+    requestedByEmail:
+      typeof record.requestedByEmail === 'string'
+        ? record.requestedByEmail
+        : null,
+  };
+}
+
 function normalizeDockerHealth(
   value: unknown
 ): BlueGreenMonitoringDockerHealth {
@@ -750,6 +779,12 @@ export function readBlueGreenMonitoringSnapshot({
       fsImpl
     )
   );
+  const instantRolloutRequest = normalizeInstantRolloutRequest(
+    readJsonFile<Record<string, unknown>>(
+      path.join(watchDir, 'control', 'blue-green-instant-rollout.request.json'),
+      fsImpl
+    )
+  );
 
   const activeColor = readTextFile(path.join(prodDir, 'active-color'), fsImpl);
   const deploymentStamp = readTextFile(
@@ -857,6 +892,7 @@ export function readBlueGreenMonitoringSnapshot({
     },
     control: {
       deploymentPin,
+      instantRolloutRequest,
     },
     dockerResources: {
       allContainers,

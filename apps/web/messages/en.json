@@ -1560,8 +1560,12 @@
       "standby_commit_chip": "Standby {commit}",
       "standby_lane": "Standby Lane",
       "sync_action": "Sync Standby Now",
+      "sync_building": "Building Standby",
+      "sync_building_hint": "The watcher is rebuilding the standby color. This control will unlock after the refresh finishes.",
       "sync_error": "Could not queue the standby sync request.",
       "sync_pending": "Queueing Sync",
+      "sync_queued": "Sync Queued",
+      "sync_queued_hint": "Queued at {time}. The watcher will pick up the standby rebuild on its next polling cycle.",
       "sync_success": "Queued the standby sync request.",
       "title": "Sync both colors to the same commit",
       "unavailable_hint": "This control is available only while the watcher is live and both colors are discoverable."
