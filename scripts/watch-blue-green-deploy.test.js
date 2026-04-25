@@ -2419,6 +2419,253 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
   }
 });
 
+test('runDeployWatchIteration bootstraps active and standby deployments when no active runtime exists', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-missing-active-recovery-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const composeProjectName = path.basename(tempDir);
+  const activeServiceImageName = `${composeProjectName}-web-blue`;
+  const cachedImageTag = `${composeProjectName}-web-cache:bbb222`;
+  const standbyServiceImageName = `${composeProjectName}-web-green`;
+  const calls = [];
+  const pendingStates = [];
+  const latestCommitHash = 'bbb222222222222222222';
+  let activeBootstrapped = false;
+  let standbyBootstrapped = false;
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: Date.parse('2026-04-18T10:00:00.000Z'),
+          activeColor: 'green',
+          buildDurationMs: 20_000,
+          commitHash: 'bbb222222222222222222',
+          commitShortHash: 'bbb222',
+          commitSubject: 'Previous recovery point',
+          endedAt: Date.parse('2026-04-18T10:30:00.000Z'),
+          finishedAt: Date.parse('2026-04-18T10:00:00.000Z'),
+          imageTag: cachedImageTag,
+          startedAt: Date.parse('2026-04-18T09:59:40.000Z'),
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+
+    const runCommand = async (command, args) => {
+      const key = `${command} ${args.join(' ')}`;
+      calls.push(key);
+
+      if (key === 'git rev-parse --abbrev-ref HEAD') {
+        return createResult('main\n');
+      }
+
+      if (key === 'git status --porcelain') {
+        return createResult('');
+      }
+
+      if (key === 'git fetch origin main') {
+        return createResult('');
+      }
+
+      if (key === 'git rev-parse HEAD') {
+        return createResult(`${latestCommitHash}\n`);
+      }
+
+      if (key === 'git rev-parse origin/main') {
+        return createResult(`${latestCommitHash}\n`);
+      }
+
+      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+        return createResult(
+          `${latestCommitHash}\nbbb222\nRecover missing runtime\n2026-04-18T10:58:00.000Z\n`
+        );
+      }
+
+      if (key === `docker image inspect ${cachedImageTag}`) {
+        return createResult('');
+      }
+
+      if (key === `docker tag ${cachedImageTag} ${activeServiceImageName}`) {
+        activeBootstrapped = true;
+        fs.writeFileSync(paths.blueGreen.stateFile, 'blue\n', 'utf8');
+        fs.writeFileSync(
+          paths.blueGreen.deploymentStampFile,
+          'deploy-recovery\n',
+          'utf8'
+        );
+        return createResult('');
+      }
+
+      if (key === `docker tag ${cachedImageTag} ${standbyServiceImageName}`) {
+        standbyBootstrapped = true;
+        fs.writeFileSync(
+          paths.blueGreen.deploymentStampFile,
+          'deploy-recovery\n',
+          'utf8'
+        );
+        return createResult('');
+      }
+
+      if (
+        key ===
+        'docker logs --timestamps --since 2026-04-18T10:00:00.000Z proxy-123'
+      ) {
+        return createResult('');
+      }
+
+      if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+        return createResult('proxy-123\n');
+      }
+
+      if (key === prodComposePsKey('web-blue')) {
+        return createResult(activeBootstrapped ? 'blue-123\n' : '');
+      }
+
+      if (key === prodComposePsKey('web-green')) {
+        return createResult(standbyBootstrapped ? 'green-123\n' : '');
+      }
+
+      if (
+        key ===
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans ${BLUE_GREEN_PROXY_SERVICE} web-blue`
+      ) {
+        return createResult('');
+      }
+
+      if (
+        key ===
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-green`
+      ) {
+        return createResult('');
+      }
+
+      if (
+        key ===
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q ${BLUE_GREEN_PROXY_SERVICE}`
+      ) {
+        return createResult('proxy-123\n');
+      }
+
+      if (
+        key ===
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-blue`
+      ) {
+        return createResult(activeBootstrapped ? 'blue-123\n' : '');
+      }
+
+      if (
+        key ===
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-green`
+      ) {
+        return createResult(standbyBootstrapped ? 'green-123\n' : '');
+      }
+
+      if (
+        key ===
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} proxy-123`
+      ) {
+        return createResult('healthy\n');
+      }
+
+      if (
+        key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123' ||
+        key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123'
+      ) {
+        return createResult('healthy\n');
+      }
+
+      if (
+        key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -t` ||
+        key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload` ||
+        key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`
+      ) {
+        return createResult('');
+      }
+
+      throw new Error(`Unexpected command: ${key}`);
+    };
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        envFilePath,
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        now: () => Date.parse('2026-04-18T11:16:00.000Z'),
+        onDeploymentStart: (state) => {
+          pendingStates.push(state);
+        },
+        paths,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(result.status, 'recovered');
+    assert.equal(result.currentBlueGreen.activeColor, 'blue');
+    assert.equal(result.currentBlueGreen.standbyColor, 'green');
+    assert.equal(result.deployments[0].runtimeState, 'standby');
+    assert.equal(result.deployments[1].runtimeState, 'active');
+    assert.deepEqual(
+      pendingStates.map((state) => state.pendingDeployment.deploymentKind),
+      ['recovery-cache', 'standby-refresh']
+    );
+    assert.ok(
+      calls.includes(
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans ${BLUE_GREEN_PROXY_SERVICE} web-blue`
+      )
+    );
+    assert.ok(
+      calls.includes(
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-green`
+      )
+    );
+    assert.equal(
+      calls.some((call) => call.startsWith('bun ')),
+      false
+    );
+    assert.equal(
+      calls.some((call) => call.includes('--build')),
+      false
+    );
+    assert.ok(
+      result.deployments.filter((entry) => entry.status === 'successful')
+        .length >= 2
+    );
+    assert.deepEqual(
+      readDeploymentHistory(paths, fs)
+        .filter((entry) => entry.status === 'successful')
+        .slice(0, 3)
+        .map((entry) => entry.commitShortHash),
+      ['bbb222', 'bbb222', 'bbb222']
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('runDeployWatchIteration honors an instant standby sync request before the stale window', async () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'watch-instant-standby-refresh-')
@@ -2656,6 +2903,9 @@ test('runPendingDeployAfterRestart refreshes the live proxy before running blue/
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-pending-'));
   const paths = getWatchPaths(tempDir);
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const composeProjectName = path.basename(tempDir);
+  const activeServiceImageName = `${composeProjectName}-web-green`;
+  const cachedImageTag = `${composeProjectName}-web-cache:bbb222`;
   const logs = [];
   const calls = [];
 
@@ -2732,6 +2982,14 @@ test('runPendingDeployAfterRestart refreshes the live proxy before running blue/
           return createResult('');
         }
 
+        if (key === `docker image inspect ${activeServiceImageName}`) {
+          return createResult('');
+        }
+
+        if (key === `docker tag ${activeServiceImageName} ${cachedImageTag}`) {
+          return createResult('');
+        }
+
         throw new Error(`Unexpected command: ${key}`);
       },
     });
@@ -2744,12 +3002,15 @@ test('runPendingDeployAfterRestart refreshes the live proxy before running blue/
       `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload`,
       `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`,
       `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`,
+      `docker image inspect ${activeServiceImageName}`,
+      `docker tag ${activeServiceImageName} ${cachedImageTag}`,
     ]);
     assert.equal(result.refreshedProxy, true);
     assert.equal(result.activeColor, 'green');
     assert.equal(result.buildDurationMs, 3000);
     assert.equal(result.history.length, 1);
     assert.equal(result.history[0].status, 'successful');
+    assert.equal(result.history[0].imageTag, cachedImageTag);
     assert.match(
       logs[0],
       /Refreshed live blue\/green proxy config before deployment/

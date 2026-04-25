@@ -236,6 +236,14 @@ Additional behavior:
 - If blue/green is already live and the standby color remains on an older
   revision for 15 minutes, the watcher rebuilds only the standby color in
   place. The active color remains primary for new traffic the whole time.
+- If the watcher sees a degraded blue/green runtime with a proxy or runtime
+  marker present but no active web color serving traffic, it immediately
+  retags the latest retained successful image into the active web color and
+  starts it with `--no-build`. It prefers a retained image for the current
+  `main` commit, then falls back to the newest retained successful image so
+  the runtime can recover first and reconcile to `main` afterward. It then
+  retags the same cached image into the opposite color and starts that as the
+  warm standby, creating two ready copies without waiting for a fresh build.
 - That standby catch-up path also stops and removes the stale standby
   container before rebuilding it, so health checks target the fresh
   replacement container rather than an outdated standby instance.
@@ -246,6 +254,13 @@ Additional behavior:
   recent history, prioritizing in-progress rollouts first, then the live
   promoted color, then the warm standby. Direct manual
   `bun serve:web:docker:bg` runs are written into that same history too.
+- Cached recoveries write both the active recovery and the standby refresh into
+  the same retained ledger, preserving the current two warm copies plus the
+  prior successful deployment as the fastest rollback reference. If no retained
+  image exists, the watcher falls back to the normal recovery build path.
+- Successful active and standby builds tag the service image as
+  `{compose-project}-web-cache:{commit}` and prune older retained cache tags
+  beyond the three newest successful deployments.
 
 ### Monitoring Surfaces
 

@@ -6,10 +6,14 @@ const path = require('node:path');
 const readline = require('node:readline');
 
 const {
+  getBlueGreenCacheImageTag,
+  getBlueGreenServiceName,
   readBlueGreenActiveColor,
   readBlueGreenDeploymentStamp,
   refreshBlueGreenProxyIfRunning,
+  runBlueGreenCachedRecoveryWorkflow,
   runBlueGreenStandbyRefreshWorkflow,
+  tagBlueGreenServiceImageForCache,
 } = require('./docker-web/blue-green.js');
 const {
   ensureProductionRedisToken,
@@ -72,6 +76,7 @@ const MAX_GIT_FAILURE_BACKOFF_MS = 15 * 60_000;
 const DEFAULT_REPLACE_WATCHER_TIMEOUT_MS = 5_000;
 const CONTAINER_SELF_RESTART_EXIT_CODE = 75;
 const MAX_FAILED_DEPLOYMENTS_PER_COMMIT = 3;
+const MAX_RECOVERY_CACHE_IMAGES = 3;
 const MAX_EVENTS = 8;
 const DISPLAY_DEPLOYMENTS = 3;
 const BLUE_GREEN_COLORS = ['blue', 'green'];
@@ -640,6 +645,8 @@ function summarizeResult(result) {
       return colorize('yellow', 'Pinned to rollback');
     case 'pinned-deployed':
       return colorize('green', 'Pinned rollback deployed');
+    case 'recovered':
+      return colorize('green', 'Recovered active and standby');
     case 'restarting':
       return colorize('magenta', 'Restarting watcher');
     case 'standby-refresh-failed':
@@ -1362,6 +1369,66 @@ function getLatestSuccessfulDeploymentCommitHash(deployments = []) {
   return latestSuccessfulDeployment?.commitHash ?? null;
 }
 
+function getLatestCachedSuccessfulDeployment(deployments = [], commitHash) {
+  return deployments.find(
+    (entry) =>
+      entry?.status === 'successful' &&
+      typeof entry.imageTag === 'string' &&
+      entry.imageTag.length > 0 &&
+      (!commitHash || entry.commitHash === commitHash)
+  );
+}
+
+function getRecoveryCacheImageTagsToKeep(
+  deployments = [],
+  { extraImageTag = null, max = MAX_RECOVERY_CACHE_IMAGES } = {}
+) {
+  const imageTags = [];
+
+  if (typeof extraImageTag === 'string' && extraImageTag.length > 0) {
+    imageTags.push(extraImageTag);
+  }
+
+  for (const entry of deployments) {
+    if (
+      entry?.status !== 'successful' ||
+      typeof entry.imageTag !== 'string' ||
+      entry.imageTag.length === 0 ||
+      imageTags.includes(entry.imageTag)
+    ) {
+      continue;
+    }
+
+    imageTags.push(entry.imageTag);
+  }
+
+  return imageTags.slice(0, max);
+}
+
+function getPrunableRecoveryCacheImageTags(
+  deployments = [],
+  keptImageTags = []
+) {
+  const kept = new Set(keptImageTags);
+  const prunable = [];
+
+  for (const entry of deployments) {
+    if (
+      entry?.status !== 'successful' ||
+      typeof entry.imageTag !== 'string' ||
+      entry.imageTag.length === 0 ||
+      kept.has(entry.imageTag) ||
+      prunable.includes(entry.imageTag)
+    ) {
+      continue;
+    }
+
+    prunable.push(entry.imageTag);
+  }
+
+  return prunable;
+}
+
 function getFailedDeploymentCountForCommit(deployments = [], commitHash) {
   if (!commitHash) {
     return 0;
@@ -1793,6 +1860,27 @@ function getRuntimeDeployment(deployments, runtimeState) {
   );
 }
 
+function getExpectedStandbyColor(activeColor) {
+  if (activeColor === 'blue') {
+    return 'green';
+  }
+
+  if (activeColor === 'green') {
+    return 'blue';
+  }
+
+  return null;
+}
+
+function needsActiveRuntimeRecovery(runtimeSnapshot) {
+  const currentBlueGreen = runtimeSnapshot?.currentBlueGreen;
+
+  return (
+    currentBlueGreen?.state === 'degraded' &&
+    (!currentBlueGreen.activeColor || !currentBlueGreen.activeServiceRunning)
+  );
+}
+
 function getStandbyRefreshCandidate(
   runtimeSnapshot,
   latestCommit,
@@ -2031,6 +2119,82 @@ async function runBunUpgradeAndInstall({
   });
 }
 
+async function pruneBlueGreenRecoveryCacheImages(
+  deploymentHistory,
+  {
+    env,
+    extraImageTag = null,
+    log = console,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  const keptImageTags = getRecoveryCacheImageTagsToKeep(deploymentHistory, {
+    extraImageTag,
+  });
+  const prunableImageTags = getPrunableRecoveryCacheImageTags(
+    deploymentHistory,
+    keptImageTags
+  );
+
+  for (const imageTag of prunableImageTags) {
+    try {
+      await runChecked('docker', ['image', 'rm', imageTag], {
+        env,
+        runCommand: run,
+      });
+    } catch (error) {
+      log.warn?.(
+        `Unable to prune old blue/green recovery cache image ${imageTag}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  return keptImageTags;
+}
+
+async function cacheBlueGreenDeploymentImage({
+  activeColor,
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  latestCommit,
+  log = console,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  if (!activeColor || !latestCommit?.shortHash) {
+    return null;
+  }
+
+  const composeFile = getComposeFile('prod');
+  const composeEnv = getComposeEnvironment({
+    baseEnv: env ?? process.env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+    withRedis: true,
+    withSupportServices: true,
+  });
+  const serviceName = getBlueGreenServiceName(activeColor);
+  const imageTag = getBlueGreenCacheImageTag(latestCommit.shortHash, {
+    composeFile,
+    env: composeEnv,
+  });
+
+  try {
+    return await tagBlueGreenServiceImageForCache(serviceName, imageTag, {
+      composeFile,
+      env: composeEnv,
+      runCommand: run,
+    });
+  } catch (error) {
+    log.warn?.(
+      `Unable to cache blue/green image ${imageTag} for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return null;
+  }
+}
+
 async function runBlueGreenStandbyRefresh({
   env,
   envFilePath = WEB_ENV_FILE,
@@ -2054,6 +2218,415 @@ async function runBlueGreenStandbyRefresh({
       runCommand: run,
     }
   );
+}
+
+async function runBlueGreenCachedRecovery({
+  cachedImageTag,
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  return runBlueGreenCachedRecoveryWorkflow(
+    {
+      action: 'up',
+      composeArgs: [],
+      composeGlobalArgs: ['--profile', 'redis'],
+      mode: 'prod',
+      strategy: 'blue-green',
+    },
+    {
+      cachedImageTag,
+      env,
+      envFilePath,
+      fsImpl,
+      rootDir,
+      runCommand: run,
+    }
+  );
+}
+
+async function runMissingActiveDeploymentRecovery(
+  latestCommit,
+  {
+    attachRuntime,
+    checkedAt,
+    deployCommand = DEFAULT_DEPLOY_COMMAND,
+    env,
+    envFilePath = WEB_ENV_FILE,
+    fsImpl = fs,
+    log = console,
+    now = () => Date.now(),
+    onDeploymentStart = () => {},
+    paths = getWatchPaths(),
+    rootDir = ROOT_DIR,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  const deploymentHistory = readDeploymentHistory(paths, fsImpl);
+  const cachedDeployment =
+    getLatestCachedSuccessfulDeployment(deploymentHistory, latestCommit.hash) ??
+    getLatestCachedSuccessfulDeployment(deploymentHistory);
+
+  log.warn?.(
+    `No active blue/green deployment is serving traffic. Bootstrapping ${latestCommit.shortHash} as active and standby to avoid downtime.`
+  );
+
+  if (cachedDeployment) {
+    const cachedCommit = {
+      hash: cachedDeployment.commitHash ?? latestCommit.hash,
+      shortHash:
+        cachedDeployment.commitShortHash ??
+        cachedDeployment.commitHash?.slice(0, 7) ??
+        latestCommit.shortHash,
+      subject: cachedDeployment.commitSubject ?? latestCommit.subject,
+    };
+    const activeStartedAt = now();
+    onDeploymentStart({
+      checkedAt,
+      latestCommit: cachedCommit,
+      pendingDeployment: createPendingDeploymentEntry({
+        activeColor: cachedDeployment.activeColor ?? null,
+        deploymentKind: 'recovery-cache',
+        latestCommit: cachedCommit,
+        startedAt: activeStartedAt,
+        status: 'deploying',
+      }),
+    });
+
+    try {
+      const recovery = await runBlueGreenCachedRecovery({
+        cachedImageTag: cachedDeployment.imageTag,
+        env,
+        envFilePath,
+        fsImpl,
+        rootDir,
+        runCommand: run,
+      });
+      const activeFinishedAt = now();
+      let history = appendDeploymentHistory(
+        {
+          activatedAt: activeFinishedAt,
+          activeColor: recovery.activeColor,
+          buildDurationMs: Math.max(0, activeFinishedAt - activeStartedAt),
+          commitHash: cachedCommit.hash,
+          commitShortHash: cachedCommit.shortHash,
+          commitSubject: cachedCommit.subject,
+          deploymentKind: 'recovery-cache',
+          deploymentStamp: recovery.deploymentStamp,
+          finishedAt: activeFinishedAt,
+          imageTag: recovery.cachedImageTag,
+          startedAt: activeStartedAt,
+          status: 'successful',
+        },
+        {
+          fsImpl,
+          paths,
+        }
+      );
+      const standbyStartedAt = now();
+      onDeploymentStart({
+        checkedAt,
+        latestCommit: cachedCommit,
+        pendingDeployment: createPendingDeploymentEntry({
+          activeColor: recovery.standbyColor,
+          deploymentKind: 'standby-refresh',
+          latestCommit: cachedCommit,
+          startedAt: standbyStartedAt,
+          status: 'deploying',
+        }),
+      });
+      const standbyFinishedAt = now();
+      history = appendDeploymentHistory(
+        {
+          activatedAt: standbyFinishedAt,
+          activeColor: recovery.standbyColor,
+          buildDurationMs: Math.max(0, standbyFinishedAt - standbyStartedAt),
+          commitHash: cachedCommit.hash,
+          commitShortHash: cachedCommit.shortHash,
+          commitSubject: cachedCommit.subject,
+          deploymentKind: 'standby-refresh',
+          deploymentStamp: recovery.deploymentStamp,
+          finishedAt: standbyFinishedAt,
+          imageTag: recovery.cachedImageTag,
+          startedAt: standbyStartedAt,
+          status: 'successful',
+        },
+        {
+          fsImpl,
+          paths,
+        }
+      );
+      await pruneBlueGreenRecoveryCacheImages(history, {
+        env,
+        extraImageTag: recovery.cachedImageTag,
+        log,
+        runCommand: run,
+      });
+
+      log.info?.(
+        `Recovered blue/green runtime from cached image ${cachedDeployment.imageTag} with active ${recovery.activeColor} and standby ${recovery.standbyColor} for ${cachedCommit.shortHash}.`
+      );
+
+      return attachRuntime(
+        {
+          checkedAt,
+          cachedImageTag: cachedDeployment.imageTag,
+          latestCommit,
+          status: 'recovered',
+        },
+        history
+      );
+    } catch (error) {
+      const activeFinishedAt = now();
+      const history = appendDeploymentHistory(
+        {
+          buildDurationMs: Math.max(0, activeFinishedAt - activeStartedAt),
+          commitHash: cachedCommit.hash,
+          commitShortHash: cachedCommit.shortHash,
+          commitSubject: cachedCommit.subject,
+          deploymentKind: 'recovery-cache',
+          finishedAt: activeFinishedAt,
+          imageTag: cachedDeployment.imageTag,
+          startedAt: activeStartedAt,
+          status: 'failed',
+        },
+        {
+          fsImpl,
+          paths,
+        }
+      );
+
+      log.error?.(
+        `Cached blue/green runtime recovery failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+      );
+
+      return attachRuntime(
+        {
+          checkedAt,
+          error,
+          latestCommit,
+          status: 'deploy-failed',
+        },
+        history
+      );
+    }
+  }
+
+  log.info?.(
+    `Refreshing Bun runtime and dependencies for ${latestCommit.shortHash} before runtime recovery.`
+  );
+
+  await runBunUpgradeAndInstall({
+    env,
+    runCommand: run,
+  });
+
+  const deployStartedAt = now();
+  onDeploymentStart({
+    checkedAt,
+    latestCommit,
+    pendingDeployment: createPendingDeploymentEntry({
+      deploymentKind: 'recovery-bootstrap',
+      latestCommit,
+      startedAt: deployStartedAt,
+      status: 'building',
+    }),
+  });
+
+  let history;
+
+  try {
+    await runBlueGreenDeploy({
+      deployCommand,
+      env,
+      runCommand: run,
+    });
+
+    const deployFinishedAt = now();
+    const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+    const deploymentStamp = readBlueGreenDeploymentStamp(
+      paths.blueGreen,
+      fsImpl
+    );
+    const imageTag = await cacheBlueGreenDeploymentImage({
+      activeColor,
+      env,
+      envFilePath,
+      fsImpl,
+      latestCommit,
+      log,
+      rootDir,
+      runCommand: run,
+    });
+
+    history = appendDeploymentHistory(
+      {
+        activatedAt: deployFinishedAt,
+        activeColor,
+        buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+        commitHash: latestCommit.hash,
+        commitShortHash: latestCommit.shortHash,
+        commitSubject: latestCommit.subject,
+        deploymentKind: 'recovery-bootstrap',
+        deploymentStamp,
+        finishedAt: deployFinishedAt,
+        ...(imageTag ? { imageTag } : {}),
+        startedAt: deployStartedAt,
+        status: 'successful',
+      },
+      {
+        fsImpl,
+        paths,
+      }
+    );
+  } catch (error) {
+    const deployFinishedAt = now();
+    history = appendDeploymentHistory(
+      {
+        buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+        commitHash: latestCommit.hash,
+        commitShortHash: latestCommit.shortHash,
+        commitSubject: latestCommit.subject,
+        deploymentKind: 'recovery-bootstrap',
+        finishedAt: deployFinishedAt,
+        startedAt: deployStartedAt,
+        status: 'failed',
+      },
+      {
+        fsImpl,
+        paths,
+      }
+    );
+
+    log.error?.(
+      `Blue/green runtime recovery failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+    );
+
+    return attachRuntime(
+      {
+        checkedAt,
+        error,
+        latestCommit,
+        status: 'deploy-failed',
+      },
+      history
+    );
+  }
+
+  const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+  const standbyColor = getExpectedStandbyColor(activeColor);
+  const standbyStartedAt = now();
+
+  onDeploymentStart({
+    checkedAt,
+    latestCommit,
+    pendingDeployment: createPendingDeploymentEntry({
+      activeColor: standbyColor,
+      deploymentKind: 'standby-refresh',
+      latestCommit,
+      startedAt: standbyStartedAt,
+      status: 'building',
+    }),
+  });
+
+  try {
+    const standbyResult = await runBlueGreenStandbyRefresh({
+      env,
+      envFilePath,
+      fsImpl,
+      rootDir,
+      runCommand: run,
+    });
+    const standbyFinishedAt = now();
+    const deploymentStamp = readBlueGreenDeploymentStamp(
+      paths.blueGreen,
+      fsImpl
+    );
+    const standbyImageTag = await cacheBlueGreenDeploymentImage({
+      activeColor: standbyResult.standbyColor ?? standbyColor,
+      env,
+      envFilePath,
+      fsImpl,
+      latestCommit,
+      log,
+      rootDir,
+      runCommand: run,
+    });
+    history = appendDeploymentHistory(
+      {
+        activatedAt: standbyFinishedAt,
+        activeColor: standbyResult.standbyColor ?? standbyColor,
+        buildDurationMs: Math.max(0, standbyFinishedAt - standbyStartedAt),
+        commitHash: latestCommit.hash,
+        commitShortHash: latestCommit.shortHash,
+        commitSubject: latestCommit.subject,
+        deploymentKind: 'standby-refresh',
+        deploymentStamp,
+        finishedAt: standbyFinishedAt,
+        ...(standbyImageTag ? { imageTag: standbyImageTag } : {}),
+        startedAt: standbyStartedAt,
+        status: 'successful',
+      },
+      {
+        fsImpl,
+        paths,
+      }
+    );
+    await pruneBlueGreenRecoveryCacheImages(history, {
+      env,
+      extraImageTag: standbyImageTag ?? imageTag,
+      log,
+      runCommand: run,
+    });
+
+    log.info?.(
+      `Recovered blue/green runtime with active ${activeColor ?? 'unknown'} and standby ${standbyResult.standbyColor ?? standbyColor ?? 'unknown'} for ${latestCommit.shortHash}.`
+    );
+
+    return attachRuntime(
+      {
+        checkedAt,
+        latestCommit,
+        status: 'recovered',
+      },
+      history
+    );
+  } catch (error) {
+    const standbyFinishedAt = now();
+    history = appendDeploymentHistory(
+      {
+        activeColor: standbyColor,
+        buildDurationMs: Math.max(0, standbyFinishedAt - standbyStartedAt),
+        commitHash: latestCommit.hash,
+        commitShortHash: latestCommit.shortHash,
+        commitSubject: latestCommit.subject,
+        deploymentKind: 'standby-refresh',
+        finishedAt: standbyFinishedAt,
+        startedAt: standbyStartedAt,
+        status: 'failed',
+      },
+      {
+        fsImpl,
+        paths,
+      }
+    );
+
+    log.error?.(
+      `Recovered active ${activeColor ?? 'unknown'} but standby recovery failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+    );
+
+    return attachRuntime(
+      {
+        checkedAt,
+        error,
+        latestCommit,
+        status: 'standby-refresh-failed',
+      },
+      history
+    );
+  }
 }
 
 async function runPendingDeployAfterRestart({
@@ -2092,6 +2665,16 @@ async function runPendingDeployAfterRestart({
   const deployFinishedAt = now();
   const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
   const deploymentStamp = readBlueGreenDeploymentStamp(paths.blueGreen, fsImpl);
+  const imageTag = await cacheBlueGreenDeploymentImage({
+    activeColor,
+    env,
+    envFilePath,
+    fsImpl,
+    latestCommit,
+    log,
+    rootDir,
+    runCommand: run,
+  });
   const history = appendDeploymentHistory(
     {
       activatedAt: deployFinishedAt,
@@ -2102,6 +2685,7 @@ async function runPendingDeployAfterRestart({
       commitSubject: latestCommit.subject,
       deploymentStamp,
       finishedAt: deployFinishedAt,
+      ...(imageTag ? { imageTag } : {}),
       startedAt: deployStartedAt,
       status: 'successful',
     },
@@ -2110,6 +2694,12 @@ async function runPendingDeployAfterRestart({
       paths,
     }
   );
+  await pruneBlueGreenRecoveryCacheImages(history, {
+    env,
+    extraImageTag: imageTag,
+    log,
+    runCommand: run,
+  });
 
   return {
     activeColor,
@@ -3045,6 +3635,16 @@ async function runPinnedDeploymentIteration(
       paths.blueGreen,
       fsImpl
     );
+    const imageTag = await cacheBlueGreenDeploymentImage({
+      activeColor,
+      env,
+      envFilePath,
+      fsImpl,
+      latestCommit,
+      log,
+      rootDir,
+      runCommand: run,
+    });
     const history = appendDeploymentHistory(
       {
         activatedAt: deployFinishedAt,
@@ -3056,6 +3656,7 @@ async function runPinnedDeploymentIteration(
         deploymentKind: 'rollback-pin',
         deploymentStamp,
         finishedAt: deployFinishedAt,
+        ...(imageTag ? { imageTag } : {}),
         pinnedBy: deploymentPin.requestedBy,
         pinnedByEmail: deploymentPin.requestedByEmail,
         startedAt: deployStartedAt,
@@ -3066,6 +3667,12 @@ async function runPinnedDeploymentIteration(
         paths,
       }
     );
+    await pruneBlueGreenRecoveryCacheImages(history, {
+      env,
+      extraImageTag: imageTag,
+      log,
+      runCommand: run,
+    });
 
     log.info?.(`Pinned rollback deployed for ${latestCommit.shortHash}.`);
 
@@ -3240,6 +3847,42 @@ async function runDeployWatchIteration(
         deploymentHistory,
         latestCommit.hash
       );
+      const runtimeSnapshot = await attachRuntime({
+        checkedAt,
+        latestCommit,
+        status: 'up-to-date',
+      });
+
+      if (needsActiveRuntimeRecovery(runtimeSnapshot)) {
+        if (
+          hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
+        ) {
+          log.warn?.(
+            `Skipping blue/green runtime recovery for ${latestCommit.shortHash} because it already failed ${failedDeploymentCount} deployment attempts.`
+          );
+          return attachRuntime({
+            checkedAt,
+            failedDeploymentCount,
+            latestCommit,
+            status: 'retry-limited',
+          });
+        }
+
+        return runMissingActiveDeploymentRecovery(latestCommit, {
+          attachRuntime,
+          checkedAt,
+          deployCommand,
+          env,
+          envFilePath,
+          fsImpl,
+          log,
+          now,
+          onDeploymentStart,
+          paths,
+          rootDir,
+          runCommand: run,
+        });
+      }
 
       if (
         latestDeployedCommitHash &&
@@ -3298,6 +3941,16 @@ async function runDeployWatchIteration(
             paths.blueGreen,
             fsImpl
           );
+          const imageTag = await cacheBlueGreenDeploymentImage({
+            activeColor,
+            env,
+            envFilePath,
+            fsImpl,
+            latestCommit,
+            log,
+            rootDir,
+            runCommand: run,
+          });
           const history = appendDeploymentHistory(
             {
               activatedAt: deployFinishedAt,
@@ -3309,6 +3962,7 @@ async function runDeployWatchIteration(
               deploymentKind: 'reconcile',
               deploymentStamp,
               finishedAt: deployFinishedAt,
+              ...(imageTag ? { imageTag } : {}),
               startedAt: deployStartedAt,
               status: 'successful',
             },
@@ -3317,6 +3971,12 @@ async function runDeployWatchIteration(
               paths,
             }
           );
+          await pruneBlueGreenRecoveryCacheImages(history, {
+            env,
+            extraImageTag: imageTag,
+            log,
+            runCommand: run,
+          });
 
           log.info?.(
             `Blue/green reconciliation deployment completed for ${latestCommit.shortHash}.`
@@ -3367,11 +4027,6 @@ async function runDeployWatchIteration(
         }
       }
 
-      const runtimeSnapshot = await attachRuntime({
-        checkedAt,
-        latestCommit,
-        status: 'up-to-date',
-      });
       const instantRolloutRequest = readInstantRolloutRequest(paths, fsImpl);
       const standbyRefreshCandidate = getStandbyRefreshCandidate(
         runtimeSnapshot,
@@ -3459,6 +4114,16 @@ async function runDeployWatchIteration(
           paths.blueGreen,
           fsImpl
         );
+        const imageTag = await cacheBlueGreenDeploymentImage({
+          activeColor: standbyRefreshCandidate.standbyColor,
+          env,
+          envFilePath,
+          fsImpl,
+          latestCommit,
+          log,
+          rootDir,
+          runCommand: run,
+        });
         const history = appendDeploymentHistory(
           {
             activatedAt: refreshFinishedAt,
@@ -3470,6 +4135,7 @@ async function runDeployWatchIteration(
             deploymentKind: 'standby-refresh',
             deploymentStamp,
             finishedAt: refreshFinishedAt,
+            ...(imageTag ? { imageTag } : {}),
             startedAt: refreshStartedAt,
             status: 'successful',
           },
@@ -3478,6 +4144,12 @@ async function runDeployWatchIteration(
             paths,
           }
         );
+        await pruneBlueGreenRecoveryCacheImages(history, {
+          env,
+          extraImageTag: imageTag,
+          log,
+          runCommand: run,
+        });
 
         log.info?.(
           `Standby ${standbyRefreshCandidate.standbyColor} now matches ${latestCommit.shortHash}.`
@@ -3700,6 +4372,16 @@ async function runDeployWatchIteration(
           paths.blueGreen,
           fsImpl
         );
+        const imageTag = await cacheBlueGreenDeploymentImage({
+          activeColor,
+          env,
+          envFilePath,
+          fsImpl,
+          latestCommit,
+          log,
+          rootDir,
+          runCommand: run,
+        });
         const history = appendDeploymentHistory(
           {
             activatedAt: deployFinishedAt,
@@ -3710,6 +4392,7 @@ async function runDeployWatchIteration(
             commitSubject: latestCommit.subject,
             deploymentStamp,
             finishedAt: deployFinishedAt,
+            ...(imageTag ? { imageTag } : {}),
             startedAt: deployStartedAt,
             status: 'successful',
           },
@@ -3718,6 +4401,12 @@ async function runDeployWatchIteration(
             paths,
           }
         );
+        await pruneBlueGreenRecoveryCacheImages(history, {
+          env,
+          extraImageTag: imageTag,
+          log,
+          runCommand: run,
+        });
 
         log.info?.(
           `Blue/green deployment completed for ${updatedHead.slice(0, 12)}.`
@@ -4253,6 +4942,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
             iterationResult.status === 'deploy-failed' ||
             iterationResult.status === 'pin-deploy-failed' ||
             iterationResult.status === 'pinned-deployed' ||
+            iterationResult.status === 'recovered' ||
             iterationResult.status === 'standby-refreshed' ||
             iterationResult.status === 'standby-refresh-failed' ||
             iterationResult.status === 'restarting'
@@ -4271,6 +4961,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
                   ? 'building'
                   : iterationResult.status === 'deployed' ||
                       iterationResult.status === 'pinned-deployed' ||
+                      iterationResult.status === 'recovered' ||
                       iterationResult.status === 'standby-refreshed' ||
                       iterationResult.status === 'restarting'
                     ? 'successful'
@@ -4403,6 +5094,7 @@ module.exports = {
   formatRelativeTime,
   formatRequestsPerMinute,
   getGitFailureBackoffMs,
+  getLatestCachedSuccessfulDeployment,
   getLatestDeploymentSummary,
   getFailedDeploymentCountForCommit,
   getLatestSuccessfulDeploymentCommitHash,

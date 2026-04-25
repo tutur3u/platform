@@ -137,6 +137,89 @@ function getBlueGreenServiceName(color) {
   return `web-${color}`;
 }
 
+function getComposeProjectName(composeFile, env = {}) {
+  if (
+    typeof env.COMPOSE_PROJECT_NAME === 'string' &&
+    env.COMPOSE_PROJECT_NAME.trim().length > 0
+  ) {
+    return env.COMPOSE_PROJECT_NAME.trim();
+  }
+
+  return path.basename(path.dirname(composeFile));
+}
+
+function getComposeServiceImageName(serviceName, { composeFile, env }) {
+  return `${getComposeProjectName(composeFile, env)}-${serviceName}`;
+}
+
+function getBlueGreenCacheImageTag(commitShortHash, { composeFile, env }) {
+  if (
+    typeof commitShortHash !== 'string' ||
+    commitShortHash.trim().length === 0
+  ) {
+    throw new Error('A commit short hash is required for cache image tagging.');
+  }
+
+  return `${getComposeProjectName(composeFile, env)}-web-cache:${commitShortHash.trim()}`;
+}
+
+async function retagCachedImageForService(
+  cachedImageTag,
+  serviceName,
+  { composeFile, env, runCommand: run }
+) {
+  if (
+    typeof cachedImageTag !== 'string' ||
+    cachedImageTag.trim().length === 0
+  ) {
+    throw new Error('Cached recovery image tag is required.');
+  }
+
+  const serviceImageName = getComposeServiceImageName(serviceName, {
+    composeFile,
+    env,
+  });
+
+  await runChecked('docker', ['image', 'inspect', cachedImageTag], {
+    env,
+    runCommand: run,
+    stdio: 'pipe',
+  });
+  await runChecked('docker', ['tag', cachedImageTag, serviceImageName], {
+    env,
+    runCommand: run,
+  });
+
+  return serviceImageName;
+}
+
+async function tagBlueGreenServiceImageForCache(
+  serviceName,
+  cacheImageTag,
+  { composeFile, env, runCommand: run }
+) {
+  if (typeof cacheImageTag !== 'string' || cacheImageTag.trim().length === 0) {
+    throw new Error('A cache image tag is required.');
+  }
+
+  const serviceImageName = getComposeServiceImageName(serviceName, {
+    composeFile,
+    env,
+  });
+
+  await runChecked('docker', ['image', 'inspect', serviceImageName], {
+    env,
+    runCommand: run,
+    stdio: 'pipe',
+  });
+  await runChecked('docker', ['tag', serviceImageName, cacheImageTag], {
+    env,
+    runCommand: run,
+  });
+
+  return cacheImageTag;
+}
+
 function renderBlueGreenProxyConfig(
   color,
   { deploymentStamp = null, standbyColor = null } = {}
@@ -826,6 +909,163 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
   };
 }
 
+async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
+  const composeFile = getComposeFile(parsed.mode);
+  const env = getComposeEnvironment({
+    baseEnv: options.env ?? process.env,
+    envFilePath: options.envFilePath ?? WEB_ENV_FILE,
+    fsImpl: options.fsImpl ?? fs,
+    rootDir: options.rootDir,
+    withRedis: hasComposeProfile(parsed.composeGlobalArgs, 'redis'),
+    withSupportServices: true,
+  });
+  const fsImpl = options.fsImpl ?? fs;
+  const paths = getBlueGreenPaths(options.rootDir ?? ROOT_DIR);
+  const run = options.runCommand ?? runCommand;
+  const cachedImageTag = options.cachedImageTag;
+  const persistedActiveColor = readBlueGreenActiveColor(paths, fsImpl);
+  const activeColor = persistedActiveColor ?? 'blue';
+  const standbyColor = getNextBlueGreenColor(activeColor);
+  const deploymentStamp =
+    options.deploymentStamp ??
+    readBlueGreenDeploymentStamp(paths, fsImpl) ??
+    generateBlueGreenDeploymentStamp();
+  const activeServiceName = getBlueGreenServiceName(activeColor);
+  const standbyServiceName = getBlueGreenServiceName(standbyColor);
+  const activeEnv = {
+    ...env,
+    PLATFORM_BLUE_GREEN_COLOR: activeColor,
+    PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
+  };
+  const standbyEnv = {
+    ...env,
+    PLATFORM_BLUE_GREEN_COLOR: standbyColor,
+    PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
+  };
+  const activeServices = [BLUE_GREEN_PROXY_SERVICE, activeServiceName];
+
+  await retagCachedImageForService(cachedImageTag, activeServiceName, {
+    composeFile,
+    env: activeEnv,
+    runCommand: run,
+  });
+  await runComposeUpWithNameConflictRecovery({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: activeEnv,
+    fsImpl,
+    runCommand: run,
+    services: activeServices,
+    upArgs: [
+      'up',
+      '--detach',
+      '--no-build',
+      '--remove-orphans',
+      ...activeServices,
+    ],
+  });
+
+  await waitForComposeServiceHealthy(BLUE_GREEN_PROXY_SERVICE, {
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: activeEnv,
+    runCommand: run,
+  });
+  await waitForComposeServiceHealthy(activeServiceName, {
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: activeEnv,
+    runCommand: run,
+  });
+
+  writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
+  writeBlueGreenActiveColor(activeColor, paths, fsImpl);
+  writeBlueGreenProxyConfig(activeColor, {
+    deploymentStamp,
+    fsImpl,
+    paths,
+    standbyColor: null,
+  });
+  await validateBlueGreenProxyConfig({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: activeEnv,
+    runCommand: run,
+  });
+  await reloadBlueGreenProxy({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: activeEnv,
+    runCommand: run,
+  });
+  await testBlueGreenProxyRouting({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: activeEnv,
+    runCommand: run,
+  });
+
+  await retagCachedImageForService(cachedImageTag, standbyServiceName, {
+    composeFile,
+    env: standbyEnv,
+    runCommand: run,
+  });
+  await runComposeUpWithNameConflictRecovery({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: standbyEnv,
+    fsImpl,
+    runCommand: run,
+    services: [standbyServiceName],
+    upArgs: [
+      'up',
+      '--detach',
+      '--no-build',
+      '--remove-orphans',
+      standbyServiceName,
+    ],
+  });
+  await waitForComposeServiceHealthy(standbyServiceName, {
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: standbyEnv,
+    runCommand: run,
+  });
+
+  writeBlueGreenProxyConfig(activeColor, {
+    deploymentStamp,
+    fsImpl,
+    paths,
+    standbyColor,
+  });
+  await validateBlueGreenProxyConfig({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: standbyEnv,
+    runCommand: run,
+  });
+  await reloadBlueGreenProxy({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: standbyEnv,
+    runCommand: run,
+  });
+  await testBlueGreenProxyRouting({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: standbyEnv,
+    runCommand: run,
+  });
+
+  return {
+    activeColor,
+    cachedImageTag,
+    deploymentStamp,
+    refreshedStandby: true,
+    standbyColor,
+  };
+}
+
 module.exports = {
   BLUE_GREEN_COLORS,
   BLUE_GREEN_DRAIN_POLL_MS,
@@ -841,6 +1081,7 @@ module.exports = {
   clearBlueGreenRuntime,
   ensureBlueGreenRuntime,
   generateBlueGreenDeploymentStamp,
+  getBlueGreenCacheImageTag,
   getBlueGreenPaths,
   getBlueGreenProdServices,
   getBlueGreenProdServicesWithProxyOption,
@@ -856,8 +1097,10 @@ module.exports = {
   resolveBlueGreenActiveColor,
   resolveBlueGreenStandbyColor,
   runBlueGreenProdWorkflow,
+  runBlueGreenCachedRecoveryWorkflow,
   runBlueGreenStandbyRefreshWorkflow,
   sleep,
+  tagBlueGreenServiceImageForCache,
   testBlueGreenProxyRouting,
   validateBlueGreenProxyConfig,
   waitForBlueGreenServiceDrain,
