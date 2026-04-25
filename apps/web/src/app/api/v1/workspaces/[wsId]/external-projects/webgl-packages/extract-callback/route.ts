@@ -6,6 +6,7 @@ import { z } from 'zod';
 import {
   createWorkspaceStorageFolderObject,
   createWorkspaceStorageUploadPayload,
+  uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
 import { resolveWebglPackageExtractConfig } from '../shared';
@@ -67,6 +68,31 @@ export async function POST(
       }
 
       return NextResponse.json({ message: 'Folder extracted successfully' });
+    }
+
+    if (operation === 'file') {
+      const contentType =
+        request.headers.get('content-type') || 'application/octet-stream';
+      const buffer = new Uint8Array(await request.arrayBuffer());
+
+      if (buffer.byteLength === 0) {
+        return NextResponse.json(
+          { message: 'Extracted file is empty' },
+          { status: 400 }
+        );
+      }
+
+      await uploadWorkspaceStorageFileDirect(
+        normalizedWsId,
+        sanitizedPath,
+        buffer,
+        {
+          contentType,
+          upsert: true,
+        }
+      );
+
+      return NextResponse.json({ message: 'File extracted successfully' });
     }
 
     if (operation === 'file-upload-url') {

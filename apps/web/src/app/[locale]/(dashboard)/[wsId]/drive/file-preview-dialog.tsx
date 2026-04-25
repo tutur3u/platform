@@ -28,6 +28,7 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { formatBytes } from '@/utils/file-helper';
+import { getStorageObjectDisplayName } from './storage-display-name';
 
 // Dynamic imports for heavy components
 const PDFViewer = dynamic(
@@ -122,11 +123,7 @@ export function FilePreviewDialog({
 }: FilePreviewDialogProps) {
   const t = useTranslations();
   const fileType = file?.name ? getFileType(file.name) : 'other';
-  const cleanFileName =
-    file?.name?.replace(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
-      ''
-    ) || '';
+  const cleanFileName = getStorageObjectDisplayName(file);
   const relativePath = file?.name ? joinPath(path, file.name) : '';
 
   const signedUrlQuery = useQuery({

@@ -33,6 +33,7 @@ import { formatBytes } from '@/utils/file-helper';
 import { joinPath } from '@/utils/path-helper';
 import { DriveGridThumbnail } from './drive-grid-thumbnail';
 import { StorageObjectRowActions } from './row-actions';
+import { getStorageObjectDisplayName } from './storage-display-name';
 
 interface DriveExplorerItemsProps {
   wsId: string;
@@ -71,15 +72,6 @@ function formatTimestamp(value?: string | null) {
     month: 'short',
     year: 'numeric',
   }).format(new Date(value));
-}
-
-function getDisplayName(item: StorageObject) {
-  return (
-    item.name?.replace(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
-      ''
-    ) || ''
-  );
 }
 
 function isFolder(item: StorageObject) {
@@ -224,7 +216,7 @@ export function DriveListView({
           <TableBody>
             {items.map((item) => {
               const folder = isFolder(item);
-              const displayName = getDisplayName(item);
+              const displayName = getStorageObjectDisplayName(item);
               const selectionKey = getSelectionKey(path, item);
               const isSelected = selectedKeys.includes(selectionKey);
               const row = (
@@ -358,7 +350,7 @@ export function DriveGridView({
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {items.map((item) => {
           const folder = isFolder(item);
-          const displayName = getDisplayName(item);
+          const displayName = getStorageObjectDisplayName(item);
           const selectionKey = getSelectionKey(path, item);
           const isSelected = selectedKeys.includes(selectionKey);
 

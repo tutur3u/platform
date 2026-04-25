@@ -35,6 +35,7 @@ import { DriveGridThumbnail } from './drive-grid-thumbnail';
 import { FilePreviewDialog } from './file-preview-dialog';
 import { RenameStorageObjectDialog } from './rename-storage-object-dialog';
 import { StorageObjectRowActions } from './row-actions';
+import { getStorageObjectDisplayName } from './storage-display-name';
 
 interface Props {
   wsId: string;
@@ -281,11 +282,7 @@ export default function StorageObjectsTable({
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
           {/* Grid View */}
           {data.map((item) => {
-            const displayName =
-              item.name?.replace(
-                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
-                ''
-              ) || '';
+            const displayName = getStorageObjectDisplayName(item);
 
             return (
               <ContextMenu key={item.id || item.name}>
@@ -380,10 +377,10 @@ export default function StorageObjectsTable({
             <AlertDialogDescription>
               {deleteTarget?.id
                 ? t('ws-storage-objects.confirm_delete_file', {
-                    name: deleteTarget?.name || '',
+                    name: getStorageObjectDisplayName(deleteTarget),
                   })
                 : t('ws-storage-objects.confirm_delete_folder', {
-                    name: deleteTarget?.name || '',
+                    name: getStorageObjectDisplayName(deleteTarget),
                   })}
             </AlertDialogDescription>
           </AlertDialogHeader>

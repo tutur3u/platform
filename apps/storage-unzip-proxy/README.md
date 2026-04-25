@@ -2,6 +2,11 @@
 
 Self-hosted helper service for automatically extracting uploaded ZIP archives back into Tuturuuu Drive.
 
+The proxy only coordinates backend-to-backend extraction. It downloads the
+uploaded ZIP from a signed read URL, posts extracted folders/files back to the
+web callback route with the shared bearer token, and the web backend writes the
+extracted objects to the active workspace storage provider.
+
 ## Environment
 
 - `PORT`: HTTP port. Default `8788`.

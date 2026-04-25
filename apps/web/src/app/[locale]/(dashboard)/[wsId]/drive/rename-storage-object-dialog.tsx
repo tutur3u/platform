@@ -16,6 +16,7 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { getStorageObjectDisplayName } from './storage-display-name';
 
 interface RenameStorageObjectDialogProps {
   wsId: string;
@@ -26,18 +27,8 @@ interface RenameStorageObjectDialogProps {
   onSuccess?: () => void;
 }
 
-function stripUploadedFilePrefix(name: string) {
-  return name.replace(
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
-    ''
-  );
-}
-
 function getDefaultRenameValue(storageObject: StorageObject | null) {
-  if (!storageObject?.name) return '';
-  return storageObject.id
-    ? stripUploadedFilePrefix(storageObject.name)
-    : storageObject.name;
+  return getStorageObjectDisplayName(storageObject);
 }
 
 function getFinalRenameValue(

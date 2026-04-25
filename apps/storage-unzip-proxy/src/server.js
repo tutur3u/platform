@@ -142,14 +142,6 @@ function contentTypeForFile(filePath) {
   return MIME_TYPES[extension] || 'application/octet-stream';
 }
 
-async function drainResponseBody(response) {
-  try {
-    await response.arrayBuffer();
-  } catch {
-    await response.body?.cancel?.().catch(() => {});
-  }
-}
-
 async function fetchWithTimeout(input, init = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => {
@@ -200,78 +192,21 @@ async function postExtractedEntry({
   }
 }
 
-async function requestExtractedFileUpload({
+async function uploadExtractedFileThroughCallback({
+  body,
   callbackToken,
   callbackUrl,
   contentType,
   filePath,
-  size,
 }) {
-  const response = await fetchWithTimeout(callbackUrl, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${callbackToken}`,
-      'Content-Type': 'application/json',
-      'x-drive-auto-extract-operation': 'file-upload-url',
-      'x-drive-auto-extract-path': filePath,
-    },
-    body: JSON.stringify({
-      contentType,
-      size,
-    }),
-  });
-
-  if (!response.ok) {
-    const message = await response.text().catch(() => '');
-    throw new HttpError(
-      response.status >= 400 && response.status < 500 ? response.status : 502,
-      message || `Upload URL callback failed with status ${response.status}`
-    );
-  }
-
-  return response.json();
-}
-
-async function uploadExtractedFile({ body, contentType, uploadPayload }) {
-  const headers = {
-    ...(uploadPayload.headers || {}),
-  };
-
-  if (!headers['Content-Type']) {
-    headers['Content-Type'] = contentType || 'application/octet-stream';
-  }
-
-  if (uploadPayload.token) {
-    headers.Authorization = `Bearer ${uploadPayload.token}`;
-  }
-
-  let response = await fetchWithTimeout(uploadPayload.signedUrl, {
-    method: 'PUT',
-    headers,
+  await postExtractedEntry({
     body,
+    callbackToken,
+    callbackUrl,
+    contentType,
+    filePath,
+    operation: 'file',
   });
-
-  if (!response.ok) {
-    await drainResponseBody(response);
-    // Retry without Content-Type because some signed-upload backends
-    // require the retry request to omit headers that were not part of signing.
-    const fallbackHeaders = { ...headers };
-    delete fallbackHeaders['Content-Type'];
-
-    response = await fetchWithTimeout(uploadPayload.signedUrl, {
-      method: 'PUT',
-      headers: fallbackHeaders,
-      body,
-    });
-  }
-
-  if (!response.ok) {
-    const message = await response.text().catch(() => '');
-    throw new HttpError(
-      response.status >= 400 && response.status < 500 ? response.status : 502,
-      message || `Direct upload failed with status ${response.status}`
-    );
-  }
 }
 
 async function extractArchive(payload) {
@@ -394,17 +329,12 @@ async function extractArchive(payload) {
     }
 
     const contentType = contentTypeForFile(entry.path);
-    const uploadPayload = await requestExtractedFileUpload({
+    await uploadExtractedFileThroughCallback({
+      body,
       callbackToken: payload.callbackToken,
       callbackUrl: payload.callbackUrl,
       contentType,
       filePath: targetPath,
-      size: body.byteLength,
-    });
-    await uploadExtractedFile({
-      body,
-      contentType,
-      uploadPayload,
     });
     files += 1;
   }

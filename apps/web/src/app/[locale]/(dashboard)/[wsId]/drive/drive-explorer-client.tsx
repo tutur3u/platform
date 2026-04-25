@@ -71,6 +71,7 @@ import {
   driveSortByValues,
   driveViewModes,
 } from './search-params';
+import { getStorageObjectDisplayName } from './storage-display-name';
 import {
   useInvalidateDriveQueries,
   useWorkspaceStorageAnalyticsQuery,
@@ -789,10 +790,10 @@ export default function DriveExplorerClient({
             <AlertDialogDescription>
               {deleteTarget?.id
                 ? t('confirm_delete_file', {
-                    name: deleteTarget.name || '',
+                    name: getStorageObjectDisplayName(deleteTarget),
                   })
                 : t('confirm_delete_folder', {
-                    name: deleteTarget?.name || '',
+                    name: getStorageObjectDisplayName(deleteTarget),
                   })}
             </AlertDialogDescription>
           </AlertDialogHeader>

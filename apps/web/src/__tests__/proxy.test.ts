@@ -369,6 +369,40 @@ describe('web proxy api handling', () => {
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(1);
   });
 
+  it('lets storage unzip callbacks bypass proxy rate limiting', async () => {
+    mocks.guardApiProxyRequest.mockResolvedValue(
+      NextResponse.json(
+        { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+        {
+          status: 429,
+          headers: {
+            'X-Proxy-Block-Reason': 'route-rate-limit',
+          },
+        }
+      )
+    );
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/storage/auto-extract',
+        {
+          method: 'POST',
+          body: '{}',
+          headers: {
+            Authorization: 'Bearer unzip-proxy-token',
+            'content-type': 'application/json',
+            'user-agent': 'Bun/1.2',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
+  });
+
   it('escalates repeated anonymous proxy guard rate-limit hits into an IP block', async () => {
     const now = new Date(Date.now());
 

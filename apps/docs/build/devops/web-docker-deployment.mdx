@@ -179,6 +179,14 @@ through a same-origin WebGL package proxy route before the server writes to
 Supabase Storage or R2, so CMS editors do not depend on object-storage CORS
 settings for ZIP uploads.
 
+The unzip proxy fans out one backend callback per extracted folder or file. File
+callbacks send the extracted bytes to the web backend, and the backend writes to
+Supabase Storage or R2 server-side. The web proxy intentionally lets the
+bearer-token protected storage auto-extract and CMS WebGL extract callback
+routes pass through without anonymous mutation rate limiting; the callback
+routes still validate the shared unzip token before creating folders or writing
+files.
+
 The MarkItDown endpoint is the conversion path for uploaded workspace files.
 Do not route YouTube summaries through MarkItDown or Google Search. Google
 Gemini chat requests attach one public or unlisted YouTube URL directly as a

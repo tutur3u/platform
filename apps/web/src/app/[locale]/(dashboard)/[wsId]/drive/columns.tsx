@@ -12,6 +12,7 @@ import { Fragment } from 'react';
 import { formatBytes } from '@/utils/file-helper';
 import { joinPath, popPath } from '@/utils/path-helper';
 import { StorageObjectRowActions } from './row-actions';
+import { getStorageObjectDisplayName } from './storage-display-name';
 
 interface StorageObjectExtraData {
   setStorageObject: (value: StorageObject | undefined) => void;
@@ -81,10 +82,7 @@ export const storageObjectsColumns = ({
         return (
           <div className="flex min-w-32 items-center gap-2 font-semibold">
             <FileText className="h-4 w-4" />
-            {(row.getValue('name') as string | undefined)?.replace(
-              /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
-              ''
-            )}
+            {getStorageObjectDisplayName(row.original)}
           </div>
         );
 
@@ -112,7 +110,7 @@ export const storageObjectsColumns = ({
             ) : (
               <Fragment>
                 <Folder className="h-4 w-4" />
-                {row.getValue('name')}
+                {getStorageObjectDisplayName(row.original)}
               </Fragment>
             )}
           </Link>
