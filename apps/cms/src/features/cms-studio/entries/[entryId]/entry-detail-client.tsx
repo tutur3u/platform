@@ -33,6 +33,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { isGameLikeCollection } from '../../cms-games-shared';
 import { optimizeCmsMediaUpload } from '../../cms-media-upload';
 import {
   getCmsEntryPath,
@@ -174,6 +175,7 @@ function mergeFeaturedProfileData({
 
 export function EntryDetailClient({
   binding,
+  cmsGamesEnabled = false,
   entryId,
   initialStudio,
   onDeleted,
@@ -185,6 +187,7 @@ export function EntryDetailClient({
   workspaceId,
 }: {
   binding: WorkspaceExternalProjectBinding;
+  cmsGamesEnabled?: boolean;
   entryId: string;
   initialStudio?: ExternalProjectStudioData;
   onDeleted?: () => void;
@@ -247,16 +250,9 @@ export function EntryDetailClient({
   );
   const coverAsset = imageAssets[0] ?? null;
   const supportsWebglPackage = Boolean(
-    activeCollection &&
-      /game|webgl|playable/i.test(
-        [
-          activeCollection.slug,
-          activeCollection.collection_type,
-          activeCollection.title,
-        ]
-          .filter(Boolean)
-          .join(' ')
-      )
+    cmsGamesEnabled &&
+      activeCollection &&
+      isGameLikeCollection(activeCollection)
   );
   const webglPackagePlayerPath = webglPackageAsset
     ? `${getCmsWorkspaceBasePath(pathname)}/library/entries/${entryId}/webgl/${webglPackageAsset.id}`

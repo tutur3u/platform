@@ -12,7 +12,7 @@ interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function CmsLibraryPage({ params, searchParams }: Props) {
+export default async function CmsGamesPage({ params, searchParams }: Props) {
   const { wsId } = await params;
   const resolvedSearchParams = await searchParams;
   const access = await getCmsWorkspaceAccess(wsId);
@@ -25,17 +25,19 @@ export default async function CmsLibraryPage({ params, searchParams }: Props) {
     redirect('/no-access');
   }
 
-  const cmsGamesEnabled = await getCmsGamesEnabled(
-    access.normalizedWorkspaceId
-  );
+  if (!(await getCmsGamesEnabled(access.normalizedWorkspaceId))) {
+    redirect(`/${wsId}/library`);
+  }
+
   const t = await getTranslations('external-projects');
 
   return (
     <CmsStudioClient
       availableEditSections={['entries', 'workflow']}
       binding={access.binding}
-      cmsGamesEnabled={cmsGamesEnabled}
-      headerDescription="Manage collections, entries, and editorial workflow from the CMS library."
+      cmsGamesEnabled
+      collectionScope="games"
+      headerDescription={t('epm.games_page_description')}
       initialEditSection="entries"
       initialEditorEntryId={
         typeof resolvedSearchParams.entryId === 'string'

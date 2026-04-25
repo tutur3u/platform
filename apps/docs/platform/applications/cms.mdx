@@ -1,7 +1,7 @@
 ---
 title: 'CMS'
 description: 'Dedicated Tuturuuu CMS app for workspace content operations and root-level project linking.'
-updatedAt: '2026-04-23'
+updatedAt: '2026-04-25'
 ---
 
 ## Overview
@@ -15,6 +15,7 @@ updatedAt: '2026-04-23'
 ## Routing
 
 - `/{wsId}`: overview
+- `/{wsId}/games`: game-focused content library, visible only when CMS Games is enabled
 - `/{wsId}/library`: content library and canonical entry-editing surface
 - `/{wsId}/library/entries/{entryId}`: compatibility redirect that opens the library fullscreen editor dialog
 - `/{wsId}/library/collections/{collectionId}`: collection detail
@@ -31,6 +32,7 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 
 - Only workspaces with CMS access enabled appear in the CMS workspace picker.
 - A workspace must still satisfy the existing external-project permissions to open CMS workspace routes.
+- CMS Games is disabled by default for every workspace. Enable it from the CMS settings dialog, which writes `ENABLE_CMS_GAMES=true` to workspace configs and reveals the `/{wsId}/games` sidebar route.
 - Only platform admins can open `/internal/projects`.
 - Workspace member and role management lives on `/{wsId}/members` and still respects the existing `manage_workspace_members` and `manage_workspace_roles` permissions.
 
@@ -46,6 +48,7 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - Keep route pages server-side only for auth and access gates, then hand off interactive CMS surfaces to client modules backed by TanStack Query.
 - Keep `cms-studio-client.tsx` focused on query state, mutations, and routing. Library rendering should stay split across dedicated gallery, workflow, and settings modules rather than growing back into one large TSX file.
 - Entry detail now opens as a fullscreen dialog from the library route so the CMS keeps the library cache warm instead of forcing a separate navigation for each entry.
+- The Games route reuses the library client with a game-like collection scope and only exposes WebGL ZIP upload controls when `ENABLE_CMS_GAMES` is explicitly enabled.
 - Library taxonomy edits should stay lightweight: category/tag assignment, creation, and removal can happen directly from the library dialog, while deeper editorial changes still live in the entry sidebar taxonomy card.
 
 ## Local Development

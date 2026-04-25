@@ -1,10 +1,12 @@
 import 'server-only';
 
 import { posix } from 'node:path';
+import { ENABLE_CMS_GAMES_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { WorkspaceExternalProjectBinding } from '@tuturuuu/types';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { getSecrets } from '@tuturuuu/utils/workspace-helper';
+import { getWorkspaceConfig } from '@/lib/workspace-helper';
 import {
   DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET,
   DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET,
@@ -89,6 +91,11 @@ export async function resolveWebglPackageExtractConfig(wsId: string) {
     proxyToken,
     proxyUrl,
   };
+}
+
+export async function isCmsGamesEnabled(wsId: string) {
+  const value = await getWorkspaceConfig(wsId, ENABLE_CMS_GAMES_CONFIG_ID);
+  return value?.trim().toLowerCase() === 'true';
 }
 
 export async function getWebglPackageEntryContext(

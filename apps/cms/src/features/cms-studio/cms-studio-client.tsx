@@ -39,6 +39,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter } from 'next/navigation';
 import { useDeferredValue, useEffect, useState } from 'react';
+import { isGameLikeCollection } from './cms-games-shared';
 import { CmsLibrarySection } from './cms-library-section';
 import type { CmsLibrarySectionProps } from './cms-library-section-shared';
 import { CmsLibraryTaxonomyDialog } from './cms-library-taxonomy-dialog';
@@ -113,6 +114,8 @@ function parseTaxonomyDraft(value: string) {
 export function CmsStudioClient({
   availableEditSections = ['entries', 'workflow', 'settings'],
   binding,
+  cmsGamesEnabled = false,
+  collectionScope = 'all',
   headerDescription,
   initialEditSection = 'entries',
   initialEditorEntryId = null,
@@ -124,6 +127,8 @@ export function CmsStudioClient({
 }: {
   availableEditSections?: EditSection[];
   binding: WorkspaceExternalProjectBinding;
+  cmsGamesEnabled?: boolean;
+  collectionScope?: 'all' | 'games';
   headerDescription?: string;
   initialEditSection?: EditSection;
   initialEditorEntryId?: string | null;
@@ -171,9 +176,29 @@ export function CmsStudioClient({
   const [newCollectionTitle, setNewCollectionTitle] = useState('');
   const [newCollectionDescription, setNewCollectionDescription] = useState('');
   const deferredSearch = useDeferredValue(search);
-  const entries = studio?.entries ?? initialStudio?.entries ?? [];
-  const collections = studio?.collections ?? initialStudio?.collections ?? [];
-  const assets = studio?.assets ?? initialStudio?.assets ?? [];
+  const allEntries = studio?.entries ?? initialStudio?.entries ?? [];
+  const allCollections =
+    studio?.collections ?? initialStudio?.collections ?? [];
+  const collections =
+    collectionScope === 'games'
+      ? allCollections.filter(isGameLikeCollection)
+      : allCollections;
+  const scopedCollectionIds = new Set(
+    collections.map((collection) => collection.id)
+  );
+  const entries =
+    collectionScope === 'games'
+      ? allEntries.filter((entry) =>
+          scopedCollectionIds.has(entry.collection_id)
+        )
+      : allEntries;
+  const scopedEntryIds = new Set(entries.map((entry) => entry.id));
+  const assets = (studio?.assets ?? initialStudio?.assets ?? []).filter(
+    (asset) =>
+      collectionScope !== 'games' ||
+      !asset.entry_id ||
+      scopedEntryIds.has(asset.entry_id)
+  );
   const publishEvents =
     studio?.publishEvents ?? initialStudio?.publishEvents ?? [];
   const artworkCollection =
@@ -532,10 +557,16 @@ export function CmsStudioClient({
   const createCollectionMutation = useMutation({
     mutationFn: async () => {
       const collectionType =
-        binding.canonical_project?.allowed_collections[0] ??
-        activeCollection?.collection_type ??
-        'collection';
-      const title = newCollectionTitle.trim() || 'Untitled collection';
+        collectionScope === 'games'
+          ? 'game'
+          : (binding.canonical_project?.allowed_collections[0] ??
+            activeCollection?.collection_type ??
+            'collection');
+      const title =
+        newCollectionTitle.trim() ||
+        (collectionScope === 'games'
+          ? 'Untitled game collection'
+          : 'Untitled collection');
       const slug = slugifyLabel(title, `collection-${Date.now()}`);
 
       return createWorkspaceExternalProjectCollection(workspaceId, {
@@ -1115,6 +1146,7 @@ export function CmsStudioClient({
       {editorEntry ? (
         <EntryDetailClient
           binding={binding}
+          cmsGamesEnabled={cmsGamesEnabled}
           entryId={editorEntry.id}
           onDeleted={closeEntryEditor}
           onEntryChange={(nextEntryId) => {

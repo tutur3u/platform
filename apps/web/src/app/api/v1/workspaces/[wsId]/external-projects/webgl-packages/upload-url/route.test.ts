@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   createWorkspaceStorageUploadPayload: vi.fn(),
   getWebglPackageEntryContext: vi.fn(),
+  isCmsGamesEnabled: vi.fn(),
   requireWorkspaceExternalProjectAccess: vi.fn(),
 }));
 
@@ -34,6 +35,8 @@ vi.mock('../shared', () => ({
   getWebglPackageEntryContext: (
     ...args: Parameters<typeof mocks.getWebglPackageEntryContext>
   ) => mocks.getWebglPackageEntryContext(...args),
+  isCmsGamesEnabled: (...args: Parameters<typeof mocks.isCmsGamesEnabled>) =>
+    mocks.isCmsGamesEnabled(...args),
   sanitizeWebglZipFilename: (value: string) => value,
 }));
 
@@ -52,6 +55,40 @@ describe('WebGL package upload URL route', () => {
         id: 'user-1',
       },
     });
+    mocks.isCmsGamesEnabled.mockResolvedValue(true);
+  });
+
+  it('rejects upload URL creation when CMS Games is disabled', async () => {
+    mocks.isCmsGamesEnabled.mockResolvedValue(false);
+
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload-url/route'
+    );
+
+    const response = await POST(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/external-projects/webgl-packages/upload-url',
+        {
+          body: JSON.stringify({
+            contentType: 'application/zip',
+            entryId: '00000000-0000-4000-8000-000000000001',
+            filename: 'Mine Blast WebGL.zip',
+          }),
+          method: 'POST',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'CMS Games is disabled for this workspace.',
+    });
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
 
   it('rejects non-ZIP uploads before creating a signed upload URL', async () => {

@@ -23,6 +23,7 @@ import {
 import {
   buildWebglPackageUploadPath,
   getWebglPackageEntryContext,
+  isCmsGamesEnabled,
   resolveWebglCallbackOrigin,
   resolveWebglPackageExtractConfig,
 } from '../shared';
@@ -106,6 +107,13 @@ export async function POST(
   if (!access.ok) return access.response;
 
   try {
+    if (!(await isCmsGamesEnabled(access.normalizedWorkspaceId))) {
+      return NextResponse.json(
+        { error: 'CMS Games is disabled for this workspace.' },
+        { status: 403 }
+      );
+    }
+
     const payload = finalizeSchema.parse(await request.json());
     const archivePath = sanitizePath(payload.archivePath);
 
