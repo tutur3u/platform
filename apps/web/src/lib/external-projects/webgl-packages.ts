@@ -59,6 +59,8 @@ const WEBGL_CONTENT_TYPES: Record<string, string> = {
   '.data': 'application/octet-stream',
   '.html': 'text/html; charset=utf-8',
   '.ico': 'image/x-icon',
+  '.jpeg': 'image/jpeg',
+  '.jpg': 'image/jpeg',
   '.js': 'application/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',

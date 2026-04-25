@@ -40,6 +40,8 @@ vi.mock('@/lib/workspace-storage-provider', () => ({
 const artifactMetadata = {
   archivePath: 'external-projects/yoola/games/mine/webgl-packages/package.zip',
   assetUrls: {
+    'Build/Mine Blast WebGL.loader.js':
+      '/api/v1/workspaces/ws-1/external-projects/assets/asset-1/webgl/Build/Mine%20Blast%20WebGL.loader.js',
     'index.html':
       '/api/v1/workspaces/ws-1/external-projects/assets/asset-1/webgl/index.html',
   },
@@ -179,6 +181,11 @@ describe('WebGL package asset route', () => {
       '<base data-tuturuuu-webgl-viewport-fill href="/api/v1/workspaces/ws-1/external-projects/assets/asset-1/webgl/">'
     );
     expect(html).toContain('data-tuturuuu-webgl-viewport-fill');
+    expect(html).toContain('data-cfasync="false"');
+    expect(html).toContain(
+      '"Build/Mine Blast WebGL.loader.js":"/api/v1/workspaces/ws-1/external-projects/assets/asset-1/webgl/Build/Mine%20Blast%20WebGL.loader.js"'
+    );
+    expect(html).toContain('HTMLScriptElement');
     expect(html).toContain('canvas.width');
     expect(html).toContain('tuturuuu-webgl-download-status');
   });
@@ -207,6 +214,22 @@ describe('WebGL package asset route', () => {
       'supabase',
       'external-projects/yoola/games/mine/webgl-packages/package/Mine Blast WebGL/Build/Mine Blast WebGL.loader.js'
     );
+  });
+
+  it('serves Unity splash images with image content types', async () => {
+    mocks.createAdminClient.mockResolvedValue(createAdminWithAsset('draft'));
+    mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
+      ok: true,
+    });
+    mocks.downloadWorkspaceStorageObjectForProvider.mockResolvedValue({
+      buffer: new Uint8Array([1, 2, 3]),
+      contentType: 'application/octet-stream',
+    });
+
+    const response = await callRoute(['Build', 'Mine Blast WebGL.jpg']);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('image/jpeg');
   });
 
   it('prevents path traversal outside the WebGL package root', async () => {

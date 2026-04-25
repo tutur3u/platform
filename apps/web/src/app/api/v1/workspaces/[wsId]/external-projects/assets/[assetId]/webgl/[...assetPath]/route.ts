@@ -28,11 +28,28 @@ function escapeHtmlAttribute(value: string) {
     .replaceAll('>', '&gt;');
 }
 
-function injectWebglViewportFill(html: string, baseHref: string) {
+function rewriteWebglHtmlDocument(html: string) {
+  return html
+    .replaceAll(
+      /<script(?![^>]*\bdata-cfasync=)/gi,
+      '<script data-cfasync="false"'
+    )
+    .replaceAll(
+      /\balert\s*\(\s*message\s*\)/g,
+      'console.error(message); if (typeof unityShowBanner === "function") unityShowBanner(String(message), "error")'
+    );
+}
+
+function injectWebglViewportFill(
+  html: string,
+  baseHref: string,
+  assetUrls: Record<string, string>
+) {
   if (html.includes(WEBGL_VIEWPORT_FILL_MARKER)) {
     return html;
   }
 
+  const rewrittenHtml = rewriteWebglHtmlDocument(html);
   const base = `<base ${WEBGL_VIEWPORT_FILL_MARKER} href="${escapeHtmlAttribute(baseHref)}">`;
   const injection = `<style ${WEBGL_VIEWPORT_FILL_MARKER}>
 html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#000!important;}
@@ -48,13 +65,62 @@ body{position:fixed!important;inset:0!important;}
 #tuturuuu-webgl-download-status span{display:block;color:#fff;font-weight:600;}
 #tuturuuu-webgl-download-status .tuturuuu-webgl-download-track{height:4px;margin-top:8px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.22);}
 #tuturuuu-webgl-download-status .tuturuuu-webgl-download-bar{height:100%;width:0;background:#fff;transition:width .18s ease;}
-</style><script ${WEBGL_VIEWPORT_FILL_MARKER}>
+</style><script ${WEBGL_VIEWPORT_FILL_MARKER} data-cfasync="false">
 (function(){
 var maxDpr=2;
 var requests={};
 var hideTimer=0;
 var originalFetch=window.fetch;
 var OriginalXhr=window.XMLHttpRequest;
+var baseHref=${JSON.stringify(baseHref)};
+var assetUrls=${JSON.stringify(assetUrls)};
+var currentCreateUnityInstance=window.createUnityInstance;
+function decodePath(value){
+try{return decodeURIComponent(value);}
+catch(error){return value;}
+}
+function assetUrlFor(value){
+if(typeof value!=='string'||!value){return value;}
+var url=new URL(value,baseHref);
+var basePath=new URL(baseHref,window.location.href).pathname;
+var relativePath=url.pathname.indexOf(basePath)===0?url.pathname.slice(basePath.length):url.pathname.replace(/^\\/+/, '');
+relativePath=decodePath(relativePath);
+return assetUrls[relativePath]||assetUrls[relativePath.replace(/^\\/+/, '')]||url.pathname;
+}
+function packageUrl(value){
+if(typeof value!=='string'||!value){return value;}
+if(/^(?:blob:|data:|javascript:)/i.test(value)){return value;}
+if(/^[a-z][a-z0-9+.-]*:/i.test(value)){
+try{
+var absoluteUrl=new URL(value);
+if(absoluteUrl.origin!==window.location.origin){return value;}
+}catch(error){
+return value;
+}
+}
+return assetUrlFor(value);
+}
+function rewriteUnityConfig(config){
+if(!config||typeof config!=='object'){return config;}
+['dataUrl','frameworkUrl','codeUrl','memoryUrl','symbolsUrl','streamingAssetsUrl'].forEach(function(key){
+if(typeof config[key]==='string'){config[key]=packageUrl(config[key]);}
+});
+return config;
+}
+function wrapUnityFactory(value){
+if(typeof value!=='function'||value.__tuturuuuPatched){return value;}
+var patched=function(canvas,config,onProgress){
+return value.call(this,canvas,rewriteUnityConfig(config),onProgress);
+};
+patched.__tuturuuuPatched=true;
+return patched;
+}
+Object.defineProperty(window,'createUnityInstance',{
+configurable:true,
+get:function(){return currentCreateUnityInstance;},
+set:function(value){currentCreateUnityInstance=wrapUnityFactory(value);}
+});
+currentCreateUnityInstance=wrapUnityFactory(currentCreateUnityInstance);
 function formatBytes(bytes){
 if(!Number.isFinite(bytes)||bytes<=0){return '0 B';}
 var units=['B','KB','MB','GB'];
@@ -128,8 +194,9 @@ renderDownloads();
 function patchFetch(){
 if(!originalFetch){return;}
 window.fetch=function(input,init){
-if(!isTrackedUrl(input)){return originalFetch.apply(this,arguments);}
-return originalFetch.apply(this,arguments).then(function(response){
+if(typeof input==='string'){input=packageUrl(input);}
+if(!isTrackedUrl(input)){return originalFetch.call(this,input,init);}
+return originalFetch.call(this,input,init).then(function(response){
 var total=Number(response.headers.get('content-length')||0);
 var id=trackStart(response.url,total);
 if(!response.body||!window.ReadableStream){
@@ -163,6 +230,32 @@ throw error;
 });
 };
 }
+function patchElementUrlSetters(){
+var originalSetAttribute=Element.prototype.setAttribute;
+Element.prototype.setAttribute=function(name,value){
+var lowerName=String(name).toLowerCase();
+if((lowerName==='src'||lowerName==='href')&&typeof value==='string'){
+value=packageUrl(value);
+}
+return originalSetAttribute.call(this,name,value);
+};
+[
+[window.HTMLScriptElement&&window.HTMLScriptElement.prototype,'src'],
+[window.HTMLLinkElement&&window.HTMLLinkElement.prototype,'href'],
+[window.HTMLImageElement&&window.HTMLImageElement.prototype,'src']
+].forEach(function(entry){
+var proto=entry[0];
+var property=entry[1];
+if(!proto){return;}
+var descriptor=Object.getOwnPropertyDescriptor(proto,property);
+if(!descriptor||!descriptor.set||!descriptor.get){return;}
+Object.defineProperty(proto,property,{
+configurable:true,
+get:function(){return descriptor.get.call(this);},
+set:function(value){return descriptor.set.call(this,packageUrl(value));}
+});
+});
+}
 function patchXhr(){
 if(!OriginalXhr){return;}
 window.XMLHttpRequest=function(){
@@ -171,8 +264,9 @@ var id='';
 var track=false;
 var open=xhr.open;
 xhr.open=function(method,url){
+if(typeof url==='string'){url=packageUrl(url);}
 track=isTrackedUrl(url);
-return open.apply(xhr,arguments);
+return open.call(xhr,method,url,arguments[2],arguments[3],arguments[4]);
 };
 xhr.addEventListener('loadstart',function(event){
 if(track&&!id){id=trackStart(xhr.responseURL||'',event.lengthComputable?event.total:0);}
@@ -237,6 +331,7 @@ window.requestAnimationFrame(tick);
 }
 }
 tick.frames=0;
+patchElementUrlSetters();
 patchFetch();
 patchXhr();
 window.addEventListener('resize',fit,{passive:true});
@@ -246,9 +341,9 @@ if(document.readyState==='loading'){fit();}else{tick();}
 })();
 </script>`;
 
-  const withBase = html.includes('<head>')
-    ? html.replace('<head>', `<head>${base}`)
-    : `${base}${html}`;
+  const withBase = rewrittenHtml.includes('<head>')
+    ? rewrittenHtml.replace('<head>', `<head>${base}`)
+    : `${base}${rewrittenHtml}`;
 
   return withBase.includes('</head>')
     ? withBase.replace('</head>', `${injection}</head>`)
@@ -385,7 +480,8 @@ export async function GET(
       ? new TextEncoder().encode(
           injectWebglViewportFill(
             new TextDecoder().decode(downloaded.buffer),
-            new URL(request.url).pathname.replace(/\/[^/]*$/, '/')
+            new URL(request.url).pathname.replace(/\/[^/]*$/, '/'),
+            metadata.assetUrls
           )
         )
       : downloaded.buffer.slice();
