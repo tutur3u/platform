@@ -10,6 +10,48 @@ import {
 } from './constants';
 
 type AdminDb = TypedSupabaseClient;
+const WORKSPACE_SECRET_QUERY_CHUNK_SIZE = 100;
+
+function chunkValues<T>(values: T[], chunkSize: number) {
+  const chunks: T[][] = [];
+  for (let index = 0; index < values.length; index += chunkSize) {
+    chunks.push(values.slice(index, index + chunkSize));
+  }
+  return chunks;
+}
+
+async function listExternalProjectWorkspaceSecrets(
+  admin: AdminDb,
+  workspaceIds: string[]
+) {
+  if (workspaceIds.length === 0) {
+    return [];
+  }
+
+  const rows: Array<{ name: string; value: string | null; ws_id: string }> = [];
+
+  for (const workspaceIdChunk of chunkValues(
+    workspaceIds,
+    WORKSPACE_SECRET_QUERY_CHUNK_SIZE
+  )) {
+    const { data, error } = await admin
+      .from('workspace_secrets')
+      .select('ws_id, name, value')
+      .in('ws_id', workspaceIdChunk)
+      .in('name', [
+        EXTERNAL_PROJECT_ENABLED_SECRET,
+        EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
+      ]);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    rows.push(...(data ?? []));
+  }
+
+  return rows;
+}
 
 export async function listCanonicalExternalProjects(db?: AdminDb) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
@@ -59,30 +101,14 @@ export async function listExternalProjectWorkspaceBindingSummaries(
   }
 
   const workspaceIds = (workspaces ?? []).map((workspace) => workspace.id);
-  const [
-    { data: secrets, error: secretsError },
-    { data: audits, error: auditsError },
-  ] = await Promise.all([
-    workspaceIds.length === 0
-      ? Promise.resolve({ data: [], error: null })
-      : admin
-          .from('workspace_secrets')
-          .select('ws_id, name, value')
-          .in('ws_id', workspaceIds)
-          .in('name', [
-            EXTERNAL_PROJECT_ENABLED_SECRET,
-            EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
-          ]),
+  const [secrets, { data: audits, error: auditsError }] = await Promise.all([
+    listExternalProjectWorkspaceSecrets(admin, workspaceIds),
     admin
       .from('workspace_external_project_binding_audits')
       .select('*')
       .order('changed_at', { ascending: false })
       .limit(500),
   ]);
-
-  if (secretsError) {
-    throw new Error(secretsError.message);
-  }
 
   if (auditsError) {
     throw new Error(auditsError.message);
