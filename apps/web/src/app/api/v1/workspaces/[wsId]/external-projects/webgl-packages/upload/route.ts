@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { isWebglZipUpload } from '@/lib/external-projects/webgl-packages';
 import {
-  uploadWorkspaceStorageFileDirect,
+  createWorkspaceStorageUploadPayload,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
 import {
@@ -92,6 +92,55 @@ function normalizeArchivePath(path: string) {
   return normalized;
 }
 
+function parseContentLength(value: string | null) {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+async function uploadRequestBodyToStorage(
+  request: Request,
+  upload: {
+    headers?: Record<string, string>;
+    signedUrl: string;
+    token?: string;
+  },
+  contentType: string
+) {
+  if (!request.body) {
+    throw new WorkspaceStorageError('WebGL package upload is empty.', 400);
+  }
+
+  const headers = new Headers(upload.headers);
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', contentType);
+  }
+  if (upload.token) {
+    headers.set('Authorization', `Bearer ${upload.token}`);
+  }
+
+  const uploadResponse = await fetch(upload.signedUrl, {
+    body: request.body,
+    cache: 'no-store',
+    duplex: 'half',
+    headers,
+    method: 'PUT',
+  } as RequestInit & { duplex: 'half' });
+
+  if (!uploadResponse.ok) {
+    const message = await uploadResponse.text().catch(() => '');
+    throw new WorkspaceStorageError(
+      `Failed to upload WebGL package archive (${uploadResponse.status})${
+        message ? `: ${message}` : ''
+      }`,
+      uploadResponse.status
+    );
+  }
+}
+
 export function OPTIONS(request: Request) {
   return withUploadCors(request, new NextResponse(null, { status: 204 }));
 }
@@ -169,8 +218,10 @@ export async function PUT(
       );
     }
 
-    const buffer = new Uint8Array(await request.arrayBuffer());
-    if (buffer.byteLength === 0) {
+    const contentLength = parseContentLength(
+      request.headers.get('content-length')
+    );
+    if (contentLength === 0) {
       return uploadJson(
         request,
         { error: 'WebGL package upload is empty.' },
@@ -178,15 +229,26 @@ export async function PUT(
       );
     }
 
-    const upload = await uploadWorkspaceStorageFileDirect(
+    const upload = await createWorkspaceStorageUploadPayload(
       access.normalizedWorkspaceId,
-      archivePath,
-      buffer,
+      posix.basename(archivePath),
       {
         contentType,
+        path: posix.dirname(archivePath),
+        size: contentLength,
         upsert: false,
       }
     );
+
+    if (upload.path !== archivePath) {
+      return uploadJson(
+        request,
+        { error: 'Invalid WebGL package upload path.' },
+        { status: 400 }
+      );
+    }
+
+    await uploadRequestBodyToStorage(request, upload, contentType);
 
     return uploadJson(request, {
       archivePath: upload.path,

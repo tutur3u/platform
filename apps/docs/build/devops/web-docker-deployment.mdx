@@ -178,8 +178,9 @@ same-origin artifact map on the CMS `webgl-package` asset. Browser uploads go
 through the self-hosted web app's WebGL package proxy route before the server
 writes to Supabase Storage or R2, so CMS editors do not depend on object-storage
 CORS settings or Vercel function body limits for ZIP uploads. The proxy upload
-route allows credentialed browser requests from the configured CMS origin and
-the CMS client reports per-file upload progress while the backend handles the
+route allows credentialed browser requests from the configured CMS origin,
+streams the request body into a backend-generated signed storage upload, and the
+CMS client reports per-file upload progress while the backend handles the
 storage write and extraction workflow.
 
 The unzip proxy fans out one backend callback per extracted folder or file. File

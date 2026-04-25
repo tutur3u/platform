@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  createWorkspaceStorageUploadPayload: vi.fn(),
   getWebglPackageEntryContext: vi.fn(),
   isCmsGamesEnabled: vi.fn(),
   requireWorkspaceExternalProjectAccess: vi.fn(),
-  uploadWorkspaceStorageFileDirect: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -24,9 +24,9 @@ vi.mock('@/lib/workspace-storage-provider', () => ({
       super(message);
     }
   },
-  uploadWorkspaceStorageFileDirect: (
-    ...args: Parameters<typeof mocks.uploadWorkspaceStorageFileDirect>
-  ) => mocks.uploadWorkspaceStorageFileDirect(...args),
+  createWorkspaceStorageUploadPayload: (
+    ...args: Parameters<typeof mocks.createWorkspaceStorageUploadPayload>
+  ) => mocks.createWorkspaceStorageUploadPayload(...args),
 }));
 
 vi.mock('../shared', () => ({
@@ -41,6 +41,10 @@ vi.mock('../shared', () => ({
 }));
 
 describe('WebGL package proxy upload route', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -61,14 +65,24 @@ describe('WebGL package proxy upload route', () => {
       collectionType: 'games',
       entrySlug: 'mine',
     });
-    mocks.uploadWorkspaceStorageFileDirect.mockResolvedValue({
+    mocks.createWorkspaceStorageUploadPayload.mockResolvedValue({
       fullPath:
         'ws-1/external-projects/yoola/games/mine/webgl-packages/upload.zip',
       path: 'external-projects/yoola/games/mine/webgl-packages/upload.zip',
+      signedUrl: 'https://storage.example/upload.zip',
+      token: 'storage-token',
     });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: async () => '',
+      })
+    );
   });
 
-  it('uploads ZIP bytes through server-side workspace storage', async () => {
+  it('streams ZIP bytes through a backend signed storage upload', async () => {
     const { PUT } = await import(
       '@/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route'
     );
@@ -98,14 +112,25 @@ describe('WebGL package proxy upload route', () => {
       fullPath:
         'ws-1/external-projects/yoola/games/mine/webgl-packages/upload.zip',
     });
-    expect(mocks.uploadWorkspaceStorageFileDirect).toHaveBeenCalledWith(
+    expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalledWith(
       'ws-1',
-      'external-projects/yoola/games/mine/webgl-packages/upload.zip',
-      expect.any(Uint8Array),
+      'upload.zip',
       {
         contentType: 'application/zip',
+        path: 'external-projects/yoola/games/mine/webgl-packages',
+        size: undefined,
         upsert: false,
       }
+    );
+    expect(fetch).toHaveBeenCalledWith(
+      'https://storage.example/upload.zip',
+      expect.objectContaining({
+        body: expect.any(ReadableStream),
+        cache: 'no-store',
+        duplex: 'half',
+        headers: expect.any(Headers),
+        method: 'PUT',
+      })
     );
   });
 
@@ -185,6 +210,7 @@ describe('WebGL package proxy upload route', () => {
     await expect(response.json()).resolves.toMatchObject({
       error: 'Invalid WebGL package upload path.',
     });
-    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
   });
 });
