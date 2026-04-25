@@ -59,9 +59,17 @@ export function BlueGreenMonitoringAlerts({
   snapshot: BlueGreenMonitoringSnapshot;
   t: MonitoringTranslations;
 }) {
+  const showMountMissingAlert = !snapshot.source.monitoringDirAvailable;
+  const showSnapshotMissingAlert =
+    snapshot.source.monitoringDirAvailable && !snapshot.source.statusAvailable;
+  const showWatcherDegradedAlert =
+    snapshot.source.monitoringDirAvailable &&
+    snapshot.source.statusAvailable &&
+    snapshot.watcher.health !== 'live';
+
   return (
     <>
-      {!snapshot.source.monitoringDirAvailable ? (
+      {showMountMissingAlert ? (
         <Alert className="rounded-lg border-dynamic-orange/30 bg-dynamic-orange/5">
           <TriangleAlert className="h-4 w-4" />
           <AlertTitle>{t('alerts.mount_missing_title')}</AlertTitle>
@@ -71,8 +79,7 @@ export function BlueGreenMonitoringAlerts({
         </Alert>
       ) : null}
 
-      {snapshot.source.monitoringDirAvailable &&
-      !snapshot.source.statusAvailable ? (
+      {showSnapshotMissingAlert ? (
         <Alert className="rounded-lg border-dynamic-blue/20 bg-dynamic-blue/5">
           <TriangleAlert className="h-4 w-4" />
           <AlertTitle>{t('alerts.snapshot_missing_title')}</AlertTitle>
@@ -82,7 +89,7 @@ export function BlueGreenMonitoringAlerts({
         </Alert>
       ) : null}
 
-      {snapshot.watcher.health !== 'live' ? (
+      {showWatcherDegradedAlert ? (
         <Alert className="rounded-lg border-dynamic-blue/20 bg-dynamic-blue/5">
           <TriangleAlert className="h-4 w-4" />
           <AlertTitle>{t('alerts.watcher_degraded_title')}</AlertTitle>
