@@ -3,13 +3,26 @@ import unzipper from 'unzipper';
 
 const PORT = Number(process.env.PORT || 8788);
 const SHARED_TOKEN = process.env.DRIVE_UNZIP_PROXY_SHARED_TOKEN || '';
+const ONE_GIB = 1024 * 1024 * 1024;
 const FETCH_TIMEOUT_MS = Number(
-  process.env.DRIVE_UNZIP_PROXY_FETCH_TIMEOUT_MS || 30000
+  process.env.DRIVE_UNZIP_PROXY_FETCH_TIMEOUT_MS || 10 * 60 * 1000
 );
-const MAX_ARCHIVE_DOWNLOAD_BYTES = 100 * 1024 * 1024;
-const MAX_ARCHIVE_ENTRIES = 2000;
-const MAX_EXTRACTED_ENTRY_BYTES = 50 * 1024 * 1024;
-const MAX_TOTAL_EXTRACTED_BYTES = 250 * 1024 * 1024;
+const MAX_ARCHIVE_DOWNLOAD_BYTES = parseByteLimitEnv(
+  'DRIVE_UNZIP_PROXY_MAX_ARCHIVE_BYTES',
+  ONE_GIB
+);
+const MAX_ARCHIVE_ENTRIES = parseIntegerLimitEnv(
+  'DRIVE_UNZIP_PROXY_MAX_ARCHIVE_ENTRIES',
+  2000
+);
+const MAX_EXTRACTED_ENTRY_BYTES = parseByteLimitEnv(
+  'DRIVE_UNZIP_PROXY_MAX_ENTRY_BYTES',
+  ONE_GIB
+);
+const MAX_TOTAL_EXTRACTED_BYTES = parseByteLimitEnv(
+  'DRIVE_UNZIP_PROXY_MAX_TOTAL_EXTRACTED_BYTES',
+  ONE_GIB
+);
 
 const MIME_TYPES = {
   '.br': 'application/octet-stream',
@@ -32,6 +45,20 @@ const MIME_TYPES = {
   '.wasm': 'application/wasm',
   '.webp': 'image/webp',
 };
+
+function parseIntegerLimitEnv(name, fallback) {
+  const raw = process.env[name];
+  if (!raw) {
+    return fallback;
+  }
+
+  const value = Number(raw);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback;
+}
+
+function parseByteLimitEnv(name, fallback) {
+  return parseIntegerLimitEnv(name, fallback);
+}
 
 if (!SHARED_TOKEN) {
   throw new Error(

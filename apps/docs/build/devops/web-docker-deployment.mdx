@@ -187,7 +187,13 @@ Supabase Storage or R2 server-side. The web proxy intentionally lets the
 bearer-token protected storage auto-extract and CMS WebGL extract callback
 routes pass through without anonymous mutation rate limiting; the callback
 routes still validate the shared unzip token before creating folders or writing
-files.
+files. The proxy defaults allow ZIP downloads up to 1 GiB and extracted output
+up to 1 GiB. Operators can tune those caps with
+`DRIVE_UNZIP_PROXY_MAX_ARCHIVE_BYTES`,
+`DRIVE_UNZIP_PROXY_MAX_ENTRY_BYTES`,
+`DRIVE_UNZIP_PROXY_MAX_TOTAL_EXTRACTED_BYTES`, and
+`DRIVE_UNZIP_PROXY_MAX_ARCHIVE_ENTRIES`; workspace Drive quota must still be
+large enough for the uploaded archive and extracted files.
 
 The MarkItDown endpoint is the conversion path for uploaded workspace files.
 Do not route YouTube summaries through MarkItDown or Google Search. Google
