@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { __testUtils } from '../markdown-components';
 
 describe('markdown-components table normalization', () => {
+  it('enables Streamdown single-dollar inline math for model-style LaTeX output', () => {
+    expect(__testUtils.isSingleDollarMathEnabled()).toBe(true);
+  });
+
   it('unwraps fenced markdown tables with valid separator rows', () => {
     const input = [
       'Before',

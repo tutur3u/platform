@@ -1,6 +1,6 @@
 import { cjk } from '@streamdown/cjk';
 import { code } from '@streamdown/code';
-import { math } from '@streamdown/math';
+import { createMathPlugin } from '@streamdown/math';
 import { mermaid as mermaidPlugin } from '@streamdown/mermaid';
 import { Brain, ChevronRight, Loader2 } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
@@ -14,7 +14,19 @@ import {
 } from 'react';
 import { Streamdown } from 'streamdown';
 
+const math = createMathPlugin({
+  singleDollarTextMath: true,
+});
 const plugins = { code, mermaid: mermaidPlugin, math, cjk };
+
+function isSingleDollarMathEnabled(): boolean {
+  const remarkPlugin = math.remarkPlugin;
+  return (
+    Array.isArray(remarkPlugin) &&
+    (remarkPlugin[1] as { singleDollarTextMath?: boolean } | undefined)
+      ?.singleDollarTextMath === true
+  );
+}
 
 function isMarkdownTableSeparator(separator: string): boolean {
   for (const char of separator) {
@@ -115,6 +127,7 @@ export function AssistantMarkdown({
 }
 
 export const __testUtils = {
+  isSingleDollarMathEnabled,
   isMarkdownTableBlock,
   normalizeMarkdownTables,
 };

@@ -59,6 +59,11 @@ assistant text surface on the shared Streamdown wrapper, including text rendered
 inside compact tool UIs, so code blocks, tables, Mermaid, math, and CJK spacing
 stay consistent.
 
+Mira enables Streamdown math with `singleDollarTextMath` because model output
+commonly uses `$...$` inline LaTeX. Keep `@streamdown/math` in the Tailwind
+source scan alongside the base Streamdown dist files, and keep
+`katex/dist/katex.min.css` imported from the chat renderer path.
+
 While the request is submitted but no assistant text has arrived yet, the chat
 should render a lightweight assistant activity bubble with rotating status copy.
 Hide that placeholder as soon as real assistant text streams, and keep it
