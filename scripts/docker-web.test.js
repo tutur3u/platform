@@ -34,6 +34,10 @@ const {
   runBlueGreenCachedRecoveryWorkflow,
 } = require('./docker-web/blue-green.js');
 const { getWatchPaths } = require('./watch-blue-green/paths.js');
+const {
+  getStatusSnapshotHealth,
+  shouldRestartWatcherExit,
+} = require('../apps/web/docker/blue-green-watcher-entrypoint.js');
 
 function createFsStub({ envFileContent = '', hasEnvFile = true } = {}) {
   return {
@@ -54,6 +58,17 @@ function createFsStub({ envFileContent = '', hasEnvFile = true } = {}) {
     },
     rmSync() {},
     writeFileSync() {},
+  };
+}
+
+function createSnapshotFsStub(snapshot = null) {
+  return {
+    existsSync() {
+      return snapshot != null;
+    },
+    readFileSync() {
+      return JSON.stringify(snapshot);
+    },
   };
 }
 
@@ -150,6 +165,95 @@ test('usesBlueGreenStrategy only enables blue-green for production', () => {
   );
   assert.equal(
     usesBlueGreenStrategy(parseArgs(['up', '--strategy', 'blue-green'])),
+    false
+  );
+});
+
+test('watcher entrypoint treats missing startup snapshots as restartable after grace', () => {
+  assert.deepEqual(
+    getStatusSnapshotHealth({
+      fsImpl: createSnapshotFsStub(null),
+      now: 11_000,
+      startGraceMs: 15_000,
+      startedAt: 0,
+      statusFile: '/tmp/missing-status.json',
+    }),
+    {
+      reason: null,
+      status: 'starting',
+    }
+  );
+
+  const health = getStatusSnapshotHealth({
+    fsImpl: createSnapshotFsStub(null),
+    now: 16_000,
+    startGraceMs: 15_000,
+    startedAt: 0,
+    statusFile: '/tmp/missing-status.json',
+  });
+
+  assert.equal(health.status, 'missing');
+  assert.match(health.reason, /status snapshot missing/);
+});
+
+test('watcher entrypoint detects stale status snapshots from watcher interval', () => {
+  assert.deepEqual(
+    getStatusSnapshotHealth({
+      fsImpl: createSnapshotFsStub({ intervalMs: 5_000, updatedAt: 20_000 }),
+      now: 30_000,
+      startedAt: 0,
+      staleGraceMs: 1_000,
+      statusFile: '/tmp/status.json',
+    }),
+    {
+      reason: null,
+      status: 'live',
+    }
+  );
+
+  const health = getStatusSnapshotHealth({
+    fsImpl: createSnapshotFsStub({ intervalMs: 5_000, updatedAt: 20_000 }),
+    now: 45_001,
+    startedAt: 0,
+    staleGraceMs: 1_000,
+    statusFile: '/tmp/status.json',
+  });
+
+  assert.equal(health.status, 'stale');
+  assert.match(health.reason, /status snapshot stale/);
+});
+
+test('watcher entrypoint restarts crashed or stale child processes', () => {
+  assert.equal(
+    shouldRestartWatcherExit(
+      { code: 1, restartReason: null, signal: null },
+      [],
+      { stopRequested: false }
+    ),
+    true
+  );
+  assert.equal(
+    shouldRestartWatcherExit(
+      { code: 0, restartReason: null, signal: null },
+      [],
+      { stopRequested: false }
+    ),
+    false
+  );
+  assert.equal(
+    shouldRestartWatcherExit(
+      { code: 0, restartReason: 'status snapshot stale', signal: null },
+      [],
+      { stopRequested: false }
+    ),
+    true
+  );
+  assert.equal(
+    shouldRestartWatcherExit(
+      { code: 1, restartReason: null, signal: null },
+      ['--once'],
+      { stopRequested: false }
+    ),
     false
   );
 });

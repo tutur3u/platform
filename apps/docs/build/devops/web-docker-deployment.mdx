@@ -472,6 +472,11 @@ Operational notes for the containerized watcher:
 - Its entrypoint wrapper relaunches the watcher in-place when
   `scripts/watch-blue-green-deploy.js` requests a self-restart after pulling a
   new watcher revision.
+- The entrypoint is also the watcher supervisor. It restarts the child process
+  after crashes, after the status snapshot fails to appear during startup, or
+  after `blue-green-auto-deploy.status.json` becomes stale. The compose service
+  uses `restart: unless-stopped` so Docker also brings the watcher back after a
+  daemon or container failure.
 - `bun serve:web:docker:bg:down` also stops the watcher service because it is
   part of the production compose stack now.
 
