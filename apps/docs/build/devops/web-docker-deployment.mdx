@@ -399,9 +399,14 @@ Behavior:
 15. Retries recoverable Git command failures instead of exiting. The first retry
     waits 1 minute, then the watcher backs off exponentially on consecutive Git
     failures up to a 15 minute ceiling.
-16. Stops immediately if the checked-out branch changes while the watcher is
+16. Caps deployment attempts at 3 failures per commit. A recovered pending
+    handoff failure is recorded, the pending request is cleared, and the
+    watcher keeps polling; once the cap is reached, that commit reports
+    `retry-limited` until a new commit is available or an operator pins a
+    different deployment.
+17. Stops immediately if the checked-out branch changes while the watcher is
     running.
-17. If another watcher already owns the lock, a new invocation can fail with
+18. If another watcher already owns the lock, a new invocation can fail with
     guidance, mirror the active watcher with `--resume-if-running`, or replace
     it with `--replace-existing`.
 
@@ -459,6 +464,10 @@ Dashboard details:
 - Recoverable Git poll failures stay visible in the dashboard as a retrying
   watcher state instead of terminating the process, and the next-check timer
   reflects the active backoff delay.
+- Build/deploy failures also stay inside the watcher loop. The watcher records
+  failed attempts in deployment history, clears stale pending handoff files
+  after recovery failures, and stops retrying the same commit after the third
+  failed deployment attempt.
 - Normal promotions keep the long-lived `web-proxy` container and bound port
   stable, which avoids transient listener drops for upstreams such as
   Cloudflare Tunnel that are connected to `:7803`.

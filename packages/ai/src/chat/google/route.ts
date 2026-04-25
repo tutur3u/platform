@@ -21,7 +21,7 @@ import {
 import { ChatRequestBodySchema, mapToUIMessages } from './chat-request-schema';
 import { systemInstruction } from './default-system-instruction';
 import { prepareMiraToolStep } from './mira-step-preparation';
-import { resolveAiRouteAuth } from './route-auth.js';
+import { resolveAiRouteAuth } from './route-auth';
 import {
   moveTempFilesToThread,
   resolveChatIdForUser,

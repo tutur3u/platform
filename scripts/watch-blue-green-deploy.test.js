@@ -15,6 +15,7 @@ const {
   DISPLAY_DEPLOYMENTS,
   HOST_WORKSPACE_DIR_ENV,
   MAX_GIT_FAILURE_BACKOFF_MS,
+  MAX_FAILED_DEPLOYMENTS_PER_COMMIT,
   SELF_WATCHED_FILES,
   WATCH_ARGS_FILE,
   WATCH_PENDING_DEPLOY_ENV,
@@ -30,6 +31,7 @@ const {
   formatRelativeTime,
   formatRequestsPerMinute,
   getGitFailureBackoffMs,
+  getFailedDeploymentCountForCommit,
   getWatcherComposeEnv,
   getWatchPaths,
   isRecoverableGitCommandError,
@@ -3291,6 +3293,321 @@ test('getLatestSuccessfulDeploymentCommitHash returns the newest successful comm
     ]),
     'bbb222222222222222222'
   );
+});
+
+test('getFailedDeploymentCountForCommit counts failed attempts per commit', () => {
+  assert.equal(
+    getFailedDeploymentCountForCommit(
+      [
+        { commitHash: 'bbb222', status: 'failed' },
+        { commitHash: 'bbb222', status: 'failed' },
+        { commitHash: 'bbb222', status: 'successful' },
+        { commitHash: 'aaa111', status: 'failed' },
+      ],
+      'bbb222'
+    ),
+    2
+  );
+});
+
+test('runDeployWatchIteration stops retrying a commit after three failed deployments', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-retry-cap-'));
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+  const latestCommitHash = 'bbb222222222222222222';
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    writeDeploymentHistory(
+      [
+        {
+          commitHash: latestCommitHash,
+          commitShortHash: 'bbb222',
+          commitSubject: 'Broken deployment',
+          finishedAt: 300,
+          startedAt: 200,
+          status: 'failed',
+        },
+        {
+          commitHash: latestCommitHash,
+          commitShortHash: 'bbb222',
+          commitSubject: 'Broken deployment',
+          finishedAt: 200,
+          startedAt: 100,
+          status: 'failed',
+        },
+        {
+          commitHash: latestCommitHash,
+          commitShortHash: 'bbb222',
+          commitSubject: 'Broken deployment',
+          finishedAt: 100,
+          startedAt: 0,
+          status: 'failed',
+        },
+        {
+          activatedAt: 50,
+          activeColor: 'green',
+          commitHash: 'aaa111111111111111111',
+          commitShortHash: 'aaa111',
+          commitSubject: 'Previous successful deployment',
+          finishedAt: 50,
+          startedAt: 0,
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        envFilePath,
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        paths,
+        rootDir: tempDir,
+        runCommand: async (command, args) => {
+          const key = `${command} ${args.join(' ')}`;
+          calls.push(key);
+
+          if (key === 'git rev-parse --abbrev-ref HEAD') {
+            return createResult('main\n');
+          }
+
+          if (key === 'git status --porcelain') {
+            return createResult('');
+          }
+
+          if (key === 'git fetch origin main') {
+            return createResult('');
+          }
+
+          if (key === 'git rev-parse HEAD') {
+            return createResult(`${latestCommitHash}\n`);
+          }
+
+          if (key === 'git rev-parse origin/main') {
+            return createResult(`${latestCommitHash}\n`);
+          }
+
+          if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+            return createResult(
+              `${latestCommitHash}\nbbb222\nBroken deployment\n2026-04-18T10:59:00.000Z\n`
+            );
+          }
+
+          if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+            return createResult('');
+          }
+
+          if (
+            key ===
+            `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`
+          ) {
+            return createResult('');
+          }
+
+          if (
+            key ===
+            'docker ps --format {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}\t{{.Ports}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project"}}'
+          ) {
+            return createResult('');
+          }
+
+          throw new Error(`Unexpected command: ${key}`);
+        },
+      }
+    );
+
+    assert.equal(result.status, 'retry-limited');
+    assert.equal(
+      result.failedDeploymentCount,
+      MAX_FAILED_DEPLOYMENTS_PER_COMMIT
+    );
+    assert.ok(!calls.includes('bun upgrade'));
+    assert.ok(
+      !calls.includes(
+        `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+      )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('main keeps watching after recovered pending deployment failure and caps retries', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-pending-failure-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const uiState = {};
+  const latestCommitHash = 'bbb222222222222222222';
+  const deployKey = `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`;
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    writeDeploymentHistory(
+      [
+        {
+          commitHash: latestCommitHash,
+          commitShortHash: 'bbb222',
+          commitSubject: 'Broken deployment',
+          finishedAt: 300,
+          startedAt: 200,
+          status: 'failed',
+        },
+        {
+          commitHash: latestCommitHash,
+          commitShortHash: 'bbb222',
+          commitSubject: 'Broken deployment',
+          finishedAt: 200,
+          startedAt: 100,
+          status: 'failed',
+        },
+        {
+          activatedAt: 50,
+          activeColor: 'green',
+          commitHash: 'aaa111111111111111111',
+          commitShortHash: 'aaa111',
+          commitSubject: 'Previous successful deployment',
+          finishedAt: 50,
+          startedAt: 0,
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+    writePendingDeployRequest(
+      {
+        commitHash: latestCommitHash,
+        commitShortHash: 'bbb222',
+        reason: 'process-restart',
+      },
+      { fsImpl: fs, paths }
+    );
+
+    await main(['--once'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      now: (() => {
+        const values = [1000, 2000, 3000, 4000, 5000, 6000];
+        return () => values.shift() ?? 6000;
+      })(),
+      processImpl: {
+        argv: ['node', 'scripts/watch-blue-green-deploy.js'],
+        exit() {
+          throw new Error('main should not exit after deploy failure');
+        },
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`
+        ) {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          'docker ps --format {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}\t{{.Ports}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project"}}'
+        ) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult('main\n');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref --symbolic-full-name @{u}') {
+          return createResult('origin/main\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return createResult(
+            `${latestCommitHash}\nbbb222\nBroken deployment\n2026-04-18T10:59:00.000Z\n`
+          );
+        }
+
+        if (key === deployKey) {
+          return createResult('', { code: 1, stderr: 'build failed' });
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git fetch origin main') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse HEAD') {
+          return createResult(`${latestCommitHash}\n`);
+        }
+
+        if (key === 'git rev-parse origin/main') {
+          return createResult(`${latestCommitHash}\n`);
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error() {},
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn() {},
+      },
+    });
+
+    const history = readDeploymentHistory(paths, fs);
+
+    assert.equal(readPendingDeployRequest(paths, fs), null);
+    assert.equal(uiState.lastResult.status, 'retry-limited');
+    assert.equal(
+      getFailedDeploymentCountForCommit(history, latestCommitHash),
+      MAX_FAILED_DEPLOYMENTS_PER_COMMIT
+    );
+    assert.equal(calls.filter((key) => key === deployKey).length, 1);
+    assert.ok(!calls.includes('bun upgrade'));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('main deploys the latest fetched revision after recovery when the last successful build is stale', async () => {

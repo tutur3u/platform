@@ -71,6 +71,7 @@ const DEFAULT_LOCK_CONFLICT_ACTION = 'fail';
 const MAX_GIT_FAILURE_BACKOFF_MS = 15 * 60_000;
 const DEFAULT_REPLACE_WATCHER_TIMEOUT_MS = 5_000;
 const CONTAINER_SELF_RESTART_EXIT_CODE = 75;
+const MAX_FAILED_DEPLOYMENTS_PER_COMMIT = 3;
 const MAX_EVENTS = 8;
 const DISPLAY_DEPLOYMENTS = 3;
 const BLUE_GREEN_COLORS = ['blue', 'green'];
@@ -631,6 +632,8 @@ function summarizeResult(result) {
       return colorize('yellow', 'Branch diverged, waiting');
     case 'git-failed':
       return colorize('yellow', 'Git failed, retrying');
+    case 'retry-limited':
+      return colorize('yellow', 'Deployment retry limit reached');
     case 'pin-deploy-failed':
       return colorize('red', 'Pinned rollback failed');
     case 'pinned':
@@ -1357,6 +1360,23 @@ function getLatestSuccessfulDeploymentCommitHash(deployments = []) {
   );
 
   return latestSuccessfulDeployment?.commitHash ?? null;
+}
+
+function getFailedDeploymentCountForCommit(deployments = [], commitHash) {
+  if (!commitHash) {
+    return 0;
+  }
+
+  return deployments.filter(
+    (entry) => entry?.status === 'failed' && entry.commitHash === commitHash
+  ).length;
+}
+
+function hasReachedDeploymentFailureLimit(deployments = [], commitHash) {
+  return (
+    getFailedDeploymentCountForCommit(deployments, commitHash) >=
+    MAX_FAILED_DEPLOYMENTS_PER_COMMIT
+  );
 }
 
 function createWatchUi(initialState = {}, options = {}) {
@@ -2971,12 +2991,29 @@ async function runPinnedDeploymentIteration(
   const latestDeployedCommitHash = getLatestSuccessfulDeploymentCommitHash(
     readDeploymentHistory(paths, fsImpl)
   );
+  const deploymentHistory = readDeploymentHistory(paths, fsImpl);
+  const failedDeploymentCount = getFailedDeploymentCountForCommit(
+    deploymentHistory,
+    latestCommit.hash
+  );
 
   if (latestCommit.hash && latestCommit.hash === latestDeployedCommitHash) {
     return attachRuntime({
       checkedAt,
       latestCommit,
       status: 'pinned',
+    });
+  }
+
+  if (hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)) {
+    log.warn?.(
+      `Skipping pinned rollback for ${latestCommit.shortHash} because it already failed ${failedDeploymentCount} deployment attempts.`
+    );
+    return attachRuntime({
+      checkedAt,
+      failedDeploymentCount,
+      latestCommit,
+      status: 'retry-limited',
     });
   }
 
@@ -3198,6 +3235,11 @@ async function runDeployWatchIteration(
       const latestDeployedCommitHash = getLatestSuccessfulDeploymentCommitHash(
         readDeploymentHistory(paths, fsImpl)
       );
+      const deploymentHistory = readDeploymentHistory(paths, fsImpl);
+      const failedDeploymentCount = getFailedDeploymentCountForCommit(
+        deploymentHistory,
+        latestCommit.hash
+      );
 
       if (
         latestDeployedCommitHash &&
@@ -3210,6 +3252,21 @@ async function runDeployWatchIteration(
         log.info?.(
           `Refreshing Bun runtime and dependencies for ${latestCommit.shortHash} before reconciliation deploy.`
         );
+
+        if (
+          hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
+        ) {
+          log.warn?.(
+            `Skipping reconciliation deploy for ${latestCommit.shortHash} because it already failed ${failedDeploymentCount} deployment attempts.`
+          );
+          return attachRuntime({
+            checkedAt,
+            failedDeploymentCount,
+            latestCommit,
+            reconciledFromCommitHash: latestDeployedCommitHash,
+            status: 'retry-limited',
+          });
+        }
 
         await runBunUpgradeAndInstall({
           env,
@@ -3353,6 +3410,20 @@ async function runDeployWatchIteration(
         }
 
         return runtimeSnapshot;
+      }
+
+      if (
+        hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
+      ) {
+        log.warn?.(
+          `Skipping standby refresh for ${latestCommit.shortHash} because it already failed ${failedDeploymentCount} deployment attempts.`
+        );
+        return attachRuntime({
+          checkedAt,
+          failedDeploymentCount,
+          latestCommit,
+          status: 'retry-limited',
+        });
       }
 
       log.info?.(
@@ -3507,6 +3578,11 @@ async function runDeployWatchIteration(
         env,
         runCommand: run,
       });
+      const deploymentHistory = readDeploymentHistory(paths, fsImpl);
+      const failedDeploymentCount = getFailedDeploymentCountForCommit(
+        deploymentHistory,
+        latestCommit.hash
+      );
 
       log.info?.(
         `Pulled ${target.branch} from ${localHead.slice(
@@ -3518,6 +3594,22 @@ async function runDeployWatchIteration(
       log.info?.(
         `Refreshing Bun runtime and dependencies for ${updatedHead.slice(0, 12)}.`
       );
+
+      if (
+        hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
+      ) {
+        log.warn?.(
+          `Skipping deployment for ${latestCommit.shortHash} because it already failed ${failedDeploymentCount} deployment attempts.`
+        );
+        return attachRuntime({
+          checkedAt,
+          failedDeploymentCount,
+          latestCommit,
+          newHead: updatedHead,
+          oldHead: localHead,
+          status: 'retry-limited',
+        });
+      }
 
       await runBunUpgradeAndInstall({
         env,
@@ -3978,112 +4070,141 @@ async function main(argv = process.argv.slice(2), options = {}) {
           `Recovered watcher is already serving ${latestCommit.shortHash}; skipping the pending deploy handoff.`
         );
       } else {
-        const pendingStartedAt =
-          typeof options.now === 'function' ? options.now() : Date.now();
-        const buildingDeployment = createPendingDeploymentEntry({
-          latestCommit,
-          startedAt: pendingStartedAt,
-          status: 'building',
-        });
-        const buildingDeployments = prependPendingDeployment(
-          ui.state.deployments,
-          buildingDeployment
+        const deploymentHistory = readDeploymentHistory(paths, fsImpl);
+        const failedDeploymentCount = getFailedDeploymentCountForCommit(
+          deploymentHistory,
+          latestCommit.hash
         );
-        const buildingSummary = getLatestDeploymentSummary(buildingDeployments);
 
-        ui.update({
-          dockerResources: ui.state.dockerResources,
-          deployments: buildingDeployments,
-          lastDeployAt: buildingSummary.lastDeployAt,
-          lastDeployStatus: buildingSummary.lastDeployStatus,
-          nextCheckAt: null,
-        });
-
-        try {
-          const pendingResult = await runPendingDeployAfterRestart({
-            deployCommand: options.deployCommand ?? DEFAULT_DEPLOY_COMMAND,
-            env,
-            envFilePath,
-            fsImpl,
-            latestCommit,
-            log: ui,
-            now: options.now ?? (() => Date.now()),
-            paths,
-            rootDir,
-            runCommand: run,
-          });
-          const runtimeSnapshot = await loadRuntimeSnapshot({
-            env,
-            envFilePath,
-            fsImpl,
-            now: typeof options.now === 'function' ? options.now() : Date.now(),
-            paths,
-            rootDir,
-            runCommand: run,
-            history: pendingResult.history,
-          });
-          const latestDeploymentSummary = getLatestDeploymentSummary(
-            runtimeSnapshot.deployments
-          );
-
-          ui.update({
-            currentBlueGreen: runtimeSnapshot.currentBlueGreen,
-            dockerResources: runtimeSnapshot.dockerResources,
-            deployments: runtimeSnapshot.deployments,
-            lastDeployAt: latestDeploymentSummary.lastDeployAt,
-            lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
-            lastResult: { status: 'deployed' },
-            nextCheckAt: Date.now() + parsed.intervalMs,
-          });
+        if (
+          hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
+        ) {
           clearPendingDeployRequest({
             fsImpl,
             paths,
           });
-          ui.info(
-            `Blue/green deployment completed for ${latestCommit.shortHash}.`
+          ui.warn(
+            `Skipping recovered deploy handoff for ${latestCommit.shortHash} because it already failed ${failedDeploymentCount} deployment attempts.`
           );
-        } catch (error) {
-          const deployFinishedAt =
+        } else {
+          const pendingStartedAt =
             typeof options.now === 'function' ? options.now() : Date.now();
-          const history = appendDeploymentHistory(
-            {
-              buildDurationMs: Math.max(0, deployFinishedAt - pendingStartedAt),
-              commitHash: latestCommit.hash,
-              commitShortHash: latestCommit.shortHash,
-              commitSubject: latestCommit.subject,
-              finishedAt: deployFinishedAt,
-              startedAt: pendingStartedAt,
-              status: 'failed',
-            },
-            {
-              fsImpl,
-              paths,
-            }
-          );
-          const runtimeSnapshot = await loadRuntimeSnapshot({
-            env,
-            envFilePath,
-            fsImpl,
-            now: deployFinishedAt,
-            paths,
-            rootDir,
-            runCommand: run,
-            history,
+          const buildingDeployment = createPendingDeploymentEntry({
+            latestCommit,
+            startedAt: pendingStartedAt,
+            status: 'building',
           });
-          const latestDeploymentSummary = getLatestDeploymentSummary(
-            runtimeSnapshot.deployments
+          const buildingDeployments = prependPendingDeployment(
+            ui.state.deployments,
+            buildingDeployment
           );
+          const buildingSummary =
+            getLatestDeploymentSummary(buildingDeployments);
 
           ui.update({
-            currentBlueGreen: runtimeSnapshot.currentBlueGreen,
-            dockerResources: runtimeSnapshot.dockerResources,
-            deployments: runtimeSnapshot.deployments,
-            lastDeployAt: latestDeploymentSummary.lastDeployAt,
-            lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
-            lastResult: { error, status: 'deploy-failed' },
-            nextCheckAt: Date.now() + parsed.intervalMs,
+            dockerResources: ui.state.dockerResources,
+            deployments: buildingDeployments,
+            lastDeployAt: buildingSummary.lastDeployAt,
+            lastDeployStatus: buildingSummary.lastDeployStatus,
+            nextCheckAt: null,
           });
-          throw error;
+
+          try {
+            const pendingResult = await runPendingDeployAfterRestart({
+              deployCommand: options.deployCommand ?? DEFAULT_DEPLOY_COMMAND,
+              env,
+              envFilePath,
+              fsImpl,
+              latestCommit,
+              log: ui,
+              now: options.now ?? (() => Date.now()),
+              paths,
+              rootDir,
+              runCommand: run,
+            });
+            const runtimeSnapshot = await loadRuntimeSnapshot({
+              env,
+              envFilePath,
+              fsImpl,
+              now:
+                typeof options.now === 'function' ? options.now() : Date.now(),
+              paths,
+              rootDir,
+              runCommand: run,
+              history: pendingResult.history,
+            });
+            const latestDeploymentSummary = getLatestDeploymentSummary(
+              runtimeSnapshot.deployments
+            );
+
+            ui.update({
+              currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+              dockerResources: runtimeSnapshot.dockerResources,
+              deployments: runtimeSnapshot.deployments,
+              lastDeployAt: latestDeploymentSummary.lastDeployAt,
+              lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
+              lastResult: { status: 'deployed' },
+              nextCheckAt: Date.now() + parsed.intervalMs,
+            });
+            clearPendingDeployRequest({
+              fsImpl,
+              paths,
+            });
+            ui.info(
+              `Blue/green deployment completed for ${latestCommit.shortHash}.`
+            );
+          } catch (error) {
+            const deployFinishedAt =
+              typeof options.now === 'function' ? options.now() : Date.now();
+            const history = appendDeploymentHistory(
+              {
+                buildDurationMs: Math.max(
+                  0,
+                  deployFinishedAt - pendingStartedAt
+                ),
+                commitHash: latestCommit.hash,
+                commitShortHash: latestCommit.shortHash,
+                commitSubject: latestCommit.subject,
+                finishedAt: deployFinishedAt,
+                startedAt: pendingStartedAt,
+                status: 'failed',
+              },
+              {
+                fsImpl,
+                paths,
+              }
+            );
+            const runtimeSnapshot = await loadRuntimeSnapshot({
+              env,
+              envFilePath,
+              fsImpl,
+              now: deployFinishedAt,
+              paths,
+              rootDir,
+              runCommand: run,
+              history,
+            });
+            const latestDeploymentSummary = getLatestDeploymentSummary(
+              runtimeSnapshot.deployments
+            );
+
+            ui.update({
+              currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+              dockerResources: runtimeSnapshot.dockerResources,
+              deployments: runtimeSnapshot.deployments,
+              lastDeployAt: latestDeploymentSummary.lastDeployAt,
+              lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
+              lastResult: { error, status: 'deploy-failed' },
+              nextCheckAt: Date.now() + parsed.intervalMs,
+            });
+            clearPendingDeployRequest({
+              fsImpl,
+              paths,
+            });
+            ui.error(
+              `Recovered deploy handoff failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+            );
+          }
         }
       }
     }
@@ -4251,6 +4372,7 @@ module.exports = {
   DEFAULT_INTERVAL_MS,
   DISPLAY_DEPLOYMENTS,
   MAX_GIT_FAILURE_BACKOFF_MS,
+  MAX_FAILED_DEPLOYMENTS_PER_COMMIT,
   MAX_DEPLOYMENTS,
   MAX_EVENTS,
   CONTAINER_REFRESH_WATCHED_FILES,
@@ -4282,6 +4404,7 @@ module.exports = {
   formatRequestsPerMinute,
   getGitFailureBackoffMs,
   getLatestDeploymentSummary,
+  getFailedDeploymentCountForCommit,
   getLatestSuccessfulDeploymentCommitHash,
   getCommitMetadata,
   getCurrentBranch,
