@@ -244,14 +244,17 @@ export function buildWebglPackageArtifact(input: {
 
 export function inferWebglAssetHeaders(relativePath: string): {
   contentEncoding?: 'br' | 'gzip';
+  isKnownType: boolean;
   contentType: string;
 } {
   const compressed = stripCompressionExtension(relativePath);
   const extension = posix.extname(compressed.path).toLowerCase();
+  const contentType = WEBGL_CONTENT_TYPES[extension];
 
   return {
     contentEncoding: compressed.contentEncoding,
-    contentType: WEBGL_CONTENT_TYPES[extension] ?? 'application/octet-stream',
+    contentType: contentType ?? 'application/octet-stream',
+    isKnownType: Boolean(contentType),
   };
 }
 
