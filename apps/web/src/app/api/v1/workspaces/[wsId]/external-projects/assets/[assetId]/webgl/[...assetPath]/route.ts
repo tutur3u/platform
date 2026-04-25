@@ -18,6 +18,41 @@ import {
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
 
+const WEBGL_VIEWPORT_FILL_MARKER = 'data-tuturuuu-webgl-viewport-fill';
+
+function injectWebglViewportFill(html: string) {
+  if (html.includes(WEBGL_VIEWPORT_FILL_MARKER)) {
+    return html;
+  }
+
+  const injection = `<style ${WEBGL_VIEWPORT_FILL_MARKER}>
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#000!important;}
+#unity-container{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;background:#000!important;}
+#unity-container.unity-desktop{left:0!important;top:0!important;transform:none!important;}
+#unity-canvas{width:100vw!important;height:100vh!important;display:block!important;background:#231f20!important;}
+#unity-loading-bar{position:fixed!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;}
+#unity-footer{position:fixed!important;right:12px!important;bottom:12px!important;left:12px!important;z-index:2;}
+</style><script ${WEBGL_VIEWPORT_FILL_MARKER}>
+(function(){function fit(){var container=document.getElementById('unity-container');var canvas=document.getElementById('unity-canvas');if(container){container.style.width='100vw';container.style.height='100vh';container.style.maxWidth='none';container.style.maxHeight='none';}if(canvas){canvas.style.width='100vw';canvas.style.height='100vh';}}window.addEventListener('resize',fit);document.addEventListener('DOMContentLoaded',fit);fit();})();
+</script>`;
+
+  return html.includes('</head>')
+    ? html.replace('</head>', `${injection}</head>`)
+    : `${injection}${html}`;
+}
+
+function shouldInjectWebglViewportFill(input: {
+  contentEncoding?: string;
+  contentType: string;
+  relativePath: string;
+}) {
+  return (
+    !input.contentEncoding &&
+    input.contentType.toLowerCase().startsWith('text/html') &&
+    input.relativePath.toLowerCase().endsWith('.html')
+  );
+}
+
 export async function GET(
   request: Request,
   {
@@ -128,7 +163,15 @@ export async function GET(
       headers.set('Content-Encoding', inferred.contentEncoding);
     }
 
-    const responseBody = downloaded.buffer.slice();
+    const responseBody = shouldInjectWebglViewportFill({
+      contentEncoding: inferred.contentEncoding,
+      contentType,
+      relativePath,
+    })
+      ? new TextEncoder().encode(
+          injectWebglViewportFill(new TextDecoder().decode(downloaded.buffer))
+        )
+      : downloaded.buffer.slice();
 
     return new Response(responseBody.buffer as ArrayBuffer, {
       headers,

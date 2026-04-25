@@ -173,6 +173,9 @@ describe('WebGL package asset route', () => {
     expect(response.headers.get('content-type')).toBe(
       'text/html; charset=utf-8'
     );
+    await expect(response.text()).resolves.toContain(
+      'data-tuturuuu-webgl-viewport-fill'
+    );
   });
 
   it('prevents path traversal outside the WebGL package root', async () => {

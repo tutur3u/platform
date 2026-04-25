@@ -61,8 +61,8 @@ export default async function CmsWebglPackagePlayerPage({ params }: Props) {
   const strings = buildCmsStrings(t);
 
   return (
-    <main className="flex min-h-[calc(100svh-5rem)] flex-col bg-background">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-border/70 border-b px-4 py-3">
+    <main className="flex h-[calc(100svh-5rem)] min-h-0 flex-col overflow-hidden bg-background">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-border/70 border-b px-4 py-3">
         <div className="min-w-0">
           <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
             {strings.webglPackageTitle}
@@ -77,7 +77,8 @@ export default async function CmsWebglPackagePlayerPage({ params }: Props) {
         </a>
       </header>
       <iframe
-        className="min-h-0 flex-1 border-0"
+        allow="autoplay; fullscreen; gamepad; xr-spatial-tracking"
+        className="h-full min-h-0 w-full flex-1 border-0 bg-black"
         src={entryUrl}
         title={entry.title}
       />
