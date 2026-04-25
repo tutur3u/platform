@@ -109,6 +109,55 @@ describe('WebGL package proxy upload route', () => {
     );
   });
 
+  it('allows credentialed CMS browser uploads from the configured CMS origin', async () => {
+    const { OPTIONS, PUT } = await import(
+      '@/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route'
+    );
+    const requestUrl =
+      'http://localhost/api/v1/workspaces/ws-1/external-projects/webgl-packages/upload?entryId=00000000-0000-4000-8000-000000000001&archivePath=external-projects%2Fyoola%2Fgames%2Fmine%2Fwebgl-packages%2Fupload.zip&filename=Mine+Blast+WebGL.zip';
+
+    const preflight = OPTIONS(
+      new Request(requestUrl, {
+        headers: {
+          Origin: 'https://cms.tuturuuu.com',
+        },
+        method: 'OPTIONS',
+      })
+    );
+
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get('Access-Control-Allow-Origin')).toBe(
+      'https://cms.tuturuuu.com'
+    );
+    expect(preflight.headers.get('Access-Control-Allow-Credentials')).toBe(
+      'true'
+    );
+
+    const response = await PUT(
+      new Request(requestUrl, {
+        body: new Blob(['zip'], { type: 'application/zip' }),
+        headers: {
+          'Content-Type': 'application/zip',
+          Origin: 'https://cms.tuturuuu.com',
+        },
+        method: 'PUT',
+      }),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(
+      'https://cms.tuturuuu.com'
+    );
+    expect(response.headers.get('Access-Control-Allow-Credentials')).toBe(
+      'true'
+    );
+  });
+
   it('rejects archive paths outside the entry WebGL package folder', async () => {
     const { PUT } = await import(
       '@/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route'

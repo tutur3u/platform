@@ -11,6 +11,16 @@ export function stripGeneratedStorageNamePrefix(name: string) {
   return name.replace(GENERATED_STORAGE_PREFIX_PATTERN, '');
 }
 
+export function getStoragePathSegmentDisplayName(segment: string) {
+  let decoded = segment;
+
+  try {
+    decoded = decodeURIComponent(segment);
+  } catch {}
+
+  return stripGeneratedStorageNamePrefix(decoded);
+}
+
 export function getStorageObjectDisplayName(item: StorageObject | null) {
   if (!item?.name) {
     return '';

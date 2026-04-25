@@ -383,8 +383,8 @@ export function StorageObjectForm({
                     })
                     .map((file, i) => (
                       <Fragment key={file.name}>
-                        <div className="flex items-center justify-between gap-2 p-2">
-                          <div>
+                        <div className="flex items-start justify-between gap-3 p-2">
+                          <div className="min-w-0 flex-1">
                             {editingFile?.name === file.name ? (
                               <input
                                 type="text"
@@ -430,7 +430,7 @@ export function StorageObjectForm({
                               />
                             ) : (
                               <div
-                                className="line-clamp-1 max-w-100 break-all text-sm opacity-70"
+                                className="line-clamp-1 w-full break-all text-sm opacity-70"
                                 onClick={() => {
                                   setNewFileName(file.name);
                                   setEditingFile(file);
@@ -459,19 +459,19 @@ export function StorageObjectForm({
                             {fileStatuses[file.name] === 'uploading' ? (
                               <Progress
                                 value={fileProgress[file.name] ?? 0}
-                                className="mt-2 h-1.5"
+                                className="mt-2 h-1.5 w-full"
                               />
                             ) : null}
                             {fileStatuses[file.name] === 'error' &&
                             fileErrors[file.name] ? (
-                              <p className="mt-1 max-w-100 break-words text-destructive text-xs">
+                              <p className="mt-1 w-full break-words text-destructive text-xs">
                                 {fileErrors[file.name]}
                               </p>
                             ) : null}
                           </div>
                           {uploadedAllFiles ||
                           fileStatuses[file.name] === 'uploaded' ? (
-                            <Check className="h-5 w-5" />
+                            <Check className="mt-1 h-5 w-5 shrink-0" />
                           ) : (
                             <Button
                               size="icon"

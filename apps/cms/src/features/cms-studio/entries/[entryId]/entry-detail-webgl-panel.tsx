@@ -19,6 +19,10 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import type { CmsStrings } from '../../cms-strings';
+import {
+  type EntryDetailUploadProgressItem,
+  EntryDetailUploadProgressList,
+} from './entry-detail-upload-progress';
 
 function getWebglArtifactMetadata(
   asset: ExternalProjectStudioAsset | null | undefined
@@ -47,6 +51,7 @@ function getWebglArtifactMetadata(
 type EntryDetailWebglPanelProps = {
   onUploadWebglClick: () => void;
   strings: CmsStrings;
+  uploadProgressItems: EntryDetailUploadProgressItem[];
   uploadWebglPending: boolean;
   webglPackageAsset: ExternalProjectStudioAsset | null;
   webglPackagePlayerPath: string | null;
@@ -55,6 +60,7 @@ type EntryDetailWebglPanelProps = {
 export function EntryDetailWebglPanel({
   onUploadWebglClick,
   strings,
+  uploadProgressItems,
   uploadWebglPending,
   webglPackageAsset,
   webglPackagePlayerPath,
@@ -130,7 +136,8 @@ export function EntryDetailWebglPanel({
         </div>
       </CardHeader>
 
-      <CardContent className="p-5">
+      <CardContent className="space-y-4 p-5">
+        <EntryDetailUploadProgressList items={uploadProgressItems} />
         {webglArtifact ? (
           <div className="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)]">
             <div className="rounded-[1.2rem] border border-border/70 bg-background/85 p-4">

@@ -71,7 +71,10 @@ import {
   driveSortByValues,
   driveViewModes,
 } from './search-params';
-import { getStorageObjectDisplayName } from './storage-display-name';
+import {
+  getStorageObjectDisplayName,
+  getStoragePathSegmentDisplayName,
+} from './storage-display-name';
 import {
   useInvalidateDriveQueries,
   useWorkspaceStorageAnalyticsQuery,
@@ -347,7 +350,16 @@ export default function DriveExplorerClient({
     },
   });
 
-  const directoryLabel = pathSegments.at(-1) || t('root_label');
+  const currentDirectorySegment = pathSegments.at(-1);
+  const directoryLabel = currentDirectorySegment
+    ? getStoragePathSegmentDisplayName(currentDirectorySegment)
+    : t('root_label');
+  const largestFileName = analyticsQuery.data?.largestFile?.name
+    ? getStoragePathSegmentDisplayName(analyticsQuery.data.largestFile.name)
+    : t('not_available');
+  const smallestFileName = analyticsQuery.data?.smallestFile?.name
+    ? getStoragePathSegmentDisplayName(analyticsQuery.data.smallestFile.name)
+    : t('not_available');
 
   return (
     <div className="space-y-6">
@@ -455,8 +467,7 @@ export default function DriveExplorerClient({
                             : '-'}
                         </p>
                         <p className="mt-1 truncate text-muted-foreground text-xs">
-                          {analyticsQuery.data?.largestFile?.name ||
-                            t('not_available')}
+                          {largestFileName}
                         </p>
                       </div>
                       <div className="rounded-[24px] border border-dynamic-border/80 bg-muted/20 p-4">
@@ -469,8 +480,7 @@ export default function DriveExplorerClient({
                             : '-'}
                         </p>
                         <p className="mt-1 truncate text-muted-foreground text-xs">
-                          {analyticsQuery.data?.smallestFile?.name ||
-                            t('not_available')}
+                          {smallestFileName}
                         </p>
                       </div>
                     </div>

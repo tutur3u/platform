@@ -16,10 +16,12 @@ import type {
 } from '@tuturuuu/types';
 import {
   encodePathSegment,
+  getConfiguredInternalApiBaseUrl,
   getInternalApiClient,
   type InternalApiClientOptions,
   resolveInternalApiUrl,
 } from './client';
+import type { WorkspaceStorageUploadProgress } from './storage';
 
 type CanonicalExternalProjectUpsertPayload = {
   adapter: CanonicalExternalProject['adapter'];
@@ -91,6 +93,14 @@ type ExternalProjectUploadUrlPayload = {
   fullPath: string | null;
 };
 
+type ExternalProjectUploadProgressHandler = (
+  progress: WorkspaceStorageUploadProgress
+) => void;
+
+type ExternalProjectUploadOptions = InternalApiClientOptions & {
+  onUploadProgress?: ExternalProjectUploadProgressHandler;
+};
+
 export type WorkspaceExternalProjectWebglPackageArtifact = {
   archivePath: string;
   assetUrls: Record<string, string>;
@@ -139,10 +149,16 @@ async function uploadExternalProjectFileWithSignedUrl(
   file: File,
   uploadUrlResult: ExternalProjectUploadUrlPayload,
   fetchImpl: typeof fetch,
-  baseUrl?: string
+  options?: {
+    baseUrl?: string;
+    onUploadProgress?: ExternalProjectUploadProgressHandler;
+  }
 ) {
   const uploadUrl = uploadUrlResult.proxyUploadUrl
-    ? resolveInternalApiUrl(uploadUrlResult.proxyUploadUrl, baseUrl)
+    ? resolveInternalApiUrl(
+        uploadUrlResult.proxyUploadUrl,
+        options?.baseUrl ?? getConfiguredInternalApiBaseUrl()
+      )
     : uploadUrlResult.signedUrl;
   const isProxyUpload = Boolean(uploadUrlResult.proxyUploadUrl);
   const headers: Record<string, string> = {
@@ -155,6 +171,41 @@ async function uploadExternalProjectFileWithSignedUrl(
 
   if (!headers['Content-Type']) {
     headers['Content-Type'] = file.type || 'application/octet-stream';
+  }
+
+  if (options?.onUploadProgress && typeof XMLHttpRequest !== 'undefined') {
+    try {
+      await uploadExternalProjectFileWithXhr(
+        file,
+        uploadUrl,
+        headers,
+        options.onUploadProgress,
+        isProxyUpload
+      );
+    } catch (error) {
+      if (isProxyUpload) {
+        throw error;
+      }
+
+      const fallbackHeaders = { ...headers };
+      delete fallbackHeaders['Content-Type'];
+
+      await uploadExternalProjectFileWithXhr(
+        file,
+        uploadUrl,
+        fallbackHeaders,
+        options.onUploadProgress,
+        false
+      ).catch(() => {
+        throw error;
+      });
+    }
+
+    return {
+      archivePath: uploadUrlResult.archivePath ?? uploadUrlResult.path,
+      fullPath: uploadUrlResult.fullPath,
+      path: uploadUrlResult.path,
+    };
   }
 
   let uploadResponse = await fetchImpl(uploadUrl, {
@@ -183,11 +234,76 @@ async function uploadExternalProjectFileWithSignedUrl(
     );
   }
 
+  options?.onUploadProgress?.({
+    loaded: file.size,
+    percent: 100,
+    total: file.size,
+  });
+
   return {
     archivePath: uploadUrlResult.archivePath ?? uploadUrlResult.path,
     fullPath: uploadUrlResult.fullPath,
     path: uploadUrlResult.path,
   };
+}
+
+function uploadExternalProjectFileWithXhr(
+  file: File,
+  uploadUrl: string,
+  headers: Record<string, string>,
+  onProgress: ExternalProjectUploadProgressHandler,
+  withCredentials: boolean
+) {
+  return new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.withCredentials = withCredentials;
+
+    xhr.upload.onprogress = (event) => {
+      const total = event.lengthComputable ? event.total : file.size || null;
+      const loaded = event.loaded;
+      const percent =
+        total && total > 0
+          ? Math.min(99, Math.round((loaded / total) * 100))
+          : 0;
+
+      onProgress({
+        loaded,
+        percent,
+        total,
+      });
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress({
+          loaded: file.size,
+          percent: 100,
+          total: file.size,
+        });
+        resolve();
+        return;
+      }
+
+      reject(
+        new Error(
+          `Failed to upload file (${xhr.status})${xhr.responseText ? `: ${xhr.responseText}` : ''}`
+        )
+      );
+    };
+
+    xhr.onerror = () => {
+      reject(new Error('Failed to upload file'));
+    };
+    xhr.onabort = () => {
+      reject(new Error('Upload aborted'));
+    };
+
+    xhr.open('PUT', uploadUrl);
+    for (const [key, value] of Object.entries(headers)) {
+      xhr.setRequestHeader(key, value);
+    }
+    xhr.send(file);
+  });
 }
 
 export async function listCanonicalExternalProjects(
@@ -473,7 +589,7 @@ export async function uploadWorkspaceExternalProjectAssetFile(
     entrySlug: string;
     upsert?: boolean;
   },
-  options?: InternalApiClientOptions
+  options?: ExternalProjectUploadOptions
 ) {
   const fetchImpl = options?.fetch ?? globalThis.fetch;
   const uploadUrl = await createWorkspaceExternalProjectAssetUploadUrl(
@@ -485,7 +601,10 @@ export async function uploadWorkspaceExternalProjectAssetFile(
     options
   );
 
-  return uploadExternalProjectFileWithSignedUrl(file, uploadUrl, fetchImpl);
+  return uploadExternalProjectFileWithSignedUrl(file, uploadUrl, fetchImpl, {
+    baseUrl: options?.baseUrl,
+    onUploadProgress: options?.onUploadProgress,
+  });
 }
 
 export async function createWorkspaceExternalProjectWebglPackageUploadUrl(
@@ -544,7 +663,7 @@ export async function uploadWorkspaceExternalProjectWebglPackageFile(
   payload: {
     entryId: string;
   },
-  options?: InternalApiClientOptions
+  options?: ExternalProjectUploadOptions
 ) {
   const fetchImpl = options?.fetch ?? globalThis.fetch;
   const uploadUrl = await createWorkspaceExternalProjectWebglPackageUploadUrl(
@@ -561,7 +680,10 @@ export async function uploadWorkspaceExternalProjectWebglPackageFile(
     file,
     uploadUrl,
     fetchImpl,
-    options?.baseUrl
+    {
+      baseUrl: options?.baseUrl,
+      onUploadProgress: options?.onUploadProgress,
+    }
   );
 
   return finalizeWorkspaceExternalProjectWebglPackage(

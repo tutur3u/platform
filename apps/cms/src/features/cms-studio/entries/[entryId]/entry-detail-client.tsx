@@ -61,6 +61,19 @@ import {
   toStudioAsset,
 } from './entry-detail-shared';
 import { EntryDetailSidebar } from './entry-detail-sidebar';
+import type { EntryDetailUploadProgressItem } from './entry-detail-upload-progress';
+
+function getUploadProgressId(
+  scope: EntryDetailUploadProgressItem['scope'],
+  file: File,
+  index = 0
+) {
+  return `${scope}:${file.name}:${file.size}:${file.lastModified}:${index}`;
+}
+
+function clampUploadPercent(value: number) {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
 
 function mergeAssetCaptionMetadata(
   asset: ExternalProjectStudioAsset,
@@ -218,6 +231,9 @@ export function EntryDetailClient({
   const [deleteEntryDialogOpen, setDeleteEntryDialogOpen] = useState(false);
   const [deleteMediaDialogOpen, setDeleteMediaDialogOpen] = useState(false);
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
+  const [uploadProgressById, setUploadProgressById] = useState<
+    Record<string, EntryDetailUploadProgressItem>
+  >({});
   const [assetCaptions, setAssetCaptions] = useState<Record<string, string>>(
     {}
   );
@@ -681,6 +697,32 @@ export function EntryDetailClient({
     });
   };
 
+  const setUploadProgressItem = (
+    id: string,
+    item: Omit<EntryDetailUploadProgressItem, 'id'>
+  ) => {
+    setUploadProgressById((current) => ({
+      ...current,
+      [id]: {
+        ...item,
+        id,
+        percent: clampUploadPercent(item.percent),
+      },
+    }));
+  };
+
+  const removeUploadProgressItems = (ids: string[]) => {
+    window.setTimeout(() => {
+      setUploadProgressById((current) => {
+        const next = { ...current };
+        for (const id of ids) {
+          delete next[id];
+        }
+        return next;
+      });
+    }, 1200);
+  };
+
   useEffect(() => {
     if (!activeEntry) {
       setEntryForm(null);
@@ -1132,6 +1174,14 @@ export function EntryDetailClient({
         throw new Error(strings.emptyCollection);
       }
 
+      const progressId = getUploadProgressId('cover', file);
+      setUploadProgressItem(progressId, {
+        loaded: 0,
+        name: file.name,
+        percent: 0,
+        scope: 'cover',
+        total: file.size,
+      });
       const optimizedFile = await optimizeCmsMediaUpload(file);
 
       const upload = await uploadWorkspaceExternalProjectAssetFile(
@@ -1141,8 +1191,26 @@ export function EntryDetailClient({
           collectionType: activeCollection.collection_type,
           entrySlug: entryForm?.slug.trim() || activeEntry?.slug || 'entry',
           upsert: true,
+        },
+        {
+          onUploadProgress: (progress) =>
+            setUploadProgressItem(progressId, {
+              loaded: progress.loaded,
+              name: file.name,
+              percent: progress.percent,
+              scope: 'cover',
+              total: progress.total,
+            }),
         }
       );
+
+      setUploadProgressItem(progressId, {
+        loaded: optimizedFile.size,
+        name: file.name,
+        percent: 100,
+        scope: 'cover',
+        total: optimizedFile.size,
+      });
 
       if (coverAsset) {
         return updateWorkspaceExternalProjectAsset(workspaceId, coverAsset.id, {
@@ -1170,6 +1238,9 @@ export function EntryDetailClient({
       await refreshStudioFromBackend();
       toast.success(strings.coverUploadSuccessToast);
     },
+    onSettled: (_data, _error, file) => {
+      removeUploadProgressItems([getUploadProgressId('cover', file)]);
+    },
   });
 
   const uploadMediaMutation = useMutation({
@@ -1180,6 +1251,14 @@ export function EntryDetailClient({
 
       return Promise.all(
         files.map(async (file, index) => {
+          const progressId = getUploadProgressId('media', file, index);
+          setUploadProgressItem(progressId, {
+            loaded: 0,
+            name: file.name,
+            percent: 0,
+            scope: 'media',
+            total: file.size,
+          });
           const optimizedFile = await optimizeCmsMediaUpload(file);
           const upload = await uploadWorkspaceExternalProjectAssetFile(
             workspaceId,
@@ -1187,8 +1266,26 @@ export function EntryDetailClient({
             {
               collectionType: activeCollection.collection_type,
               entrySlug: entryForm?.slug.trim() || activeEntry?.slug || 'entry',
+            },
+            {
+              onUploadProgress: (progress) =>
+                setUploadProgressItem(progressId, {
+                  loaded: progress.loaded,
+                  name: file.name,
+                  percent: progress.percent,
+                  scope: 'media',
+                  total: progress.total,
+                }),
             }
           );
+
+          setUploadProgressItem(progressId, {
+            loaded: optimizedFile.size,
+            name: file.name,
+            percent: 100,
+            scope: 'media',
+            total: optimizedFile.size,
+          });
 
           const nextSortOrder =
             Math.max(-1, ...imageAssets.map((asset) => asset.sort_order ?? 0)) +
@@ -1218,18 +1315,53 @@ export function EntryDetailClient({
       await refreshStudioFromBackend();
       toast.success(strings.coverUploadSuccessToast);
     },
+    onSettled: (_data, _error, files) => {
+      removeUploadProgressItems(
+        files.map((file, index) => getUploadProgressId('media', file, index))
+      );
+    },
   });
 
   const uploadWebglPackageMutation = useMutation({
-    mutationFn: async (file: File) =>
-      uploadWorkspaceExternalProjectWebglPackageFile(
+    mutationFn: async (file: File) => {
+      const progressId = getUploadProgressId('webgl', file);
+      setUploadProgressItem(progressId, {
+        loaded: 0,
+        name: file.name,
+        percent: 0,
+        scope: 'webgl',
+        total: file.size,
+      });
+
+      const result = await uploadWorkspaceExternalProjectWebglPackageFile(
         workspaceId,
         file,
         {
           entryId: activeEntry?.id ?? entryId,
         },
-        { fetch }
-      ),
+        {
+          fetch,
+          onUploadProgress: (progress) =>
+            setUploadProgressItem(progressId, {
+              loaded: progress.loaded,
+              name: file.name,
+              percent: progress.percent,
+              scope: 'webgl',
+              total: progress.total,
+            }),
+        }
+      );
+
+      setUploadProgressItem(progressId, {
+        loaded: file.size,
+        name: file.name,
+        percent: 100,
+        scope: 'webgl',
+        total: file.size,
+      });
+
+      return result;
+    },
     onSuccess: async (result) => {
       mergeAsset(toStudioAsset(result.asset, webglPackageAsset));
       setPreviewRefreshToken((value) => value + 1);
@@ -1240,6 +1372,9 @@ export function EntryDetailClient({
       toast.error(
         error instanceof Error ? error.message : strings.webglUploadFailedToast
       );
+    },
+    onSettled: (_data, _error, file) => {
+      removeUploadProgressItems([getUploadProgressId('webgl', file)]);
     },
   });
 
@@ -1573,6 +1708,7 @@ export function EntryDetailClient({
   }
 
   const selectedAssetCount = selectedAssetIds.length;
+  const uploadProgressItems = Object.values(uploadProgressById);
   const mediaProcessing =
     uploadCoverMutation.isPending ||
     uploadMediaMutation.isPending ||
@@ -1731,6 +1867,7 @@ export function EntryDetailClient({
           supportsWebglPackage={supportsWebglPackage}
           uploadCoverPending={uploadCoverMutation.isPending}
           uploadMediaPending={uploadMediaMutation.isPending}
+          uploadProgressItems={uploadProgressItems}
           uploadWebglPending={uploadWebglPackageMutation.isPending}
           webglPackageAsset={webglPackageAsset}
           webglPackagePlayerPath={webglPackagePlayerPath}

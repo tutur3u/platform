@@ -8,6 +8,7 @@ const {
   BLUE_GREEN_PROXY_SERVICE,
   BLUE_GREEN_WATCHER_SERVICE,
   CONTAINER_REFRESH_WATCHED_FILES,
+  CONTAINER_REFRESH_EXIT_CODE,
   CONTAINER_SELF_RESTART_EXIT_CODE,
   DEFAULT_DEPLOY_COMMAND,
   DEFAULT_GIT_FAILURE_BACKOFF_MS,
@@ -3489,10 +3490,36 @@ test('runWatcherCommand boots the watcher container before tailing logs', async 
       env: { PATH: process.env.PATH },
       envFilePath,
       fsImpl: fs,
+      reconnectDelayMs: 0,
       rootDir: tempDir,
       runCommand: async (command, args) => {
-        calls.push(`${command} ${args.join(' ')}`);
-        return createResult('');
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === 'docker compose version') {
+          return createResult('');
+        }
+
+        if (key === prodComposeWatcherUpKey()) {
+          return createResult('');
+        }
+
+        if (key === prodComposeWatcherLogsKey()) {
+          return createResult('');
+        }
+
+        if (key === prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE)) {
+          return createResult('watcher-123\n');
+        }
+
+        if (
+          key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123'
+        ) {
+          return createResult('healthy\n');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
       },
     });
 
@@ -3500,6 +3527,8 @@ test('runWatcherCommand boots the watcher container before tailing logs', async 
       'docker compose version',
       prodComposeWatcherUpKey(),
       prodComposeWatcherLogsKey(),
+      prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
+      'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123',
     ]);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -3613,6 +3642,89 @@ test('runWatcherCommand reconnects after watcher service recreation', async () =
       prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
       'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123',
       prodComposeWatcherLogsKey(),
+      prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
+      'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123',
+    ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runWatcherCommand recreates the watcher when the log stream completes after container exit', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-command-exit-refresh-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    await runWatcherCommand(['--once'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      reconnectDelayMs: 0,
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === 'docker compose version') {
+          return createResult('');
+        }
+
+        if (key === prodComposeWatcherUpKey()) {
+          return createResult('');
+        }
+
+        if (key === prodComposeWatcherLogsKey()) {
+          return createResult('');
+        }
+
+        if (key === prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE)) {
+          const stateChecks = calls.filter(
+            (call) => call === prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE)
+          ).length;
+          return createResult(
+            stateChecks === 1 ? 'watcher-123\n' : 'watcher-456\n'
+          );
+        }
+
+        if (
+          key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123'
+        ) {
+          return createResult('exited\n');
+        }
+
+        if (
+          key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-456'
+        ) {
+          return createResult('healthy\n');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+    });
+
+    assert.deepEqual(calls, [
+      'docker compose version',
+      prodComposeWatcherUpKey(),
+      prodComposeWatcherLogsKey(),
+      prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
+      'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123',
+      'docker compose version',
+      prodComposeWatcherUpKey(),
+      prodComposeWatcherLogsKey(),
+      prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
+      'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-456',
     ]);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -4613,12 +4725,13 @@ test('main exits with the container restart code when the watcher script changes
   }
 });
 
-test('main recreates the watcher container when critical watcher runtime files change inside the watcher container', async () => {
+test('main exits with the container refresh code when critical watcher runtime files change inside the watcher container', async () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'watch-main-container-refresh-')
   );
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
   const calls = [];
+  const exits = [];
   const uiState = {};
   let pullCompleted = false;
 
@@ -4639,10 +4752,8 @@ test('main recreates the watcher container when critical watcher runtime files c
       fsImpl: fs,
       processImpl: {
         argv: ['bun', 'scripts/watch-blue-green-deploy.js'],
-        exit() {
-          throw new Error(
-            'main should recreate the container instead of exiting'
-          );
+        exit(code) {
+          exits.push(code);
         },
         on() {},
         pid: 4321,
@@ -4721,14 +4832,6 @@ test('main recreates the watcher container when critical watcher runtime files c
           return createResult('');
         }
 
-        if (key === 'docker compose version') {
-          return createResult('');
-        }
-
-        if (key === prodComposeWatcherUpKey()) {
-          return createResult('');
-        }
-
         throw new Error(`Unexpected command: ${key}`);
       },
       ui: {
@@ -4745,8 +4848,9 @@ test('main recreates the watcher container when critical watcher runtime files c
       },
     });
 
-    assert.ok(calls.includes('docker compose version'));
-    assert.ok(calls.includes(prodComposeWatcherUpKey()));
+    assert.deepEqual(exits, [CONTAINER_REFRESH_EXIT_CODE]);
+    assert.equal(calls.includes('docker compose version'), false);
+    assert.equal(calls.includes(prodComposeWatcherUpKey()), false);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

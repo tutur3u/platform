@@ -75,6 +75,7 @@ const DEFAULT_LOCK_CONFLICT_ACTION = 'fail';
 const MAX_GIT_FAILURE_BACKOFF_MS = 15 * 60_000;
 const DEFAULT_REPLACE_WATCHER_TIMEOUT_MS = 5_000;
 const CONTAINER_SELF_RESTART_EXIT_CODE = 75;
+const CONTAINER_REFRESH_EXIT_CODE = 76;
 const MAX_FAILED_DEPLOYMENTS_PER_COMMIT = 3;
 const MAX_RECOVERY_CACHE_IMAGES = 3;
 const MAX_EVENTS = 8;
@@ -412,7 +413,7 @@ async function runWatcherCommand(argv = process.argv.slice(2), options = {}) {
   while (true) {
     const result = await streamBlueGreenWatcherLogs(options);
 
-    if (result?.status !== 'recreated') {
+    if (result?.status === 'interrupted') {
       return;
     }
 
@@ -421,7 +422,14 @@ async function runWatcherCommand(argv = process.argv.slice(2), options = {}) {
     const state = await getWatcherContainerState(options);
     if (state === 'missing' || state === 'dead' || state === 'exited') {
       await startBlueGreenWatcherContainer(argv, options);
+      continue;
     }
+
+    if (result?.status === 'recreated') {
+      continue;
+    }
+
+    return;
   }
 }
 
@@ -5069,19 +5077,10 @@ async function main(argv = process.argv.slice(2), options = {}) {
       cleanup();
       if (env[WATCHER_CONTAINER_ENV] === '1') {
         ui.info(
-          'Critical watcher container files changed. Recreating the containerized watcher service.'
+          'Critical watcher container files changed. Requesting host-supervised watcher service recreation.'
         );
         ui.close();
-        await startBlueGreenWatcherContainer(
-          options.restartArgv ?? process.argv.slice(2),
-          {
-            env,
-            envFilePath,
-            fsImpl,
-            rootDir,
-            runCommand: options.runCommand ?? runCommand,
-          }
-        );
+        processImpl.exit?.(CONTAINER_REFRESH_EXIT_CODE);
         return;
       }
 
@@ -5109,6 +5108,7 @@ if (require.main === module) {
 module.exports = {
   BLUE_GREEN_PROXY_SERVICE,
   BLUE_GREEN_WATCHER_SERVICE,
+  CONTAINER_REFRESH_EXIT_CODE,
   CONTAINER_SELF_RESTART_EXIT_CODE,
   DEFAULT_DEPLOY_COMMAND,
   DEFAULT_GIT_FAILURE_BACKOFF_MS,

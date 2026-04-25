@@ -23,6 +23,10 @@ import type { CmsStrings } from '../../cms-strings';
 import { ResilientMediaImage } from '../../resilient-media-image';
 import { EntryDetailMarkdownEditor } from './entry-detail-markdown-editor';
 import { ActionButton } from './entry-detail-shared';
+import {
+  type EntryDetailUploadProgressItem,
+  EntryDetailUploadProgressList,
+} from './entry-detail-upload-progress';
 import { EntryDetailWebglPanel } from './entry-detail-webgl-panel';
 
 function getAssetCaption(asset: ExternalProjectStudioAsset | null | undefined) {
@@ -75,6 +79,7 @@ type EntryDetailMainColumnProps = {
   supportsMarkdownBody: boolean;
   supportsWebglPackage: boolean;
   uploadCoverPending: boolean;
+  uploadProgressItems: EntryDetailUploadProgressItem[];
   uploadMediaPending: boolean;
   uploadWebglPending: boolean;
   webglPackageAsset: ExternalProjectStudioAsset | null;
@@ -121,17 +126,29 @@ export function EntryDetailMainColumn({
   supportsMarkdownBody,
   supportsWebglPackage,
   uploadCoverPending,
+  uploadProgressItems,
   uploadMediaPending,
   uploadWebglPending,
   webglPackageAsset,
   webglPackagePlayerPath,
 }: EntryDetailMainColumnProps) {
+  const coverUploadProgressItems = uploadProgressItems.filter(
+    (item) => item.scope === 'cover'
+  );
+  const mediaUploadProgressItems = uploadProgressItems.filter(
+    (item) => item.scope === 'media'
+  );
+  const webglUploadProgressItems = uploadProgressItems.filter(
+    (item) => item.scope === 'webgl'
+  );
+
   return (
     <div className="space-y-6">
       {supportsWebglPackage ? (
         <EntryDetailWebglPanel
           onUploadWebglClick={onUploadWebglClick}
           strings={strings}
+          uploadProgressItems={webglUploadProgressItems}
           uploadWebglPending={uploadWebglPending}
           webglPackageAsset={webglPackageAsset}
           webglPackagePlayerPath={webglPackagePlayerPath}
@@ -197,6 +214,9 @@ export function EntryDetailMainColumn({
                     {strings.openPreviewAction}
                   </Button>
                 </div>
+                <EntryDetailUploadProgressList
+                  items={coverUploadProgressItems}
+                />
               </div>
             )}
           </div>
@@ -255,6 +275,10 @@ export function EntryDetailMainColumn({
                     : strings.saveCoverAction}
                 </ActionButton>
               </div>
+              <EntryDetailUploadProgressList
+                className="mt-4"
+                items={coverUploadProgressItems}
+              />
             </div>
           ) : null}
         </CardContent>
@@ -370,6 +394,10 @@ export function EntryDetailMainColumn({
               <span>{strings.mediaProcessingLabel}</span>
             </div>
           ) : null}
+          <EntryDetailUploadProgressList
+            className="md:col-span-3"
+            items={mediaUploadProgressItems}
+          />
           {imageAssets.length === 0 ? (
             <button
               type="button"

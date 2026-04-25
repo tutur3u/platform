@@ -35,6 +35,7 @@ const {
 } = require('./docker-web/blue-green.js');
 const { getWatchPaths } = require('./watch-blue-green/paths.js');
 const {
+  CONTAINER_REFRESH_EXIT_CODE,
   getStatusSnapshotHealth,
   shouldRestartWatcherExit,
 } = require('../apps/web/docker/blue-green-watcher-entrypoint.js');
@@ -252,6 +253,18 @@ test('watcher entrypoint restarts crashed or stale child processes', () => {
     shouldRestartWatcherExit(
       { code: 1, restartReason: null, signal: null },
       ['--once'],
+      { stopRequested: false }
+    ),
+    false
+  );
+  assert.equal(
+    shouldRestartWatcherExit(
+      {
+        code: CONTAINER_REFRESH_EXIT_CODE,
+        restartReason: null,
+        signal: null,
+      },
+      [],
       { stopRequested: false }
     ),
     false

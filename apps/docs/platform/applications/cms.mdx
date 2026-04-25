@@ -51,6 +51,7 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - Entry detail now opens as a fullscreen dialog from the library route so the CMS keeps the library cache warm instead of forcing a separate navigation for each entry.
 - The Games route reuses the library client with a game-like collection scope and only exposes WebGL ZIP upload controls when `ENABLE_CMS_GAMES` is explicitly enabled.
 - When a user creates the first Games entry, CMS should automatically create the workspace `Games` collection and then open the new game entry instead of requiring a manual collection setup step.
+- CMS media uploads show per-file progress for cover images, gallery media, and WebGL ZIP packages. WebGL ZIP package uploads must resolve the large `PUT` request to the self-hosted web API origin, not the Vercel-hosted CMS origin, because Vercel function payload limits reject large game archives before the web stack can store them.
 - Library taxonomy edits should stay lightweight: category/tag assignment, creation, and removal can happen directly from the library dialog, while deeper editorial changes still live in the entry sidebar taxonomy card.
 
 ## Local Development

@@ -4,6 +4,7 @@ import { ArrowLeft, ChevronRight, Folder } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea, ScrollBar } from '@tuturuuu/ui/scroll-area';
 import { useTranslations } from 'next-intl';
+import { getStoragePathSegmentDisplayName } from './storage-display-name';
 
 interface DriveBreadcrumbsProps {
   path: string;
@@ -58,7 +59,7 @@ export default function DriveBreadcrumbs({
                 className="h-8 rounded-xl"
                 onClick={() => onNavigate(nextPath)}
               >
-                {decodeURIComponent(segment)}
+                {getStoragePathSegmentDisplayName(segment)}
               </Button>
             </div>
           );

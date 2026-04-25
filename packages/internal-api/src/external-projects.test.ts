@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { uploadWorkspaceExternalProjectWebglPackageFile } from './external-projects';
 
 function createJsonResponse(payload: unknown) {
@@ -11,10 +11,15 @@ function createJsonResponse(payload: unknown) {
 }
 
 describe('external project upload helpers', () => {
-  it('uploads WebGL ZIP packages through the same-origin proxy when provided', async () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('uploads WebGL ZIP packages through the configured web proxy when provided', async () => {
     const file = new File(['zip'], 'Mine Blast WebGL.zip', {
       type: 'application/zip',
     });
+    vi.stubEnv('NEXT_PUBLIC_WEB_APP_URL', 'https://web.example.com');
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
@@ -65,14 +70,13 @@ describe('external project upload helpers', () => {
         entryId: '00000000-0000-4000-8000-000000000001',
       },
       {
-        baseUrl: 'https://cms.example.com',
         fetch: fetchMock as unknown as typeof fetch,
       }
     );
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      'https://cms.example.com/api/v1/workspaces/ws-1/external-projects/webgl-packages/upload?entryId=00000000-0000-4000-8000-000000000001&archivePath=external-projects%2Fyoola%2Fgames%2Fmine%2Fwebgl-packages%2Fupload.zip&filename=Mine+Blast+WebGL.zip',
+      'https://web.example.com/api/v1/workspaces/ws-1/external-projects/webgl-packages/upload?entryId=00000000-0000-4000-8000-000000000001&archivePath=external-projects%2Fyoola%2Fgames%2Fmine%2Fwebgl-packages%2Fupload.zip&filename=Mine+Blast+WebGL.zip',
       expect.objectContaining({
         method: 'PUT',
         cache: 'no-store',

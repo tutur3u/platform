@@ -16,6 +16,7 @@ const WATCH_ARGS_FILE =
     'blue-green-auto-deploy.args.json'
   );
 const RESTART_EXIT_CODE = 75;
+const CONTAINER_REFRESH_EXIT_CODE = 76;
 const WATCHER_CONTAINER_ENV = 'PLATFORM_BLUE_GREEN_WATCHER_CONTAINER';
 const WATCHER_SCRIPT_PATH = path.join(
   WORKSPACE_DIR,
@@ -163,6 +164,10 @@ function shouldRestartWatcherExit(result, args, { stopRequested: stopping }) {
     return false;
   }
 
+  if (result.code === CONTAINER_REFRESH_EXIT_CODE) {
+    return false;
+  }
+
   if (result.code === RESTART_EXIT_CODE || result.restartReason) {
     return true;
   }
@@ -280,6 +285,13 @@ async function main() {
     const args = readArgs();
     const result = await runWatcherOnce(args);
 
+    if (result.code === CONTAINER_REFRESH_EXIT_CODE) {
+      console.info(
+        'Watcher requested a host-supervised container refresh. Stopping wrapper.'
+      );
+      process.exit(result.code);
+    }
+
     if (!shouldRestartWatcherExit(result, args, { stopRequested })) {
       process.exit(result.code);
     }
@@ -327,6 +339,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  CONTAINER_REFRESH_EXIT_CODE,
   getSnapshotStaleAfterMs,
   getStatusSnapshotHealth,
   hasOnceArg,

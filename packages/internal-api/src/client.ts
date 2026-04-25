@@ -101,7 +101,7 @@ function appendQuery(path: string, query?: InternalApiQuery): string {
   return isAbsoluteUrl ? url.toString() : `${url.pathname}${url.search}`;
 }
 
-function getConfiguredBaseUrl() {
+export function getConfiguredInternalApiBaseUrl() {
   return normalizeBaseUrl(
     resolveConfiguredOrigin(process.env.INTERNAL_WEB_API_ORIGIN) ||
       resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
@@ -125,7 +125,7 @@ export function resolveInternalApiUrl(path: string, baseUrl?: string) {
   const resolvedBaseUrl = baseUrl
     ? normalizeBaseUrl(baseUrl)
     : typeof window === 'undefined'
-      ? getConfiguredBaseUrl()
+      ? getConfiguredInternalApiBaseUrl()
       : undefined;
 
   if (!resolvedBaseUrl) {
@@ -227,7 +227,9 @@ export function withForwardedInternalApiAuth(
     }
   }
 
-  const configuredBaseUrl = tryParseAbsoluteUrl(getConfiguredBaseUrl());
+  const configuredBaseUrl = tryParseAbsoluteUrl(
+    getConfiguredInternalApiBaseUrl()
+  );
   if (configuredBaseUrl) {
     allowedOrigins.add(configuredBaseUrl.origin);
   }
