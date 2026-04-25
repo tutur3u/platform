@@ -173,8 +173,39 @@ describe('WebGL package asset route', () => {
     expect(response.headers.get('content-type')).toBe(
       'text/html; charset=utf-8'
     );
-    await expect(response.text()).resolves.toContain(
-      'data-tuturuuu-webgl-viewport-fill'
+    expect(response.headers.get('content-length')).toBeTruthy();
+    const html = await response.text();
+    expect(html).toContain(
+      '<base data-tuturuuu-webgl-viewport-fill href="/api/v1/workspaces/ws-1/external-projects/assets/asset-1/webgl/">'
+    );
+    expect(html).toContain('data-tuturuuu-webgl-viewport-fill');
+    expect(html).toContain('canvas.width');
+    expect(html).toContain('tuturuuu-webgl-download-status');
+  });
+
+  it('serves Unity Build resources from the same WebGL package route', async () => {
+    mocks.createAdminClient.mockResolvedValue(createAdminWithAsset('draft'));
+    mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
+      ok: true,
+    });
+    mocks.downloadWorkspaceStorageObjectForProvider.mockResolvedValue({
+      buffer: new TextEncoder().encode('createUnityInstance();'),
+      contentType: 'text/plain;charset=UTF-8',
+    });
+
+    const response = await callRoute(['Build', 'Mine Blast WebGL.loader.js']);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe(
+      'application/javascript; charset=utf-8'
+    );
+    await expect(response.text()).resolves.toBe('createUnityInstance();');
+    expect(
+      mocks.downloadWorkspaceStorageObjectForProvider
+    ).toHaveBeenCalledWith(
+      'ws-1',
+      'supabase',
+      'external-projects/yoola/games/mine/webgl-packages/package/Mine Blast WebGL/Build/Mine Blast WebGL.loader.js'
     );
   });
 
