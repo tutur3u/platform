@@ -8,6 +8,7 @@ import {
   PeriodTrendChart,
   RequestVelocityChart,
 } from './blue-green-monitoring-charts';
+import { dedupeBlueGreenDeployments } from './blue-green-monitoring-deployments';
 import {
   DeploymentLedger,
   EventStreamPanel,
@@ -45,12 +46,16 @@ export function BlueGreenMonitoringRolloutsClient() {
   }
 
   const snapshot = query.data;
+  const deployments = dedupeBlueGreenDeployments(snapshot.deployments);
+  const successfulDeployments = deployments.filter(
+    (deployment) => deployment.status === 'successful'
+  ).length;
   const statCards = [
     {
       icon: <GitBranch className="h-4 w-4" />,
       label: t('rollouts.cards.successful'),
       meta: t('rollouts.cards.successful_description'),
-      value: `${snapshot.overview.successfulDeployments}/${snapshot.overview.totalDeployments}`,
+      value: `${successfulDeployments}/${deployments.length}`,
     },
     {
       icon: <Activity className="h-4 w-4" />,
@@ -96,10 +101,7 @@ export function BlueGreenMonitoringRolloutsClient() {
         ))}
       </div>
 
-      <RolloutStagePanel
-        deployments={snapshot.deployments}
-        watcher={snapshot.watcher}
-      />
+      <RolloutStagePanel deployments={deployments} watcher={snapshot.watcher} />
 
       <BlueGreenMonitoringRolloutControls snapshot={snapshot} />
 
@@ -128,7 +130,7 @@ export function BlueGreenMonitoringRolloutsClient() {
               {t('chart.rollout_story')}
             </h3>
           </div>
-          <DeploymentStoryChart deployments={snapshot.deployments} />
+          <DeploymentStoryChart deployments={deployments} />
         </section>
 
         <section className="rounded-lg border border-border/60 bg-background p-5">
@@ -140,7 +142,7 @@ export function BlueGreenMonitoringRolloutsClient() {
               {t('chart.deploy_request_velocity')}
             </h3>
           </div>
-          <RequestVelocityChart deployments={snapshot.deployments} />
+          <RequestVelocityChart deployments={deployments} />
         </section>
       </div>
 
@@ -170,7 +172,7 @@ export function BlueGreenMonitoringRolloutsClient() {
               </h3>
             </div>
           </div>
-          <DeploymentLedger deployments={snapshot.deployments} />
+          <DeploymentLedger deployments={deployments} />
         </section>
       </div>
     </div>

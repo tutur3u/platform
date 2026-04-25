@@ -12,6 +12,17 @@ import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrast
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
+import { parseAsInteger, useQueryState } from 'nuqs';
+import type { BlueGreenMonitoringDeploymentRollup } from './blue-green-monitoring-deployments';
+import {
+  ExplorerPagination,
+  FilterSelect,
+  getSafePage,
+  getTotalPages,
+  PAGE_SIZE_OPTIONS,
+  PaginationSummary,
+  paginateItems,
+} from './blue-green-monitoring-explorer-shared';
 import {
   MetricBlock,
   StatusBadge,
@@ -115,7 +126,7 @@ export function RolloutStagePanel({
   deployments,
   watcher,
 }: {
-  deployments: BlueGreenMonitoringSnapshot['deployments'];
+  deployments: BlueGreenMonitoringDeploymentRollup[];
   watcher: BlueGreenMonitoringSnapshot['watcher'];
 }) {
   const t = useTranslations('blue-green-monitoring');
@@ -256,9 +267,22 @@ export function RolloutStagePanel({
 export function DeploymentLedger({
   deployments,
 }: {
-  deployments: BlueGreenMonitoringSnapshot['deployments'];
+  deployments: BlueGreenMonitoringDeploymentRollup[];
 }) {
   const t = useTranslations('blue-green-monitoring');
+  const [page, setPage] = useQueryState(
+    'deploymentsPage',
+    parseAsInteger.withDefault(1).withOptions({ shallow: true })
+  );
+  const [pageSize, setPageSize] = useQueryState(
+    'deploymentsPageSize',
+    parseAsInteger.withDefault(10).withOptions({ shallow: true })
+  );
+  const normalizedPageSize = PAGE_SIZE_OPTIONS.includes(
+    String(pageSize) as (typeof PAGE_SIZE_OPTIONS)[number]
+  )
+    ? pageSize
+    : 10;
 
   if (deployments.length === 0) {
     return (
@@ -268,103 +292,166 @@ export function DeploymentLedger({
     );
   }
 
+  const safePage = getSafePage(page, deployments.length, normalizedPageSize);
+  const visibleDeployments = paginateItems(
+    deployments,
+    safePage,
+    normalizedPageSize
+  );
+
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
-      {deployments.map((deployment, index) => {
-        const deploymentStatusKey = getDeploymentStatusTranslationKey(
-          deployment.status
-        );
-        const runtimeBadgeKey = getRuntimeBadgeTranslationKey(
-          deployment.runtimeState
-        );
-        const activeColorKey = getColorTranslationKey(deployment.activeColor);
+    <div className="space-y-4">
+      <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
+        <div className="grid gap-4 lg:grid-cols-[1fr_180px]">
+          <PaginationSummary
+            currentPage={safePage}
+            filteredCount={deployments.length}
+            pageSize={normalizedPageSize}
+            t={t}
+            totalCount={deployments.length}
+          />
+          <FilterSelect
+            label={t('explorer.page_size')}
+            onValueChange={(value) => {
+              void setPage(1);
+              void setPageSize(Number(value));
+            }}
+            options={PAGE_SIZE_OPTIONS.map((option) => ({
+              label: t('explorer.per_page', { count: Number(option) }),
+              value: option,
+            }))}
+            value={String(normalizedPageSize)}
+          />
+        </div>
+      </div>
 
-        return (
-          <div
-            key={`${deployment.commitHash ?? deployment.startedAt ?? index}`}
-            className="rounded-lg border border-border/60 bg-muted/20 p-5"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusBadge label={t(deploymentStatusKey)} />
-                  {runtimeBadgeKey ? (
-                    <Badge variant="outline" className="rounded-full">
-                      {t(runtimeBadgeKey)}
-                    </Badge>
-                  ) : null}
+      <div className="grid gap-4 xl:grid-cols-2">
+        {visibleDeployments.map((deployment, index) => {
+          const deploymentStatusKey = getDeploymentStatusTranslationKey(
+            deployment.status
+          );
+          const runtimeBadgeKey = getRuntimeBadgeTranslationKey(
+            deployment.runtimeState
+          );
+          const activeColors =
+            deployment.activeColors.length > 0
+              ? deployment.activeColors
+              : deployment.activeColor
+                ? [deployment.activeColor]
+                : [];
+          const activeColorLabel =
+            activeColors.length > 0
+              ? activeColors
+                  .map((color) => {
+                    const colorKey = getColorTranslationKey(color);
+                    return colorKey ? t(colorKey) : color;
+                  })
+                  .join(' / ')
+              : t('states.none');
+
+          return (
+            <div
+              key={`${deployment.commitHash ?? deployment.startedAt ?? index}`}
+              className="rounded-lg border border-border/60 bg-muted/20 p-5"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusBadge label={t(deploymentStatusKey)} />
+                    {runtimeBadgeKey ? (
+                      <Badge variant="outline" className="rounded-full">
+                        {t(runtimeBadgeKey)}
+                      </Badge>
+                    ) : null}
+                    {deployment.mergedDeploymentCount > 1 ? (
+                      <Badge variant="secondary" className="rounded-full">
+                        {deployment.mergedDeploymentCount}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <h3 className="mt-3 font-semibold text-lg">
+                    {deployment.commitSubject ?? t('ledger.no_commit_subject')}
+                  </h3>
+                  <p className="mt-1 text-muted-foreground text-sm">
+                    {deployment.commitShortHash ?? t('states.none')} ·{' '}
+                    {activeColorLabel}
+                  </p>
+                  <p className="mt-1 text-muted-foreground text-xs">
+                    {deployment.deploymentStamp ?? t('states.none')}
+                  </p>
                 </div>
-                <h3 className="mt-3 font-semibold text-lg">
-                  {deployment.commitSubject ?? t('ledger.no_commit_subject')}
-                </h3>
-                <p className="mt-1 text-muted-foreground text-sm">
-                  {deployment.commitShortHash ?? t('states.none')} ·{' '}
-                  {activeColorKey
-                    ? t(activeColorKey)
-                    : (deployment.activeColor ?? t('states.none'))}
-                </p>
-                <p className="mt-1 text-muted-foreground text-xs">
-                  {deployment.deploymentStamp ?? t('states.none')}
-                </p>
+                <div className="text-right text-xs">
+                  <div className="text-muted-foreground">
+                    {formatDateTime(
+                      deployment.activatedAt ??
+                        deployment.finishedAt ??
+                        deployment.startedAt
+                    )}
+                  </div>
+                  <div className="mt-1 font-medium">
+                    {formatRelativeTime(
+                      deployment.activatedAt ??
+                        deployment.finishedAt ??
+                        deployment.startedAt
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="text-right text-xs">
-                <div className="text-muted-foreground">
-                  {formatDateTime(
-                    deployment.activatedAt ??
-                      deployment.finishedAt ??
-                      deployment.startedAt
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <MetricBlock
+                  icon={<Clock className="h-4 w-4" />}
+                  label={t('ledger.build_time')}
+                  value={formatDuration(deployment.buildDurationMs)}
+                />
+                <MetricBlock
+                  icon={<Gauge className="h-4 w-4" />}
+                  label={t('ledger.avg_rpm')}
+                  value={formatDecimalNumber(
+                    deployment.averageRequestsPerMinute,
+                    {
+                      maximumFractionDigits: 1,
+                    }
                   )}
-                </div>
-                <div className="mt-1 font-medium">
-                  {formatRelativeTime(
-                    deployment.activatedAt ??
-                      deployment.finishedAt ??
-                      deployment.startedAt
-                  )}
-                </div>
+                />
+                <MetricBlock
+                  icon={<Activity className="h-4 w-4" />}
+                  label={t('ledger.peak_rpm')}
+                  value={formatNumber(deployment.peakRequestsPerMinute)}
+                />
+                <MetricBlock
+                  icon={<SquareStack className="h-4 w-4" />}
+                  label={t('ledger.requests')}
+                  value={formatCompactNumber(deployment.requestCount)}
+                />
+                <MetricBlock
+                  icon={<TriangleAlert className="h-4 w-4" />}
+                  label={t('ledger.errors')}
+                  value={formatCompactNumber(deployment.errorCount)}
+                />
+                <MetricBlock
+                  icon={<Clock className="h-4 w-4" />}
+                  label={t('stats.avg_latency')}
+                  value={formatLatencyMs(deployment.averageLatencyMs)}
+                />
               </div>
             </div>
+          );
+        })}
+      </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              <MetricBlock
-                icon={<Clock className="h-4 w-4" />}
-                label={t('ledger.build_time')}
-                value={formatDuration(deployment.buildDurationMs)}
-              />
-              <MetricBlock
-                icon={<Gauge className="h-4 w-4" />}
-                label={t('ledger.avg_rpm')}
-                value={formatDecimalNumber(
-                  deployment.averageRequestsPerMinute,
-                  {
-                    maximumFractionDigits: 1,
-                  }
-                )}
-              />
-              <MetricBlock
-                icon={<Activity className="h-4 w-4" />}
-                label={t('ledger.peak_rpm')}
-                value={formatNumber(deployment.peakRequestsPerMinute)}
-              />
-              <MetricBlock
-                icon={<SquareStack className="h-4 w-4" />}
-                label={t('ledger.requests')}
-                value={formatCompactNumber(deployment.requestCount)}
-              />
-              <MetricBlock
-                icon={<TriangleAlert className="h-4 w-4" />}
-                label={t('ledger.errors')}
-                value={formatCompactNumber(deployment.errorCount)}
-              />
-              <MetricBlock
-                icon={<Clock className="h-4 w-4" />}
-                label={t('stats.avg_latency')}
-                value={formatLatencyMs(deployment.averageLatencyMs)}
-              />
-            </div>
-          </div>
-        );
-      })}
+      <ExplorerPagination
+        currentPage={safePage}
+        onNextPage={() => {
+          void setPage(safePage + 1);
+        }}
+        onPreviousPage={() => {
+          void setPage(safePage - 1);
+        }}
+        t={t}
+        totalItems={deployments.length}
+        totalPages={getTotalPages(deployments.length, normalizedPageSize)}
+      />
     </div>
   );
 }

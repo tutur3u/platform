@@ -16,7 +16,13 @@ import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrast
 import { Badge } from '@tuturuuu/ui/badge';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
+import {
+  ExplorerPagination,
+  getSafePage,
+  getTotalPages,
+  paginateItems,
+} from './blue-green-monitoring-explorer-shared';
 import {
   MetricBlock,
   StatusBadge,
@@ -38,6 +44,8 @@ import {
   getColorTranslationKey,
   getRuntimeStateTranslationKey,
 } from './formatters';
+
+const DOCKER_INVENTORY_PAGE_SIZE = 10;
 
 export function RuntimeTopologyPanel({
   snapshot,
@@ -233,6 +241,28 @@ export function DockerInventoryPanel({
   const t = useTranslations('blue-green-monitoring');
   const runningContainers = dockerResources.allContainers;
   const serviceHealth = dockerResources.serviceHealth;
+  const [servicePage, setServicePage] = useState(1);
+  const [containerPage, setContainerPage] = useState(1);
+  const safeServicePage = getSafePage(
+    servicePage,
+    serviceHealth.length,
+    DOCKER_INVENTORY_PAGE_SIZE
+  );
+  const safeContainerPage = getSafePage(
+    containerPage,
+    runningContainers.length,
+    DOCKER_INVENTORY_PAGE_SIZE
+  );
+  const visibleServiceHealth = paginateItems(
+    serviceHealth,
+    safeServicePage,
+    DOCKER_INVENTORY_PAGE_SIZE
+  );
+  const visibleRunningContainers = paginateItems(
+    runningContainers,
+    safeContainerPage,
+    DOCKER_INVENTORY_PAGE_SIZE
+  );
 
   return (
     <section className="rounded-lg border border-border/60 bg-muted/20 p-5">
@@ -263,7 +293,7 @@ export function DockerInventoryPanel({
             </div>
           ) : (
             <div className="space-y-2">
-              {serviceHealth.map((service) => (
+              {visibleServiceHealth.map((service) => (
                 <div
                   key={`${service.serviceName}-${service.containerId}`}
                   className="rounded-lg border border-border/50 bg-background px-3 py-2.5"
@@ -284,6 +314,23 @@ export function DockerInventoryPanel({
                   </p>
                 </div>
               ))}
+              {serviceHealth.length > DOCKER_INVENTORY_PAGE_SIZE ? (
+                <ExplorerPagination
+                  currentPage={safeServicePage}
+                  onNextPage={() => {
+                    setServicePage(safeServicePage + 1);
+                  }}
+                  onPreviousPage={() => {
+                    setServicePage(safeServicePage - 1);
+                  }}
+                  t={t}
+                  totalItems={serviceHealth.length}
+                  totalPages={getTotalPages(
+                    serviceHealth.length,
+                    DOCKER_INVENTORY_PAGE_SIZE
+                  )}
+                />
+              ) : null}
             </div>
           )}
         </div>
@@ -300,7 +347,7 @@ export function DockerInventoryPanel({
             </div>
           ) : (
             <div className="space-y-2">
-              {runningContainers.map((container) => (
+              {visibleRunningContainers.map((container) => (
                 <div
                   key={container.containerId}
                   className="rounded-lg border border-border/50 bg-background p-3"
@@ -346,6 +393,23 @@ export function DockerInventoryPanel({
                   ) : null}
                 </div>
               ))}
+              {runningContainers.length > DOCKER_INVENTORY_PAGE_SIZE ? (
+                <ExplorerPagination
+                  currentPage={safeContainerPage}
+                  onNextPage={() => {
+                    setContainerPage(safeContainerPage + 1);
+                  }}
+                  onPreviousPage={() => {
+                    setContainerPage(safeContainerPage - 1);
+                  }}
+                  t={t}
+                  totalItems={runningContainers.length}
+                  totalPages={getTotalPages(
+                    runningContainers.length,
+                    DOCKER_INVENTORY_PAGE_SIZE
+                  )}
+                />
+              ) : null}
             </div>
           )}
         </div>

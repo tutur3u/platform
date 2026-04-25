@@ -29,6 +29,15 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useMemo, useState } from 'react';
+import { dedupeBlueGreenDeployments } from './blue-green-monitoring-deployments';
+import {
+  ExplorerPagination,
+  getSafePage,
+  getTotalPages,
+  paginateItems,
+} from './blue-green-monitoring-explorer-shared';
+
+const ROLLBACK_SELECT_PAGE_SIZE = 10;
 
 function findRuntimeDeployment(
   deployments: BlueGreenMonitoringDeployment[],
@@ -72,7 +81,7 @@ export function BlueGreenMonitoringRolloutControls({
     activeDeployment.commitHash === standbyDeployment.commitHash;
   const rollbackCandidates = useMemo(
     () =>
-      snapshot.deployments
+      dedupeBlueGreenDeployments(snapshot.deployments)
         .filter(
           (deployment) =>
             deployment.status === 'successful' && deployment.commitHash
@@ -89,12 +98,31 @@ export function BlueGreenMonitoringRolloutControls({
       rollbackCandidates[0]?.commitHash ??
       ''
   );
+  const [rollbackPage, setRollbackPage] = useState(1);
+  const safeRollbackPage = getSafePage(
+    rollbackPage,
+    rollbackCandidates.length,
+    ROLLBACK_SELECT_PAGE_SIZE
+  );
   const selectedRollbackDeployment =
     rollbackCandidates.find(
       (deployment) => deployment.commitHash === selectedCommitHash
     ) ??
     rollbackCandidates[0] ??
     null;
+  const visibleRollbackCandidates = paginateItems(
+    rollbackCandidates,
+    safeRollbackPage,
+    ROLLBACK_SELECT_PAGE_SIZE
+  );
+  const selectRollbackCandidates =
+    selectedRollbackDeployment &&
+    !visibleRollbackCandidates.some(
+      (deployment) =>
+        deployment.commitHash === selectedRollbackDeployment.commitHash
+    )
+      ? [selectedRollbackDeployment, ...visibleRollbackCandidates]
+      : visibleRollbackCandidates;
   const mutation = useMutation({
     mutationFn: () => requestBlueGreenInstantRollout(),
     onSuccess: async () => {
@@ -272,17 +300,37 @@ export function BlueGreenMonitoringRolloutControls({
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  {rollbackCandidates.map((deployment) => (
+                  {selectRollbackCandidates.map((deployment) => (
                     <SelectItem
+                      className="max-w-[min(760px,calc(100vw-4rem))]"
                       key={deployment.commitHash}
                       value={deployment.commitHash ?? ''}
                     >
-                      {deployment.commitShortHash ?? deployment.commitHash}{' '}
-                      {deployment.commitSubject ?? t('states.none')}
+                      <span className="block truncate">
+                        {deployment.commitShortHash ?? deployment.commitHash}{' '}
+                        {deployment.commitSubject ?? t('states.none')}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {rollbackCandidates.length > ROLLBACK_SELECT_PAGE_SIZE ? (
+                <ExplorerPagination
+                  currentPage={safeRollbackPage}
+                  onNextPage={() => {
+                    setRollbackPage(safeRollbackPage + 1);
+                  }}
+                  onPreviousPage={() => {
+                    setRollbackPage(safeRollbackPage - 1);
+                  }}
+                  t={t}
+                  totalItems={rollbackCandidates.length}
+                  totalPages={getTotalPages(
+                    rollbackCandidates.length,
+                    ROLLBACK_SELECT_PAGE_SIZE
+                  )}
+                />
+              ) : null}
 
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button

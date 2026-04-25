@@ -14,6 +14,7 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { dedupeBlueGreenDeployments } from './blue-green-monitoring-deployments';
 import {
   DockerInventoryPanel,
   RuntimeTopologyPanel,
@@ -58,6 +59,10 @@ export function BlueGreenMonitoringOverviewClient({
   }
 
   const snapshot = query.data;
+  const deployments = dedupeBlueGreenDeployments(snapshot.deployments);
+  const successfulDeployments = deployments.filter(
+    (deployment) => deployment.status === 'successful'
+  ).length;
   const runtimeStateKey = getRuntimeStateTranslationKey(snapshot.runtime.state);
   const activeColorKey = getColorTranslationKey(snapshot.runtime.activeColor);
   const statCards = [
@@ -134,7 +139,7 @@ export function BlueGreenMonitoringOverviewClient({
       description: t('overview.focus_rollouts_description'),
       href: 'rollouts',
       title: t('routes.rollouts.title'),
-      value: `${snapshot.overview.successfulDeployments}/${snapshot.overview.totalDeployments}`,
+      value: `${successfulDeployments}/${deployments.length}`,
     },
     {
       description: t('overview.focus_requests_description'),

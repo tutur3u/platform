@@ -12,6 +12,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { parseAsInteger, useQueryState } from 'nuqs';
 import { startTransition, useDeferredValue, useState } from 'react';
+import { dedupeBlueGreenDeployments } from './blue-green-monitoring-deployments';
 import {
   EmptyFilteredState,
   ExplorerPagination,
@@ -84,6 +85,7 @@ export function BlueGreenMonitoringWatcherLogsClient() {
 
   const archive = archiveQuery.data;
   const snapshot = snapshotQuery.data;
+  const deployments = dedupeBlueGreenDeployments(snapshot.deployments);
   const filteredLogs = archive.items.filter((log) => {
     if (scopeFilter !== 'all' && log.deploymentKey !== scopeFilter) {
       return false;
@@ -123,7 +125,7 @@ export function BlueGreenMonitoringWatcherLogsClient() {
   });
   const scopeOptions = [
     { label: t('logs.scope_all'), value: 'all' },
-    ...snapshot.deployments
+    ...deployments
       .map((deployment) => {
         const scopeValue =
           deployment.deploymentStamp != null

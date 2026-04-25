@@ -545,6 +545,12 @@ Dashboard details:
   explorers. Route filters come from normalized request paths, the raw request
   URI still surfaces query signatures, and `?_rsc=*` requests are called out so
   React Server Component traffic is inspectable separately from document hits.
+- Deployment-facing dashboard surfaces deduplicate successful blue/green rows
+  for the same commit so active and standby colors do not appear as separate
+  rollouts. Failed attempts remain separate because the retry cap and recovery
+  debugging depend on seeing each failed build/deploy attempt. Large deployment,
+  rollback-candidate, Docker-service, and container lists are paginated in the
+  UI instead of rendering every retained row at once.
 - Production `web`, `web-blue`, and `web-green` containers mount
   `./tmp/docker-web` read-only at `/app/runtime/docker-web` and use
   `PLATFORM_BLUE_GREEN_MONITORING_DIR` to find the watcher snapshot. Keep that
