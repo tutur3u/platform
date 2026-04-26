@@ -649,6 +649,79 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     );
   }
 
+  Widget _buildFullscreenSectionBody(
+    BuildContext context, {
+    required _TaskBoardTaskDetailSection section,
+    ScrollController? scrollController,
+  }) {
+    final hasFullscreenTitle =
+        widget.fullscreenTitle?.trim().isNotEmpty == true;
+    final showHeader =
+        section == _TaskBoardTaskDetailSection.information ||
+        hasFullscreenTitle;
+    final bottomInset =
+        widget.bottomContentPadding + MediaQuery.viewInsetsOf(context).bottom;
+
+    Widget buildSectionContent() {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final contentHeight = constraints.maxHeight.isFinite
+              ? math.max<double>(0, constraints.maxHeight)
+              : 0.toDouble();
+
+          return SingleChildScrollView(
+            controller: scrollController,
+            padding: EdgeInsets.fromLTRB(16, 0, 16, bottomInset),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: contentHeight),
+              child: switch (section) {
+                _TaskBoardTaskDetailSection.information =>
+                  _buildEmbeddedTaskEditor(
+                    context,
+                    section: _TaskBoardTaskDetailSection.information,
+                    minHeight: contentHeight,
+                  ),
+                _TaskBoardTaskDetailSection.relationships =>
+                  _buildEmbeddedTaskEditor(
+                    context,
+                    section: _TaskBoardTaskDetailSection.relationships,
+                    minHeight: contentHeight,
+                  ),
+                _TaskBoardTaskDetailSection.description =>
+                  _buildDescriptionSection(
+                    context,
+                    _taskDescriptionParsed(_task.description),
+                    fullscreenImmersive: true,
+                    minHeight: contentHeight,
+                  ),
+              },
+            ),
+          );
+        },
+      );
+    }
+
+    return SafeArea(
+      top: false,
+      bottom: false,
+      child: SizedBox.expand(
+        child: showHeader
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: _buildFullscreenHeader(context, section: section),
+                  ),
+                  const shad.Gap(12),
+                  Expanded(child: buildSectionContent()),
+                ],
+              )
+            : buildSectionContent(),
+      ),
+    );
+  }
+
   Widget _buildScrollableBody(
     BuildContext context, {
     ScrollController? scrollController,
@@ -669,6 +742,13 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     }
     if (isFullscreenDescription && widget.isDescriptionEditing) {
       return _buildFullscreenDescriptionEditorBody(context);
+    }
+    if (widget.isFullscreen) {
+      return _buildFullscreenSectionBody(
+        context,
+        section: section,
+        scrollController: scrollController,
+      );
     }
 
     final hasFullscreenTitle =
