@@ -85,7 +85,10 @@
               },
               {
                 "group": "AI",
-                "pages": ["platform/ai/structured-data"]
+                "pages": [
+                  "platform/ai/model-catalog",
+                  "platform/ai/structured-data"
+                ]
               },
               {
                 "group": "Personalization",

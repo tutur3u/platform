@@ -18,6 +18,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@tuturuuu/ui/toggle-group';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { DEV_MODE } from '@/constants/common';
 import { ProviderLogo } from '../../../../(dashboard)/components/provider-logo';
 
 interface GatewayModel {
@@ -47,6 +48,26 @@ interface ModelsResponse {
   pagination: { page: number; limit: number; total: number };
 }
 
+const ADMIN_MODELS_PAGE_SIZE = 100;
+
+type SyncSource = 'tuturuuu-production-public' | 'vercel-gateway';
+
+const SYNC_SOURCE_OPTIONS: Array<{
+  labelKey:
+    | 'sync_source_tuturuuu_production_public'
+    | 'sync_source_vercel_ai_sdk_models';
+  value: SyncSource;
+}> = [
+  {
+    labelKey: 'sync_source_tuturuuu_production_public',
+    value: 'tuturuuu-production-public',
+  },
+  {
+    labelKey: 'sync_source_vercel_ai_sdk_models',
+    value: 'vercel-gateway',
+  },
+];
+
 export default function ModelsTab() {
   const t = useTranslations('ai-credits-admin');
   const queryClient = useQueryClient();
@@ -56,16 +77,43 @@ export default function ModelsTab() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [syncSource, setSyncSource] = useState<SyncSource>(
+    DEV_MODE ? 'tuturuuu-production-public' : 'vercel-gateway'
+  );
 
   const { data, isLoading } = useQuery<ModelsResponse>({
-    queryKey: ['admin', 'ai-credits', 'models', { page, limit: 500 }],
+    queryKey: ['admin', 'ai-credits', 'models', { scope: 'all' }],
     queryFn: async () => {
-      const params = new URLSearchParams({ page: '1', limit: '500' });
-      const res = await fetch(
-        `/api/v1/admin/ai-credits/models?${params.toString()}`
-      );
-      if (!res.ok) throw new Error('Failed to fetch models');
-      return res.json();
+      const models: GatewayModel[] = [];
+      let total = 0;
+
+      for (let pageNumber = 1; pageNumber <= 100; pageNumber++) {
+        const params = new URLSearchParams({
+          limit: String(ADMIN_MODELS_PAGE_SIZE),
+          page: String(pageNumber),
+        });
+        const res = await fetch(
+          `/api/v1/admin/ai-credits/models?${params.toString()}`,
+          { cache: 'no-store' }
+        );
+        if (!res.ok) throw new Error('Failed to fetch models');
+
+        const pageData = (await res.json()) as ModelsResponse;
+        models.push(...pageData.data);
+        total = pageData.pagination.total;
+
+        if (
+          pageData.data.length < ADMIN_MODELS_PAGE_SIZE ||
+          models.length >= total
+        ) {
+          break;
+        }
+      }
+
+      return {
+        data: models,
+        pagination: { limit: models.length, page: 1, total },
+      };
     },
   });
 
@@ -101,9 +149,11 @@ export default function ModelsTab() {
   });
 
   const syncMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (source: SyncSource) => {
       const res = await fetch('/api/v1/admin/ai-credits/sync-models', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source }),
       });
       if (!res.ok) throw new Error('Sync failed');
       return res.json();
@@ -183,13 +233,39 @@ export default function ModelsTab() {
                 {t('models_subcopy')}
               </p>
             </div>
-            <Button
-              onClick={() => syncMutation.mutate()}
-              disabled={syncMutation.isPending}
-              variant="outline"
-            >
-              {syncMutation.isPending ? t('syncing') : t('sync_from_gateway')}
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              {DEV_MODE && (
+                <Select
+                  value={syncSource}
+                  onValueChange={(value) => setSyncSource(value as SyncSource)}
+                >
+                  <SelectTrigger
+                    aria-label={t('sync_source_label')}
+                    className="w-full bg-background/80 sm:w-72"
+                  >
+                    <SelectValue placeholder={t('sync_source_label')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SYNC_SOURCE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {t(option.labelKey)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Button
+                onClick={() => syncMutation.mutate(syncSource)}
+                disabled={syncMutation.isPending}
+                variant="outline"
+              >
+                {syncMutation.isPending
+                  ? t('syncing')
+                  : DEV_MODE
+                    ? t('sync_selected_source')
+                    : t('sync_from_gateway')}
+              </Button>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">

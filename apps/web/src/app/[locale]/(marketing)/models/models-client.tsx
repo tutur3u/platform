@@ -1,7 +1,9 @@
 'use client';
 
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { LayoutGrid, LayoutList, Search } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
 import {
@@ -15,6 +17,7 @@ import { ToggleGroup, ToggleGroupItem } from '@tuturuuu/ui/toggle-group';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { ProviderLogo } from '../../(dashboard)/[wsId]/(dashboard)/components/provider-logo';
+import { MODELS_PAGE_SIZE } from './models-constants';
 
 // Using the same interface shape expected from ai_gateway_models
 interface ModelData {
@@ -31,10 +34,63 @@ interface ModelData {
   image_gen_price: number | null;
 }
 
-export default function ModelsClient({
-  initialModels,
+interface ModelsPageResponse {
+  data: ModelData[];
+  pagination: {
+    limit: number;
+    page: number;
+    total: number;
+  };
+}
+
+interface ModelFilterOptions {
+  providers: string[];
+  tags: string[];
+  types: string[];
+}
+
+function getModelsUrl({
+  page,
+  provider,
+  search,
+  tag,
+  type,
 }: {
-  initialModels: ModelData[];
+  page: number;
+  provider: string;
+  search: string;
+  tag: string;
+  type: string;
+}) {
+  const params = new URLSearchParams({
+    format: 'paginated',
+    limit: String(MODELS_PAGE_SIZE),
+    page: String(page),
+    type: type === 'all' ? 'all' : type,
+  });
+
+  if (provider !== 'all') {
+    params.set('provider', provider);
+  }
+
+  if (tag !== 'all') {
+    params.set('tag', tag);
+  }
+
+  const trimmedSearch = search.trim();
+  if (trimmedSearch) {
+    params.set('search', trimmedSearch);
+  }
+
+  return `/api/v1/infrastructure/ai/models?${params.toString()}`;
+}
+
+export default function ModelsClient({
+  filterOptions,
+  initialPage,
+}: {
+  filterOptions: ModelFilterOptions;
+  initialPage: ModelsPageResponse;
 }) {
   const t = useTranslations('marketing-models');
   const [search, setSearch] = useState('');
@@ -43,41 +99,59 @@ export default function ModelsClient({
   const [tagFilter, setTagFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  const providers = useMemo(() => {
-    const set = new Set(initialModels.map((m) => m.provider));
-    return Array.from(set).sort();
-  }, [initialModels]);
+  const usesInitialPage =
+    search.trim().length === 0 &&
+    providerFilter === 'all' &&
+    typeFilter === 'all' &&
+    tagFilter === 'all';
 
-  const types = useMemo(() => {
-    const set = new Set(initialModels.map((m) => m.type));
-    return Array.from(set).sort();
-  }, [initialModels]);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteQuery<ModelsPageResponse>({
+    queryKey: [
+      'marketing-models',
+      { providerFilter, search, tagFilter, typeFilter },
+    ],
+    queryFn: async ({ pageParam }) => {
+      const response = await fetch(
+        getModelsUrl({
+          page: Number(pageParam),
+          provider: providerFilter,
+          search,
+          tag: tagFilter,
+          type: typeFilter,
+        }),
+        { cache: 'no-store' }
+      );
 
-  const tags = useMemo(() => {
-    const set = new Set<string>();
-    for (const model of initialModels) {
-      for (const tag of model.tags ?? []) {
-        set.add(tag);
+      if (!response.ok) {
+        throw new Error('Failed to fetch models');
       }
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [initialModels]);
 
-  const filteredModels = useMemo(() => {
-    return initialModels.filter((m) => {
-      const matchesSearch =
-        m.name.toLowerCase().includes(search.toLowerCase()) ||
-        m.id.toLowerCase().includes(search.toLowerCase()) ||
-        (m.description?.toLowerCase() || '').includes(search.toLowerCase());
-      const matchesProvider =
-        providerFilter === 'all' || m.provider === providerFilter;
-      const matchesType = typeFilter === 'all' || m.type === typeFilter;
-      const matchesTag =
-        tagFilter === 'all' || (m.tags ?? []).some((tag) => tag === tagFilter);
+      return response.json();
+    },
+    initialData: usesInitialPage
+      ? { pageParams: [1], pages: [initialPage] }
+      : undefined,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const nextPage = lastPage.pagination.page + 1;
+      const loaded = lastPage.pagination.page * lastPage.pagination.limit;
 
-      return matchesSearch && matchesProvider && matchesType && matchesTag;
-    });
-  }, [initialModels, search, providerFilter, typeFilter, tagFilter]);
+      return loaded < lastPage.pagination.total ? nextPage : undefined;
+    },
+  });
+
+  const loadedModels = useMemo(
+    () => data?.pages.flatMap((page) => page.data) ?? [],
+    [data]
+  );
+  const totalModels = data?.pages.at(-1)?.pagination.total ?? 0;
 
   const formatTokens = (tokens: number | null) => {
     if (!tokens) return 'N/A';
@@ -120,7 +194,7 @@ export default function ModelsClient({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t('all_providers')}</SelectItem>
-            {providers.map((p) => (
+            {filterOptions.providers.map((p) => (
               <SelectItem key={p} value={p} className="capitalize">
                 {p}
               </SelectItem>
@@ -134,7 +208,7 @@ export default function ModelsClient({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t('all_types')}</SelectItem>
-            {types.map((typeVal) => (
+            {filterOptions.types.map((typeVal) => (
               <SelectItem key={typeVal} value={typeVal} className="capitalize">
                 {typeVal}
               </SelectItem>
@@ -148,7 +222,7 @@ export default function ModelsClient({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t('all_tags')}</SelectItem>
-            {tags.map((tag) => (
+            {filterOptions.tags.map((tag) => (
               <SelectItem key={tag} value={tag}>
                 {tag}
               </SelectItem>
@@ -159,7 +233,10 @@ export default function ModelsClient({
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground text-sm">
-          {t('showing_count', { count: filteredModels.length })}
+          {t('showing_count', {
+            count: loadedModels.length,
+            total: totalModels,
+          })}
         </p>
         <ToggleGroup
           type="single"
@@ -187,13 +264,26 @@ export default function ModelsClient({
         </ToggleGroup>
       </div>
 
-      {filteredModels.length === 0 ? (
+      {isLoading ? (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-72 animate-pulse rounded-xl border bg-muted/50"
+            />
+          ))}
+        </div>
+      ) : isError ? (
+        <div className="rounded-xl border bg-muted/50 py-20 text-center">
+          <p className="text-lg text-muted-foreground">{t('load_failed')}</p>
+        </div>
+      ) : loadedModels.length === 0 ? (
         <div className="rounded-xl border bg-muted/50 py-20 text-center">
           <p className="text-lg text-muted-foreground">{t('no_results')}</p>
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredModels.map((model) => (
+          {loadedModels.map((model) => (
             <Card
               key={model.id}
               className="flex h-full flex-col overflow-hidden transition-shadow duration-200 hover:shadow-lg"
@@ -311,7 +401,7 @@ export default function ModelsClient({
         </div>
       ) : (
         <div className="divide-y rounded-xl border bg-background">
-          {filteredModels.map((model) => (
+          {loadedModels.map((model) => (
             <div
               key={model.id}
               className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
@@ -410,6 +500,20 @@ export default function ModelsClient({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {hasNextPage && (
+        <div className="flex justify-center pt-8">
+          <Button
+            variant="outline"
+            onClick={() => {
+              void fetchNextPage();
+            }}
+            disabled={isFetchingNextPage}
+          >
+            {isFetchingNextPage ? t('loading_more') : t('load_more')}
+          </Button>
         </div>
       )}
     </div>

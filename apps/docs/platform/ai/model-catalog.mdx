@@ -1,0 +1,33 @@
+---
+title: Model Catalog
+description: How Tuturuuu publishes, browses, and syncs AI gateway model metadata.
+---
+
+The public model catalog is served from `apps/web` at:
+
+```txt
+GET /api/v1/infrastructure/ai/models
+```
+
+Without pagination parameters, the route keeps the legacy response shape and returns an array of language models. For catalog pages and sync jobs, prefer the paginated contract:
+
+```txt
+GET /api/v1/infrastructure/ai/models?format=paginated&type=all&page=1&limit=60
+```
+
+The paginated response is:
+
+```ts
+{
+  data: Model[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+}
+```
+
+Supported filters include `type`, `provider`, `tag`, `enabled`, and `search`. Use `type=all` when a caller needs language, image, embedding, and video models.
+
+In development, the AI credits admin model sync defaults to the Tuturuuu production public catalog before falling back to the Vercel AI SDK model source. This keeps local catalogs close to production while preserving the explicit Vercel source for refreshing upstream gateway metadata.

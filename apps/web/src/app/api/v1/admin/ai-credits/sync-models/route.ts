@@ -1,13 +1,24 @@
-import { syncGatewayModels } from '@tuturuuu/ai/credits/sync-gateway-models';
+import {
+  type GatewayModelSyncSource,
+  syncGatewayModels,
+} from '@tuturuuu/ai/credits/sync-gateway-models';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { DEV_MODE, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
-export async function POST() {
+const syncModelsSchema = z.object({
+  source: z
+    .enum(['tuturuuu-production-public', 'vercel-gateway'])
+    .optional()
+    .default('vercel-gateway'),
+});
+
+export async function POST(request: Request) {
   try {
     // Auth: require root workspace admin
     const supabase = await createClient();
@@ -40,8 +51,28 @@ export async function POST() {
       );
     }
 
+    const body = await request.json().catch(() => ({}));
+    const parsed = syncModelsSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid payload', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const source = parsed.data.source as GatewayModelSyncSource;
+    if (source === 'tuturuuu-production-public' && !DEV_MODE) {
+      return NextResponse.json(
+        {
+          error:
+            'Tuturuuu production public model sync is only available in development mode',
+        },
+        { status: 403 }
+      );
+    }
+
     const sbAdmin = await createAdminClient();
-    const result = await syncGatewayModels(sbAdmin);
+    const result = await syncGatewayModels(sbAdmin, { source });
 
     return NextResponse.json(result);
   } catch (error) {
