@@ -4,8 +4,6 @@ import {
 } from '@tuturuuu/internal-api';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
-import { buildCmsStrings } from '@/features/cms-studio/cms-strings';
 import { getCmsWorkspaceAccess } from '@/lib/external-projects/access';
 
 interface Props {
@@ -57,16 +55,13 @@ export default async function CmsWebglPackagePlayerPage({ params }: Props) {
     notFound();
   }
 
-  const t = await getTranslations('external-projects');
-  const strings = buildCmsStrings(t);
+  // const t = await getTranslations('external-projects');
+  // const strings = buildCmsStrings(t);
 
   return (
-    <main className="flex h-[calc(100svh-5rem)] min-h-0 flex-col overflow-hidden bg-background">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-border/70 border-b px-4 py-3">
+    <main className="-m-2 -mt-17 flex h-svh min-h-0 w-[calc(100%+1rem)] max-w-none flex-col overflow-hidden bg-background md:-m-4 md:h-screen md:w-[calc(100%+2rem)]">
+      {/* <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-border/70 border-b px-4 py-2">
         <div className="min-w-0">
-          <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-            {strings.webglPackageTitle}
-          </div>
           <h1 className="truncate font-semibold text-lg">{entry.title}</h1>
         </div>
         <a
@@ -75,7 +70,7 @@ export default async function CmsWebglPackagePlayerPage({ params }: Props) {
         >
           {strings.backToEpmAction}
         </a>
-      </header>
+      </header> */}
       <iframe
         allow="autoplay; fullscreen; gamepad; xr-spatial-tracking"
         className="h-full min-h-0 w-full flex-1 border-0 bg-black"
