@@ -205,14 +205,18 @@ export type CmsStrings = {
   visualBoardTitle: string;
   webglAssetCountLabel: string;
   webglCopyManifestAction: string;
+  webglCopyPublicLinkAction: string;
   webglDeploymentBadge: string;
   webglDeploymentDescription: string;
   webglDeploymentTitle: string;
   webglEmptyDescription: string;
   webglEntryUrlLabel: string;
   webglOpenAction: string;
+  webglOpenPublicAction: string;
   webglPackageDescription: string;
   webglPackageTitle: string;
+  webglPublicEntryUrlLabel: string;
+  webglPublicLinkUnavailable: string;
   webglReplaceAction: string;
   webglUploadAction: string;
   webglUploadFailedToast: string;
@@ -449,14 +453,18 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     visualBoardTitle: t('epm.visual_board_title'),
     webglAssetCountLabel: t('epm.webgl_asset_count_label'),
     webglCopyManifestAction: t('epm.webgl_copy_manifest_action'),
+    webglCopyPublicLinkAction: t('epm.webgl_copy_public_link_action'),
     webglDeploymentBadge: t('epm.webgl_deployment_badge'),
     webglDeploymentDescription: t('epm.webgl_deployment_description'),
     webglDeploymentTitle: t('epm.webgl_deployment_title'),
     webglEmptyDescription: t('epm.webgl_empty_description'),
     webglEntryUrlLabel: t('epm.webgl_entry_url_label'),
     webglOpenAction: t('epm.webgl_open_action'),
+    webglOpenPublicAction: t('epm.webgl_open_public_action'),
     webglPackageDescription: t('epm.webgl_package_description'),
     webglPackageTitle: t('epm.webgl_package_title'),
+    webglPublicEntryUrlLabel: t('epm.webgl_public_entry_url_label'),
+    webglPublicLinkUnavailable: t('epm.webgl_public_link_unavailable'),
     webglReplaceAction: t('epm.webgl_replace_action'),
     webglUploadAction: t('epm.webgl_upload_action'),
     webglUploadFailedToast: t('epm.webgl_upload_failed_toast'),

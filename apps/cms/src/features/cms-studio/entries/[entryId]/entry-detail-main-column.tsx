@@ -84,6 +84,7 @@ type EntryDetailMainColumnProps = {
   uploadWebglPending: boolean;
   webglPackageAsset: ExternalProjectStudioAsset | null;
   webglPackagePlayerPath: string | null;
+  webglPackagePublicPlayerPath: string | null;
 };
 
 export function EntryDetailMainColumn({
@@ -131,6 +132,7 @@ export function EntryDetailMainColumn({
   uploadWebglPending,
   webglPackageAsset,
   webglPackagePlayerPath,
+  webglPackagePublicPlayerPath,
 }: EntryDetailMainColumnProps) {
   const coverUploadProgressItems = uploadProgressItems.filter(
     (item) => item.scope === 'cover'
@@ -152,6 +154,7 @@ export function EntryDetailMainColumn({
           uploadWebglPending={uploadWebglPending}
           webglPackageAsset={webglPackageAsset}
           webglPackagePlayerPath={webglPackagePlayerPath}
+          webglPackagePublicPlayerPath={webglPackagePublicPlayerPath}
         />
       ) : null}
 

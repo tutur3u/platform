@@ -48,6 +48,10 @@ function getWebglArtifactMetadata(
   };
 }
 
+function getAbsoluteUrl(path: string) {
+  return new URL(path, window.location.origin).toString();
+}
+
 type EntryDetailWebglPanelProps = {
   onUploadWebglClick: () => void;
   strings: CmsStrings;
@@ -55,6 +59,7 @@ type EntryDetailWebglPanelProps = {
   uploadWebglPending: boolean;
   webglPackageAsset: ExternalProjectStudioAsset | null;
   webglPackagePlayerPath: string | null;
+  webglPackagePublicPlayerPath: string | null;
 };
 
 export function EntryDetailWebglPanel({
@@ -64,6 +69,7 @@ export function EntryDetailWebglPanel({
   uploadWebglPending,
   webglPackageAsset,
   webglPackagePlayerPath,
+  webglPackagePublicPlayerPath,
 }: EntryDetailWebglPanelProps) {
   const webglArtifact = getWebglArtifactMetadata(webglPackageAsset);
   const webglManifestText = webglPackageAsset
@@ -121,6 +127,34 @@ export function EntryDetailWebglPanel({
                 {strings.webglOpenAction}
               </Button>
             ) : null}
+            {webglPackagePublicPlayerPath ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    window.open(
+                      getAbsoluteUrl(webglPackagePublicPlayerPath),
+                      '_blank',
+                      'noopener,noreferrer'
+                    )
+                  }
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  {strings.webglOpenPublicAction}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    void navigator.clipboard?.writeText(
+                      getAbsoluteUrl(webglPackagePublicPlayerPath)
+                    )
+                  }
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  {strings.webglCopyPublicLinkAction}
+                </Button>
+              </>
+            ) : null}
             {webglManifestText ? (
               <Button
                 variant="outline"
@@ -154,6 +188,15 @@ export function EntryDetailWebglPanel({
               </div>
               <div className="mt-2 break-all font-mono text-muted-foreground text-xs leading-6">
                 {webglArtifact.entryUrl}
+              </div>
+            </div>
+            <div className="min-w-0 rounded-[1.2rem] border border-border/70 bg-background/85 p-4 md:col-span-2">
+              <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                {strings.webglPublicEntryUrlLabel}
+              </div>
+              <div className="mt-2 break-all font-mono text-muted-foreground text-xs leading-6">
+                {webglPackagePublicPlayerPath ??
+                  strings.webglPublicLinkUnavailable}
               </div>
             </div>
           </div>

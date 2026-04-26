@@ -1,7 +1,7 @@
 ---
 title: 'CMS'
 description: 'Dedicated Tuturuuu CMS app for workspace content operations and root-level project linking.'
-updatedAt: '2026-04-25'
+updatedAt: '2026-04-26'
 ---
 
 ## Overview
@@ -23,6 +23,7 @@ updatedAt: '2026-04-25'
 - `/{wsId}/preview`: delivered-content preview
 - `/{wsId}/settings`: legacy compatibility redirect to `/{wsId}/members`
 - `/internal/projects`: root workspace canonical project registry and workspace linking
+- `/play/{wsId}/webgl/{assetId}`: public WebGL package player. This route does not require a CMS login, but the proxied WebGL asset API still only serves the package when the owning CMS entry is published.
 
 When `wsId` resolves to the internal/root workspace, `/{wsId}` and other workspace-local routes should bounce to `/internal/projects` instead of trying to render the bound-workspace CMS surfaces.
 
@@ -51,6 +52,7 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - Entry detail now opens as a fullscreen dialog from the library route so the CMS keeps the library cache warm instead of forcing a separate navigation for each entry.
 - The Games route reuses the library client with a game-like collection scope and only exposes WebGL ZIP upload controls when `ENABLE_CMS_GAMES` is explicitly enabled.
 - When a user creates the first Games entry, CMS should automatically create the workspace `Games` collection and then open the new game entry instead of requiring a manual collection setup step.
+- Published game entries expose a public `/play/{wsId}/webgl/{assetId}` link from the WebGL package card. Keep this route login-free in the CMS proxy, and keep publication checks in the central `apps/web` WebGL asset route so drafts and archived entries do not leak assets.
 - CMS media uploads show per-file progress for cover images, gallery media, and WebGL ZIP packages. Cover and gallery media must use the same workspace Drive signed-upload flow as the Drive page (`/api/v1/workspaces/:wsId/storage/upload-url` followed by `/storage/finalize-upload`) and store the returned Drive path on the CMS asset row. WebGL ZIP package uploads also upload directly to the signed storage URL returned by the self-hosted web API, then call the WebGL package finalize route so the ZIP can be extracted and mapped to a playable artifact. The WebGL asset-serving route must infer browser content types from the requested WebGL filename for known outputs such as `index.html`, `.js`, `.jpg`, `.wasm`, `.data`, and compressed `.gz`/`.br` files, because extracted storage metadata can be too generic or incorrectly recorded as `text/plain`. Served HTML is also adjusted for the CMS player so Unity canvases fill the iframe viewport instead of keeping the default fixed-size template layout, hide the stock Unity footer chrome, resize the canvas backing buffer to the iframe viewport, inject a route-local `<base>` and artifact-map URL resolver so `Build/*` and `TemplateData/*` load through the same WebGL package API route even when the Unity template creates scripts dynamically, and show in-frame resource download progress when the runtime fetches package assets.
 - CMS asset delivery must respect the workspace Drive provider. Supabase assets may use signed image transforms, while R2-backed assets should resolve through the workspace storage provider signed-read path and ignore Supabase-only transform parameters.
 - CMS does not register the shared Serwist service worker or emit the shared web app manifest. It is a Vercel-hosted satellite that proxies protected APIs to `apps/web`, so PWA routes owned by `apps/web` must not be advertised from `cms.tuturuuu.com`.

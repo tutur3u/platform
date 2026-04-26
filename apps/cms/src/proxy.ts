@@ -44,6 +44,17 @@ const authProxy = createCentralizedAuthProxy({
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
   excludeRootPath: true,
+  isPublicPath: (pathname) => {
+    const pathSegments = pathname.split('/').filter(Boolean);
+    const firstSegment = pathSegments[0];
+    const hasLocalePrefix =
+      firstSegment && supportedLocales.includes(firstSegment as Locale);
+    const unlocalizedPath = `/${pathSegments
+      .slice(hasLocalePrefix ? 1 : 0)
+      .join('/')}`;
+
+    return unlocalizedPath.startsWith('/play/');
+  },
   mfa: { enabled: false },
 });
 

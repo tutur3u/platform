@@ -75,6 +75,20 @@ function clampUploadPercent(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
+function getCmsPublicWebglPlayerPath(
+  pathname: string,
+  input: {
+    assetId: string;
+    workspaceId: string;
+  }
+) {
+  const [firstSegment] = pathname.split('/').filter(Boolean);
+  const localePrefix =
+    firstSegment === 'en' || firstSegment === 'vi' ? `/${firstSegment}` : '';
+
+  return `${localePrefix}/play/${input.workspaceId}/webgl/${input.assetId}`;
+}
+
 function mergeAssetCaptionMetadata(
   asset: ExternalProjectStudioAsset,
   caption: string
@@ -273,6 +287,13 @@ export function EntryDetailClient({
   const webglPackagePlayerPath = webglPackageAsset
     ? `${getCmsWorkspaceBasePath(pathname)}/library/entries/${entryId}/webgl/${webglPackageAsset.id}`
     : null;
+  const webglPackagePublicPlayerPath =
+    webglPackageAsset && activeEntry?.status === 'published'
+      ? getCmsPublicWebglPlayerPath(pathname, {
+          assetId: webglPackageAsset.id,
+          workspaceId,
+        })
+      : null;
   const artworkCollection =
     collections.find((collection) => collection.slug === 'artworks') ?? null;
   const loreCollection =
@@ -1873,6 +1894,7 @@ export function EntryDetailClient({
           uploadWebglPending={uploadWebglPackageMutation.isPending}
           webglPackageAsset={webglPackageAsset}
           webglPackagePlayerPath={webglPackagePlayerPath}
+          webglPackagePublicPlayerPath={webglPackagePublicPlayerPath}
         />
 
         <EntryDetailSidebar
