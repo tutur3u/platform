@@ -89,6 +89,17 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     return _isSaving || _isMoving || _isDeleting || _isMutatingRelationships;
   }
 
+  bool get _hasDescriptionChanges {
+    if (!_isTaskDescriptionEditingEnabled) {
+      return false;
+    }
+
+    final description = normalizeTaskDescriptionPayload(
+      _descriptionController.text,
+    );
+    return description != _initialDescription;
+  }
+
   bool get _hasTaskChanges {
     if (_isCreate) {
       return _nameController.text.trim().isNotEmpty;
@@ -98,13 +109,8 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       return true;
     }
 
-    if (_isTaskDescriptionEditingEnabled) {
-      final description = normalizeTaskDescriptionPayload(
-        _descriptionController.text,
-      );
-      if (description != _initialDescription) {
-        return true;
-      }
+    if (_hasDescriptionChanges) {
+      return true;
     }
 
     if (_priority != _initialPriority) {
@@ -185,7 +191,10 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     );
     _initialPriority = _normalizePriority(task?.priority);
     _initialEstimationPoints = task?.estimationPoints;
-    _initialAssigneeIds = {...?task?.assigneeIds};
+    final initialAssigneeIds = _workspaceMemberAssigneeIds(
+      task?.assigneeIds ?? const <String>[],
+    );
+    _initialAssigneeIds = {...initialAssigneeIds};
     _initialLabelIds = {...?task?.labelIds};
     _initialProjectIds = {...?task?.projectIds};
     _initialStartDate = task?.startDate;
@@ -193,7 +202,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     _priority = _normalizePriority(task?.priority);
     _selectedListId = _resolveInitialListId(task);
     _estimationPoints = task?.estimationPoints;
-    _selectedAssigneeIds = {...?task?.assigneeIds};
+    _selectedAssigneeIds = {...initialAssigneeIds};
     _selectedLabelIds = {...?task?.labelIds};
     _selectedProjectIds = {...?task?.projectIds};
     _startDate = task?.startDate;
@@ -202,7 +211,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
         task?.relationships ?? TaskRelationshipsResponse.empty;
 
     if (!_isCreate) {
-      unawaited(_loadRelationshipsIfNeeded(force: true));
+      unawaited(_loadRelationshipsIfNeeded());
     }
 
     _nameController.addListener(_handleFormFieldChanged);
@@ -509,11 +518,22 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     final section = widget.embeddedSection;
     final minHeight = widget.embeddedMinHeight;
 
+    if (section == _TaskBoardTaskDetailSection.description) {
+      final editor = _buildEmbeddedDescriptionEditorShell(context);
+
+      if (minHeight == null || minHeight <= 0) {
+        return editor;
+      }
+
+      return ConstrainedBox(
+        constraints: BoxConstraints(minHeight: minHeight),
+        child: editor,
+      );
+    }
+
     final editor = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (section == _TaskBoardTaskDetailSection.description)
-          _buildEmbeddedSaveBar(context),
         switch (section) {
           _TaskBoardTaskDetailSection.information => _buildDetailsFields(
             context,
@@ -541,6 +561,15 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     );
   }
 
+  Widget _buildEmbeddedDescriptionEditorShell(BuildContext context) {
+    return Stack(
+      children: [
+        _buildEmbeddedDescriptionEditor(context),
+        _buildEmbeddedFloatingSaveButton(context),
+      ],
+    );
+  }
+
   Widget _buildEmbeddedDescriptionEditor(BuildContext context) {
     final theme = shad.Theme.of(context);
 
@@ -557,11 +586,10 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       );
     }
 
-    final fallbackHeight = MediaQuery.sizeOf(context).height - 260;
-    final editorHeight = math.max<double>(
-      460,
-      math.max<double>(fallbackHeight, widget.embeddedMinHeight ?? 0),
-    );
+    final embeddedMinHeight = widget.embeddedMinHeight;
+    final editorHeight = embeddedMinHeight != null && embeddedMinHeight > 0
+        ? embeddedMinHeight
+        : math.max<double>(460, MediaQuery.sizeOf(context).height - 260);
 
     return SizedBox(
       height: editorHeight,
@@ -579,6 +607,42 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
         onRequestImageUpload: _isBusy
             ? null
             : () => _uploadDescriptionInlineImage(context),
+      ),
+    );
+  }
+
+  Widget _buildEmbeddedFloatingSaveButton(BuildContext context) {
+    final canSave = _canSave;
+    final showButton = _hasDescriptionChanges || _isSaving;
+
+    if (!showButton) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned(
+      right: 16,
+      bottom: 16,
+      child: Tooltip(
+        message: context.l10n.commonSave,
+        child: Semantics(
+          label: context.l10n.commonSave,
+          button: true,
+          child: SizedBox.square(
+            dimension: 56,
+            child: shad.PrimaryButton(
+              onPressed: canSave ? _saveTask : null,
+              shape: shad.ButtonShape.circle,
+              density: shad.ButtonDensity.icon,
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: shad.CircularProgressIndicator(strokeWidth: 2.5),
+                    )
+                  : const Icon(Icons.check_rounded, size: 26),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1168,6 +1232,17 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
           ),
         )
         .toList(growable: false);
+  }
+
+  Set<String> _workspaceMemberAssigneeIds(Iterable<String> assigneeIds) {
+    final workspaceMemberIds = {
+      for (final member in widget.members) member.id,
+    };
+    if (workspaceMemberIds.isEmpty) {
+      return <String>{};
+    }
+
+    return assigneeIds.where(workspaceMemberIds.contains).toSet();
   }
 
   List<TaskBoardTaskAssignee> _selectedAssignees() {

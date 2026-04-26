@@ -36,6 +36,14 @@ class WorkspaceUserOption extends Equatable {
     return id;
   }
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'display_name': displayName,
+    'full_name': fullName,
+    'email': email,
+    'avatar_url': avatarUrl,
+  };
+
   @override
   List<Object?> get props => [id, displayName, fullName, email, avatarUrl];
 }

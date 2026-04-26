@@ -33,6 +33,18 @@ class _TaskBoardTaskDetailFullscreenViewState
     extends State<_TaskBoardTaskDetailFullscreenView> {
   _TaskBoardTaskDetailSection _section =
       _TaskBoardTaskDetailSection.description;
+  bool _isDescriptionEditing = false;
+
+  @override
+  void didUpdateWidget(
+    covariant _TaskBoardTaskDetailFullscreenView oldWidget,
+  ) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.task.id != widget.task.id) {
+      _section = _TaskBoardTaskDetailSection.description;
+      _isDescriptionEditing = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +62,9 @@ class _TaskBoardTaskDetailFullscreenViewState
           ownerId: 'task-board-task-title-${widget.task.id}',
           locations: {boardRoute},
           title: taskTitle,
+          showLeadingBrand: false,
+          showAvatar: false,
+          onTitleSubmitted: _saveShellTitle,
         ),
         ShellMiniNav(
           ownerId: 'task-board-task-mini-nav-${widget.task.id}',
@@ -69,9 +84,10 @@ class _TaskBoardTaskDetailFullscreenViewState
               label: context.l10n.taskBoardDetailInformation,
               selected: _section == _TaskBoardTaskDetailSection.information,
               callbackToken: 'task-info-${widget.task.id}-$_section',
-              onPressed: () => setState(
-                () => _section = _TaskBoardTaskDetailSection.information,
-              ),
+              onPressed: () => setState(() {
+                _section = _TaskBoardTaskDetailSection.information;
+                _isDescriptionEditing = false;
+              }),
             ),
             ShellMiniNavItemSpec(
               id: 'description',
@@ -79,9 +95,10 @@ class _TaskBoardTaskDetailFullscreenViewState
               label: context.l10n.taskBoardDetailTaskDescriptionLabel,
               selected: _section == _TaskBoardTaskDetailSection.description,
               callbackToken: 'task-description-${widget.task.id}-$_section',
-              onPressed: () => setState(
-                () => _section = _TaskBoardTaskDetailSection.description,
-              ),
+              onPressed: () => setState(() {
+                _section = _TaskBoardTaskDetailSection.description;
+                _isDescriptionEditing = false;
+              }),
             ),
             ShellMiniNavItemSpec(
               id: 'relationships',
@@ -89,9 +106,10 @@ class _TaskBoardTaskDetailFullscreenViewState
               label: context.l10n.taskBoardDetailEditorRelationshipsTab,
               selected: _section == _TaskBoardTaskDetailSection.relationships,
               callbackToken: 'task-relationships-${widget.task.id}-$_section',
-              onPressed: () => setState(
-                () => _section = _TaskBoardTaskDetailSection.relationships,
-              ),
+              onPressed: () => setState(() {
+                _section = _TaskBoardTaskDetailSection.relationships;
+                _isDescriptionEditing = false;
+              }),
             ),
           ],
         ),
@@ -106,6 +124,7 @@ class _TaskBoardTaskDetailFullscreenViewState
           isPersonalWorkspace: widget.isPersonalWorkspace,
           isFullscreen: true,
           section: _section,
+          isDescriptionEditing: _isDescriptionEditing,
           bottomContentPadding: hasShellMiniNav ? 0 : 88,
           fullscreenTitle: hasShellMiniNav
               ? null
@@ -117,12 +136,92 @@ class _TaskBoardTaskDetailFullscreenViewState
             child: _TaskBoardTaskDetailFallbackNav(
               section: _section,
               onBack: widget.onClose,
-              onSectionChanged: (section) => setState(
-                () => _section = section,
-              ),
+              onSectionChanged: (section) => setState(() {
+                _section = section;
+                _isDescriptionEditing = false;
+              }),
             ),
           ),
+        if (_section == _TaskBoardTaskDetailSection.description &&
+            !_isDescriptionEditing)
+          _TaskBoardTaskDescriptionEditFab(
+            hasShellMiniNav: hasShellMiniNav,
+            onPressed: () => setState(() => _isDescriptionEditing = true),
+          ),
       ],
+    );
+  }
+
+  Future<void> _saveShellTitle(String nextTitle) async {
+    final title = nextTitle.trim();
+    final currentTitle = (widget.task.name ?? '').trim();
+    if (title.isEmpty || title == currentTitle) {
+      return;
+    }
+
+    final workspaceMemberIds = {
+      for (final member in widget.members) member.id,
+    };
+    final assigneeIds =
+        workspaceMemberIds.isEmpty
+              ? <String>[]
+              : widget.task.assigneeIds
+                    .where(workspaceMemberIds.contains)
+                    .toList(growable: false)
+          ..sort();
+
+    await context.read<TaskBoardDetailCubit>().updateTask(
+      taskId: widget.task.id,
+      name: title,
+      priority: widget.task.priority,
+      startDate: widget.task.startDate,
+      endDate: widget.task.endDate,
+      estimationPoints: widget.task.estimationPoints,
+      assigneeIds: assigneeIds,
+      labelIds: widget.task.labelIds,
+      projectIds: widget.task.projectIds,
+    );
+  }
+}
+
+class _TaskBoardTaskDescriptionEditFab extends StatelessWidget {
+  const _TaskBoardTaskDescriptionEditFab({
+    required this.hasShellMiniNav,
+    required this.onPressed,
+  });
+
+  final bool hasShellMiniNav;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaPadding = MediaQuery.paddingOf(context);
+    final injectedMiniNavInset = hasShellMiniNav ? 132 : 0;
+    final bottomSafeArea = math.max<double>(
+      0,
+      mediaPadding.bottom - injectedMiniNavInset,
+    );
+    final bottom = 16 + bottomSafeArea;
+
+    return Positioned(
+      right: 16 + mediaPadding.right,
+      bottom: bottom,
+      child: Tooltip(
+        message: context.l10n.taskBoardDetailTaskEditDescription,
+        child: Semantics(
+          label: context.l10n.taskBoardDetailTaskEditDescription,
+          button: true,
+          child: SizedBox.square(
+            dimension: 56,
+            child: shad.PrimaryButton(
+              onPressed: onPressed,
+              shape: shad.ButtonShape.circle,
+              density: shad.ButtonDensity.icon,
+              child: const Icon(Icons.edit, size: 24),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -278,6 +377,7 @@ class _TaskBoardTaskDetailSheet extends StatefulWidget {
     required this.isPersonalWorkspace,
     this.isFullscreen = false,
     this.section,
+    this.isDescriptionEditing = false,
     this.bottomContentPadding = 0,
     this.fullscreenTitle,
     super.key,
@@ -292,6 +392,7 @@ class _TaskBoardTaskDetailSheet extends StatefulWidget {
   final bool isPersonalWorkspace;
   final bool isFullscreen;
   final _TaskBoardTaskDetailSection? section;
+  final bool isDescriptionEditing;
   final double bottomContentPadding;
   final String? fullscreenTitle;
 
@@ -312,8 +413,12 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
   bool _isMutatingRelationships = false;
   String? _relationshipsError;
   bool _isDescriptionExpanded = false;
+  bool _isTitleEditing = false;
+  bool _isSavingTitle = false;
   int _relationshipLoadRequestToken = 0;
   List<TaskLinkOption> _relationshipTaskOptions = const <TaskLinkOption>[];
+  late final TextEditingController _titleController;
+  late final FocusNode _titleFocusNode;
 
   bool get _isRelationshipBusy =>
       _isLoadingRelationships || _isMutatingRelationships;
@@ -322,9 +427,20 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
   void initState() {
     super.initState();
     _task = widget.task;
+    _titleController = TextEditingController(
+      text: _task.name?.trim() ?? '',
+    );
+    _titleFocusNode = FocusNode();
     if (!_task.relationshipsLoaded) {
       unawaited(_loadRelationships());
     }
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _titleFocusNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -335,12 +451,84 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     }
 
     _task = widget.task;
+    if (!_isTitleEditing) {
+      _titleController.text = _taskBoardTaskTitle(context, _task);
+    }
     _relationshipLoadRequestToken += 1;
     _isLoadingRelationships = false;
     _relationshipsError = null;
 
     if (!_task.relationshipsLoaded) {
       unawaited(_loadRelationships());
+    }
+  }
+
+  void _startTitleEdit() {
+    if (_isSavingTitle) return;
+    setState(() {
+      _isTitleEditing = true;
+      _titleController.text = _taskBoardTaskTitle(context, _task);
+      _titleController.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _titleController.text.length,
+      );
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _titleFocusNode.requestFocus();
+      }
+    });
+  }
+
+  Future<void> _saveTitleEdit() async {
+    final nextTitle = _titleController.text.trim();
+    final currentTitle = (_task.name ?? '').trim();
+    if (nextTitle.isEmpty) {
+      _titleController.text = _taskBoardTaskTitle(context, _task);
+      setState(() => _isTitleEditing = false);
+      return;
+    }
+    if (nextTitle == currentTitle) {
+      setState(() => _isTitleEditing = false);
+      return;
+    }
+
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    setState(() => _isSavingTitle = true);
+    try {
+      final cubit = context.read<TaskBoardDetailCubit>();
+      await cubit.updateTask(
+        taskId: _task.id,
+        name: nextTitle,
+        priority: _task.priority,
+        startDate: _task.startDate,
+        endDate: _task.endDate,
+        estimationPoints: _task.estimationPoints,
+        assigneeIds: _task.assigneeIds,
+        labelIds: _task.labelIds,
+        projectIds: _task.projectIds,
+      );
+      if (!mounted) return;
+      final updatedTask = _findTaskInState(cubit.state, _task.id);
+      setState(() {
+        _task = updatedTask ?? _task.copyWith(name: nextTitle);
+        _titleController.text = _taskBoardTaskTitle(context, _task);
+        _isTitleEditing = false;
+      });
+    } on Object catch (error) {
+      if (!mounted || !toastContext.mounted) return;
+      final fallbackMessage = context.l10n.commonSomethingWentWrong;
+      final message = error.toString().trim();
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          content: Text(message.isEmpty ? fallbackMessage : message),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingTitle = false);
+      }
     }
   }
 
@@ -368,6 +556,99 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     return _buildScrollableBody(context);
   }
 
+  Widget _buildFullscreenDescriptionBody(BuildContext context) {
+    final hasFullscreenTitle =
+        widget.fullscreenTitle?.trim().isNotEmpty == true;
+
+    return SafeArea(
+      top: false,
+      bottom: false,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final bodyHeight = constraints.maxHeight.isFinite
+              ? math.max<double>(0, constraints.maxHeight)
+              : 0.toDouble();
+          final descriptionBody = _buildDescriptionSection(
+            context,
+            _taskDescriptionParsed(_task.description),
+            fullscreenImmersive: true,
+            minHeight: hasFullscreenTitle ? null : bodyHeight,
+          );
+
+          return SizedBox(
+            width: double.infinity,
+            height: bodyHeight,
+            child: hasFullscreenTitle
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        child: _buildFullscreenHeader(
+                          context,
+                          section: _TaskBoardTaskDetailSection.description,
+                        ),
+                      ),
+                      const shad.Gap(12),
+                      Expanded(child: descriptionBody),
+                    ],
+                  )
+                : descriptionBody,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFullscreenDescriptionEditorBody(BuildContext context) {
+    final hasFullscreenTitle =
+        widget.fullscreenTitle?.trim().isNotEmpty == true;
+    final bottomInset =
+        widget.bottomContentPadding + MediaQuery.viewInsetsOf(context).bottom;
+
+    Widget buildEditorBody() {
+      return Padding(
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final editorHeight = constraints.maxHeight.isFinite
+                ? math.max<double>(0, constraints.maxHeight)
+                : 0.toDouble();
+
+            return _buildEmbeddedTaskEditor(
+              context,
+              section: _TaskBoardTaskDetailSection.description,
+              minHeight: editorHeight,
+            );
+          },
+        ),
+      );
+    }
+
+    return SafeArea(
+      top: false,
+      bottom: false,
+      child: SizedBox.expand(
+        child: hasFullscreenTitle
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: _buildFullscreenHeader(
+                      context,
+                      section: _TaskBoardTaskDetailSection.description,
+                    ),
+                  ),
+                  const shad.Gap(12),
+                  Expanded(child: buildEditorBody()),
+                ],
+              )
+            : buildEditorBody(),
+      ),
+    );
+  }
+
   Widget _buildScrollableBody(
     BuildContext context, {
     ScrollController? scrollController,
@@ -383,6 +664,13 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     final isFullscreenDescription =
         widget.isFullscreen &&
         section == _TaskBoardTaskDetailSection.description;
+    if (isFullscreenDescription && !widget.isDescriptionEditing) {
+      return _buildFullscreenDescriptionBody(context);
+    }
+    if (isFullscreenDescription && widget.isDescriptionEditing) {
+      return _buildFullscreenDescriptionEditorBody(context);
+    }
+
     final hasFullscreenTitle =
         widget.fullscreenTitle?.trim().isNotEmpty == true;
     final shouldShowHeader =
@@ -392,7 +680,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     final horizontalPadding = (isFullscreenDescription ? 0 : 16).toDouble();
     final topPadding = (shouldShowHeader ? 12 : 0).toDouble();
     final bottomPadding =
-        24 +
+        (isFullscreenDescription ? 0 : 24) +
         widget.bottomContentPadding +
         MediaQuery.viewInsetsOf(context).bottom;
 
@@ -463,7 +751,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
                             )
                           : _buildInformationSection(context),
                     _TaskBoardTaskDetailSection.description =>
-                      widget.isFullscreen
+                      widget.isFullscreen && widget.isDescriptionEditing
                           ? _buildEmbeddedTaskEditor(
                               context,
                               section: _TaskBoardTaskDetailSection.description,
@@ -472,6 +760,8 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
                           : _buildDescriptionSection(
                               context,
                               _taskDescriptionParsed(_task.description),
+                              fullscreenImmersive: isFullscreenDescription,
+                              minHeight: availableBodyHeight,
                             ),
                     _TaskBoardTaskDetailSection.relationships =>
                       widget.isFullscreen
@@ -531,7 +821,9 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     BuildContext context, {
     required _TaskBoardTaskDetailSection section,
   }) {
-    final title = widget.fullscreenTitle;
+    final title = widget.fullscreenTitle?.trim().isNotEmpty == true
+        ? _taskBoardTaskTitle(context, _task)
+        : null;
     final showActions = section == _TaskBoardTaskDetailSection.information;
 
     if (title == null || title.trim().isEmpty) {
@@ -540,15 +832,9 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
           : const SizedBox.shrink();
     }
 
-    final theme = shad.Theme.of(context);
-    final titleWidget = Text(
-      title,
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-      style: theme.typography.large.copyWith(
-        fontWeight: FontWeight.w800,
-      ),
-    );
+    final titleWidget = _isTitleEditing
+        ? _buildFullscreenTitleEditor(context, title)
+        : _buildFullscreenScrollableTitle(context, title);
 
     if (!showActions) {
       return titleWidget;
@@ -561,6 +847,108 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
         const shad.Gap(10),
         _buildFullscreenActionsRow(context),
       ],
+    );
+  }
+
+  Widget _buildFullscreenScrollableTitle(BuildContext context, String title) {
+    final theme = shad.Theme.of(context);
+    final titleStyle = theme.typography.large.copyWith(
+      fontWeight: FontWeight.w800,
+    );
+
+    return Semantics(
+      button: true,
+      label: title,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _startTitleEdit,
+        child: SizedBox(
+          height: 48,
+          width: double.infinity,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return ShaderMask(
+                blendMode: BlendMode.dstIn,
+                shaderCallback: (bounds) {
+                  return const LinearGradient(
+                    colors: [
+                      Colors.white,
+                      Colors.white,
+                      Colors.transparent,
+                    ],
+                    stops: [0, 0.84, 1],
+                  ).createShader(bounds);
+                },
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minWidth: constraints.maxWidth,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: titleStyle,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFullscreenTitleEditor(BuildContext context, String title) {
+    final theme = shad.Theme.of(context);
+
+    return SizedBox(
+      height: 48,
+      width: double.infinity,
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _titleController,
+              focusNode: _titleFocusNode,
+              enabled: !_isSavingTitle,
+              scrollPadding: EdgeInsets.zero,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => unawaited(_saveTitleEdit()),
+              style: theme.typography.large.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+              decoration: InputDecoration(
+                hintText: title,
+                isDense: true,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
+          const shad.Gap(8),
+          Tooltip(
+            message: context.l10n.commonSave,
+            child: shad.IconButton.ghost(
+              onPressed: _isSavingTitle
+                  ? null
+                  : () => unawaited(_saveTitleEdit()),
+              icon: _isSavingTitle
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: shad.CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.check_rounded, size: 20),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -714,11 +1102,75 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
 
   Widget _buildDescriptionSection(
     BuildContext context,
-    ParsedTipTapDescription? description,
-  ) {
+    ParsedTipTapDescription? description, {
+    bool fullscreenImmersive = false,
+    double? minHeight,
+  }) {
     if (description == null) {
-      return shad.Card(
-        child: Text(context.l10n.taskBoardDetailTaskNoDescription),
+      final theme = shad.Theme.of(context);
+      return Container(
+        width: double.infinity,
+        constraints: BoxConstraints(
+          minHeight: fullscreenImmersive ? (minHeight ?? 220) : 220,
+        ),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: fullscreenImmersive
+              ? Colors.transparent
+              : theme.colorScheme.muted.withValues(alpha: 0.22),
+          borderRadius: BorderRadius.circular(fullscreenImmersive ? 0 : 20),
+          border: fullscreenImmersive
+              ? null
+              : Border.all(
+                  color: theme.colorScheme.border.withValues(alpha: 0.76),
+                ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Icon(
+                  Icons.notes_rounded,
+                  size: 28,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ),
+            const shad.Gap(18),
+            Text(
+              context.l10n.taskBoardDetailTaskNoDescription,
+              style: theme.typography.h4.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const shad.Gap(8),
+            Text(
+              context.l10n.taskBoardDetailTaskDescriptionHint,
+              style: theme.typography.small.copyWith(
+                color: theme.colorScheme.mutedForeground,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (fullscreenImmersive) {
+      return SizedBox(
+        width: double.infinity,
+        height: minHeight,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          child: _TaskBoardDescriptionDocument(description: description),
+        ),
       );
     }
 

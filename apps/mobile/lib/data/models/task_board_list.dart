@@ -80,6 +80,16 @@ class TaskBoardList extends Equatable {
 
   bool get completesWork => isDone || isClosed;
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'board_id': boardId,
+    'name': name,
+    'status': status,
+    'color': color,
+    'position': position,
+    'archived': archived,
+  };
+
   static String? normalizeSupportedStatus(String? rawStatus) {
     final normalized = rawStatus?.trim().toLowerCase();
     if (normalized == null || normalized.isEmpty) return null;

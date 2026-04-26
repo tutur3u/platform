@@ -34,6 +34,13 @@ class TaskBoardTaskAssignee extends Equatable {
   final String? email;
   final String? avatarUrl;
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'display_name': displayName,
+    'email': email,
+    'avatar_url': avatarUrl,
+  };
+
   @override
   List<Object?> get props => [id, displayName, email, avatarUrl];
 }
@@ -68,6 +75,12 @@ class TaskBoardTaskLabel extends Equatable {
   final String? name;
   final String? color;
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'color': color,
+  };
+
   @override
   List<Object?> get props => [id, name, color];
 }
@@ -98,6 +111,11 @@ class TaskBoardTaskProject extends Equatable {
 
   final String id;
   final String? name;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+  };
 
   @override
   List<Object?> get props => [id, name];
@@ -147,6 +165,18 @@ class TaskBoardTask extends Equatable {
     final assigneeIds = _parseIdList(json['assignee_ids']);
     final labelIds = _parseIdList(json['label_ids']);
     final projectIds = _parseIdList(json['project_ids']);
+    final assignees = _parseAssignees(json['assignees']);
+    final labels = _parseLabels(json['labels']);
+    final projects = _parseProjects(json['projects']);
+    final normalizedAssigneeIds = assigneeIds.isNotEmpty
+        ? assigneeIds
+        : assignees.map((assignee) => assignee.id).toList(growable: false);
+    final normalizedLabelIds = labelIds.isNotEmpty
+        ? labelIds
+        : labels.map((label) => label.id).toList(growable: false);
+    final normalizedProjectIds = projectIds.isNotEmpty
+        ? projectIds
+        : projects.map((project) => project.id).toList(growable: false);
 
     final relationshipSummary = _parseRelationshipSummary(
       json['relationship_summary'],
@@ -165,18 +195,24 @@ class TaskBoardTask extends Equatable {
       createdAt: parseDateTime(json['created_at']),
       closedAt: parseDateTime(json['closed_at']),
       estimationPoints: (json['estimation_points'] as num?)?.toInt(),
-      assigneeIds: assigneeIds,
-      labelIds: labelIds,
-      projectIds: projectIds,
-      assignees: assigneeIds
-          .map((id) => TaskBoardTaskAssignee(id: id))
-          .toList(growable: false),
-      labels: labelIds
-          .map((id) => TaskBoardTaskLabel(id: id))
-          .toList(growable: false),
-      projects: projectIds
-          .map((id) => TaskBoardTaskProject(id: id))
-          .toList(growable: false),
+      assigneeIds: normalizedAssigneeIds,
+      labelIds: normalizedLabelIds,
+      projectIds: normalizedProjectIds,
+      assignees: assignees.isNotEmpty
+          ? assignees
+          : normalizedAssigneeIds
+                .map((id) => TaskBoardTaskAssignee(id: id))
+                .toList(growable: false),
+      labels: labels.isNotEmpty
+          ? labels
+          : normalizedLabelIds
+                .map((id) => TaskBoardTaskLabel(id: id))
+                .toList(growable: false),
+      projects: projects.isNotEmpty
+          ? projects
+          : normalizedProjectIds
+                .map((id) => TaskBoardTaskProject(id: id))
+                .toList(growable: false),
       relationshipSummary: relationshipSummary,
     );
   }
@@ -254,6 +290,30 @@ class TaskBoardTask extends Equatable {
     return List.unmodifiable(uniqueIds);
   }
 
+  static List<TaskBoardTaskAssignee> _parseAssignees(Object? value) {
+    if (value is! List<dynamic>) return const [];
+    return value
+        .whereType<Map<String, dynamic>>()
+        .map(TaskBoardTaskAssignee.fromJson)
+        .toList(growable: false);
+  }
+
+  static List<TaskBoardTaskLabel> _parseLabels(Object? value) {
+    if (value is! List<dynamic>) return const [];
+    return value
+        .whereType<Map<String, dynamic>>()
+        .map(TaskBoardTaskLabel.fromJson)
+        .toList(growable: false);
+  }
+
+  static List<TaskBoardTaskProject> _parseProjects(Object? value) {
+    if (value is! List<dynamic>) return const [];
+    return value
+        .whereType<Map<String, dynamic>>()
+        .map(TaskBoardTaskProject.fromJson)
+        .toList(growable: false);
+  }
+
   final String id;
   final String listId;
   final int? displayNumber;
@@ -275,6 +335,32 @@ class TaskBoardTask extends Equatable {
   final TaskRelationshipsResponse relationships;
   final bool relationshipsLoaded;
   final TaskRelationshipSummary relationshipSummary;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'list_id': listId,
+    'display_number': displayNumber,
+    'name': name,
+    'description': description,
+    'priority': priority,
+    'completed': completed,
+    'start_date': startDate?.toIso8601String(),
+    'end_date': endDate?.toIso8601String(),
+    'created_at': createdAt?.toIso8601String(),
+    'closed_at': closedAt?.toIso8601String(),
+    'estimation_points': estimationPoints,
+    'assignee_ids': assigneeIds,
+    'label_ids': labelIds,
+    'project_ids': projectIds,
+    'assignees': assignees
+        .map((assignee) => assignee.toJson())
+        .toList(growable: false),
+    'labels': labels.map((label) => label.toJson()).toList(growable: false),
+    'projects': projects
+        .map((project) => project.toJson())
+        .toList(growable: false),
+    'relationship_summary': relationshipSummary.toJson(),
+  };
 
   @override
   List<Object?> get props => [
@@ -329,6 +415,14 @@ class TaskRelationshipSummary extends Equatable {
   final int relatedCount;
 
   bool get hasParent => parentTaskId != null;
+
+  Map<String, dynamic> toJson() => {
+    'parent_task_id': parentTaskId,
+    'child_count': childCount,
+    'blocked_by_count': blockedByCount,
+    'blocking_count': blockingCount,
+    'related_count': relatedCount,
+  };
 
   @override
   List<Object?> get props => [

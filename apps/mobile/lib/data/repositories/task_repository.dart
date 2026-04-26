@@ -115,6 +115,22 @@ class TaskRepository {
     return Uri(queryParameters: params).query;
   }
 
+  DateTime _startOfDay(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
+  DateTime _endOfDay(DateTime date) {
+    return DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
+  }
+
+  String _taskStartDateIso(DateTime date) {
+    return _startOfDay(date).toUtc().toIso8601String();
+  }
+
+  String _taskEndDateIso(DateTime date) {
+    return _endOfDay(date).toUtc().toIso8601String();
+  }
+
   Task _taskFromApiJson(Map<String, dynamic> json) {
     final priority = switch (json['priority']) {
       'low' => 1,
@@ -591,8 +607,8 @@ class TaskRepository {
         'listId': listId,
         'description': description,
         'priority': priority,
-        'start_date': startDate?.toUtc().toIso8601String(),
-        'end_date': endDate?.toUtc().toIso8601String(),
+        'start_date': startDate == null ? null : _taskStartDateIso(startDate),
+        'end_date': endDate == null ? null : _taskEndDateIso(endDate),
         'estimation_points': estimationPoints,
         if (labelIds != null) 'label_ids': labelIds,
         if (projectIds != null) 'project_ids': projectIds,
@@ -658,8 +674,8 @@ class TaskRepository {
       if (description != null) 'description': description,
       if (clearDescription) 'description': null,
       if (priority != null) 'priority': priority,
-      if (startDate != null) 'start_date': startDate.toUtc().toIso8601String(),
-      if (endDate != null) 'end_date': endDate.toUtc().toIso8601String(),
+      if (startDate != null) 'start_date': _taskStartDateIso(startDate),
+      if (endDate != null) 'end_date': _taskEndDateIso(endDate),
       if (clearStartDate) 'start_date': null,
       if (clearEndDate) 'end_date': null,
       if (estimationPoints != null) 'estimation_points': estimationPoints,

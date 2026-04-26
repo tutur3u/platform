@@ -98,6 +98,19 @@ class _TaskBoardDescriptionAccordion extends StatelessWidget {
   }
 
   Widget _buildDescriptionViewer(BuildContext context) {
+    return _TaskBoardDescriptionDocument(description: description);
+  }
+}
+
+class _TaskBoardDescriptionDocument extends StatelessWidget {
+  const _TaskBoardDescriptionDocument({
+    required this.description,
+  });
+
+  final ParsedTipTapDescription description;
+
+  @override
+  Widget build(BuildContext context) {
     final normalizedRawJson = description.rawJson?.trim();
     final descriptionPayload =
         (normalizedRawJson != null && normalizedRawJson.isNotEmpty)

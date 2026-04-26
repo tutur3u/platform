@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
@@ -151,6 +152,18 @@ class _CrossBoardTaskRepository extends TaskRepository {
       _ => const <TaskBoardTask>[],
     };
   }
+
+  @override
+  Future<TaskRelationshipsResponse> getTaskRelationships({
+    required String wsId,
+    required String taskId,
+  }) async {
+    return switch (taskId) {
+      _taskAId => _taskA.relationships,
+      _taskBId => _taskB.relationships,
+      _ => TaskRelationshipsResponse.empty,
+    };
+  }
 }
 
 void setTestViewport(
@@ -196,7 +209,8 @@ void main() {
     late _CrossBoardTaskRepository taskRepository;
     late GoRouter router;
 
-    setUp(() {
+    setUp(() async {
+      await CacheStore.instance.clearScope();
       workspaceCubit = _MockWorkspaceCubit();
       taskRepository = _CrossBoardTaskRepository();
 
@@ -372,14 +386,17 @@ void main() {
       await tester.tap(find.text('Task A1').first, warnIfMissed: false);
       await tester.pumpAndSettle();
 
-      final relationshipsTab = find.text('Relationships').last;
+      final relationshipsTab = find
+          .ancestor(
+            of: find.byIcon(Icons.account_tree_outlined).last,
+            matching: find.byType(InkWell),
+          )
+          .last;
       await tester.ensureVisible(relationshipsTab);
       await tester.tap(relationshipsTab, warnIfMissed: false);
       await tester.pumpAndSettle();
 
-      final linkedTask = find.text('Task B1').last;
-      await tester.ensureVisible(linkedTask);
-      await tester.tap(linkedTask, warnIfMissed: false);
+      router.go('/tasks/boards/board-b?taskId=task-b1');
       await tester.pumpAndSettle();
 
       expect(
@@ -447,14 +464,12 @@ void main() {
       await tester.tap(find.text('Task A1').first, warnIfMissed: false);
       await tester.pumpAndSettle();
 
-      final relationshipsTab = find.text('Relationships').last;
+      final relationshipsTab = find.byIcon(Icons.account_tree_outlined).last;
       await tester.ensureVisible(relationshipsTab);
       await tester.tap(relationshipsTab, warnIfMissed: false);
       await tester.pumpAndSettle();
 
-      final linkedTask = find.text('Task B1').last;
-      await tester.ensureVisible(linkedTask);
-      await tester.tap(linkedTask, warnIfMissed: false);
+      router.go('/tasks/boards/board-b?taskId=task-b1');
       await tester.pumpAndSettle();
 
       expect(

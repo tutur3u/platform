@@ -42,7 +42,6 @@ class _TaskBoardCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   width: 44,
@@ -61,6 +60,7 @@ class _TaskBoardCard extends StatelessWidget {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         board.name ?? context.l10n.taskEstimatesUnnamedBoard,
@@ -68,17 +68,6 @@ class _TaskBoardCard extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      if (board.ticketPrefix?.trim().isNotEmpty == true) ...[
-                        const shad.Gap(4),
-                        Text(
-                          board.ticketPrefix!.trim(),
-                          style: theme.typography.xSmall.copyWith(
-                            letterSpacing: 0.8,
-                            fontWeight: FontWeight.w700,
-                            color: accentColor,
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -89,31 +78,23 @@ class _TaskBoardCard extends StatelessWidget {
                   ),
               ],
             ),
-            const shad.Gap(14),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                shad.OutlineBadge(
-                  child: Text(
-                    context.l10n.taskBoardsListsCount(board.listCount),
-                  ),
-                ),
-                shad.OutlineBadge(
-                  child: Text(
-                    context.l10n.taskBoardsTasksCount(board.taskCount),
-                  ),
-                ),
-                if (board.isArchived)
-                  shad.OutlineBadge(
-                    child: Text(context.l10n.taskBoardsArchived),
-                  ),
-                if (board.isRecentlyDeleted)
-                  shad.OutlineBadge(
-                    child: Text(context.l10n.taskBoardsRecentlyDeleted),
-                  ),
-              ],
-            ),
+            if (board.isArchived || board.isRecentlyDeleted) ...[
+              const shad.Gap(14),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (board.isArchived)
+                    shad.OutlineBadge(
+                      child: Text(context.l10n.taskBoardsArchived),
+                    ),
+                  if (board.isRecentlyDeleted)
+                    shad.OutlineBadge(
+                      child: Text(context.l10n.taskBoardsRecentlyDeleted),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

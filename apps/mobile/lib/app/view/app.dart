@@ -29,6 +29,7 @@ import 'package:mobile/data/repositories/workspace_repository.dart';
 import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
 import 'package:mobile/features/app_version/view/app_version_gate.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
@@ -91,6 +92,7 @@ class _AppState extends State<App> {
   late final InventoryAccessRepository _inventoryAccessRepository;
   late final TimeTrackerRepository _timeTrackerRepository;
   late final ProfileRepository _profileRepository;
+  late final AssistantRepository _assistantRepository;
   late final AuthCubit _authCubit;
   late final AppVersionCubit _appVersionCubit;
   late final WorkspaceCubit _workspaceCubit;
@@ -125,6 +127,7 @@ class _AppState extends State<App> {
       ownsApiClient: true,
       ownsHttpClient: true,
     );
+    _assistantRepository = AssistantRepository();
     PushNotificationService.instance.configure(
       appFlavor: widget.appFlavor,
       settingsRepository: _settingsRepo,
@@ -220,7 +223,15 @@ class _AppState extends State<App> {
     );
     CacheWarmupCoordinator.instance.register(
       'assistant_metadata',
-      ({forceRefresh = false}) async {},
+      ({forceRefresh = false}) async {
+        final workspace = _workspaceCubit.state.currentWorkspace;
+        if (workspace == null) return;
+        await _assistantRepository.prewarmWorkspace(
+          wsId: workspace.id,
+          isPersonal: workspace.personal,
+          forceRefresh: forceRefresh,
+        );
+      },
     );
     CacheWarmupCoordinator.instance.register(
       'apps_registry',

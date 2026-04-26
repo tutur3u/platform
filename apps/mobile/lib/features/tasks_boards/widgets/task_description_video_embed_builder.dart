@@ -48,11 +48,19 @@ class _TaskDescriptionVideoPlayer extends StatefulWidget {
   const _TaskDescriptionVideoPlayer({
     required this.url,
     this.headers,
+    this.allowFullscreen = true,
+    this.immersive = false,
+    this.initialPosition,
+    this.autoPlay = false,
     super.key,
   });
 
   final String url;
   final Map<String, String>? headers;
+  final bool allowFullscreen;
+  final bool immersive;
+  final Duration? initialPosition;
+  final bool autoPlay;
 
   @override
   State<_TaskDescriptionVideoPlayer> createState() =>
@@ -88,6 +96,28 @@ class _TaskDescriptionVideoPlayerState
     }
   }
 
+  void _openFullscreen() {
+    final controller = _controller;
+    final initialPosition = controller?.value.position;
+    final autoPlay = controller?.value.isPlaying ?? false;
+    if (controller != null && controller.value.isPlaying) {
+      unawaited(controller.pause());
+    }
+    unawaited(
+      Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute<void>(
+          fullscreenDialog: true,
+          builder: (_) => _TaskDescriptionVideoFullscreenPage(
+            url: widget.url,
+            headers: widget.headers,
+            initialPosition: initialPosition,
+            autoPlay: autoPlay,
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _initializeController() async {
     final resolvedUrl = await resolveTaskDescriptionVideoUrl(
       widget.url,
@@ -104,6 +134,14 @@ class _TaskDescriptionVideoPlayerState
     );
     try {
       await localController.initialize();
+      final initialPosition = widget.initialPosition;
+      if (initialPosition != null && initialPosition > Duration.zero) {
+        await localController.seekTo(initialPosition);
+      }
+      if (widget.autoPlay) {
+        await localController.play();
+        _startControlsTimer();
+      }
     } on Object {
       await localController.dispose();
       rethrow;
@@ -187,12 +225,13 @@ class _TaskDescriptionVideoPlayerState
             : 16 / 9;
 
         return ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(widget.immersive ? 0 : 8),
           child: AspectRatio(
             aspectRatio: aspectRatio,
             child: TaskDescriptionVideoControls(
               controller: controller,
               showControls: _showControls,
+              immersive: widget.immersive,
               onToggleControls: _toggleControls,
               onTogglePlayback: () {
                 setState(() {
@@ -226,10 +265,74 @@ class _TaskDescriptionVideoPlayerState
               },
               onInteractionStart: (_) => _controlsTimer?.cancel(),
               onInteractionEnd: (_) => _startControlsTimer(),
+              onOpenFullscreen: widget.allowFullscreen ? _openFullscreen : null,
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _TaskDescriptionVideoFullscreenPage extends StatelessWidget {
+  const _TaskDescriptionVideoFullscreenPage({
+    required this.url,
+    this.headers,
+    this.initialPosition,
+    this.autoPlay = false,
+  });
+
+  final String url;
+  final Map<String, String>? headers;
+  final Duration? initialPosition;
+  final bool autoPlay;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          SafeArea(
+            top: false,
+            bottom: false,
+            child: Center(
+              child: _TaskDescriptionVideoPlayer(
+                url: url,
+                headers: headers,
+                allowFullscreen: false,
+                immersive: true,
+                initialPosition: initialPosition,
+                autoPlay: autoPlay,
+              ),
+            ),
+          ),
+          SafeArea(
+            bottom: false,
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.48),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    tooltip: MaterialLocalizations.of(context).closeButtonLabel,
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: Colors.white,
+                    ),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

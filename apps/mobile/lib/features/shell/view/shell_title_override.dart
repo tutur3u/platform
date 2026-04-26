@@ -9,11 +9,17 @@ class ShellTitleOverride extends StatefulWidget {
     required this.locations,
     required this.title,
     super.key,
+    this.showLeadingBrand = true,
+    this.showAvatar = true,
+    this.onTitleSubmitted,
   });
 
   final String ownerId;
   final Set<String> locations;
   final String title;
+  final bool showLeadingBrand;
+  final bool showAvatar;
+  final Future<void> Function(String title)? onTitleSubmitted;
 
   @override
   State<ShellTitleOverride> createState() => _ShellTitleOverrideState();
@@ -40,7 +46,10 @@ class _ShellTitleOverrideState extends State<ShellTitleOverride> {
     super.didUpdateWidget(oldWidget);
     if (!setEquals(oldWidget.locations, widget.locations) ||
         oldWidget.ownerId != widget.ownerId ||
-        oldWidget.title != widget.title) {
+        oldWidget.title != widget.title ||
+        oldWidget.showLeadingBrand != widget.showLeadingBrand ||
+        oldWidget.showAvatar != widget.showAvatar ||
+        oldWidget.onTitleSubmitted != widget.onTitleSubmitted) {
       _syncRegistration();
     }
   }
@@ -51,6 +60,9 @@ class _ShellTitleOverrideState extends State<ShellTitleOverride> {
       ownerId: widget.ownerId,
       locations: widget.locations,
       title: widget.title,
+      showLeadingBrand: widget.showLeadingBrand,
+      showAvatar: widget.showAvatar,
+      onTitleSubmitted: widget.onTitleSubmitted,
     );
   }
 

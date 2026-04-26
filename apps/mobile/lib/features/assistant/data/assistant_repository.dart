@@ -31,7 +31,13 @@ class AssistantRepository {
   static final Random _random = Random.secure();
 
   static const _assistantChatCacheTag = 'assistant:chat';
+  static const _assistantMetadataCacheTag = 'assistant:metadata';
+  static const _assistantHistoryCacheTag = 'assistant:history';
   static const CachePolicy _assistantChatCachePolicy = CachePolicies.detail;
+  static const CachePolicy _assistantMetadataCachePolicy =
+      CachePolicies.metadata;
+  static const CachePolicy _assistantInsightCachePolicy = CachePolicies.summary;
+  static const CachePolicy _assistantHistoryCachePolicy = CachePolicies.summary;
 
   static CacheKey _assistantChatCacheKey({
     required String wsId,
@@ -46,6 +52,20 @@ class AssistantRepository {
     );
   }
 
+  static CacheKey _assistantMetadataCacheKey({
+    required String namespace,
+    String? wsId,
+    Map<String, String> params = const <String, String>{},
+  }) {
+    return CacheKey(
+      namespace: namespace,
+      userId: currentCacheUserId(),
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+      params: params,
+    );
+  }
+
   static AssistantRestoredChat _decodeRestoredCache(Object? json) {
     if (json is! Map) {
       throw const FormatException('Invalid assistant chat cache payload.');
@@ -53,6 +73,63 @@ class AssistantRepository {
     return AssistantRestoredChat.fromJson(
       Map<String, dynamic>.from(json),
     );
+  }
+
+  static AssistantSoul _decodeSoulCache(Object? json) {
+    if (json is! Map) {
+      throw const FormatException('Invalid assistant soul cache payload.');
+    }
+    return AssistantSoul.fromJson(Map<String, dynamic>.from(json));
+  }
+
+  static String _decodePersonalWorkspaceCache(Object? json) {
+    if (json is! Map) {
+      throw const FormatException(
+        'Invalid assistant personal workspace cache payload.',
+      );
+    }
+    return json['workspaceId'] as String? ?? '';
+  }
+
+  static AssistantTasksInsight _decodeTasksInsightCache(Object? json) {
+    if (json is! Map) {
+      throw const FormatException('Invalid assistant tasks cache payload.');
+    }
+    return AssistantTasksInsight.fromJson(Map<String, dynamic>.from(json));
+  }
+
+  static AssistantCalendarInsight _decodeCalendarInsightCache(Object? json) {
+    if (json is! Map) {
+      throw const FormatException('Invalid assistant calendar cache payload.');
+    }
+    return AssistantCalendarInsight.fromJson(Map<String, dynamic>.from(json));
+  }
+
+  static AssistantCredits _decodeCreditsCache(Object? json) {
+    if (json is! Map) {
+      throw const FormatException('Invalid assistant credits cache payload.');
+    }
+    return AssistantCredits.fromJson(Map<String, dynamic>.from(json));
+  }
+
+  static List<AssistantGatewayModel> _decodeGatewayModelsCache(Object? json) {
+    if (json is! List<dynamic>) {
+      throw const FormatException('Invalid assistant models cache payload.');
+    }
+    return json
+        .whereType<Map<String, dynamic>>()
+        .map(AssistantGatewayModel.fromJson)
+        .toList(growable: false);
+  }
+
+  static List<AssistantChatRecord> _decodeRecentChatsCache(Object? json) {
+    if (json is! List<dynamic>) {
+      throw const FormatException('Invalid assistant history cache payload.');
+    }
+    return json
+        .whereType<Map<String, dynamic>>()
+        .map(AssistantChatRecord.fromJson)
+        .toList(growable: false);
   }
 
   Future<void> writeAssistantChatCache({
@@ -72,95 +149,225 @@ class AssistantRepository {
     );
   }
 
-  Future<String?> resolvePersonalWorkspaceId() async {
-    final response = await _apiClient.postJson(
-      '/api/v1/infrastructure/resolve-workspace-id',
-      const {'wsId': 'personal'},
+  Future<String?> resolvePersonalWorkspaceId({
+    bool forceRefresh = false,
+  }) async {
+    final result = await CacheStore.instance.prefetch<String>(
+      key: _assistantMetadataCacheKey(
+        namespace: 'assistant.personal_workspace',
+      ),
+      policy: _assistantMetadataCachePolicy,
+      decode: _decodePersonalWorkspaceCache,
+      forceRefresh: forceRefresh,
+      tags: [_assistantMetadataCacheTag, 'module:assistant'],
+      fetch: () async {
+        final response = await _apiClient.postJson(
+          '/api/v1/infrastructure/resolve-workspace-id',
+          const {'wsId': 'personal'},
+        );
+        return {'workspaceId': response['workspaceId'] as String? ?? ''};
+      },
     );
-    return response['workspaceId'] as String?;
+    final workspaceId = result.data;
+    return workspaceId == null || workspaceId.isEmpty ? null : workspaceId;
   }
 
-  Future<AssistantSoul> fetchSoul() async {
-    final response = await _apiClient.getJson('/api/v1/mira/soul');
-    return AssistantSoul.fromJson(response['soul'] as Map<String, dynamic>?);
+  Future<AssistantSoul> fetchSoul({bool forceRefresh = false}) async {
+    final result = await CacheStore.instance.prefetch<AssistantSoul>(
+      key: _assistantMetadataCacheKey(namespace: 'assistant.soul'),
+      policy: _assistantMetadataCachePolicy,
+      decode: _decodeSoulCache,
+      forceRefresh: forceRefresh,
+      tags: [_assistantMetadataCacheTag, 'module:assistant'],
+      fetch: () async {
+        final response = await _apiClient.getJson('/api/v1/mira/soul');
+        return AssistantSoul.fromJson(
+          response['soul'] as Map<String, dynamic>?,
+        ).toJson();
+      },
+    );
+    return result.data ?? const AssistantSoul();
   }
 
   Future<AssistantSoul> updateSoulName(String name) async {
     final response = await _apiClient.patchJson('/api/v1/mira/soul', {
       'name': name,
     });
-    return AssistantSoul.fromJson(response['soul'] as Map<String, dynamic>?);
+    final soul = AssistantSoul.fromJson(
+      response['soul'] as Map<String, dynamic>?,
+    );
+    await CacheStore.instance.write(
+      key: _assistantMetadataCacheKey(namespace: 'assistant.soul'),
+      policy: _assistantMetadataCachePolicy,
+      payload: soul.toJson(),
+      tags: [_assistantMetadataCacheTag, 'module:assistant'],
+    );
+    return soul;
   }
 
   Future<AssistantTasksInsight> fetchTasksInsight({
     required String wsId,
     required bool isPersonal,
+    bool forceRefresh = false,
   }) async {
-    final query = Uri(
-      queryParameters: {
-        'wsId': wsId,
-        'isPersonal': isPersonal.toString(),
+    final result = await CacheStore.instance.prefetch<AssistantTasksInsight>(
+      key: _assistantMetadataCacheKey(
+        namespace: 'assistant.tasks_insight',
+        wsId: wsId,
+        params: {'isPersonal': isPersonal.toString()},
+      ),
+      policy: _assistantInsightCachePolicy,
+      decode: _decodeTasksInsightCache,
+      forceRefresh: forceRefresh,
+      tags: [
+        _assistantMetadataCacheTag,
+        'workspace:$wsId',
+        'module:assistant',
+      ],
+      fetch: () async {
+        final query = Uri(
+          queryParameters: {
+            'wsId': wsId,
+            'isPersonal': isPersonal.toString(),
+          },
+        ).query;
+        final response = await _apiClient.getJson('/api/v1/mira/tasks?$query');
+        return AssistantTasksInsight.fromJson(response).toJson();
       },
-    ).query;
-    final response = await _apiClient.getJson('/api/v1/mira/tasks?$query');
-    return AssistantTasksInsight.fromJson(response);
-  }
-
-  Future<AssistantCalendarInsight> fetchCalendarInsight(String wsId) async {
-    final query = Uri(queryParameters: {'wsId': wsId}).query;
-    final response = await _apiClient.getJson('/api/v1/mira/calendar?$query');
-    return AssistantCalendarInsight.fromJson(response);
-  }
-
-  Future<AssistantCredits> fetchCredits(String wsId) async {
-    final response = await _apiClient.getJson(
-      '/api/v1/workspaces/$wsId/ai/credits',
     );
-    return AssistantCredits.fromJson(response);
+    return result.data ?? const AssistantTasksInsight();
   }
 
-  Future<List<AssistantGatewayModel>> fetchGatewayModels() async {
+  Future<AssistantCalendarInsight> fetchCalendarInsight(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async {
+    final result = await CacheStore.instance.prefetch<AssistantCalendarInsight>(
+      key: _assistantMetadataCacheKey(
+        namespace: 'assistant.calendar_insight',
+        wsId: wsId,
+      ),
+      policy: _assistantInsightCachePolicy,
+      decode: _decodeCalendarInsightCache,
+      forceRefresh: forceRefresh,
+      tags: [
+        _assistantMetadataCacheTag,
+        'workspace:$wsId',
+        'module:assistant',
+      ],
+      fetch: () async {
+        final query = Uri(queryParameters: {'wsId': wsId}).query;
+        final response = await _apiClient.getJson(
+          '/api/v1/mira/calendar?$query',
+        );
+        return AssistantCalendarInsight.fromJson(response).toJson();
+      },
+    );
+    return result.data ?? const AssistantCalendarInsight();
+  }
+
+  Future<AssistantCredits> fetchCredits(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async {
+    final result = await CacheStore.instance.prefetch<AssistantCredits>(
+      key: _assistantMetadataCacheKey(
+        namespace: 'assistant.credits',
+        wsId: wsId,
+      ),
+      policy: _assistantInsightCachePolicy,
+      decode: _decodeCreditsCache,
+      forceRefresh: forceRefresh,
+      tags: [
+        _assistantMetadataCacheTag,
+        'workspace:$wsId',
+        'module:assistant',
+      ],
+      fetch: () async {
+        final response = await _apiClient.getJson(
+          '/api/v1/workspaces/$wsId/ai/credits',
+        );
+        return AssistantCredits.fromJson(response).toJson();
+      },
+    );
+    return result.data ?? const AssistantCredits();
+  }
+
+  Future<List<AssistantGatewayModel>> fetchGatewayModels({
+    bool forceRefresh = false,
+  }) async {
     try {
-      final models = await _apiClient.getJsonList(
-        '/api/v1/infrastructure/ai/models',
-      );
-      return models
-          .whereType<Map<String, dynamic>>()
-          .map(
-            (model) => AssistantGatewayModel(
-              value: model['id'] as String,
-              label: model['name'] as String? ?? model['id'] as String,
-              provider: model['provider'] as String? ?? 'google',
-              description: model['description'] as String?,
-              context: (model['context_window'] as num?)?.toInt(),
-              disabled: !(model['is_enabled'] as bool? ?? true),
-              tags: (model['tags'] as List<dynamic>? ?? const [])
-                  .map((tag) => tag.toString())
-                  .toList(),
-              inputPricePerToken: (model['input_price_per_token'] as num?)
-                  ?.toDouble(),
-              outputPricePerToken: (model['output_price_per_token'] as num?)
-                  ?.toDouble(),
-              maxTokens: (model['max_tokens'] as num?)?.toInt(),
+      final result = await CacheStore.instance
+          .prefetch<List<AssistantGatewayModel>>(
+            key: _assistantMetadataCacheKey(
+              namespace: 'assistant.gateway_models',
             ),
-          )
-          .toList();
+            policy: _assistantMetadataCachePolicy,
+            decode: _decodeGatewayModelsCache,
+            forceRefresh: forceRefresh,
+            tags: [_assistantMetadataCacheTag, 'module:assistant'],
+            fetch: () async {
+              final models = await _apiClient.getJsonList(
+                '/api/v1/infrastructure/ai/models',
+              );
+              return models
+                  .whereType<Map<String, dynamic>>()
+                  .map(
+                    (model) => AssistantGatewayModel(
+                      value: model['id'] as String,
+                      label: model['name'] as String? ?? model['id'] as String,
+                      provider: model['provider'] as String? ?? 'google',
+                      description: model['description'] as String?,
+                      context: (model['context_window'] as num?)?.toInt(),
+                      disabled: !(model['is_enabled'] as bool? ?? true),
+                      tags: (model['tags'] as List<dynamic>? ?? const [])
+                          .map((tag) => tag.toString())
+                          .toList(),
+                      inputPricePerToken:
+                          (model['input_price_per_token'] as num?)?.toDouble(),
+                      outputPricePerToken:
+                          (model['output_price_per_token'] as num?)?.toDouble(),
+                      maxTokens: (model['max_tokens'] as num?)?.toInt(),
+                    ),
+                  )
+                  .map((model) => model.toJson())
+                  .toList(growable: false);
+            },
+          );
+      return result.data ?? const <AssistantGatewayModel>[];
     } on Exception catch (_) {
       // Return empty list on permission errors or API failures
       return const [];
     }
   }
 
-  Future<List<AssistantChatRecord>> fetchRecentChats({int? limit}) async {
-    final rows = await _apiClient.getJsonList('/api/v1/ai/chats');
-    final mapped = rows
-        .whereType<Map<String, dynamic>>()
-        .map(AssistantChatRecord.fromJson)
-        .toList(growable: false);
-    if (limit == null) {
-      return mapped;
-    }
-    return mapped.take(limit).toList(growable: false);
+  Future<List<AssistantChatRecord>> fetchRecentChats({
+    int? limit,
+    bool forceRefresh = false,
+  }) async {
+    final result = await CacheStore.instance
+        .prefetch<List<AssistantChatRecord>>(
+          key: _assistantMetadataCacheKey(
+            namespace: 'assistant.recent_chats',
+            params: {'limit': limit?.toString() ?? 'all'},
+          ),
+          policy: _assistantHistoryCachePolicy,
+          decode: _decodeRecentChatsCache,
+          forceRefresh: forceRefresh,
+          tags: [_assistantHistoryCacheTag, 'module:assistant'],
+          fetch: () async {
+            final rows = await _apiClient.getJsonList('/api/v1/ai/chats');
+            final mapped = rows
+                .whereType<Map<String, dynamic>>()
+                .map(AssistantChatRecord.fromJson)
+                .toList(growable: false);
+            final limited = limit == null
+                ? mapped
+                : mapped.take(limit).toList(growable: false);
+            return limited.map((chat) => chat.toJson()).toList(growable: false);
+          },
+        );
+    return result.data ?? const <AssistantChatRecord>[];
   }
 
   Future<AssistantRestoredChat?> restoreChat({
@@ -175,7 +382,16 @@ class AssistantRepository {
         key: cacheKey,
         decode: _decodeRestoredCache,
       );
-      if (cached.hasValue && cached.data != null && cached.isFresh) {
+      if (cached.hasValue && cached.data != null && !cached.isExpired) {
+        if (!cached.isFresh) {
+          unawaited(
+            restoreChat(
+              wsId: wsId,
+              chatId: chatId,
+              forceRefresh: true,
+            ).catchError((_) => null),
+          );
+        }
         return cached.data;
       }
     }
@@ -292,6 +508,36 @@ class AssistantRepository {
     );
 
     return restored;
+  }
+
+  Future<void> prewarmWorkspace({
+    required String wsId,
+    required bool isPersonal,
+    bool forceRefresh = false,
+  }) async {
+    Future<void> ignoreWarmupError(Future<Object?> future) {
+      return future.then((_) {}).catchError((_) {});
+    }
+
+    await Future.wait([
+      ignoreWarmupError(fetchSoul(forceRefresh: forceRefresh)),
+      ignoreWarmupError(resolvePersonalWorkspaceId(forceRefresh: forceRefresh)),
+      ignoreWarmupError(
+        fetchTasksInsight(
+          wsId: wsId,
+          isPersonal: isPersonal,
+          forceRefresh: forceRefresh,
+        ),
+      ),
+      ignoreWarmupError(
+        fetchCalendarInsight(wsId, forceRefresh: forceRefresh),
+      ),
+      ignoreWarmupError(fetchCredits(wsId, forceRefresh: forceRefresh)),
+      ignoreWarmupError(fetchGatewayModels(forceRefresh: forceRefresh)),
+      ignoreWarmupError(
+        fetchRecentChats(limit: 20, forceRefresh: forceRefresh),
+      ),
+    ]);
   }
 
   Future<AssistantChatRecord> createChat({

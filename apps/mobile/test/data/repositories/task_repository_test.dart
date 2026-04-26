@@ -136,5 +136,64 @@ void main() {
         );
       },
     );
+
+    test('createBoardTask sends task dates at day bounds', () async {
+      Map<String, dynamic>? requestBody;
+
+      when(() => apiClient.postJson(any(), any())).thenAnswer((
+        invocation,
+      ) async {
+        requestBody = invocation.positionalArguments[1] as Map<String, dynamic>;
+        return {
+          'task': {'id': 'task-1', 'list_id': 'list-1'},
+        };
+      });
+
+      await repository.createBoardTask(
+        wsId: 'ws-1',
+        listId: 'list-1',
+        name: 'Task',
+        startDate: DateTime(2026, 4, 26, 15, 30),
+        endDate: DateTime(2026, 4, 26, 15, 30),
+      );
+
+      expect(
+        DateTime.parse(requestBody!['start_date'] as String).toLocal(),
+        DateTime(2026, 4, 26),
+      );
+      expect(
+        DateTime.parse(requestBody!['end_date'] as String).toLocal(),
+        DateTime(2026, 4, 26, 23, 59, 59, 999),
+      );
+    });
+
+    test('updateBoardTask sends task dates at day bounds', () async {
+      Map<String, dynamic>? requestBody;
+
+      when(() => apiClient.putJson(any(), any())).thenAnswer((
+        invocation,
+      ) async {
+        requestBody = invocation.positionalArguments[1] as Map<String, dynamic>;
+        return {
+          'task': {'id': 'task-1', 'list_id': 'list-1'},
+        };
+      });
+
+      await repository.updateBoardTask(
+        wsId: 'ws-1',
+        taskId: 'task-1',
+        startDate: DateTime(2026, 4, 26, 15, 30),
+        endDate: DateTime(2026, 4, 26, 15, 30),
+      );
+
+      expect(
+        DateTime.parse(requestBody!['start_date'] as String).toLocal(),
+        DateTime(2026, 4, 26),
+      );
+      expect(
+        DateTime.parse(requestBody!['end_date'] as String).toLocal(),
+        DateTime(2026, 4, 26, 23, 59, 59, 999),
+      );
+    });
   });
 }

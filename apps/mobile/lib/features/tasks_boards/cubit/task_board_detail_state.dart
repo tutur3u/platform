@@ -109,6 +109,15 @@ class TaskBoardDetailState extends Equatable {
 
   bool get isLoadingListTasks => loadingListIds.isNotEmpty;
 
+  bool get _shouldUseDefaultOpenListFilter {
+    return filters.statuses.isEmpty && filters.listIds.isEmpty;
+  }
+
+  bool _isTerminalList(TaskBoardList? list) {
+    final status = TaskBoardList.normalizeSupportedStatus(list?.status);
+    return status == 'done' || status == 'closed';
+  }
+
   List<TaskBoardTask> get filteredTasks {
     final source = board?.tasks ?? const <TaskBoardTask>[];
     final listsById = {
@@ -209,6 +218,27 @@ class TaskBoardDetailState extends Equatable {
   Map<String, List<TaskBoardTask>> get filteredTasksByListId {
     final grouped = <String, List<TaskBoardTask>>{};
     for (final task in filteredTasks) {
+      grouped.putIfAbsent(task.listId, () => <TaskBoardTask>[]).add(task);
+    }
+    return grouped;
+  }
+
+  List<TaskBoardTask> get filteredTasksForListView {
+    final tasks = filteredTasks;
+    if (!_shouldUseDefaultOpenListFilter) {
+      return tasks;
+    }
+    final listsById = {
+      for (final list in board?.lists ?? const <TaskBoardList>[]) list.id: list,
+    };
+    return tasks
+        .where((task) => !_isTerminalList(listsById[task.listId]))
+        .toList(growable: false);
+  }
+
+  Map<String, List<TaskBoardTask>> get filteredTasksByListIdForListView {
+    final grouped = <String, List<TaskBoardTask>>{};
+    for (final task in filteredTasksForListView) {
       grouped.putIfAbsent(task.listId, () => <TaskBoardTask>[]).add(task);
     }
     return grouped;

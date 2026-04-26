@@ -566,7 +566,7 @@ export async function POST(
       auto_schedule,
     } = body;
 
-    const normalizedAssigneeIds =
+    let normalizedAssigneeIds =
       assignee_ids && Array.isArray(assignee_ids)
         ? Array.from(new Set(assignee_ids))
         : undefined;
@@ -630,16 +630,10 @@ export async function POST(
       const validAssigneeIds = new Set(
         (members ?? []).map((member) => member.user_id)
       );
-      const hasInvalidAssignee = normalizedAssigneeIds.some(
-        (assigneeId) => !validAssigneeIds.has(assigneeId)
-      );
 
-      if (hasInvalidAssignee) {
-        return NextResponse.json(
-          { error: 'One or more assignees are not in this workspace' },
-          { status: 400 }
-        );
-      }
+      normalizedAssigneeIds = normalizedAssigneeIds.filter((assigneeId) =>
+        validAssigneeIds.has(assigneeId)
+      );
     }
 
     if (normalizedLabelIds && normalizedLabelIds.length > 0) {

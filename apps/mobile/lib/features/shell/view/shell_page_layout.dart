@@ -538,23 +538,96 @@ extension _ShellPageLayout on _ShellPageState {
       padding: mobileSectionAppBarPadding,
       trailingGap: 6,
       trailing: [
-        ShellInjectedActionsHost(matchedLocation: widget.matchedLocation),
+        _ShellTrailingActions(matchedLocation: widget.matchedLocation),
+      ],
+      child: SizedBox(
+        width: double.infinity,
+        child: RepaintBoundary(
+          child: ShellTopBarTitle(matchedLocation: widget.matchedLocation),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShellTrailingActions extends StatelessWidget {
+  const _ShellTrailingActions({required this.matchedLocation});
+
+  final String matchedLocation;
+
+  @override
+  Widget build(BuildContext context) {
+    final titleOverrideCubit = lookupShellTitleOverrideCubit(context);
+    if (titleOverrideCubit == null) {
+      return _buildActions();
+    }
+
+    return BlocBuilder<ShellTitleOverrideCubit, ShellTitleOverrideState>(
+      bloc: titleOverrideCubit,
+      buildWhen: (previous, current) =>
+          previous.showAvatarForLocation(matchedLocation) !=
+          current.showAvatarForLocation(matchedLocation),
+      builder: (context, state) {
+        if (!state.showAvatarForLocation(matchedLocation)) {
+          return const SizedBox.shrink();
+        }
+
+        return _buildActions();
+      },
+    );
+  }
+
+  Widget _buildActions() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ShellInjectedActionsHost(matchedLocation: matchedLocation),
+        const SizedBox(width: 6),
         KeyedSubtree(
           key: _ShellPageState._shellNotificationsKey,
           child: RepaintBoundary(
             child: ShellNotificationsActionSlot(
-              matchedLocation: widget.matchedLocation,
+              matchedLocation: matchedLocation,
             ),
           ),
         ),
-        const KeyedSubtree(
+        const SizedBox(width: 6),
+        _ShellAvatarSlot(matchedLocation: matchedLocation),
+      ],
+    );
+  }
+}
+
+class _ShellAvatarSlot extends StatelessWidget {
+  const _ShellAvatarSlot({required this.matchedLocation});
+
+  final String matchedLocation;
+
+  @override
+  Widget build(BuildContext context) {
+    final titleOverrideCubit = lookupShellTitleOverrideCubit(context);
+    if (titleOverrideCubit == null) {
+      return const KeyedSubtree(
+        key: _ShellPageState._shellAvatarKey,
+        child: RepaintBoundary(child: AvatarDropdown()),
+      );
+    }
+
+    return BlocBuilder<ShellTitleOverrideCubit, ShellTitleOverrideState>(
+      bloc: titleOverrideCubit,
+      buildWhen: (previous, current) =>
+          previous.showAvatarForLocation(matchedLocation) !=
+          current.showAvatarForLocation(matchedLocation),
+      builder: (context, state) {
+        if (!state.showAvatarForLocation(matchedLocation)) {
+          return const SizedBox.shrink();
+        }
+
+        return const KeyedSubtree(
           key: _ShellPageState._shellAvatarKey,
           child: RepaintBoundary(child: AvatarDropdown()),
-        ),
-      ],
-      child: RepaintBoundary(
-        child: ShellTopBarTitle(matchedLocation: widget.matchedLocation),
-      ),
+        );
+      },
     );
   }
 }

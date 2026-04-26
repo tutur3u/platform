@@ -6,17 +6,28 @@ class ShellTitleOverrideRegistration extends Equatable {
     required this.ownerId,
     required this.locations,
     required this.title,
+    required this.showLeadingBrand,
+    required this.showAvatar,
+    this.onTitleSubmitted,
   });
 
   final String ownerId;
   final Set<String> locations;
   final String title;
+  final bool showLeadingBrand;
+  final bool showAvatar;
+  final Future<void> Function(String title)? onTitleSubmitted;
+
+  bool get canEditTitle => onTitleSubmitted != null;
 
   @override
   List<Object?> get props => [
     ownerId,
     locations.toList(growable: false)..sort(),
     title,
+    showLeadingBrand,
+    showAvatar,
+    canEditTitle,
   ];
 }
 
@@ -32,6 +43,48 @@ class ShellTitleOverrideState extends Equatable {
     for (final registration in registrations.values) {
       if (registration.locations.contains(matchedLocation)) {
         resolved = registration.title;
+      }
+    }
+    return resolved;
+  }
+
+  bool showLeadingBrandForLocation(String matchedLocation) {
+    var resolved = true;
+    for (final registration in registrations.values) {
+      if (registration.locations.contains(matchedLocation)) {
+        resolved = registration.showLeadingBrand;
+      }
+    }
+    return resolved;
+  }
+
+  bool showAvatarForLocation(String matchedLocation) {
+    var resolved = true;
+    for (final registration in registrations.values) {
+      if (registration.locations.contains(matchedLocation)) {
+        resolved = registration.showAvatar;
+      }
+    }
+    return resolved;
+  }
+
+  bool canEditTitleForLocation(String matchedLocation) {
+    var resolved = false;
+    for (final registration in registrations.values) {
+      if (registration.locations.contains(matchedLocation)) {
+        resolved = registration.canEditTitle;
+      }
+    }
+    return resolved;
+  }
+
+  Future<void> Function(String title)? titleSubmitterForLocation(
+    String matchedLocation,
+  ) {
+    Future<void> Function(String title)? resolved;
+    for (final registration in registrations.values) {
+      if (registration.locations.contains(matchedLocation)) {
+        resolved = registration.onTitleSubmitted;
       }
     }
     return resolved;
@@ -57,11 +110,17 @@ class ShellTitleOverrideCubit extends Cubit<ShellTitleOverrideState> {
     required String ownerId,
     required Set<String> locations,
     required String title,
+    bool showLeadingBrand = true,
+    bool showAvatar = true,
+    Future<void> Function(String title)? onTitleSubmitted,
   }) {
     final nextRegistration = ShellTitleOverrideRegistration(
       ownerId: ownerId,
       locations: Set<String>.from(locations),
       title: title,
+      showLeadingBrand: showLeadingBrand,
+      showAvatar: showAvatar,
+      onTitleSubmitted: onTitleSubmitted,
     );
     final currentRegistration = state.registrations[registrationId];
     if (currentRegistration == nextRegistration) {

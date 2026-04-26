@@ -54,9 +54,24 @@ void main() {
       projectIds: ['project-a', 'project-b'],
       assigneeIds: ['user-a', 'user-b'],
     );
+    const taskDone = TaskBoardTask(
+      id: 'task-done',
+      listId: 'list-done',
+      name: 'Done task',
+    );
+    const taskClosed = TaskBoardTask(
+      id: 'task-closed',
+      listId: 'list-closed',
+      name: 'Closed task',
+    );
 
     TaskBoardDetail buildBoard({
-      List<TaskBoardTask> tasks = const [taskOne, taskTwo],
+      List<TaskBoardTask> tasks = const [
+        taskOne,
+        taskTwo,
+        taskDone,
+        taskClosed,
+      ],
     }) {
       return const TaskBoardDetail(
         id: 'board-1',
@@ -104,7 +119,7 @@ void main() {
         ),
       ).thenAnswer((invocation) async {
         final listId = invocation.namedArguments[#listId] as String;
-        final all = [taskOne, taskTwo];
+        final all = [taskOne, taskTwo, taskDone, taskClosed];
         return all
             .where((task) => task.listId == listId)
             .toList(growable: false);
@@ -189,6 +204,31 @@ void main() {
 
       expect(cubit.state.isBulkSelectMode, isTrue);
       expect(cubit.state.selectedTaskIds, {'task-2'});
+    });
+
+    test('list view hides done and closed tasks until explicitly filtered', () {
+      expect(
+        cubit.state.filteredTasksForListView.map((task) => task.id),
+        ['task-1', 'task-2'],
+      );
+
+      cubit.setFilters(
+        const TaskBoardDetailFilters(statuses: {'done', 'closed'}),
+      );
+
+      expect(
+        cubit.state.filteredTasksForListView.map((task) => task.id),
+        ['task-done', 'task-closed'],
+      );
+
+      cubit.setFilters(
+        const TaskBoardDetailFilters(listIds: {'list-closed'}),
+      );
+
+      expect(
+        cubit.state.filteredTasksForListView.map((task) => task.id),
+        ['task-closed'],
+      );
     });
 
     test(

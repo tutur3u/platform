@@ -59,6 +59,26 @@ class TaskBoardDetail extends Equatable {
       allowZeroEstimates: json['allow_zero_estimates'] as bool? ?? true,
       countUnestimatedIssues:
           json['count_unestimated_issues'] as bool? ?? false,
+      lists: ((json['lists'] as List<dynamic>?) ?? const <dynamic>[])
+          .whereType<Map<String, dynamic>>()
+          .map(TaskBoardList.fromJson)
+          .toList(growable: false),
+      tasks: ((json['tasks'] as List<dynamic>?) ?? const <dynamic>[])
+          .whereType<Map<String, dynamic>>()
+          .map(TaskBoardTask.fromJson)
+          .toList(growable: false),
+      labels: ((json['labels'] as List<dynamic>?) ?? const <dynamic>[])
+          .whereType<Map<String, dynamic>>()
+          .map(TaskLabel.fromJson)
+          .toList(growable: false),
+      members: ((json['members'] as List<dynamic>?) ?? const <dynamic>[])
+          .whereType<Map<String, dynamic>>()
+          .map(WorkspaceUserOption.fromJson)
+          .toList(growable: false),
+      projects: ((json['projects'] as List<dynamic>?) ?? const <dynamic>[])
+          .whereType<Map<String, dynamic>>()
+          .map(TaskProjectSummary.fromJson)
+          .toList(growable: false),
     );
   }
 
@@ -79,6 +99,30 @@ class TaskBoardDetail extends Equatable {
   final List<TaskLabel> labels;
   final List<WorkspaceUserOption> members;
   final List<TaskProjectSummary> projects;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'ws_id': wsId,
+    'name': name,
+    'icon': icon,
+    'ticket_prefix': ticketPrefix,
+    'created_at': createdAt?.toIso8601String(),
+    'archived_at': archivedAt?.toIso8601String(),
+    'deleted_at': deletedAt?.toIso8601String(),
+    'estimation_type': estimationType,
+    'extended_estimation': extendedEstimation,
+    'allow_zero_estimates': allowZeroEstimates,
+    'count_unestimated_issues': countUnestimatedIssues,
+    'lists': lists.map((list) => list.toJson()).toList(growable: false),
+    'tasks': tasks.map((task) => task.toJson()).toList(growable: false),
+    'labels': labels.map((label) => label.toJson()).toList(growable: false),
+    'members': members.map((member) => member.toJson()).toList(growable: false),
+    'projects': projects
+        .map((project) => project.toJson())
+        .toList(
+          growable: false,
+        ),
+  };
 
   TaskBoardDetail copyWith({
     Object? name = _taskBoardDetailSentinel,

@@ -112,6 +112,7 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
     required int page,
     required bool reset,
     int? pageSize,
+    bool forceRefresh = false,
   }) async {
     final requestToken = ++_loadRequestToken;
     final workspaceChanged = state.workspaceId != wsId;
@@ -120,13 +121,15 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
     final normalizedPageSize = (pageSize ?? state.pageSize).clamp(1, 200);
     final isLoadingMore =
         !reset && !workspaceChanged && state.boards.isNotEmpty;
+    var hasCachedReset = false;
 
-    if (reset) {
+    if (reset && !forceRefresh) {
       final cached = await CacheStore.instance.read<Map<String, dynamic>>(
         key: cacheKey,
         decode: _decodeCacheJson,
       );
       if (cached.hasValue) {
+        hasCachedReset = true;
         final json = cached.data!;
         emit(
           state.copyWith(
@@ -151,12 +154,18 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
 
     emit(
       state.copyWith(
-        status: isLoadingMore ? state.status : TaskBoardsStatus.loading,
+        status: hasCachedReset || isLoadingMore
+            ? state.status
+            : TaskBoardsStatus.loading,
         workspaceId: wsId,
         currentPage: normalizedPage,
         pageSize: normalizedPageSize,
-        totalCount: reset || workspaceChanged ? 0 : state.totalCount,
-        boards: reset || workspaceChanged ? const [] : state.boards,
+        totalCount: hasCachedReset || (!reset && !workspaceChanged)
+            ? state.totalCount
+            : 0,
+        boards: hasCachedReset || (!reset && !workspaceChanged)
+            ? state.boards
+            : const [],
         isLoadingMore: isLoadingMore,
         clearError: true,
       ),
@@ -201,6 +210,17 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
       }
     } on Exception catch (error) {
       if (requestToken != _loadRequestToken) return;
+      if (hasCachedReset) {
+        emit(
+          state.copyWith(
+            status: TaskBoardsStatus.loaded,
+            workspaceId: wsId,
+            isLoadingMore: false,
+            error: error.toString(),
+          ),
+        );
+        return;
+      }
       emit(
         state.copyWith(
           status: TaskBoardsStatus.error,
@@ -313,11 +333,13 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
       if (state.workspaceId != wsId) {
         return;
       }
+      await CacheStore.instance.invalidateTags([_cacheTag], workspaceId: wsId);
       await _loadBoardsForPage(
         wsId,
         page: 1,
         pageSize: state.pageSize,
         reset: true,
+        forceRefresh: true,
       );
     } catch (_) {
       if (state.workspaceId == wsId) {

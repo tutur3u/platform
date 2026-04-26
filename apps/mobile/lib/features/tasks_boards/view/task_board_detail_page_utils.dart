@@ -57,6 +57,26 @@ List<TaskBoardList> _sortedListsByStatusOrder(List<TaskBoardList> lists) {
   return sorted;
 }
 
+bool _taskBoardListIsTerminal(TaskBoardList list) {
+  final normalizedStatus = TaskBoardList.normalizeSupportedStatus(list.status);
+  return normalizedStatus == 'done' || normalizedStatus == 'closed';
+}
+
+List<TaskBoardList> _listViewVisibleLists(
+  List<TaskBoardList> lists,
+  TaskBoardDetailFilters filters,
+) {
+  if (filters.statuses.isEmpty && filters.listIds.isEmpty) {
+    return lists
+        .where((list) => !_taskBoardListIsTerminal(list))
+        .toList(
+          growable: false,
+        );
+  }
+
+  return lists;
+}
+
 bool _taskBoardCanCreateListInStatus(
   List<TaskBoardList> lists,
   String? status, {
@@ -455,6 +475,14 @@ String? _taskDescriptionPreview(String? rawDescription) {
 
 bool _taskHasDescription(String? rawDescription) {
   return _taskDescriptionPreview(rawDescription) != null;
+}
+
+DateTime _taskStartOfDay(DateTime date) {
+  return DateTime(date.year, date.month, date.day);
+}
+
+DateTime _taskEndOfDay(DateTime date) {
+  return DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
 }
 
 String _taskReference(TaskBoardTask task, TaskBoardDetail board) {

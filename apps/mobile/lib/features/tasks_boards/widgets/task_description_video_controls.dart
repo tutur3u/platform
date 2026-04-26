@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:video_player/video_player.dart';
 
 class TaskDescriptionVideoControls extends StatelessWidget {
@@ -13,6 +14,8 @@ class TaskDescriptionVideoControls extends StatelessWidget {
     required this.onInteractionStart,
     required this.onInteractionEnd,
     super.key,
+    this.onOpenFullscreen,
+    this.immersive = false,
   });
 
   final VideoPlayerController controller;
@@ -24,6 +27,8 @@ class TaskDescriptionVideoControls extends StatelessWidget {
   final ValueChanged<double> onSetVolume;
   final ValueChanged<double> onInteractionStart;
   final ValueChanged<double> onInteractionEnd;
+  final VoidCallback? onOpenFullscreen;
+  final bool immersive;
 
   String _formatDuration(Duration duration) {
     final hours = duration.inHours;
@@ -48,6 +53,11 @@ class TaskDescriptionVideoControls extends StatelessWidget {
         ? position.inMilliseconds / duration.inMilliseconds
         : 0.0;
     final clampedProgress = progress.clamp(0.0, 1.0);
+    final playButtonSize = immersive ? 70.0 : 54.0;
+    final controlPadding = immersive
+        ? const EdgeInsets.fromLTRB(18, 44, 18, 18)
+        : const EdgeInsets.all(10);
+    final gradientOpacity = immersive ? 0.88 : 0.76;
 
     return GestureDetector(
       onTap: onToggleControls,
@@ -60,17 +70,27 @@ class TaskDescriptionVideoControls extends StatelessWidget {
               opacity: value.isPlaying && !showControls ? 0 : 1,
               duration: const Duration(milliseconds: 200),
               child: ColoredBox(
-                color: Colors.black.withValues(alpha: 0.3),
+                color: Colors.black.withValues(alpha: immersive ? 0.16 : 0.24),
                 child: Center(
-                  child: IconButton(
-                    iconSize: 64,
-                    icon: Icon(
-                      value.isPlaying
-                          ? Icons.pause_circle_filled
-                          : Icons.play_circle_fill,
-                      color: Colors.white,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.38),
+                      shape: BoxShape.circle,
                     ),
-                    onPressed: onTogglePlayback,
+                    child: IconButton(
+                      iconSize: playButtonSize,
+                      constraints: BoxConstraints.tightFor(
+                        width: playButtonSize + 16,
+                        height: playButtonSize + 16,
+                      ),
+                      icon: Icon(
+                        value.isPlaying
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        color: Colors.white,
+                      ),
+                      onPressed: onTogglePlayback,
+                    ),
                   ),
                 ),
               ),
@@ -84,13 +104,13 @@ class TaskDescriptionVideoControls extends StatelessWidget {
                 opacity: showControls ? 1 : 0,
                 duration: const Duration(milliseconds: 200),
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: controlPadding,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
                       colors: [
-                        Colors.black.withValues(alpha: 0.8),
+                        Colors.black.withValues(alpha: gradientOpacity),
                         Colors.transparent,
                       ],
                     ),
@@ -148,7 +168,7 @@ class TaskDescriptionVideoControls extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             IconButton(
                               icon: Icon(
@@ -162,31 +182,44 @@ class TaskDescriptionVideoControls extends StatelessWidget {
                               ),
                               onPressed: onToggleMuted,
                             ),
-                            SizedBox(
-                              width: 100,
-                              child: SliderTheme(
-                                data: SliderTheme.of(context).copyWith(
-                                  activeTrackColor: Colors.white,
-                                  inactiveTrackColor: Colors.white.withValues(
-                                    alpha: 0.3,
+                            if (!immersive)
+                              Expanded(
+                                child: SliderTheme(
+                                  data: SliderTheme.of(context).copyWith(
+                                    activeTrackColor: Colors.white,
+                                    inactiveTrackColor: Colors.white.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                    thumbColor: Colors.white,
+                                    overlayColor: Colors.white.withValues(
+                                      alpha: 0.2,
+                                    ),
+                                    trackHeight: 3,
+                                    thumbShape: const RoundSliderThumbShape(
+                                      enabledThumbRadius: 5,
+                                    ),
                                   ),
-                                  thumbColor: Colors.white,
-                                  overlayColor: Colors.white.withValues(
-                                    alpha: 0.2,
-                                  ),
-                                  trackHeight: 3,
-                                  thumbShape: const RoundSliderThumbShape(
-                                    enabledThumbRadius: 5,
+                                  child: Slider(
+                                    value: value.volume,
+                                    onChanged: onSetVolume,
+                                    onChangeStart: onInteractionStart,
+                                    onChangeEnd: onInteractionEnd,
                                   ),
                                 ),
-                                child: Slider(
-                                  value: value.volume,
-                                  onChanged: onSetVolume,
-                                  onChangeStart: onInteractionStart,
-                                  onChangeEnd: onInteractionEnd,
+                              )
+                            else
+                              const Spacer(),
+                            if (onOpenFullscreen != null)
+                              IconButton(
+                                tooltip:
+                                    context.l10n.assistantEnterFullscreenAction,
+                                icon: const Icon(
+                                  Icons.open_in_full_rounded,
+                                  color: Colors.white,
+                                  size: 20,
                                 ),
+                                onPressed: onOpenFullscreen,
                               ),
-                            ),
                           ],
                         ),
                       ],

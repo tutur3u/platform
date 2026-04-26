@@ -191,6 +191,13 @@ class AssistantTasksInsight extends Equatable {
   final int total;
   final int completedToday;
 
+  Map<String, dynamic> toJson() => {
+    'overdue': overdue.map((task) => task.toJson()).toList(growable: false),
+    'today': today.map((task) => task.toJson()).toList(growable: false),
+    'upcoming': upcoming.map((task) => task.toJson()).toList(growable: false),
+    'stats': {'total': total, 'completed_today': completedToday},
+  };
+
   @override
   List<Object?> get props => [overdue, today, upcoming, total, completedToday];
 }
@@ -274,6 +281,11 @@ class AssistantCalendarInsight extends Equatable {
   final int total;
   final int encryptedCount;
 
+  Map<String, dynamic> toJson() => {
+    'events': events.map((event) => event.toJson()).toList(growable: false),
+    'stats': {'total': total, 'encrypted_count': encryptedCount},
+  };
+
   @override
   List<Object?> get props => [events, total, encryptedCount];
 }
@@ -341,6 +353,26 @@ class AssistantCredits extends Equatable {
   final int? maxOutputTokens;
   final String balanceScope;
   final int? seatCount;
+
+  Map<String, dynamic> toJson() => {
+    'totalAllocated': totalAllocated,
+    'totalUsed': totalUsed,
+    'remaining': remaining,
+    'bonusCredits': bonusCredits,
+    'percentUsed': percentUsed,
+    'periodStart': periodStart?.toIso8601String(),
+    'periodEnd': periodEnd?.toIso8601String(),
+    'tier': tier,
+    'allowedModels': allowedModels,
+    'allowedFeatures': allowedFeatures,
+    'defaultImageModel': defaultImageModel,
+    'defaultLanguageModel': defaultLanguageModel,
+    'dailyLimit': dailyLimit,
+    'dailyUsed': dailyUsed,
+    'maxOutputTokens': maxOutputTokens,
+    'balanceScope': balanceScope,
+    'seatCount': seatCount,
+  };
 
   @override
   List<Object?> get props => [

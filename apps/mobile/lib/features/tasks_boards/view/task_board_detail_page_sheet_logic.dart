@@ -563,6 +563,18 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
   final description = state._isTaskDescriptionEditingEnabled
       ? normalizeTaskDescriptionPayload(state._descriptionController.text)
       : null;
+  final sanitizedAssigneeIds = state._workspaceMemberAssigneeIds(
+    state._selectedAssigneeIds,
+  );
+  if (!FormDirtyUtils.sameUnorderedValues(
+    sanitizedAssigneeIds,
+    state._selectedAssigneeIds,
+  )) {
+    state._updateState(() {
+      state._selectedAssigneeIds = sanitizedAssigneeIds;
+    });
+  }
+  final assigneeIds = sanitizedAssigneeIds.toList(growable: false)..sort();
 
   state._updateState(() => state._isSaving = true);
   try {
@@ -576,7 +588,7 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
         startDate: state._startDate,
         endDate: state._endDate,
         estimationPoints: state._estimationPoints,
-        assigneeIds: state._selectedAssigneeIds.toList(growable: false),
+        assigneeIds: assigneeIds,
         labelIds: state._selectedLabelIds.toList(growable: false),
         projectIds: state._selectedProjectIds.toList(growable: false),
       );
@@ -593,7 +605,7 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
         startDate: state._startDate,
         endDate: state._endDate,
         estimationPoints: state._estimationPoints,
-        assigneeIds: state._selectedAssigneeIds.toList(growable: false),
+        assigneeIds: assigneeIds,
         labelIds: state._selectedLabelIds.toList(growable: false),
         projectIds: state._selectedProjectIds.toList(growable: false),
         description: description,
@@ -806,17 +818,17 @@ Future<void> _pickTaskDate(
   );
   if (picked == null || !state.mounted) return;
 
-  final normalized = DateTime(picked.year, picked.month, picked.day);
+  final normalized = isStart ? _taskStartOfDay(picked) : _taskEndOfDay(picked);
   state._updateState(() {
     if (isStart) {
       state._startDate = normalized;
       if (state._endDate != null && normalized.isAfter(state._endDate!)) {
-        state._endDate = normalized;
+        state._endDate = _taskEndOfDay(picked);
       }
     } else {
       state._endDate = normalized;
       if (state._startDate != null && normalized.isBefore(state._startDate!)) {
-        state._startDate = normalized;
+        state._startDate = _taskStartOfDay(picked);
       }
     }
   });

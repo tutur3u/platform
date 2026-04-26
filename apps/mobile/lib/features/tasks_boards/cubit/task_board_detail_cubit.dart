@@ -2,6 +2,10 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/utils/tiptap_description_parser.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
@@ -22,6 +26,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
   static const int _listTaskPageSize = 50;
   static const int _initialPrefetchListCount = 3;
   static const Duration _deletedTasksCacheTtl = Duration(minutes: 3);
+  static const CachePolicy _detailCachePolicy = CachePolicies.detail;
+  static const CachePolicy _listTasksCachePolicy = CachePolicies.moduleData;
+  static const _detailCacheTag = 'tasks:board-detail';
+  static const _listTasksCacheTag = 'tasks:board-list-tasks';
 
   final TaskRepository _taskRepository;
   int _loadRequestToken = 0;
@@ -30,59 +38,201 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
   String? _cachedDeletedTasksWorkspaceId;
   String? _cachedDeletedTasksBoardId;
 
+  static TaskBoardDetail _decodeBoardDetailCache(Object? json) {
+    if (json is! Map) {
+      throw const FormatException('Invalid task board detail cache payload.');
+    }
+    return TaskBoardDetail.fromJson(Map<String, dynamic>.from(json));
+  }
+
+  static List<TaskBoardTask> _decodeListTasksCache(Object? json) {
+    if (json is! List<dynamic>) {
+      throw const FormatException('Invalid task board list cache payload.');
+    }
+    return json
+        .whereType<Map<String, dynamic>>()
+        .map(TaskBoardTask.fromJson)
+        .toList(growable: false);
+  }
+
+  static CacheKey _detailCacheKey({
+    required String wsId,
+    required String boardId,
+  }) {
+    return CacheKey(
+      namespace: 'tasks.board_detail',
+      userId: currentCacheUserId(),
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+      schemaVersion: 2,
+      params: {'boardId': boardId},
+    );
+  }
+
+  static CacheKey _listTasksCacheKey({
+    required String wsId,
+    required String boardId,
+    required String listId,
+    required int limit,
+    required int offset,
+  }) {
+    return CacheKey(
+      namespace: 'tasks.board_list_tasks',
+      userId: currentCacheUserId(),
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+      schemaVersion: 2,
+      params: {
+        'boardId': boardId,
+        'listId': listId,
+        'limit': limit.toString(),
+        'offset': offset.toString(),
+      },
+    );
+  }
+
   Future<void> loadBoardDetail({
     required String wsId,
     required String boardId,
+    bool forceRefresh = false,
   }) async {
     final requestToken = ++_loadRequestToken;
     final targetChanged = state.workspaceId != wsId || state.boardId != boardId;
+    final cacheKey = _detailCacheKey(wsId: wsId, boardId: boardId);
 
     if (targetChanged) {
       _invalidateDeletedTasksCache();
     }
 
-    emit(
-      state.copyWith(
-        status: TaskBoardDetailStatus.loading,
-        workspaceId: wsId,
-        boardId: boardId,
-        board: targetChanged ? null : state.board,
-        filters: targetChanged ? const TaskBoardDetailFilters() : state.filters,
-        taskDescriptionSearchIndex: targetChanged
-            ? const <String, String>{}
-            : state.taskDescriptionSearchIndex,
-        listTasksByListId: targetChanged
-            ? const <String, List<TaskBoardTask>>{}
-            : state.listTasksByListId,
-        loadedListIds: targetChanged ? const <String>{} : state.loadedListIds,
-        loadingListIds: targetChanged ? const <String>{} : state.loadingListIds,
-        listHasMoreById: targetChanged
-            ? const <String, bool>{}
-            : state.listHasMoreById,
-        listOffsetsById: targetChanged
-            ? const <String, int>{}
-            : state.listOffsetsById,
-        listPageSizeById: targetChanged
-            ? const <String, int>{}
-            : state.listPageSizeById,
-        listLoadErrorById: targetChanged
-            ? const <String, String>{}
-            : state.listLoadErrorById,
-        selectedTaskId: targetChanged ? null : state.selectedTaskId,
-        isBulkSelectMode: !targetChanged && state.isBulkSelectMode,
-        selectedTaskIds: targetChanged
-            ? const <String>{}
-            : state.selectedTaskIds,
-        clearError: true,
-      ),
-    );
+    var hasCachedDetail = false;
+    if (!forceRefresh) {
+      final cached = CacheStore.instance.peek<TaskBoardDetail>(
+        key: cacheKey,
+        decode: _decodeBoardDetailCache,
+      );
+      final cachedDetail = cached.data;
+      if (cached.hasValue && cachedDetail != null) {
+        hasCachedDetail = true;
+        final cachedTasksByList = _mergeTaskListSnapshots(
+          _groupTasksByKnownLists(cachedDetail.tasks, cachedDetail.lists),
+          _filterTasksByKnownLists(
+            state.listTasksByListId,
+            cachedDetail.lists,
+          ),
+        );
+        final cachedBoard = cachedDetail.copyWith(
+          tasks: _flattenTasks(cachedDetail.lists, cachedTasksByList),
+        );
+        final sanitizedSelectedTaskIds = _sanitizeSelectedTaskIds(
+          targetChanged ? const <String>{} : state.selectedTaskIds,
+          cachedBoard.tasks,
+        );
+        emit(
+          state.copyWith(
+            status: TaskBoardDetailStatus.loaded,
+            workspaceId: wsId,
+            boardId: boardId,
+            board: cachedBoard,
+            filters: targetChanged
+                ? const TaskBoardDetailFilters()
+                : state.filters,
+            taskDescriptionSearchIndex: _buildTaskDescriptionSearchIndex(
+              cachedBoard.tasks,
+            ),
+            listTasksByListId: cachedTasksByList,
+            loadedListIds: targetChanged
+                ? const <String>{}
+                : state.loadedListIds,
+            loadingListIds: const <String>{},
+            listHasMoreById: targetChanged
+                ? const <String, bool>{}
+                : state.listHasMoreById,
+            listOffsetsById: targetChanged
+                ? const <String, int>{}
+                : state.listOffsetsById,
+            listPageSizeById: targetChanged
+                ? const <String, int>{}
+                : state.listPageSizeById,
+            listLoadErrorById: const <String, String>{},
+            selectedTaskId: targetChanged ? null : state.selectedTaskId,
+            isBulkSelectMode:
+                !targetChanged &&
+                state.isBulkSelectMode &&
+                sanitizedSelectedTaskIds.isNotEmpty,
+            selectedTaskIds: sanitizedSelectedTaskIds,
+            clearError: true,
+          ),
+        );
+
+        await _prefetchInitialLists(
+          requestToken: requestToken,
+          detail: cachedDetail,
+        );
+        if (cached.isFresh) {
+          return;
+        }
+      }
+    }
+
+    if (!hasCachedDetail) {
+      emit(
+        state.copyWith(
+          status: TaskBoardDetailStatus.loading,
+          workspaceId: wsId,
+          boardId: boardId,
+          board: targetChanged ? null : state.board,
+          filters: targetChanged
+              ? const TaskBoardDetailFilters()
+              : state.filters,
+          taskDescriptionSearchIndex: targetChanged
+              ? const <String, String>{}
+              : state.taskDescriptionSearchIndex,
+          listTasksByListId: targetChanged
+              ? const <String, List<TaskBoardTask>>{}
+              : state.listTasksByListId,
+          loadedListIds: targetChanged ? const <String>{} : state.loadedListIds,
+          loadingListIds: targetChanged
+              ? const <String>{}
+              : state.loadingListIds,
+          listHasMoreById: targetChanged
+              ? const <String, bool>{}
+              : state.listHasMoreById,
+          listOffsetsById: targetChanged
+              ? const <String, int>{}
+              : state.listOffsetsById,
+          listPageSizeById: targetChanged
+              ? const <String, int>{}
+              : state.listPageSizeById,
+          listLoadErrorById: targetChanged
+              ? const <String, String>{}
+              : state.listLoadErrorById,
+          selectedTaskId: targetChanged ? null : state.selectedTaskId,
+          isBulkSelectMode: !targetChanged && state.isBulkSelectMode,
+          selectedTaskIds: targetChanged
+              ? const <String>{}
+              : state.selectedTaskIds,
+          clearError: true,
+        ),
+      );
+    }
 
     try {
       final detail = await _taskRepository.getTaskBoardDetail(wsId, boardId);
       if (requestToken != _loadRequestToken) return;
+
+      final retainedTasksByList = _mergeTaskListSnapshots(
+        _groupTasksByKnownLists(detail.tasks, detail.lists),
+        _filterTasksByKnownLists(
+          state.listTasksByListId,
+          detail.lists,
+        ),
+      );
+      final nextBoard = detail.copyWith(
+        tasks: _flattenTasks(detail.lists, retainedTasksByList),
+      );
       final sanitizedSelectedTaskIds = _sanitizeSelectedTaskIds(
         state.selectedTaskIds,
-        detail.tasks,
+        nextBoard.tasks,
       );
 
       emit(
@@ -90,27 +240,53 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
           status: TaskBoardDetailStatus.loaded,
           workspaceId: wsId,
           boardId: boardId,
-          board: detail,
+          board: nextBoard,
           selectedTaskIds: sanitizedSelectedTaskIds,
           isBulkSelectMode:
               state.isBulkSelectMode && sanitizedSelectedTaskIds.isNotEmpty,
           taskDescriptionSearchIndex: _buildTaskDescriptionSearchIndex(
-            detail.tasks,
+            nextBoard.tasks,
           ),
-          listTasksByListId: const <String, List<TaskBoardTask>>{},
-          loadedListIds: const <String>{},
+          listTasksByListId: retainedTasksByList,
+          loadedListIds: state.loadedListIds.intersection(
+            retainedTasksByList.keys.toSet(),
+          ),
           loadingListIds: const <String>{},
-          listHasMoreById: const <String, bool>{},
-          listOffsetsById: const <String, int>{},
-          listPageSizeById: const <String, int>{},
+          listHasMoreById: _filterMapByKeys(
+            state.listHasMoreById,
+            retainedTasksByList.keys,
+          ),
+          listOffsetsById: _filterMapByKeys(
+            state.listOffsetsById,
+            retainedTasksByList.keys,
+          ),
+          listPageSizeById: _filterMapByKeys(
+            state.listPageSizeById,
+            retainedTasksByList.keys,
+          ),
           listLoadErrorById: const <String, String>{},
           clearError: true,
         ),
       );
 
+      unawaited(
+        CacheStore.instance
+            .write(
+              key: cacheKey,
+              policy: _detailCachePolicy,
+              payload: detail.toJson(),
+              tags: [_detailCacheTag, 'workspace:$wsId', 'module:tasks'],
+            )
+            .catchError((_) {}),
+      );
+
       await _prefetchInitialLists(requestToken: requestToken, detail: detail);
     } on Exception catch (error) {
       if (requestToken != _loadRequestToken) return;
+      if (hasCachedDetail) {
+        emit(state.copyWith(error: error.toString()));
+        return;
+      }
       emit(
         state.copyWith(
           status: TaskBoardDetailStatus.error,
@@ -126,7 +302,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     final wsId = state.workspaceId;
     final boardId = state.boardId;
     if (wsId == null || boardId == null) return;
-    await loadBoardDetail(wsId: wsId, boardId: boardId);
+    await loadBoardDetail(wsId: wsId, boardId: boardId, forceRefresh: true);
   }
 
   Future<void> loadListTasks({
@@ -165,15 +341,49 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     final pageSize =
         state.listPageSizeById[listId] ?? _normalizePageSize(pageSizeHint);
     final offset = loadMore ? (state.listOffsetsById[listId] ?? 0) : 0;
-    final nextLoading = {...state.loadingListIds, listId};
-    final nextLoadErrors = Map<String, String>.from(state.listLoadErrorById)
-      ..remove(listId);
-    emit(
-      state.copyWith(
-        loadingListIds: nextLoading,
-        listLoadErrorById: nextLoadErrors,
-      ),
+    final cacheKey = _listTasksCacheKey(
+      wsId: wsId,
+      boardId: board.id,
+      listId: listId,
+      limit: pageSize,
+      offset: offset,
     );
+    var hasCachedPage = false;
+
+    if (!forceRefresh) {
+      final cached = CacheStore.instance.peek<List<TaskBoardTask>>(
+        key: cacheKey,
+        decode: _decodeListTasksCache,
+      );
+      final cachedPage = cached.data;
+      if (cached.hasValue && cachedPage != null) {
+        hasCachedPage = true;
+        final applied = _emitListTasksPage(
+          requestToken: requestToken,
+          wsId: wsId,
+          boardId: board.id,
+          listId: listId,
+          page: cachedPage,
+          pageSize: pageSize,
+          loadMore: loadMore,
+        );
+        if (!applied || cached.isFresh) {
+          return;
+        }
+      }
+    }
+
+    if (!hasCachedPage) {
+      final nextLoading = {...state.loadingListIds, listId};
+      final nextLoadErrors = Map<String, String>.from(state.listLoadErrorById)
+        ..remove(listId);
+      emit(
+        state.copyWith(
+          loadingListIds: nextLoading,
+          listLoadErrorById: nextLoadErrors,
+        ),
+      );
+    }
 
     try {
       final page = await _taskRepository.getBoardTasksForList(
@@ -192,58 +402,31 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         return;
       }
 
-      final existing = loadMore
-          ? (state.listTasksByListId[listId] ?? const <TaskBoardTask>[])
-          : const <TaskBoardTask>[];
-      final merged = _mergeTaskPages(existing, page);
-      final baseTasksByList = Map<String, List<TaskBoardTask>>.from(
-        state.listTasksByListId,
-      )..[listId] = List.unmodifiable(merged);
-      final nextTasksByList = _mergeCurrentBoardTaskSnapshots(
-        board: state.board ?? board,
-        tasksByList: baseTasksByList,
+      _emitListTasksPage(
+        requestToken: requestToken,
+        wsId: wsId,
+        boardId: board.id,
+        listId: listId,
+        page: page,
+        pageSize: pageSize,
+        loadMore: loadMore,
       );
-      final nextLoadingDone = {...state.loadingListIds}..remove(listId);
-      final listHasMore = page.length >= pageSize;
-      final nextHasMore = Map<String, bool>.from(state.listHasMoreById)
-        ..[listId] = listHasMore;
-      final nextOffsets = Map<String, int>.from(state.listOffsetsById)
-        ..[listId] = merged.length;
-      final nextPageSizes = Map<String, int>.from(state.listPageSizeById)
-        ..[listId] = pageSize;
-      final nextLoaded = Set<String>.from(state.loadedListIds);
-      if (listHasMore) {
-        nextLoaded.remove(listId);
-      } else {
-        nextLoaded.add(listId);
-      }
-      final nextLoadErrors = Map<String, String>.from(state.listLoadErrorById)
-        ..remove(listId);
-      final nextBoard = board.copyWith(
-        tasks: _flattenTasks(board.lists, nextTasksByList),
-      );
-      final sanitizedSelectedTaskIds = _sanitizeSelectedTaskIds(
-        state.selectedTaskIds,
-        nextBoard.tasks,
-      );
-
-      emit(
-        state.copyWith(
-          board: nextBoard,
-          selectedTaskIds: sanitizedSelectedTaskIds,
-          isBulkSelectMode:
-              state.isBulkSelectMode && sanitizedSelectedTaskIds.isNotEmpty,
-          taskDescriptionSearchIndex: _buildTaskDescriptionSearchIndex(
-            nextBoard.tasks,
-          ),
-          listTasksByListId: nextTasksByList,
-          loadedListIds: nextLoaded,
-          loadingListIds: nextLoadingDone,
-          listHasMoreById: nextHasMore,
-          listOffsetsById: nextOffsets,
-          listPageSizeById: nextPageSizes,
-          listLoadErrorById: nextLoadErrors,
-        ),
+      unawaited(
+        CacheStore.instance
+            .write(
+              key: cacheKey,
+              policy: _listTasksCachePolicy,
+              payload: page
+                  .map((task) => task.toJson())
+                  .toList(growable: false),
+              tags: [
+                _listTasksCacheTag,
+                _detailCacheTag,
+                'workspace:$wsId',
+                'module:tasks',
+              ],
+            )
+            .catchError((_) {}),
       );
     } on Exception {
       if (requestToken != _loadRequestToken) {
@@ -1183,6 +1366,8 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         return;
       }
 
+      await _invalidateBoardCaches(wsId: wsId);
+
       emit(
         state.copyWith(
           isMutating: false,
@@ -1192,7 +1377,11 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       );
 
       if (reloadBoard) {
-        await loadBoardDetail(wsId: wsId, boardId: boardId);
+        await loadBoardDetail(
+          wsId: wsId,
+          boardId: boardId,
+          forceRefresh: true,
+        );
       }
     } on Exception catch (error) {
       final isSameBoard = state.workspaceId == wsId && state.boardId == boardId;
@@ -1276,7 +1465,13 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         ),
       );
 
-      await loadBoardDetail(wsId: wsId, boardId: boardId);
+      await _invalidateBoardCaches(wsId: wsId);
+
+      await loadBoardDetail(
+        wsId: wsId,
+        boardId: boardId,
+        forceRefresh: true,
+      );
       return result;
     } on Exception catch (error) {
       if (isClosed) {
@@ -1360,6 +1555,89 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
   }
 
+  Future<void> _invalidateBoardCaches({required String wsId}) {
+    return CacheStore.instance.invalidateTags(
+      [_detailCacheTag, _listTasksCacheTag],
+      workspaceId: wsId,
+    );
+  }
+
+  bool _emitListTasksPage({
+    required int requestToken,
+    required String wsId,
+    required String boardId,
+    required String listId,
+    required List<TaskBoardTask> page,
+    required int pageSize,
+    required bool loadMore,
+  }) {
+    if (requestToken != _loadRequestToken ||
+        state.workspaceId != wsId ||
+        state.board?.id != boardId) {
+      return false;
+    }
+
+    final board = state.board;
+    if (board == null) {
+      return false;
+    }
+
+    final existing = loadMore
+        ? (state.listTasksByListId[listId] ?? const <TaskBoardTask>[])
+        : const <TaskBoardTask>[];
+    final merged = _mergeTaskPages(existing, page);
+    final baseTasksByList = Map<String, List<TaskBoardTask>>.from(
+      state.listTasksByListId,
+    )..[listId] = List.unmodifiable(merged);
+    final nextTasksByList = _mergeCurrentBoardTaskSnapshots(
+      board: board,
+      tasksByList: baseTasksByList,
+    );
+    final nextLoadingDone = {...state.loadingListIds}..remove(listId);
+    final listHasMore = page.length >= pageSize;
+    final nextHasMore = Map<String, bool>.from(state.listHasMoreById)
+      ..[listId] = listHasMore;
+    final nextOffsets = Map<String, int>.from(state.listOffsetsById)
+      ..[listId] = merged.length;
+    final nextPageSizes = Map<String, int>.from(state.listPageSizeById)
+      ..[listId] = pageSize;
+    final nextLoaded = Set<String>.from(state.loadedListIds);
+    if (listHasMore) {
+      nextLoaded.remove(listId);
+    } else {
+      nextLoaded.add(listId);
+    }
+    final nextLoadErrors = Map<String, String>.from(state.listLoadErrorById)
+      ..remove(listId);
+    final nextBoard = board.copyWith(
+      tasks: _flattenTasks(board.lists, nextTasksByList),
+    );
+    final sanitizedSelectedTaskIds = _sanitizeSelectedTaskIds(
+      state.selectedTaskIds,
+      nextBoard.tasks,
+    );
+
+    emit(
+      state.copyWith(
+        board: nextBoard,
+        selectedTaskIds: sanitizedSelectedTaskIds,
+        isBulkSelectMode:
+            state.isBulkSelectMode && sanitizedSelectedTaskIds.isNotEmpty,
+        taskDescriptionSearchIndex: _buildTaskDescriptionSearchIndex(
+          nextBoard.tasks,
+        ),
+        listTasksByListId: nextTasksByList,
+        loadedListIds: nextLoaded,
+        loadingListIds: nextLoadingDone,
+        listHasMoreById: nextHasMore,
+        listOffsetsById: nextOffsets,
+        listPageSizeById: nextPageSizes,
+        listLoadErrorById: nextLoadErrors,
+      ),
+    );
+    return true;
+  }
+
   static Set<String> _sanitizeSelectedTaskIds(
     Set<String> selectedTaskIds,
     Iterable<TaskBoardTask> tasks,
@@ -1441,5 +1719,67 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       flattened.addAll(listTasks);
     }
     return List.unmodifiable(flattened);
+  }
+
+  static Map<String, List<TaskBoardTask>> _filterTasksByKnownLists(
+    Map<String, List<TaskBoardTask>> tasksByList,
+    List<TaskBoardList> lists,
+  ) {
+    final knownListIds = lists.map((list) => list.id).toSet();
+    final next = <String, List<TaskBoardTask>>{};
+    for (final entry in tasksByList.entries) {
+      if (knownListIds.contains(entry.key)) {
+        next[entry.key] = List.unmodifiable(entry.value);
+      }
+    }
+    return Map.unmodifiable(next);
+  }
+
+  static Map<String, List<TaskBoardTask>> _groupTasksByKnownLists(
+    Iterable<TaskBoardTask> tasks,
+    List<TaskBoardList> lists,
+  ) {
+    final knownListIds = lists.map((list) => list.id).toSet();
+    final next = <String, List<TaskBoardTask>>{};
+    for (final task in tasks) {
+      if (!knownListIds.contains(task.listId)) {
+        continue;
+      }
+      next.putIfAbsent(task.listId, () => <TaskBoardTask>[]).add(task);
+    }
+    return Map.unmodifiable(
+      next.map(
+        (listId, listTasks) => MapEntry(
+          listId,
+          List<TaskBoardTask>.unmodifiable(listTasks),
+        ),
+      ),
+    );
+  }
+
+  static Map<String, List<TaskBoardTask>> _mergeTaskListSnapshots(
+    Map<String, List<TaskBoardTask>> base,
+    Map<String, List<TaskBoardTask>> overlay,
+  ) {
+    if (base.isEmpty) return overlay;
+    if (overlay.isEmpty) return base;
+    return Map.unmodifiable({
+      ...base,
+      ...overlay,
+    });
+  }
+
+  static Map<String, T> _filterMapByKeys<T>(
+    Map<String, T> source,
+    Iterable<String> keys,
+  ) {
+    final keySet = keys.toSet();
+    final next = <String, T>{};
+    for (final entry in source.entries) {
+      if (keySet.contains(entry.key)) {
+        next[entry.key] = entry.value;
+      }
+    }
+    return Map.unmodifiable(next);
   }
 }

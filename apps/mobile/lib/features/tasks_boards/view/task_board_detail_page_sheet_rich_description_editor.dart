@@ -231,6 +231,65 @@ class _TaskDescriptionRichEditorState
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final controller = _resolvedController;
+    final inlineCodeStyle = TextStyle(
+      color: theme.colorScheme.foreground,
+      fontFamily: 'monospace',
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+      height: 1.18,
+    );
+    final bodyStyle = theme.typography.p.copyWith(
+      height: 1.24,
+      fontWeight: FontWeight.w400,
+    );
+    final paragraphStyle = DefaultTextBlockStyle(
+      bodyStyle,
+      HorizontalSpacing.zero,
+      const VerticalSpacing(0, 12),
+      VerticalSpacing.zero,
+      null,
+    );
+    final listStyle = DefaultListBlockStyle(
+      bodyStyle,
+      HorizontalSpacing.zero,
+      const VerticalSpacing(2, 10),
+      VerticalSpacing.zero,
+      null,
+      null,
+    );
+    final h1Style = DefaultTextBlockStyle(
+      bodyStyle.copyWith(
+        fontSize: 26,
+        fontWeight: FontWeight.w800,
+        height: 1.16,
+      ),
+      HorizontalSpacing.zero,
+      const VerticalSpacing(18, 10),
+      VerticalSpacing.zero,
+      null,
+    );
+    final h2Style = DefaultTextBlockStyle(
+      bodyStyle.copyWith(
+        fontSize: 23,
+        fontWeight: FontWeight.w800,
+        height: 1.18,
+      ),
+      HorizontalSpacing.zero,
+      const VerticalSpacing(16, 8),
+      VerticalSpacing.zero,
+      null,
+    );
+    final h3Style = DefaultTextBlockStyle(
+      bodyStyle.copyWith(
+        fontSize: 20,
+        fontWeight: FontWeight.w800,
+        height: 1.2,
+      ),
+      HorizontalSpacing.zero,
+      const VerticalSpacing(14, 8),
+      VerticalSpacing.zero,
+      null,
+    );
 
     final editor = Column(
       children: [
@@ -282,6 +341,26 @@ class _TaskDescriptionRichEditorState
               focusNode: _editorFocusNode,
               config: QuillEditorConfig(
                 placeholder: widget.hintText,
+                customStyles: DefaultStyles(
+                  h1: h1Style,
+                  h2: h2Style,
+                  h3: h3Style,
+                  paragraph: paragraphStyle,
+                  lists: listStyle,
+                  sizeSmall: bodyStyle,
+                  sizeLarge: bodyStyle,
+                  sizeHuge: bodyStyle,
+                  inlineCode: InlineCodeStyle(
+                    backgroundColor: theme.colorScheme.muted.withValues(
+                      alpha: 0.42,
+                    ),
+                    radius: const Radius.circular(5),
+                    style: inlineCodeStyle,
+                    header1: inlineCodeStyle.copyWith(fontSize: 30),
+                    header2: inlineCodeStyle.copyWith(fontSize: 24),
+                    header3: inlineCodeStyle.copyWith(fontSize: 20),
+                  ),
+                ),
                 embedBuilders: [
                   const TaskDescriptionImageEmbedBuilder(),
                   const TaskDescriptionVideoEmbedBuilder(),

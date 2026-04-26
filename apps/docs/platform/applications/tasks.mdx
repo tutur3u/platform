@@ -201,6 +201,28 @@ export async function addTaskToProject(projectId: string, taskId: string) {
 
 Kanban-style task boards.
 
+#### Mobile board caching
+
+The mobile task-board flow restores workspace boards, board metadata, and per-list
+task pages from `CacheStore` before network revalidation. Board detail pages
+prefetch the first three lists on open and the focused Kanban list plus the next
+two lists on horizontal page changes, so column swipes should not wait for one
+on-demand request at a time. Cached task-page payloads must preserve the display
+metadata used by cards, including assignees, labels, projects, and relationship
+summaries.
+
+The mobile board List tab hides tasks in `done` and `closed` lists by default.
+Explicit status filters or list filters are treated as user intent and can show
+those terminal lists again.
+
+Mobile task details open description in a read-first fullscreen surface. Keep
+that surface borderless and height-bounded under the task title, with editing
+entered only from the edit FAB and save actions kept inside the editor chrome.
+
+Task create/update API routes silently drop assignee ids that no longer belong
+to the workspace. This lets stale task assignments be cleaned up during the next
+save instead of blocking unrelated edits such as description updates.
+
 ```sql
 CREATE TABLE workspace_boards (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

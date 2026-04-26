@@ -26,6 +26,7 @@ class _TaskBoardKanbanView extends StatelessWidget {
     required this.kanbanVerticalScrollController,
     required this.kanbanHorizontalPageController,
     required this.onRequestInitialLoad,
+    required this.onRequestListWindowLoad,
     required this.onLoadMore,
     required this.onRetryLoad,
     required this.onTaskTap,
@@ -52,6 +53,12 @@ class _TaskBoardKanbanView extends StatelessWidget {
     TaskBoardDetailState state,
   )
   onRequestInitialLoad;
+  final void Function(
+    int focusedIndex,
+    int pageSizeHint,
+    TaskBoardDetailState state,
+  )
+  onRequestListWindowLoad;
   final Future<void> Function(String listId, int pageSizeHint) onLoadMore;
   final Future<void> Function(String listId, int pageSizeHint) onRetryLoad;
   final Future<void> Function(TaskBoardTask task) onTaskTap;
@@ -154,6 +161,9 @@ class _TaskBoardKanbanView extends StatelessWidget {
                 controller: kanbanHorizontalPageController,
                 physics: const BouncingScrollPhysics(),
                 itemCount: lists.length,
+                onPageChanged: (index) {
+                  onRequestListWindowLoad(index, pageSizeHint, state);
+                },
                 itemBuilder: (context, index) {
                   final list = lists[index];
                   onRequestInitialLoad(list.id, pageSizeHint, state);
@@ -509,6 +519,10 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
           }
 
           final sortedLists = _sortedListsByStatusOrder(detail.lists);
+          final listViewLists = _listViewVisibleLists(
+            sortedLists,
+            state.filters,
+          );
           final filteredByList = state.filteredTasksByListId;
           final bottomPadding =
               _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
@@ -573,8 +587,16 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                     final pageSizeHint = _tasksPageSizeHintForViewport(
                       constraints.maxHeight,
                     );
-                    if (state.currentView == TaskBoardDetailView.list ||
-                        state.currentView == TaskBoardDetailView.timeline) {
+                    if (state.currentView == TaskBoardDetailView.list) {
+                      for (final list in listViewLists) {
+                        _requestInitialListLoadOnce(
+                          list.id,
+                          pageSizeHint,
+                          state,
+                        );
+                      }
+                    } else if (state.currentView ==
+                        TaskBoardDetailView.timeline) {
                       for (final list in sortedLists) {
                         _requestInitialListLoadOnce(
                           list.id,
@@ -590,8 +612,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                       child: switch (state.currentView) {
                         TaskBoardDetailView.list => _TaskBoardEnhancedListView(
                           boardId: widget.boardId,
-                          lists: sortedLists,
-                          tasks: state.filteredTasks,
+                          lists: listViewLists,
+                          tasks: state.filteredTasksForListView,
                           state: state,
                           board: detail,
                           bottomPadding: bottomPadding,
@@ -612,7 +634,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                           onLoadMore: () {
                             _loadMoreVisibleLists(
                               context,
-                              lists: sortedLists,
+                              lists: listViewLists,
                               state: state,
                               pageSizeHint: pageSizeHint,
                             );
@@ -631,6 +653,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                           kanbanHorizontalPageController:
                               _kanbanHorizontalPageController,
                           onRequestInitialLoad: _requestInitialListLoadOnce,
+                          onRequestListWindowLoad: _requestListWindowLoad,
                           onLoadMore: (listId, pageSizeHint) => context
                               .read<TaskBoardDetailCubit>()
                               .loadListTasks(
@@ -841,6 +864,21 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         pageSizeHint: pageSizeHint,
       ),
     );
+  }
+
+  void _requestListWindowLoad(
+    int focusedIndex,
+    int pageSizeHint,
+    TaskBoardDetailState state,
+  ) {
+    final board = state.board;
+    if (board == null || board.lists.isEmpty) return;
+    final sortedLists = _sortedListsByStatusOrder(board.lists);
+    final start = focusedIndex.clamp(0, sortedLists.length - 1);
+    final endExclusive = math.min(start + 3, sortedLists.length);
+    for (var index = start; index < endExclusive; index++) {
+      _requestInitialListLoadOnce(sortedLists[index].id, pageSizeHint, state);
+    }
   }
 
   String? get _normalizedInitialTaskId {
@@ -1135,8 +1173,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
             : context.l10n.taskBoardDetailUntitledTask,
         description: task.description,
         priority: task.priority,
-        startDate: startDate,
-        endDate: endDate,
+        startDate: _taskStartOfDay(startDate),
+        endDate: _taskEndOfDay(endDate),
         estimationPoints: task.estimationPoints,
         labelIds: task.labelIds,
         projectIds: task.projectIds,

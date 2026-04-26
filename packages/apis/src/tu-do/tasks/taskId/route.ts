@@ -391,7 +391,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    const normalizedAssigneeIds = body.assignee_ids
+    let normalizedAssigneeIds = body.assignee_ids
       ? [...new Set(body.assignee_ids)]
       : undefined;
     const normalizedLabelIds = body.label_ids
@@ -450,16 +450,10 @@ export async function PUT(
       const validAssigneeIds = new Set(
         (members ?? []).map((member) => member.user_id)
       );
-      const hasInvalidAssignee = normalizedAssigneeIds.some(
-        (assigneeId) => !validAssigneeIds.has(assigneeId)
-      );
 
-      if (hasInvalidAssignee) {
-        return NextResponse.json(
-          { error: 'One or more assignees are not in this workspace' },
-          { status: 400 }
-        );
-      }
+      normalizedAssigneeIds = normalizedAssigneeIds.filter((assigneeId) =>
+        validAssigneeIds.has(assigneeId)
+      );
     }
 
     if (normalizedLabelIds !== undefined && normalizedLabelIds.length > 0) {
