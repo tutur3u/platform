@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(27);
+select plan(28);
 
 select ok(
   not exists (
@@ -16,6 +16,7 @@ select ok(
         and t.table_name = c.table_name
       where c.table_schema = 'public'
         and t.table_type = 'BASE TABLE'
+        and c.table_name <> 'ai_gateway_models'
         and c.data_type in ('text', 'character varying', 'character')
     )
     select 1
@@ -39,6 +40,7 @@ select ok(
         and t.table_name = c.table_name
       where c.table_schema = 'public'
         and t.table_type = 'BASE TABLE'
+        and c.table_name <> 'ai_gateway_models'
         and c.data_type in ('text', 'character varying', 'character')
         and (
           c.column_name = 'description'
@@ -79,6 +81,7 @@ select ok(
         and t.table_name = c.table_name
       where c.table_schema = 'public'
         and t.table_type = 'BASE TABLE'
+        and c.table_name <> 'ai_gateway_models'
         and c.data_type in ('text', 'character varying', 'character')
         and (
           c.column_name = 'description'
@@ -123,6 +126,7 @@ select ok(
         and t.table_name = c.table_name
       where c.table_schema = 'public'
         and t.table_type = 'BASE TABLE'
+        and c.table_name <> 'ai_gateway_models'
         and c.data_type in ('text', 'character varying', 'character')
         and (
           c.column_name = 'description'
@@ -172,6 +176,7 @@ select ok(
       and t.table_name = c.table_name
     where c.table_schema = 'public'
       and t.table_type = 'BASE TABLE'
+      and c.table_name <> 'ai_gateway_models'
       and c.data_type in ('text', 'character varying', 'character')
       and strict_text_field_char_limit(c.table_name, c.column_name) <= 0
   ),
@@ -187,6 +192,7 @@ select ok(
       and t.table_name = c.table_name
     where c.table_schema = 'public'
       and t.table_type = 'BASE TABLE'
+      and c.table_name <> 'ai_gateway_models'
       and c.data_type in ('text', 'character varying', 'character')
       and strict_text_field_byte_limit(c.table_name, c.column_name) <= 0
   ),
@@ -202,6 +208,7 @@ select ok(
       and t.table_name = c.table_name
     where c.table_schema = 'public'
       and t.table_type = 'BASE TABLE'
+      and c.table_name <> 'ai_gateway_models'
       and c.data_type in ('text', 'character varying', 'character')
       and strict_text_field_byte_limit(c.table_name, c.column_name)
         < strict_text_field_char_limit(c.table_name, c.column_name)
@@ -234,6 +241,7 @@ select ok(
         and t.table_name = c.table_name
       where c.table_schema = 'public'
         and t.table_type = 'BASE TABLE'
+        and c.table_name <> 'ai_gateway_models'
         and c.data_type in ('text', 'character varying', 'character')
     )
     select 1
@@ -257,6 +265,7 @@ select ok(
         and t.table_name = c.table_name
       where c.table_schema = 'public'
         and t.table_type = 'BASE TABLE'
+        and c.table_name <> 'ai_gateway_models'
         and c.data_type in ('text', 'character varying', 'character')
     )
     select 1
@@ -382,6 +391,27 @@ select is(
   strict_text_field_char_limit('finance_budgets', 'period'),
   64,
   'period fields use the short enum-style ceiling'
+);
+
+select ok(
+  not exists (
+    select 1
+    from pg_constraint con
+    join pg_class cls
+      on cls.oid = con.conrelid
+    join pg_namespace ns
+      on ns.oid = cls.relnamespace
+    where ns.nspname = 'public'
+      and cls.relname = 'ai_gateway_models'
+      and con.contype = 'c'
+      and (
+        con.conname like '%\_strict\_length\_check' escape '\'
+        or con.conname like '%\_strict\_bytes\_check' escape '\'
+        or pg_get_constraintdef(con.oid) like '%char_length(%'
+        or pg_get_constraintdef(con.oid) like '%octet_length(%'
+      )
+  ),
+  'ai gateway model text columns are not text-length constrained'
 );
 
 select is(

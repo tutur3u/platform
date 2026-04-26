@@ -10,6 +10,15 @@ The mobile assistant now has two distinct interaction modes:
 - Standard chat is the default assistant surface. Typed turns continue to use the normal text-model selection in the mobile shell.
 - Live mode is a dedicated fullscreen Gemini Live experience. It is entered from the assistant mic control or the assistant chrome action and binds the session to `gemini-3.1-flash-live-preview`.
 
+### Mobile cache warmup
+
+The mobile assistant shell restores core metadata from `AssistantRepository`
+cache helpers before revalidating: personal workspace resolution, Mira soul,
+task and calendar insight, workspace credits, model catalog, recent chat
+history, and restored chat detail. The `assistant_metadata` warmup task should
+remain the entry point for preloading this data after boot, home resume, or
+workspace changes.
+
 ### What fullscreen live mode does
 
 - Immediately switches the assistant route into a live-first surface instead of silently preparing a background session.

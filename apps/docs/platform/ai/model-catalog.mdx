@@ -31,3 +31,5 @@ The paginated response is:
 Supported filters include `type`, `provider`, `tag`, `enabled`, and `search`. Use `type=all` when a caller needs language, image, embedding, and video models.
 
 In development, the AI credits admin model sync defaults to the Tuturuuu production public catalog before falling back to the Vercel AI SDK model source. This keeps local catalogs close to production while preserving the explicit Vercel source for refreshing upstream gateway metadata.
+
+`ai_gateway_models` stores provider-owned catalog metadata, so its text fields are exempt from the global strict text-field length trigger and generated text check constraints. JSON payload fields on the same table still keep the standard payload-size checks.
