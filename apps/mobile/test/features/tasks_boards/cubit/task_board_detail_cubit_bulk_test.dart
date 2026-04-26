@@ -157,6 +157,32 @@ void main() {
       });
 
       when(
+        () => repository.createBoardTask(
+          wsId: any(named: 'wsId'),
+          listId: any(named: 'listId'),
+          name: any(named: 'name'),
+          description: any(named: 'description'),
+          priority: any(named: 'priority'),
+          startDate: any(named: 'startDate'),
+          endDate: any(named: 'endDate'),
+          estimationPoints: any(named: 'estimationPoints'),
+          labelIds: any(named: 'labelIds'),
+          projectIds: any(named: 'projectIds'),
+          assigneeIds: any(named: 'assigneeIds'),
+        ),
+      ).thenAnswer((invocation) async {
+        final listId = invocation.namedArguments[#listId] as String;
+        final name = invocation.namedArguments[#name] as String;
+        final created = TaskBoardTask(
+          id: 'task-created-${repositoryTasks.length}',
+          listId: listId,
+          name: name,
+        );
+        repositoryTasks = [...repositoryTasks, created];
+        return created;
+      });
+
+      when(
         () => repository.bulkBoardTasks(
           wsId: any(named: 'wsId'),
           taskIds: any(named: 'taskIds'),
@@ -302,6 +328,40 @@ void main() {
           projects: any(named: 'projects'),
         ),
       ).called(1);
+    });
+
+    test('createTask refreshes the affected list', () async {
+      clearInteractions(repository);
+
+      await cubit.createTask(listId: 'list-active', name: 'Created task');
+
+      verify(
+        () => repository.createBoardTask(
+          wsId: 'ws-1',
+          listId: 'list-active',
+          name: 'Created task',
+          description: any(named: 'description'),
+          priority: any(named: 'priority'),
+          startDate: any(named: 'startDate'),
+          endDate: any(named: 'endDate'),
+          estimationPoints: any(named: 'estimationPoints'),
+          labelIds: any(named: 'labelIds'),
+          projectIds: any(named: 'projectIds'),
+          assigneeIds: any(named: 'assigneeIds'),
+        ),
+      ).called(1);
+      verify(
+        () => repository.getBoardTasksForList(
+          'ws-1',
+          listId: 'list-active',
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+          members: any(named: 'members'),
+          labels: any(named: 'labels'),
+          projects: any(named: 'projects'),
+        ),
+      ).called(1);
+      verifyNever(() => repository.getTaskBoardDetail('ws-1', 'board-1'));
     });
 
     test(

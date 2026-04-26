@@ -34,6 +34,7 @@ class _FilterDropdownSection extends StatelessWidget {
     required this.onApplySelection,
     this.enabled = true,
     this.singleSelection = false,
+    this.autoApplyOnSelection = false,
   });
 
   final String title;
@@ -42,6 +43,7 @@ class _FilterDropdownSection extends StatelessWidget {
   final ValueChanged<Set<String>> onApplySelection;
   final bool enabled;
   final bool singleSelection;
+  final bool autoApplyOnSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -71,17 +73,22 @@ class _FilterDropdownSection extends StatelessWidget {
   Widget _buildMenuButton(BuildContext context, String selectedSummary) {
     final button = shad.OutlineButton(
       onPressed: enabled ? () => unawaited(_openSelectionMenu(context)) : null,
-      child: Row(
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          Expanded(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Text(
               selectedSummary,
+              textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const shad.Gap(8),
-          const Icon(Icons.keyboard_arrow_down, size: 16),
+          const Align(
+            alignment: Alignment.centerRight,
+            child: Icon(Icons.keyboard_arrow_down, size: 16),
+          ),
         ],
       ),
     );
@@ -97,6 +104,7 @@ class _FilterDropdownSection extends StatelessWidget {
           options: options,
           initialSelectedIds: selectedIds,
           singleSelection: singleSelection,
+          autoApplyOnSelection: autoApplyOnSelection,
         );
       },
     );
@@ -166,17 +174,22 @@ class _ListPickerSection extends StatelessWidget {
             onPressed: enabled
                 ? () => unawaited(_openListPicker(context))
                 : null,
-            child: Row(
+            child: Stack(
+              alignment: Alignment.center,
               children: [
-                Expanded(
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Text(
                     l10n.taskBoardDetailTaskListSelect,
+                    textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const shad.Gap(8),
-                const Icon(Icons.keyboard_arrow_down, size: 16),
+                const Align(
+                  alignment: Alignment.centerRight,
+                  child: Icon(Icons.keyboard_arrow_down, size: 16),
+                ),
               ],
             ),
           ),
@@ -206,12 +219,14 @@ class _FilterSelectionSheet extends StatefulWidget {
     required this.options,
     required this.initialSelectedIds,
     this.singleSelection = false,
+    this.autoApplyOnSelection = false,
   });
 
   final String title;
   final List<_FilterMenuOption> options;
   final Set<String> initialSelectedIds;
   final bool singleSelection;
+  final bool autoApplyOnSelection;
 
   @override
   State<_FilterSelectionSheet> createState() => _FilterSelectionSheetState();
@@ -284,7 +299,7 @@ class _FilterSelectionSheetState extends State<_FilterSelectionSheet> {
                             ? const Icon(Icons.check, size: 16)
                             : const SizedBox(width: 16, height: 16),
                         title: Text(context.l10n.taskBoardDetailNone),
-                        onTap: () => setState(_draftSelectedIds.clear),
+                        onTap: () => _select(const <String>{}),
                       ),
                       ...widget.options.map(
                         (option) {
@@ -295,17 +310,7 @@ class _FilterSelectionSheetState extends State<_FilterSelectionSheet> {
                                 ? const Icon(Icons.check, size: 16)
                                 : const SizedBox(width: 16, height: 16),
                             title: _FilterOptionContent(option: option),
-                            onTap: () => setState(() {
-                              if (checked) {
-                                _draftSelectedIds.remove(option.id);
-                              } else {
-                                if (widget.singleSelection) {
-                                  _draftSelectedIds = {option.id};
-                                } else {
-                                  _draftSelectedIds.add(option.id);
-                                }
-                              }
-                            }),
+                            onTap: () => _toggleOption(option.id, checked),
                           );
                         },
                       ),
@@ -319,8 +324,10 @@ class _FilterSelectionSheetState extends State<_FilterSelectionSheet> {
                     child: shad.OutlineButton(
                       onPressed: _draftSelectedIds.isEmpty
                           ? null
-                          : () => setState(_draftSelectedIds.clear),
-                      child: Text(context.l10n.taskBoardDetailClearFilters),
+                          : () => _select(const <String>{}),
+                      child: _CenteredButtonText(
+                        context.l10n.taskBoardDetailClearFilters,
+                      ),
                     ),
                   ),
                   const shad.Gap(10),
@@ -332,7 +339,9 @@ class _FilterSelectionSheetState extends State<_FilterSelectionSheet> {
                           context,
                         ).pop(Set<String>.from(_draftSelectedIds));
                       },
-                      child: Text(context.l10n.taskBoardDetailApplyFilters),
+                      child: _CenteredButtonText(
+                        context.l10n.taskBoardDetailApplyFilters,
+                      ),
                     ),
                   ),
                 ],
@@ -342,6 +351,31 @@ class _FilterSelectionSheetState extends State<_FilterSelectionSheet> {
         ),
       ),
     );
+  }
+
+  void _toggleOption(String optionId, bool checked) {
+    final nextSelectedIds = Set<String>.from(_draftSelectedIds);
+    if (checked) {
+      nextSelectedIds.remove(optionId);
+    } else if (widget.singleSelection) {
+      nextSelectedIds
+        ..clear()
+        ..add(optionId);
+    } else {
+      nextSelectedIds.add(optionId);
+    }
+    _select(nextSelectedIds);
+  }
+
+  void _select(Set<String> nextSelectedIds) {
+    if (widget.autoApplyOnSelection) {
+      Navigator.of(context).pop(Set<String>.from(nextSelectedIds));
+      return;
+    }
+
+    setState(() {
+      _draftSelectedIds = Set<String>.from(nextSelectedIds);
+    });
   }
 }
 

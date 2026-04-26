@@ -1,5 +1,37 @@
 part of 'task_board_detail_page.dart';
 
+class _CenteredButtonText extends StatelessWidget {
+  const _CenteredButtonText(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        label,
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+}
+
+class _TaskButtonLoadingIndicator extends StatelessWidget {
+  const _TaskButtonLoadingIndicator({this.size = 18});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SizedBox.square(
+        dimension: size,
+        child: NovaLoadingIndicator(size: size),
+      ),
+    );
+  }
+}
+
 class _DateFieldRow extends StatelessWidget {
   const _DateFieldRow({
     required this.label,
@@ -25,9 +57,13 @@ class _DateFieldRow extends StatelessWidget {
         Expanded(
           child: shad.OutlineButton(
             onPressed: onPick,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [Text(label), Text(buttonLabel)],
+            child: Center(
+              child: Text(
+                '$label · $buttonLabel',
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         ),
@@ -37,6 +73,61 @@ class _DateFieldRow extends StatelessWidget {
           onPressed: onClear,
         ),
       ],
+    );
+  }
+}
+
+class _TaskDatePickerSheet extends StatelessWidget {
+  const _TaskDatePickerSheet({
+    required this.title,
+    required this.initialDate,
+    required this.firstDate,
+    required this.lastDate,
+  });
+
+  final String title;
+  final DateTime initialDate;
+  final DateTime firstDate;
+  final DateTime lastDate;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.typography.large.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                shad.IconButton.ghost(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.maybePop(context),
+                ),
+              ],
+            ),
+            const shad.Gap(8),
+            CalendarDatePicker(
+              initialDate: initialDate,
+              firstDate: firstDate,
+              lastDate: lastDate,
+              onDateChanged: (date) => Navigator.of(context).pop(date),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -94,21 +185,23 @@ class _EditFieldButton extends StatelessWidget {
     final theme = shad.Theme.of(context);
     return shad.OutlineButton(
       onPressed: onPressed,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              softWrap: false,
-            ),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
           ),
-          Icon(
-            Icons.edit,
-            size: 16,
-            color: theme.colorScheme.mutedForeground,
+          Align(
+            alignment: Alignment.centerRight,
+            child: Icon(
+              Icons.edit,
+              size: 16,
+              color: theme.colorScheme.mutedForeground,
+            ),
           ),
         ],
       ),
@@ -133,18 +226,13 @@ class _SelectionFieldButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return shad.OutlineButton(
       onPressed: enabled ? onPressed : null,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label),
-          Flexible(
-            child: Text(
-              value,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.right,
-            ),
-          ),
-        ],
+      child: Center(
+        child: Text(
+          '$label · $value',
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
     );
   }

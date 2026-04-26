@@ -330,7 +330,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                       onPressed: _isBusy
                           ? null
                           : () => unawaited(_closeEditor()),
-                      child: Text(context.l10n.commonCancel),
+                      child: _CenteredButtonText(context.l10n.commonCancel),
                     ),
                   ),
                   const shad.Gap(10),
@@ -338,12 +338,8 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                     child: shad.PrimaryButton(
                       onPressed: _canSave ? _saveTask : null,
                       child: _isSaving
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: shad.CircularProgressIndicator(),
-                            )
-                          : Text(saveLabel),
+                          ? const _TaskButtonLoadingIndicator(size: 16)
+                          : _CenteredButtonText(saveLabel),
                     ),
                   ),
                 ],
@@ -425,6 +421,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                 selectedIds: {_priority},
                 enabled: !_isBusy,
                 singleSelection: true,
+                autoApplyOnSelection: true,
                 onApplySelection: (nextSelectedIds) => setState(() {
                   final selectedPriority = nextSelectedIds.firstOrNull;
                   _priority = _normalizePriority(selectedPriority);
@@ -470,6 +467,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                 },
                 enabled: !_isBusy,
                 singleSelection: true,
+                autoApplyOnSelection: true,
                 onApplySelection: (nextSelectedIds) => setState(() {
                   _estimationPoints = int.tryParse(
                     nextSelectedIds.firstOrNull ?? '',
@@ -503,6 +501,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                 options: _taskEditorProjectOptions(),
                 selectedIds: _selectedProjectIds,
                 enabled: !_isBusy,
+                autoApplyOnSelection: true,
                 onApplySelection: (nextSelectedIds) => setState(() {
                   _selectedProjectIds = nextSelectedIds;
                 }),
@@ -634,11 +633,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
               shape: shad.ButtonShape.circle,
               density: shad.ButtonDensity.icon,
               child: _isSaving
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: shad.CircularProgressIndicator(strokeWidth: 2.5),
-                    )
+                  ? const _TaskButtonLoadingIndicator(size: 22)
                   : const Icon(Icons.check_rounded, size: 26),
             ),
           ),
@@ -672,12 +667,8 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                     shad.PrimaryButton(
                       onPressed: canSave ? _saveTask : null,
                       child: _isSaving
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: shad.CircularProgressIndicator(),
-                            )
-                          : Text(context.l10n.commonSave),
+                          ? const _TaskButtonLoadingIndicator(size: 16)
+                          : _CenteredButtonText(context.l10n.commonSave),
                     ),
                   ],
                 ),
@@ -1365,7 +1356,9 @@ class _TaskDescriptionEditorOverlay extends StatelessWidget {
           const shad.Gap(12),
           shad.PrimaryButton(
             onPressed: () => Navigator.maybePop(context),
-            child: Text(context.l10n.taskBoardDetailTaskDescriptionDone),
+            child: _CenteredButtonText(
+              context.l10n.taskBoardDetailTaskDescriptionDone,
+            ),
           ),
         ],
       ),

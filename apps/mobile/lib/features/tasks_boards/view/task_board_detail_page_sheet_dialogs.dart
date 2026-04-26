@@ -26,7 +26,7 @@ class _MoveTaskListDialog extends StatelessWidget {
               }),
               shad.OutlineButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: Text(context.l10n.commonCancel),
+                child: _CenteredButtonText(context.l10n.commonCancel),
               ),
             ],
           ),
@@ -66,7 +66,7 @@ class _TaskListPickerDialog extends StatelessWidget {
               }),
               shad.OutlineButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: Text(context.l10n.commonCancel),
+                child: _CenteredButtonText(context.l10n.commonCancel),
               ),
             ],
           ),

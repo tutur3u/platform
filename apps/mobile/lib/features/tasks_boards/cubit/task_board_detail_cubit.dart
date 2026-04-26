@@ -477,9 +477,15 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     List<String>? assigneeIds,
   }) async {
     final wsId = state.workspaceId;
+    final board = state.board;
     if (wsId == null) {
       throw StateError('Workspace not selected');
     }
+    if (board == null) {
+      throw StateError('Board detail is not initialized');
+    }
+
+    final pageSizeHint = state.listPageSizeById[listId];
 
     await _runMutation(
       () => _taskRepository.createBoardTask(
@@ -495,6 +501,17 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         projectIds: projectIds,
         assigneeIds: assigneeIds,
       ),
+      reloadBoard: false,
+    );
+
+    if (isClosed || state.workspaceId != wsId || state.boardId != board.id) {
+      return;
+    }
+
+    await loadListTasks(
+      listId: listId,
+      forceRefresh: true,
+      pageSizeHint: pageSizeHint,
     );
   }
 

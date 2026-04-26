@@ -1020,10 +1020,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
                   ? null
                   : () => unawaited(_saveTitleEdit()),
               icon: _isSavingTitle
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: shad.CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const _TaskButtonLoadingIndicator()
                   : const Icon(Icons.check_rounded, size: 20),
             ),
           ),

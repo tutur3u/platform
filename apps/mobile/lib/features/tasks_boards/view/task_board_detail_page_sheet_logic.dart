@@ -810,11 +810,17 @@ Future<void> _pickTaskDate(
   required bool isStart,
 }) async {
   final current = isStart ? state._startDate : state._endDate;
-  final picked = await showDatePicker(
+  final picked = await showAdaptiveSheet<DateTime>(
     context: state.context,
-    initialDate: current ?? DateTime.now(),
-    firstDate: DateTime(2000),
-    lastDate: DateTime(2100),
+    backgroundColor: shad.Theme.of(state.context).colorScheme.background,
+    builder: (context) => _TaskDatePickerSheet(
+      title: isStart
+          ? state.context.l10n.taskBoardDetailTaskStartDate
+          : state.context.l10n.taskBoardDetailTaskEndDate,
+      initialDate: current ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    ),
   );
   if (picked == null || !state.mounted) return;
 
