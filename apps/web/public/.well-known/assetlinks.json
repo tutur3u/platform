@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.tuturuuu.app.mobile",
+      "sha256_cert_fingerprints": [
+        "2F:16:AC:23:BC:61:8C:23:A4:6A:04:19:D4:61:61:3C:5F:6D:C2:DD:24:FB:7C:AD:A9:44:CE:CD:9E:E3:CB:0A"
+      ]
+    }
+  }
+]
