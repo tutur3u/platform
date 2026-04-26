@@ -34,6 +34,7 @@ The task editor includes isolated React roots inside some Tiptap node views, esp
 - Avoid generating or persisting modal-only URLs such as `/{wsId}/tasks/{taskId}` for share/copy flows unless the dedicated task detail page is the explicit target. The board-backed URL is the reliable reloadable path used by the dashboard task dialog.
 - When reloading or recovering a task deep link, resolve the task through the workspace-scoped task API (`/api/v1/workspaces/{wsId}/tasks/{taskId}`) rather than the current-user task dialog API. The current-user endpoint can 404 for valid board tasks because it is optimized for dialog hydration, not route recovery.
 - Android opens supported links by default only after App Links verification succeeds. Keep `apps/web/public/.well-known/assetlinks.json` in sync with the production Android signing certificate fingerprint; if Play App Signing uses a different app-signing certificate than the repo release keystore, add the Play Console SHA-256 fingerprint before release.
+- Keep `GoRouter.overridePlatformDefaultLocation` enabled in mobile. iOS can provide a universal link URL as Flutter's platform default route on cold start, and GoRouter will show a no-route page unless `app_links` is allowed to normalize that URL first.
 
 ## Mobile Board List Mode Notes
 

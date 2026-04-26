@@ -148,6 +148,7 @@ GoRouter createAppRouter(
   return GoRouter(
     debugLogDiagnostics: true,
     initialLocation: initialLocation ?? Routes.home,
+    overridePlatformDefaultLocation: true,
     refreshListenable: _AppRefreshNotifier(
       authCubit,
       workspaceCubit,
