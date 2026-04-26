@@ -29,6 +29,8 @@ The task editor includes isolated React roots inside some Tiptap node views, esp
 ## Task Link Notes
 
 - Canonical deep links for board tasks should use the board route with the task query parameter: `/{wsId}/tasks/boards/{boardId}?task={taskId}`.
+- Tuturuuu Mobile normalizes production web links from `https://tuturuuu.com` into native routes for task boards, board task details, task estimates, task portfolio/project routes, and common workspace modules. Mobile accepts both `?task={taskId}` from web and `?taskId={taskId}` from native routes.
+- Links can opt out of native app opening with `native=0` or `openInBrowser=1`. Use this for flows that must stay in the browser, such as debugging, web-only admin surfaces, or temporary compatibility issues.
 - Avoid generating or persisting modal-only URLs such as `/{wsId}/tasks/{taskId}` for share/copy flows unless the dedicated task detail page is the explicit target. The board-backed URL is the reliable reloadable path used by the dashboard task dialog.
 - When reloading or recovering a task deep link, resolve the task through the workspace-scoped task API (`/api/v1/workspaces/{wsId}/tasks/{taskId}`) rather than the current-user task dialog API. The current-user endpoint can 404 for valid board tasks because it is optimized for dialog hydration, not route recovery.
 

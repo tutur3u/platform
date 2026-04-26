@@ -1,0 +1,79 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "8H6TTBD6T8.com.tuturuuu.app.mobile",
+          "8H6TTBD6T8.com.tuturuuu.app.mobile.stg",
+          "8H6TTBD6T8.com.tuturuuu.app.mobile.dev"
+        ],
+        "components": [
+          {
+            "/": "/*",
+            "?": {
+              "native": "0"
+            },
+            "exclude": true,
+            "comment": "Allow links to opt out of native app opening."
+          },
+          {
+            "/": "/*",
+            "?": {
+              "openInBrowser": "1"
+            },
+            "exclude": true,
+            "comment": "Allow links to force browser opening."
+          },
+          {
+            "/": "/*/apps*"
+          },
+          {
+            "/": "/*/assistant*"
+          },
+          {
+            "/": "/*/notifications*"
+          },
+          {
+            "/": "/*/tasks*"
+          },
+          {
+            "/": "/*/habits*"
+          },
+          {
+            "/": "/*/calendar*"
+          },
+          {
+            "/": "/*/finance*"
+          },
+          {
+            "/": "/*/education*"
+          },
+          {
+            "/": "/*/inventory*"
+          },
+          {
+            "/": "/*/drive*"
+          },
+          {
+            "/": "/*/documents*"
+          },
+          {
+            "/": "/*/cms*"
+          },
+          {
+            "/": "/*/crm*"
+          },
+          {
+            "/": "/*/meet*"
+          },
+          {
+            "/": "/*/timer*"
+          },
+          {
+            "/": "/*/settings*"
+          }
+        ]
+      }
+    ]
+  }
+}

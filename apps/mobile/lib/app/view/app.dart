@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:app_links/app_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'
     hide NavigationBar, NavigationBarTheme, ThemeData, ThemeMode;
 import 'package:flutter/services.dart';
@@ -9,6 +11,7 @@ import 'package:mobile/app/view/auth_session_boundary.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/router/app_router.dart';
+import 'package:mobile/core/router/deep_links.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/theme/colors.dart';
@@ -61,6 +64,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:url_launcher/url_launcher.dart';
 
 class App extends StatefulWidget {
   const App({
@@ -107,8 +111,11 @@ class _AppState extends State<App> {
   late final ShellMiniNavCubit _shellMiniNavCubit;
   late final ShellProfileCubit _shellProfileCubit;
   late final ShellTitleOverrideCubit _shellTitleOverrideCubit;
+  late final AppLinks _appLinks;
   late final GoRouter _router;
   late final _AppLifecycleObserver _lifecycleObserver;
+  StreamSubscription<Uri>? _appLinkSubscription;
+  MobileDeepLink? _pendingDeepLink;
 
   @override
   void initState() {
@@ -163,6 +170,7 @@ class _AppState extends State<App> {
       profileRepository: _profileRepository,
     );
     _shellTitleOverrideCubit = ShellTitleOverrideCubit();
+    _appLinks = AppLinks();
     _lifecycleObserver = _AppLifecycleObserver(() {
       unawaited(_appVersionCubit.checkVersion(background: true));
       unawaited(CacheWarmupCoordinator.instance.prewarmHome());
@@ -179,6 +187,7 @@ class _AppState extends State<App> {
       _appTabCubit,
       initialLocation: widget.initialRoute,
     );
+    _initializeDeepLinks();
     unawaited(_localeCubit.loadLocale());
     unawaited(_calendarSettingsCubit.loadUserPreference());
     unawaited(_financePreferencesCubit.load());
@@ -198,6 +207,94 @@ class _AppState extends State<App> {
       );
       unawaited(_workspaceCubit.loadWorkspaces());
     }
+  }
+
+  void _initializeDeepLinks() {
+    unawaited(_handleInitialDeepLink());
+    _appLinkSubscription = _appLinks.uriLinkStream.listen(
+      (uri) => unawaited(_handleDeepLinkUri(uri)),
+      onError: (Object error, StackTrace stackTrace) {
+        if (kDebugMode) {
+          debugPrint('Failed to receive app link: $error');
+        }
+      },
+    );
+  }
+
+  Future<void> _handleInitialDeepLink() async {
+    try {
+      final uri = await _appLinks.getInitialLink();
+      if (uri != null) {
+        await _handleDeepLinkUri(uri);
+      }
+    } on Object catch (error) {
+      if (kDebugMode) {
+        debugPrint('Failed to resolve initial app link: $error');
+      }
+    }
+  }
+
+  Future<void> _handleDeepLinkUri(Uri uri) async {
+    final deepLink = resolveMobileDeepLink(uri);
+    if (deepLink == null) return;
+
+    if (deepLink.openExternally) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return;
+    }
+
+    _pendingDeepLink = deepLink;
+    await _openPendingDeepLinkIfReady();
+  }
+
+  Future<void> _openPendingDeepLinkIfReady() async {
+    final deepLink = _pendingDeepLink;
+    if (deepLink == null) return;
+    if (_authCubit.state.status != AuthStatus.authenticated) return;
+
+    final canOpen = await _selectWorkspaceForDeepLink(deepLink);
+    if (!canOpen) return;
+
+    _pendingDeepLink = null;
+    _router.go(deepLink.location);
+  }
+
+  Future<bool> _selectWorkspaceForDeepLink(MobileDeepLink deepLink) async {
+    final workspaceSlug = deepLink.workspaceSlug?.trim();
+    if (workspaceSlug == null || workspaceSlug.isEmpty) {
+      return true;
+    }
+
+    if (_workspaceCubit.state.workspaces.isEmpty ||
+        _workspaceCubit.state.status != WorkspaceStatus.loaded) {
+      await _workspaceCubit.loadWorkspaces();
+    }
+
+    final targetWorkspace = _workspaceForSlug(workspaceSlug);
+    if (targetWorkspace == null) {
+      _pendingDeepLink = null;
+      _router.go(Routes.workspaceSelect);
+      return false;
+    }
+
+    if (_workspaceCubit.state.currentWorkspace?.id != targetWorkspace.id) {
+      await _workspaceCubit.selectWorkspace(targetWorkspace);
+    }
+
+    return true;
+  }
+
+  Workspace? _workspaceForSlug(String workspaceSlug) {
+    final normalized = workspaceSlug.trim();
+    for (final workspace in _workspaceCubit.state.workspaces) {
+      if (normalized == workspace.id) {
+        return workspace;
+      }
+      if (normalized == 'personal' && workspace.personal) {
+        return workspace;
+      }
+    }
+    return null;
   }
 
   void _registerWarmupTasks() {
@@ -435,6 +532,7 @@ class _AppState extends State<App> {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(_lifecycleObserver);
+    unawaited(_appLinkSubscription?.cancel());
     _router.dispose();
     unawaited(_authCubit.close());
     unawaited(_appVersionCubit.close());
@@ -493,6 +591,7 @@ class _AppState extends State<App> {
                   ),
                 );
                 unawaited(context.read<WorkspaceCubit>().loadWorkspaces());
+                unawaited(_openPendingDeepLinkIfReady());
               } else if (state.status == AuthStatus.unauthenticated) {
                 unawaited(context.read<ShellProfileCubit>().clear());
                 unawaited(context.read<WorkspaceCubit>().clearWorkspaces());
@@ -522,6 +621,7 @@ class _AppState extends State<App> {
                 ),
               );
               unawaited(CacheWarmupCoordinator.instance.prewarmBoot());
+              unawaited(_openPendingDeepLinkIfReady());
             },
           ),
         ],

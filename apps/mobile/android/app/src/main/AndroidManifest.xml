@@ -43,6 +43,27 @@
                     android:scheme="${applicationId}"
                     android:host="login-callback" />
             </intent-filter>
+            <intent-filter android:autoVerify="true" android:label="Tuturuuu app links">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/apps.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/assistant.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/notifications.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/tasks.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/habits.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/calendar.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/finance.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/education.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/inventory.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/drive.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/documents.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/cms.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/crm.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/meet.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/timer.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/settings.*" />
+            </intent-filter>
         </activity>
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
