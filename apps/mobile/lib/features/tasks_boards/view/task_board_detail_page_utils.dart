@@ -57,9 +57,11 @@ List<TaskBoardList> _sortedListsByStatusOrder(List<TaskBoardList> lists) {
   return sorted;
 }
 
-bool _taskBoardListIsTerminal(TaskBoardList list) {
+bool _taskBoardListIsHiddenByDefaultInListView(TaskBoardList list) {
   final normalizedStatus = TaskBoardList.normalizeSupportedStatus(list.status);
-  return normalizedStatus == 'done' || normalizedStatus == 'closed';
+  return normalizedStatus == 'documents' ||
+      normalizedStatus == 'done' ||
+      normalizedStatus == 'closed';
 }
 
 List<TaskBoardList> _listViewVisibleLists(
@@ -68,7 +70,7 @@ List<TaskBoardList> _listViewVisibleLists(
 ) {
   if (filters.statuses.isEmpty && filters.listIds.isEmpty) {
     return lists
-        .where((list) => !_taskBoardListIsTerminal(list))
+        .where((list) => !_taskBoardListIsHiddenByDefaultInListView(list))
         .toList(
           growable: false,
         );

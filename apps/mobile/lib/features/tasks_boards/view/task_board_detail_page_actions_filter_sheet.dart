@@ -155,6 +155,10 @@ class _TaskBoardAdvancedFilterSheetState
                 ],
               ),
               const shad.Gap(12),
+              _DefaultListModeFilterNotice(
+                isOverridden: _listIds.isNotEmpty || _statuses.isNotEmpty,
+              ),
+              const shad.Gap(12),
               _FilterDropdownSection(
                 title: context.l10n.taskBoardDetailFilterLists,
                 options: listOptions,
@@ -268,5 +272,70 @@ class _TaskBoardAdvancedFilterSheetState
       final navigator = Navigator.of(context);
       await navigator.maybePop();
     }
+  }
+}
+
+class _DefaultListModeFilterNotice extends StatelessWidget {
+  const _DefaultListModeFilterNotice({required this.isOverridden});
+
+  final bool isOverridden;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final colors = context.dynamicColors;
+    final accent = isOverridden ? colors.green : theme.colorScheme.primary;
+    final title = isOverridden
+        ? context.l10n.taskBoardDetailDefaultHiddenListsOverrideTitle
+        : context.l10n.taskBoardDetailDefaultHiddenListsTitle;
+    final description = isOverridden
+        ? context.l10n.taskBoardDetailDefaultHiddenListsOverrideDescription
+        : context.l10n.taskBoardDetailDefaultHiddenListsDescription;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.08),
+        border: Border.all(color: accent.withValues(alpha: 0.28)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              isOverridden
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+              size: 18,
+              color: accent,
+            ),
+            const shad.Gap(10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.typography.small.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.foreground,
+                    ),
+                  ),
+                  const shad.Gap(4),
+                  Text(
+                    description,
+                    style: theme.typography.small.copyWith(
+                      color: theme.colorScheme.mutedForeground,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -8,6 +8,8 @@ class _TaskCard extends StatelessWidget {
     required this.isLast,
     required this.onTap,
     required this.onMove,
+    required this.onMarkDone,
+    required this.onMarkClosed,
     required this.isBulkSelectMode,
     required this.isSelected,
     required this.onToggleSelected,
@@ -19,6 +21,8 @@ class _TaskCard extends StatelessWidget {
   final bool isLast;
   final VoidCallback onTap;
   final VoidCallback onMove;
+  final VoidCallback onMarkDone;
+  final VoidCallback onMarkClosed;
   final bool isBulkSelectMode;
   final bool isSelected;
   final VoidCallback onToggleSelected;
@@ -108,6 +112,15 @@ class _TaskCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (!isBulkSelectMode) ...[
+                          const shad.Gap(4),
+                          shad.IconButton.ghost(
+                            icon: const Icon(Icons.more_horiz, size: 20),
+                            onPressed: () => unawaited(
+                              _showActions(context, list),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     const shad.Gap(8),
@@ -136,6 +149,116 @@ class _TaskCard extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showActions(BuildContext context, TaskBoardList list) {
+    return showAdaptiveSheet<void>(
+      context: context,
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (context) => _TaskCardActionSheet(
+        list: list,
+        onMove: onMove,
+        onMarkDone: onMarkDone,
+        onMarkClosed: onMarkClosed,
+      ),
+    );
+  }
+}
+
+class _TaskCardActionSheet extends StatelessWidget {
+  const _TaskCardActionSheet({
+    required this.list,
+    required this.onMove,
+    required this.onMarkDone,
+    required this.onMarkClosed,
+  });
+
+  final TaskBoardList list;
+  final VoidCallback onMove;
+  final VoidCallback onMarkDone;
+  final VoidCallback onMarkClosed;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = TaskBoardList.normalizeSupportedStatus(list.status);
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              context.l10n.taskBoardDetailTaskActions,
+              style: shad.Theme.of(context).typography.large.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const shad.Gap(10),
+            if (status != 'done')
+              _TaskCardActionButton(
+                icon: Icons.check_circle_outline,
+                label: context.l10n.taskBoardDetailBulkMarkDone,
+                onPressed: onMarkDone,
+              ),
+            if (status != 'closed')
+              _TaskCardActionButton(
+                icon: Icons.block_outlined,
+                label: context.l10n.taskBoardDetailBulkMarkClosed,
+                onPressed: onMarkClosed,
+              ),
+            _TaskCardActionButton(
+              icon: Icons.drive_file_move_outlined,
+              label: context.l10n.taskBoardDetailMoveTask,
+              onPressed: onMove,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TaskCardActionButton extends StatelessWidget {
+  const _TaskCardActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: shad.GhostButton(
+        onPressed: () {
+          Navigator.of(context).pop();
+          onPressed();
+        },
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: theme.colorScheme.foreground),
+            const shad.Gap(12),
+            Flexible(
+              child: Text(
+                label,
+                style: theme.typography.p.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

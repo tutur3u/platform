@@ -2278,6 +2278,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailColorLabel => 'Color';
 
   @override
+  String get taskBoardDetailDefaultHiddenListsTitle => 'Hidden by default';
+
+  @override
+  String get taskBoardDetailDefaultHiddenListsDescription => 'List mode hides Documents, Done, and Closed lists until you choose a list or status filter.';
+
+  @override
+  String get taskBoardDetailDefaultHiddenListsOverrideTitle => 'Default hidden lists are visible';
+
+  @override
+  String get taskBoardDetailDefaultHiddenListsOverrideDescription => 'Your list or status filter is overriding the default Documents, Done, and Closed exclusions.';
+
+  @override
   String get taskBoardDetailFilters => 'Filters';
 
   @override

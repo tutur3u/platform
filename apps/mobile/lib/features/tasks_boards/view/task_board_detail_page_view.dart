@@ -624,6 +624,18 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                             task,
                             sortedLists,
                           ),
+                          onTaskMarkDone: (task) => _markTaskAsStatus(
+                            context,
+                            task,
+                            sortedLists,
+                            'done',
+                          ),
+                          onTaskMarkClosed: (task) => _markTaskAsStatus(
+                            context,
+                            task,
+                            sortedLists,
+                            'closed',
+                          ),
                           isBulkSelectMode: state.isBulkSelectMode,
                           selectedTaskIds: state.selectedTaskIds,
                           onToggleTaskSelection: (task) => context
@@ -1243,6 +1255,89 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         context: toastContext,
         builder: (context, overlay) =>
             shad.Alert(content: Text(taskMovedMessage)),
+      );
+    } on ApiException catch (error) {
+      if (!context.mounted || !toastContext.mounted) return;
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          content: Text(
+            error.message.trim().isEmpty ? fallbackErrorMessage : error.message,
+          ),
+        ),
+      );
+    } on Exception {
+      if (!context.mounted || !toastContext.mounted) return;
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) =>
+            shad.Alert.destructive(content: Text(fallbackErrorMessage)),
+      );
+    }
+  }
+
+  Future<void> _markTaskAsStatus(
+    BuildContext context,
+    TaskBoardTask task,
+    List<TaskBoardList> lists,
+    String status,
+  ) async {
+    final normalizedStatus = TaskBoardList.normalizeSupportedStatus(status);
+    if (normalizedStatus == null) {
+      return;
+    }
+
+    final targetLists = lists
+        .where(
+          (list) =>
+              list.id != task.listId &&
+              TaskBoardList.normalizeSupportedStatus(list.status) ==
+                  normalizedStatus,
+        )
+        .toList(growable: false);
+
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    if (targetLists.isEmpty) {
+      if (!toastContext.mounted) return;
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          content: Text(context.l10n.taskBoardDetailNoListsInStatus),
+        ),
+      );
+      return;
+    }
+
+    String? selectedListId;
+    if (targetLists.length == 1) {
+      selectedListId = targetLists.single.id;
+    } else {
+      final title = normalizedStatus == 'done'
+          ? context.l10n.taskBoardDetailBulkMarkDone
+          : context.l10n.taskBoardDetailBulkMarkClosed;
+      selectedListId = await shad.showDialog<String>(
+        context: context,
+        builder: (dialogContext) => _TaskListPickerDialog(
+          title: title,
+          lists: targetLists,
+        ),
+      );
+    }
+
+    if (selectedListId == null || !context.mounted) return;
+
+    final cubit = context.read<TaskBoardDetailCubit>();
+    final fallbackErrorMessage = context.l10n.commonSomethingWentWrong;
+    final movedMessage = context.l10n.taskBoardDetailMovedToStatus(
+      _taskBoardListStatusLabel(context, normalizedStatus),
+    );
+
+    try {
+      await cubit.moveTask(taskId: task.id, listId: selectedListId);
+      if (!context.mounted || !toastContext.mounted) return;
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert(content: Text(movedMessage)),
       );
     } on ApiException catch (error) {
       if (!context.mounted || !toastContext.mounted) return;

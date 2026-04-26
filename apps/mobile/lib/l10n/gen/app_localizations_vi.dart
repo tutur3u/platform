@@ -2254,6 +2254,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailColorLabel => 'Màu sắc';
 
   @override
+  String get taskBoardDetailDefaultHiddenListsTitle => 'Ẩn mặc định';
+
+  @override
+  String get taskBoardDetailDefaultHiddenListsDescription => 'Chế độ danh sách ẩn các danh sách Tài liệu, Hoàn thành và Đã đóng cho đến khi bạn chọn bộ lọc danh sách hoặc trạng thái.';
+
+  @override
+  String get taskBoardDetailDefaultHiddenListsOverrideTitle => 'Danh sách ẩn mặc định đang hiển thị';
+
+  @override
+  String get taskBoardDetailDefaultHiddenListsOverrideDescription => 'Bộ lọc danh sách hoặc trạng thái của bạn đang bỏ qua mặc định ẩn Tài liệu, Hoàn thành và Đã đóng.';
+
+  @override
   String get taskBoardDetailFilters => 'Bộ lọc';
 
   @override

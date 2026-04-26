@@ -15,6 +15,7 @@ void main() {
   group('TaskBoardDetailCubit bulk operations', () {
     late _MockTaskRepository repository;
     late TaskBoardDetailCubit cubit;
+    late List<TaskBoardTask> repositoryTasks;
 
     const listActive = TaskBoardList(
       id: 'list-active',
@@ -36,6 +37,13 @@ void main() {
       name: 'Closed',
       status: 'closed',
       color: 'GRAY',
+    );
+    const listDocuments = TaskBoardList(
+      id: 'list-documents',
+      boardId: 'board-1',
+      name: 'Documents',
+      status: 'documents',
+      color: 'PURPLE',
     );
 
     const taskOne = TaskBoardTask(
@@ -64,21 +72,21 @@ void main() {
       listId: 'list-closed',
       name: 'Closed task',
     );
+    const taskDocuments = TaskBoardTask(
+      id: 'task-documents',
+      listId: 'list-documents',
+      name: 'Documents task',
+    );
 
     TaskBoardDetail buildBoard({
-      List<TaskBoardTask> tasks = const [
-        taskOne,
-        taskTwo,
-        taskDone,
-        taskClosed,
-      ],
+      List<TaskBoardTask>? tasks,
     }) {
       return const TaskBoardDetail(
         id: 'board-1',
         wsId: 'ws-1',
         name: 'Board',
-        lists: [listActive, listDone, listClosed],
-      ).copyWith(tasks: tasks);
+        lists: [listActive, listDone, listClosed, listDocuments],
+      ).copyWith(tasks: tasks ?? repositoryTasks);
     }
 
     TaskBulkResult buildBulkResult({
@@ -102,6 +110,13 @@ void main() {
     setUp(() async {
       repository = _MockTaskRepository();
       cubit = TaskBoardDetailCubit(taskRepository: repository);
+      repositoryTasks = [
+        taskOne,
+        taskTwo,
+        taskDone,
+        taskClosed,
+        taskDocuments,
+      ];
 
       when(
         () => repository.getTaskBoardDetail('ws-1', 'board-1'),
@@ -119,10 +134,26 @@ void main() {
         ),
       ).thenAnswer((invocation) async {
         final listId = invocation.namedArguments[#listId] as String;
-        final all = [taskOne, taskTwo, taskDone, taskClosed];
-        return all
+        return repositoryTasks
             .where((task) => task.listId == listId)
             .toList(growable: false);
+      });
+
+      when(
+        () => repository.moveBoardTask(
+          wsId: any(named: 'wsId'),
+          taskId: any(named: 'taskId'),
+          listId: any(named: 'listId'),
+        ),
+      ).thenAnswer((invocation) async {
+        final taskId = invocation.namedArguments[#taskId] as String;
+        final listId = invocation.namedArguments[#listId] as String;
+        final task = repositoryTasks.firstWhere((task) => task.id == taskId);
+        final moved = task.copyWith(listId: listId);
+        repositoryTasks = repositoryTasks
+            .map((task) => task.id == taskId ? moved : task)
+            .toList(growable: false);
+        return moved;
       });
 
       when(
@@ -206,29 +237,71 @@ void main() {
       expect(cubit.state.selectedTaskIds, {'task-2'});
     });
 
-    test('list view hides done and closed tasks until explicitly filtered', () {
+    test('list view hides documents, done, and closed tasks by default', () {
       expect(
         cubit.state.filteredTasksForListView.map((task) => task.id),
         ['task-1', 'task-2'],
       );
 
       cubit.setFilters(
-        const TaskBoardDetailFilters(statuses: {'done', 'closed'}),
+        const TaskBoardDetailFilters(
+          statuses: {
+            'documents',
+            'done',
+            'closed',
+          },
+        ),
       );
 
       expect(
         cubit.state.filteredTasksForListView.map((task) => task.id),
-        ['task-done', 'task-closed'],
+        ['task-done', 'task-closed', 'task-documents'],
       );
 
       cubit.setFilters(
-        const TaskBoardDetailFilters(listIds: {'list-closed'}),
+        const TaskBoardDetailFilters(listIds: {'list-documents'}),
       );
 
       expect(
         cubit.state.filteredTasksForListView.map((task) => task.id),
-        ['task-closed'],
+        ['task-documents'],
       );
+    });
+
+    test('moveTask refreshes source and target lists', () async {
+      clearInteractions(repository);
+
+      await cubit.moveTask(taskId: 'task-1', listId: 'list-done');
+
+      verify(
+        () => repository.moveBoardTask(
+          wsId: 'ws-1',
+          taskId: 'task-1',
+          listId: 'list-done',
+        ),
+      ).called(1);
+      verify(
+        () => repository.getBoardTasksForList(
+          'ws-1',
+          listId: 'list-active',
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+          members: any(named: 'members'),
+          labels: any(named: 'labels'),
+          projects: any(named: 'projects'),
+        ),
+      ).called(1);
+      verify(
+        () => repository.getBoardTasksForList(
+          'ws-1',
+          listId: 'list-done',
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+          members: any(named: 'members'),
+          labels: any(named: 'labels'),
+          projects: any(named: 'projects'),
+        ),
+      ).called(1);
     });
 
     test(

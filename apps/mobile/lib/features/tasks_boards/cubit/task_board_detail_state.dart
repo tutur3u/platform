@@ -113,9 +113,9 @@ class TaskBoardDetailState extends Equatable {
     return filters.statuses.isEmpty && filters.listIds.isEmpty;
   }
 
-  bool _isTerminalList(TaskBoardList? list) {
+  bool _isHiddenByDefaultInListView(TaskBoardList? list) {
     final status = TaskBoardList.normalizeSupportedStatus(list?.status);
-    return status == 'done' || status == 'closed';
+    return status == 'documents' || status == 'done' || status == 'closed';
   }
 
   List<TaskBoardTask> get filteredTasks {
@@ -232,7 +232,9 @@ class TaskBoardDetailState extends Equatable {
       for (final list in board?.lists ?? const <TaskBoardList>[]) list.id: list,
     };
     return tasks
-        .where((task) => !_isTerminalList(listsById[task.listId]))
+        .where(
+          (task) => !_isHiddenByDefaultInListView(listsById[task.listId]),
+        )
         .toList(growable: false);
   }
 

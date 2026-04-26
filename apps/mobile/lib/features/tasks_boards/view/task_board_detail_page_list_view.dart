@@ -11,6 +11,8 @@ class _TaskBoardEnhancedListView extends StatefulWidget {
     required this.scrollController,
     required this.onTaskTap,
     required this.onTaskMove,
+    required this.onTaskMarkDone,
+    required this.onTaskMarkClosed,
     required this.isBulkSelectMode,
     required this.selectedTaskIds,
     required this.onToggleTaskSelection,
@@ -28,6 +30,8 @@ class _TaskBoardEnhancedListView extends StatefulWidget {
   final ScrollController scrollController;
   final void Function(TaskBoardTask task) onTaskTap;
   final void Function(TaskBoardTask task) onTaskMove;
+  final void Function(TaskBoardTask task) onTaskMarkDone;
+  final void Function(TaskBoardTask task) onTaskMarkClosed;
   final bool isBulkSelectMode;
   final Set<String> selectedTaskIds;
   final void Function(TaskBoardTask task) onToggleTaskSelection;
@@ -205,6 +209,8 @@ class _TaskBoardEnhancedListViewState
           isLast: entry.isLastInSection,
           onTap: () => widget.onTaskTap(task),
           onMove: () => widget.onTaskMove(task),
+          onMarkDone: () => widget.onTaskMarkDone(task),
+          onMarkClosed: () => widget.onTaskMarkClosed(task),
           isBulkSelectMode: widget.isBulkSelectMode,
           isSelected: widget.selectedTaskIds.contains(task.id),
           onToggleSelected: () => widget.onToggleTaskSelection(task),

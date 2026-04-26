@@ -628,9 +628,23 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     required String listId,
   }) async {
     final wsId = state.workspaceId;
+    final board = state.board;
     if (wsId == null) {
       throw StateError('Workspace not selected');
     }
+    if (board == null) {
+      throw StateError('Board detail is not initialized');
+    }
+
+    final sourceListId = _findTaskListId(taskId);
+    if (sourceListId == listId) {
+      return;
+    }
+    final pageSizeHints = <String, int?>{
+      if (sourceListId != null)
+        sourceListId: state.listPageSizeById[sourceListId],
+      listId: state.listPageSizeById[listId],
+    };
 
     await _runMutation(
       () => _taskRepository.moveBoardTask(
@@ -638,7 +652,24 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         taskId: taskId,
         listId: listId,
       ),
+      reloadBoard: false,
     );
+
+    if (isClosed || state.workspaceId != wsId || state.boardId != board.id) {
+      return;
+    }
+
+    final affectedListIds = <String>{
+      if (sourceListId != null) sourceListId,
+      listId,
+    };
+    for (final affectedListId in affectedListIds) {
+      await loadListTasks(
+        listId: affectedListId,
+        forceRefresh: true,
+        pageSizeHint: pageSizeHints[affectedListId],
+      );
+    }
   }
 
   Future<void> deleteTask({required String taskId}) async {

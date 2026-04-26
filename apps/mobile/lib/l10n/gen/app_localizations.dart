@@ -4381,6 +4381,30 @@ abstract class AppLocalizations {
   /// **'Color'**
   String get taskBoardDetailColorLabel;
 
+  /// No description provided for @taskBoardDetailDefaultHiddenListsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden by default'**
+  String get taskBoardDetailDefaultHiddenListsTitle;
+
+  /// No description provided for @taskBoardDetailDefaultHiddenListsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'List mode hides Documents, Done, and Closed lists until you choose a list or status filter.'**
+  String get taskBoardDetailDefaultHiddenListsDescription;
+
+  /// No description provided for @taskBoardDetailDefaultHiddenListsOverrideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Default hidden lists are visible'**
+  String get taskBoardDetailDefaultHiddenListsOverrideTitle;
+
+  /// No description provided for @taskBoardDetailDefaultHiddenListsOverrideDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your list or status filter is overriding the default Documents, Done, and Closed exclusions.'**
+  String get taskBoardDetailDefaultHiddenListsOverrideDescription;
+
   /// No description provided for @taskBoardDetailFilters.
   ///
   /// In en, this message translates to:
