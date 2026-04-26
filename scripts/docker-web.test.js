@@ -22,6 +22,7 @@ const {
   parseArgs,
   parseEnvFile,
   readBlueGreenActiveColor,
+  readBlueGreenProxyActiveColor,
   renderBlueGreenProxyConfig,
   resolveBlueGreenActiveColor,
   rewriteLocalhostUrl,
@@ -31,6 +32,7 @@ const {
   writeBlueGreenActiveColor,
 } = require('./docker-web.js');
 const {
+  runBlueGreenProdWorkflow,
   runBlueGreenCachedRecoveryWorkflow,
 } = require('./docker-web/blue-green.js');
 const { getWatchPaths } = require('./watch-blue-green/paths.js');
@@ -305,6 +307,26 @@ test('resolveBlueGreenActiveColor promotes a healthy standby over an unhealthy p
   });
 
   assert.equal(activeColor, 'green');
+});
+
+test('readBlueGreenProxyActiveColor recovers the primary lane from nginx config', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-proxy-active-')
+  );
+  const paths = getBlueGreenPaths(tempDir);
+
+  try {
+    fs.mkdirSync(paths.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      paths.proxyConfigFile,
+      renderBlueGreenProxyConfig('green', { standbyColor: 'blue' }),
+      'utf8'
+    );
+
+    assert.equal(readBlueGreenProxyActiveColor(paths), 'green');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('parseEnvFile ignores comments and unquotes values', () => {
@@ -1209,6 +1231,117 @@ test('runDockerWebWorkflow recovers from stale blue-green container name conflic
       2
     );
     assert.equal(readBlueGreenActiveColor(getBlueGreenPaths(tempDir)), 'blue');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runBlueGreenProdWorkflow does not clear a blue-green lane before a failed replacement build', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-bg-build-first-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getBlueGreenPaths(tempDir);
+  const calls = [];
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+  writeBlueGreenActiveColor('blue', paths);
+
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    calls.push(key);
+
+    if (args.includes('ps') && args.at(-1) === 'web-blue') {
+      return { code: 0, signal: null, stderr: '', stdout: 'blue-123\n' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === BLUE_GREEN_PROXY_SERVICE) {
+      return { code: 0, signal: null, stderr: '', stdout: 'proxy-123\n' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'web') {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'web-green') {
+      return { code: 0, signal: null, stderr: '', stdout: 'green-123\n' };
+    }
+
+    if (args[0] === 'inspect' && args.at(-1) === 'blue-123') {
+      return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+    }
+
+    if (args.includes('build') && args.includes('web-green')) {
+      return {
+        code: 1,
+        signal: null,
+        stderr: 'web build failed',
+        stdout: '',
+      };
+    }
+
+    if (args.includes('up') && args.includes('--build')) {
+      return {
+        code: 1,
+        signal: null,
+        stderr: 'web build failed',
+        stdout: '',
+      };
+    }
+
+    if (
+      args.includes('stop') &&
+      (args.includes('web-blue') || args.includes('web-green'))
+    ) {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (
+      args.includes('rm') &&
+      (args.includes('web-blue') || args.includes('web-green'))
+    ) {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    await assert.rejects(
+      () =>
+        runBlueGreenProdWorkflow(
+          {
+            action: 'up',
+            composeArgs: [],
+            composeGlobalArgs: ['--profile', 'redis'],
+            mode: 'prod',
+            strategy: 'blue-green',
+          },
+          {
+            env: { PATH: 'test-path' },
+            envFilePath,
+            rootDir: tempDir,
+            runCommand,
+          }
+        ),
+      /web build failed/
+    );
+
+    assert.ok(calls.some((call) => call.includes(' build web-green')));
+    assert.equal(
+      calls.some(
+        (call) =>
+          call.includes(' stop web-blue') ||
+          call.includes(' stop web-green') ||
+          call.includes(' rm -f web-blue') ||
+          call.includes(' rm -f web-green')
+      ),
+      false
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

@@ -1,6 +1,9 @@
 const fs = require('node:fs');
 
-const { readBlueGreenActiveColor } = require('../docker-web/blue-green.js');
+const {
+  readBlueGreenActiveColor,
+  readBlueGreenProxyActiveColor,
+} = require('../docker-web/blue-green.js');
 const { getComposeEnvironment, WEB_ENV_FILE } = require('../docker-web/env.js');
 const {
   getComposeCommandArgs,
@@ -173,7 +176,9 @@ async function resolveCurrentBlueGreenStatus({
   rootDir = ROOT_DIR,
   runCommand: run = runCommand,
 } = {}) {
-  const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+  const activeColor =
+    readBlueGreenActiveColor(paths.blueGreen, fsImpl) ??
+    readBlueGreenProxyActiveColor(paths.blueGreen, fsImpl);
   const serviceStates = {};
 
   try {

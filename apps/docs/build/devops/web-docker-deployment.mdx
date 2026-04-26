@@ -686,6 +686,15 @@ Dashboard details:
   already up to date but the latest successful deployment record still points
   at an older commit, the watcher rebuilds/deploys the current `HEAD` instead
   of incorrectly reporting `up-to-date`.
+- Blue/green deploys build the replacement lane before stopping or removing any
+  existing blue/green container. A failed `docker compose build` must leave the
+  currently serving lane and any warm standby untouched; only after the build
+  succeeds may the target lane be recreated with `--no-build`.
+- If `tmp/docker-web/prod/active-color` is missing or stale, the deployer and
+  watcher recover the serving lane from the generated nginx proxy config before
+  deciding what to rebuild. Treat the proxy config as the runtime source of
+  truth during drift so a failed reconciliation cannot misclassify and clear a
+  stable deployment.
 
 ## Browser-State 502 Recovery
 

@@ -10,6 +10,7 @@ const {
   getBlueGreenServiceName,
   readBlueGreenActiveColor,
   readBlueGreenDeploymentStamp,
+  readBlueGreenProxyActiveColor,
   refreshBlueGreenProxyIfRunning,
   runBlueGreenCachedRecoveryWorkflow,
   runBlueGreenStandbyRefreshWorkflow,
@@ -2532,7 +2533,9 @@ async function runMissingActiveDeploymentRecovery(
     );
   }
 
-  const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+  const activeColor =
+    readBlueGreenActiveColor(paths.blueGreen, fsImpl) ??
+    readBlueGreenProxyActiveColor(paths.blueGreen, fsImpl);
   const standbyColor = getExpectedStandbyColor(activeColor);
   const standbyStartedAt = now();
 
@@ -2980,7 +2983,9 @@ async function resolveCurrentBlueGreenStatus({
   rootDir = ROOT_DIR,
   runCommand: run = runCommand,
 } = {}) {
-  const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+  const activeColor =
+    readBlueGreenActiveColor(paths.blueGreen, fsImpl) ??
+    readBlueGreenProxyActiveColor(paths.blueGreen, fsImpl);
   const serviceStates = {};
 
   try {

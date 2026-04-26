@@ -4,6 +4,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
+const { renderBlueGreenProxyConfig } = require('./docker-web/blue-green.js');
+
 const {
   BLUE_GREEN_PROXY_SERVICE,
   BLUE_GREEN_WATCHER_SERVICE,
@@ -454,7 +456,7 @@ test('buildDashboardView surfaces the latest deploy failure details', () => {
         intervalMs: DEFAULT_INTERVAL_MS,
         lastResult: {
           error: new Error(
-            'Command failed (1): docker compose -f docker-compose.web.prod.yml --profile redis up --build --detach --remove-orphans web-green\nservice "web-green" is unhealthy'
+            'Command failed (1): docker compose -f docker-compose.web.prod.yml --profile redis up --detach --no-build --remove-orphans web-green\nservice "web-green" is unhealthy'
           ),
           status: 'deploy-failed',
         },
@@ -1312,6 +1314,71 @@ test('resolveCurrentBlueGreenStatus reflects the active color and running servic
       receivedEnvs[0].SUPABASE_SERVER_URL,
       'http://host.docker.internal:8001/'
     );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('resolveCurrentBlueGreenStatus recovers active color from proxy config when state file is missing', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-blue-green-proxy-active-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.writeFileSync(
+      paths.blueGreen.proxyConfigFile,
+      renderBlueGreenProxyConfig('green', { standbyColor: 'blue' }),
+      'utf8'
+    );
+
+    const status = await resolveCurrentBlueGreenStatus({
+      envFilePath,
+      fsImpl: fs,
+      paths,
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('proxy-123\n');
+        }
+
+        if (key === prodComposePsKey('web-green')) {
+          return createResult('green-123\n');
+        }
+
+        if (key === prodComposePsKey('web-blue')) {
+          return createResult('blue-123\n');
+        }
+
+        if (
+          key ===
+            'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123' ||
+          key ===
+            'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123' ||
+          key ===
+            'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} proxy-123'
+        ) {
+          return createResult('healthy\n');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+    });
+
+    assert.equal(status.activeColor, 'green');
+    assert.equal(status.activeServiceRunning, true);
+    assert.equal(status.state, 'serving');
+    assert.equal(status.standbyColor, 'blue');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -2378,7 +2445,11 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         createResult(''),
       ],
       [
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue markitdown storage-unzip-proxy redis serverless-redis-http`,
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue markitdown storage-unzip-proxy redis serverless-redis-http`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue markitdown storage-unzip-proxy redis serverless-redis-http`,
         createResult(''),
       ],
       [
@@ -2479,7 +2550,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f web-blue`
       ) <
         calls.indexOf(
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue markitdown storage-unzip-proxy redis serverless-redis-http`
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue markitdown storage-unzip-proxy redis serverless-redis-http`
         )
     );
     assert.ok(
@@ -2844,7 +2915,11 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
           createResult(''),
         ],
         [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --remove-orphans web-blue markitdown storage-unzip-proxy redis serverless-redis-http`,
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue markitdown storage-unzip-proxy redis serverless-redis-http`,
+          createResult(''),
+        ],
+        [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue markitdown storage-unzip-proxy redis serverless-redis-http`,
           createResult(''),
         ],
         [

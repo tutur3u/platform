@@ -73,6 +73,23 @@ function readBlueGreenActiveColor(paths = getBlueGreenPaths(), fsImpl = fs) {
   return isBlueGreenColor(color) ? color : null;
 }
 
+function readBlueGreenProxyActiveColor(
+  paths = getBlueGreenPaths(),
+  fsImpl = fs
+) {
+  if (!fsImpl.existsSync(paths.proxyConfigFile)) {
+    return null;
+  }
+
+  const config = fsImpl.readFileSync(paths.proxyConfigFile, 'utf8');
+  const match = config.match(
+    /^\s*server\s+web-(blue|green):7803\s+resolve\b(?!.*\bbackup\b).*$/imu
+  );
+  const color = match?.[1] ?? null;
+
+  return isBlueGreenColor(color) ? color : null;
+}
+
 function writeBlueGreenActiveColor(
   color,
   paths = getBlueGreenPaths(),
@@ -374,6 +391,23 @@ async function reloadBlueGreenProxy({
   );
 }
 
+async function buildBlueGreenServices({
+  composeFile,
+  composeGlobalArgs = [],
+  env,
+  runCommand: run,
+  services,
+}) {
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(composeFile, composeGlobalArgs, 'build', ...services),
+    {
+      env,
+      runCommand: run,
+    }
+  );
+}
+
 async function refreshBlueGreenProxyIfRunning({
   env,
   envFilePath = WEB_ENV_FILE,
@@ -391,12 +425,16 @@ async function refreshBlueGreenProxyIfRunning({
     withRedis: true,
   });
   const persistedActiveColor = readBlueGreenActiveColor(paths, fsImpl);
-  const activeColor = await resolveBlueGreenActiveColor(persistedActiveColor, {
-    composeFile,
-    composeGlobalArgs: [],
-    env: composeEnv,
-    runCommand: run,
-  });
+  const proxyActiveColor = readBlueGreenProxyActiveColor(paths, fsImpl);
+  const activeColor = await resolveBlueGreenActiveColor(
+    persistedActiveColor ?? proxyActiveColor,
+    {
+      composeFile,
+      composeGlobalArgs: [],
+      env: composeEnv,
+      runCommand: run,
+    }
+  );
 
   if (!activeColor) {
     return false;
@@ -623,17 +661,21 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
   const paths = getBlueGreenPaths(options.rootDir ?? ROOT_DIR);
   const run = options.runCommand ?? runCommand;
   const persistedActiveColor = readBlueGreenActiveColor(paths, fsImpl);
+  const proxyActiveColor = readBlueGreenProxyActiveColor(paths, fsImpl);
   const proxyDrainMs = options.proxyDrainMs ?? BLUE_GREEN_PROXY_DRAIN_MS;
   const drainPollMs = options.drainPollMs ?? BLUE_GREEN_DRAIN_POLL_MS;
   const drainTimeoutMs = options.drainTimeoutMs ?? BLUE_GREEN_DRAIN_TIMEOUT_MS;
   const deploymentStamp =
     options.deploymentStamp ?? generateBlueGreenDeploymentStamp();
-  const activeColor = await resolveBlueGreenActiveColor(persistedActiveColor, {
-    composeFile,
-    composeGlobalArgs: parsed.composeGlobalArgs,
-    env,
-    runCommand: run,
-  });
+  const activeColor = await resolveBlueGreenActiveColor(
+    persistedActiveColor ?? proxyActiveColor,
+    {
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env,
+      runCommand: run,
+    }
+  );
   const targetColor = getNextBlueGreenColor(activeColor);
   const initialProxyColor = activeColor ?? targetColor;
   const standbyColor = activeColor;
@@ -669,6 +711,20 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     });
   }
 
+  const targetServices = getBlueGreenProdServicesWithProxyOption(
+    parsed,
+    targetColor,
+    needsProxyBootstrap
+  );
+
+  await buildBlueGreenServices({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: targetEnv,
+    runCommand: run,
+    services: targetServices,
+  });
+
   await stopComposeServicesIfPresent(['web'], {
     composeFile,
     composeGlobalArgs: parsed.composeGlobalArgs,
@@ -689,12 +745,6 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     runCommand: run,
   });
 
-  const targetServices = getBlueGreenProdServicesWithProxyOption(
-    parsed,
-    targetColor,
-    needsProxyBootstrap
-  );
-
   await runComposeUpWithNameConflictRecovery({
     composeFile,
     composeGlobalArgs: parsed.composeGlobalArgs,
@@ -704,8 +754,8 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     services: targetServices,
     upArgs: [
       'up',
-      '--build',
       '--detach',
+      '--no-build',
       '--remove-orphans',
       ...parsed.composeArgs,
       ...targetServices,
@@ -810,7 +860,8 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
   const paths = getBlueGreenPaths(options.rootDir ?? ROOT_DIR);
   const run = options.runCommand ?? runCommand;
   const activeColor = await resolveBlueGreenActiveColor(
-    readBlueGreenActiveColor(paths, fsImpl),
+    readBlueGreenActiveColor(paths, fsImpl) ??
+      readBlueGreenProxyActiveColor(paths, fsImpl),
     {
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
@@ -838,6 +889,19 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     PLATFORM_BLUE_GREEN_COLOR: standbyColor,
     PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
   };
+  const standbyServices = getBlueGreenProdServicesWithProxyOption(
+    parsed,
+    standbyColor,
+    false
+  );
+
+  await buildBlueGreenServices({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: standbyEnv,
+    runCommand: run,
+    services: standbyServices,
+  });
 
   await stopComposeServicesIfPresent([getBlueGreenServiceName(standbyColor)], {
     composeFile,
@@ -855,12 +919,6 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     }
   );
 
-  const standbyServices = getBlueGreenProdServicesWithProxyOption(
-    parsed,
-    standbyColor,
-    false
-  );
-
   await runComposeUpWithNameConflictRecovery({
     composeFile,
     composeGlobalArgs: parsed.composeGlobalArgs,
@@ -870,8 +928,8 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     services: standbyServices,
     upArgs: [
       'up',
-      '--build',
       '--detach',
+      '--no-build',
       '--remove-orphans',
       ...parsed.composeArgs,
       ...standbyServices,
@@ -927,7 +985,9 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
   const paths = getBlueGreenPaths(options.rootDir ?? ROOT_DIR);
   const run = options.runCommand ?? runCommand;
   const cachedImageTag = options.cachedImageTag;
-  const persistedActiveColor = readBlueGreenActiveColor(paths, fsImpl);
+  const persistedActiveColor =
+    readBlueGreenActiveColor(paths, fsImpl) ??
+    readBlueGreenProxyActiveColor(paths, fsImpl);
   const activeColor = persistedActiveColor ?? 'blue';
   const standbyColor = getNextBlueGreenColor(activeColor);
   const deploymentStamp =
@@ -1096,6 +1156,7 @@ module.exports = {
   getNextBlueGreenColor,
   isBlueGreenColor,
   readBlueGreenActiveColor,
+  readBlueGreenProxyActiveColor,
   refreshBlueGreenProxyIfRunning,
   reloadBlueGreenProxy,
   renderBlueGreenProxyConfig,
