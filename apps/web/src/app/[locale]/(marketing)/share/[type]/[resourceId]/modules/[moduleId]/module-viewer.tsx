@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Goal,
+  SwatchBook,
   Youtube,
 } from '@tuturuuu/icons';
 import type { SharedCourseGroup, SharedCourseModule } from '@tuturuuu/types';
@@ -17,6 +18,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import { Flashcard } from 'react-quizlet-flashcard';
 import { extractYoutubeId } from '@/utils/url-helper';
 
 interface ModuleSectionProps {
@@ -97,12 +99,36 @@ export function ModuleViewer({
         .replace(/\/$/, '')
     : '/share/course';
 
+  const flashcardCards = (module.flashcardItems ?? []).map((card) => ({
+    id: card.id,
+    frontHTML: (
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-green/10 p-4 text-center font-semibold">
+        {card.front || '...'}
+      </div>
+    ),
+    backHTML: (
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-purple/10 p-4 text-center font-semibold">
+        {card.back || '...'}
+      </div>
+    ),
+    frontCardStyle: {
+      color: 'hsl(var(--green))',
+      backgroundColor: 'hsl(var(--green) / 0.05)',
+      borderColor: 'hsl(var(--green))',
+    },
+    backCardStyle: {
+      color: 'hsl(var(--purple))',
+      backgroundColor: 'hsl(var(--purple) / 0.05)',
+      borderColor: 'hsl(var(--purple))',
+    },
+  }));
+
   return (
     <div className="relative">
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(900px_420px_at_10%_-10%,hsl(var(--foreground)/0.08),transparent_65%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(700px_420px_at_90%_-10%,hsl(var(--foreground)/0.06),transparent_60%)]" />
-        <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(hsl(var(--foreground)/0.05)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--foreground)/0.05)_1px,transparent_1px)] [background-size:28px_28px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(hsl(var(--foreground)/0.05)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--foreground)/0.05)_1px,transparent_1px)] bg-size-[28px_28px] opacity-30" />
       </div>
 
       <div className="container mx-auto px-4 py-10">
@@ -149,6 +175,30 @@ export function ModuleViewer({
                       content={module.content as JSONContent}
                       readOnly
                     />
+                  </div>
+                }
+              />
+            )}
+
+            {flashcardCards.length > 0 && (
+              <ModuleSection
+                title={t('ws-flashcards.plural')}
+                icon={<SwatchBook className="h-4 w-4" />}
+                content={
+                  <div className="grid gap-4 pt-2 md:grid-cols-2">
+                    {flashcardCards.map((card) => (
+                      <Flashcard
+                        key={card.id}
+                        front={{
+                          html: card.frontHTML,
+                          style: card.frontCardStyle,
+                        }}
+                        back={{
+                          html: card.backHTML,
+                          style: card.backCardStyle,
+                        }}
+                      />
+                    ))}
                   </div>
                 }
               />

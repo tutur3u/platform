@@ -31,7 +31,9 @@ export default async function ShareModulePage({ params }: Props) {
 
   if (type !== 'course') notFound();
 
-  const sharedCourse = await loadSharedCourseContent(resourceId);
+  const sharedCourse = await loadSharedCourseContent(resourceId, undefined, {
+    includeFlashcards: true,
+  });
   if (!sharedCourse) notFound();
 
   const moduleIndex = sharedCourse.modules.findIndex(

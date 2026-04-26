@@ -21,7 +21,10 @@ function toRichTextContent(value: unknown): JSONContent | null {
 
 export async function loadSharedCourseContent(
   groupId: string,
-  request?: Request
+  request?: Request,
+  options?: {
+    includeFlashcards?: boolean;
+  }
 ): Promise<SharedCourseContent | null> {
   if (!validateUuid(groupId)) {
     return null;
@@ -99,8 +102,9 @@ export async function loadSharedCourseContent(
 
   const publishedModules = modules ?? [];
   const moduleIds = publishedModules.map((module) => module.id);
+  const includeFlashcards = Boolean(options?.includeFlashcards);
 
-  const [quizzesRes, flashcardsRes, quizSetsRes] =
+  const [quizzesRes, flashcardsRes, quizSetsRes, flashcardDetailsRes] =
     moduleIds.length > 0
       ? await Promise.all([
           sbAdmin
@@ -115,8 +119,15 @@ export async function loadSharedCourseContent(
             .from('course_module_quiz_sets')
             .select('module_id')
             .in('module_id', moduleIds),
+          includeFlashcards
+            ? sbAdmin
+                .from('course_module_flashcards')
+                .select('module_id, ...workspace_flashcards(id, front, back)')
+                .in('module_id', moduleIds)
+            : Promise.resolve({ data: [], error: null }),
         ])
       : [
+          { data: [], error: null },
           { data: [], error: null },
           { data: [], error: null },
           { data: [], error: null },
@@ -125,6 +136,7 @@ export async function loadSharedCourseContent(
   if (quizzesRes.error) throw quizzesRes.error;
   if (flashcardsRes.error) throw flashcardsRes.error;
   if (quizSetsRes.error) throw quizSetsRes.error;
+  if (flashcardDetailsRes.error) throw flashcardDetailsRes.error;
 
   const quizCount = new Map<string, number>();
   for (const row of quizzesRes.data ?? []) {
@@ -144,6 +156,23 @@ export async function loadSharedCourseContent(
     quizSetCount.set(row.module_id, (quizSetCount.get(row.module_id) ?? 0) + 1);
   }
 
+  const flashcardItemsByModule = new Map<
+    string,
+    Array<{ id: string; front: string; back: string }>
+  >();
+  if (includeFlashcards) {
+    for (const row of flashcardDetailsRes.data ?? []) {
+      if (!row?.module_id || !row?.id) continue;
+      const existing = flashcardItemsByModule.get(row.module_id) ?? [];
+      existing.push({
+        id: row.id,
+        front: row.front ?? '',
+        back: row.back ?? '',
+      });
+      flashcardItemsByModule.set(row.module_id, existing);
+    }
+  }
+
   return {
     group: {
       description: group.description,
@@ -152,6 +181,9 @@ export async function loadSharedCourseContent(
     modules: publishedModules.map((module) => ({
       ...module,
       content: toRichTextContent(module.content),
+      flashcardItems: includeFlashcards
+        ? (flashcardItemsByModule.get(module.id) ?? [])
+        : undefined,
       flashcards: flashcardCount.get(module.id) ?? 0,
       quizzes: quizCount.get(module.id) ?? 0,
       quizSets: quizSetCount.get(module.id) ?? 0,

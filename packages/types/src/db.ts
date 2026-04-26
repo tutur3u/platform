@@ -390,6 +390,7 @@ export type SharedCourseModule = Omit<
   'content'
 > & {
   content: JSONContent | null;
+  flashcardItems?: Array<Pick<WorkspaceFlashcard, 'id' | 'front' | 'back'>>;
   flashcards: number;
   quizzes: number;
   quizSets: number;

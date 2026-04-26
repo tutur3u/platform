@@ -32,6 +32,10 @@ Choose the earliest applicable strategy:
 - Client-side state
 - Real-time data
 
+### Shared Course Module Loader
+
+For shared course pages, prefer the server-side `loadSharedCourseContent` helper and only request flashcard payloads when the module view needs them. Use the `includeFlashcards` option to hydrate read-only flashcards under the module content without loading them on the course overview page.
+
 ### Implementation
 
 ```typescript
