@@ -15723,6 +15723,7 @@
     "members_and_guests": "Thành viên & Khách",
     "metrics": "Số liệu nhóm",
     "modify_schedule": "Chỉnh sửa lịch trình",
+    "no_files": "Chưa có tệp nào được tải lên.",
     "no_managers": "Không tìm thấy quản lý",
     "no_members": "Không tìm thấy thành viên",
     "no_users_selected": "Chưa chọn người dùng nào.",
@@ -15732,7 +15733,8 @@
     "search_users_placeholder": "Tìm kiếm người dùng...",
     "select_and_submit": "{groupActionLabel} vào {groupName}",
     "share": "Chia sẻ",
-    "share_description": "Tạo liên kết để chia sẻ nhóm này."
+    "share_description": "Tạo liên kết để chia sẻ nhóm này.",
+    "storage": "Lưu trữ"
   },
   "ws-user-group-feedback": {
     "add_feedback": "Thêm nhận xét",
