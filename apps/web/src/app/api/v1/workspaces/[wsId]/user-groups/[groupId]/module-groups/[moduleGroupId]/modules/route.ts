@@ -1,6 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { Json, TablesInsert } from '@tuturuuu/types';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -11,27 +10,18 @@ import { withSessionAuth } from '@/lib/api-auth';
 
 interface RouteParams {
   groupId: string;
+  moduleGroupId: string;
   wsId: string;
 }
 
-type WorkspaceCourseModuleInsert = TablesInsert<'workspace_course_modules'>;
-
-const RouteParamsSchema = z.object({
+const WorkspaceGroupParamsSchema = z.object({
   groupId: z.guid(),
   wsId: z.string().min(1),
 });
 
-const CreateModuleSchema = z
-  .object({
-    content: z.custom<Json>().optional(),
-    extra_content: z.custom<Json>().optional(),
-    is_public: z.boolean().optional(),
-    is_published: z.boolean().optional(),
-    module_group_id: z.guid(),
-    name: z.string().trim().min(1).max(255),
-    youtube_links: z.array(z.string().trim()).nullable().optional(),
-  })
-  .strict();
+const RouteParamsSchema = WorkspaceGroupParamsSchema.extend({
+  moduleGroupId: z.guid(),
+});
 
 async function validateWorkspaceGroupAccess(
   wsId: string,
@@ -40,7 +30,7 @@ async function validateWorkspaceGroupAccess(
   sessionSupabase: TypedSupabaseClient,
   request: Request
 ) {
-  const parsedParams = RouteParamsSchema.safeParse({ groupId, wsId });
+  const parsedParams = WorkspaceGroupParamsSchema.safeParse({ groupId, wsId });
   if (!parsedParams.success) {
     return NextResponse.json(
       { message: 'Invalid route params', errors: parsedParams.error.issues },
@@ -106,58 +96,15 @@ async function validateWorkspaceGroupAccess(
 
 export const GET = withSessionAuth(
   async (request, context, params: RouteParams | Promise<RouteParams>) => {
-    const { wsId, groupId } = await params;
-
-    const access = await validateWorkspaceGroupAccess(
-      wsId,
-      groupId,
-      context.user.id,
-      context.supabase,
-      request
-    );
-    if (access instanceof NextResponse) return access;
-
-    const { data, error } = await access.sbAdmin
-      .from('workspace_course_modules')
-      .select('*')
-      .eq('group_id', groupId)
-      .order('module_group_id', { ascending: true })
-      .order('sort_key', { ascending: true, nullsFirst: false })
-      .order('created_at', { ascending: true });
-
-    if (error) {
+    const parsedParams = RouteParamsSchema.safeParse(await params);
+    if (!parsedParams.success) {
       return NextResponse.json(
-        { message: 'Error fetching workspace course modules' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(data);
-  },
-  { rateLimit: { maxRequests: 60, windowMs: 60000 } }
-);
-
-export const POST = withSessionAuth(
-  async (request, context, params: RouteParams | Promise<RouteParams>) => {
-    const { wsId, groupId } = await params;
-
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json(
-        { message: 'Invalid request body' },
+        { message: 'Invalid route params', errors: parsedParams.error.issues },
         { status: 400 }
       );
     }
 
-    const parsed = CreateModuleSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { message: 'Invalid request body', errors: parsed.error.issues },
-        { status: 400 }
-      );
-    }
+    const { wsId, groupId, moduleGroupId } = parsedParams.data;
 
     const access = await validateWorkspaceGroupAccess(
       wsId,
@@ -171,7 +118,7 @@ export const POST = withSessionAuth(
     const { data: moduleGroup, error: moduleGroupError } = await access.sbAdmin
       .from('workspace_course_module_groups')
       .select('id')
-      .eq('id', parsed.data.module_group_id)
+      .eq('id', moduleGroupId)
       .eq('group_id', groupId)
       .maybeSingle();
 
@@ -189,49 +136,22 @@ export const POST = withSessionAuth(
       );
     }
 
-    const { data: lastModuleInGroup, error: lastModuleInGroupError } =
-      await access.sbAdmin
-        .from('workspace_course_modules')
-        .select('sort_key')
-        .eq('group_id', groupId)
-        .eq('module_group_id', parsed.data.module_group_id)
-        .order('sort_key', { ascending: false, nullsFirst: false })
-        .limit(1)
-        .maybeSingle();
-
-    if (lastModuleInGroupError) {
-      return NextResponse.json(
-        { message: 'Failed to determine module sort order' },
-        { status: 500 }
-      );
-    }
-
-    const insertPayload: WorkspaceCourseModuleInsert = {
-      content: parsed.data.content ?? null,
-      extra_content: parsed.data.extra_content ?? null,
-      group_id: groupId,
-      is_public: parsed.data.is_public ?? false,
-      is_published: parsed.data.is_published ?? false,
-      module_group_id: parsed.data.module_group_id,
-      name: parsed.data.name,
-      sort_key: (lastModuleInGroup?.sort_key ?? 0) + 1,
-      youtube_links: parsed.data.youtube_links ?? null,
-    };
-
-    const { data: created, error } = await access.sbAdmin
+    const { data, error } = await access.sbAdmin
       .from('workspace_course_modules')
-      .insert(insertPayload)
       .select('*')
-      .single();
+      .eq('group_id', groupId)
+      .eq('module_group_id', moduleGroupId)
+      .order('sort_key', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true });
 
     if (error) {
       return NextResponse.json(
-        { message: 'Error creating workspace course module' },
+        { message: 'Error fetching workspace course modules' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(created);
+    return NextResponse.json(data);
   },
   { rateLimit: { maxRequests: 60, windowMs: 60000 } }
 );

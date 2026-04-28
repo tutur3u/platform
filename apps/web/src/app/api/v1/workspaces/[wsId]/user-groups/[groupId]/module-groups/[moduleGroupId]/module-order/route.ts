@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
+  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -8,22 +9,22 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 
 const ModuleOrderSchema = z.object({
-  moduleIds: z.array(z.string().uuid()).min(1).max(500),
+  moduleIds: z.array(z.guid()).min(1).max(500),
 });
 
 const RouteParamsSchema = z.object({
-  groupId: z.string().uuid(),
+  groupId: z.guid(),
+  moduleGroupId: z.guid(),
   wsId: z.string().min(1),
 });
 
 interface RouteParams {
   wsId: string;
   groupId: string;
+  moduleGroupId: string;
 }
 
 export const PATCH = withSessionAuth(
-  // Deprecated compatibility endpoint. Prefer
-  // /user-groups/:groupId/module-groups/:moduleGroupId/module-order.
   async (request, context, params: RouteParams | Promise<RouteParams>) => {
     const parsedParams = RouteParamsSchema.safeParse(await params);
     if (!parsedParams.success) {
@@ -33,7 +34,7 @@ export const PATCH = withSessionAuth(
       );
     }
 
-    const { wsId, groupId } = parsedParams.data;
+    const { wsId, groupId, moduleGroupId } = parsedParams.data;
     const normalizedWsId = await normalizeWorkspaceId(wsId, context.supabase);
 
     const membership = await verifyWorkspaceMembershipType({
@@ -52,6 +53,17 @@ export const PATCH = withSessionAuth(
     if (!membership.ok) {
       return NextResponse.json(
         { message: "You don't have access to this workspace" },
+        { status: 403 }
+      );
+    }
+
+    const permissions = await getPermissions({
+      request,
+      wsId: normalizedWsId,
+    });
+    if (!permissions?.containsPermission('manage_users')) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions' },
         { status: 403 }
       );
     }
@@ -102,10 +114,31 @@ export const PATCH = withSessionAuth(
       return NextResponse.json({ message: 'Group not found' }, { status: 404 });
     }
 
+    const { data: moduleGroup, error: moduleGroupError } = await sbAdmin
+      .from('workspace_course_module_groups')
+      .select('id')
+      .eq('id', moduleGroupId)
+      .eq('group_id', groupId)
+      .maybeSingle();
+
+    if (moduleGroupError) {
+      return NextResponse.json(
+        { message: 'Failed to validate module group' },
+        { status: 500 }
+      );
+    }
+
+    if (!moduleGroup) {
+      return NextResponse.json(
+        { message: 'Module group not found' },
+        { status: 404 }
+      );
+    }
+
     const { data: existingModules, error: modulesError } = await sbAdmin
       .from('workspace_course_modules')
       .select('id')
-      .eq('group_id', groupId);
+      .eq('module_group_id', moduleGroupId);
 
     if (modulesError) {
       return NextResponse.json(
@@ -119,7 +152,9 @@ export const PATCH = withSessionAuth(
     );
     if (existingIds.size !== moduleIds.length) {
       return NextResponse.json(
-        { message: 'Module order payload must include all group modules' },
+        {
+          message: 'Module order payload must include all module group modules',
+        },
         { status: 400 }
       );
     }
@@ -135,9 +170,9 @@ export const PATCH = withSessionAuth(
     }
 
     const { error: reorderError } = await sbAdmin.rpc(
-      'reorder_workspace_course_modules',
+      'reorder_workspace_course_modules_in_module_group',
       {
-        p_group_id: groupId,
+        p_module_group_id: moduleGroupId,
         p_module_ids: moduleIds,
       }
     );
@@ -145,7 +180,7 @@ export const PATCH = withSessionAuth(
     if (reorderError) {
       console.error('Failed to reorder modules', {
         error: reorderError,
-        groupId,
+        moduleGroupId,
         moduleIds,
       });
       return NextResponse.json(

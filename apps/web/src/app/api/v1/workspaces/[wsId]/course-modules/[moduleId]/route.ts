@@ -24,6 +24,7 @@ const UpdateModuleSchema = z
     group_id: z.string().uuid().optional(),
     is_public: z.boolean().optional(),
     is_published: z.boolean().optional(),
+    module_group_id: z.string().uuid().optional(),
     name: z.string().trim().min(1).max(255).optional(),
     youtube_links: z.array(z.string().trim()).nullable().optional(),
   })
@@ -101,6 +102,30 @@ export const PUT = withSessionAuth(
       context.supabase
     );
     if (access instanceof NextResponse) return access;
+
+    if (parsed.data.module_group_id) {
+      const { data: moduleGroup, error: moduleGroupError } =
+        await access.sbAdmin
+          .from('workspace_course_module_groups')
+          .select('id')
+          .eq('id', parsed.data.module_group_id)
+          .eq('group_id', access.module.group_id)
+          .maybeSingle();
+
+      if (moduleGroupError) {
+        return NextResponse.json(
+          { message: 'Failed to validate module group' },
+          { status: 500 }
+        );
+      }
+
+      if (!moduleGroup) {
+        return NextResponse.json(
+          { message: 'Module group not found' },
+          { status: 404 }
+        );
+      }
+    }
 
     const updatePayload: WorkspaceCourseModuleUpdate = parsed.data;
 

@@ -10080,10 +10080,12 @@
     "edit_description": "Edit an existing module",
     "edit_link": "Edit link",
     "invalid_youtube_link": "Invalid YouTube link",
+    "module_group": "Module group",
     "name": "Module name",
     "plural": "Course Modules",
     "resource": "Resource",
     "resources": "Resources",
+    "select_group": "Select a group",
     "singular": "Course Module",
     "youtube_link": "YouTube Link",
     "youtube_links": "YouTube Links"

@@ -16941,6 +16941,86 @@ export type Database = {
           },
         ];
       };
+      workspace_course_module_groups: {
+        Row: {
+          color: string | null;
+          created_at: string;
+          group_id: string;
+          icon: string | null;
+          id: string;
+          sort_key: number;
+          title: string;
+        };
+        Insert: {
+          color?: string | null;
+          created_at?: string;
+          group_id: string;
+          icon?: string | null;
+          id?: string;
+          sort_key: number;
+          title: string;
+        };
+        Update: {
+          color?: string | null;
+          created_at?: string;
+          group_id?: string;
+          icon?: string | null;
+          id?: string;
+          sort_key?: number;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_course_module_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'workspace_course_module_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'workspace_course_module_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'workspace_course_module_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_course_module_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_course_module_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_course_module_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_course_modules: {
         Row: {
           content: Json | null;
@@ -16950,8 +17030,9 @@ export type Database = {
           id: string;
           is_public: boolean;
           is_published: boolean;
+          module_group_id: string;
           name: string;
-          sort_key: number | null;
+          sort_key: number;
           youtube_links: string[] | null;
         };
         Insert: {
@@ -16962,8 +17043,9 @@ export type Database = {
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
+          module_group_id: string;
           name?: string;
-          sort_key?: number | null;
+          sort_key: number;
           youtube_links?: string[] | null;
         };
         Update: {
@@ -16974,8 +17056,9 @@ export type Database = {
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
+          module_group_id?: string;
           name?: string;
-          sort_key?: number | null;
+          sort_key?: number;
           youtube_links?: string[] | null;
         };
         Relationships: [
@@ -17026,6 +17109,13 @@ export type Database = {
             columns: ['group_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_user_groups_with_guest';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_course_modules_module_group_id_fkey';
+            columns: ['module_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_course_module_groups';
             referencedColumns: ['id'];
           },
         ];
@@ -28474,8 +28564,16 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      reorder_workspace_course_module_groups: {
+        Args: { p_group_id: string; p_module_group_ids: string[] };
+        Returns: undefined;
+      };
       reorder_workspace_course_modules: {
         Args: { p_group_id: string; p_module_ids: string[] };
+        Returns: undefined;
+      };
+      reorder_workspace_course_modules_in_module_group: {
+        Args: { p_module_group_id: string; p_module_ids: string[] };
         Returns: undefined;
       };
       reserve_fixed_ai_credits: {
@@ -28496,7 +28594,12 @@ export type Database = {
         }[];
       };
       resolve_guest_self_join_candidate: {
-        Args: { p_user_id: string; p_ws_id: string };
+        Args: {
+          p_auth_email?: string;
+          p_private_email?: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
         Returns: {
           eligible: boolean;
           matched_email_source: string;

@@ -12615,10 +12615,12 @@
     "edit_description": "Chỉnh sửa mô-đun hiện có",
     "edit_link": "Chỉnh sửa liên kết",
     "invalid_youtube_link": "Liên kết YouTube không hợp lệ",
+    "module_group": "Nhóm mô-đun",
     "name": "Tên mô-đun",
     "plural": "Mô-đun khóa học",
     "resource": "Tài nguyên",
     "resources": "Tài nguyên",
+    "select_group": "Chọn nhóm",
     "singular": "Mô-đun khóa học",
     "youtube_link": "Liên kết YouTube",
     "youtube_links": "Liên kết YouTube"

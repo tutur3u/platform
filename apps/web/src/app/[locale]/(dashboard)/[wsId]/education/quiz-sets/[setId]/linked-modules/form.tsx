@@ -26,6 +26,7 @@ import * as z from 'zod';
 interface Props {
   wsId: string;
   courseId: string;
+  moduleGroupId?: string;
   data?: Partial<WorkspaceCourseModule>;
 
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
@@ -33,12 +34,14 @@ interface Props {
 
 const FormSchema = z.object({
   id: z.string().optional(),
+  module_group_id: z.string().uuid(),
   name: z.string().min(1),
 });
 
 export default function CourseModuleForm({
   wsId,
   courseId,
+  moduleGroupId,
   data,
   onFinish,
 }: Props) {
@@ -49,6 +52,7 @@ export default function CourseModuleForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id,
+      module_group_id: data?.module_group_id || moduleGroupId || '',
       name: data?.name || '',
     },
   });
@@ -86,6 +90,7 @@ export default function CourseModuleForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
+        <input type="hidden" {...form.register('module_group_id')} />
         <FormField
           control={form.control}
           name="name"

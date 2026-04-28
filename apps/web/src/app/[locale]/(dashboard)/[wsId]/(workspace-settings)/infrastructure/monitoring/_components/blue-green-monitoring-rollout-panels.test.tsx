@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrastructure';
 import { describe, expect, it, vi } from 'vitest';
 import type { BlueGreenMonitoringDeploymentRollup } from './blue-green-monitoring-deployments';
@@ -32,7 +32,10 @@ vi.mock('next-intl', () => ({
 
 describe('RolloutStagePanel', () => {
   it('refreshes an in-progress deployment duration every second', async () => {
-    const startedAt = Date.now() - 1000;
+    vi.useFakeTimers();
+    const now = new Date('2026-01-01T00:00:02.000Z');
+    vi.setSystemTime(now);
+    const startedAt = now.getTime() - 1000;
 
     const deployments: BlueGreenMonitoringDeploymentRollup[] = [
       {
@@ -75,8 +78,12 @@ describe('RolloutStagePanel', () => {
 
     expect(screen.getByText('1s')).toBeInTheDocument();
 
-    await waitFor(() => {
-      expect(screen.getByText('2s')).toBeInTheDocument();
+    await act(async () => {
+      vi.advanceTimersByTime(1000);
     });
+
+    expect(screen.getByText('2s')).toBeInTheDocument();
+
+    vi.useRealTimers();
   });
 });
