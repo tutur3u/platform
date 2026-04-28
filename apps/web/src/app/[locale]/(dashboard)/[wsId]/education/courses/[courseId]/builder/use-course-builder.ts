@@ -21,6 +21,8 @@ import {
   updateWorkspaceCourseModuleGroup,
 } from '@tuturuuu/internal-api';
 import type { WorkspaceCourseBuilderModule } from '@tuturuuu/types/db';
+import { toast } from '@tuturuuu/ui/sonner';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 interface UseCourseBuilderParams {
@@ -43,6 +45,7 @@ export function useCourseBuilder({
   resolvedWsId,
 }: UseCourseBuilderParams) {
   const queryClient = useQueryClient();
+  const t = useTranslations('ws-course-modules');
 
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
 
@@ -131,10 +134,14 @@ export function useCourseBuilder({
         payload.data
       );
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ['workspaceCourseModuleGroups', resolvedWsId, courseId],
       });
+      toast.success(variables.id ? t('group_updated') : t('group_created'));
+    },
+    onError: () => {
+      toast.error(t('group_save_error'));
     },
   });
 
@@ -147,6 +154,10 @@ export function useCourseBuilder({
       });
       invalidateModuleGroupModules();
       setActiveModuleId(null);
+      toast.success(t('group_deleted'));
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : String(error));
     },
   });
 
@@ -161,6 +172,10 @@ export function useCourseBuilder({
       queryClient.invalidateQueries({
         queryKey: ['workspaceCourseModuleGroups', resolvedWsId, courseId],
       });
+      toast.success(t('groups_reordered'));
+    },
+    onError: () => {
+      toast.error(t('reorder_failed'));
     },
   });
 
@@ -177,6 +192,10 @@ export function useCourseBuilder({
       ),
     onSuccess: () => {
       invalidateModuleGroupModules();
+      toast.success(t('modules_reordered'));
+    },
+    onError: () => {
+      toast.error(t('reorder_failed'));
     },
   });
 
@@ -185,6 +204,13 @@ export function useCourseBuilder({
       updateWorkspaceCourseModule(resolvedWsId, payload.moduleId, {
         module_group_id: payload.targetGroupId,
       }),
+    onSuccess: () => {
+      invalidateModuleGroupModules();
+      toast.success(t('module_moved'));
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : String(error));
+    },
   });
 
   const duplicateMutation = useMutation({
@@ -192,6 +218,10 @@ export function useCourseBuilder({
       createWorkspaceCourseModule(resolvedWsId, courseId, payload),
     onSuccess: () => {
       invalidateModuleGroupModules();
+      toast.success(t('module_duplicated'));
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : String(error));
     },
   });
 
@@ -201,6 +231,10 @@ export function useCourseBuilder({
     onSuccess: () => {
       invalidateModuleGroupModules();
       setActiveModuleId(null);
+      toast.success(t('module_deleted'));
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : String(error));
     },
   });
 

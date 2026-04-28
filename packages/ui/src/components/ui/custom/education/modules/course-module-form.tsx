@@ -21,7 +21,6 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import {
@@ -31,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -116,9 +116,9 @@ export function CourseModuleForm({
         router.refresh();
       }
       onFinish?.();
+      toast.success(payload.id ? t('module_updated') : t('module_created'));
     } catch (error) {
-      toast({
-        title: `Failed to ${payload.id ? 'edit' : 'create'} course module`,
+      toast.error(t('module_save_error'), {
         description: error instanceof Error ? error.message : String(error),
       });
     }

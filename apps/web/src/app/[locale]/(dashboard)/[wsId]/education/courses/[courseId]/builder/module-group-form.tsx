@@ -20,7 +20,6 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import {
   Tooltip,
@@ -166,8 +165,6 @@ export function ModuleGroupForm({
           color: values.color?.toLowerCase(),
         });
 
-        toast.success(isEditing ? t('group_updated') : t('group_created'));
-
         if (isEditing || !createMultiple) {
           resetForm();
           onFinish?.();
@@ -175,12 +172,12 @@ export function ModuleGroupForm({
           resetForm();
         }
       } catch {
-        toast.error(t('group_save_error'));
+        // error handled by parent hook toast
       } finally {
         setIsSubmitting(false);
       }
     },
-    [onSubmit, onFinish, isEditing, createMultiple, resetForm, t]
+    [onSubmit, onFinish, isEditing, createMultiple, resetForm]
   );
 
   const CurrentIcon = useMemo(() => {

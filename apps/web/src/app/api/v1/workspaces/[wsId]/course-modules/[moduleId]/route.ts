@@ -64,7 +64,7 @@ async function validateWorkspaceModuleAccess(
   const sbAdmin = await createAdminClient();
   const { data: module, error: moduleError } = await sbAdmin
     .from('workspace_course_modules')
-    .select('id, group_id, workspace_user_groups!inner(ws_id)')
+    .select('id, group_id, module_group_id, workspace_user_groups!inner(ws_id)')
     .eq('id', moduleId)
     .eq('workspace_user_groups.ws_id', normalizedWsId)
     .maybeSingle();
@@ -87,7 +87,17 @@ export const PUT = withSessionAuth(
   async (request, context, params: RouteParams | Promise<RouteParams>) => {
     const { moduleId, wsId } = await params;
 
-    const parsed = UpdateModuleSchema.safeParse(await request.json());
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { message: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    const parsed = UpdateModuleSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         { message: 'Invalid request body', errors: parsed.error.issues },
@@ -103,13 +113,48 @@ export const PUT = withSessionAuth(
     );
     if (access instanceof NextResponse) return access;
 
+    const targetGroupId = parsed.data.group_id ?? access.module.group_id;
+    const isChangingGroup = targetGroupId !== access.module.group_id;
+    if (isChangingGroup && !parsed.data.module_group_id) {
+      return NextResponse.json(
+        {
+          message:
+            'module_group_id is required when changing a module to another group',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (isChangingGroup) {
+      const { data: targetGroup, error: targetGroupError } = await access.sbAdmin
+        .from('workspace_user_groups')
+        .select('id')
+        .eq('id', targetGroupId)
+        .eq('ws_id', access.normalizedWsId)
+        .maybeSingle();
+
+      if (targetGroupError) {
+        return NextResponse.json(
+          { message: 'Failed to validate target group' },
+          { status: 500 }
+        );
+      }
+
+      if (!targetGroup) {
+        return NextResponse.json(
+          { message: 'Target group not found' },
+          { status: 404 }
+        );
+      }
+    }
+
     if (parsed.data.module_group_id) {
       const { data: moduleGroup, error: moduleGroupError } =
         await access.sbAdmin
           .from('workspace_course_module_groups')
           .select('id')
           .eq('id', parsed.data.module_group_id)
-          .eq('group_id', access.module.group_id)
+          .eq('group_id', targetGroupId)
           .maybeSingle();
 
       if (moduleGroupError) {
@@ -128,6 +173,31 @@ export const PUT = withSessionAuth(
     }
 
     const updatePayload: WorkspaceCourseModuleUpdate = parsed.data;
+    if (
+      parsed.data.module_group_id &&
+      parsed.data.module_group_id !== access.module.module_group_id
+    ) {
+      const { data: lastModuleInTargetGroup, error: lastModuleInTargetGroupError } =
+        await access.sbAdmin
+          .from('workspace_course_modules')
+          .select('sort_key')
+          .eq('group_id', targetGroupId)
+          .eq('module_group_id', parsed.data.module_group_id)
+          .order('sort_key', { ascending: false, nullsFirst: false })
+          .limit(1)
+          .maybeSingle();
+
+      if (lastModuleInTargetGroupError) {
+        return NextResponse.json(
+          { message: 'Failed to determine module sort order' },
+          { status: 500 }
+        );
+      }
+
+      // Preserve contiguous ordering in the destination group and avoid
+      // unique (module_group_id, sort_key) conflicts when moving modules.
+      updatePayload.sort_key = (lastModuleInTargetGroup?.sort_key ?? 0) + 1;
+    }
 
     const { error } = await access.sbAdmin
       .from('workspace_course_modules')
@@ -135,6 +205,11 @@ export const PUT = withSessionAuth(
       .eq('id', moduleId);
 
     if (error) {
+      console.error('Failed to update workspace course module', {
+        error,
+        moduleId,
+        updatePayload,
+      });
       return NextResponse.json(
         { message: 'Error updating workspace course module' },
         { status: 500 }

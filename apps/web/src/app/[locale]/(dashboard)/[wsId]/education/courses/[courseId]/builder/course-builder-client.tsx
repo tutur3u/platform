@@ -1,11 +1,29 @@
 'use client';
 
 import {
+  closestCenter,
+  type CollisionDetection,
+  DndContext,
+  type DragCancelEvent,
+  type DragEndEvent,
+  DragOverlay,
+  type DragOverEvent,
+  type DragStartEvent,
+  pointerWithin,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { useQueryClient } from '@tanstack/react-query';
+import {
   BookOpenText,
-  Circle,
   ClipboardCheck,
   Copy,
-  Ellipsis,
   GripVertical,
   Link as LinkIcon,
   ListTodo,
@@ -17,36 +35,23 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { CourseModuleForm } from '@tuturuuu/ui/custom/education/modules/course-module-form';
 import { ModuleToggles } from '@tuturuuu/ui/custom/education/modules/module-toggle';
 import { StorageObjectForm } from '@tuturuuu/ui/custom/education/modules/resources/file-upload-form';
 import YouTubeLinkForm from '@tuturuuu/ui/custom/education/modules/youtube/form';
 import { EducationContentSurface } from '@tuturuuu/ui/custom/education/shell/education-content-surface';
 import { EducationKpiStrip } from '@tuturuuu/ui/custom/education/shell/education-kpi-strip';
 import { EducationPageHeader } from '@tuturuuu/ui/custom/education/shell/education-page-header';
-import {
-  getIconComponentByKey,
-  type PlatformIconKey,
-} from '@tuturuuu/ui/custom/icon-picker';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import FlashcardForm from '../../../flashcards/form';
 import QuizSetForm from '../../../quiz-sets/form';
 import QuizForm from '../../../quizzes/form';
 import { ModuleContentEditor } from '../modules/[moduleId]/content/content-editor';
 import { ModuleGroupForm } from './module-group-form';
+import { SortableGroup } from './sortable-group';
 import { useCourseBuilder } from './use-course-builder';
 
 interface CourseBuilderClientProps {
@@ -63,11 +68,11 @@ export function CourseBuilderClient({
   routeWsId,
 }: CourseBuilderClientProps) {
   const t = useTranslations();
-  const [dragGroupId, setDragGroupId] = useState<string | null>(null);
-  const [dragModuleId, setDragModuleId] = useState<string | null>(null);
-  const [dragSourceGroupId, setDragSourceGroupId] = useState<string | null>(
-    null
-  );
+  const queryClient = useQueryClient();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [moduleDropTargetGroupId, setModuleDropTargetGroupId] = useState<
+    string | null
+  >(null);
   const [editGroupId, setEditGroupId] = useState<string | null>(null);
   const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
 
@@ -91,73 +96,281 @@ export function CourseBuilderClient({
     upsertGroupMutation,
   } = useCourseBuilder({ courseId, resolvedWsId });
 
-  const onDropGroup = async (targetGroupId: string) => {
-    if (!dragGroupId || dragGroupId === targetGroupId) return;
-    try {
-      const ids = moduleGroups.map((group) => group.id);
-      const from = ids.indexOf(dragGroupId);
-      const to = ids.indexOf(targetGroupId);
-      if (from < 0 || to < 0) return;
-      const [moved] = ids.splice(from, 1);
-      if (!moved) return;
-      ids.splice(to, 0, moved);
-      await reorderGroupsMutation.mutateAsync(ids);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error));
-    } finally {
-      setDragGroupId(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  );
+
+  const modules = useMemo(() => {
+    const all: ReturnType<typeof modulesByGroupId.get> = [];
+    for (const group of moduleGroups) {
+      all.push(...(modulesByGroupId.get(group.id) ?? []));
     }
+    return all;
+  }, [moduleGroups, modulesByGroupId]);
+
+  /** Nested group + module sortables share one DnD tree; the group's droppable wraps the whole card.
+   *  Module drags: prefer module hits, then group targets for cross-group moves.
+   *  Group drags: prefer pointerWithin on other groups — closestCenter skews toward the dragged card,
+   *  which blocks moving a lower group upward until the pointer crosses far enough (asymmetric vs drag-down).
+   */
+  const collisionDetection = useCallback<CollisionDetection>(
+    (args) => {
+      const activeId = String(args.active.id);
+      const activeIsGroup = moduleGroups.some((g) => g.id === activeId);
+      const activeIsModule = modules.some((m) => m.id === activeId);
+
+      if (activeIsGroup) {
+        const groupContainers = args.droppableContainers.filter((c) =>
+          moduleGroups.some((g) => g.id === String(c.id))
+        );
+        // Prefer pointer hits on *other* groups. closestCenter alone stays biased toward the
+        // dragged card's center, so dragging a lower group upward rarely beats the active group
+        // until the pointer has entered the target card (asymmetric vs dragging top downward).
+        const otherGroupContainers = groupContainers.filter(
+          (c) => String(c.id) !== activeId
+        );
+        if (otherGroupContainers.length > 0) {
+          const pointerOverTarget = pointerWithin({
+            ...args,
+            droppableContainers: otherGroupContainers,
+          });
+          if (pointerOverTarget.length > 0) {
+            return pointerOverTarget;
+          }
+        }
+        return groupContainers.length > 0
+          ? closestCenter({ ...args, droppableContainers: groupContainers })
+          : closestCenter(args);
+      }
+
+      if (activeIsModule) {
+        const moduleContainers = args.droppableContainers.filter((c) =>
+          modules.some((m) => m.id === String(c.id))
+        );
+
+        const pointerOverModules = pointerWithin({
+          ...args,
+          droppableContainers: moduleContainers,
+        });
+        if (pointerOverModules.length > 0) {
+          return pointerOverModules;
+        }
+
+        const closestModules = closestCenter({
+          ...args,
+          droppableContainers: moduleContainers,
+        });
+        if (closestModules.length > 0) {
+          return closestModules;
+        }
+
+        const groupContainers = args.droppableContainers.filter((c) =>
+          moduleGroups.some((g) => g.id === String(c.id))
+        );
+        return groupContainers.length > 0
+          ? closestCenter({ ...args, droppableContainers: groupContainers })
+          : closestCenter(args);
+      }
+
+      return closestCenter(args);
+    },
+    [moduleGroups, modules]
+  );
+
+  const moduleParentMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const group of moduleGroups) {
+      for (const module of modulesByGroupId.get(group.id) ?? []) {
+        map.set(module.id, group.id);
+      }
+    }
+    return map;
+  }, [moduleGroups, modulesByGroupId]);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(String(event.active.id));
+    setModuleDropTargetGroupId(null);
   };
 
-  const onDropModule = async (targetGroupId: string, targetIndex: number) => {
-    if (!dragModuleId || !dragSourceGroupId) return;
-    try {
-      const sourceModules = modulesByGroupId.get(dragSourceGroupId) ?? [];
-      const sourceIndex = sourceModules.findIndex(
-        (module) => module.id === dragModuleId
-      );
-      if (sourceIndex < 0) return;
+  const handleDragOver = (event: DragOverEvent) => {
+    const aid = String(event.active.id);
+    if (!modules.some((m) => m.id === aid)) {
+      setModuleDropTargetGroupId(null);
+      return;
+    }
+    const over = event.over;
+    if (!over) {
+      setModuleDropTargetGroupId(null);
+      return;
+    }
+    const oid = String(over.id);
+    const fromModule = moduleParentMap.get(oid);
+    if (fromModule) {
+      setModuleDropTargetGroupId(fromModule);
+      return;
+    }
+    if (modulesByGroupId.has(oid)) {
+      setModuleDropTargetGroupId(oid);
+      return;
+    }
+    setModuleDropTargetGroupId(null);
+  };
 
-      if (dragSourceGroupId === targetGroupId) {
-        const next = [...sourceModules];
-        const [moved] = next.splice(sourceIndex, 1);
-        if (!moved) return;
-        next.splice(targetIndex, 0, moved);
-        await reorderModulesMutation.mutateAsync({
+  const handleDragCancel = (_event: DragCancelEvent) => {
+    setActiveId(null);
+    setModuleDropTargetGroupId(null);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+    setModuleDropTargetGroupId(null);
+
+    if (!over) return;
+
+    const activeIdStr = String(active.id);
+    const overIdStr = String(over.id);
+
+    if (activeIdStr === overIdStr) return;
+
+    const isGroup = moduleGroups.some((g) => g.id === activeIdStr);
+    const isModule = modules.some((m) => m.id === activeIdStr);
+
+    if (isGroup) {
+      const overIsGroup = moduleGroups.some((g) => g.id === overIdStr);
+      if (!overIsGroup) return;
+
+      const oldIndex = moduleGroups.findIndex((g) => g.id === activeIdStr);
+      const newIndex = moduleGroups.findIndex((g) => g.id === overIdStr);
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+
+      const nextGroups = arrayMove(moduleGroups, oldIndex, newIndex);
+      queryClient.setQueryData(
+        ['workspaceCourseModuleGroups', resolvedWsId, courseId],
+        nextGroups
+      );
+      reorderGroupsMutation.mutate(
+        nextGroups.map((g) => g.id),
+        {
+          onError: () => {
+            queryClient.invalidateQueries({
+              queryKey: ['workspaceCourseModuleGroups', resolvedWsId, courseId],
+            });
+          },
+        }
+      );
+      return;
+    }
+
+    if (isModule) {
+      const sourceGroupId = moduleParentMap.get(activeIdStr);
+      if (!sourceGroupId) return;
+
+      let targetGroupId: string;
+      let targetIndex: number;
+
+      const overModuleGroupId = moduleParentMap.get(overIdStr);
+      if (overModuleGroupId) {
+        targetGroupId = overModuleGroupId;
+        const targetModules = modulesByGroupId.get(targetGroupId) ?? [];
+        targetIndex = targetModules.findIndex((m) => m.id === overIdStr);
+      } else if (modulesByGroupId.has(overIdStr)) {
+        targetGroupId = overIdStr;
+        targetIndex = (modulesByGroupId.get(targetGroupId) ?? []).length;
+      } else {
+        return;
+      }
+
+      const sourceModules = modulesByGroupId.get(sourceGroupId) ?? [];
+      const activeModuleIndex = sourceModules.findIndex(
+        (m) => m.id === activeIdStr
+      );
+      if (activeModuleIndex === -1) return;
+      const movedModule = sourceModules[activeModuleIndex];
+      if (!movedModule) return;
+
+      if (sourceGroupId === targetGroupId) {
+        if (activeModuleIndex === targetIndex) return;
+        const nextModules = arrayMove(
+          sourceModules,
+          activeModuleIndex,
+          targetIndex
+        );
+        queryClient.setQueryData(
+          [
+            'workspaceCourseModuleGroupModules',
+            resolvedWsId,
+            courseId,
+            targetGroupId,
+          ],
+          nextModules
+        );
+        reorderModulesMutation.mutate({
           moduleGroupId: targetGroupId,
-          moduleIds: next.map((module) => module.id),
+          moduleIds: nextModules.map((m) => m.id),
         });
       } else {
+        const nextSource = sourceModules.filter((m) => m.id !== activeIdStr);
         const targetModules = modulesByGroupId.get(targetGroupId) ?? [];
         const nextTarget = [...targetModules];
-        const movingModule = sourceModules[sourceIndex];
-        if (!movingModule) return;
-        nextTarget.splice(targetIndex, 0, movingModule);
-        await moveModuleMutation.mutateAsync({
-          moduleId: dragModuleId,
+        const insertIndex =
+          targetIndex >= 0 && targetIndex <= nextTarget.length
+            ? targetIndex
+            : nextTarget.length;
+        nextTarget.splice(insertIndex, 0, movedModule);
+
+        queryClient.setQueryData(
+          [
+            'workspaceCourseModuleGroupModules',
+            resolvedWsId,
+            courseId,
+            sourceGroupId,
+          ],
+          nextSource
+        );
+        queryClient.setQueryData(
+          [
+            'workspaceCourseModuleGroupModules',
+            resolvedWsId,
+            courseId,
+            targetGroupId,
+          ],
+          nextTarget
+        );
+
+        moveModuleMutation.mutate({
+          moduleId: activeIdStr,
           targetGroupId,
         });
-        await reorderModulesMutation.mutateAsync({
+        reorderModulesMutation.mutate({
           moduleGroupId: targetGroupId,
-          moduleIds: nextTarget.map((module) => module.id),
+          moduleIds: nextTarget.map((m) => m.id),
         });
-        const nextSource = sourceModules
-          .filter((module) => module.id !== dragModuleId)
-          .map((module) => module.id);
         if (nextSource.length > 0) {
-          await reorderModulesMutation.mutateAsync({
-            moduleGroupId: dragSourceGroupId,
-            moduleIds: nextSource,
+          reorderModulesMutation.mutate({
+            moduleGroupId: sourceGroupId,
+            moduleIds: nextSource.map((m) => m.id),
           });
         }
       }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error));
-    } finally {
-      setDragModuleId(null);
-      setDragSourceGroupId(null);
     }
   };
+
+  const activeGroup = activeId
+    ? moduleGroups.find((g) => g.id === activeId)
+    : null;
+  const activeModuleItem = activeId
+    ? modules.find((m) => m.id === activeId)
+    : null;
+
+  const draggingModuleSourceGroupId =
+    activeId && modules.some((m) => m.id === activeId)
+      ? (moduleParentMap.get(activeId) ?? null)
+      : null;
 
   if (isLoading) {
     return (
@@ -268,162 +481,71 @@ export function CourseBuilderClient({
             />
           </div>
 
-          <div className="space-y-3">
-            {moduleGroups.map((group) => {
-              const groupModules = modulesByGroupId.get(group.id) ?? [];
-              return (
-                <div
-                  key={group.id}
-                  draggable
-                  onDragStart={() => setDragGroupId(group.id)}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={() => void onDropGroup(group.id)}
-                  className="rounded-xl border border-border/70 bg-background/70 p-3"
-                >
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <GripVertical className="h-4 w-4 shrink-0 text-foreground/40" />
-                      {(() => {
-                        const GroupIcon =
-                          getIconComponentByKey(
-                            group.icon as PlatformIconKey | null
-                          ) ?? Circle;
-                        const colorStyles = computeAccessibleLabelStyles(
-                          group.color || '#64748b'
-                        );
-                        return (
-                          <div
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
-                            style={
-                              colorStyles
-                                ? {
-                                    backgroundColor: colorStyles.bg,
-                                    borderColor: colorStyles.border,
-                                    borderWidth: '1px',
-                                  }
-                                : undefined
-                            }
-                          >
-                            <GroupIcon
-                              className="h-3.5 w-3.5"
-                              style={
-                                colorStyles
-                                  ? { color: colorStyles.text }
-                                  : undefined
-                              }
-                            />
-                          </div>
-                        );
-                      })()}
-                      <div className="line-clamp-1 font-medium text-sm">
-                        {group.title}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <ModifiableDialogTrigger
-                        title={t('ws-course-modules.create')}
-                        createDescription={t(
-                          'ws-course-modules.create_description'
-                        )}
-                        form={
-                          <CourseModuleForm
-                            wsId={resolvedWsId}
-                            courseId={courseId}
-                            defaultModuleGroupId={group.id}
-                            moduleGroups={moduleGroups.map((g) => ({
-                              id: g.id,
-                              title: g.title,
-                              icon: g.icon,
-                              color: g.color,
-                            }))}
-                            onCreated={() => {
-                              invalidateModuleGroupModules();
-                            }}
-                          />
-                        }
-                        trigger={
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 rounded-lg"
-                            title={t('ws-course-modules.create')}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        }
-                      />
-                      <DropdownMenu modal={false}>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 rounded-lg"
-                          >
-                            <Ellipsis className="h-4 w-4" />
-                            <span className="sr-only">
-                              {t('common.actions')}
-                            </span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem
-                            onClick={() => setEditGroupId(group.id)}
-                          >
-                            {t('common.edit')}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => setDeleteGroupId(group.id)}
-                            className="text-dynamic-red"
-                          >
-                            {t('common.delete')}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={collisionDetection}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragCancel={handleDragCancel}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={moduleGroups.map((g) => g.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-3">
+                {moduleGroups.map((group) => (
+                  <SortableGroup
+                    key={group.id}
+                    group={group}
+                    modules={modulesByGroupId.get(group.id) ?? []}
+                    activeModuleId={activeModule?.id ?? null}
+                    resolvedWsId={resolvedWsId}
+                    courseId={courseId}
+                    moduleGroups={moduleGroups}
+                    onSetActiveModuleId={setActiveModuleId}
+                    onEditGroup={setEditGroupId}
+                    onDeleteGroup={setDeleteGroupId}
+                    onInvalidate={invalidateModuleGroupModules}
+                    isModuleDragDropTarget={
+                      draggingModuleSourceGroupId !== null &&
+                      moduleDropTargetGroupId === group.id
+                    }
+                    showCrossGroupModuleDropHint={
+                      draggingModuleSourceGroupId !== null &&
+                      moduleDropTargetGroupId === group.id &&
+                      draggingModuleSourceGroupId !== group.id
+                    }
+                  />
+                ))}
+              </div>
+            </SortableContext>
 
-                  <div className="space-y-2">
-                    {groupModules.map((module, index) => (
-                      <button
-                        key={module.id}
-                        type="button"
-                        draggable
-                        onDragStart={() => {
-                          setDragModuleId(module.id);
-                          setDragSourceGroupId(group.id);
-                        }}
-                        onDragOver={(event) => event.preventDefault()}
-                        onDrop={() => void onDropModule(group.id, index)}
-                        onClick={() => setActiveModuleId(module.id)}
-                        className={`flex w-full items-center justify-between gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors ${
-                          module.id === activeModule?.id
-                            ? 'border-dynamic-blue/30 bg-dynamic-blue/10'
-                            : 'border-border/70 hover:bg-foreground/5'
-                        }`}
-                      >
-                        <div className="min-w-0">
-                          <div className="line-clamp-1 font-medium text-sm">
-                            {module.name}
-                          </div>
-                        </div>
-                        <GripVertical className="h-4 w-4 shrink-0 text-foreground/40" />
-                      </button>
-                    ))}
-                    <div
-                      onDragOver={(event) => event.preventDefault()}
-                      onDrop={() =>
-                        void onDropModule(group.id, groupModules.length)
-                      }
-                      className="rounded-lg border border-border border-dashed px-2 py-1.5 text-center text-foreground/50 text-xs"
-                    >
-                      {t('workspace-education-tabs.drag_reorder_hint')}
-                    </div>
+            <DragOverlay dropAnimation={null}>
+              {activeGroup ? (
+                <div className="rounded-xl border border-border/70 bg-background/95 p-3 opacity-90 shadow-xl">
+                  <div className="flex items-center gap-2">
+                    <GripVertical className="h-4 w-4 text-foreground/40" />
+                    <span className="font-medium text-sm">
+                      {activeGroup.title}
+                    </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ) : activeModuleItem ? (
+                <div className="pointer-events-none flex min-h-11 min-w-[220px] max-w-[min(100vw-2rem,320px)] flex-col gap-1 rounded-xl border-2 border-dynamic-blue/45 bg-background/98 px-3 py-2.5 text-left shadow-2xl ring-2 ring-dynamic-blue/25 ring-offset-2 ring-offset-background">
+                  <div className="font-medium text-foreground text-xs uppercase tracking-wide">
+                    {t('ws-course-modules.singular')}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="line-clamp-2 font-medium text-sm leading-snug">
+                      {activeModuleItem.name}
+                    </div>
+                    <GripVertical className="h-4 w-4 shrink-0 text-foreground/45" />
+                  </div>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
 
           <ModifiableDialogTrigger
             open={!!editGroupId}
@@ -464,17 +586,7 @@ export function CourseBuilderClient({
                   onClick={() => {
                     if (deleteGroupId) {
                       deleteGroupMutation.mutate(deleteGroupId, {
-                        onSuccess: () => {
-                          setDeleteGroupId(null);
-                          toast.success(t('ws-course-modules.group_deleted'));
-                        },
-                        onError: (error) => {
-                          toast.error(
-                            error instanceof Error
-                              ? error.message
-                              : String(error)
-                          );
-                        },
+                        onSuccess: () => setDeleteGroupId(null),
                       });
                     }
                   }}
@@ -655,26 +767,15 @@ export function CourseBuilderClient({
                       variant="outline"
                       className="rounded-xl"
                       onClick={() =>
-                        duplicateMutation.mutate(
-                          {
-                            content: activeModule.content,
-                            extra_content: activeModule.extra_content,
-                            is_public: activeModule.is_public,
-                            is_published: false,
-                            module_group_id: activeModule.module_group_id,
-                            name: `${activeModule.name} (Copy)`,
-                            youtube_links: activeModule.youtube_links ?? [],
-                          },
-                          {
-                            onError: (error) => {
-                              toast.error(
-                                error instanceof Error
-                                  ? error.message
-                                  : String(error)
-                              );
-                            },
-                          }
-                        )
+                        duplicateMutation.mutate({
+                          content: activeModule.content,
+                          extra_content: activeModule.extra_content,
+                          is_public: activeModule.is_public,
+                          is_published: false,
+                          module_group_id: activeModule.module_group_id,
+                          name: `${activeModule.name} (Copy)`,
+                          youtube_links: activeModule.youtube_links ?? [],
+                        })
                       }
                     >
                       <Copy className="h-4 w-4" />
@@ -684,15 +785,7 @@ export function CourseBuilderClient({
                       variant="destructive"
                       className="rounded-xl"
                       onClick={() =>
-                        deleteModuleMutation.mutate(activeModule.id, {
-                          onError: (error) => {
-                            toast.error(
-                              error instanceof Error
-                                ? error.message
-                                : String(error)
-                            );
-                          },
-                        })
+                        deleteModuleMutation.mutate(activeModule.id)
                       }
                     >
                       <Trash2 className="h-4 w-4" />
