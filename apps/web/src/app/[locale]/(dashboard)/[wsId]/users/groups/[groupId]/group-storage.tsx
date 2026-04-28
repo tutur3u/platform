@@ -89,7 +89,7 @@ export default function GroupStorage({
       toast.success(commonT('success'));
       queryClient.invalidateQueries({ queryKey });
       setOpen(false);
-    } catch (error) {
+    } catch {
       toast.error(commonT('error'));
     }
   };

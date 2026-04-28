@@ -24,7 +24,7 @@ export async function GET(
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const permissions = await getPermissions({ wsId: normalizedWsId, request });
 
-    if (!permissions || !permissions.containsPermission('view_user_groups')) {
+    if (!permissions?.containsPermission('view_user_groups')) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
@@ -63,7 +63,7 @@ export async function POST(
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const permissions = await getPermissions({ wsId: normalizedWsId, request });
 
-    if (!permissions || !permissions.containsPermission('update_user_groups')) {
+    if (!permissions?.containsPermission('update_user_groups')) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
@@ -139,7 +139,7 @@ export async function DELETE(
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const permissions = await getPermissions({ wsId: normalizedWsId, request });
 
-    if (!permissions || !permissions.containsPermission('update_user_groups')) {
+    if (!permissions?.containsPermission('update_user_groups')) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
