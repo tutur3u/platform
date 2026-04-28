@@ -186,6 +186,7 @@ class _AnimatedTitleTextState extends State<_AnimatedTitleText> {
     if (_isSaving || submitter == null) {
       return;
     }
+    _focusNode.unfocus();
 
     final nextTitle = _controller.text.trim();
     final currentTitle = widget.title.trim();
@@ -336,7 +337,10 @@ class _AnimatedTitleTextState extends State<_AnimatedTitleText> {
               enabled: !_isSaving,
               scrollPadding: EdgeInsets.zero,
               textInputAction: TextInputAction.done,
-              onSubmitted: (_) => unawaited(_submit()),
+              onSubmitted: (_) {
+                FocusScope.of(context).unfocus();
+                unawaited(_submit());
+              },
               style: titleStyle,
               decoration: InputDecoration(
                 isDense: true,

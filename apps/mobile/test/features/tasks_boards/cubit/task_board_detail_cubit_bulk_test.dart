@@ -183,6 +183,33 @@ void main() {
       });
 
       when(
+        () => repository.updateBoardTask(
+          wsId: any(named: 'wsId'),
+          taskId: any(named: 'taskId'),
+          name: any(named: 'name'),
+          priority: any(named: 'priority'),
+          startDate: any(named: 'startDate'),
+          endDate: any(named: 'endDate'),
+          estimationPoints: any(named: 'estimationPoints'),
+          labelIds: any(named: 'labelIds'),
+          projectIds: any(named: 'projectIds'),
+          assigneeIds: any(named: 'assigneeIds'),
+          clearStartDate: any(named: 'clearStartDate'),
+          clearEndDate: any(named: 'clearEndDate'),
+          clearEstimationPoints: any(named: 'clearEstimationPoints'),
+        ),
+      ).thenAnswer((invocation) async {
+        final taskId = invocation.namedArguments[#taskId] as String;
+        final name = invocation.namedArguments[#name] as String?;
+        final task = repositoryTasks.firstWhere((task) => task.id == taskId);
+        final updated = task.copyWith(name: name ?? task.name);
+        repositoryTasks = repositoryTasks
+            .map((task) => task.id == taskId ? updated : task)
+            .toList(growable: false);
+        return updated;
+      });
+
+      when(
         () => repository.bulkBoardTasks(
           wsId: any(named: 'wsId'),
           taskIds: any(named: 'taskIds'),
@@ -348,6 +375,46 @@ void main() {
           labelIds: any(named: 'labelIds'),
           projectIds: any(named: 'projectIds'),
           assigneeIds: any(named: 'assigneeIds'),
+        ),
+      ).called(1);
+      verify(
+        () => repository.getBoardTasksForList(
+          'ws-1',
+          listId: 'list-active',
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+          members: any(named: 'members'),
+          labels: any(named: 'labels'),
+          projects: any(named: 'projects'),
+        ),
+      ).called(1);
+      verifyNever(() => repository.getTaskBoardDetail('ws-1', 'board-1'));
+    });
+
+    test('updateTask refreshes the affected list', () async {
+      clearInteractions(repository);
+
+      await cubit.updateTask(
+        taskId: 'task-1',
+        listId: 'list-active',
+        name: 'Updated task',
+      );
+
+      verify(
+        () => repository.updateBoardTask(
+          wsId: 'ws-1',
+          taskId: 'task-1',
+          name: 'Updated task',
+          priority: any(named: 'priority'),
+          startDate: any(named: 'startDate'),
+          endDate: any(named: 'endDate'),
+          estimationPoints: any(named: 'estimationPoints'),
+          labelIds: any(named: 'labelIds'),
+          projectIds: any(named: 'projectIds'),
+          assigneeIds: any(named: 'assigneeIds'),
+          clearStartDate: any(named: 'clearStartDate'),
+          clearEndDate: any(named: 'clearEndDate'),
+          clearEstimationPoints: any(named: 'clearEstimationPoints'),
         ),
       ).called(1);
       verify(

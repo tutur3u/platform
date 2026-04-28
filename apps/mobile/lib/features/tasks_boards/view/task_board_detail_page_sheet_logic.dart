@@ -600,6 +600,7 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
           description == null;
       await cubit.updateTask(
         taskId: currentTask.id,
+        listId: currentTask.listId,
         name: title,
         priority: state._priority,
         startDate: state._startDate,

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
@@ -31,15 +29,15 @@ String taskBoardTaskDetailLocation({
   return taskBoardDetailLocation(boardId: boardId, taskId: task.id);
 }
 
-bool openUserTaskBoardDetail(BuildContext context, UserTask task) {
+Future<bool> openUserTaskBoardDetail(BuildContext context, UserTask task) {
   return openUserTaskBoardDetailWithWorkspace(context, task);
 }
 
-bool openUserTaskBoardDetailWithWorkspace(
+Future<bool> openUserTaskBoardDetailWithWorkspace(
   BuildContext context,
   UserTask task, {
   WorkspaceCubit? workspaceCubit,
-}) {
+}) async {
   final location = userTaskBoardDetailLocation(task);
   if (location == null) {
     return false;
@@ -50,19 +48,27 @@ bool openUserTaskBoardDetailWithWorkspace(
     final currentWorkspace = workspaceState.currentWorkspace;
     final targetWorkspaceId =
         task.list?.board?.workspace?.id ?? task.list?.board?.wsId;
-    if ((currentWorkspace?.personal ?? false) &&
-        targetWorkspaceId != null &&
+    if (targetWorkspaceId != null &&
         targetWorkspaceId.isNotEmpty &&
         targetWorkspaceId != currentWorkspace?.id) {
-      final targetWorkspace = workspaceState.workspaces
+      var targetWorkspace = workspaceState.workspaces
           .where((workspace) => workspace.id == targetWorkspaceId)
           .firstOrNull;
+      if (targetWorkspace == null) {
+        await workspaceCubit.loadWorkspaces();
+        targetWorkspace = workspaceCubit.state.workspaces
+            .where((workspace) => workspace.id == targetWorkspaceId)
+            .firstOrNull;
+      }
       if (targetWorkspace != null) {
-        unawaited(workspaceCubit.selectWorkspace(targetWorkspace));
+        await workspaceCubit.selectWorkspace(targetWorkspace);
       }
     }
   }
 
+  if (!context.mounted) {
+    return false;
+  }
   context.go(location);
   return true;
 }

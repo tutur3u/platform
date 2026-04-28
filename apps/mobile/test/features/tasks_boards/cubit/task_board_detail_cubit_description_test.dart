@@ -30,6 +30,16 @@ void main() {
           wsId: any(named: 'wsId'),
           taskId: any(named: 'taskId'),
           name: any(named: 'name'),
+          priority: any(named: 'priority'),
+          startDate: any(named: 'startDate'),
+          endDate: any(named: 'endDate'),
+          estimationPoints: any(named: 'estimationPoints'),
+          labelIds: any(named: 'labelIds'),
+          projectIds: any(named: 'projectIds'),
+          assigneeIds: any(named: 'assigneeIds'),
+          clearStartDate: any(named: 'clearStartDate'),
+          clearEndDate: any(named: 'clearEndDate'),
+          clearEstimationPoints: any(named: 'clearEstimationPoints'),
         ),
       ).thenAnswer(
         (_) async => const TaskBoardTask(id: 'task-1', listId: 'list-1'),
@@ -42,6 +52,17 @@ void main() {
           descriptionYjsState: any(named: 'descriptionYjsState'),
         ),
       ).thenAnswer((_) async {});
+      when(
+        () => repository.getBoardTasksForList(
+          any(),
+          listId: any(named: 'listId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+          members: any(named: 'members'),
+          labels: any(named: 'labels'),
+          projects: any(named: 'projects'),
+        ),
+      ).thenAnswer((_) async => boardDetail.tasks);
 
       await cubit.loadBoardDetail(wsId: 'ws-1', boardId: 'board-1');
     });
@@ -68,6 +89,16 @@ void main() {
             wsId: 'ws-1',
             taskId: 'task-1',
             name: 'Task updated',
+            priority: any(named: 'priority'),
+            startDate: any(named: 'startDate'),
+            endDate: any(named: 'endDate'),
+            estimationPoints: any(named: 'estimationPoints'),
+            labelIds: any(named: 'labelIds'),
+            projectIds: any(named: 'projectIds'),
+            assigneeIds: any(named: 'assigneeIds'),
+            clearStartDate: any(named: 'clearStartDate'),
+            clearEndDate: any(named: 'clearEndDate'),
+            clearEstimationPoints: any(named: 'clearEstimationPoints'),
           ),
         ).called(1);
 

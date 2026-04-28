@@ -1258,11 +1258,10 @@ class _TaskBoardBulkActionsDrawerState
                               unawaited(_runBulkActionSequence(actions));
                             },
                           ),
-                          if (!_isPersonalWorkspaceForBoard(board))
-                            const shad.Divider(height: 24),
+                          const shad.Divider(height: 24),
 
                           // Assignees
-                          if (!_isPersonalWorkspaceForBoard(board))
+                          if (!_isPersonalWorkspaceForBoard(board)) ...[
                             _FilterDropdownSection(
                               title: l10n.taskBoardDetailTaskAssignees,
                               options: assigneeOptions,
@@ -1297,6 +1296,21 @@ class _TaskBoardBulkActionsDrawerState
                                 unawaited(_runBulkActionSequence(actions));
                               },
                             ),
+                            const shad.Gap(8),
+                          ],
+                          shad.OutlineButton(
+                            enabled: canRun && appliedAssigneeIds.isNotEmpty,
+                            leading: const Icon(
+                              Icons.person_remove_outlined,
+                              size: 18,
+                            ),
+                            onPressed: () => unawaited(
+                              _runBulkAction(_cubit.bulkClearAssignees),
+                            ),
+                            child: _CenteredButtonText(
+                              l10n.taskBoardDetailBulkClearAssignees,
+                            ),
+                          ),
                         ],
                       ),
                       const shad.Gap(20),

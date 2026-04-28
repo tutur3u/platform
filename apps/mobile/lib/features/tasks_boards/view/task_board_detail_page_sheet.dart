@@ -385,7 +385,11 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                 controller: _nameController,
                 hintText: context.l10n.taskBoardDetailTaskTitleHint,
                 autofocus: _isCreate,
-                onSubmitted: (_) => unawaited(_saveTask()),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) {
+                  FocusScope.of(context).unfocus();
+                  unawaited(_saveTask());
+                },
               ),
               if (includeDescriptionShortcut &&
                   _isTaskDescriptionEditingEnabled) ...[

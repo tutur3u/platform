@@ -172,6 +172,7 @@ class _TaskBoardTaskDetailFullscreenViewState
 
     await context.read<TaskBoardDetailCubit>().updateTask(
       taskId: widget.task.id,
+      listId: widget.task.listId,
       name: title,
       priority: widget.task.priority,
       startDate: widget.task.startDate,
@@ -481,6 +482,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
   }
 
   Future<void> _saveTitleEdit() async {
+    _titleFocusNode.unfocus();
     final nextTitle = _titleController.text.trim();
     final currentTitle = (_task.name ?? '').trim();
     if (nextTitle.isEmpty) {
@@ -499,6 +501,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
       final cubit = context.read<TaskBoardDetailCubit>();
       await cubit.updateTask(
         taskId: _task.id,
+        listId: _task.listId,
         name: nextTitle,
         priority: _task.priority,
         startDate: _task.startDate,
@@ -1000,7 +1003,10 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
               enabled: !_isSavingTitle,
               scrollPadding: EdgeInsets.zero,
               textInputAction: TextInputAction.done,
-              onSubmitted: (_) => unawaited(_saveTitleEdit()),
+              onSubmitted: (_) {
+                FocusScope.of(context).unfocus();
+                unawaited(_saveTitleEdit());
+              },
               style: theme.typography.large.copyWith(
                 fontWeight: FontWeight.w800,
               ),

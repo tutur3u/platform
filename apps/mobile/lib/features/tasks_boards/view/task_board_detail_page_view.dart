@@ -225,6 +225,42 @@ int _tasksPageSizeHintForViewport(double viewportHeight) {
   return hinted.clamp(12, 80);
 }
 
+class _TaskQuickCreateFab extends StatelessWidget {
+  const _TaskQuickCreateFab({
+    required this.label,
+    required this.onPressed,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final safeAreaPadding = MediaQuery.paddingOf(context);
+
+    return Positioned(
+      right: 16 + safeAreaPadding.right,
+      bottom: 16,
+      child: Tooltip(
+        message: label,
+        child: Semantics(
+          label: label,
+          button: true,
+          child: SizedBox.square(
+            dimension: 56,
+            child: shad.PrimaryButton(
+              onPressed: onPressed,
+              shape: shad.ButtonShape.circle,
+              density: shad.ButtonDensity.icon,
+              child: const Center(child: Icon(Icons.add, size: 24)),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   static const double _fabContentBottomPadding = 96;
   final Map<String, double> _savedScrollOffsets = <String, double>{};
@@ -738,55 +774,45 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                   },
                 ),
               ),
-              SpeedDialFab(
-                label: state.isBulkSelectMode
-                    ? context.l10n.taskBoardDetailBulkActions
-                    : context.l10n.taskBoardDetailCreateTask,
-                icon: state.isBulkSelectMode ? Icons.checklist : Icons.add,
-                includeBottomSafeArea: false,
-                actions: state.isBulkSelectMode
-                    ? [
-                        FabAction(
-                          icon: Icons.tune,
-                          label: context.l10n.taskBoardDetailBulkActions,
-                          onPressed: () =>
-                              unawaited(_openBulkActionsSheet(context)),
-                        ),
-                        FabAction(
-                          icon: Icons.select_all,
-                          label: context.l10n.taskBoardDetailSelectAllFiltered,
-                          onPressed: () => context
-                              .read<TaskBoardDetailCubit>()
-                              .selectAllFilteredTasks(),
-                        ),
-                        FabAction(
-                          icon: Icons.close,
-                          label: context.l10n.taskBoardDetailExitBulkSelect,
-                          onPressed: () => context
-                              .read<TaskBoardDetailCubit>()
-                              .exitBulkSelectMode(),
-                        ),
-                      ]
-                    : [
-                        FabAction(
-                          icon: Icons.add_task,
-                          label: context.l10n.taskBoardDetailCreateTask,
-                          onPressed: () => unawaited(
-                            _openTaskCreateSheet(
-                              context,
-                              lists: sortedLists,
-                              defaultListId: sortedLists.first.id,
-                            ),
-                          ),
-                        ),
-                        FabAction(
-                          icon: Icons.playlist_add,
-                          label: context.l10n.taskBoardDetailCreateList,
-                          onPressed: () =>
-                              unawaited(_openCreateListDialog(context)),
-                        ),
-                      ],
-              ),
+              if (state.isBulkSelectMode)
+                SpeedDialFab(
+                  label: context.l10n.taskBoardDetailBulkActions,
+                  icon: Icons.checklist,
+                  includeBottomSafeArea: false,
+                  actions: [
+                    FabAction(
+                      icon: Icons.tune,
+                      label: context.l10n.taskBoardDetailBulkActions,
+                      onPressed: () =>
+                          unawaited(_openBulkActionsSheet(context)),
+                    ),
+                    FabAction(
+                      icon: Icons.select_all,
+                      label: context.l10n.taskBoardDetailSelectAllFiltered,
+                      onPressed: () => context
+                          .read<TaskBoardDetailCubit>()
+                          .selectAllFilteredTasks(),
+                    ),
+                    FabAction(
+                      icon: Icons.close,
+                      label: context.l10n.taskBoardDetailExitBulkSelect,
+                      onPressed: () => context
+                          .read<TaskBoardDetailCubit>()
+                          .exitBulkSelectMode(),
+                    ),
+                  ],
+                )
+              else if (sortedLists.isNotEmpty)
+                _TaskQuickCreateFab(
+                  label: context.l10n.taskBoardDetailCreateTask,
+                  onPressed: () => unawaited(
+                    _openTaskCreateSheet(
+                      context,
+                      lists: sortedLists,
+                      defaultListId: sortedLists.first.id,
+                    ),
+                  ),
+                ),
             ],
           );
 
@@ -1180,6 +1206,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     try {
       await cubit.updateTask(
         taskId: task.id,
+        listId: task.listId,
         name: task.name?.trim().isNotEmpty == true
             ? task.name!.trim()
             : context.l10n.taskBoardDetailUntitledTask,

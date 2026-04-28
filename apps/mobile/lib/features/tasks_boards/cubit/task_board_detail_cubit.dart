@@ -486,6 +486,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
 
     final pageSizeHint = state.listPageSizeById[listId];
+    final sanitizedAssigneeIds = _sanitizeAssigneeIdsForBoard(
+      board,
+      assigneeIds,
+    );
 
     await _runMutation(
       () => _taskRepository.createBoardTask(
@@ -499,7 +503,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         estimationPoints: estimationPoints,
         labelIds: labelIds,
         projectIds: projectIds,
-        assigneeIds: assigneeIds,
+        assigneeIds: sanitizedAssigneeIds,
       ),
       reloadBoard: false,
     );
@@ -530,6 +534,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
   Future<void> updateTask({
     required String taskId,
     required String name,
+    String? listId,
     String? description,
     String? priority,
     DateTime? startDate,
@@ -544,9 +549,24 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     bool clearEstimationPoints = false,
   }) async {
     final wsId = state.workspaceId;
+    final board = state.board;
     if (wsId == null) {
       throw StateError('Workspace not selected');
     }
+    if (board == null) {
+      throw StateError('Board detail is not initialized');
+    }
+
+    final affectedListId = listId?.trim().isNotEmpty == true
+        ? listId!.trim()
+        : _findTaskListId(taskId);
+    final pageSizeHint = affectedListId == null
+        ? null
+        : state.listPageSizeById[affectedListId];
+    final sanitizedAssigneeIds = _sanitizeAssigneeIdsForBoard(
+      board,
+      assigneeIds,
+    );
 
     await _runMutation(
       () async {
@@ -560,7 +580,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
           estimationPoints: estimationPoints,
           labelIds: labelIds,
           projectIds: projectIds,
-          assigneeIds: assigneeIds,
+          assigneeIds: sanitizedAssigneeIds,
           clearStartDate: clearStartDate,
           clearEndDate: clearEndDate,
           clearEstimationPoints: clearEstimationPoints,
@@ -576,6 +596,22 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
         return null;
       },
+      reloadBoard: false,
+    );
+
+    if (isClosed || state.workspaceId != wsId || state.boardId != board.id) {
+      return;
+    }
+
+    if (affectedListId == null) {
+      await loadBoardDetail(wsId: wsId, boardId: board.id, forceRefresh: true);
+      return;
+    }
+
+    await loadListTasks(
+      listId: affectedListId,
+      forceRefresh: true,
+      pageSizeHint: pageSizeHint,
     );
   }
 
@@ -1557,6 +1593,29 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
 
     return null;
+  }
+
+  List<String>? _sanitizeAssigneeIdsForBoard(
+    TaskBoardDetail board,
+    List<String>? assigneeIds,
+  ) {
+    if (assigneeIds == null) {
+      return null;
+    }
+
+    final memberIds = board.members.map((member) => member.id).toSet();
+    if (memberIds.isEmpty) {
+      return const <String>[];
+    }
+
+    final sanitized =
+        assigneeIds
+            .map((id) => id.trim())
+            .where((id) => id.isNotEmpty && memberIds.contains(id))
+            .toSet()
+            .toList(growable: false)
+          ..sort();
+    return sanitized;
   }
 
   Future<void> _prefetchInitialLists({

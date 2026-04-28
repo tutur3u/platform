@@ -1213,10 +1213,12 @@ class _TaskRow extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => openUserTaskBoardDetailWithWorkspace(
-          context,
-          task,
-          workspaceCubit: context.read<WorkspaceCubit>(),
+        onTap: () => unawaited(
+          openUserTaskBoardDetailWithWorkspace(
+            context,
+            task,
+            workspaceCubit: context.read<WorkspaceCubit>(),
+          ),
         ),
         borderRadius: BorderRadius.circular(18),
         child: Ink(

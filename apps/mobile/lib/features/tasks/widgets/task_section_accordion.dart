@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart' hide Badge;
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
 import 'package:mobile/features/tasks/widgets/task_surface.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -160,7 +164,13 @@ class _TaskTile extends StatelessWidget {
     ].join(' / ');
 
     return shad.GhostButton(
-      onPressed: () => openUserTaskBoardDetail(context, task),
+      onPressed: () => unawaited(
+        openUserTaskBoardDetailWithWorkspace(
+          context,
+          task,
+          workspaceCubit: _workspaceCubitOrNull(context),
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
         child: Row(
@@ -221,6 +231,14 @@ class _TaskTile extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+WorkspaceCubit? _workspaceCubitOrNull(BuildContext context) {
+  try {
+    return context.read<WorkspaceCubit>();
+  } on Object {
+    return null;
   }
 }
 
