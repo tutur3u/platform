@@ -46,7 +46,7 @@
     "nanoid": "^5.1.9",
     "negotiator": "^1.0.0",
     "next": "^16.2.4",
-    "next-intl": "^4.9.1",
+    "next-intl": "^4.9.2",
     "next-themes": "^0.4.6",
     "nuqs": "^2.8.9",
     "qrcode.react": "^4.2.0",

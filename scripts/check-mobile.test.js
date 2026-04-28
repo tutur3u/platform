@@ -19,9 +19,9 @@ test('runCheck buffers successful output by default', async () => {
 
   const resultPromise = runCheck(
     {
-      name: 'flutter-test',
+      name: 'flutter-analyze',
       command: 'turbo',
-      args: ['run', 'flutter-test'],
+      args: ['run', 'flutter-analyze'],
       parseOutput: () => 'All tests passed',
     },
     {
@@ -39,6 +39,35 @@ test('runCheck buffers successful output by default', async () => {
 
   assert.equal(result.success, true);
   assert.deepEqual(stdoutWrites, []);
+  assert.deepEqual(stderrWrites, []);
+});
+
+test('runCheck streams flutter-test output by default', async () => {
+  const proc = createMockProc();
+  const stdoutWrites = [];
+  const stderrWrites = [];
+
+  const resultPromise = runCheck(
+    {
+      name: 'flutter-test',
+      command: 'turbo',
+      args: ['run', 'flutter-test'],
+      parseOutput: () => 'All tests passed',
+    },
+    {
+      spawnImpl: () => proc,
+      stdoutWriter: (str) => stdoutWrites.push(str),
+      stderrWriter: (str) => stderrWrites.push(str),
+    }
+  );
+
+  proc.stdout.emit('data', Buffer.from('00:01 +10: still running\n'));
+  proc.emit('close', 0);
+
+  const result = await resultPromise;
+
+  assert.equal(result.success, true);
+  assert.deepEqual(stdoutWrites, ['00:01 +10: still running\n']);
   assert.deepEqual(stderrWrites, []);
 });
 

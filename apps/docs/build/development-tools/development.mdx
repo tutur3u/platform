@@ -194,6 +194,16 @@ To run all tests, run the following command:
 bun run test
 ```
 
+To run the Flutter mobile quality gate, use:
+
+```bash bun
+bun check:mobile
+```
+
+`bun check:mobile` runs Dart format, Flutter analyze, and Flutter tests for
+`apps/mobile`. Flutter test output is streamed by default so slow suites still
+show progress instead of appearing stuck.
+
 <Warning>
   
 Tests are still a work in progress. We're currently working on adding tests to all packages to ensure the best quality possible.

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -231,6 +233,10 @@ void main() {
     testWidgets('optimistically updates relationship indicator and list', (
       tester,
     ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(900, 1200);
+      addTearDown(tester.view.reset);
+
       await tester.pumpApp(
         BlocProvider<WorkspaceCubit>.value(
           value: workspaceCubit,
@@ -253,7 +259,7 @@ void main() {
       await tester.tap(relationshipsTab, warnIfMissed: false);
       await tester.pumpAndSettle();
 
-      final addRelatedTaskButton = find.text('Add related task').last;
+      final addRelatedTaskButton = find.textContaining('Add related task').last;
       await tester.ensureVisible(addRelatedTaskButton);
       final betaTaskTextCountBefore = find.text('Beta task').evaluate().length;
       await tester.tap(addRelatedTaskButton, warnIfMissed: false);

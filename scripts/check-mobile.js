@@ -157,7 +157,8 @@ function runCheck(check, options = {}) {
       options.stdoutWriter ?? ((str) => process.stdout.write(str));
     const stderrWriter =
       options.stderrWriter ?? ((str) => process.stderr.write(str));
-    const streamOutput = options.streamOutput ?? showDetails;
+    const streamOutput =
+      options.streamOutput ?? (showDetails || check.name === 'flutter-test');
 
     const proc = spawnImpl(check.command, check.args, {
       cwd: ROOT_DIR,

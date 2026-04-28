@@ -375,7 +375,7 @@ export async function GET(
     if (includeDeletedMode === 'none') {
       query = query.is('deleted_at', null).eq('task_lists.deleted', false);
     } else if (includeDeletedMode === 'only') {
-      query = query.not('deleted_at', 'is', null);
+      query = query.not('deleted_at', 'is', null) as typeof query;
     }
 
     if (forTimeTracking) {

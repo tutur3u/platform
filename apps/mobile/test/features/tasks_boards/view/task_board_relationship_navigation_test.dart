@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
@@ -203,6 +202,13 @@ Widget buildTestApp({
   );
 }
 
+Future<void> pumpTaskBoardTransition(WidgetTester tester) async {
+  await tester.pump();
+  for (var i = 0; i < 8; i += 1) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}
+
 void main() {
   group('Task relationship cross-board navigation', () {
     late _MockWorkspaceCubit workspaceCubit;
@@ -210,7 +216,6 @@ void main() {
     late GoRouter router;
 
     setUp(() async {
-      await CacheStore.instance.clearScope();
       workspaceCubit = _MockWorkspaceCubit();
       taskRepository = _CrossBoardTaskRepository();
 
@@ -289,7 +294,7 @@ void main() {
           workspaceCubit: workspaceCubit,
         ),
       );
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       expect(
         deepLinkRouter.routeInformationProvider.value.uri.toString(),
@@ -305,10 +310,10 @@ void main() {
       await tester.pumpWidget(
         buildTestApp(routerConfig: router, workspaceCubit: workspaceCubit),
       );
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       await tester.tap(find.text('Task A1').first, warnIfMissed: false);
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       expect(
         router.routeInformationProvider.value.uri.toString(),
@@ -317,7 +322,7 @@ void main() {
       expect(find.text('Relationships'), findsOneWidget);
 
       await tester.tap(find.text('Back').last, warnIfMissed: false);
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       expect(
         router.routeInformationProvider.value.uri.path,
@@ -340,16 +345,16 @@ void main() {
         await tester.pumpWidget(
           buildTestApp(routerConfig: router, workspaceCubit: workspaceCubit),
         );
-        await tester.pumpAndSettle();
+        await pumpTaskBoardTransition(tester);
 
         await tester.drag(find.byType(PageView).first, const Offset(-820, 0));
-        await tester.pumpAndSettle();
+        await pumpTaskBoardTransition(tester);
 
         expect(find.text('Doing'), findsOneWidget);
         expect(find.text('Task A2'), findsWidgets);
 
         await tester.tap(find.text('Task A2').first, warnIfMissed: false);
-        await tester.pumpAndSettle();
+        await pumpTaskBoardTransition(tester);
 
         expect(
           router.routeInformationProvider.value.uri.toString(),
@@ -357,7 +362,7 @@ void main() {
         );
 
         await tester.tap(find.text('Back').last, warnIfMissed: false);
-        await tester.pumpAndSettle();
+        await pumpTaskBoardTransition(tester);
 
         expect(
           router.routeInformationProvider.value.uri.path,
@@ -367,7 +372,7 @@ void main() {
         expect(find.text('Task A2'), findsWidgets);
 
         await tester.drag(find.byType(PageView).first, const Offset(820, 0));
-        await tester.pumpAndSettle();
+        await pumpTaskBoardTransition(tester);
 
         expect(find.text('Todo'), findsOneWidget);
       },
@@ -381,10 +386,10 @@ void main() {
       await tester.pumpWidget(
         buildTestApp(routerConfig: router, workspaceCubit: workspaceCubit),
       );
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       await tester.tap(find.text('Task A1').first, warnIfMissed: false);
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       final relationshipsTab = find
           .ancestor(
@@ -394,10 +399,10 @@ void main() {
           .last;
       await tester.ensureVisible(relationshipsTab);
       await tester.tap(relationshipsTab, warnIfMissed: false);
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       router.go('/tasks/boards/board-b?taskId=task-b1');
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       expect(
         router.routeInformationProvider.value.uri.toString(),
@@ -414,20 +419,20 @@ void main() {
       await tester.pumpWidget(
         buildTestApp(routerConfig: router, workspaceCubit: workspaceCubit),
       );
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       await tester.tap(find.text('Task A1').first, warnIfMissed: false);
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       var relationshipsTab = find.text('Relationships').last;
       await tester.ensureVisible(relationshipsTab);
       await tester.tap(relationshipsTab, warnIfMissed: false);
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       var linkedTask = find.text('Task B1').last;
       await tester.ensureVisible(linkedTask);
       await tester.tap(linkedTask, warnIfMissed: false);
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       expect(
         router.routeInformationProvider.value.uri.toString(),
@@ -437,12 +442,12 @@ void main() {
       relationshipsTab = find.text('Relationships').last;
       await tester.ensureVisible(relationshipsTab);
       await tester.tap(relationshipsTab, warnIfMissed: false);
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       linkedTask = find.text('Task A1').last;
       await tester.ensureVisible(linkedTask);
       await tester.tap(linkedTask, warnIfMissed: false);
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       expect(
         router.routeInformationProvider.value.uri.toString(),
@@ -459,18 +464,18 @@ void main() {
       await tester.pumpWidget(
         buildTestApp(routerConfig: router, workspaceCubit: workspaceCubit),
       );
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       await tester.tap(find.text('Task A1').first, warnIfMissed: false);
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       final relationshipsTab = find.byIcon(Icons.account_tree_outlined).last;
       await tester.ensureVisible(relationshipsTab);
       await tester.tap(relationshipsTab, warnIfMissed: false);
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       router.go('/tasks/boards/board-b?taskId=task-b1');
-      await tester.pumpAndSettle();
+      await pumpTaskBoardTransition(tester);
 
       expect(
         router.routeInformationProvider.value.uri.toString(),

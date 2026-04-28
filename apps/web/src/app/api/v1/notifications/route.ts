@@ -168,7 +168,7 @@ export async function GET(req: Request) {
     if (unreadOnly) {
       query = query.is('read_at', null);
     } else if (readOnly) {
-      query = query.not('read_at', 'is', null);
+      query = query.not('read_at', 'is', null) as typeof query;
     }
 
     // Filter by type
@@ -309,7 +309,7 @@ export async function PATCH(req: Request) {
     if (action === 'mark_all_read') {
       query = query.is('read_at', null);
     } else {
-      query = query.not('read_at', 'is', null);
+      query = query.not('read_at', 'is', null) as typeof query;
     }
 
     const { error } = await query;

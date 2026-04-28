@@ -51,7 +51,9 @@ export async function GET(_: Request, { params }: Params) {
 
   // If not admin, only allow viewing published entries
   if (!authorized) {
-    query = query.eq('is_published', true).not('published_at', 'is', null);
+    query = query
+      .eq('is_published', true)
+      .not('published_at', 'is', null) as typeof query;
   }
 
   const { data, error } = await query.single();

@@ -80,9 +80,9 @@ export async function GET(req: NextRequest) {
     }
 
     if (scopeFilter === 'user') {
-      query = query.not('user_id', 'is', null);
+      query = query.not('user_id', 'is', null) as typeof query;
     } else if (scopeFilter === 'workspace') {
-      query = query.not('ws_id', 'is', null);
+      query = query.not('ws_id', 'is', null) as typeof query;
     }
 
     const from = (page - 1) * limit;

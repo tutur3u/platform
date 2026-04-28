@@ -320,7 +320,11 @@ async function getData({
 
   // Filter by error status if provided
   if (errorFilter === 'has-error') {
-    queryBuilder = queryBuilder.not('error_message', 'is', null);
+    queryBuilder = queryBuilder.not(
+      'error_message',
+      'is',
+      null
+    ) as typeof queryBuilder;
   } else if (errorFilter === 'no-error') {
     queryBuilder = queryBuilder.is('error_message', null);
   }
