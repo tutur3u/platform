@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -32,9 +33,7 @@ const UpdatePayloadSchema = z.object({
 
 async function authorizePlatformAdmin(request: Request) {
   const supabase = await createClient(request);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return {

@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -33,9 +34,7 @@ export async function PATCH(
     const sbAdmin = await createAdminClient();
 
     // Verify user has valid Tuturuuu email
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     console.log('Authenticated user:', user?.email);
 

@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   extractIPFromHeaders,
@@ -31,9 +32,7 @@ const ResetOtpLimitsSchema = z
 
 async function authorizeInfrastructureAdmin(request: Request) {
   const supabase = await createClient(request);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return {

@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -113,9 +114,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   const sbAdmin = await createAdminClient();
   const supabase = await createClient(req);
-  const {
-    data: { user: actorUser },
-  } = await supabase.auth.getUser();
+  const { user: actorUser } = await resolveAuthenticatedSessionUser(supabase);
 
   // Get current user to check status changes
   const { data: currentUser, error: fetchError } = await sbAdmin
@@ -244,9 +243,7 @@ export async function DELETE(_: Request, { params }: Params) {
     );
   }
   const supabase = await createClient(_);
-  const {
-    data: { user: actorUser },
-  } = await supabase.auth.getUser();
+  const { user: actorUser } = await resolveAuthenticatedSessionUser(supabase);
   const sbAdmin = await createAdminClient();
   const { error } = await sbAdmin.rpc(
     'admin_delete_workspace_user_with_audit_actor',

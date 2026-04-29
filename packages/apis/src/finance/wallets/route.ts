@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -38,9 +39,7 @@ export async function GET(request: Request, { params }: Params) {
 
   const { withoutPermission } = permissions;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

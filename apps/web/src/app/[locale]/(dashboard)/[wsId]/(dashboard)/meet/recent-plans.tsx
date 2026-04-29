@@ -5,6 +5,7 @@ import {
   SquaresIntersect,
   Users,
 } from '@tuturuuu/icons';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -27,9 +28,7 @@ export default async function RecentTumeetPlans({
   const supabase = await createClient();
   const t = await getTranslations('dashboard');
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) return null;
 

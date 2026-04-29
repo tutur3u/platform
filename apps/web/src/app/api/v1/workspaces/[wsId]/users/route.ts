@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -182,9 +183,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
-  const {
-    data: { user: actorUser },
-  } = await supabase.auth.getUser();
+  const { user: actorUser } = await resolveAuthenticatedSessionUser(supabase);
   // Separate control flags from user payload
   // Do NOT allow archived or archived_until during creation
   const { is_guest, ...userPayload } = data ?? {};

@@ -5,7 +5,10 @@ const LogAuthTiming = process.env.NODE_ENV === 'development';
 
 export async function resolveAuthenticatedSessionUser(
   supabase: TypedSupabaseClient
-): Promise<{ user: SupabaseUser | null; authError: unknown }> {
+): Promise<{
+  user: SupabaseUser | null;
+  authError: (Error & { code?: string; status?: number }) | null;
+}> {
   try {
     const t0 = LogAuthTiming ? Date.now() : 0;
     const { data: claimsData, error: claimsError } =

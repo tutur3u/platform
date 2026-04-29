@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -42,10 +43,8 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   // Initial Supabase client and user check
   const supabase = await createClient(request);
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const { user, authError: userError } =
+    await resolveAuthenticatedSessionUser(supabase);
 
   if (userError || !user) {
     console.log(

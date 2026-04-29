@@ -1,4 +1,5 @@
 import { sendWorkspaceEmail } from '@tuturuuu/email-service';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -72,10 +73,8 @@ export async function POST(
   const supabase = await createClient();
 
   // Get authenticated user
-  const {
-    data: { user: authUser },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user: authUser, authError } =
+    await resolveAuthenticatedSessionUser(supabase);
 
   if (authError || !authUser) {
     console.error('Authentication error:', authError);

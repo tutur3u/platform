@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
@@ -38,9 +39,7 @@ export default async function TimeTrackerManagementPage({
         const searchParamsResolved = await searchParams;
         const supabase = await createClient();
 
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { user } = await resolveAuthenticatedSessionUser(supabase);
         if (!user) notFound();
 
         const isRootUser = isValidTuturuuuEmail(user.email || '');

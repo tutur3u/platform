@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -159,9 +160,7 @@ export async function POST(req: Request, { params }: Params) {
   const { referredUserId } = parsed.data;
 
   // Resolve current workspace virtual user id for auditing fields
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+  const { user: authUser } = await resolveAuthenticatedSessionUser(supabase);
   if (!authUser) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -291,9 +290,7 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   // Resolve current workspace virtual user id for auditing fields
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+  const { user: authUser } = await resolveAuthenticatedSessionUser(supabase);
   if (!authUser) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }

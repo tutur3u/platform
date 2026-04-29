@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -54,9 +55,7 @@ export default async function InquiriesPage({
         const supabase = await createClient();
 
         // Verify user has valid Tuturuuu email
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { user } = await resolveAuthenticatedSessionUser(supabase);
 
         if (!isValidTuturuuuEmail(user?.email)) {
           return (

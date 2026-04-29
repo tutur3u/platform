@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/ai/credits/resolve-plan-model';
 import type { CreditCheckResult } from '@tuturuuu/ai/credits/types';
 import { quickJournalTaskSchema } from '@tuturuuu/ai/object/types';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
   createAdminClient,
@@ -195,10 +196,7 @@ type CandidateTask = {
 
 // Helper: authenticate and restrict to Tuturuuu email
 async function getAuthorizedUser(supabase: TypedSupabaseClient) {
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
   if (authError || !user) {
     return {

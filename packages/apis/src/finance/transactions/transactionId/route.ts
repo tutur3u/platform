@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -113,9 +114,7 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   // Get authenticated user for permission checks
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -507,11 +506,11 @@ export async function DELETE(req: Request, { params }: Params) {
           .select('id, notice')
           .eq('id', linkedTransaction.invoice_id)
           .maybeSingle(),
-        supabase.auth.getUser(),
+        resolveAuthenticatedSessionUser(supabase),
       ]);
 
     if ((inventoryLineCount ?? 0) > 0 && invoice) {
-      const authUserId = authResult.data.user?.id ?? null;
+      const authUserId = authResult.user?.id ?? null;
       let workspaceUserId: string | null = null;
 
       if (authUserId) {

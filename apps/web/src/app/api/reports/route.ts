@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -99,10 +100,7 @@ export async function POST(request: NextRequest) {
     const sbAdmin = await createAdminClient();
 
     // Get current user if authenticated
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
     if (authError) {
       console.error('Auth error:', authError);

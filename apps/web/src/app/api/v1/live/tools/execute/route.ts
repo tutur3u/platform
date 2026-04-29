@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -32,9 +33,7 @@ async function normalizeWorkspaceId(wsId: string): Promise<string> {
     // Query personal workspace directly for API route context
     const supabase = await createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
       throw new Error('User not authenticated');
@@ -89,9 +88,7 @@ export async function POST(req: Request) {
   try {
     // 1. Authenticate user
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });

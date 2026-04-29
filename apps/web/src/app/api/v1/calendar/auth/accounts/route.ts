@@ -6,6 +6,7 @@
  * DELETE - Disconnect an account
  */
 
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_LONG_TEXT_LENGTH,
@@ -27,10 +28,8 @@ const disconnectQuerySchema = z.object({
 export async function GET(request: Request): Promise<NextResponse> {
   const supabase = await createClient(request);
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const { user, authError: userError } =
+    await resolveAuthenticatedSessionUser(supabase);
 
   if (userError || !user) {
     return NextResponse.json(
@@ -98,10 +97,8 @@ export async function GET(request: Request): Promise<NextResponse> {
 export async function DELETE(request: Request): Promise<NextResponse> {
   const supabase = await createClient(request);
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const { user, authError: userError } =
+    await resolveAuthenticatedSessionUser(supabase);
 
   if (userError || !user) {
     return NextResponse.json(

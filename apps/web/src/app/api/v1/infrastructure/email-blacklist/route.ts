@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH, MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import {
@@ -17,9 +18,7 @@ export async function GET(_req: Request) {
   const supabase = await createClient();
 
   // Check if user is authenticated and from root workspace
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -57,9 +56,7 @@ export async function POST(req: Request) {
   const supabase = await createClient();
 
   // Check if user is authenticated and from root workspace
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

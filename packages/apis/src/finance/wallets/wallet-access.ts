@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -77,10 +78,7 @@ export async function getWalletRouteContext(
   requiredPermission: WalletPermission
 ): Promise<WalletContextResult> {
   const supabase = await createClient(req);
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
   if (authError || !user) {
     return {

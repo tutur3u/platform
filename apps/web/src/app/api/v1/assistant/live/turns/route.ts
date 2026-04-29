@@ -1,4 +1,5 @@
 import { resolveGatewayModelId } from '@tuturuuu/ai/credits/model-mapping';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { Database } from '@tuturuuu/types/db';
@@ -48,9 +49,8 @@ export async function POST(request: Request) {
     if (tempAuth.status === 'valid') {
       user = tempAuth.context.user as SupabaseUser;
     } else {
-      const {
-        data: { user: sessionUser },
-      } = await supabase.auth.getUser();
+      const { user: sessionUser } =
+        await resolveAuthenticatedSessionUser(supabase);
       user = sessionUser;
     }
 

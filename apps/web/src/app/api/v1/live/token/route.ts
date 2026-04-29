@@ -1,4 +1,5 @@
 import { Modality, ThinkingLevel } from '@google/genai';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   getWorkspaceTier,
@@ -28,9 +29,7 @@ export async function POST(request: Request) {
     }
 
     const supabase = await createClient(request);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });

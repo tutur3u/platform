@@ -3,6 +3,7 @@ import {
   createCentralizedAuthProxy,
   propagateAuthCookies,
 } from '@tuturuuu/auth/proxy';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -136,9 +137,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (potentialWorkspaceId) {
     try {
       const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { user } = await resolveAuthenticatedSessionUser(supabase);
 
       if (user) {
         const isPersonal = await isPersonalWorkspace(potentialWorkspaceId);
@@ -188,9 +187,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   ) {
     try {
       const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { user } = await resolveAuthenticatedSessionUser(supabase);
 
       if (user) {
         const [defaultWorkspace, joinedWorkspaces, rootPermissions] =

@@ -1,4 +1,5 @@
 import { matchesAllowedModel } from '@tuturuuu/ai/credits/model-mapping';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -42,10 +43,7 @@ function getPlanDefaults(tier: string) {
 
 async function requireRootAdmin() {
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
   if (authError || !user) {
     return {

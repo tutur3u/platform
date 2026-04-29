@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_COLOR_LENGTH,
@@ -72,9 +73,7 @@ export async function GET(
       walletIds.length > 0 ? walletIds : walletId ? [walletId] : undefined;
 
     // Get current user to pass to RPC
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

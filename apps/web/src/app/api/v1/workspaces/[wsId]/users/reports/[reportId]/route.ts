@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -105,9 +106,8 @@ export async function PUT(request: Request, { params }: Params) {
     };
 
     if (approvalFieldsTouched) {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
+      const { user: authUser } =
+        await resolveAuthenticatedSessionUser(supabase);
 
       if (!authUser) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

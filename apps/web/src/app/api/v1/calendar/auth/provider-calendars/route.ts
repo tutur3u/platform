@@ -1,6 +1,7 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
 import { createGraphClient } from '@tuturuuu/microsoft';
 import { fetchMicrosoftCalendars } from '@tuturuuu/microsoft/calendar';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
@@ -27,10 +28,8 @@ const getGoogleAuthClient = (tokens: {
 
 export async function GET(request: Request) {
   const supabase = await createClient(request);
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const { user, authError: userError } =
+    await resolveAuthenticatedSessionUser(supabase);
 
   if (userError || !user) {
     return NextResponse.json(

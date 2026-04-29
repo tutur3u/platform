@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
   createAdminClient,
@@ -59,9 +60,7 @@ const getWorkspaceUserId = async ({
   sbAdmin: TypedSupabaseClient;
   wsId: string;
 }) => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) return null;
 
@@ -324,7 +323,8 @@ export async function POST(req: Request, { params }: Params) {
       inventory,
     },
     actor: {
-      authUserId: (await supabase.auth.getUser()).data.user?.id ?? null,
+      authUserId:
+        (await resolveAuthenticatedSessionUser(supabase)).user?.id ?? null,
       workspaceUserId,
     },
   });

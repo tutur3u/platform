@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -29,9 +30,7 @@ export async function POST(req: Request, { params }: Params) {
     console.log('[Money Lover Import] Starting import for workspace:', wsId);
 
     // Get the current user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
       console.error('[Money Lover Import] Unauthorized - no user found');

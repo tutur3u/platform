@@ -1,4 +1,5 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_WORKSPACE_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import {
@@ -22,10 +23,7 @@ export async function GET(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const { wsId: id } = await params;
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
   if (authError || !user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -62,10 +60,7 @@ export async function PUT(req: Request, { params }: Params) {
   const { wsId: id } = await params;
 
   try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
     if (authError || !user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -149,10 +144,7 @@ export async function DELETE(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const { wsId: id } = await params;
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
   if (authError || !user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

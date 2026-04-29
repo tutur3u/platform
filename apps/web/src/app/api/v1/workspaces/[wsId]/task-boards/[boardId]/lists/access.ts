@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -19,10 +20,7 @@ export async function requireBoardAccess(request: Request, rawParams: unknown) {
   const { wsId: rawWsId, boardId, listId } = paramsSchema.parse(rawParams);
   const supabase = await createClient(request);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
   if (authError || !user) {
     return {

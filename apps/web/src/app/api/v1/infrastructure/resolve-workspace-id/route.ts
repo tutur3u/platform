@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   PERSONAL_WORKSPACE_SLUG,
@@ -17,9 +18,7 @@ export async function POST(req: Request) {
     if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
       const supabase = await createClient(req);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { user } = await resolveAuthenticatedSessionUser(supabase);
 
       if (!user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

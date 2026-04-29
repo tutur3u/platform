@@ -3,6 +3,7 @@ import {
   createCentralizedAuthProxy,
   propagateAuthCookies,
 } from '@tuturuuu/auth/proxy';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { getMalformedSupabaseAuthCookieNames } from '@tuturuuu/supabase/next/proxy';
 import {
   createAdminClient,
@@ -632,9 +633,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (isOnboardingPath(req.nextUrl.pathname)) {
     try {
       const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { user } = await resolveAuthenticatedSessionUser(supabase);
 
       if (user) {
         const completed = await hasCompletedOnboarding(user.id);
@@ -673,9 +672,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (!shouldBypassOnboardingCheck(req.nextUrl.pathname)) {
     try {
       const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { user } = await resolveAuthenticatedSessionUser(supabase);
 
       if (user) {
         const needsOnboarding = await shouldRedirectToOnboarding(user.id);
@@ -812,9 +809,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (potentialWorkspaceId) {
     try {
       const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { user } = await resolveAuthenticatedSessionUser(supabase);
 
       if (user) {
         const isPersonal = await isPersonalWorkspace(potentialWorkspaceId);
@@ -863,9 +858,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   ) {
     try {
       const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { user } = await resolveAuthenticatedSessionUser(supabase);
 
       if (user) {
         const defaultWorkspace = await getUserDefaultWorkspace();

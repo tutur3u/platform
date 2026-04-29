@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -30,10 +31,8 @@ export async function loadSharedCourseContent(
   const sessionSupabase = request
     ? await createClient(request)
     : await createClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await sessionSupabase.auth.getUser();
+  const { user, authError: userError } =
+    await resolveAuthenticatedSessionUser(sessionSupabase);
 
   if (userError) throw userError;
   if (!user) return null;

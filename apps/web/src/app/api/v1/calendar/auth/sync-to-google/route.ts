@@ -1,4 +1,5 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import dayjs from 'dayjs';
 import { NextResponse } from 'next/server';
@@ -21,10 +22,8 @@ export async function POST(request: Request) {
   console.log('🔵 [API] POST /api/v1/calendar/auth/sync-to-google called');
 
   const supabase = await createClient(request);
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const { user, authError: userError } =
+    await resolveAuthenticatedSessionUser(supabase);
 
   console.log('🔵 [API] Auth check:', {
     hasUser: !!user,
