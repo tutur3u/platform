@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { redirect } from 'next/navigation';
@@ -14,9 +15,7 @@ export default async function RealtimeChatPage({
       {async ({ wsId, isRoot }) => {
         const supabase = await createClient();
 
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { user } = await resolveAuthenticatedSessionUser(supabase);
 
         if (!user) redirect('/login');
         if (!isRoot || !isValidTuturuuuEmail(user.email || ''))

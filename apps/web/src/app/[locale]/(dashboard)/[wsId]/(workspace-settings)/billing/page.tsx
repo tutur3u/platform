@@ -1,4 +1,5 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -39,9 +40,7 @@ export default async function BillingPage({
       {async ({ wsId }) => {
         // Get user first
         const supabase = await createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { user } = await resolveAuthenticatedSessionUser(supabase);
 
         if (!user) return notFound();
 

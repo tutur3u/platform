@@ -2,6 +2,7 @@ import {
   listWorkspaceTaskBoards,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -340,8 +341,8 @@ export async function TasksUsageStats({ wsId }: { wsId: string }) {
 export async function TimeTrackingUsageStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
 
-  const { data: user } = await supabase.auth.getUser();
-  if (!user.user?.id) {
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
+  if (!user?.id) {
     return (
       <StatisticCard title="Time Sessions" value="***" className="opacity-50" />
     );
@@ -351,7 +352,7 @@ export async function TimeTrackingUsageStats({ wsId }: { wsId: string }) {
     .from('time_tracking_sessions')
     .select('*', { count: 'exact', head: true })
     .eq('ws_id', wsId)
-    .eq('user_id', user.user.id);
+    .eq('user_id', user.id);
 
   return <StatisticCard title="Time Sessions" value={count || 0} />;
 }
@@ -462,8 +463,8 @@ export async function ChatUsageStats({ wsId }: { wsId: string }) {
     );
   }
 
-  const { data: user } = await supabase.auth.getUser();
-  if (!user.user?.id) {
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
+  if (!user?.id) {
     return (
       <StatisticCard title="Chat Messages" value="***" className="opacity-50" />
     );
@@ -475,7 +476,7 @@ export async function ChatUsageStats({ wsId }: { wsId: string }) {
       count: 'exact',
       head: true,
     })
-    .eq('ai_chats.creator_id', user.user.id);
+    .eq('ai_chats.creator_id', user.id);
 
   return <StatisticCard title="Chat Messages" value={count || 0} />;
 }
@@ -572,9 +573,7 @@ export async function CrawlersUsageStats({ wsId }: { wsId: string }) {
     );
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
   if (!user?.id) {
     return <StatisticCard title="Crawlers" value="Error" />;
   }

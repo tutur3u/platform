@@ -1,4 +1,5 @@
 import { Activity, ArrowLeft, Clock } from '@tuturuuu/icons';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -186,9 +187,7 @@ async function fetchAnalyticsData(
     const supabase = await createClient();
     const sbAdmin = await createAdminClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user?.id) {
       return null;

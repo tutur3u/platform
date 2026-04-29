@@ -95,6 +95,7 @@ import {
   DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
   DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
 } from '@tuturuuu/internal-api';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   ROOT_WORKSPACE_ID,
@@ -127,15 +128,9 @@ export async function WorkspaceNavigationLinks({
   const supabase = await createClient();
 
   // Parallelize all independent initial queries
-  const [
-    t,
-    {
-      data: { user },
-    },
-    secrets,
-  ] = await Promise.all([
+  const [t, { user }, secrets] = await Promise.all([
     getTranslations(),
-    supabase.auth.getUser(),
+    resolveAuthenticatedSessionUser(supabase),
     getSecrets({ wsId: resolvedWorkspaceId, forceAdmin: true }),
   ]);
   if (!secrets) notFound();

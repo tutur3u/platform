@@ -1,15 +1,25 @@
 import type { TypedSupabaseClient } from '../types';
 import type { SupabaseUser } from './user';
 
+const LogAuthTiming = process.env.NODE_ENV === 'development';
+
 export async function resolveAuthenticatedSessionUser(
   supabase: TypedSupabaseClient
 ): Promise<{ user: SupabaseUser | null; authError: unknown }> {
   try {
+    const t0 = LogAuthTiming ? Date.now() : 0;
     const { data: claimsData, error: claimsError } =
       await supabase.auth.getClaims();
+    const claimsMs = LogAuthTiming ? Date.now() - t0 : 0;
 
     if (!claimsError && typeof claimsData?.claims?.sub === 'string') {
       const claims = claimsData.claims as Record<string, unknown>;
+
+      if (LogAuthTiming) {
+        console.info(
+          `[resolveAuthenticatedSessionUser] getClaims hit: ${claimsMs}ms — sub=${claimsData.claims.sub}`
+        );
+      }
 
       return {
         user: {
@@ -53,13 +63,20 @@ export async function resolveAuthenticatedSessionUser(
     console.warn(
       '[resolveAuthenticatedSessionUser] getClaims is unavailable, falling back to getUser. This may be expected in testing environments or older Supabase clients.'
     );
-    // Fall back to getUser when getClaims is unavailable in mocks/older clients.
   }
 
+  const t1 = LogAuthTiming ? Date.now() : 0;
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
+  const userMs = LogAuthTiming ? Date.now() - t1 : 0;
+
+  if (LogAuthTiming) {
+    console.info(
+      `[resolveAuthenticatedSessionUser] getUser fallback: ${userMs}ms — sub=${user?.id ?? 'null'}`
+    );
+  }
 
   return { user, authError };
 }
