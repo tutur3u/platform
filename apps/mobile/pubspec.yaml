@@ -46,7 +46,7 @@ dependencies:
   http_parser: ^4.1.2
   image: ^4.8.0
   image_cropper: ^12.1.1
-  image_picker: ^1.2.1
+  image_picker: ^1.2.2
   intl: ^0.20.2
   json_annotation: ^4.11.0
   lucide_icons: ^0.257.0
