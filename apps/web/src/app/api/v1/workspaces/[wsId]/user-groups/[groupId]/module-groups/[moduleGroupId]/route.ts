@@ -16,10 +16,74 @@ interface RouteParams {
 }
 
 const RouteParamsSchema = z.object({
-  groupId: z.guid(),
-  moduleGroupId: z.guid(),
+  groupId: z.uuid(),
+  moduleGroupId: z.uuid(),
   wsId: z.string().min(1),
 });
+
+async function validateModuleGroupRouteAccess(
+  request: Request,
+  wsId: string,
+  groupId: string,
+  userId: string,
+  sessionSupabase: Parameters<
+    typeof verifyWorkspaceMembershipType
+  >[0]['supabase']
+) {
+  const normalizedWsId = await normalizeWorkspaceId(wsId, sessionSupabase);
+
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: normalizedWsId,
+    userId,
+    supabase: sessionSupabase,
+  });
+
+  if (membership.error === 'membership_lookup_failed') {
+    return NextResponse.json(
+      { message: 'Failed to verify workspace access' },
+      { status: 500 }
+    );
+  }
+
+  if (!membership.ok) {
+    return NextResponse.json(
+      { message: "You don't have access to this workspace" },
+      { status: 403 }
+    );
+  }
+
+  const permissions = await getPermissions({
+    request,
+    wsId: normalizedWsId,
+  });
+  if (!permissions?.containsPermission('manage_users')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
+
+  const sbAdmin = await createAdminClient();
+  const { data: group, error: groupError } = await sbAdmin
+    .from('workspace_user_groups')
+    .select('id')
+    .eq('id', groupId)
+    .eq('ws_id', normalizedWsId)
+    .maybeSingle();
+
+  if (groupError) {
+    return NextResponse.json(
+      { message: 'Failed to validate group' },
+      { status: 500 }
+    );
+  }
+
+  if (!group) {
+    return NextResponse.json({ message: 'Group not found' }, { status: 404 });
+  }
+
+  return { normalizedWsId, sbAdmin };
+}
 
 const UpdateModuleGroupSchema = z
   .object({
@@ -48,38 +112,14 @@ export const PUT = withSessionAuth(
     }
 
     const { wsId, groupId, moduleGroupId } = parsedParams.data;
-    const normalizedWsId = await normalizeWorkspaceId(wsId, context.supabase);
-
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: normalizedWsId,
-      userId: context.user.id,
-      supabase: context.supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { message: 'Failed to verify workspace access' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json(
-        { message: "You don't have access to this workspace" },
-        { status: 403 }
-      );
-    }
-
-    const permissions = await getPermissions({
+    const access = await validateModuleGroupRouteAccess(
       request,
-      wsId: normalizedWsId,
-    });
-    if (!permissions?.containsPermission('manage_users')) {
-      return NextResponse.json(
-        { message: 'Insufficient permissions' },
-        { status: 403 }
-      );
-    }
+      wsId,
+      groupId,
+      context.user.id,
+      context.supabase
+    );
+    if (access instanceof NextResponse) return access;
 
     let body: unknown;
     try {
@@ -99,9 +139,7 @@ export const PUT = withSessionAuth(
       );
     }
 
-    const sbAdmin = await createAdminClient();
-
-    const { data: existing, error: existingError } = await sbAdmin
+    const { data: existing, error: existingError } = await access.sbAdmin
       .from('workspace_course_module_groups')
       .select('id')
       .eq('id', moduleGroupId)
@@ -127,7 +165,7 @@ export const PUT = withSessionAuth(
       color: parsed.data.color?.toLowerCase(),
     };
 
-    const { error } = await sbAdmin
+    const { error } = await access.sbAdmin
       .from('workspace_course_module_groups')
       .update(updatePayload)
       .eq('id', moduleGroupId);
@@ -145,7 +183,7 @@ export const PUT = withSessionAuth(
 );
 
 export const DELETE = withSessionAuth(
-  async (_request, context, params: RouteParams | Promise<RouteParams>) => {
+  async (request, context, params: RouteParams | Promise<RouteParams>) => {
     const parsedParams = RouteParamsSchema.safeParse(await params);
     if (!parsedParams.success) {
       return NextResponse.json(
@@ -155,31 +193,16 @@ export const DELETE = withSessionAuth(
     }
 
     const { wsId, groupId, moduleGroupId } = parsedParams.data;
-    const normalizedWsId = await normalizeWorkspaceId(wsId, context.supabase);
+    const access = await validateModuleGroupRouteAccess(
+      request,
+      wsId,
+      groupId,
+      context.user.id,
+      context.supabase
+    );
+    if (access instanceof NextResponse) return access;
 
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: normalizedWsId,
-      userId: context.user.id,
-      supabase: context.supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { message: 'Failed to verify workspace access' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json(
-        { message: "You don't have access to this workspace" },
-        { status: 403 }
-      );
-    }
-
-    const sbAdmin = await createAdminClient();
-
-    const { data: existing, error: existingError } = await sbAdmin
+    const { data: existing, error: existingError } = await access.sbAdmin
       .from('workspace_course_module_groups')
       .select('id')
       .eq('id', moduleGroupId)
@@ -200,7 +223,7 @@ export const DELETE = withSessionAuth(
       );
     }
 
-    const { error } = await sbAdmin
+    const { error } = await access.sbAdmin
       .from('workspace_course_module_groups')
       .delete()
       .eq('id', moduleGroupId);

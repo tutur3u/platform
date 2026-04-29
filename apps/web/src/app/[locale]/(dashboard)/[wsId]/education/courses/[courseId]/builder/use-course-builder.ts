@@ -105,14 +105,26 @@ export function useCourseBuilder({
       module.flashcard_count > 0
   ).length;
 
-  const isLoading =
-    moduleGroupsQuery.isLoading ||
-    moduleGroupModulesQueries.some((query) => query.isLoading);
+  const isLoading = moduleGroupsQuery.isLoading;
 
-  const invalidateModuleGroupModules = () =>
-    queryClient.invalidateQueries({
-      queryKey: ['workspaceCourseModuleGroupModules', resolvedWsId, courseId],
-    });
+  const invalidateModuleGroupModules = (
+    ...groupIds: Array<string | null | undefined>
+  ) => {
+    const uniqueGroupIds = [...new Set(groupIds.filter(Boolean))] as string[];
+
+    return Promise.all(
+      uniqueGroupIds.map((groupId) =>
+        queryClient.invalidateQueries({
+          queryKey: [
+            'workspaceCourseModuleGroupModules',
+            resolvedWsId,
+            courseId,
+            groupId,
+          ],
+        })
+      )
+    );
+  };
 
   const upsertGroupMutation = useMutation({
     mutationFn: async (payload: {
@@ -152,7 +164,9 @@ export function useCourseBuilder({
       queryClient.invalidateQueries({
         queryKey: ['workspaceCourseModuleGroups', resolvedWsId, courseId],
       });
-      invalidateModuleGroupModules();
+      void invalidateModuleGroupModules(
+        ...moduleGroups.map((group) => group.id)
+      );
       setActiveModuleId(null);
       toast.success(t('group_deleted'));
     },
@@ -190,8 +204,8 @@ export function useCourseBuilder({
         payload.moduleGroupId,
         payload.moduleIds
       ),
-    onSuccess: () => {
-      invalidateModuleGroupModules();
+    onSuccess: (_data, variables) => {
+      void invalidateModuleGroupModules(variables.moduleGroupId);
       toast.success(t('modules_reordered'));
     },
     onError: () => {
@@ -200,12 +214,19 @@ export function useCourseBuilder({
   });
 
   const moveModuleMutation = useMutation({
-    mutationFn: async (payload: { moduleId: string; targetGroupId: string }) =>
+    mutationFn: async (payload: {
+      moduleId: string;
+      sourceGroupId: string;
+      targetGroupId: string;
+    }) =>
       updateWorkspaceCourseModule(resolvedWsId, payload.moduleId, {
         module_group_id: payload.targetGroupId,
       }),
-    onSuccess: () => {
-      invalidateModuleGroupModules();
+    onSuccess: (_data, variables) => {
+      void invalidateModuleGroupModules(
+        variables.sourceGroupId,
+        variables.targetGroupId
+      );
       toast.success(t('module_moved'));
     },
     onError: (error) => {
@@ -216,8 +237,8 @@ export function useCourseBuilder({
   const duplicateMutation = useMutation({
     mutationFn: async (payload: UpsertWorkspaceCourseModulePayload) =>
       createWorkspaceCourseModule(resolvedWsId, courseId, payload),
-    onSuccess: () => {
-      invalidateModuleGroupModules();
+    onSuccess: (_data, variables) => {
+      void invalidateModuleGroupModules(variables.module_group_id);
       toast.success(t('module_duplicated'));
     },
     onError: (error) => {
@@ -226,10 +247,10 @@ export function useCourseBuilder({
   });
 
   const deleteModuleMutation = useMutation({
-    mutationFn: async (moduleId: string) =>
-      deleteWorkspaceCourseModule(resolvedWsId, moduleId),
-    onSuccess: () => {
-      invalidateModuleGroupModules();
+    mutationFn: async (payload: { moduleGroupId: string; moduleId: string }) =>
+      deleteWorkspaceCourseModule(resolvedWsId, payload.moduleId),
+    onSuccess: (_data, variables) => {
+      void invalidateModuleGroupModules(variables.moduleGroupId);
       setActiveModuleId(null);
       toast.success(t('module_deleted'));
     },

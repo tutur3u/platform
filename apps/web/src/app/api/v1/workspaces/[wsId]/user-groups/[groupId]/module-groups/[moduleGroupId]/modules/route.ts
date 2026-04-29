@@ -15,12 +15,12 @@ interface RouteParams {
 }
 
 const WorkspaceGroupParamsSchema = z.object({
-  groupId: z.guid(),
+  groupId: z.uuid(),
   wsId: z.string().min(1),
 });
 
 const RouteParamsSchema = WorkspaceGroupParamsSchema.extend({
-  moduleGroupId: z.guid(),
+  moduleGroupId: z.uuid(),
 });
 
 async function validateWorkspaceGroupAccess(

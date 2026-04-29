@@ -15,9 +15,11 @@ interface RouteParams {
 }
 
 const RouteParamsSchema = z.object({
-  groupId: z.guid(),
+  groupId: z.uuid(),
   wsId: z.string().min(1),
 });
+
+const MAX_SORT_KEY_INSERT_ATTEMPTS = 3;
 
 const CreateModuleGroupSchema = z
   .object({
@@ -196,38 +198,56 @@ export const POST = withSessionAuth(
       return NextResponse.json({ message: 'Group not found' }, { status: 404 });
     }
 
-    const { data: maxRow } = await sbAdmin
-      .from('workspace_course_module_groups')
-      .select('sort_key')
-      .eq('group_id', groupId)
-      .order('sort_key', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    for (
+      let attempt = 0;
+      attempt < MAX_SORT_KEY_INSERT_ATTEMPTS;
+      attempt += 1
+    ) {
+      const { data: maxRow, error: maxRowError } = await sbAdmin
+        .from('workspace_course_module_groups')
+        .select('sort_key')
+        .eq('group_id', groupId)
+        .order('sort_key', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    const nextSortKey = (maxRow?.sort_key ?? 0) + 1;
+      if (maxRowError) {
+        return NextResponse.json(
+          { message: 'Failed to determine next module group sort order' },
+          { status: 500 }
+        );
+      }
 
-    const insertPayload: TablesInsert<'workspace_course_module_groups'> = {
-      group_id: groupId,
-      title: parsed.data.title,
-      icon: parsed.data.icon ?? null,
-      color: parsed.data.color?.toLowerCase() ?? null,
-      sort_key: nextSortKey,
-    };
+      const insertPayload: TablesInsert<'workspace_course_module_groups'> = {
+        group_id: groupId,
+        title: parsed.data.title,
+        icon: parsed.data.icon ?? null,
+        color: parsed.data.color?.toLowerCase() ?? null,
+        sort_key: (maxRow?.sort_key ?? 0) + 1,
+      };
 
-    const { data: created, error } = await sbAdmin
-      .from('workspace_course_module_groups')
-      .insert(insertPayload)
-      .select('*')
-      .single();
+      const { data: created, error } = await sbAdmin
+        .from('workspace_course_module_groups')
+        .insert(insertPayload)
+        .select('*')
+        .single();
 
-    if (error) {
-      return NextResponse.json(
-        { message: 'Error creating workspace course module group' },
-        { status: 500 }
-      );
+      if (!error) {
+        return NextResponse.json(created);
+      }
+
+      if (error.code !== '23505') {
+        return NextResponse.json(
+          { message: 'Error creating workspace course module group' },
+          { status: 500 }
+        );
+      }
     }
 
-    return NextResponse.json(created);
+    return NextResponse.json(
+      { message: 'Failed to allocate a unique module group sort order' },
+      { status: 409 }
+    );
   },
   { rateLimit: { maxRequests: 60, windowMs: 60000 } }
 );

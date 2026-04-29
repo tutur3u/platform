@@ -13,6 +13,8 @@ as $$
 declare
   v_temp_offset integer;
 begin
+  perform pg_advisory_xact_lock(hashtextextended("p_group_id"::text, 0));
+
   select
     coalesce(max(module_groups."sort_key"), 0)
     + coalesce(array_length("p_module_group_ids", 1), 0)
@@ -56,6 +58,8 @@ as $$
 declare
   v_temp_offset integer;
 begin
+  perform pg_advisory_xact_lock(hashtextextended("p_module_group_id"::text, 0));
+
   select
     coalesce(max(modules."sort_key"), 0)
     + coalesce(array_length("p_module_ids", 1), 0)
@@ -97,6 +101,8 @@ security definer
 set search_path = public
 as $$
 begin
+  perform pg_advisory_xact_lock(hashtextextended("p_group_id"::text, 0));
+
   with ordered as (
     select module_id, ordinality::integer as position
     from unnest("p_module_ids") with ordinality as ordered(module_id, ordinality)

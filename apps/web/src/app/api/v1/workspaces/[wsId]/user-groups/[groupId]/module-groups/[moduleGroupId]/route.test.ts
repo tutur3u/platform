@@ -7,6 +7,7 @@ const MODULE_GROUP_ID = '33333333-3333-4333-8333-333333333333';
 const mocks = vi.hoisted(() => {
   const normalizeWorkspaceId = vi.fn();
   const existingMaybeSingle = vi.fn();
+  const groupMaybeSingle = vi.fn();
   const updateEq = vi.fn();
   const deleteEq = vi.fn();
 
@@ -22,6 +23,16 @@ const mocks = vi.hoisted(() => {
 
   const adminSupabase = {
     from: vi.fn((table: string) => {
+      if (table === 'workspace_user_groups') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({ maybeSingle: groupMaybeSingle })),
+            })),
+          })),
+        };
+      }
+
       if (table === 'workspace_course_module_groups') {
         return {
           select: vi.fn(() => ({
@@ -41,6 +52,7 @@ const mocks = vi.hoisted(() => {
     adminSupabase,
     deleteEq,
     existingMaybeSingle,
+    groupMaybeSingle,
     normalizeWorkspaceId,
     sessionSupabase,
     updateEq,
@@ -89,6 +101,10 @@ describe('module group item route', () => {
     mocks.normalizeWorkspaceId.mockResolvedValue(
       '00000000-0000-0000-0000-000000000001'
     );
+    mocks.groupMaybeSingle.mockResolvedValue({
+      data: { id: GROUP_ID },
+      error: null,
+    });
     mocks.existingMaybeSingle.mockResolvedValue({
       data: { id: MODULE_GROUP_ID },
       error: null,

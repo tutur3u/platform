@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   createWorkspaceCourseModule,
   updateWorkspaceCourseModule,
@@ -19,7 +19,6 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import * as z from 'zod';
 
@@ -46,13 +45,17 @@ export default function CourseModuleForm({
   onFinish,
 }: Props) {
   const t = useTranslations('ws-course-modules');
-  const router = useRouter();
+  const queryClient = useQueryClient();
+  const parsedModuleGroupId = z.string().uuid().safeParse(moduleGroupId);
+  const resolvedModuleGroupId =
+    data?.module_group_id ??
+    (parsedModuleGroupId.success ? parsedModuleGroupId.data : undefined);
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
-    values: {
+    defaultValues: {
       id: data?.id,
-      module_group_id: data?.module_group_id || moduleGroupId || '',
+      module_group_id: resolvedModuleGroupId ?? undefined,
       name: data?.name || '',
     },
   });
@@ -77,8 +80,20 @@ export default function CourseModuleForm({
   const onSubmit = async (payload: z.infer<typeof FormSchema>) => {
     try {
       await saveMutation.mutateAsync(payload);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['workspaceCourseModuleGroups', wsId, courseId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [
+            'workspaceCourseModuleGroupModules',
+            wsId,
+            courseId,
+            payload.module_group_id,
+          ],
+        }),
+      ]);
       onFinish?.(payload);
-      router.refresh();
     } catch (error) {
       toast({
         title: `Failed to ${payload.id ? 'edit' : 'create'} course module`,

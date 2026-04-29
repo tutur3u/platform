@@ -112,14 +112,29 @@ export function ModuleGroupForm({
   useEffect(() => {
     const nextIcon = data?.icon ?? '';
     const nextColor = data?.color ?? '#64748b';
+    const nextTitle = data?.title ?? '';
+    const currentValues = form.getValues();
+
+    if (form.formState.isDirty) {
+      return;
+    }
+
+    if (
+      currentValues.title === nextTitle &&
+      currentValues.icon === nextIcon &&
+      currentValues.color === nextColor
+    ) {
+      return;
+    }
+
     setLocalIcon(nextIcon);
     setLocalColor(nextColor);
     form.reset({
-      title: data?.title ?? '',
+      title: nextTitle,
       icon: nextIcon,
       color: nextColor,
     });
-  }, [data, form]);
+  }, [data?.color, data?.icon, data?.title, form]);
 
   const resetForm = useCallback(() => {
     const defaultColor = '#64748b';

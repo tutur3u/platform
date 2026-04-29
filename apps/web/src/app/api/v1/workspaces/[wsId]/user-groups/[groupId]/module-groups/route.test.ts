@@ -7,7 +7,6 @@ const mocks = vi.hoisted(() => {
   const membershipMaybeSingle = vi.fn();
   const normalizeWorkspaceId = vi.fn();
   const groupMaybeSingle = vi.fn();
-  const listGroupsEq = vi.fn();
   const listGroupsOrder = vi.fn();
   const insertSingle = vi.fn();
   const selectMaybeSingle = vi.fn();
@@ -82,7 +81,6 @@ const mocks = vi.hoisted(() => {
     adminSupabase,
     groupMaybeSingle,
     insertSingle,
-    listGroupsEq,
     listGroupsOrder,
     membershipMaybeSingle,
     normalizeWorkspaceId,

@@ -9,11 +9,11 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 
 const ModuleGroupOrderSchema = z.object({
-  moduleGroupIds: z.array(z.guid()).min(1).max(500),
+  moduleGroupIds: z.array(z.uuid()).max(500),
 });
 
 const RouteParamsSchema = z.object({
-  groupId: z.guid(),
+  groupId: z.uuid(),
   wsId: z.string().min(1),
 });
 

@@ -83,12 +83,26 @@ export function CourseModuleForm({
   });
 
   useEffect(() => {
+    const nextModuleGroupId =
+      data?.module_group_id || defaultModuleGroupId || '';
+    const nextName = data?.name || '';
+    const currentValues = form.getValues();
+
+    if (
+      form.formState.isDirty ||
+      (currentValues.id === data?.id &&
+        currentValues.module_group_id === nextModuleGroupId &&
+        currentValues.name === nextName)
+    ) {
+      return;
+    }
+
     form.reset({
       id: data?.id,
-      module_group_id: data?.module_group_id || defaultModuleGroupId || '',
-      name: data?.name || '',
+      module_group_id: nextModuleGroupId,
+      name: nextName,
     });
-  }, [data, defaultModuleGroupId, form]);
+  }, [data?.id, data?.module_group_id, data?.name, defaultModuleGroupId, form]);
 
   const isDirty = form.formState.isDirty;
   const isValid = form.formState.isValid;

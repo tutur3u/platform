@@ -143,10 +143,16 @@ export const PATCH = withSessionAuth(
     );
 
     if (reorderError) {
+      const sanitizedError = {
+        message: reorderError.message,
+        name: reorderError.name,
+        stack: reorderError.stack?.split('\n').slice(0, 5).join('\n'),
+      };
       console.error('Failed to reorder modules', {
-        error: reorderError,
         groupId,
-        moduleIds,
+        modulesPreview: moduleIds.slice(0, 10),
+        modulesTotal: moduleIds.length,
+        sanitizedError,
       });
       return NextResponse.json(
         { message: 'Failed to persist module order' },

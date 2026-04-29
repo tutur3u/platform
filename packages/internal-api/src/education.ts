@@ -1,5 +1,8 @@
 import type { WorkspaceCourseModule } from '@tuturuuu/types';
-import type { WorkspaceCourseBuilderModule } from '@tuturuuu/types/db';
+import type {
+  WorkspaceCourseBuilderModule,
+  WorkspaceCourseModuleGroup,
+} from '@tuturuuu/types/db';
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -231,17 +234,7 @@ export async function listWorkspaceCourseModuleGroups(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<
-    Array<{
-      id: string;
-      group_id: string;
-      title: string;
-      icon: string | null;
-      color: string | null;
-      sort_key: number;
-      created_at: string;
-    }>
-  >(
+  return client.json<WorkspaceCourseModuleGroup[]>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups`,
     { cache: 'no-store' }
   );
@@ -254,15 +247,7 @@ export async function createWorkspaceCourseModuleGroup(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{
-    id: string;
-    group_id: string;
-    title: string;
-    icon: string | null;
-    color: string | null;
-    sort_key: number;
-    created_at: string;
-  }>(
+  return client.json<WorkspaceCourseModuleGroup>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups`,
     {
       method: 'POST',

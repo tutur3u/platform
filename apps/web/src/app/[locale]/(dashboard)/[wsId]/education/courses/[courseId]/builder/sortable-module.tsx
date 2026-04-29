@@ -5,6 +5,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from '@tuturuuu/icons';
 import type { WorkspaceCourseBuilderModule } from '@tuturuuu/types/db';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 
 interface SortableModuleProps {
   module: WorkspaceCourseBuilderModule;
@@ -17,6 +18,7 @@ export function SortableModule({
   isActive,
   onClick,
 }: SortableModuleProps) {
+  const t = useTranslations('ws-course-modules');
   const {
     setNodeRef,
     attributes,
@@ -35,11 +37,9 @@ export function SortableModule({
   };
 
   return (
-    <button
+    <div
       ref={setNodeRef}
       style={style}
-      type="button"
-      onClick={onClick}
       className={cn(
         'flex w-full items-center justify-between gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors',
         isActive
@@ -48,16 +48,22 @@ export function SortableModule({
         isDragging && 'z-10 opacity-80 shadow-md'
       )}
     >
-      <div className="min-w-0">
+      <button
+        type="button"
+        onClick={onClick}
+        className="min-w-0 flex-1 text-left"
+      >
         <div className="line-clamp-1 font-medium text-sm">{module.name}</div>
-      </div>
-      <div
+      </button>
+      <button
+        type="button"
         {...attributes}
         {...listeners}
+        aria-label={module.name || t('name')}
         className="shrink-0 cursor-grab text-foreground/40 hover:text-foreground/70 active:cursor-grabbing"
       >
         <GripVertical className="h-4 w-4" />
-      </div>
-    </button>
+      </button>
+    </div>
   );
 }

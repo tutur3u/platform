@@ -1,5 +1,6 @@
 'use client';
 
+import { useDroppable } from '@dnd-kit/core';
 import {
   SortableContext,
   useSortable,
@@ -63,6 +64,7 @@ export function SortableGroup({
   const t = useTranslations('ws-course-modules');
   const te = useTranslations('workspace-education-tabs');
   const tc = useTranslations('common');
+  const moduleDropzoneId = `group-dropzone-${group.id}`;
 
   const {
     setNodeRef,
@@ -80,6 +82,12 @@ export function SortableGroup({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  const { setNodeRef: setModuleDropzoneRef, isOver: isModuleDropzoneOver } =
+    useDroppable({
+      id: moduleDropzoneId,
+      data: { type: 'module-dropzone', groupId: group.id },
+    });
 
   const GroupIcon =
     getIconComponentByKey(group.icon as PlatformIconKey | null) ?? Circle;
@@ -109,6 +117,7 @@ export function SortableGroup({
             type="button"
             {...attributes}
             {...listeners}
+            aria-label={group.title}
             className="shrink-0 cursor-grab text-foreground/40 hover:text-foreground/70 active:cursor-grabbing"
           >
             <GripVertical className="h-4 w-4" />
@@ -157,6 +166,7 @@ export function SortableGroup({
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label={t('create')}
                 className="h-7 w-7 rounded-lg"
                 title={t('create')}
               >
@@ -195,7 +205,13 @@ export function SortableGroup({
         items={modules.map((m) => m.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="space-y-2">
+        <div
+          ref={setModuleDropzoneRef}
+          className={cn(
+            'min-h-10 space-y-2 rounded-lg transition-colors',
+            isModuleDropzoneOver && 'bg-dynamic-blue/10'
+          )}
+        >
           {modules.map((module) => (
             <SortableModule
               key={module.id}

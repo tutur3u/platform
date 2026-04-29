@@ -17,6 +17,23 @@ interface RouteParams {
 type WorkspaceCourseModuleUpdate =
   Database['public']['Tables']['workspace_course_modules']['Update'];
 
+function summarizeUpdatePayload(updatePayload: WorkspaceCourseModuleUpdate) {
+  return {
+    group_id: updatePayload.group_id ?? null,
+    has_content: 'content' in updatePayload,
+    has_extra_content: 'extra_content' in updatePayload,
+    is_public: updatePayload.is_public,
+    is_published: updatePayload.is_published,
+    keys: Object.keys(updatePayload),
+    module_group_id: updatePayload.module_group_id ?? null,
+    name_length:
+      typeof updatePayload.name === 'string' ? updatePayload.name.length : null,
+    youtube_links_count: Array.isArray(updatePayload.youtube_links)
+      ? updatePayload.youtube_links.length
+      : null,
+  };
+}
+
 const UpdateModuleSchema = z
   .object({
     content: z.custom<Json>().optional(),
@@ -119,19 +136,20 @@ export const PUT = withSessionAuth(
       return NextResponse.json(
         {
           message:
-            'module_group_id is required when changing a module to another group',
+            'module_group_id is required when changing group_id or moving the module to a different module group',
         },
         { status: 400 }
       );
     }
 
     if (isChangingGroup) {
-      const { data: targetGroup, error: targetGroupError } = await access.sbAdmin
-        .from('workspace_user_groups')
-        .select('id')
-        .eq('id', targetGroupId)
-        .eq('ws_id', access.normalizedWsId)
-        .maybeSingle();
+      const { data: targetGroup, error: targetGroupError } =
+        await access.sbAdmin
+          .from('workspace_user_groups')
+          .select('id')
+          .eq('id', targetGroupId)
+          .eq('ws_id', access.normalizedWsId)
+          .maybeSingle();
 
       if (targetGroupError) {
         return NextResponse.json(
@@ -177,15 +195,17 @@ export const PUT = withSessionAuth(
       parsed.data.module_group_id &&
       parsed.data.module_group_id !== access.module.module_group_id
     ) {
-      const { data: lastModuleInTargetGroup, error: lastModuleInTargetGroupError } =
-        await access.sbAdmin
-          .from('workspace_course_modules')
-          .select('sort_key')
-          .eq('group_id', targetGroupId)
-          .eq('module_group_id', parsed.data.module_group_id)
-          .order('sort_key', { ascending: false, nullsFirst: false })
-          .limit(1)
-          .maybeSingle();
+      const {
+        data: lastModuleInTargetGroup,
+        error: lastModuleInTargetGroupError,
+      } = await access.sbAdmin
+        .from('workspace_course_modules')
+        .select('sort_key')
+        .eq('group_id', targetGroupId)
+        .eq('module_group_id', parsed.data.module_group_id)
+        .order('sort_key', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
 
       if (lastModuleInTargetGroupError) {
         return NextResponse.json(
@@ -205,10 +225,11 @@ export const PUT = withSessionAuth(
       .eq('id', moduleId);
 
     if (error) {
+      const scrubbedPayload = summarizeUpdatePayload(updatePayload);
       console.error('Failed to update workspace course module', {
         error,
         moduleId,
-        updatePayload,
+        updatePayload: scrubbedPayload,
       });
       return NextResponse.json(
         { message: 'Error updating workspace course module' },

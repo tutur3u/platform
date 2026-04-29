@@ -15,7 +15,7 @@ create table if not exists "public"."workspace_course_module_groups" (
     on update cascade
     on delete cascade,
   constraint "workspace_course_module_groups_color_hex_check"
-    check ("color" is null or "color" ~ '^#[0-9a-f]{6}$')
+    check ("color" is null or "color" ~ '^#[0-9A-Fa-f]{6}$')
 );
 
 create unique index if not exists "idx_workspace_course_module_groups_group_sort_key"

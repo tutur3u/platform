@@ -33,57 +33,59 @@ vi.mock('next-intl', () => ({
 describe('RolloutStagePanel', () => {
   it('refreshes an in-progress deployment duration every second', async () => {
     vi.useFakeTimers();
-    const now = new Date('2026-01-01T00:00:02.000Z');
-    vi.setSystemTime(now);
-    const startedAt = now.getTime() - 1000;
+    try {
+      const now = new Date('2026-01-01T00:00:02.000Z');
+      vi.setSystemTime(now);
+      const startedAt = now.getTime() - 1000;
 
-    const deployments: BlueGreenMonitoringDeploymentRollup[] = [
-      {
-        activeColor: 'blue',
-        activeColors: ['blue'],
-        averageLatencyMs: null,
-        averageRequestsPerMinute: null,
-        buildDurationMs: null,
-        commitHash: 'deploying-commit',
-        commitShortHash: 'deploying',
-        commitSubject: 'Build standby',
-        deploymentKind: 'promotion',
-        deploymentStamp: null,
-        deploymentStamps: [],
-        errorCount: null,
-        firstRequestAt: null,
-        lastRequestAt: null,
-        lifetimeMs: null,
-        mergedDeploymentCount: 1,
-        peakRequestsPerMinute: null,
-        requestCount: null,
-        runtimeState: null,
-        runtimeStates: [],
-        startedAt,
-        status: 'building',
-      },
-    ];
+      const deployments: BlueGreenMonitoringDeploymentRollup[] = [
+        {
+          activeColor: 'blue',
+          activeColors: ['blue'],
+          averageLatencyMs: null,
+          averageRequestsPerMinute: null,
+          buildDurationMs: null,
+          commitHash: 'deploying-commit',
+          commitShortHash: 'deploying',
+          commitSubject: 'Build standby',
+          deploymentKind: 'promotion',
+          deploymentStamp: null,
+          deploymentStamps: [],
+          errorCount: null,
+          firstRequestAt: null,
+          lastRequestAt: null,
+          lifetimeMs: null,
+          mergedDeploymentCount: 1,
+          peakRequestsPerMinute: null,
+          requestCount: null,
+          runtimeState: null,
+          runtimeStates: [],
+          startedAt,
+          status: 'building',
+        },
+      ];
 
-    render(
-      <RolloutStagePanel
-        deployments={deployments}
-        watcher={
-          {
-            lastDeployAt: startedAt,
-            lastDeployStatus: 'building',
-          } as BlueGreenMonitoringSnapshot['watcher']
-        }
-      />
-    );
+      render(
+        <RolloutStagePanel
+          deployments={deployments}
+          watcher={
+            {
+              lastDeployAt: startedAt,
+              lastDeployStatus: 'building',
+            } as BlueGreenMonitoringSnapshot['watcher']
+          }
+        />
+      );
 
-    expect(screen.getByText('1s')).toBeInTheDocument();
+      expect(screen.getByText('1s')).toBeInTheDocument();
 
-    await act(async () => {
-      vi.advanceTimersByTime(1000);
-    });
+      await act(async () => {
+        vi.advanceTimersByTime(1000);
+      });
 
-    expect(screen.getByText('2s')).toBeInTheDocument();
-
-    vi.useRealTimers();
+      expect(screen.getByText('2s')).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -1,16 +1,16 @@
 'use client';
 
 import {
-  closestCenter,
   type CollisionDetection,
+  closestCenter,
   DndContext,
   type DragCancelEvent,
   type DragEndEvent,
-  DragOverlay,
   type DragOverEvent,
+  DragOverlay,
   type DragStartEvent,
-  pointerWithin,
   PointerSensor,
+  pointerWithin,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -60,6 +60,8 @@ interface CourseBuilderClientProps {
   resolvedWsId: string;
   routeWsId: string;
 }
+
+const GROUP_DROPZONE_PREFIX = 'group-dropzone-';
 
 export function CourseBuilderClient({
   courseId,
@@ -151,6 +153,13 @@ export function CourseBuilderClient({
         const moduleContainers = args.droppableContainers.filter((c) =>
           modules.some((m) => m.id === String(c.id))
         );
+        const groupTargetContainers = args.droppableContainers.filter((c) => {
+          const containerId = String(c.id);
+          return (
+            moduleGroups.some((g) => g.id === containerId) ||
+            containerId.startsWith(GROUP_DROPZONE_PREFIX)
+          );
+        });
 
         const pointerOverModules = pointerWithin({
           ...args,
@@ -158,6 +167,14 @@ export function CourseBuilderClient({
         });
         if (pointerOverModules.length > 0) {
           return pointerOverModules;
+        }
+
+        const pointerOverGroups = pointerWithin({
+          ...args,
+          droppableContainers: groupTargetContainers,
+        });
+        if (pointerOverGroups.length > 0) {
+          return pointerOverGroups;
         }
 
         const closestModules = closestCenter({
@@ -168,11 +185,11 @@ export function CourseBuilderClient({
           return closestModules;
         }
 
-        const groupContainers = args.droppableContainers.filter((c) =>
-          moduleGroups.some((g) => g.id === String(c.id))
-        );
-        return groupContainers.length > 0
-          ? closestCenter({ ...args, droppableContainers: groupContainers })
+        return groupTargetContainers.length > 0
+          ? closestCenter({
+              ...args,
+              droppableContainers: groupTargetContainers,
+            })
           : closestCenter(args);
       }
 
@@ -191,6 +208,20 @@ export function CourseBuilderClient({
     return map;
   }, [moduleGroups, modulesByGroupId]);
 
+  const resolveDropGroupId = useCallback(
+    (dropId: string): string | null => {
+      const fromModule = moduleParentMap.get(dropId);
+      if (fromModule) return fromModule;
+      if (modulesByGroupId.has(dropId)) return dropId;
+      if (dropId.startsWith(GROUP_DROPZONE_PREFIX)) {
+        const groupId = dropId.slice(GROUP_DROPZONE_PREFIX.length);
+        if (modulesByGroupId.has(groupId)) return groupId;
+      }
+      return null;
+    },
+    [moduleParentMap, modulesByGroupId]
+  );
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(String(event.active.id));
     setModuleDropTargetGroupId(null);
@@ -208,13 +239,9 @@ export function CourseBuilderClient({
       return;
     }
     const oid = String(over.id);
-    const fromModule = moduleParentMap.get(oid);
-    if (fromModule) {
-      setModuleDropTargetGroupId(fromModule);
-      return;
-    }
-    if (modulesByGroupId.has(oid)) {
-      setModuleDropTargetGroupId(oid);
+    const targetGroupId = resolveDropGroupId(oid);
+    if (targetGroupId) {
+      setModuleDropTargetGroupId(targetGroupId);
       return;
     }
     setModuleDropTargetGroupId(null);
@@ -225,7 +252,7 @@ export function CourseBuilderClient({
     setModuleDropTargetGroupId(null);
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
     setModuleDropTargetGroupId(null);
@@ -274,12 +301,13 @@ export function CourseBuilderClient({
       let targetIndex: number;
 
       const overModuleGroupId = moduleParentMap.get(overIdStr);
+      const resolvedDropGroupId = resolveDropGroupId(overIdStr);
       if (overModuleGroupId) {
         targetGroupId = overModuleGroupId;
         const targetModules = modulesByGroupId.get(targetGroupId) ?? [];
         targetIndex = targetModules.findIndex((m) => m.id === overIdStr);
-      } else if (modulesByGroupId.has(overIdStr)) {
-        targetGroupId = overIdStr;
+      } else if (resolvedDropGroupId) {
+        targetGroupId = resolvedDropGroupId;
         targetIndex = (modulesByGroupId.get(targetGroupId) ?? []).length;
       } else {
         return;
@@ -294,11 +322,13 @@ export function CourseBuilderClient({
       if (!movedModule) return;
 
       if (sourceGroupId === targetGroupId) {
-        if (activeModuleIndex === targetIndex) return;
+        const normalizedTargetIndex =
+          targetIndex === -1 ? sourceModules.length - 1 : targetIndex;
+        if (activeModuleIndex === normalizedTargetIndex) return;
         const nextModules = arrayMove(
           sourceModules,
           activeModuleIndex,
-          targetIndex
+          normalizedTargetIndex
         );
         queryClient.setQueryData(
           [
@@ -342,10 +372,15 @@ export function CourseBuilderClient({
           nextTarget
         );
 
-        moveModuleMutation.mutate({
-          moduleId: activeIdStr,
-          targetGroupId,
-        });
+        try {
+          await moveModuleMutation.mutateAsync({
+            moduleId: activeIdStr,
+            sourceGroupId,
+            targetGroupId,
+          });
+        } catch {
+          return;
+        }
         reorderModulesMutation.mutate({
           moduleGroupId: targetGroupId,
           moduleIds: nextTarget.map((m) => m.id),
@@ -785,7 +820,10 @@ export function CourseBuilderClient({
                       variant="destructive"
                       className="rounded-xl"
                       onClick={() =>
-                        deleteModuleMutation.mutate(activeModule.id)
+                        deleteModuleMutation.mutate({
+                          moduleGroupId: activeModule.module_group_id,
+                          moduleId: activeModule.id,
+                        })
                       }
                     >
                       <Trash2 className="h-4 w-4" />

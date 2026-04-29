@@ -33,6 +33,8 @@ const CreateModuleSchema = z
   })
   .strict();
 
+const MAX_SORT_KEY_INSERT_ATTEMPTS = 3;
+
 async function validateWorkspaceGroupAccess(
   wsId: string,
   groupId: string,
@@ -189,49 +191,62 @@ export const POST = withSessionAuth(
       );
     }
 
-    const { data: lastModuleInGroup, error: lastModuleInGroupError } =
-      await access.sbAdmin
+    for (
+      let attempt = 0;
+      attempt < MAX_SORT_KEY_INSERT_ATTEMPTS;
+      attempt += 1
+    ) {
+      const { data: lastModuleInGroup, error: lastModuleInGroupError } =
+        await access.sbAdmin
+          .from('workspace_course_modules')
+          .select('sort_key')
+          .eq('group_id', groupId)
+          .eq('module_group_id', parsed.data.module_group_id)
+          .order('sort_key', { ascending: false, nullsFirst: false })
+          .limit(1)
+          .maybeSingle();
+
+      if (lastModuleInGroupError) {
+        return NextResponse.json(
+          { message: 'Failed to determine module sort order' },
+          { status: 500 }
+        );
+      }
+
+      const insertPayload: WorkspaceCourseModuleInsert = {
+        content: parsed.data.content ?? null,
+        extra_content: parsed.data.extra_content ?? null,
+        group_id: groupId,
+        is_public: parsed.data.is_public ?? false,
+        is_published: parsed.data.is_published ?? false,
+        module_group_id: parsed.data.module_group_id,
+        name: parsed.data.name,
+        sort_key: (lastModuleInGroup?.sort_key ?? 0) + 1,
+        youtube_links: parsed.data.youtube_links ?? null,
+      };
+
+      const { data: created, error } = await access.sbAdmin
         .from('workspace_course_modules')
-        .select('sort_key')
-        .eq('group_id', groupId)
-        .eq('module_group_id', parsed.data.module_group_id)
-        .order('sort_key', { ascending: false, nullsFirst: false })
-        .limit(1)
-        .maybeSingle();
+        .insert(insertPayload)
+        .select('*')
+        .single();
 
-    if (lastModuleInGroupError) {
-      return NextResponse.json(
-        { message: 'Failed to determine module sort order' },
-        { status: 500 }
-      );
+      if (!error) {
+        return NextResponse.json(created);
+      }
+
+      if (error.code !== '23505') {
+        return NextResponse.json(
+          { message: 'Error creating workspace course module' },
+          { status: 500 }
+        );
+      }
     }
 
-    const insertPayload: WorkspaceCourseModuleInsert = {
-      content: parsed.data.content ?? null,
-      extra_content: parsed.data.extra_content ?? null,
-      group_id: groupId,
-      is_public: parsed.data.is_public ?? false,
-      is_published: parsed.data.is_published ?? false,
-      module_group_id: parsed.data.module_group_id,
-      name: parsed.data.name,
-      sort_key: (lastModuleInGroup?.sort_key ?? 0) + 1,
-      youtube_links: parsed.data.youtube_links ?? null,
-    };
-
-    const { data: created, error } = await access.sbAdmin
-      .from('workspace_course_modules')
-      .insert(insertPayload)
-      .select('*')
-      .single();
-
-    if (error) {
-      return NextResponse.json(
-        { message: 'Error creating workspace course module' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(created);
+    return NextResponse.json(
+      { message: 'Failed to allocate a unique module sort order' },
+      { status: 409 }
+    );
   },
   { rateLimit: { maxRequests: 60, windowMs: 60000 } }
 );
