@@ -149,7 +149,7 @@ async def _download_signed_url_to_temp(
 
     try:
         async with (
-            aiohttp.ClientSession(timeout=timeout) as session,
+            aiohttp.ClientSession(timeout=timeout, connector=aiohttp.TCPConnector(ssl=False)) as session,
             session.get(signed_url) as response,
         ):
             if response.status >= 400:

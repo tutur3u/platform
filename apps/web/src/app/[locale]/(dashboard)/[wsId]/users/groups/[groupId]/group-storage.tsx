@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { File, Loader2, Trash2, Upload } from '@tuturuuu/icons';
+import { File, Loader2, Sparkles, Trash2, Upload } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   FileUploader,
@@ -17,6 +17,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { formatBytes } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface GroupStorageProps {
@@ -32,6 +33,7 @@ export default function GroupStorage({
 }: GroupStorageProps) {
   const t = useTranslations('ws-user-group-details');
   const commonT = useTranslations('common');
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const queryKey = ['group-storage', wsId, groupId];
@@ -113,6 +115,42 @@ export default function GroupStorage({
     },
   });
 
+  const generateModuleMutation = useMutation({
+    mutationFn: async (filename: string) => {
+      const res = await fetch('/api/ai/course', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wsId,
+          groupId,
+          storagePath: `${wsId}/user-groups/${groupId}/${filename}`,
+          fileName: filename,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(
+          errorData.error || errorData.message || 'Failed to generate module'
+        );
+      }
+
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast.success('Course module generated successfully!');
+      if (data.createdModule?.id) {
+        // Redirect to the content editor for the new module
+        router.push(`/${wsId}/education/courses/${groupId}/modules/${data.createdModule.id}/content`);
+      }
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : 'Error generating module'
+      );
+    },
+  });
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -149,12 +187,14 @@ export default function GroupStorage({
           files.map((file) => (
             <div
               key={file.id || file.name}
-              className="flex items-center justify-between rounded-lg border border-border/50 bg-card/50 p-3 backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-card/80 hover:shadow-black/5 hover:shadow-sm"
+              className="flex w-full items-center justify-between gap-2 rounded-lg border border-border/50 bg-card/50 p-3 backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-card/80 hover:shadow-black/5 hover:shadow-sm"
             >
-              <div className="flex items-center gap-3 overflow-hidden">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
                 <File className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-sm">{file.name}</p>
+                <div className="flex min-w-0 flex-col">
+                  <p className="truncate font-medium text-sm" title={file.name}>
+                    {file.name}
+                  </p>
                   {file.metadata?.size !== undefined && (
                     <p className="text-muted-foreground text-xs">
                       {formatBytes(file.metadata.size)}
@@ -162,21 +202,45 @@ export default function GroupStorage({
                   )}
                 </div>
               </div>
-              {canUpdateGroup && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => deleteMutation.mutate(file.name || '')}
-                  disabled={deleteMutation.isPending}
-                >
-                  {deleteMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </Button>
-              )}
+              <div className="flex flex-shrink-0 items-center gap-1">
+                {canUpdateGroup && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="flex-shrink-0 text-dynamic-purple hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
+                    onClick={() =>
+                      generateModuleMutation.mutate(file.name || '')
+                    }
+                    disabled={
+                      generateModuleMutation.isPending &&
+                      generateModuleMutation.variables === file.name
+                    }
+                    title="Generate Course Module with AI"
+                  >
+                    {generateModuleMutation.isPending &&
+                    generateModuleMutation.variables === file.name ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+                {canUpdateGroup && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => deleteMutation.mutate(file.name || '')}
+                    disabled={deleteMutation.isPending}
+                  >
+                    {deleteMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
           ))
         ) : (

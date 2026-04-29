@@ -375,6 +375,8 @@ export async function executeConvertFileToMarkdown(
 
     if (chatFolder && targetPath.startsWith(`${chatFolder}/`)) {
       selectedFileName = getStoragePathFileName(targetPath);
+    } else if (targetPath.startsWith(`${ctx.wsId}/user-groups/`)) {
+      selectedFileName = getStoragePathFileName(targetPath);
     } else if (isLikelyBareFileName(targetPath)) {
       selectedFileName = targetPath;
       targetPath = '';
