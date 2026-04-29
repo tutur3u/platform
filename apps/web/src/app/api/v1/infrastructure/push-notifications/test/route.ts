@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -53,10 +54,7 @@ const requestSchema = z
 
 async function authorizePlatformAdmin(request: Request) {
   const supabase = await createClient(request);
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
   if (authError || !user) {
     return {

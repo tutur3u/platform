@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -14,9 +15,7 @@ export async function GET() {
     const supabase = await createClient();
 
     // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user || !isValidTuturuuuEmail(user.email)) {
       return NextResponse.json(

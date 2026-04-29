@@ -5,6 +5,7 @@
  */
 
 import { getOccurrencesInRange } from '@tuturuuu/ai/scheduling';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -39,10 +40,7 @@ export async function GET(
     const sbAdmin = await createAdminClient();
 
     // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
     if (authError || !user) {
       return NextResponse.json(

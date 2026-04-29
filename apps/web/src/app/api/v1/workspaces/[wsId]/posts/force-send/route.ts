@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -53,7 +54,7 @@ export async function POST(request: Request, { params }: Params) {
     const [body, rootPermissions, authResult] = await Promise.all([
       request.json(),
       getPermissions({ wsId: ROOT_WORKSPACE_ID, request }),
-      supabase.auth.getUser(),
+      resolveAuthenticatedSessionUser(supabase),
     ]);
 
     const parsed = ForceSendPostEmailSchema.safeParse(body);
@@ -73,7 +74,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const user = authResult.data.user;
+    const user = authResult.user;
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }

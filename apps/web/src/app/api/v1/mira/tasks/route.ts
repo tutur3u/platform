@@ -3,6 +3,7 @@
  * GET /api/v1/mira/tasks - Get user's tasks categorized by due date
  */
 
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
@@ -37,9 +38,7 @@ export async function GET(request: Request) {
     const isPersonal = searchParams.get('isPersonal') === 'true';
 
     const supabase = await createClient(request);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

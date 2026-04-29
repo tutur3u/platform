@@ -1,12 +1,11 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { revokeUserAiTempAuthTokens } from '@tuturuuu/utils/ai-temp-auth';
 import { NextResponse } from 'next/server';
 
 export async function POST() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (user) {
     await revokeUserAiTempAuthTokens(user.id);

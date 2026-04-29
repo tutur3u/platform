@@ -1,5 +1,6 @@
 'use server';
 
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -8,9 +9,7 @@ import { revalidatePath } from 'next/cache';
 
 export async function removeUserFromPlan(planId: string, userId: string) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return { error: 'Not authenticated' };

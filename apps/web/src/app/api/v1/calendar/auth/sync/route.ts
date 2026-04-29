@@ -1,5 +1,6 @@
 import type { CalendarEvent as BaseCalendarEvent } from '@tuturuuu/ai/calendar/events';
 import { google, OAuth2Client } from '@tuturuuu/google';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import dayjs from 'dayjs';
@@ -45,9 +46,7 @@ export async function POST(request: Request) {
 
   const supabase = await createClient(request);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return NextResponse.json(
@@ -188,9 +187,7 @@ export async function PUT(request: Request) {
   }
 
   const supabase = await createClient(request);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
   if (!user) {
     return NextResponse.json(
       { error: 'User not authenticated' },
@@ -338,9 +335,7 @@ export async function DELETE(request: Request) {
   }
 
   const supabase = await createClient(request);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
   if (!user) {
     return NextResponse.json(
       { error: 'User not authenticated' },

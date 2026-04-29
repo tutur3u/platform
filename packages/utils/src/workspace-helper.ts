@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   PermissionId,
@@ -84,6 +85,40 @@ function isDirectWorkspaceLookupIdentifier(id: string): boolean {
     normalized === 'internal' ||
     validateUUID(normalized)
   );
+}
+
+async function resolveAuthenticatedPrincipal(
+  supabase: TypedSupabaseClient
+): Promise<{ id: string; email: string | null } | null> {
+  try {
+    const { data: claimsData, error: claimsError } =
+      await supabase.auth.getClaims();
+
+    if (!claimsError && claimsData?.claims?.sub) {
+      return {
+        id: claimsData.claims.sub,
+        email:
+          typeof claimsData.claims.email === 'string'
+            ? claimsData.claims.email
+            : null,
+      };
+    }
+  } catch {
+    console.warn(
+      '[resolveAuthenticatedPrincipal] getClaims is unavailable, falling back to getUser. This may be expected in testing environments or older Supabase clients.'
+    );
+    // Fall back to getUser when getClaims is unavailable in mocks/older clients.
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
+  return { id: user.id, email: user.email ?? null };
 }
 
 /**
@@ -258,12 +293,9 @@ export async function getWorkspace(
 
   const supabase = await createClient();
   const sbAdmin = options.useAdmin ? await createAdminClient() : supabase;
+  const principal = await resolveAuthenticatedPrincipal(supabase);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
+  if (!principal) return null;
 
   const queryBuilder = sbAdmin
     .from('workspaces')
@@ -272,7 +304,9 @@ export async function getWorkspace(
   const resolvedWorkspaceId = resolveWorkspaceId(id);
 
   if (id.toUpperCase() === 'PERSONAL') {
-    queryBuilder.eq('personal', true).eq('workspace_members.user_id', user.id);
+    queryBuilder
+      .eq('personal', true)
+      .eq('workspace_members.user_id', principal.id);
   } else {
     queryBuilder.eq('id', resolvedWorkspaceId);
   }
@@ -283,7 +317,7 @@ export async function getWorkspace(
   if (error) {
     logWorkspaceError('Failed to fetch workspace', error, {
       workspaceId: id,
-      userId: user.id,
+      userId: principal.id,
       errorCode: error.code,
       errorDetails: error.details,
     });
@@ -292,7 +326,7 @@ export async function getWorkspace(
   }
 
   const workspaceJoined = data.workspace_members.some(
-    (member) => member.user_id === user.id
+    (member) => member.user_id === principal.id
   );
   const tierMap = await getWorkspaceTierMap([data.id]);
   const tier = tierMap.get(data.id) ?? null;
@@ -314,23 +348,20 @@ export async function getWorkspace(
 export async function getWorkspaces(options: { useAdmin?: boolean } = {}) {
   const supabase = await createClient();
   const sbAdmin = options.useAdmin ? await createAdminClient() : supabase;
+  const principal = await resolveAuthenticatedPrincipal(supabase);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
+  if (!principal) return null;
 
   const { data, error } = await sbAdmin
     .from('workspaces')
     .select(
       'id, name, avatar_url, logo_url, personal, created_at, workspace_members!inner(user_id)'
     )
-    .eq('workspace_members.user_id', user.id);
+    .eq('workspace_members.user_id', principal.id);
 
   if (error) {
     logWorkspaceError('Failed to fetch user workspaces', error, {
-      userId: user.id,
+      userId: principal.id,
       errorCode: error.code,
       errorDetails: error.details,
     });
@@ -351,23 +382,20 @@ export async function getWorkspaces(options: { useAdmin?: boolean } = {}) {
 
 export async function getWorkspaceInvites() {
   const supabase = await createClient();
+  const principal = await resolveAuthenticatedPrincipal(supabase);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
+  if (!principal) return null;
 
   const invitesQuery = supabase
     .from('workspace_invites')
     .select('...workspaces(id, name), created_at')
-    .eq('user_id', user.id);
+    .eq('user_id', principal.id);
 
-  const emailInvitesQuery = user.email
+  const emailInvitesQuery = principal.email
     ? supabase
         .from('workspace_email_invites')
         .select('...workspaces(id, name), created_at')
-        .ilike('email', `%${user.email}%`)
+        .ilike('email', `%${principal.email}%`)
     : null;
 
   // use promise.all to run both queries in parallel
@@ -384,12 +412,9 @@ export async function getWorkspaceInvites() {
 
 export async function getUnresolvedInquiriesCount() {
   const supabase = await createClient();
+  const principal = await resolveAuthenticatedPrincipal(supabase);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user?.email || !isValidTuturuuuEmail(user.email))
+  if (!principal?.email || !isValidTuturuuuEmail(principal.email))
     return { count: 0, latestDate: null };
 
   const sbAdmin = await createAdminClient();
@@ -440,16 +465,13 @@ export async function enforceRootWorkspaceAdmin(
   enforceRootWorkspace(resolvedWorkspaceId, options);
 
   const supabase = await createClient();
+  const principal = await resolveAuthenticatedPrincipal(supabase);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) throw new WorkspaceAuthError();
+  if (!principal) throw new WorkspaceAuthError();
 
   const membership = await verifyWorkspaceMembershipType({
     wsId: ROOT_WORKSPACE_ID,
-    userId: user.id,
+    userId: principal.id,
     supabase,
   });
 
@@ -533,11 +555,9 @@ export async function verifySecret({
 
 export async function getGuestGroup({ groupId }: { groupId: string }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const principal = await resolveAuthenticatedPrincipal(supabase);
 
-  if (!user) {
+  if (!principal) {
     console.error('Unauthenticated access attempt in getGuestGroup');
     return null;
   }
@@ -569,14 +589,14 @@ export async function getPermissions({
 }): Promise<PermissionsResult | null> {
   const supabase = await (request ? createClient(request) : createClient());
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const principal = await resolveAuthenticatedPrincipal(supabase);
 
-  if (!user) {
+  if (!principal) {
     console.error('User not found');
     return null;
   }
+
+  const userId = principal.id;
 
   const sbAdmin = await createAdminClient();
 
@@ -590,7 +610,7 @@ export async function getPermissions({
 
   const membership = await verifyWorkspaceMembershipType({
     wsId: resolvedWorkspaceId,
-    userId: user.id,
+    userId,
     supabase,
   });
 
@@ -601,7 +621,7 @@ export async function getPermissions({
   const permissionsQuery = sbAdmin
     .from('workspace_role_members')
     .select('workspace_roles!inner(workspace_role_permissions(permission))')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .eq('workspace_roles.ws_id', resolvedWorkspaceId)
     .eq('workspace_roles.workspace_role_permissions.enabled', true);
 
@@ -636,7 +656,7 @@ export async function getPermissions({
   if (workspaceError) return null;
   if (defaultError) return null;
 
-  const isCreator = workspaceData.creator_id === user.id;
+  const isCreator = workspaceData.creator_id === userId;
   const hasPermissions =
     permissionsData.length > 0 || defaultData.length > 0 || isCreator;
 
@@ -654,7 +674,10 @@ export async function getPermissions({
   }
 
   const permissions = isCreator
-    ? rolePermissions({ wsId: resolvedWorkspaceId, user }).map(({ id }) => id)
+    ? rolePermissions({
+        wsId: resolvedWorkspaceId,
+        user: { id: userId } as SupabaseUser,
+      }).map(({ id }) => id)
     : [
         // permissions from role memberships
         ...permissionsData.flatMap(
@@ -880,19 +903,19 @@ export async function normalizeWorkspaceId(
   }
 
   if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
-    const {
-      data: { user },
-    } = await sb.auth.getUser();
+    const principal = await resolveAuthenticatedPrincipal(sb);
 
-    if (!user) {
+    if (!principal) {
       throw new Error('User not authenticated');
     }
+
+    const userId = principal.id;
 
     const { data: workspace, error } = await sb
       .from('workspaces')
       .select('id, workspace_members!inner(user_id, type)')
       .eq('personal', true)
-      .eq('workspace_members.user_id', user.id)
+      .eq('workspace_members.user_id', userId)
       .eq('workspace_members.type', 'MEMBER')
       .maybeSingle();
 

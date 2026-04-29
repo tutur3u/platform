@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -20,10 +21,7 @@ async function authorizeDocumentsRequest(request: Request, wsIdParam: string) {
   const supabase = await createClient(request);
   const wsId = await normalizeWorkspaceId(wsIdParam, supabase);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
   if (authError || !user) {
     return {

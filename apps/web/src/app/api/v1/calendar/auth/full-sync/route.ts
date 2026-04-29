@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { performFullSyncForWorkspace } from '@tuturuuu/trigger/google-calendar-full-sync';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
@@ -43,10 +44,8 @@ export async function POST(request: Request) {
     const supabase = await createClient(request);
 
     // Get the current authenticated user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const { user, authError: userError } =
+      await resolveAuthenticatedSessionUser(supabase);
 
     if (userError || !user) {
       return NextResponse.json(

@@ -4,6 +4,7 @@
  * POST: Bulk import holidays (admin only)
  */
 
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
@@ -28,9 +29,7 @@ const bulkImportSchema = z.object({
  */
 async function isAdmin(): Promise<boolean> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) return false;
 

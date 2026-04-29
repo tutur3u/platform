@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -83,9 +84,7 @@ async function getData(
   try {
     const supabase = await createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user?.email?.endsWith('@tuturuuu.com')) {
       throw new Error('Unauthorized');

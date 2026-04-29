@@ -6,6 +6,7 @@ import {
   TrendingUp,
   Users,
 } from '@tuturuuu/icons';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -300,9 +301,7 @@ async function getAnalyticsData(wsId: string) {
   const supabase = await createClient();
   const sbAdmin = await createAdminClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user?.id) {
     return { totalClicks: 0, uniqueVisitors: 0 };
@@ -371,9 +370,7 @@ async function getData(
   const limit = parseInt(pageSize, 10);
   const offset = (parseInt(page, 10) - 1) * limit;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user?.id) {
     return { data: [], count: 0 };

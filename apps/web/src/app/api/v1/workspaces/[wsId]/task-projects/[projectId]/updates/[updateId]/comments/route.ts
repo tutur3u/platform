@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
@@ -27,10 +28,8 @@ export async function POST(
     const supabase = await createClient();
 
     // Get current user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const { user, authError: userError } =
+      await resolveAuthenticatedSessionUser(supabase);
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -136,10 +135,8 @@ export async function GET(
     const supabase = await createClient();
 
     // Get current user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const { user, authError: userError } =
+      await resolveAuthenticatedSessionUser(supabase);
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

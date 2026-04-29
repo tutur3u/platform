@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -22,10 +23,8 @@ export async function POST(
     const { wsId: rawWsId, initiativeId } = await params;
     const supabase = await createClient(request);
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const { user, authError: userError } =
+      await resolveAuthenticatedSessionUser(supabase);
 
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

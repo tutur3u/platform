@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -12,10 +13,7 @@ export async function GET() {
     const supabase = await createClient();
 
     // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -61,10 +59,7 @@ export async function PATCH(req: NextRequest) {
     const supabase = await createClient();
 
     // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

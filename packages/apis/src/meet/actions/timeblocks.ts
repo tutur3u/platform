@@ -1,5 +1,6 @@
 'use server';
 
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -84,9 +85,7 @@ export async function createTimeblocks(
   });
 
   if (userType === 'user') {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user?.id) {
       return { error: 'Unauthorized' };
@@ -194,9 +193,7 @@ export async function deleteTimeblock(
   }
 
   if (userType === 'user') {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
       return { error: 'Unauthorized' };

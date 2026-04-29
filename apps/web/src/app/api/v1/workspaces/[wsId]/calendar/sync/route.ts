@@ -3,6 +3,7 @@ import {
   convertMicrosoftEventToWorkspaceFormat,
   fetchMicrosoftEvents,
 } from '@tuturuuu/microsoft/calendar';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -60,10 +61,7 @@ async function verifyWorkspaceAccess(
   }
 
   const supabase = await createClient(request);
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
   if (authError || !user) {
     return jsonError('Please sign in to sync calendars', 401);

@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TablesUpdate } from '@tuturuuu/types';
 import {
@@ -38,10 +39,7 @@ export async function GET(
     const supabase = await createClient();
 
     // Verify authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -161,10 +159,7 @@ export async function PATCH(
     const supabase = await createClient();
 
     // Verify authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -247,10 +242,7 @@ export async function DELETE(
     const supabase = await createClient();
 
     // Verify authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

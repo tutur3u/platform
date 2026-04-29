@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import type { AuroraExternalStatisticalMetrics } from '../types';
@@ -29,9 +30,7 @@ export async function POST() {
 
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });

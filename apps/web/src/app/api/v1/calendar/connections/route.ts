@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TablesUpdate } from '@tuturuuu/types';
 import {
@@ -33,10 +34,8 @@ const updateConnectionSchema = z
 // GET - List calendar connections for a workspace
 export async function GET(request: Request) {
   const supabase = await createClient(request);
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const { user, authError: userError } =
+    await resolveAuthenticatedSessionUser(supabase);
 
   if (userError || !user) {
     return NextResponse.json(
@@ -92,10 +91,8 @@ export async function GET(request: Request) {
 // POST - Create a new calendar connection
 export async function POST(request: Request) {
   const supabase = await createClient(request);
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const { user, authError: userError } =
+    await resolveAuthenticatedSessionUser(supabase);
 
   if (userError || !user) {
     return NextResponse.json(
@@ -162,10 +159,8 @@ export async function POST(request: Request) {
 // PATCH - Update a calendar connection
 export async function PATCH(request: Request) {
   const supabase = await createClient(request);
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const { user, authError: userError } =
+    await resolveAuthenticatedSessionUser(supabase);
 
   if (userError || !user) {
     return NextResponse.json(
@@ -230,10 +225,8 @@ export async function PATCH(request: Request) {
 // DELETE - Delete a calendar connection
 export async function DELETE(request: Request) {
   const supabase = await createClient(request);
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const { user, authError: userError } =
+    await resolveAuthenticatedSessionUser(supabase);
 
   if (userError || !user) {
     return NextResponse.json(

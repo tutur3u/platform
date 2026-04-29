@@ -1,5 +1,6 @@
 'use server';
 
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -201,9 +202,7 @@ export async function createPlan(data: CreatePlanInput) {
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   // Backend validation: ensure end_time is after start_time
   if (data.start_time && data.end_time) {
@@ -284,9 +283,7 @@ export interface UpdatePlanInput {
 
 export async function updatePlan(planId: string, data: UpdatePlanInput) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return { error: 'Not authenticated' };
@@ -466,9 +463,7 @@ export async function deletePlan(planId: string) {
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return { error: 'Not authenticated' };
@@ -509,9 +504,7 @@ export async function togglePlanLock(planId: string, isConfirm: boolean) {
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user?.id) {
     return { error: 'Unauthorized' };

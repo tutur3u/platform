@@ -9,6 +9,7 @@ import {
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
+import { resolveSupabaseSessionUser } from '../route-auth';
 
 const HUMAN_PROMPT = '\n\nHuman:';
 const AI_PROMPT = '\n\nAssistant:';
@@ -92,10 +93,8 @@ export function createPOST(
       if (tempAuth.status === 'valid') {
         user = tempAuth.context.user as SupabaseUser;
       } else {
-        const {
-          data: { user: sessionUser },
-          error: authError,
-        } = await supabase.auth.getUser();
+        const { user: sessionUser, authError } =
+          await resolveSupabaseSessionUser(supabase);
 
         if (isBackendRateLimitError(authError)) {
           return buildRateLimitResponse(req, { source: 'auth' });

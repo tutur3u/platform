@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -48,10 +49,7 @@ async function authorizeWorkspaceCalendarAccess(
   const supabase = await createClient(request);
   const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
   if (authError || !user) {
     return {

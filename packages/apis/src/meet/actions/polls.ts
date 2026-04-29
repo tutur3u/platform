@@ -1,5 +1,6 @@
 'use server';
 
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -15,9 +16,7 @@ export async function createPoll(planId: string, input: CreatePollInput) {
   const { name, allow_anonymous_updates = false } = input;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user?.id) {
     return { error: 'Unauthorized' };
@@ -62,9 +61,7 @@ export async function deletePoll(planId: string, pollId: string) {
   const supabase = await createClient();
 
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
       return { error: 'Authentication required' };
@@ -138,9 +135,7 @@ export async function addPollOption(planId: string, input: AddPollOptionInput) {
 
   let userId: string | null = null;
   if (userType === 'PLATFORM') {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
     userId = user?.id ?? null;
     if (!userId) {
       return { error: 'Unauthorized' };
@@ -265,9 +260,7 @@ export async function deletePollOption(
     return { error: 'Unauthorized' };
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
   if (!user?.id) {
     return { error: 'Unauthorized' };
   }
@@ -339,9 +332,7 @@ export async function submitVote(planId: string, input: SubmitVoteInput) {
   let userId: string | null = null;
 
   if (userType === 'PLATFORM') {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
     userId = user?.id ?? null;
     if (!userId) {
       return { error: 'Unauthorized' };
@@ -450,9 +441,7 @@ export async function toggleWherePoll(planId: string, whereToMeet: boolean) {
       return { error: 'whereToMeet must be a boolean' };
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
     if (!user) {
       return { error: 'Unauthorized' };
     }

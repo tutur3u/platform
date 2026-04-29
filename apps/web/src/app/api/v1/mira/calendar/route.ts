@@ -3,6 +3,7 @@
  * GET /api/v1/mira/calendar - Get user's upcoming calendar events
  */
 
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -26,9 +27,7 @@ export async function GET(request: Request) {
 
     const supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

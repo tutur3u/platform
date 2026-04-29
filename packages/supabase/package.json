@@ -42,6 +42,11 @@
       "types": "./dist/next/auth-browser.d.ts",
       "default": "./dist/next/auth-browser.js"
     },
+    "./next/auth-session-user": {
+      "types": "./dist/next/auth-session-user.d.ts",
+      "bun": "./src/next/auth-session-user.ts",
+      "default": "./dist/next/auth-session-user.js"
+    },
     "./next/common": {
       "types": "./dist/next/common.d.ts",
       "bun": "./src/next/common.ts",

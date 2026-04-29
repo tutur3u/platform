@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -20,10 +21,7 @@ async function authorizeMutation(request: Request, wsId: string) {
   const supabase = await createClient(request);
   const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
   if (authError || !user) {
     return {
       error: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),

@@ -4,6 +4,7 @@
  * PATCH /api/v1/mira/soul - Upsert mira_soul (name, tone, etc.)
  */
 
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -21,9 +22,7 @@ const updateSoulSchema = z.object({
 export async function GET(request: Request) {
   try {
     const supabase = await createClient(request);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -56,9 +55,7 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const supabase = await createClient(request);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -9,6 +9,30 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { resolveWorkspaceId } from './constants';
 import { verifyWorkspaceMembershipType } from './workspace-helper';
 
+async function resolveCurrentUserId(
+  supabase: TypedSupabaseClient
+): Promise<string | null> {
+  try {
+    const { data: claimsData, error: claimsError } =
+      await supabase.auth.getClaims();
+
+    if (!claimsError && claimsData?.claims?.sub) {
+      return claimsData.claims.sub;
+    }
+  } catch {
+    console.warn(
+      '[resolveCurrentUserId] getClaims is unavailable, falling back to getUser. This may be expected in testing environments or older Supabase clients.'
+    );
+    // Fall back to getUser when getClaims is unavailable in mocks/older clients.
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return user?.id ?? null;
+}
+
 export async function getCurrentSupabaseUser() {
   const supabase = await createClient();
 
@@ -50,10 +74,8 @@ export async function getCurrentWorkspaceUser(
   const { autoRepair = true } = options;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+  const userId = await resolveCurrentUserId(supabase as TypedSupabaseClient);
+  if (!userId) return null;
 
   const resolvedWsId = resolveWorkspaceId(wsId);
 
@@ -63,7 +85,7 @@ export async function getCurrentWorkspaceUser(
     .select(
       'platform_user_id, virtual_user_id, ws_id, created_at, workspace_users!virtual_user_id(*)'
     )
-    .eq('platform_user_id', user.id)
+    .eq('platform_user_id', userId)
     .eq('ws_id', resolvedWsId)
     .limit(1)
     .maybeSingle();
@@ -85,7 +107,7 @@ export async function getCurrentWorkspaceUser(
 
   const membership = await verifyWorkspaceMembershipType({
     wsId: resolvedWsId,
-    userId: user.id,
+    userId,
     supabase,
     requiredType: 'MEMBER',
   });
@@ -103,7 +125,7 @@ export async function getCurrentWorkspaceUser(
       args: Record<string, unknown>
     ) => Promise<{ error: Error | null }>;
     const { error: repairError } = await rpc('ensure_workspace_user_link', {
-      target_user_id: user.id,
+      target_user_id: userId,
       target_ws_id: resolvedWsId,
     });
 
@@ -121,7 +143,7 @@ export async function getCurrentWorkspaceUser(
       .select(
         'platform_user_id, virtual_user_id, ws_id, created_at, workspace_users!virtual_user_id(*)'
       )
-      .eq('platform_user_id', user.id)
+      .eq('platform_user_id', userId)
       .eq('ws_id', resolvedWsId)
       .limit(1)
       .maybeSingle();
@@ -146,11 +168,9 @@ export async function getCurrentWorkspaceUser(
 export async function getCurrentUser() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await resolveCurrentUserId(supabase as TypedSupabaseClient);
 
-  if (!user) {
+  if (!userId) {
     return null;
   }
 
@@ -159,7 +179,7 @@ export async function getCurrentUser() {
     .select(
       'id, display_name, avatar_url, bio, handle, created_at, user_private_details(email, new_email, birthday, full_name, default_workspace_id)'
     )
-    .eq('id', user.id)
+    .eq('id', userId)
     .single();
 
   if (error) {
@@ -177,16 +197,14 @@ export async function getUserDefaultWorkspace(client?: TypedSupabaseClient) {
   try {
     const supabase = client || (await createClient());
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const userId = await resolveCurrentUserId(supabase as TypedSupabaseClient);
 
-    if (!user) return null;
+    if (!userId) return null;
 
     const { data: userData, error: userError } = await supabase
       .from('user_private_details')
       .select('default_workspace_id')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .single();
 
     if (userError || !userData) return null;
@@ -199,7 +217,7 @@ export async function getUserDefaultWorkspace(client?: TypedSupabaseClient) {
         .from('workspaces')
         .select('id, name, personal, workspace_members!inner(user_id)')
         .eq('id', defaultWorkspaceId)
-        .eq('workspace_members.user_id', user.id)
+        .eq('workspace_members.user_id', userId)
         .single();
 
       if (!error && workspace) {
@@ -211,7 +229,7 @@ export async function getUserDefaultWorkspace(client?: TypedSupabaseClient) {
     const { data: personalWorkspace, error } = await supabase
       .from('workspaces')
       .select('id, name, personal, workspace_members!inner(user_id)')
-      .eq('workspace_members.user_id', user.id)
+      .eq('workspace_members.user_id', userId)
       .eq('personal', true)
       .limit(1)
       .maybeSingle();
@@ -233,18 +251,16 @@ export async function updateUserDefaultWorkspace(
 ) {
   const supabase = client || (await createClient());
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await resolveCurrentUserId(supabase as TypedSupabaseClient);
 
-  if (!user) return { error: 'User not found' };
+  if (!userId) return { error: 'User not found' };
 
   // Verify user has access to the workspace
   const { data: workspace, error: workspaceError } = await supabase
     .from('workspaces')
     .select('id, workspace_members!inner(user_id)')
     .eq('id', workspaceId)
-    .eq('workspace_members.user_id', user.id)
+    .eq('workspace_members.user_id', userId)
     .single();
 
   if (workspaceError || !workspace) {
@@ -255,7 +271,7 @@ export async function updateUserDefaultWorkspace(
   const { error } = await supabase
     .from('user_private_details')
     .update({ default_workspace_id: workspaceId })
-    .eq('user_id', user.id);
+    .eq('user_id', userId);
 
   if (error) {
     return { error: error.message };

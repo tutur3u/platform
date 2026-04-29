@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -13,9 +14,7 @@ export async function PUT(req: NextRequest) {
 
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user?.email?.endsWith('@tuturuuu.com'))
     return NextResponse.json(
@@ -53,9 +52,7 @@ export async function DELETE(
 
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user?.email?.endsWith('@tuturuuu.com'))
     return NextResponse.json(

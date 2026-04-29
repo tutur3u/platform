@@ -1,4 +1,5 @@
 import { hashApiKey } from '@tuturuuu/auth/api-keys';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -36,7 +37,8 @@ export async function requireSepayAccess(
 ): Promise<SepayAccessContext | { error: NextResponse }> {
   const supabase = await createClient(request);
 
-  const { data: authData, error: authError } = await supabase.auth.getUser();
+  const { user: authUser, authError } =
+    await resolveAuthenticatedSessionUser(supabase);
   if (authError) {
     console.error('Failed to authenticate SePay access request:', authError);
     return {
@@ -47,7 +49,7 @@ export async function requireSepayAccess(
     };
   }
 
-  if (!authData.user) {
+  if (!authUser) {
     return {
       error: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
     };

@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -24,10 +25,7 @@ function hasWorkspaceExternalProjectPermission(
 
 export async function GET(request: Request) {
   const supabase = (await createClient(request)) as TypedSupabaseClient;
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

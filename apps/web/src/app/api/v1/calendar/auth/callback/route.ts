@@ -1,4 +1,5 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { performFullSyncForWorkspace } from '@tuturuuu/trigger';
 import { NextResponse } from 'next/server';
@@ -88,10 +89,8 @@ export async function GET(request: Request) {
 
     console.log('🔍 [DEBUG] Getting current user...');
     // Get the current authenticated user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const { user, authError: userError } =
+      await resolveAuthenticatedSessionUser(supabase);
 
     console.log('🔍 [DEBUG] User auth result:', {
       hasUser: !!user,

@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
@@ -20,9 +21,8 @@ export async function POST(req: Request) {
     if (tempAuth.status === 'valid') {
       user = tempAuth.context.user as SupabaseUser;
     } else {
-      const {
-        data: { user: sessionUser },
-      } = await supabase.auth.getUser();
+      const { user: sessionUser } =
+        await resolveAuthenticatedSessionUser(supabase);
       user = sessionUser;
     }
 

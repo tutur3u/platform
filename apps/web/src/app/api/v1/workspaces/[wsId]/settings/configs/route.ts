@@ -1,4 +1,5 @@
 import { DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -42,10 +43,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     const sbAdmin = await createAdminClient();
 
     // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -162,10 +160,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     const sbAdmin = await createAdminClient();
 
     // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
 import { LanguageWrapper } from '@tuturuuu/ui/custom/language-wrapper';
@@ -16,9 +17,7 @@ export default async function NavbarActions({
   const t = await getTranslations();
   const supabase = await createClient();
 
-  const {
-    data: { user: sbUser },
-  } = await supabase.auth.getUser();
+  const { user: sbUser } = await resolveAuthenticatedSessionUser(supabase);
 
   return (
     <div className="relative flex w-full">

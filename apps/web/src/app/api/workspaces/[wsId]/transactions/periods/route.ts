@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type {
   Transaction,
@@ -71,9 +72,7 @@ export async function GET(req: Request, { params }: Params) {
       walletIds.length > 0 ? walletIds : walletId ? [walletId] : undefined;
 
     // Get current user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -34,9 +35,7 @@ export async function POST(_req: Request, { params }: Params) {
     const supabase = await createClient();
 
     // Get current user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -115,9 +114,7 @@ export async function GET(_req: Request, { params }: Params) {
     const supabase = await createClient();
 
     // Get current user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

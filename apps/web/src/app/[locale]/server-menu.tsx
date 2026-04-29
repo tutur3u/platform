@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import Menu from './menu';
@@ -5,9 +6,7 @@ import Menu from './menu';
 export default async function ServerMenu() {
   const supabase = await createClient();
 
-  const {
-    data: { user: sbUser },
-  } = await supabase.auth.getUser();
+  const { user: sbUser } = await resolveAuthenticatedSessionUser(supabase);
 
   const user = await getCurrentUser();
 

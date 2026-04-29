@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 
@@ -23,9 +24,7 @@ export async function GET(req: Request) {
     }
 
     const supabase = await createClient(req);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -87,9 +86,7 @@ export async function POST(req: Request) {
     }
 
     const supabase = await createClient(req);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -159,9 +156,7 @@ export async function DELETE(req: Request) {
     }
 
     const supabase = await createClient(req);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });

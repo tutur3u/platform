@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
@@ -14,9 +15,7 @@ export default async function NewFormPage({ params }: PageProps) {
     <WorkspaceWrapper params={Promise.resolve(resolvedParams)}>
       {async ({ wsId }) => {
         const supabase = await createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { user } = await resolveAuthenticatedSessionUser(supabase);
 
         if (!user) {
           notFound();

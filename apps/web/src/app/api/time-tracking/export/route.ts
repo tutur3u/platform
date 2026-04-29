@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
@@ -13,9 +14,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
 
     // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

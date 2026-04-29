@@ -1,4 +1,5 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -28,9 +29,7 @@ export async function GET(req: Request) {
     const sbAdmin = await createAdminClient();
 
     // Verify user has access to the workspace
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -120,9 +119,7 @@ export async function POST(req: Request) {
     const sbAdmin = await createAdminClient();
 
     // Verify user is authenticated and has permission
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

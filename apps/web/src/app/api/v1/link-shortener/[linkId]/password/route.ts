@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -29,9 +30,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const supabase = await createClient();
     const sbAdmin = await createAdminClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -159,9 +158,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const supabase = await createClient();
     const sbAdmin = await createAdminClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

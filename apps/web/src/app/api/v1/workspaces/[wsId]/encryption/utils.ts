@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
@@ -36,9 +37,7 @@ export async function checkE2EEPermission(
   supabase: TypedSupabaseClient,
   wsId: string
 ): Promise<CheckE2EEResult> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return { authorized: false, user: null };

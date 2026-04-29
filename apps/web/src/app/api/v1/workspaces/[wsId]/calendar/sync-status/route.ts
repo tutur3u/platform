@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -23,10 +24,7 @@ export async function GET(
     }
 
     const supabase = await createClient(request);
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
     if (authError || !user) {
       return NextResponse.json(

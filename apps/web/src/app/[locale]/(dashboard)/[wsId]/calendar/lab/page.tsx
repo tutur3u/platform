@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
@@ -30,9 +31,7 @@ export default async function CalendarLabPage({ params }: PageProps) {
         const supabase = await createClient();
 
         // Get current user
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { user } = await resolveAuthenticatedSessionUser(supabase);
 
         // Security Check: Only Tuturuuu employees
         const isEmployee = user?.email?.endsWith('@tuturuuu.com');

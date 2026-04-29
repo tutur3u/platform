@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@tuturuuu/supabase';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 
@@ -31,9 +32,7 @@ export async function fetchAllRows<T>(
 export async function verifyAdminAccess() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
   if (!user) return { error: 'Unauthorized', status: 401 };
 
   const { data: hasPermission, error: permissionError } = await supabase.rpc(

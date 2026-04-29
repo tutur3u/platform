@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
@@ -17,10 +18,8 @@ export async function POST(
     const supabase = await createClient();
 
     // Get current user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const { user, authError: userError } =
+      await resolveAuthenticatedSessionUser(supabase);
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -195,10 +194,8 @@ export async function DELETE(
     const supabase = await createClient();
 
     // Get current user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const { user, authError: userError } =
+      await resolveAuthenticatedSessionUser(supabase);
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

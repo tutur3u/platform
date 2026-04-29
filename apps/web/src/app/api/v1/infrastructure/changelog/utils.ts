@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -30,9 +31,7 @@ export type CheckChangelogPermissionResult =
 export async function checkChangelogPermission(
   supabase: TypedSupabaseClient
 ): Promise<CheckChangelogPermissionResult> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return { authorized: false, user: null, denial: 'unauthenticated' };

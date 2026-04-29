@@ -1,4 +1,5 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -16,9 +17,7 @@ export async function GET(
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -101,9 +100,7 @@ export async function POST(
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

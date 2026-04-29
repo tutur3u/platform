@@ -4,6 +4,7 @@
  * PATCH /api/v1/mira/pet - Update pet (name, etc.)
  */
 
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -19,9 +20,7 @@ const updatePetSchema = z.object({
 export async function GET() {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -86,9 +85,7 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

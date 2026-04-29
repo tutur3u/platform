@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -18,9 +19,7 @@ export async function POST(req: Request) {
     const supabase = await createClient();
 
     // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user || !isValidTuturuuuEmail(user.email)) {
       return new Response(

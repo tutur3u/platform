@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
@@ -31,9 +32,7 @@ export default async function CalendarPage({ params }: PageProps) {
         const supabase = await createClient();
 
         // Get current user
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { user } = await resolveAuthenticatedSessionUser(supabase);
 
         // Fetch Google auth token, calendar connections, and user email in parallel for better performance
         const [{ data: googleToken }, { data: calendarConnections }] = user?.id

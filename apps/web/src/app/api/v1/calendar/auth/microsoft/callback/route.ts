@@ -5,6 +5,7 @@ import {
   MICROSOFT_CALENDAR_SCOPES,
 } from '@tuturuuu/microsoft';
 import { fetchMicrosoftCalendars } from '@tuturuuu/microsoft/calendar';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_LONG_TEXT_LENGTH,
@@ -142,10 +143,8 @@ export async function GET(request: Request): Promise<NextResponse> {
     const supabase = await createClient(request);
 
     // Get the current authenticated user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const { user, authError: userError } =
+      await resolveAuthenticatedSessionUser(supabase);
 
     if (userError || !user) {
       console.log('❌ [DEBUG] User not authenticated');

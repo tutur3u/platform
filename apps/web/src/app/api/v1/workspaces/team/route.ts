@@ -1,4 +1,5 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -18,9 +19,7 @@ const CreateTeamWorkspaceSchema = z.object({
 export async function POST(req: Request) {
   const supabase = await createClient(req);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { embed } from 'ai';
@@ -20,9 +21,7 @@ export async function POST(_: Request, { params }: Params) {
     const { wsId } = await params;
 
     // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
