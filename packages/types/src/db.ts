@@ -361,6 +361,7 @@ export type WorkspaceCourseBuilderModule = Pick<
   | 'id'
   | 'is_public'
   | 'is_published'
+  | 'module_group_id'
   | 'name'
   | 'sort_key'
   | 'youtube_links'
@@ -369,6 +370,9 @@ export type WorkspaceCourseBuilderModule = Pick<
   quiz_count: number;
   quiz_set_count: number;
 };
+
+export type WorkspaceCourseModuleGroup =
+  Tables<'workspace_course_module_groups'>;
 export type SharedCourseGroup = Pick<
   Tables<'workspace_user_groups'>,
   'description' | 'name'

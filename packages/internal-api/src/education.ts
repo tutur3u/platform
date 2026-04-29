@@ -1,4 +1,8 @@
 import type { WorkspaceCourseModule } from '@tuturuuu/types';
+import type {
+  WorkspaceCourseBuilderModule,
+  WorkspaceCourseModuleGroup,
+} from '@tuturuuu/types/db';
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -15,11 +19,44 @@ export interface UpsertWorkspaceCoursePayload {
 export interface UpsertWorkspaceCourseModulePayload {
   id?: string;
   name: string;
+  module_group_id: string;
   content?: unknown;
   extra_content?: unknown;
   is_public?: boolean;
   is_published?: boolean;
   youtube_links?: string[];
+}
+
+export async function listWorkspaceCourseModules(
+  workspaceId: string,
+  groupId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceCourseModule[]>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/modules`,
+    { cache: 'no-store' }
+  );
+}
+
+export async function listWorkspaceCourseModuleGroupModules(
+  workspaceId: string,
+  groupId: string,
+  moduleGroupId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceCourseBuilderModule[]>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups/${encodePathSegment(moduleGroupId)}/modules`,
+    { cache: 'no-store' }
+  );
+}
+
+export interface UpsertWorkspaceCourseModuleGroupPayload {
+  id?: string;
+  title: string;
+  icon?: string;
+  color?: string;
 }
 
 export interface UpsertWorkspaceQuizPayload {
@@ -152,6 +189,12 @@ export async function updateWorkspaceCourseModule(
   );
 }
 
+/**
+ * @deprecated Prefer {@link reorderWorkspaceCourseModulesInModuleGroup} for
+ * per-group reorder, or {@link reorderWorkspaceCourseModuleGroups} for group-level
+ * reorder. This legacy wrapper calls the upgraded `reorder_workspace_course_modules`
+ * RPC which preserves sort_key within each module_group.
+ */
 export async function reorderWorkspaceCourseModules(
   workspaceId: string,
   groupId: string,
@@ -180,6 +223,108 @@ export async function deleteWorkspaceCourseModule(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/course-modules/${encodePathSegment(moduleId)}`,
     {
       method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceCourseModuleGroups(
+  workspaceId: string,
+  groupId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceCourseModuleGroup[]>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups`,
+    { cache: 'no-store' }
+  );
+}
+
+export async function createWorkspaceCourseModuleGroup(
+  workspaceId: string,
+  groupId: string,
+  payload: UpsertWorkspaceCourseModuleGroupPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceCourseModuleGroup>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceCourseModuleGroup(
+  workspaceId: string,
+  groupId: string,
+  moduleGroupId: string,
+  payload: Partial<UpsertWorkspaceCourseModuleGroupPayload>,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups/${encodePathSegment(moduleGroupId)}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteWorkspaceCourseModuleGroup(
+  workspaceId: string,
+  groupId: string,
+  moduleGroupId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups/${encodePathSegment(moduleGroupId)}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function reorderWorkspaceCourseModuleGroups(
+  workspaceId: string,
+  groupId: string,
+  moduleGroupIds: string[],
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups/order`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ moduleGroupIds }),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function reorderWorkspaceCourseModulesInModuleGroup(
+  workspaceId: string,
+  groupId: string,
+  moduleGroupId: string,
+  moduleIds: string[],
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups/${encodePathSegment(moduleGroupId)}/module-order`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ moduleIds }),
       cache: 'no-store',
     }
   );

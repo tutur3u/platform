@@ -1,6 +1,25 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import {
+  type CollisionDetection,
+  closestCenter,
+  DndContext,
+  type DragCancelEvent,
+  type DragEndEvent,
+  type DragOverEvent,
+  DragOverlay,
+  type DragStartEvent,
+  PointerSensor,
+  pointerWithin,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   BookOpenText,
   ClipboardCheck,
@@ -13,20 +32,9 @@ import {
   SwatchBook,
   Trash2,
 } from '@tuturuuu/icons';
-import {
-  createWorkspaceCourseModule,
-  deleteWorkspaceCourseModule,
-  reorderWorkspaceCourseModules,
-  type UpsertWorkspaceCourseModulePayload,
-} from '@tuturuuu/internal-api';
-import type {
-  WorkspaceCourseBuilderCourse,
-  WorkspaceCourseBuilderModule,
-} from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { CourseModuleForm } from '@tuturuuu/ui/custom/education/modules/course-module-form';
 import { ModuleToggles } from '@tuturuuu/ui/custom/education/modules/module-toggle';
 import { StorageObjectForm } from '@tuturuuu/ui/custom/education/modules/resources/file-upload-form';
 import YouTubeLinkForm from '@tuturuuu/ui/custom/education/modules/youtube/form';
@@ -34,178 +42,416 @@ import { EducationContentSurface } from '@tuturuuu/ui/custom/education/shell/edu
 import { EducationKpiStrip } from '@tuturuuu/ui/custom/education/shell/education-kpi-strip';
 import { EducationPageHeader } from '@tuturuuu/ui/custom/education/shell/education-page-header';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import FlashcardForm from '../../../flashcards/form';
 import QuizSetForm from '../../../quiz-sets/form';
 import QuizForm from '../../../quizzes/form';
 import { ModuleContentEditor } from '../modules/[moduleId]/content/content-editor';
+import { ModuleGroupForm } from './module-group-form';
+import { SortableGroup } from './sortable-group';
+import { useCourseBuilder } from './use-course-builder';
 
 interface CourseBuilderClientProps {
-  course: WorkspaceCourseBuilderCourse;
   courseId: string;
-  modules: WorkspaceCourseBuilderModule[];
+  courseName: string;
   resolvedWsId: string;
   routeWsId: string;
 }
 
-function reorderLocal<T>(list: T[], from: number, to: number) {
-  const next = [...list];
-  const [moved] = next.splice(from, 1);
-  if (!moved) return list;
-  next.splice(to, 0, moved);
-  return next;
-}
-
-function hasRichContent(content: unknown) {
-  if (!content || typeof content !== 'object') return false;
-  const candidate = content as {
-    content?: Array<{ content?: unknown[]; type?: string }>;
-  };
-  return (candidate.content ?? []).some(
-    (node) => node.type !== 'paragraph' || (node.content?.length ?? 0) > 0
-  );
-}
+const GROUP_DROPZONE_PREFIX = 'group-dropzone-';
 
 export function CourseBuilderClient({
-  course,
   courseId,
-  modules: initialModules,
+  courseName,
   resolvedWsId,
   routeWsId,
 }: CourseBuilderClientProps) {
-  const router = useRouter();
-  const { toast } = useToast();
   const t = useTranslations();
-  const [modules, setModules] =
-    useState<WorkspaceCourseBuilderModule[]>(initialModules);
-  const [activeModuleId, setActiveModuleId] = useState<string | null>(
-    initialModules[0]?.id ?? null
+  const queryClient = useQueryClient();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [moduleDropTargetGroupId, setModuleDropTargetGroupId] = useState<
+    string | null
+  >(null);
+  const [editGroupId, setEditGroupId] = useState<string | null>(null);
+  const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
+
+  const {
+    activeModule,
+    deleteGroupMutation,
+    deleteModuleMutation,
+    duplicateMutation,
+    invalidateModuleGroupModules,
+    isLoading,
+    moduleGroups,
+    modulesByGroupId,
+    modulesWithAssessments,
+    modulesWithContent,
+    moveModuleMutation,
+    publishedModules,
+    reorderGroupsMutation,
+    reorderModulesMutation,
+    setActiveModuleId,
+    totalModules,
+    upsertGroupMutation,
+  } = useCourseBuilder({ courseId, resolvedWsId });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
   );
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
-  const appendCreatedModule = (newModule: {
-    content: WorkspaceCourseBuilderModule['content'];
-    created_at: WorkspaceCourseBuilderModule['created_at'];
-    extra_content: WorkspaceCourseBuilderModule['extra_content'];
-    id: WorkspaceCourseBuilderModule['id'];
-    is_public: WorkspaceCourseBuilderModule['is_public'];
-    is_published: WorkspaceCourseBuilderModule['is_published'];
-    name: WorkspaceCourseBuilderModule['name'];
-    sort_key: WorkspaceCourseBuilderModule['sort_key'];
-    youtube_links: WorkspaceCourseBuilderModule['youtube_links'];
-  }) => {
-    const builderModule: WorkspaceCourseBuilderModule = {
-      ...newModule,
-      group_id: courseId,
-      flashcard_count: 0,
-      quiz_count: 0,
-      quiz_set_count: 0,
-    };
-    setModules((prev) => [...prev, builderModule]);
-    setActiveModuleId(newModule.id);
-  };
+  const modules = useMemo(() => {
+    const all: ReturnType<typeof modulesByGroupId.get> = [];
+    for (const group of moduleGroups) {
+      all.push(...(modulesByGroupId.get(group.id) ?? []));
+    }
+    return all;
+  }, [moduleGroups, modulesByGroupId]);
 
-  const activeModule = useMemo(
-    () => modules.find((module) => module.id === activeModuleId) ?? null,
-    [activeModuleId, modules]
-  );
+  /** Nested group + module sortables share one DnD tree; the group's droppable wraps the whole card.
+   *  Module drags: prefer module hits, then group targets for cross-group moves.
+   *  Group drags: prefer pointerWithin on other groups — closestCenter skews toward the dragged card,
+   *  which blocks moving a lower group upward until the pointer crosses far enough (asymmetric vs drag-down).
+   */
+  const collisionDetection = useCallback<CollisionDetection>(
+    (args) => {
+      const activeId = String(args.active.id);
+      const activeIsGroup = moduleGroups.some((g) => g.id === activeId);
+      const activeIsModule = modules.some((m) => m.id === activeId);
 
-  const reorderMutation = useMutation({
-    mutationFn: async (moduleIds: string[]) => {
-      await reorderWorkspaceCourseModules(resolvedWsId, courseId, moduleIds);
-    },
-    onError: (error) => {
-      toast({
-        title: t('common.error'),
-        description: error instanceof Error ? error.message : String(error),
-      });
-      router.refresh();
-    },
-  });
-
-  const duplicateMutation = useMutation({
-    mutationFn: async (payload: UpsertWorkspaceCourseModulePayload) => {
-      return createWorkspaceCourseModule(resolvedWsId, courseId, payload);
-    },
-    onSuccess: (newModule) => {
-      if (newModule) {
-        appendCreatedModule(newModule);
-      }
-      toast({
-        title: t('common.success'),
-        description: t('ws-course-modules.create_description'),
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: t('common.error'),
-        description: error instanceof Error ? error.message : String(error),
-      });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (moduleId: string) => {
-      await deleteWorkspaceCourseModule(resolvedWsId, moduleId);
-      return moduleId;
-    },
-    onSuccess: async (moduleId) => {
-      const nextModules = modules.filter((module) => module.id !== moduleId);
-      setModules(nextModules);
-      setActiveModuleId(nextModules[0]?.id ?? null);
-      if (nextModules.length > 0) {
-        await reorderMutation.mutateAsync(
-          nextModules.map((module) => module.id)
+      if (activeIsGroup) {
+        const groupContainers = args.droppableContainers.filter((c) =>
+          moduleGroups.some((g) => g.id === String(c.id))
         );
+        // Prefer pointer hits on *other* groups. closestCenter alone stays biased toward the
+        // dragged card's center, so dragging a lower group upward rarely beats the active group
+        // until the pointer has entered the target card (asymmetric vs dragging top downward).
+        const otherGroupContainers = groupContainers.filter(
+          (c) => String(c.id) !== activeId
+        );
+        if (otherGroupContainers.length > 0) {
+          const pointerOverTarget = pointerWithin({
+            ...args,
+            droppableContainers: otherGroupContainers,
+          });
+          if (pointerOverTarget.length > 0) {
+            return pointerOverTarget;
+          }
+        }
+        return groupContainers.length > 0
+          ? closestCenter({ ...args, droppableContainers: groupContainers })
+          : closestCenter(args);
       }
-      router.refresh();
-    },
-    onError: (error) => {
-      toast({
-        title: t('common.error'),
-        description: error instanceof Error ? error.message : String(error),
-      });
-    },
-  });
 
-  const totalModules = modules.length;
-  const publishedModules = modules.filter(
-    (module) => module.is_published
-  ).length;
-  const modulesWithContent = modules.filter((module) =>
-    hasRichContent(module.content)
-  ).length;
-  const modulesWithAssessments = modules.filter(
-    (module) =>
-      module.quiz_count > 0 ||
-      module.quiz_set_count > 0 ||
-      module.flashcard_count > 0
-  ).length;
+      if (activeIsModule) {
+        const moduleContainers = args.droppableContainers.filter((c) =>
+          modules.some((m) => m.id === String(c.id))
+        );
+        const groupTargetContainers = args.droppableContainers.filter((c) => {
+          const containerId = String(c.id);
+          return (
+            moduleGroups.some((g) => g.id === containerId) ||
+            containerId.startsWith(GROUP_DROPZONE_PREFIX)
+          );
+        });
 
-  const onDropModule = async (targetIndex: number) => {
-    if (dragIndex === null || dragIndex === targetIndex) return;
-    const next = reorderLocal(modules, dragIndex, targetIndex);
-    setModules(next);
-    setDragIndex(null);
-    await reorderMutation.mutateAsync(next.map((module) => module.id));
+        const pointerOverModules = pointerWithin({
+          ...args,
+          droppableContainers: moduleContainers,
+        });
+        if (pointerOverModules.length > 0) {
+          return pointerOverModules;
+        }
+
+        const pointerOverGroups = pointerWithin({
+          ...args,
+          droppableContainers: groupTargetContainers,
+        });
+        if (pointerOverGroups.length > 0) {
+          return pointerOverGroups;
+        }
+
+        const closestModules = closestCenter({
+          ...args,
+          droppableContainers: moduleContainers,
+        });
+        if (closestModules.length > 0) {
+          return closestModules;
+        }
+
+        return groupTargetContainers.length > 0
+          ? closestCenter({
+              ...args,
+              droppableContainers: groupTargetContainers,
+            })
+          : closestCenter(args);
+      }
+
+      return closestCenter(args);
+    },
+    [moduleGroups, modules]
+  );
+
+  const moduleParentMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const group of moduleGroups) {
+      for (const module of modulesByGroupId.get(group.id) ?? []) {
+        map.set(module.id, group.id);
+      }
+    }
+    return map;
+  }, [moduleGroups, modulesByGroupId]);
+
+  const resolveDropGroupId = useCallback(
+    (dropId: string): string | null => {
+      const fromModule = moduleParentMap.get(dropId);
+      if (fromModule) return fromModule;
+      if (modulesByGroupId.has(dropId)) return dropId;
+      if (dropId.startsWith(GROUP_DROPZONE_PREFIX)) {
+        const groupId = dropId.slice(GROUP_DROPZONE_PREFIX.length);
+        if (modulesByGroupId.has(groupId)) return groupId;
+      }
+      return null;
+    },
+    [moduleParentMap, modulesByGroupId]
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(String(event.active.id));
+    setModuleDropTargetGroupId(null);
   };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const aid = String(event.active.id);
+    if (!modules.some((m) => m.id === aid)) {
+      setModuleDropTargetGroupId(null);
+      return;
+    }
+    const over = event.over;
+    if (!over) {
+      setModuleDropTargetGroupId(null);
+      return;
+    }
+    const oid = String(over.id);
+    const targetGroupId = resolveDropGroupId(oid);
+    if (targetGroupId) {
+      setModuleDropTargetGroupId(targetGroupId);
+      return;
+    }
+    setModuleDropTargetGroupId(null);
+  };
+
+  const handleDragCancel = (_event: DragCancelEvent) => {
+    setActiveId(null);
+    setModuleDropTargetGroupId(null);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+    setModuleDropTargetGroupId(null);
+
+    if (!over) return;
+
+    const activeIdStr = String(active.id);
+    const overIdStr = String(over.id);
+
+    if (activeIdStr === overIdStr) return;
+
+    const isGroup = moduleGroups.some((g) => g.id === activeIdStr);
+    const isModule = modules.some((m) => m.id === activeIdStr);
+
+    if (isGroup) {
+      const overIsGroup = moduleGroups.some((g) => g.id === overIdStr);
+      if (!overIsGroup) return;
+
+      const oldIndex = moduleGroups.findIndex((g) => g.id === activeIdStr);
+      const newIndex = moduleGroups.findIndex((g) => g.id === overIdStr);
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+
+      const nextGroups = arrayMove(moduleGroups, oldIndex, newIndex);
+      queryClient.setQueryData(
+        ['workspaceCourseModuleGroups', resolvedWsId, courseId],
+        nextGroups
+      );
+      reorderGroupsMutation.mutate(
+        nextGroups.map((g) => g.id),
+        {
+          onError: () => {
+            queryClient.invalidateQueries({
+              queryKey: ['workspaceCourseModuleGroups', resolvedWsId, courseId],
+            });
+          },
+        }
+      );
+      return;
+    }
+
+    if (isModule) {
+      const sourceGroupId = moduleParentMap.get(activeIdStr);
+      if (!sourceGroupId) return;
+
+      let targetGroupId: string;
+      let targetIndex: number;
+
+      const overModuleGroupId = moduleParentMap.get(overIdStr);
+      const resolvedDropGroupId = resolveDropGroupId(overIdStr);
+      if (overModuleGroupId) {
+        targetGroupId = overModuleGroupId;
+        const targetModules = modulesByGroupId.get(targetGroupId) ?? [];
+        targetIndex = targetModules.findIndex((m) => m.id === overIdStr);
+      } else if (resolvedDropGroupId) {
+        targetGroupId = resolvedDropGroupId;
+        targetIndex = (modulesByGroupId.get(targetGroupId) ?? []).length;
+      } else {
+        return;
+      }
+
+      const sourceModules = modulesByGroupId.get(sourceGroupId) ?? [];
+      const activeModuleIndex = sourceModules.findIndex(
+        (m) => m.id === activeIdStr
+      );
+      if (activeModuleIndex === -1) return;
+      const movedModule = sourceModules[activeModuleIndex];
+      if (!movedModule) return;
+
+      if (sourceGroupId === targetGroupId) {
+        const normalizedTargetIndex =
+          targetIndex === -1 ? sourceModules.length - 1 : targetIndex;
+        if (activeModuleIndex === normalizedTargetIndex) return;
+        const nextModules = arrayMove(
+          sourceModules,
+          activeModuleIndex,
+          normalizedTargetIndex
+        );
+        queryClient.setQueryData(
+          [
+            'workspaceCourseModuleGroupModules',
+            resolvedWsId,
+            courseId,
+            targetGroupId,
+          ],
+          nextModules
+        );
+        reorderModulesMutation.mutate({
+          moduleGroupId: targetGroupId,
+          moduleIds: nextModules.map((m) => m.id),
+        });
+      } else {
+        const nextSource = sourceModules.filter((m) => m.id !== activeIdStr);
+        const targetModules = modulesByGroupId.get(targetGroupId) ?? [];
+        const nextTarget = [...targetModules];
+        const insertIndex =
+          targetIndex >= 0 && targetIndex <= nextTarget.length
+            ? targetIndex
+            : nextTarget.length;
+        nextTarget.splice(insertIndex, 0, movedModule);
+
+        queryClient.setQueryData(
+          [
+            'workspaceCourseModuleGroupModules',
+            resolvedWsId,
+            courseId,
+            sourceGroupId,
+          ],
+          nextSource
+        );
+        queryClient.setQueryData(
+          [
+            'workspaceCourseModuleGroupModules',
+            resolvedWsId,
+            courseId,
+            targetGroupId,
+          ],
+          nextTarget
+        );
+
+        try {
+          await moveModuleMutation.mutateAsync({
+            moduleId: activeIdStr,
+            sourceGroupId,
+            targetGroupId,
+          });
+        } catch {
+          return;
+        }
+        reorderModulesMutation.mutate({
+          moduleGroupId: targetGroupId,
+          moduleIds: nextTarget.map((m) => m.id),
+        });
+        if (nextSource.length > 0) {
+          reorderModulesMutation.mutate({
+            moduleGroupId: sourceGroupId,
+            moduleIds: nextSource.map((m) => m.id),
+          });
+        }
+      }
+    }
+  };
+
+  const activeGroup = activeId
+    ? moduleGroups.find((g) => g.id === activeId)
+    : null;
+  const activeModuleItem = activeId
+    ? modules.find((m) => m.id === activeId)
+    : null;
+
+  const draggingModuleSourceGroupId =
+    activeId && modules.some((m) => m.id === activeId)
+      ? (moduleParentMap.get(activeId) ?? null)
+      : null;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-5 p-4">
+        <EducationPageHeader
+          title={t('workspace-education-tabs.course_builder')}
+          description={t('ws-courses.no_description_provided')}
+          badge={
+            <div className="inline-flex items-center gap-2 rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 px-3 py-1 font-medium text-dynamic-blue text-xs">
+              <BookOpenText className="h-3.5 w-3.5" />
+              {courseName}
+            </div>
+          }
+          primaryAction={
+            <Button
+              asChild
+              className="h-11 rounded-2xl bg-foreground px-5 text-background"
+            >
+              <Link href={`/${routeWsId}/education/courses`}>
+                {t('workspace-education-tabs.courses')}
+              </Link>
+            </Button>
+          }
+        />
+
+        <EducationContentSurface className="min-h-120" padded>
+          <div className="flex min-h-105 items-center justify-center rounded-2xl border border-border/70 border-dashed bg-foreground/5 text-foreground/65">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-dynamic-blue border-t-transparent" />
+              <div className="font-medium text-sm">{t('common.loading')}</div>
+            </div>
+          </div>
+        </EducationContentSurface>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5 p-4">
       <EducationPageHeader
         title={t('workspace-education-tabs.course_builder')}
-        description={
-          course.description || t('ws-courses.no_description_provided')
-        }
+        description={t('ws-courses.no_description_provided')}
         badge={
           <div className="inline-flex items-center gap-2 rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 px-3 py-1 font-medium text-dynamic-blue text-xs">
             <BookOpenText className="h-3.5 w-3.5" />
-            {course.name}
+            {courseName}
           </div>
         }
         primaryAction={
@@ -245,83 +491,152 @@ export function CourseBuilderClient({
         ]}
       />
 
-      <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)_320px]">
+      <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)_320px]">
         <EducationContentSurface className="h-fit" padded>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-foreground/70 text-sm uppercase tracking-wide">
-                {t('ws-course-modules.plural')}
-              </h2>
-              <ModifiableDialogTrigger
-                title={t('ws-course-modules.singular')}
-                createDescription={t('ws-course-modules.create_description')}
-                form={
-                  <CourseModuleForm
-                    wsId={resolvedWsId}
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-semibold text-foreground/70 text-sm uppercase tracking-wide">
+              {t('ws-course-modules.module_groups')}
+            </h2>
+            <ModifiableDialogTrigger
+              title={t('ws-course-modules.create_group')}
+              createDescription={t(
+                'ws-course-modules.create_group_description'
+              )}
+              form={
+                <ModuleGroupForm
+                  onSubmit={(data) => upsertGroupMutation.mutateAsync({ data })}
+                />
+              }
+              trigger={
+                <Button size="sm" variant="outline" className="rounded-xl">
+                  <Plus className="h-4 w-4" />
+                  {t('ws-course-modules.create_group')}
+                </Button>
+              }
+            />
+          </div>
+
+          <DndContext
+            sensors={sensors}
+            collisionDetection={collisionDetection}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragCancel={handleDragCancel}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={moduleGroups.map((g) => g.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-3">
+                {moduleGroups.map((group) => (
+                  <SortableGroup
+                    key={group.id}
+                    group={group}
+                    modules={modulesByGroupId.get(group.id) ?? []}
+                    activeModuleId={activeModule?.id ?? null}
+                    resolvedWsId={resolvedWsId}
                     courseId={courseId}
-                    onCreated={appendCreatedModule}
+                    moduleGroups={moduleGroups}
+                    onSetActiveModuleId={setActiveModuleId}
+                    onEditGroup={setEditGroupId}
+                    onDeleteGroup={setDeleteGroupId}
+                    onInvalidate={invalidateModuleGroupModules}
+                    isModuleDragDropTarget={
+                      draggingModuleSourceGroupId !== null &&
+                      moduleDropTargetGroupId === group.id
+                    }
+                    showCrossGroupModuleDropHint={
+                      draggingModuleSourceGroupId !== null &&
+                      moduleDropTargetGroupId === group.id &&
+                      draggingModuleSourceGroupId !== group.id
+                    }
                   />
-                }
-                trigger={
-                  <Button size="sm" variant="outline" className="rounded-xl">
-                    <Plus className="h-4 w-4" />
-                    {t('ws-course-modules.create')}
-                  </Button>
+                ))}
+              </div>
+            </SortableContext>
+
+            <DragOverlay dropAnimation={null}>
+              {activeGroup ? (
+                <div className="rounded-xl border border-border/70 bg-background/95 p-3 opacity-90 shadow-xl">
+                  <div className="flex items-center gap-2">
+                    <GripVertical className="h-4 w-4 text-foreground/40" />
+                    <span className="font-medium text-sm">
+                      {activeGroup.title}
+                    </span>
+                  </div>
+                </div>
+              ) : activeModuleItem ? (
+                <div className="pointer-events-none flex min-h-11 min-w-[220px] max-w-[min(100vw-2rem,320px)] flex-col gap-1 rounded-xl border-2 border-dynamic-blue/45 bg-background/98 px-3 py-2.5 text-left shadow-2xl ring-2 ring-dynamic-blue/25 ring-offset-2 ring-offset-background">
+                  <div className="font-medium text-foreground text-xs uppercase tracking-wide">
+                    {t('ws-course-modules.singular')}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="line-clamp-2 font-medium text-sm leading-snug">
+                      {activeModuleItem.name}
+                    </div>
+                    <GripVertical className="h-4 w-4 shrink-0 text-foreground/45" />
+                  </div>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+
+          <ModifiableDialogTrigger
+            open={!!editGroupId}
+            setOpen={(open) => !open && setEditGroupId(null)}
+            title={moduleGroups.find((g) => g.id === editGroupId)?.title ?? ''}
+            editDescription={t('ws-course-modules.edit_description')}
+            data={moduleGroups.find((g) => g.id === editGroupId)}
+            form={
+              <ModuleGroupForm
+                onSubmit={(payload) =>
+                  upsertGroupMutation.mutateAsync({
+                    id: editGroupId!,
+                    data: payload,
+                  })
                 }
               />
-            </div>
+            }
+          />
 
-            <div className="space-y-2">
-              {modules.map((module, index) => (
-                <button
-                  key={module.id}
-                  type="button"
-                  draggable
-                  onDragStart={() => setDragIndex(index)}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={() => void onDropModule(index)}
-                  onClick={() => setActiveModuleId(module.id)}
-                  className={`flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left transition-colors ${
-                    module.id === activeModuleId
-                      ? 'border-dynamic-blue/30 bg-dynamic-blue/10'
-                      : 'border-border/70 bg-background/70 hover:bg-foreground/5'
-                  }`}
+          <ModifiableDialogTrigger
+            open={!!deleteGroupId}
+            setOpen={(open) => !open && setDeleteGroupId(null)}
+            title={t('ws-courses.delete_confirm_title', {
+              name:
+                moduleGroups.find((g) => g.id === deleteGroupId)?.title ?? '',
+            })}
+            editDescription={t('common.confirm_delete_description')}
+            form={
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteGroupId(null)}
                 >
-                  <div className="min-w-0">
-                    <div className="line-clamp-1 font-medium text-sm">
-                      {module.name}
-                    </div>
-                    <div className="mt-1 flex items-center gap-1 text-foreground/60 text-xs">
-                      <Badge
-                        variant="outline"
-                        className="h-5 rounded-md px-1.5"
-                      >
-                        Q {module.quiz_count}
-                      </Badge>
-                      <Badge
-                        variant="outline"
-                        className="h-5 rounded-md px-1.5"
-                      >
-                        S {module.quiz_set_count}
-                      </Badge>
-                      <Badge
-                        variant="outline"
-                        className="h-5 rounded-md px-1.5"
-                      >
-                        F {module.flashcard_count}
-                      </Badge>
-                    </div>
-                  </div>
-                  <GripVertical className="h-4 w-4 shrink-0 text-foreground/40" />
-                </button>
-              ))}
-            </div>
-          </div>
+                  {t('common.cancel')}
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (deleteGroupId) {
+                      deleteGroupMutation.mutate(deleteGroupId, {
+                        onSuccess: () => setDeleteGroupId(null),
+                      });
+                    }
+                  }}
+                  disabled={deleteGroupMutation.isPending}
+                >
+                  {t('common.delete')}
+                </Button>
+              </div>
+            }
+          />
         </EducationContentSurface>
 
-        <EducationContentSurface className="min-h-[540px]" padded>
+        <EducationContentSurface className="min-h-135" padded>
           {!activeModule ? (
-            <div className="flex min-h-[420px] items-center justify-center rounded-2xl border border-foreground/20 border-dashed bg-foreground/5 text-center text-foreground/65">
+            <div className="flex min-h-105 items-center justify-center rounded-2xl border border-foreground/20 border-dashed bg-foreground/5 text-center text-foreground/65">
               {t('common.no_content_yet')}
             </div>
           ) : (
@@ -438,7 +753,6 @@ export function CourseBuilderClient({
             <h2 className="font-semibold text-foreground/70 text-sm uppercase tracking-wide">
               {t('workspace-education-tabs.publish_checklist')}
             </h2>
-
             <Card className="border-border/60">
               <CardHeader>
                 <CardTitle className="text-base">
@@ -466,23 +780,10 @@ export function CourseBuilderClient({
                     {modulesWithContent}/{totalModules}
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span>{t('workspace-education-tabs.assessments_ready')}</span>
-                  <Badge
-                    variant={
-                      totalModules > 0 &&
-                      modulesWithAssessments === totalModules
-                        ? 'default'
-                        : 'secondary'
-                    }
-                  >
-                    {modulesWithAssessments}/{totalModules}
-                  </Badge>
-                </div>
               </CardContent>
             </Card>
 
-            {activeModule ? (
+            {activeModule && (
               <Card className="border-border/60">
                 <CardHeader>
                   <CardTitle className="text-base">
@@ -496,7 +797,6 @@ export function CourseBuilderClient({
                     moduleId={activeModule.id}
                     isPublished={activeModule.is_published}
                   />
-
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       variant="outline"
@@ -507,11 +807,11 @@ export function CourseBuilderClient({
                           extra_content: activeModule.extra_content,
                           is_public: activeModule.is_public,
                           is_published: false,
+                          module_group_id: activeModule.module_group_id,
                           name: `${activeModule.name} (Copy)`,
                           youtube_links: activeModule.youtube_links ?? [],
                         })
                       }
-                      disabled={duplicateMutation.isPending}
                     >
                       <Copy className="h-4 w-4" />
                       {t('ws-task-boards.row_actions.duplicate')}
@@ -519,23 +819,20 @@ export function CourseBuilderClient({
                     <Button
                       variant="destructive"
                       className="rounded-xl"
-                      onClick={() => deleteMutation.mutate(activeModule.id)}
-                      disabled={deleteMutation.isPending}
+                      onClick={() =>
+                        deleteModuleMutation.mutate({
+                          moduleGroupId: activeModule.module_group_id,
+                          moduleId: activeModule.id,
+                        })
+                      }
                     >
                       <Trash2 className="h-4 w-4" />
                       {t('common.delete')}
                     </Button>
                   </div>
-                  <div className="text-foreground/60 text-xs">
-                    {t('workspace-education-tabs.drag_reorder_hint')}
-                  </div>
                 </CardContent>
               </Card>
-            ) : null}
-
-            <div className="rounded-xl border border-dynamic-green/20 bg-dynamic-green/10 p-3 text-dynamic-green text-sm">
-              {t('workspace-education-tabs.guided_teacher_flow_hint')}
-            </div>
+            )}
           </div>
         </EducationContentSurface>
       </div>

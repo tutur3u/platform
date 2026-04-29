@@ -5,6 +5,17 @@ description: "When and how to fetch data using RSC, Server Actions, React Query,
 
 The Tuturuuu platform uses a layered approach to data fetching, choosing the right strategy based on use case, caching requirements, and user experience needs.
 
+## Builder Migration Pattern (Education Module Groups)
+
+For highly interactive editors (for example the course builder with module groups + drag/drop):
+
+- Keep the route page as a thin server-side auth/permission gate.
+- Move list data loading into a client shell backed by React Query.
+- Use `@tuturuuu/internal-api` helpers as the client fetch boundary (`listWorkspaceCourseModuleGroups`, `listWorkspaceCourseModules`, and reorder helpers).
+- Avoid `router.refresh()` for routine drag/drop updates; mutate via API and invalidate the corresponding query keys.
+- When a drag/drop move changes both membership and order, await the membership mutation before firing any follow-up reorder mutations, and invalidate only the affected query keys instead of every list in the builder.
+- Keep create/update payload contracts explicit (`module_group_id` is required for new course modules).
+
 ## Strategy Preference Order
 
 Choose the earliest applicable strategy:

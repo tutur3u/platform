@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
+  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -7,12 +8,12 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 
-const ModuleOrderSchema = z.object({
-  moduleIds: z.array(z.string().uuid()).min(1).max(500),
+const ModuleGroupOrderSchema = z.object({
+  moduleGroupIds: z.array(z.uuid()).max(500),
 });
 
 const RouteParamsSchema = z.object({
-  groupId: z.string().uuid(),
+  groupId: z.uuid(),
   wsId: z.string().min(1),
 });
 
@@ -22,8 +23,6 @@ interface RouteParams {
 }
 
 export const PATCH = withSessionAuth(
-  // Deprecated compatibility endpoint. Prefer
-  // /user-groups/:groupId/module-groups/:moduleGroupId/module-order.
   async (request, context, params: RouteParams | Promise<RouteParams>) => {
     const parsedParams = RouteParamsSchema.safeParse(await params);
     if (!parsedParams.success) {
@@ -56,6 +55,17 @@ export const PATCH = withSessionAuth(
       );
     }
 
+    const permissions = await getPermissions({
+      request,
+      wsId: normalizedWsId,
+    });
+    if (!permissions?.containsPermission('manage_users')) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
     let body: unknown;
     try {
       body = await request.json();
@@ -66,7 +76,7 @@ export const PATCH = withSessionAuth(
       );
     }
 
-    const parsed = ModuleOrderSchema.safeParse(body);
+    const parsed = ModuleGroupOrderSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         { message: 'Invalid request body', errors: parsed.error.issues },
@@ -74,10 +84,10 @@ export const PATCH = withSessionAuth(
       );
     }
 
-    const { moduleIds } = parsed.data;
-    if (new Set(moduleIds).size !== moduleIds.length) {
+    const { moduleGroupIds } = parsed.data;
+    if (new Set(moduleGroupIds).size !== moduleGroupIds.length) {
       return NextResponse.json(
-        { message: 'Module IDs must be unique' },
+        { message: 'Module group IDs must be unique' },
         { status: 400 }
       );
     }
@@ -102,60 +112,51 @@ export const PATCH = withSessionAuth(
       return NextResponse.json({ message: 'Group not found' }, { status: 404 });
     }
 
-    const { data: existingModules, error: modulesError } = await sbAdmin
-      .from('workspace_course_modules')
+    const { data: existingGroups, error: groupsError } = await sbAdmin
+      .from('workspace_course_module_groups')
       .select('id')
       .eq('group_id', groupId);
 
-    if (modulesError) {
+    if (groupsError) {
       return NextResponse.json(
-        { message: 'Failed to validate modules' },
+        { message: 'Failed to validate module groups' },
         { status: 500 }
       );
     }
 
-    const existingIds = new Set(
-      (existingModules ?? []).map((module) => module.id)
-    );
-    if (existingIds.size !== moduleIds.length) {
+    const existingIds = new Set((existingGroups ?? []).map((g) => g.id));
+    if (existingIds.size !== moduleGroupIds.length) {
       return NextResponse.json(
-        { message: 'Module order payload must include all group modules' },
+        {
+          message:
+            'Module group order payload must include all group module groups',
+        },
         { status: 400 }
       );
     }
 
-    const hasUnknownModule = moduleIds.some(
-      (moduleId) => !existingIds.has(moduleId)
-    );
-    if (hasUnknownModule) {
+    const hasUnknown = moduleGroupIds.some((id) => !existingIds.has(id));
+    if (hasUnknown) {
       return NextResponse.json(
-        { message: 'Module order payload contains unknown module IDs' },
+        {
+          message:
+            'Module group order payload contains unknown module group IDs',
+        },
         { status: 400 }
       );
     }
 
     const { error: reorderError } = await sbAdmin.rpc(
-      'reorder_workspace_course_modules',
+      'reorder_workspace_course_module_groups',
       {
         p_group_id: groupId,
-        p_module_ids: moduleIds,
+        p_module_group_ids: moduleGroupIds,
       }
     );
 
     if (reorderError) {
-      const sanitizedError = {
-        message: reorderError.message,
-        name: reorderError.name,
-        stack: reorderError.stack?.split('\n').slice(0, 5).join('\n'),
-      };
-      console.error('Failed to reorder modules', {
-        groupId,
-        modulesPreview: moduleIds.slice(0, 10),
-        modulesTotal: moduleIds.length,
-        sanitizedError,
-      });
       return NextResponse.json(
-        { message: 'Failed to persist module order' },
+        { message: 'Failed to persist module group order' },
         { status: 500 }
       );
     }

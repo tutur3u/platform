@@ -1,12 +1,17 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
+import { Circle } from '@tuturuuu/icons';
 import {
   createWorkspaceCourseModule,
   updateWorkspaceCourseModule,
 } from '@tuturuuu/internal-api';
 import type { WorkspaceCourseModule } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  getIconComponentByKey,
+  type PlatformIconKey,
+} from '@tuturuuu/ui/custom/icon-picker';
 import {
   Form,
   FormControl,
@@ -16,17 +21,35 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
+import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useEffect } from 'react';
 import * as z from 'zod';
+
+interface ModuleGroupOption {
+  id: string;
+  title: string;
+  icon?: string | null;
+  color?: string | null;
+}
 
 interface Props {
   wsId: string;
   courseId: string;
   data?: WorkspaceCourseModule;
+  defaultModuleGroupId?: string;
+  moduleGroups?: ModuleGroupOption[];
 
   onCreated?: (data: WorkspaceCourseModule) => void;
   onFinish?: () => void;
@@ -34,6 +57,7 @@ interface Props {
 
 const FormSchema = z.object({
   id: z.string().optional(),
+  module_group_id: z.string().uuid(),
   name: z.string().min(1),
 });
 
@@ -41,6 +65,8 @@ export function CourseModuleForm({
   wsId,
   courseId,
   data,
+  defaultModuleGroupId,
+  moduleGroups,
   onCreated,
   onFinish,
 }: Props) {
@@ -49,11 +75,34 @@ export function CourseModuleForm({
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
-    values: {
+    defaultValues: {
       id: data?.id,
+      module_group_id: data?.module_group_id || defaultModuleGroupId || '',
       name: data?.name || '',
     },
   });
+
+  useEffect(() => {
+    const nextModuleGroupId =
+      data?.module_group_id || defaultModuleGroupId || '';
+    const nextName = data?.name || '';
+    const currentValues = form.getValues();
+
+    if (
+      form.formState.isDirty ||
+      (currentValues.id === data?.id &&
+        currentValues.module_group_id === nextModuleGroupId &&
+        currentValues.name === nextName)
+    ) {
+      return;
+    }
+
+    form.reset({
+      id: data?.id,
+      module_group_id: nextModuleGroupId,
+      name: nextName,
+    });
+  }, [data?.id, data?.module_group_id, data?.name, defaultModuleGroupId, form]);
 
   const isDirty = form.formState.isDirty;
   const isValid = form.formState.isValid;
@@ -81,9 +130,9 @@ export function CourseModuleForm({
         router.refresh();
       }
       onFinish?.();
+      toast.success(payload.id ? t('module_updated') : t('module_created'));
     } catch (error) {
-      toast({
-        title: `Failed to ${payload.id ? 'edit' : 'create'} course module`,
+      toast.error(t('module_save_error'), {
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -92,6 +141,69 @@ export function CourseModuleForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
+        {!data?.id && moduleGroups && moduleGroups.length > 0 && (
+          <FormField
+            control={form.control}
+            name="module_group_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('module_group')}</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('select_group')} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {moduleGroups.map((group) => {
+                      const GroupIcon =
+                        getIconComponentByKey(
+                          group.icon as PlatformIconKey | null
+                        ) ?? Circle;
+                      const colorStyles = computeAccessibleLabelStyles(
+                        group.color || '#64748b'
+                      );
+                      return (
+                        <SelectItem key={group.id} value={group.id}>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md"
+                              style={
+                                colorStyles
+                                  ? {
+                                      backgroundColor: colorStyles.bg,
+                                      borderColor: colorStyles.border,
+                                      borderWidth: '1px',
+                                    }
+                                  : undefined
+                              }
+                            >
+                              <GroupIcon
+                                className="h-3 w-3"
+                                style={
+                                  colorStyles
+                                    ? { color: colorStyles.text }
+                                    : undefined
+                                }
+                              />
+                            </div>
+                            <span>{group.title}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {data?.id && (
+          <input type="hidden" {...form.register('module_group_id')} />
+        )}
+
         <FormField
           control={form.control}
           name="name"
