@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -18,6 +19,8 @@ export type AiRouteAuthResult =
       ok: false;
       response: Response;
     };
+
+export const resolveSupabaseSessionUser = resolveAuthenticatedSessionUser;
 
 export async function resolveAiRouteAuth(
   request: Request
@@ -41,9 +44,7 @@ export async function resolveAiRouteAuth(
     };
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveSupabaseSessionUser(supabase);
 
   if (!user) {
     return {

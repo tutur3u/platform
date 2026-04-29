@@ -198,6 +198,45 @@ export async function signOut() {
 }
 ```
 
+## Server-side Auth Resolution (`getClaims` first)
+
+For server-side route and helper authorization checks, prefer a claims-first flow:
+
+1. Call `supabase.auth.getClaims()` first.
+2. Use `claims.sub` as the authenticated user id when available.
+3. Fall back to `supabase.auth.getUser()` when claims are unavailable or insufficient.
+
+This reduces auth latency on hot API paths while preserving correctness for call sites
+that still need canonical user resolution.
+
+```typescript
+async function resolveCurrentUserId(supabase: TypedSupabaseClient) {
+  const getClaims = (supabase.auth as { getClaims?: () => Promise<unknown> })
+    .getClaims;
+
+  if (typeof getClaims === 'function') {
+    const { data, error } = (await getClaims.call(supabase.auth)) as {
+      data?: { claims?: { sub?: string } };
+      error?: unknown;
+    };
+
+    if (!error && data?.claims?.sub) {
+      return data.claims.sub;
+    }
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return user?.id ?? null;
+}
+```
+
+When implementing this pattern, feature-detect `getClaims` first. Some tests and
+older stubs only mock `getUser`, and unconditional `getClaims` calls will break
+those environments.
+
 ## Multi-Factor Authentication (MFA)
 
 ### Enable TOTP MFA

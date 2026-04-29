@@ -1,3 +1,4 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
@@ -45,10 +46,7 @@ export async function authorizeRequest(
   }
 
   const supabase = (await createClient(request)) as TypedSupabaseClient;
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, authError } = await resolveAuthenticatedUser(supabase);
 
   if (authError || !user) {
     return {
@@ -67,10 +65,8 @@ export async function authorize(
   wsId: string
 ): Promise<{ user: SupabaseUser | null; error: NextResponse | null }> {
   const supabase = (await createClient()) as TypedSupabaseClient;
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const { user, authError: userError } =
+    await resolveAuthenticatedUser(supabase);
 
   if (userError) {
     return {
@@ -125,6 +121,8 @@ interface SessionAuthContext {
   user: SupabaseUser;
   supabase: TypedSupabaseClient;
 }
+
+const resolveAuthenticatedUser = resolveAuthenticatedSessionUser;
 
 interface CacheConfig {
   /** Browser cache max-age in seconds. Only applied to 2xx GET responses. */
@@ -269,8 +267,8 @@ export function withSessionAuth<T = unknown>(
       }
     }
 
-    // 4. Authenticate — use Redis temp auth when present, otherwise fall back
-    // to the expensive Supabase `getUser()` call.
+    // 4. Authenticate — use Redis temp auth when present, otherwise resolve
+    // identity with `getClaims()` and fall back to `getUser()` when required.
     const supabase = (await createClient(request)) as TypedSupabaseClient;
     const tempAuth = options?.allowAiTempAuth
       ? await validateAiTempAuthRequest(request)
@@ -326,10 +324,7 @@ export function withSessionAuth<T = unknown>(
       return response;
     }
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, authError } = await resolveAuthenticatedUser(supabase);
 
     if (isBackendRateLimitError(authError)) {
       const blockInfo = await cascadeBackendRateLimitToProxyBan({
