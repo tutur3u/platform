@@ -101,7 +101,8 @@ export async function reserveFixedAiCredits(
     });
   }
 
-  let data, error;
+  let data: ReserveFixedCreditsRpcRow[] | null = null;
+  let error: RpcError = null;
   try {
     const result = await rpc('reserve_fixed_ai_credits', {
       p_ws_id: params.wsId,
@@ -176,7 +177,8 @@ export async function commitFixedAiCreditReservation(
     inFlightMarked = await incrementAiCreditChargeInFlight({ wsId, userId });
   }
 
-  let data, error;
+  let data: CommitFixedCreditReservationRpcRow[] | null = null;
+  let error: RpcError = null;
   try {
     const result = await rpc('commit_fixed_ai_credit_reservation', {
       p_reservation_id: reservationId,
