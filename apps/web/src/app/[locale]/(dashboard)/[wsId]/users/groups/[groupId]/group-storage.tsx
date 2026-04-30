@@ -137,12 +137,10 @@ export default function GroupStorage({
 
       return res.json();
     },
-    onSuccess: (data) => {
-      toast.success('Course module generated successfully!');
-      if (data.createdModule?.id) {
-        // Redirect to the content editor for the new module
-        router.push(`/${wsId}/education/courses/${groupId}/modules/${data.createdModule.id}/content`);
-      }
+    onSuccess: () => {
+      toast.success('Course module(s) generated successfully!');
+      // Refresh the current route to show the newly generated modules in the builder
+      router.refresh();
     },
     onError: (error) => {
       toast.error(
