@@ -15723,6 +15723,7 @@
     "members_and_guests": "Members & Guests",
     "metrics": "Group Metrics",
     "modify_schedule": "Modify Schedule",
+    "no_files": "No files uploaded yet.",
     "no_managers": "No managers found",
     "no_members": "No members found",
     "no_users_selected": "No users selected.",
@@ -15732,7 +15733,8 @@
     "search_users_placeholder": "Search users...",
     "select_and_submit": "{groupActionLabel} to {groupName}",
     "share": "Share",
-    "share_description": "Generate a link to share this group."
+    "share_description": "Generate a link to share this group.",
+    "storage": "Storage"
   },
   "ws-user-group-feedback": {
     "add_feedback": "Add Feedback",

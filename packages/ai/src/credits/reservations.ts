@@ -101,24 +101,30 @@ export async function reserveFixedAiCredits(
     });
   }
 
-  const { data, error } = await rpc('reserve_fixed_ai_credits', {
-    p_ws_id: params.wsId,
-    p_user_id: params.userId ?? null,
-    p_amount: params.amount,
-    p_model_id: gatewayModelId,
-    p_feature: params.feature,
-    p_metadata: (params.metadata ?? {}) as Json,
-    ...((params.expiresInSeconds ?? 0) > 0
-      ? { p_expires_in_seconds: params.expiresInSeconds }
-      : {}),
-  }).finally(async () => {
+  let data: ReserveFixedCreditsRpcRow[] | null = null;
+  let error: RpcError = null;
+  try {
+    const result = await rpc('reserve_fixed_ai_credits', {
+      p_ws_id: params.wsId,
+      p_user_id: params.userId ?? null,
+      p_amount: params.amount,
+      p_model_id: gatewayModelId,
+      p_feature: params.feature,
+      p_metadata: (params.metadata ?? {}) as Json,
+      ...((params.expiresInSeconds ?? 0) > 0
+        ? { p_expires_in_seconds: params.expiresInSeconds }
+        : {}),
+    });
+    data = result.data;
+    error = result.error;
+  } finally {
     if (inFlightMarked && params.userId) {
       await decrementAiCreditChargeInFlight({
         wsId: params.wsId,
         userId: params.userId,
       });
     }
-  });
+  }
 
   if (error) {
     console.error('Error reserving AI credits:', error);
@@ -171,14 +177,20 @@ export async function commitFixedAiCreditReservation(
     inFlightMarked = await incrementAiCreditChargeInFlight({ wsId, userId });
   }
 
-  const { data, error } = await rpc('commit_fixed_ai_credit_reservation', {
-    p_reservation_id: reservationId,
-    p_metadata: (metadata ?? {}) as Json,
-  }).finally(async () => {
+  let data: CommitFixedCreditReservationRpcRow[] | null = null;
+  let error: RpcError = null;
+  try {
+    const result = await rpc('commit_fixed_ai_credit_reservation', {
+      p_reservation_id: reservationId,
+      p_metadata: (metadata ?? {}) as Json,
+    });
+    data = result.data;
+    error = result.error;
+  } finally {
     if (inFlightMarked && wsId && userId) {
       await decrementAiCreditChargeInFlight({ wsId, userId });
     }
-  });
+  }
 
   if (error) {
     console.error('Error committing AI credit reservation:', error);

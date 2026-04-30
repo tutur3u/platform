@@ -8,6 +8,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import GroupMembers from './group-members';
+import GroupStorage from './group-storage';
 import LinkedProductsClient from './linked-products-client';
 import PostsClient from './posts-client';
 import GroupSchedule from './schedule';
@@ -120,6 +121,14 @@ export default async function UserGroupDetailsPage({
                 groupId={groupId}
                 canUpdateLinkedProducts={canUpdateUserGroups}
               />
+
+              <div className="flex flex-col rounded-lg border border-border/60 bg-background p-5 shadow-sm">
+                <GroupStorage
+                  wsId={wsId}
+                  groupId={groupId}
+                  canUpdateGroup={canUpdateUserGroups}
+                />
+              </div>
             </div>
             <Separator className="my-5" />
           </>

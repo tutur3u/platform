@@ -148,8 +148,9 @@ async def _download_signed_url_to_temp(
         allowed_hosts.add(signed_url_host.lower())
 
     try:
+        connector = aiohttp.TCPConnector(ssl=False)
         async with (
-            aiohttp.ClientSession(timeout=timeout) as session,
+            aiohttp.ClientSession(timeout=timeout, connector=connector) as session,
             session.get(signed_url) as response,
         ):
             if response.status >= 400:
