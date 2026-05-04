@@ -3421,12 +3421,12 @@ async function collectDockerResources(
           (Number.isFinite(container.memoryBytes) ? container.memoryBytes : 0),
         0
       ),
-      totalRxBytes: resourceContainers.reduce(
+      totalRxBytes: allContainers.reduce(
         (sum, container) =>
           sum + (Number.isFinite(container.rxBytes) ? container.rxBytes : 0),
         0
       ),
-      totalTxBytes: resourceContainers.reduce(
+      totalTxBytes: allContainers.reduce(
         (sum, container) =>
           sum + (Number.isFinite(container.txBytes) ? container.txBytes : 0),
         0
