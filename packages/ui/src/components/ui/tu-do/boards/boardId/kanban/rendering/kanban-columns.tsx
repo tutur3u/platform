@@ -41,6 +41,7 @@ interface KanbanColumnsProps {
   bulkUpdateCustomDueDate: (date: Date | null) => Promise<void>;
   boardRef: React.RefObject<HTMLDivElement | null>;
   columnsId: string[];
+  onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
 }
 
 export function KanbanColumns({
@@ -66,13 +67,22 @@ export function KanbanColumns({
   bulkUpdateCustomDueDate,
   boardRef,
   columnsId,
+  onExternalTasksCollapsedChange,
 }: KanbanColumnsProps) {
   const realColumns = columns.filter((column) => !column.is_external_staging);
   const snapEdgePadding = columns.length > 0 ? '0.5rem' : '0px';
   const columnGapRem = 0.75;
+  const collapsedColumnCount = columns.filter(
+    (column) => column.is_external_collapsed
+  ).length;
+  const expandedColumnCount = Math.max(
+    1,
+    columns.length - collapsedColumnCount
+  );
+  const collapsedColumnsWidthRem = collapsedColumnCount * 3.5;
   const dynamicColumnWidth =
     columns.length > 0
-      ? `max(21.875rem, calc((100% - (${snapEdgePadding} * 2) - ${(columns.length - 1) * columnGapRem}rem) / ${columns.length}))`
+      ? `max(21.875rem, calc((100% - (${snapEdgePadding} * 2) - ${(columns.length - 1) * columnGapRem}rem - ${collapsedColumnsWidthRem}rem) / ${expandedColumnCount}))`
       : '21.875rem';
 
   return (
@@ -171,6 +181,7 @@ export function KanbanColumns({
                 bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
                 workspaceId={workspaceId}
                 wsId={workspaceId}
+                onExternalTasksCollapsedChange={onExternalTasksCollapsedChange}
               />
             );
           })}

@@ -8,7 +8,6 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
@@ -17,6 +16,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getBoardConfigKey } from '../board-config-storage';
 import { BoardViews } from '../board-views';
 
+const listWorkspaceTasksMock = vi.hoisted(() => vi.fn());
 const createTaskMock = vi.fn();
 const loadListPageMock = vi.fn();
 let boardHeaderProps:
@@ -50,7 +50,7 @@ vi.mock('../../hooks/useTaskDialog', () => ({
 }));
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
-  listWorkspaceTasks: vi.fn(),
+  listWorkspaceTasks: listWorkspaceTasksMock,
 }));
 
 vi.mock('../progressive-loader-context', () => ({
@@ -193,8 +193,8 @@ describe('BoardViews', () => {
     listViewProps = undefined;
     createTaskMock.mockReset();
     loadListPageMock.mockReset();
-    vi.mocked(listWorkspaceTasks).mockReset();
-    vi.mocked(listWorkspaceTasks).mockResolvedValue({ tasks: mockTasks });
+    listWorkspaceTasksMock.mockReset();
+    listWorkspaceTasksMock.mockResolvedValue({ tasks: mockTasks });
     window.localStorage.clear();
   });
 
@@ -258,7 +258,7 @@ describe('BoardViews', () => {
     );
   });
 
-  it('pins a virtual external staging list on personal boards without using it for create shortcuts', () => {
+  it('pins a virtual external task list on personal boards without using it for create shortcuts', () => {
     renderBoardViews({
       workspace: {
         ...mockWorkspace,
@@ -269,6 +269,7 @@ describe('BoardViews', () => {
     expect(kanbanBoardProps?.lists[0]).toEqual(
       expect.objectContaining({
         id: 'personal-external-staging:board-1',
+        is_external_collapsed: false,
         is_external_staging: true,
         name: 'external_tasks',
       })
@@ -285,6 +286,42 @@ describe('BoardViews', () => {
         labels: [],
       })
     );
+  });
+
+  it('persists the collapsed external task list state per personal board', async () => {
+    window.localStorage.setItem(
+      'personal-board-external-tasks-collapsed:board-1',
+      'true'
+    );
+
+    renderBoardViews({
+      workspace: {
+        ...mockWorkspace,
+        personal: true,
+      },
+    });
+
+    await waitFor(() => {
+      expect(kanbanBoardProps?.lists[0]).toEqual(
+        expect.objectContaining({
+          id: 'personal-external-staging:board-1',
+          is_external_collapsed: true,
+          is_external_staging: true,
+        })
+      );
+    });
+
+    act(() => {
+      kanbanBoardProps?.onExternalTasksCollapsedChange?.(false);
+    });
+
+    await waitFor(() => {
+      expect(
+        window.localStorage.getItem(
+          'personal-board-external-tasks-collapsed:board-1'
+        )
+      ).toBe('false');
+    });
   });
 
   it('excludes deleted lists from active board views and create shortcuts', () => {
@@ -382,14 +419,14 @@ describe('BoardViews', () => {
   it('eagerly fetches the full board task set when switching to list view', async () => {
     renderBoardViews();
 
-    expect(listWorkspaceTasks).not.toHaveBeenCalled();
+    expect(listWorkspaceTasksMock).not.toHaveBeenCalled();
 
     await act(async () => {
       boardHeaderProps?.onViewChange('list');
     });
 
     await waitFor(() => {
-      expect(listWorkspaceTasks).toHaveBeenCalledTimes(1);
+      expect(listWorkspaceTasksMock).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -419,7 +456,7 @@ describe('BoardViews', () => {
     });
 
     await waitFor(() => {
-      expect(listWorkspaceTasks).toHaveBeenCalledTimes(1);
+      expect(listWorkspaceTasksMock).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -449,7 +486,7 @@ describe('BoardViews', () => {
     });
 
     await waitFor(() => {
-      expect(listWorkspaceTasks).toHaveBeenCalledTimes(1);
+      expect(listWorkspaceTasksMock).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -69,6 +69,7 @@ interface Props {
   filters?: TaskFilters;
   isMultiSelectMode: boolean;
   setIsMultiSelectMode: (enabled: boolean) => void;
+  onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
 }
 
 export function KanbanBoard({
@@ -84,6 +85,7 @@ export function KanbanBoard({
   filters,
   isMultiSelectMode,
   setIsMultiSelectMode,
+  onExternalTasksCollapsedChange,
 }: Props) {
   const tLayout = useTranslations('ws-task-boards.layout_settings');
   const tTasks = useTranslations('ws-tasks');
@@ -395,6 +397,7 @@ export function KanbanBoard({
             }}
             boardRef={boardRef}
             columnsId={columnsId}
+            onExternalTasksCollapsedChange={onExternalTasksCollapsedChange}
           />
 
           <DragOverlay dropAnimation={null}>

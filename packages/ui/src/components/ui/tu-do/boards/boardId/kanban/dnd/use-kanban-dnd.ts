@@ -7,7 +7,10 @@ import type {
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
-import { upsertCurrentUserTaskPersonalPlacement } from '@tuturuuu/internal-api/tasks';
+import {
+  removeCurrentUserTaskPersonalPlacement,
+  upsertCurrentUserTaskPersonalPlacement,
+} from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -116,6 +119,7 @@ export function useKanbanDnd({
         personal_sort_key: isStagingTarget ? null : newSortKey,
         personal_placed_at: isStagingTarget ? null : new Date().toISOString(),
         is_personal_external: true,
+        is_personal_external_default: isStagingTarget,
         _localMutationAt: Date.now(),
       } as Task & { _localMutationAt: number };
 
@@ -133,20 +137,27 @@ export function useKanbanDnd({
       setOptimisticUpdateInProgress((prev) => new Set(prev).add(task.id));
 
       try {
-        const response = await upsertCurrentUserTaskPersonalPlacement(task.id, {
-          personal_board_id: targetBoardId,
-          personal_list_id: isStagingTarget ? null : targetListId,
-          personal_sort_key: isStagingTarget ? null : newSortKey,
-        });
+        const response = isStagingTarget
+          ? null
+          : await upsertCurrentUserTaskPersonalPlacement(task.id, {
+              personal_board_id: targetBoardId,
+              personal_list_id: targetListId,
+              personal_sort_key: newSortKey,
+            });
+
+        if (isStagingTarget) {
+          await removeCurrentUserTaskPersonalPlacement(task.id);
+        }
 
         const savedTask = {
           ...task,
-          ...response.task,
+          ...(response?.task ?? nextTask),
           assignees: task.assignees,
           labels: task.labels,
           projects: task.projects,
           list_id: nextTask.list_id,
           sort_key: nextTask.sort_key,
+          is_personal_external_default: isStagingTarget,
         } as Task;
 
         queryClient.setQueryData(

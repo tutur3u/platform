@@ -1,6 +1,12 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Loader2, MoveRight } from '@tuturuuu/icons';
+import {
+  ChevronLeft,
+  ChevronRight,
+  GripVertical,
+  Loader2,
+  MoveRight,
+} from '@tuturuuu/icons';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -61,6 +67,7 @@ interface BoardColumnProps {
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
   workspaceId?: string;
   wsId: string;
+  onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
 }
 
 export function BoardColumn({
@@ -84,6 +91,7 @@ export function BoardColumn({
   bulkUpdateCustomDueDate,
   workspaceId,
   wsId,
+  onExternalTasksCollapsedChange,
 }: BoardColumnProps) {
   const t = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
@@ -91,6 +99,8 @@ export function BoardColumn({
   const [isEditOpen, setIsEditOpen] = useState(false);
   const { pagination, loadListPage } = useProgressiveLoader();
   const isExternalStaging = column.is_external_staging === true;
+  const isExternalCollapsed =
+    isExternalStaging && column.is_external_collapsed === true;
   const listState = pagination[column.id];
   const isInitialLoad = !listState || listState.isInitialLoad;
   const hasActiveFilters =
@@ -110,7 +120,7 @@ export function BoardColumn({
   const columnRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = columnRef.current;
-    if (!el || listState) return; // Already loaded or loading
+    if (!el || listState || isExternalCollapsed) return; // Already loaded, loading, or intentionally collapsed
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
@@ -122,12 +132,18 @@ export function BoardColumn({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [column.id, listState, loadListPage]);
+  }, [column.id, isExternalCollapsed, listState, loadListPage]);
 
   // Recovery path: if the list metadata says tasks exist but the shared tasks
   // cache was cleared, refetch page 0 for this list so cards reappear.
   useEffect(() => {
-    if (!listState || listState.isLoading || hasActiveFilters) return;
+    if (
+      isExternalCollapsed ||
+      !listState ||
+      listState.isLoading ||
+      hasActiveFilters
+    )
+      return;
 
     if (listState.totalCount > 0 && tasks.length === 0) {
       if (recoveryRequestedRef.current) return;
@@ -142,6 +158,7 @@ export function BoardColumn({
   }, [
     column.id,
     hasActiveFilters,
+    isExternalCollapsed,
     listState,
     listState?.isLoading,
     listState?.totalCount,
@@ -253,6 +270,41 @@ export function BoardColumn({
     });
   };
 
+  if (isExternalCollapsed) {
+    return (
+      <Card
+        ref={composedRef}
+        style={style}
+        className={cn(
+          'group flex h-full w-14 shrink-0 snap-start scroll-mr-[var(--kanban-snap-right-padding)] scroll-ml-[var(--kanban-snap-left-padding)] flex-col items-center rounded-xl border border-dynamic-cyan/45 border-dashed bg-dynamic-cyan/[0.035] py-3 transition-all duration-200',
+          'touch-none select-none hover:shadow-md'
+        )}
+      >
+        <button
+          type="button"
+          className="flex h-full w-full flex-col items-center gap-3 rounded-lg px-1 text-dynamic-cyan transition-colors hover:bg-dynamic-cyan/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-cyan/40"
+          title={tTasks('expand_external_tasks')}
+          aria-label={tTasks('expand_external_tasks')}
+          onClick={() => onExternalTasksCollapsedChange?.(false)}
+        >
+          <ChevronRight className="h-4 w-4 shrink-0" />
+          <Badge
+            variant="secondary"
+            className="h-5 min-w-5 justify-center px-1 text-[10px]"
+          >
+            {badgeCount}
+          </Badge>
+          <span
+            className="max-h-48 truncate font-medium text-[11px]"
+            style={{ writingMode: 'vertical-rl' }}
+          >
+            {translateListName(column.name)}
+          </span>
+        </button>
+      </Card>
+    );
+  }
+
   return (
     <Card
       ref={composedRef}
@@ -301,7 +353,19 @@ export function BoardColumn({
           </Badge>
         </div>
         <div className="flex items-center gap-1">
-          {!isExternalStaging && (
+          {isExternalStaging ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              className="h-7 w-7 p-0 text-dynamic-cyan hover:bg-dynamic-cyan/10"
+              title={tTasks('collapse_external_tasks')}
+              aria-label={tTasks('collapse_external_tasks')}
+              onClick={() => onExternalTasksCollapsedChange?.(true)}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+          ) : (
             <ListActions
               listId={column.id}
               listName={column.name}

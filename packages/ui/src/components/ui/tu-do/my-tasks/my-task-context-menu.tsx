@@ -10,10 +10,7 @@ import {
   UserMinus,
   UserX,
 } from '@tuturuuu/icons';
-import {
-  removeCurrentUserTaskPersonalPlacement,
-  upsertCurrentUserTaskPersonalPlacement,
-} from '@tuturuuu/internal-api';
+import { removeCurrentUserTaskPersonalPlacement } from '@tuturuuu/internal-api';
 import type { TaskWithRelations } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import {
@@ -122,12 +119,8 @@ export function MyTaskContextMenu({
     if (!personalBoardId) return;
 
     try {
-      await upsertCurrentUserTaskPersonalPlacement(task.id, {
-        personal_board_id: personalBoardId,
-        personal_list_id: null,
-        personal_sort_key: null,
-      });
-      toast.success(t('moved_to_external_staging'));
+      await removeCurrentUserTaskPersonalPlacement(task.id);
+      toast.success(t('moved_to_external_tasks'));
       onTaskUpdate();
       onOpenChange(false);
     } catch {
@@ -298,7 +291,7 @@ export function MyTaskContextMenu({
                 disabled={isLoading}
               >
                 <MoveRight className="mr-2 h-4 w-4 text-dynamic-cyan" />
-                {t('move_to_external_staging')}
+                {t('move_to_external_tasks')}
               </DropdownMenuItem>
             )}
             {personalBoardId && (

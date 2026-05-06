@@ -34,7 +34,6 @@ import {
   listWorkspaceTaskLists,
   listWorkspaceTaskProjects,
   removeCurrentUserTaskPersonalPlacement,
-  upsertCurrentUserTaskPersonalPlacement,
 } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -61,6 +60,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import {
   createTask,
+  getPersonalExternalStagingListId,
   getTicketIdentifier,
   useBoardConfig,
   useWorkspaceLabels,
@@ -886,27 +886,28 @@ function TaskCardInner({
     setMenuOpen(false);
 
     try {
-      const response = await upsertCurrentUserTaskPersonalPlacement(task.id, {
-        personal_board_id: task.personal_board_id,
-        personal_list_id: null,
-        personal_sort_key: null,
-      });
+      await removeCurrentUserTaskPersonalPlacement(task.id);
 
       queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) =>
         old?.map((candidate) =>
           candidate.id === task.id
             ? {
                 ...candidate,
-                ...response.task,
-                assignees: candidate.assignees,
-                labels: candidate.labels,
-                projects: candidate.projects,
+                list_id: getPersonalExternalStagingListId(
+                  task.personal_board_id ?? boardId
+                ),
+                sort_key: null,
+                personal_list_id: null,
+                personal_sort_key: null,
+                personal_placed_at: null,
+                is_personal_external: true,
+                is_personal_external_default: true,
               }
             : candidate
         )
       );
 
-      toast.success(tTasks('moved_to_external_staging'));
+      toast.success(tTasks('moved_to_external_tasks'));
     } catch (error) {
       console.error('Failed to move task to external staging:', error);
       toast.error(tTasks('failed_update_personal_placement'));
@@ -1935,7 +1936,7 @@ function TaskCardInner({
                           disabled={isLoading}
                         >
                           <MoveRight className="h-4 w-4 text-dynamic-cyan" />
-                          {tTasks('move_to_external_staging')}
+                          {tTasks('move_to_external_tasks')}
                         </DropdownMenuItem>
                       )}
                       {sourceBoardUrl && (
@@ -1946,18 +1947,20 @@ function TaskCardInner({
                           </Link>
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuItem
-                        onSelect={(e) =>
-                          handleMenuItemSelect(e as unknown as Event, () => {
-                            void handleRemoveFromPersonalBoard();
-                          })
-                        }
-                        className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
-                        disabled={isLoading}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        {tTasks('remove_from_personal_board')}
-                      </DropdownMenuItem>
+                      {!task.is_personal_external_default && (
+                        <DropdownMenuItem
+                          onSelect={(e) =>
+                            handleMenuItemSelect(e as unknown as Event, () => {
+                              void handleRemoveFromPersonalBoard();
+                            })
+                          }
+                          className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
+                          disabled={isLoading}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          {tTasks('remove_from_personal_board')}
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuSeparator />
                     </>
                   )}
