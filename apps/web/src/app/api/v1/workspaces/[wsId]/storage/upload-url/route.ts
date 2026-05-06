@@ -1,5 +1,8 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import {
@@ -35,6 +38,75 @@ function canCreateUploadUrlForPath(
   return (
     path.startsWith('external-projects/') &&
     permissions.containsPermission('manage_external_projects')
+  );
+}
+
+function getFinanceTransactionIdFromStoragePath(path: string) {
+  const segments = path.split('/').filter(Boolean);
+  if (
+    segments[0] !== 'finance' ||
+    segments[1] !== 'transactions' ||
+    !segments[2]
+  ) {
+    return null;
+  }
+
+  return segments[2];
+}
+
+async function canCreateFinanceTransactionUploadUrlForPath({
+  normalizedWsId,
+  path,
+  permissions,
+  userId,
+}: {
+  normalizedWsId: string;
+  path: string;
+  permissions: Awaited<ReturnType<typeof getPermissions>>;
+  userId: string;
+}) {
+  if (!permissions) {
+    return false;
+  }
+
+  const transactionId = getFinanceTransactionIdFromStoragePath(path);
+  if (!transactionId) {
+    return false;
+  }
+
+  const sbAdmin = await createAdminClient();
+  const { data: transaction } = await sbAdmin
+    .from('wallet_transactions')
+    .select('creator_id, workspace_wallets!wallet_id(ws_id)')
+    .eq('id', transactionId)
+    .maybeSingle();
+
+  const transactionWorkspaceId = (
+    transaction?.workspace_wallets as { ws_id?: string } | null | undefined
+  )?.ws_id;
+
+  if (transactionWorkspaceId !== normalizedWsId) {
+    return false;
+  }
+
+  if (permissions.containsPermission('update_transactions')) {
+    return true;
+  }
+
+  if (!permissions.containsPermission('create_transactions')) {
+    return false;
+  }
+
+  const { data: linkedUser } = await sbAdmin
+    .from('workspace_user_linked_users')
+    .select('virtual_user_id')
+    .eq('platform_user_id', userId)
+    .eq('ws_id', normalizedWsId)
+    .maybeSingle();
+
+  return (
+    !!linkedUser?.virtual_user_id &&
+    linkedUser.virtual_user_id === transaction?.creator_id
   );
 }
 
@@ -82,7 +154,16 @@ export async function POST(
       return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
     }
 
-    if (!canCreateUploadUrlForPath(permissions, sanitizedPath)) {
+    const canCreateUploadUrl =
+      canCreateUploadUrlForPath(permissions, sanitizedPath) ||
+      (await canCreateFinanceTransactionUploadUrlForPath({
+        normalizedWsId,
+        path: sanitizedPath,
+        permissions,
+        userId: user.id,
+      }));
+
+    if (!canCreateUploadUrl) {
       return NextResponse.json(
         { message: 'Insufficient permissions' },
         { status: 403 }

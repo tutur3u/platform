@@ -1,6 +1,7 @@
 'use client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeftRight, Settings2, Wallet } from '@tuturuuu/icons';
+import { ArrowLeftRight, Paperclip, Settings2, Wallet } from '@tuturuuu/icons';
+import { uploadWorkspaceStorageFile } from '@tuturuuu/internal-api';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
@@ -18,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { fetcher } from '@tuturuuu/utils/fetcher';
 import { shouldLockFinanceWalletSelectionOnCreate } from '@tuturuuu/utils/finance';
+import { joinPath } from '@tuturuuu/utils/path-helper';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
@@ -34,6 +36,10 @@ import type {
   NewContentType,
   TransactionFormProps,
 } from './form-types';
+import {
+  type TransactionAttachmentDraft,
+  TransactionAttachmentsField,
+} from './transaction-attachments-field';
 
 export function TransactionForm({
   wsId,
@@ -51,6 +57,9 @@ export function TransactionForm({
   const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
+  const [attachments, setAttachments] = useState<TransactionAttachmentDraft[]>(
+    []
+  );
   const [isTransfer, setIsTransfer] = useState(!!data?.transfer);
   // Start in override mode when editing an existing transfer (preserve stored amounts).
   // Start in auto mode for new transfers so the exchange rate pre-fills destination.
@@ -322,6 +331,68 @@ export function TransactionForm({
     router.refresh();
   };
 
+  const updateAttachmentStatus = (
+    attachmentId: string,
+    status: TransactionAttachmentDraft['status']
+  ) => {
+    setAttachments((current) =>
+      current.map((attachment) =>
+        attachment.id === attachmentId ? { ...attachment, status } : attachment
+      )
+    );
+  };
+
+  const uploadPendingAttachments = async (transactionId?: string) => {
+    const pendingAttachments = attachments.filter(
+      (attachment) => attachment.status !== 'uploaded'
+    );
+
+    if (!transactionId || pendingAttachments.length === 0) {
+      return;
+    }
+
+    const results = await Promise.all(
+      pendingAttachments.map(async (attachment) => {
+        updateAttachmentStatus(attachment.id, 'uploading');
+
+        try {
+          const result = await uploadWorkspaceStorageFile(
+            wsId,
+            attachment.file,
+            {
+              path: joinPath('finance', 'transactions', transactionId),
+            }
+          );
+
+          if (!result.finalize?.success) {
+            throw new Error(
+              result.finalize?.error ||
+                t('transaction-data-table.attachment_upload_failed')
+            );
+          }
+
+          updateAttachmentStatus(attachment.id, 'uploaded');
+          return { ok: true };
+        } catch {
+          updateAttachmentStatus(attachment.id, 'error');
+          return { ok: false };
+        }
+      })
+    );
+
+    const failedCount = results.filter((result) => !result.ok).length;
+    if (failedCount > 0) {
+      toast.error(t('transaction-data-table.attachment_upload_failed'));
+      return;
+    }
+
+    toast.success(
+      t('transaction-data-table.attachment_upload_success', {
+        count: pendingAttachments.length,
+      })
+    );
+  };
+
   const createTransferMutation = useMutation({
     mutationFn: async (payload: {
       origin_wallet_id: string;
@@ -347,7 +418,11 @@ export function TransactionForm({
         );
       }
 
-      return body;
+      return body as {
+        message: string;
+        from_transaction_id?: string;
+        to_transaction_id?: string;
+      };
     },
   });
 
@@ -378,7 +453,7 @@ export function TransactionForm({
         );
       }
 
-      return body;
+      return body as { message: string };
     },
   });
 
@@ -415,7 +490,7 @@ export function TransactionForm({
         );
       }
 
-      return body;
+      return body as { message: string; transaction_id?: string };
     },
   });
 
@@ -528,6 +603,8 @@ export function TransactionForm({
     setLoading(true);
 
     try {
+      let attachmentTransactionId: string | undefined;
+
       if (isTransfer) {
         const sourceWallet = wallets?.find(
           (wallet) => wallet.id === formData.origin_wallet_id
@@ -564,11 +641,10 @@ export function TransactionForm({
             report_opt_in: formData.report_opt_in,
             tag_ids: formData.tag_ids,
           });
-
-          await refreshTransactions();
+          attachmentTransactionId = data.id;
         } else {
           // New transfer mode
-          await createTransferMutation.mutateAsync({
+          const result = await createTransferMutation.mutateAsync({
             origin_wallet_id: formData.origin_wallet_id,
             destination_wallet_id: formData.destination_wallet_id!,
             amount: formData.amount,
@@ -578,12 +654,11 @@ export function TransactionForm({
             report_opt_in: formData.report_opt_in,
             tag_ids: formData.tag_ids,
           });
-
-          await refreshTransactions();
+          attachmentTransactionId = result.from_transaction_id;
         }
       } else {
         // Normal transaction mode
-        await createOrUpdateTransactionMutation.mutateAsync({
+        const result = await createOrUpdateTransactionMutation.mutateAsync({
           id: formData.id,
           description: formData.description,
           amount:
@@ -600,9 +675,11 @@ export function TransactionForm({
           is_description_confidential: formData.is_description_confidential,
           is_category_confidential: formData.is_category_confidential,
         });
-
-        await refreshTransactions();
+        attachmentTransactionId = formData.id ?? result.transaction_id;
       }
+
+      await uploadPendingAttachments(attachmentTransactionId);
+      await refreshTransactions();
 
       if (!data?.id && rememberLastSelections) {
         saveLastSelections({
@@ -671,10 +748,14 @@ export function TransactionForm({
           )}
 
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="mb-3 grid w-full grid-cols-2">
+            <TabsList className="mb-3 grid w-full grid-cols-3">
               <TabsTrigger value="basic" className="gap-1.5">
                 <Wallet className="h-4 w-4" />
                 {t('transaction-data-table.tab_basic')}
+              </TabsTrigger>
+              <TabsTrigger value="attachments" className="gap-1.5">
+                <Paperclip className="h-4 w-4" />
+                {t('transaction-data-table.tab_attachments')}
               </TabsTrigger>
               <TabsTrigger value="more" className="gap-1.5">
                 <Settings2 className="h-4 w-4" />
@@ -707,6 +788,14 @@ export function TransactionForm({
                 setNewContent={setNewContent}
                 walletPrefillMeta={walletPrefillMeta}
                 categoryPrefillMeta={categoryPrefillMeta}
+              />
+            </TabsContent>
+
+            <TabsContent value="attachments" className="space-y-4">
+              <TransactionAttachmentsField
+                attachments={attachments}
+                disabled={loading || !hasFormPermission}
+                onChange={setAttachments}
               />
             </TabsContent>
 

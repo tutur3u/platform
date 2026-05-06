@@ -244,7 +244,10 @@ describe('transactions route', () => {
     );
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ message: 'success' });
+    await expect(response.json()).resolves.toEqual({
+      message: 'success',
+      transaction_id: 'transaction-1',
+    });
     expect(mocks.adminSupabase.from).toHaveBeenCalledWith(
       'wallet_transactions'
     );
@@ -321,6 +324,9 @@ describe('transactions route', () => {
     );
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ message: 'success' });
+    await expect(response.json()).resolves.toEqual({
+      message: 'success',
+      transaction_id: 'transaction-1',
+    });
   });
 });
