@@ -44,6 +44,8 @@ const HOTKEY_CREATE_TASK = 'C';
 const HOTKEY_GO_TO_KANBAN: ['G', 'K'] = ['G', 'K'];
 const HOTKEY_GO_TO_LIST: ['G', 'L'] = ['G', 'L'];
 const HOTKEY_GO_TO_TIMELINE: ['G', 'T'] = ['G', 'T'];
+const EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX =
+  'personal-board-external-tasks-collapsed';
 const DEFAULT_TASK_FILTERS: TaskFilters = {
   labels: [],
   assignees: [],
@@ -79,6 +81,7 @@ export function BoardViews({
   const queryClient = useQueryClient();
   const effectiveWorkspaceId = board.ws_id ?? workspace.id;
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
+  const [externalTasksCollapsed, setExternalTasksCollapsed] = useState(false);
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS);
   const [listStatusFilter, setListStatusFilter] =
     useState<ListStatusFilter>('all');
@@ -171,6 +174,28 @@ export function BoardViews({
     primeFullTaskCache(savedConfig.currentView);
   }, [board.id, primeFullTaskCache]);
 
+  useEffect(() => {
+    if (!workspace.personal || typeof window === 'undefined') {
+      setExternalTasksCollapsed(false);
+      return;
+    }
+
+    setExternalTasksCollapsed(
+      window.localStorage.getItem(
+        `${EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX}:${board.id}`
+      ) === 'true'
+    );
+  }, [board.id, workspace.personal]);
+
+  useEffect(() => {
+    if (!workspace.personal || typeof window === 'undefined') return;
+
+    window.localStorage.setItem(
+      `${EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX}:${board.id}`,
+      String(externalTasksCollapsed)
+    );
+  }, [board.id, externalTasksCollapsed, workspace.personal]);
+
   // Detect whether any filter is active (requires all data to be loaded)
   const hasActiveFilters = useMemo(
     () =>
@@ -201,8 +226,15 @@ export function BoardViews({
       color: 'CYAN',
       position: Number.MIN_SAFE_INTEGER,
       is_external_staging: true,
+      is_external_collapsed: externalTasksCollapsed,
     };
-  }, [board.created_at, board.id, tTasks, workspace.personal]);
+  }, [
+    board.created_at,
+    board.id,
+    externalTasksCollapsed,
+    tTasks,
+    workspace.personal,
+  ]);
 
   const activeLists = useMemo(() => {
     const realLists = boardLists.filter((list) => !list.deleted);
@@ -613,6 +645,7 @@ export function BoardViews({
             filters={filters}
             isMultiSelectMode={isMultiSelectMode}
             setIsMultiSelectMode={setIsMultiSelectMode}
+            onExternalTasksCollapsedChange={setExternalTasksCollapsed}
           />
         );
       case 'list':
@@ -652,6 +685,7 @@ export function BoardViews({
             filters={filters}
             isMultiSelectMode={isMultiSelectMode}
             setIsMultiSelectMode={setIsMultiSelectMode}
+            onExternalTasksCollapsedChange={setExternalTasksCollapsed}
           />
         );
     }

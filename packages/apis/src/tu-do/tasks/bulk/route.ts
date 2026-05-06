@@ -13,6 +13,14 @@ import {
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  addPersonalTaskLabel,
+  addPersonalTaskProject,
+  removePersonalTaskLabel,
+  removePersonalTaskProject,
+  replacePersonalTaskLabels,
+  replacePersonalTaskProjects,
+} from '../personal-overlays';
 
 const MAX_BULK_TASKS = 200;
 
@@ -108,6 +116,13 @@ type TargetListRow = {
   status: string | null;
   deleted: boolean | null;
   workspace_boards: { ws_id: string } | null;
+};
+
+type ExternalTaskAccessRow = {
+  id: string;
+  task_lists: {
+    workspace_boards: { ws_id: string | null } | null;
+  } | null;
 };
 
 async function parseJsonBody(request: NextRequest) {
@@ -212,6 +227,17 @@ function buildTaskUpdatePayload(
   }
 
   return updates;
+}
+
+function isPersonalOverlayOperation(operation: BulkOperation) {
+  return (
+    operation.type === 'add_label' ||
+    operation.type === 'remove_label' ||
+    operation.type === 'clear_labels' ||
+    operation.type === 'add_project' ||
+    operation.type === 'remove_project' ||
+    operation.type === 'clear_projects'
+  );
 }
 
 async function verifyWorkspaceMembership(
@@ -396,6 +422,107 @@ async function validateOperationScope(
   return null;
 }
 
+async function loadPersonalWorkspaceFlag(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string
+) {
+  const { data, error } = await sbAdmin
+    .from('workspaces')
+    .select('personal')
+    .eq('id', wsId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error('PERSONAL_WORKSPACE_QUERY_FAILED');
+  }
+
+  return data?.personal === true;
+}
+
+async function loadAccessiblePersonalExternalTaskIds({
+  sbAdmin,
+  supabase,
+  taskIds,
+  userId,
+  wsId,
+}: {
+  sbAdmin: TypedSupabaseClient;
+  supabase: TypedSupabaseClient;
+  taskIds: string[];
+  userId: string;
+  wsId: string;
+}) {
+  if (taskIds.length === 0) {
+    return new Set<string>();
+  }
+
+  const isPersonalWorkspace = await loadPersonalWorkspaceFlag(sbAdmin, wsId);
+  if (!isPersonalWorkspace) {
+    return new Set<string>();
+  }
+
+  const { data: taskRows, error: taskError } = await sbAdmin
+    .from('tasks')
+    .select(
+      `
+      id,
+      task_lists!inner(
+        workspace_boards!inner(ws_id)
+      )
+      `
+    )
+    .in('id', taskIds)
+    .is('deleted_at', null);
+
+  if (taskError) {
+    throw new Error('PERSONAL_EXTERNAL_TASK_QUERY_FAILED');
+  }
+
+  const externalRows = ((taskRows ?? []) as ExternalTaskAccessRow[]).filter(
+    (task) => {
+      const sourceWsId = task.task_lists?.workspace_boards?.ws_id;
+      return !!sourceWsId && sourceWsId !== wsId;
+    }
+  );
+
+  const sourceWorkspaceIds = [
+    ...new Set(
+      externalRows
+        .map((task) => task.task_lists?.workspace_boards?.ws_id)
+        .filter((sourceWsId): sourceWsId is string => Boolean(sourceWsId))
+    ),
+  ];
+
+  if (sourceWorkspaceIds.length === 0) {
+    return new Set<string>();
+  }
+
+  const { data: memberships, error: membershipError } = await supabase
+    .from('workspace_members')
+    .select('ws_id')
+    .eq('user_id', userId)
+    .in('ws_id', sourceWorkspaceIds);
+
+  if (membershipError) {
+    throw new Error('PERSONAL_EXTERNAL_SOURCE_ACCESS_QUERY_FAILED');
+  }
+
+  const accessibleWorkspaceIds = new Set(
+    (memberships ?? [])
+      .map((membership) => membership.ws_id)
+      .filter((sourceWsId): sourceWsId is string => Boolean(sourceWsId))
+  );
+
+  return new Set(
+    externalRows
+      .filter((task) => {
+        const sourceWsId = task.task_lists?.workspace_boards?.ws_id;
+        return !!sourceWsId && accessibleWorkspaceIds.has(sourceWsId);
+      })
+      .map((task) => task.id)
+  );
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
@@ -496,6 +623,26 @@ export async function POST(
       ])
     );
 
+    let personalExternalTaskIds = new Set<string>();
+    if (isPersonalOverlayOperation(operation)) {
+      const missingTaskIds = taskIds.filter((taskId) => !taskById.has(taskId));
+
+      try {
+        personalExternalTaskIds = await loadAccessiblePersonalExternalTaskIds({
+          sbAdmin,
+          supabase,
+          taskIds: missingTaskIds,
+          userId: user.id,
+          wsId,
+        });
+      } catch {
+        return NextResponse.json(
+          { error: 'Failed to verify external task access' },
+          { status: 500 }
+        );
+      }
+    }
+
     const assigneeMapByTaskId = new Map<string, string[]>();
     if (
       operation.type === 'add_assignee' ||
@@ -541,12 +688,64 @@ export async function POST(
     for (const taskId of taskIds) {
       const task = taskById.get(taskId);
 
-      if (!task) {
+      if (!task && !personalExternalTaskIds.has(taskId)) {
         failures.push({ taskId, error: 'Task not found' });
         continue;
       }
 
       try {
+        if (!task && personalExternalTaskIds.has(taskId)) {
+          switch (operation.type) {
+            case 'add_label':
+              await addPersonalTaskLabel(
+                sbAdmin,
+                user.id,
+                taskId,
+                operation.labelId
+              );
+              break;
+            case 'remove_label':
+              await removePersonalTaskLabel(
+                sbAdmin,
+                user.id,
+                taskId,
+                operation.labelId
+              );
+              break;
+            case 'clear_labels':
+              await replacePersonalTaskLabels(sbAdmin, user.id, taskId, []);
+              break;
+            case 'add_project':
+              await addPersonalTaskProject(
+                sbAdmin,
+                user.id,
+                taskId,
+                operation.projectId
+              );
+              break;
+            case 'remove_project':
+              await removePersonalTaskProject(
+                sbAdmin,
+                user.id,
+                taskId,
+                operation.projectId
+              );
+              break;
+            case 'clear_projects':
+              await replacePersonalTaskProjects(sbAdmin, user.id, taskId, []);
+              break;
+            default:
+              throw new Error('Unsupported external task operation');
+          }
+
+          succeededTaskIds.push(taskId);
+          continue;
+        }
+
+        if (!task) {
+          throw new Error('Task not found');
+        }
+
         switch (operation.type) {
           case 'update_fields': {
             const updatePayload: TaskActorRpcArgs<'update_task_fields_with_actor'> =

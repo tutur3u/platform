@@ -242,28 +242,39 @@ Task create/update API routes silently drop assignee ids that no longer belong
 to the workspace. This lets stale task assignments be cleaned up during the next
 save instead of blocking unrelated edits such as description updates.
 
-#### Personal external task staging
+#### Personal external tasks
 
 Personal task boards can reference tasks from other workspaces without cloning
-or moving the source task. The per-user placement lives on
-`task_user_overrides` with `personal_board_id`, `personal_list_id`,
-`personal_sort_key`, `personal_added_at`, and `personal_placed_at`.
+or moving the source task. Assigned tasks from accessible source workspaces
+appear by default in a virtual `External tasks` lane on each personal board.
 
-- `personal_board_id` points to the destination personal board.
-- `personal_list_id = null` means the task is staged in the virtual
-  `External tasks` lane for that personal board.
-- Dragging from the virtual lane into a real personal list sets
-  `personal_list_id` and `personal_sort_key`.
-- Dragging a placed external task back to the virtual lane clears only
-  `personal_list_id`, `personal_sort_key`, and `personal_placed_at`.
-- The virtual lane has no `task_lists` row, no list actions, no create-task
-  form, and no list reordering.
+The virtual lane is presentation-only: it has no `task_lists` row, no list
+actions, no create-task form, no list reordering, and can be collapsed per board
+when the user wants to focus on planned lists.
 
-Source task fields, including `tasks.list_id`, must not be changed when a task
-is added to, placed on, moved within, staged from, or removed from a personal
-board. Routes that read personal board tasks should keep filtering inaccessible
-source tasks out instead of surfacing stale placements to users who no longer
-have source-workspace access.
+Per-user placement lives on `task_user_overrides` with `personal_board_id`,
+`personal_list_id`, `personal_sort_key`, `personal_added_at`, and
+`personal_placed_at`.
+
+- `personal_board_id` points to the destination personal board after an
+  external task is planned there.
+- `personal_list_id` points to the real personal list that owns the planning
+  position.
+- Dragging from the virtual lane into a real personal list creates or updates
+  the personal placement.
+- Dragging a placed external task back to the virtual lane removes the personal
+  placement so the task returns to the default external view.
+- Personal-only label and project overlays live in
+  `task_user_override_labels` and `task_user_override_projects`. Those rows
+  reference labels/projects owned by the user's personal workspace and are
+  loaded only for that owner.
+
+Source task fields, including `tasks.list_id`, `task_labels`, and
+`task_project_tasks`, must not be changed when a task appears in the external
+lane, is planned into a personal list, is moved within the personal board, or
+returns to the external lane. Routes that read personal board tasks should keep
+filtering inaccessible source tasks out instead of surfacing stale placements to
+users who no longer have source-workspace access.
 
 ```sql
 CREATE TABLE workspace_boards (

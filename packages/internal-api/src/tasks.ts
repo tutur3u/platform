@@ -75,6 +75,7 @@ export interface WorkspaceTaskApiTask extends Task {
   personal_added_at?: string | null;
   personal_placed_at?: string | null;
   is_personal_external?: boolean;
+  is_personal_external_default?: boolean;
 }
 
 export interface CurrentUserTaskPersonalPlacementPayload {
