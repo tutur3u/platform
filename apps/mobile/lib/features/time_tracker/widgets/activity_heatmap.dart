@@ -100,7 +100,6 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
         initialAnchorDate: DateTime(
           _selectedMonth.year,
           _selectedMonth.month,
-          1,
         ),
         firstDayOfWeek: _firstDayOfWeek(context),
       ),
