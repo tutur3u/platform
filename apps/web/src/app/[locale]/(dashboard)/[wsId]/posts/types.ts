@@ -34,7 +34,8 @@ export type PostApprovalStatus = (typeof POST_APPROVAL_STATUSES)[number];
 export type PostReviewStage = (typeof POST_REVIEW_STAGES)[number];
 export type PostDeliveryIssueReason =
   | 'missing_email'
-  | 'missing_sender_platform_user';
+  | 'missing_sender_platform_user'
+  | 'blacklisted_email_or_domain';
 
 export function isPostApprovalStatus(
   value?: string

@@ -8597,6 +8597,7 @@
     "completed": "Hoàn thành",
     "created_at": "Ngày tạo",
     "delivery_failed": "Gửi thất bại",
+    "delivery_issue_reason_blacklisted_email_or_domain": "Người nhận này bị chặn vì địa chỉ email hoặc tên miền email nằm trong danh sách đen.",
     "delivery_issue_reason_missing_email": "Người nhận này chưa có địa chỉ email hợp lệ để gửi.",
     "delivery_issue_reason_missing_sender_platform_user": "Người phê duyệt chưa được liên kết với tài khoản người gửi trên nền tảng nên chưa thể đưa vào hàng đợi.",
     "details_description": "Chọn một người nhận để xem chi tiết quy trình kiểm tra, phê duyệt và gửi bài viết.",
