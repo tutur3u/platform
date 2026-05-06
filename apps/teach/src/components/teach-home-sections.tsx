@@ -14,6 +14,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { LEARN_APP_URL, WEB_APP_URL } from '@/constants/common';
+import { Link } from '@/i18n/navigation';
 
 const heroImageUrl = 'https://picsum.photos/seed/teach-studio-floor/1280/900';
 const inlineImageUrl = 'https://picsum.photos/seed/teach-marker-board/420/180';
@@ -35,7 +36,7 @@ export function TeachNav() {
       className="mx-auto flex max-w-7xl items-center justify-between px-5 pt-5 md:px-8 md:pt-8"
       data-teach-nav
     >
-      <div className="flex items-center gap-3 border-2 border-foreground bg-background px-4 py-2 shadow-[6px_6px_0_var(--foreground)]">
+      <div className="flex items-center gap-3 border-2 border-border bg-background px-4 py-2 shadow-[6px_6px_0_var(--border)]">
         <Image
           alt="Tuturuuu"
           className="size-9"
@@ -44,7 +45,7 @@ export function TeachNav() {
           unoptimized
           width={36}
         />
-        <span className="flex h-9 w-9 items-center justify-center border-2 border-foreground bg-dynamic-yellow text-foreground">
+        <span className="flex h-9 w-9 items-center justify-center border-2 border-border bg-dynamic-yellow/15 text-foreground">
           <GraduationCap className="h-5 w-5" />
         </span>
         <div className="leading-none">
@@ -53,6 +54,9 @@ export function TeachNav() {
         </div>
       </div>
       <div className="hidden gap-3 md:flex">
+        <InternalHeaderLink href="/login?next=/dashboard">
+          {t('dashboard')}
+        </InternalHeaderLink>
         <HeaderLink href={WEB_APP_URL}>{t('platform')}</HeaderLink>
         <HeaderLink href={LEARN_APP_URL}>{t('learn')}</HeaderLink>
       </div>
@@ -69,24 +73,26 @@ export function TeachHero() {
           <span data-teach-word>{t('heroWord1')}</span>{' '}
           <span
             aria-hidden="true"
-            className="mx-2 inline-block h-[0.62em] w-[1.34em] translate-y-[0.08em] border-2 border-foreground bg-center bg-cover align-baseline shadow-[5px_5px_0_var(--foreground)] grayscale"
+            className="mx-2 inline-block h-[0.62em] w-[1.34em] translate-y-[0.08em] border-2 border-border bg-center bg-cover align-baseline shadow-[5px_5px_0_var(--border)] grayscale"
             style={{ backgroundImage: `url(${inlineImageUrl})` }}
           />{' '}
           <span data-teach-word>{t('heroWord2')}</span>{' '}
           <span data-teach-word>{t('heroWord3')}</span>
         </h1>
-        <p className="mt-8 max-w-2xl border-2 border-foreground bg-card p-5 text-lg text-muted-foreground leading-8 shadow-[7px_7px_0_var(--foreground)]">
+        <p className="mt-8 max-w-2xl border-2 border-border bg-card p-5 text-lg text-muted-foreground leading-8 shadow-[7px_7px_0_var(--border)]">
           {t('heroLead')}
         </p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-          <HeroLink href={WEB_APP_URL}>{t('openPlatform')}</HeroLink>
+          <HeroLink href="/login?next=/dashboard">
+            {t('openDashboard')}
+          </HeroLink>
           <HeroLink href={LEARN_APP_URL} secondary>
             {t('previewLearn')}
           </HeroLink>
         </div>
       </div>
       <div
-        className="group relative min-h-[32rem] overflow-hidden border-2 border-foreground bg-card shadow-[10px_10px_0_var(--foreground)]"
+        className="group relative min-h-[32rem] overflow-hidden border-2 border-border bg-card shadow-[10px_10px_0_var(--border)]"
         data-teach-panel
       >
         <div
@@ -94,7 +100,7 @@ export function TeachHero() {
           style={{ backgroundImage: `url(${heroImageUrl})` }}
         />
         <div className="absolute inset-0 bg-linear-to-t from-background via-background/70 to-transparent" />
-        <div className="absolute right-5 bottom-5 left-5 border-2 border-foreground bg-background p-5 shadow-[6px_6px_0_var(--foreground)]">
+        <div className="absolute right-5 bottom-5 left-5 border-2 border-border bg-background p-5 shadow-[6px_6px_0_var(--border)]">
           <p className="font-black text-2xl">{t('heroPanelTitle')}</p>
           <p className="mt-2 text-muted-foreground text-sm leading-6">
             {t('heroPanelBody')}
@@ -151,10 +157,10 @@ export function TeachWorkLoop() {
         <div className="space-y-4">
           {workLoops.map(({ icon: Icon, key }, index) => (
             <article
-              className="grid gap-5 border-2 border-foreground bg-background p-6 shadow-[7px_7px_0_var(--foreground)] md:grid-cols-[4rem_minmax(0,1fr)]"
+              className="grid gap-5 border-2 border-border bg-background p-6 shadow-[7px_7px_0_var(--border)] md:grid-cols-[4rem_minmax(0,1fr)]"
               key={key}
             >
-              <div className="flex h-16 w-16 items-center justify-center border-2 border-foreground bg-dynamic-yellow shadow-[4px_4px_0_var(--foreground)]">
+              <div className="flex h-16 w-16 items-center justify-center border-2 border-border bg-dynamic-yellow/15 shadow-[4px_4px_0_var(--border)]">
                 <Icon className="h-8 w-8" />
               </div>
               <div>
@@ -177,10 +183,10 @@ export function TeachWorkLoop() {
 export function TeachFooter() {
   const t = useTranslations('teach');
   return (
-    <footer className="border-foreground border-t-2 bg-background px-5 py-12 md:px-8">
+    <footer className="border-border border-t-2 bg-background px-5 py-12 md:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <p className="max-w-2xl font-black text-2xl">{t('footer')}</p>
-        <HeroLink href={WEB_APP_URL}>{t('openPlatform')}</HeroLink>
+        <HeroLink href="/login?next=/dashboard">{t('openDashboard')}</HeroLink>
       </div>
     </footer>
   );
@@ -189,12 +195,30 @@ export function TeachFooter() {
 function HeaderLink({ children, href }: { children: ReactNode; href: string }) {
   return (
     <a
-      className="inline-flex h-11 items-center gap-2 border-2 border-foreground bg-background px-4 font-black text-sm shadow-[4px_4px_0_var(--foreground)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
+      className="inline-flex h-11 items-center gap-2 border-2 border-border bg-background px-4 font-black text-sm shadow-[4px_4px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
       href={href}
     >
       {children}
       <ExternalLink className="h-4 w-4" />
     </a>
+  );
+}
+
+function InternalHeaderLink({
+  children,
+  href,
+}: {
+  children: ReactNode;
+  href: string;
+}) {
+  return (
+    <Link
+      className="inline-flex h-11 items-center gap-2 border-2 border-border bg-background px-4 font-black text-sm shadow-[4px_4px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
+      href={href}
+    >
+      {children}
+      <ArrowRight className="h-4 w-4" />
+    </Link>
   );
 }
 
@@ -207,11 +231,19 @@ function HeroLink({
   href: string;
   secondary?: boolean;
 }) {
+  const className = `inline-flex h-12 items-center justify-center gap-2 border-2 border-border px-6 font-black shadow-[5px_5px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none ${secondary ? 'bg-background text-foreground' : 'bg-primary text-primary-foreground'}`;
+
+  if (href.startsWith('/')) {
+    return (
+      <Link className={className} href={href}>
+        {children}
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    );
+  }
+
   return (
-    <a
-      className={`inline-flex h-12 items-center justify-center gap-2 border-2 border-foreground px-6 font-black shadow-[5px_5px_0_var(--foreground)] transition active:translate-x-1 active:translate-y-1 active:shadow-none ${secondary ? 'bg-background text-foreground' : 'bg-dynamic-yellow text-foreground'}`}
-      href={href}
-    >
+    <a className={className} href={href}>
       {children}
       <ArrowRight className="h-4 w-4" />
     </a>
@@ -231,11 +263,11 @@ function FeatureCard({
 }) {
   return (
     <article
-      className={`group min-h-72 overflow-hidden border-2 border-foreground bg-card shadow-[7px_7px_0_var(--foreground)] ${className}`}
+      className={`group min-h-72 overflow-hidden border-2 border-border bg-card shadow-[7px_7px_0_var(--border)] ${className}`}
       data-teach-card
     >
       {imageUrl ? (
-        <div className="h-48 overflow-hidden border-foreground border-b-2">
+        <div className="h-48 overflow-hidden border-border border-b-2">
           <div
             className="h-full bg-center bg-cover grayscale transition-transform duration-700 ease-out group-hover:scale-105"
             style={{ backgroundImage: `url(${imageUrl})` }}

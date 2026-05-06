@@ -55,7 +55,7 @@ export function TeachHome() {
   return (
     <main
       ref={rootRef}
-      className="min-h-screen w-full max-w-full overflow-x-hidden bg-dynamic-yellow/10 text-foreground"
+      className="min-h-screen w-full max-w-full overflow-x-hidden bg-root-background text-foreground"
     >
       <TeachNav />
       <TeachHero />

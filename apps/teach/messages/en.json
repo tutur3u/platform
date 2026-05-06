@@ -1,29 +1,74 @@
 {
   "teach": {
     "byline": "by Tuturuuu",
+    "dashboard": "Dashboard",
     "familyBody": "Publish handoff notes that make sense beside Learn progress, parent views, and the central workspace record.",
     "familyTitle": "Handoff without duplicate portals",
     "footer": "Teach stays light: plan in context, manage in Tuturuuu, and send learners to Learn.",
     "handoffBody": "Open learner previews with the same education workspace context instead of guessing what students will see.",
     "handoffTitle": "Learner-preview ready",
-    "heroLead": "Teach is the companion surface for educators who plan class loops, review classroom signals, and jump back to the Tuturuuu platform when records need to change.",
-    "heroPanelBody": "A teacher-first front door that keeps actual education data, authentication, and workspace operations in the platform.",
-    "heroPanelTitle": "No duplicate admin stack",
+    "heroLead": "Teach is the teacher-facing app for course user groups, classroom signals, and the daily loop between modules, attendance, reports, and metrics.",
+    "heroPanelBody": "Public landing stays here. After sign-in, teachers enter a workspace dashboard backed by the central Tuturuuu account.",
+    "heroPanelTitle": "Landing outside, dashboard inside",
     "heroWord1": "Teach",
     "heroWord2": "with",
     "heroWord3": "signal",
     "learn": "Learn",
     "loopTitle": "Plan, signal, hand off.",
     "openPlatform": "Open platform",
+    "openDashboard": "Open dashboard",
     "planBody": "Sketch the next class loop, then jump into apps/web for the real workspace objects.",
     "planTitle": "Plan the loop",
     "platform": "Platform",
     "previewLearn": "Preview Learn",
     "signalBody": "Keep attention on what needs teaching action, not another dashboard copy.",
     "signalTitle": "Read the signal",
-    "studioBody": "Collect lesson intent, practice focus, and review rhythm before opening the full Tuturuuu education workspace.",
-    "studioTitle": "Classroom studio",
+    "studioBody": "Course user groups, modules, attendance, reports, and metrics stay framed as one teaching workspace.",
+    "studioTitle": "Teacher command surface",
     "syncBody": "Teach forwards protected API traffic to apps/web so workspace ownership stays centralized.",
     "syncTitle": "Works through the platform"
+  },
+  "teachDashboard": {
+    "activeGroups": "Active course groups",
+    "allGroups": "All user groups",
+    "attendance": "Attendance",
+    "attendanceChecks": "Attendance checks",
+    "checkAttendance": "Check attendance",
+    "courseModules": "Modules",
+    "emptyGroupsBody": "Create workspace user groups in apps/web first. Teach will present each group as a course group with modules, attendance, reports, and metrics.",
+    "emptyGroupsTitle": "No course user groups yet",
+    "eyebrow": "Teacher workspace for {name}",
+    "groupsLead": "In apps/web these are workspace user groups. In Teach, treat each one as a course group with learners, modules, attendance, reports, and metrics.",
+    "groupsTitle": "Course user groups",
+    "lead": "Manage the teaching loop without turning Teach into a second platform admin. The dashboard focuses on groups, modules, centralized attendance, reports, and score metrics.",
+    "manager": "Manager: {name}",
+    "manageInPlatform": "Manage records in platform",
+    "metrics": "Metrics",
+    "modules": "Modules",
+    "openLearn": "Open Learn",
+    "reports": "Reports",
+    "sessions": "Sessions",
+    "teacher": "Teacher",
+    "title": "Run today’s teaching dashboard.",
+    "unassigned": "Unassigned",
+    "workflow": {
+      "attendance": {
+        "body": "Use centralized attendance for the group, then keep the result tied to the same workspace record.",
+        "title": "Check attendance once"
+      },
+      "groups": {
+        "body": "Start with workspace user groups and read them as dedicated course groups inside Teach.",
+        "title": "Own the course group"
+      },
+      "metrics": {
+        "body": "Scores in the classroom map to platform metrics, so reporting stays consistent across Teach, Learn, and apps/web.",
+        "title": "Review score metrics"
+      },
+      "modules": {
+        "body": "Attach the lesson sequence to the group so students see the right module path in Learn.",
+        "title": "Sequence modules"
+      }
+    },
+    "workspaceFallback": "Education workspace"
   }
 }

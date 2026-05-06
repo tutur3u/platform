@@ -15,6 +15,7 @@
     "@gsap/react": "^2.1.2",
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
+    "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
