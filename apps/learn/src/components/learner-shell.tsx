@@ -131,7 +131,7 @@ export function LearnerShell({
                 <Rocket className="h-6 w-6" />
               </div>
               <div>
-                <p className="font-bold text-xl tracking-normal">Tulearn</p>
+                <p className="font-bold text-xl tracking-normal">Learn</p>
                 <p className="text-muted-foreground text-sm">
                   {activeWorkspace?.name ?? t('workspace.untitled')}
                 </p>

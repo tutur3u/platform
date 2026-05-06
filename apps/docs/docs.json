@@ -103,7 +103,7 @@
                   "platform/applications/cms",
                   "platform/applications/nova",
                   "platform/applications/tasks",
-                  "platform/applications/tulearn"
+                  "platform/applications/learn"
                 ]
               }
             ]

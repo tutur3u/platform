@@ -1,0 +1,85 @@
+---
+title: Learn learner app
+description: Student and parent-facing education app for Tuturuuu workspaces.
+---
+
+Learn lives in `apps/learn` and runs locally on port `7812`. It is the learner-facing companion to the main Tuturuuu web platform: students and parents use Learn for lessons, practice, assignments, reports, marks, XP, streaks, and hearts, while teachers and admins continue to manage education data in `apps/web`.
+
+## Ownership model
+
+Learn owns its email/password and email-code auth shell locally. Login, callback, logout, and session routes are implemented inside `apps/learn`. Auth metadata still uses the `tulearn` client value because the central API, OTP settings, and database tables keep the existing product namespace. Web-style Supabase cookies are kept on the Learn app.
+
+Social auth providers still run on `apps/web` because OAuth provider callbacks are registered for `tuturuuu.com`. Learn social buttons redirect to the central web login with `returnUrl=<Learn /verify-token URL>` and `provider=<provider>`. After the web callback succeeds, `apps/web` generates a cross-app token for the existing `tulearn` target app, redirects back to `/verify-token`, and Learn creates its own domain-scoped Supabase session through `POST /api/auth/verify-app-token`.
+
+Protected product data still belongs to the central platform. Learn calls `apps/web` APIs through `@tuturuuu/internal-api`, and the satellite app rewrites `/api/v1/*` to the central web app when no local Learn route exists.
+
+Learn also exposes a learner-focused AI Chat surface at `/[wsId]/ai-chat`. The UI stays inside `apps/learn`, while the chat stream uses the central `apps/web` `/api/ai/*` routes through the satellite rewrite so model routing, credits, logging, and chat persistence remain centralized.
+
+## Workspace access
+
+Every Learn workspace API requires both:
+
+- the authenticated user has student access or an explicit active parent-student link; and
+- `workspace_secrets.name = ENABLE_EDUCATION` is set to the canonical value `true` for that workspace.
+
+The bootstrap route only returns eligible education workspaces and linked students:
+
+```txt
+GET /api/v1/tulearn/bootstrap
+```
+
+Workspace-scoped learner routes use the normalized workspace id so aliases like `personal` do not diverge between selection and final reads.
+
+## Parent links
+
+Parent access is explicit and read-only in v1. The existing Tulearn schema adds:
+
+- `tulearn_parent_student_links` for accepted parent to student links;
+- `tulearn_parent_invites` for invite-based parent linking;
+- admin-managed parent-link APIs under `/api/v1/workspaces/[wsId]/tulearn/parent-links`.
+
+Parents can switch between linked students in Learn. Parent requests may read home, courses, assignments, reports, marks, and practice context for linked students, but mutation routes reject parent writes.
+
+## Gamification
+
+Learn-owned gamification behavior is backed by the existing Tulearn tables, separate from teacher-owned course data:
+
+- `tulearn_gamification_events` stores XP events with an idempotency key per workspace and learner.
+- `tulearn_learner_state` stores hearts, max hearts, total XP, streaks, freezes, selected workspace, and UI preferences.
+
+XP awards and heart loss must go through the database RPCs `award_tulearn_xp` and `lose_tulearn_heart`. Those functions lock the learner state row and keep event insertion, streak updates, XP totals, heart decrements, and refill timer resets atomic under concurrent practice or assignment submissions. Streak dates currently use UTC day boundaries until Learn stores learner or workspace time zones.
+
+Courses, modules, quiz sets, flashcards, assignments, monthly reports, and marks continue to reuse existing education and user-group tables.
+
+## Code organization
+
+Learn learner pages keep the public `apps/learn/src/components/learner-pages.tsx` entrypoint as a thin barrel export. Route-level screens live under `apps/learn/src/components/learner-pages/*`, with shared page motion, loading, empty state, and section primitives in `shared.tsx`.
+
+Keep Learn learner files under 400 LOC and individual components under 200 LOC. When a screen grows, split reusable cards, rows, panels, and route-specific helpers into adjacent modules before final verification instead of letting `learner-pages.tsx` or any route screen become a monolith again.
+
+Language switching is handled inside Learn with `next-intl` localized navigation links. Keep English and Vietnamese strings in `apps/learn/messages/en.json` and `apps/learn/messages/vi.json`, then run `bun i18n:sort`.
+
+## Verification
+
+After changing Learn schema, API, or UI code, run:
+
+```bash
+bun sb:up
+bun sb:typegen
+bun i18n:sort
+bun type-check:learn
+bun check
+```
+
+Run focused route or component tests around parent read-only access, student-only writes, XP idempotency, assignment completion, marks, and reports when those behaviors change.
+
+## CI and deployment
+
+Learn has dedicated Vercel workflows:
+
+- `.github/workflows/vercel-preview-learn.yaml`
+- `.github/workflows/vercel-production-learn.yaml`
+
+Both workflows are registered in `tuturuuu.ts` and use the shared `ci-check.yml` switchboard. They require the standard Vercel secrets plus `VERCEL_LEARN_PROJECT_ID`; production also uses the shared production Supabase secrets.
+
+`apps/learn/vercel.json` disables Vercel Git deployments and GitHub integration so preview and production deploys only happen through the CI workflows.

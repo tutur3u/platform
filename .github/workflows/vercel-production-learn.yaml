@@ -1,12 +1,15 @@
-name: Vercel Tulearn Preview Deployment
+name: Vercel Learn Production Deployment
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_TULEARN_PROJECT_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_LEARN_PROJECT_ID }}
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+  SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
 on:
   push:
-    branches-ignore:
+    branches:
       - production
   workflow_dispatch:
 
@@ -14,9 +17,9 @@ jobs:
   check-ci:
     uses: ./.github/workflows/ci-check.yml
     with:
-      workflow_name: vercel-preview-tulearn.yaml
+      workflow_name: vercel-production-learn.yaml
 
-  Deploy-Preview:
+  Deploy-Production:
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
@@ -29,15 +32,14 @@ jobs:
       - name: Check for newer commits
         id: check_commits
         run: |
-          CURRENT_BRANCH=${GITHUB_REF#refs/heads/}
-          git fetch origin $CURRENT_BRANCH || { echo "Remote branch not found, continuing with build"; echo "skip_build=false" >> $GITHUB_OUTPUT; exit 0; }
-          LATEST_COMMIT=$(git rev-parse origin/$CURRENT_BRANCH 2>/dev/null || echo "")
+          git fetch origin production || { echo "Remote branch not found, continuing with build"; echo "skip_build=false" >> $GITHUB_OUTPUT; exit 0; }
+          LATEST_COMMIT=$(git rev-parse origin/production 2>/dev/null || echo "")
           CURRENT_COMMIT=${GITHUB_SHA}
           if [ -n "$LATEST_COMMIT" ] && [ "$LATEST_COMMIT" != "$CURRENT_COMMIT" ]; then
-            echo "Newer commit found on $CURRENT_BRANCH branch. Skipping build."
+            echo "Newer commit found on production branch. Skipping build."
             echo "skip_build=true" >> $GITHUB_OUTPUT
           else
-            echo "This is the latest commit or new branch. Proceeding with build."
+            echo "This is the latest commit. Proceeding with build."
             echo "skip_build=false" >> $GITHUB_OUTPUT
           fi
 
@@ -63,7 +65,7 @@ jobs:
 
       - name: Pull Vercel Environment Information
         if: steps.check_commits.outputs.skip_build != 'true'
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build workspace dependencies
         if: steps.check_commits.outputs.skip_build != 'true'
@@ -71,4 +73,8 @@ jobs:
 
       - name: Build Project Artifacts
         if: steps.check_commits.outputs.skip_build != 'true'
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy Project Artifacts to Vercel
+        if: steps.check_commits.outputs.skip_build != 'true'
+        run: vercel deploy --archive=tgz --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

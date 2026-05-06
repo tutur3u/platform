@@ -17,7 +17,7 @@ const targetApps = [
   ['shortener', '@tuturuuu/shortener'],
   ['tasks', '@tuturuuu/tasks'],
   ['track', '@tuturuuu/track'],
-  ['tulearn', '@tuturuuu/tulearn'],
+  ['learn', '@tuturuuu/learn'],
 ];
 
 const vercelWorkflows = [
@@ -31,7 +31,7 @@ const vercelWorkflows = [
   'shortener',
   'tasks',
   'track',
-  'tulearn',
+  'learn',
 ].flatMap((app) => [
   `vercel-preview-${app}.yaml`,
   `vercel-production-${app}.yaml`,
@@ -72,7 +72,7 @@ function createFixtureRoot() {
       shortener: ['@tuturuuu/vercel'],
       tasks: ['@tuturuuu/internal-api'],
       track: ['@tuturuuu/satellite'],
-      tulearn: ['@tuturuuu/ui'],
+      learn: ['@tuturuuu/ui'],
     };
 
     writePackageJson(rootDir, `apps/${app}`, {

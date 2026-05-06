@@ -1,7 +1,7 @@
 {
   "aiChat": {
     "coachDescription": "Hỏi gợi ý, cách giải thích nhẹ nhàng hơn hoặc một bài quiz nhỏ mà không rời lộ trình học.",
-    "coachTitle": "Huấn luyện viên Tulearn",
+    "coachTitle": "Huấn luyện viên Learn",
     "description": "Một bạn đồng hành học tập thân thiện cho bài học, luyện tập, báo cáo và kế hoạch làm bài.",
     "emptyDescription": "Bắt đầu bằng một câu hỏi trên lớp hoặc chọn gợi ý nhanh. Huấn luyện viên trả lời ngắn gọn, dễ hiểu và tập trung vào việc học.",
     "emptyTitle": "Mình sẽ học gì tiếp theo?",
@@ -32,10 +32,10 @@
     "continueWithGoogle": "Tiếp tục với Google",
     "continueWithMicrosoft": "Tiếp tục với Microsoft",
     "email": "Email",
-    "footerLine": "Dùng cùng một tài khoản Tulearn cho bài học tập trung, chế độ phụ huynh và tiến độ lớp học.",
+    "footerLine": "Dùng cùng một tài khoản Learn cho bài học tập trung, chế độ phụ huynh và tiến độ lớp học.",
     "formSubtitle": "Dùng email và mật khẩu của trường, hoặc yêu cầu mã đăng nhập một lần qua email.",
     "formTitle": "Bắt đầu bài học hôm nay",
-    "heroLead": "Tulearn biến việc học trên lớp thành các vòng luyện tập ngắn, tiến độ dễ thấy và thông tin phù hợp cho phụ huynh mà không đưa học viên quay lại nền tảng quản trị.",
+    "heroLead": "Learn biến việc học trên lớp thành các vòng luyện tập ngắn, tiến độ dễ thấy và thông tin phù hợp cho phụ huynh mà không đưa học viên quay lại nền tảng quản trị.",
     "heroWord1": "Học",
     "heroWord2": "có",
     "heroWord3": "đà",
@@ -59,11 +59,11 @@
     "signalHearts": "Tim",
     "signalPractice": "Luyện tập",
     "signalStreak": "Chuỗi ngày",
-    "socialLoginLead": "Đăng nhập mạng xã hội được xử lý an toàn trên tuturuuu.com rồi quay lại Tulearn.",
+    "socialLoginLead": "Đăng nhập mạng xã hội được xử lý an toàn trên tuturuuu.com rồi quay lại Learn.",
     "startLearning": "Bắt đầu học",
     "submitCode": "Xác minh mã",
     "subtitle": "Luyện tập, bài học, bài tập và tiến độ trong một nơi thân thiện với người học.",
-    "title": "Chào mừng đến Tulearn",
+    "title": "Chào mừng đến Learn",
     "tuturuuuAccount": "Tài khoản Tuturuuu"
   },
   "common": {

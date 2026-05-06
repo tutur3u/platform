@@ -1,7 +1,7 @@
 {
   "aiChat": {
     "coachDescription": "Ask for a hint, a gentler explanation, or a tiny quiz without leaving your learning path.",
-    "coachTitle": "Tulearn coach",
+    "coachTitle": "Learn coach",
     "description": "A friendly study companion for lessons, practice, reports, and assignment planning.",
     "emptyDescription": "Start with a question from class or pick a quick prompt. The coach keeps answers short, kind, and focused on learning.",
     "emptyTitle": "What should we learn next?",
@@ -32,10 +32,10 @@
     "continueWithGoogle": "Continue with Google",
     "continueWithMicrosoft": "Continue with Microsoft",
     "email": "Email",
-    "footerLine": "Use the same Tulearn account for focused lessons, parent views, and classroom progress.",
+    "footerLine": "Use the same Learn account for focused lessons, parent views, and classroom progress.",
     "formSubtitle": "Use your school email and password, or request a one-time email code.",
     "formTitle": "Start today's lesson",
-    "heroLead": "Tulearn turns classroom work into short practice loops, visible progress, and parent-ready insight without sending learners back through the admin platform.",
+    "heroLead": "Learn turns classroom work into short practice loops, visible progress, and parent-ready insight without sending learners back through the admin platform.",
     "heroWord1": "Learn",
     "heroWord2": "with",
     "heroWord3": "momentum",
@@ -59,11 +59,11 @@
     "signalHearts": "Hearts",
     "signalPractice": "Practice",
     "signalStreak": "Day streak",
-    "socialLoginLead": "Social sign-ins are completed securely on tuturuuu.com, then returned to Tulearn.",
+    "socialLoginLead": "Social sign-ins are completed securely on tuturuuu.com, then returned to Learn.",
     "startLearning": "Start learning",
     "submitCode": "Verify code",
     "subtitle": "Practice, lessons, assignments, and progress in one learner-friendly place.",
-    "title": "Welcome to Tulearn",
+    "title": "Welcome to Learn",
     "tuturuuuAccount": "Tuturuuu account"
   },
   "common": {

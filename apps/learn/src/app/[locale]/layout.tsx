@@ -30,10 +30,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return generateCommonMetadata({
     config: {
       description: {
-        en: 'Tulearn helps students and parents follow lessons, practice, assignments, marks, and reports from Tuturuuu education workspaces.',
-        vi: 'Tulearn giúp học sinh và phụ huynh theo dõi bài học, luyện tập, bài tập, điểm và báo cáo từ workspace giáo dục Tuturuuu.',
+        en: 'Learn helps students and parents follow lessons, practice, assignments, marks, and reports from Tuturuuu education workspaces.',
+        vi: 'Learn giúp học sinh và phụ huynh theo dõi bài học, luyện tập, bài tập, điểm và báo cáo từ workspace giáo dục Tuturuuu.',
       },
-      name: 'Tulearn',
+      name: 'Learn',
       ogImage: '/media/og.png',
       url: BASE_URL,
     },

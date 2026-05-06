@@ -281,7 +281,7 @@ export function LoginForm() {
               <BookOpen className="h-5 w-5" />
             </span>
             <div className="leading-none">
-              <span className="block font-semibold text-lg">Tulearn</span>
+              <span className="block font-semibold text-lg">Learn</span>
               <span className="block text-muted-foreground text-xs">
                 {t('auth.poweredByTuturuuu')}
               </span>
