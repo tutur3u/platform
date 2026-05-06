@@ -7,8 +7,10 @@ import {
 } from '@tanstack/react-query';
 import { ArrowLeftRight, Paperclip, Settings2, Wallet } from '@tuturuuu/icons';
 import {
+  deleteWorkspaceStorageObjects,
   listWorkspaceStorageObjects,
   uploadWorkspaceStorageFile,
+  type WorkspaceStorageListItem,
 } from '@tuturuuu/internal-api';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
@@ -402,6 +404,30 @@ export function TransactionForm({
     },
     enabled: !!data?.id,
   });
+
+  const removeExistingAttachmentMutation = useMutation({
+    mutationFn: async (attachment: WorkspaceStorageListItem) => {
+      if (!data?.id) {
+        throw new Error('Missing transaction ID');
+      }
+
+      await deleteWorkspaceStorageObjects(
+        wsId,
+        [joinPath('finance', 'transactions', data.id, attachment.name)],
+        { fetch }
+      );
+
+      return attachment;
+    },
+    onSuccess: async () => {
+      await attachmentQuery.refetch();
+      toast.success(t('transaction-data-table.attachment_delete_success'));
+    },
+    onError: () => {
+      toast.error(t('transaction-data-table.attachment_delete_failed'));
+    },
+  });
+
   const existingAttachments =
     attachmentQuery.data?.pages.flatMap((page) => page.data) ?? [];
   const existingAttachmentsTotal =
@@ -889,6 +915,16 @@ export function TransactionForm({
                 onLoadMoreExisting={() => void attachmentQuery.fetchNextPage()}
                 onChange={setAttachments}
                 onRefreshExisting={() => void attachmentQuery.refetch()}
+                onRemoveExistingAttachment={async (attachment) => {
+                  await removeExistingAttachmentMutation.mutateAsync(
+                    attachment
+                  );
+                }}
+                removingExistingAttachmentName={
+                  removeExistingAttachmentMutation.isPending
+                    ? (removeExistingAttachmentMutation.variables?.name ?? null)
+                    : null
+                }
                 transactionId={data?.id}
                 wsId={wsId}
               />

@@ -11838,6 +11838,8 @@
     "all": "All",
     "amount": "Amount",
     "attachment_count": "{count, plural, =0{No files} one{1 file} other{{count} files}}",
+    "attachment_delete_failed": "Failed to remove attachment",
+    "attachment_delete_success": "Attachment removed",
     "attachment_limit_reached": "Attachment limit reached",
     "attachment_preview_unavailable": "Preview is not available for this file type.",
     "attachment_rejected": "{count, plural, one{1 file was too large. Max {size}.} other{{count} files were too large or over the limit. Max {size} each.}}",

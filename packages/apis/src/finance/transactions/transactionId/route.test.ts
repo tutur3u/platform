@@ -265,6 +265,62 @@ describe('transaction detail route', () => {
     );
   });
 
+  it('runs transaction file cleanup before deleting the transaction row', async () => {
+    const { deleteTransaction } = await import('./route.js');
+    const events: string[] = [];
+    const onBeforeDeleteFiles = vi.fn(async () => {
+      events.push('files');
+    });
+    mocks.deleteEq.mockImplementationOnce(() => {
+      events.push('transaction');
+      return Promise.resolve({ error: null });
+    });
+
+    const response = await deleteTransaction(
+      new Request('http://localhost/api/workspaces/ws-1/transactions/tx-1'),
+      {
+        params: Promise.resolve({
+          transactionId: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      },
+      { onBeforeDeleteFiles }
+    );
+
+    expect(response.status).toBe(200);
+    expect(onBeforeDeleteFiles).toHaveBeenCalledWith({
+      request: expect.any(Request),
+      transactionId: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+      wsId: '00000000-0000-0000-0000-000000000000',
+    });
+    expect(events).toEqual(['files', 'transaction']);
+  });
+
+  it('does not delete the transaction row when file cleanup fails', async () => {
+    const { deleteTransaction } = await import('./route.js');
+
+    const response = await deleteTransaction(
+      new Request('http://localhost/api/workspaces/ws-1/transactions/tx-1'),
+      {
+        params: Promise.resolve({
+          transactionId: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      },
+      {
+        onBeforeDeleteFiles: () => {
+          throw new Error('cleanup failed');
+        },
+      }
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Failed to delete transaction files',
+    });
+    expect(mocks.deleteEq).not.toHaveBeenCalled();
+  });
+
   it('updates transaction tags through sbAdmin tag tables', async () => {
     const { PUT } = await import('./route.js');
 

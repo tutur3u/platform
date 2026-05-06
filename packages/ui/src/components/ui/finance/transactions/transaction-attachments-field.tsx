@@ -10,6 +10,7 @@ import {
   Loader2,
   Paperclip,
   RefreshCw,
+  Trash2,
   Upload,
   Video,
   X,
@@ -31,6 +32,7 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn, formatBytes } from '@tuturuuu/utils/format';
 import { joinPath } from '@tuturuuu/utils/path-helper';
+import { getStorageObjectDisplayName } from '@tuturuuu/utils/storage-display-name';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useId, useRef, useState } from 'react';
@@ -63,6 +65,10 @@ interface TransactionAttachmentsFieldProps {
   onChange: (attachments: TransactionAttachmentDraft[]) => void;
   onLoadMoreExisting?: () => void;
   onRefreshExisting?: () => void;
+  onRemoveExistingAttachment?: (
+    attachment: WorkspaceStorageListItem
+  ) => void | Promise<void>;
+  removingExistingAttachmentName?: string | null;
   transactionId?: string;
   wsId?: string;
 }
@@ -170,17 +176,26 @@ function AttachmentIcon({
 function TransactionAttachmentPreviewDialog({
   attachment,
   onOpenChange,
+  onRemoveAttachment,
   open,
+  removing,
   transactionId,
   wsId,
 }: {
   attachment: WorkspaceStorageListItem | null;
   onOpenChange: (open: boolean) => void;
+  onRemoveAttachment?: (
+    attachment: WorkspaceStorageListItem
+  ) => void | Promise<void>;
   open: boolean;
+  removing?: boolean;
   transactionId?: string;
   wsId?: string;
 }) {
   const t = useTranslations();
+  const attachmentDisplayName = attachment
+    ? getStorageObjectDisplayName(attachment)
+    : t('common.preview');
   const relativePath =
     attachment?.name && transactionId
       ? joinPath('finance', 'transactions', transactionId, attachment.name)
@@ -241,7 +256,7 @@ function TransactionAttachmentPreviewDialog({
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = attachment.name;
+      link.download = attachmentDisplayName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -249,6 +264,17 @@ function TransactionAttachmentPreviewDialog({
     } catch {
       toast.error(t('ws-transactions.failed_to_download_file'));
     }
+  };
+
+  const handleRemove = async () => {
+    if (!attachment || !onRemoveAttachment) {
+      return;
+    }
+
+    try {
+      await onRemoveAttachment(attachment);
+      onOpenChange(false);
+    } catch {}
   };
 
   const renderPreview = () => {
@@ -282,7 +308,7 @@ function TransactionAttachmentPreviewDialog({
         <div className={cn(previewClass, 'p-2')}>
           <Image
             src={signedUrl}
-            alt={attachment?.name ?? t('common.preview')}
+            alt={attachmentDisplayName}
             width={1200}
             height={900}
             unoptimized
@@ -313,7 +339,7 @@ function TransactionAttachmentPreviewDialog({
         <div className={cn(previewClass, 'h-[65vh] p-0')}>
           <iframe
             src={signedUrl}
-            title={attachment?.name ?? t('common.preview')}
+            title={attachmentDisplayName}
             className="h-full w-full"
           />
         </div>
@@ -357,7 +383,7 @@ function TransactionAttachmentPreviewDialog({
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="truncate text-left">
-            {attachment?.name ?? t('common.preview')}
+            {attachmentDisplayName}
           </DialogTitle>
           <DialogDescription className="text-left">
             {attachment ? (
@@ -373,6 +399,21 @@ function TransactionAttachmentPreviewDialog({
         {renderPreview()}
 
         <div className="flex justify-end gap-2">
+          {onRemoveAttachment ? (
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={!attachment || removing}
+              onClick={handleRemove}
+            >
+              {removing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+              {t('transaction-data-table.remove_attachment')}
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="outline"
@@ -411,6 +452,8 @@ export function TransactionAttachmentsField({
   onChange,
   onLoadMoreExisting,
   onRefreshExisting,
+  onRemoveExistingAttachment,
+  removingExistingAttachmentName,
   transactionId,
   wsId,
 }: TransactionAttachmentsFieldProps) {
@@ -608,29 +651,61 @@ export function TransactionAttachmentsField({
             <div className="space-y-2">
               {existingAttachments.map((attachment) => {
                 const size = getAttachmentSize(attachment);
+                const displayName = getStorageObjectDisplayName(attachment);
+                const removing =
+                  removingExistingAttachmentName === attachment.name;
 
                 return (
-                  <button
+                  <div
                     key={attachment.id ?? attachment.name}
-                    type="button"
-                    className="flex w-full items-center gap-3 rounded-md border bg-background px-3 py-2 text-left transition-colors hover:bg-muted/50"
-                    onClick={() => setPreviewAttachment(attachment)}
+                    className="flex w-full items-center gap-2 rounded-md border bg-background px-3 py-2"
                   >
-                    <AttachmentIcon attachment={attachment} />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-sm">
-                        {attachment.name}
-                      </p>
-                      <p className="text-muted-foreground text-xs">
-                        {size !== null
-                          ? formatBytes(size)
-                          : t('transaction-data-table.attachments')}
-                      </p>
-                    </div>
-                    <span className="text-muted-foreground text-xs">
-                      {t('common.preview')}
-                    </span>
-                  </button>
+                    <button
+                      type="button"
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left transition-opacity hover:opacity-80"
+                      disabled={removing}
+                      onClick={() => setPreviewAttachment(attachment)}
+                    >
+                      <AttachmentIcon attachment={attachment} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-sm">
+                          {displayName}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          {size !== null
+                            ? formatBytes(size)
+                            : t('transaction-data-table.attachments')}
+                        </p>
+                      </div>
+                      <span className="text-muted-foreground text-xs">
+                        {t('common.preview')}
+                      </span>
+                    </button>
+                    {onRemoveExistingAttachment ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 text-destructive hover:text-destructive"
+                        disabled={disabled || removing}
+                        onClick={() => {
+                          void Promise.resolve(
+                            onRemoveExistingAttachment(attachment)
+                          ).catch(() => undefined);
+                        }}
+                        title={t('transaction-data-table.remove_attachment')}
+                      >
+                        {removing ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                        <span className="sr-only">
+                          {t('transaction-data-table.remove_attachment')}
+                        </span>
+                      </Button>
+                    ) : null}
+                  </div>
                 );
               })}
 
@@ -675,7 +750,13 @@ export function TransactionAttachmentsField({
             setPreviewAttachment(null);
           }
         }}
+        onRemoveAttachment={onRemoveExistingAttachment}
         open={!!previewAttachment}
+        removing={
+          previewAttachment
+            ? removingExistingAttachmentName === previewAttachment.name
+            : false
+        }
         transactionId={transactionId}
         wsId={wsId}
       />
