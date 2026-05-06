@@ -13,6 +13,8 @@ const placementSchema = z.object({
   personal_board_id: z.guid(),
   personal_list_id: z.guid().nullable().optional(),
   personal_sort_key: z.number().finite().nullable().optional(),
+  previous_task_id: z.guid().nullable().optional(),
+  next_task_id: z.guid().nullable().optional(),
 });
 
 type SourceTaskRow = {
@@ -319,37 +321,20 @@ export const PUT = withSessionAuth<{ taskId: string }>(
       }
     }
 
-    const { data: existingPlacement } = await (sbAdmin as any)
-      .from('task_user_overrides')
-      .select('personal_added_at')
-      .eq('task_id', taskId)
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    const now = new Date().toISOString();
-    const personalAddedAt = existingPlacement?.personal_added_at ?? now;
-    const personalPlacedAt = personalListId ? now : null;
-
-    const { data: savedPlacement, error: saveError } = await (sbAdmin as any)
-      .from('task_user_overrides')
-      .upsert(
-        {
-          task_id: taskId,
-          user_id: user.id,
-          personal_board_id,
-          personal_list_id: personalListId,
-          personal_sort_key: personalListId
-            ? (personal_sort_key ?? null)
-            : null,
-          personal_added_at: personalAddedAt,
-          personal_placed_at: personalPlacedAt,
-        },
-        { onConflict: 'task_id,user_id' }
-      )
-      .select(
-        'personal_board_id, personal_list_id, personal_sort_key, personal_added_at, personal_placed_at'
-      )
-      .single();
+    const { data: placementRows, error: saveError } = await (
+      sbAdmin as any
+    ).rpc('upsert_personal_task_placement', {
+      p_task_id: taskId,
+      p_user_id: user.id,
+      p_personal_board_id: personal_board_id,
+      p_personal_list_id: personalListId,
+      p_personal_sort_key: personal_sort_key ?? null,
+      p_previous_task_id: parsed.data.previous_task_id ?? null,
+      p_next_task_id: parsed.data.next_task_id ?? null,
+    });
+    const savedPlacement = Array.isArray(placementRows)
+      ? placementRows[0]
+      : placementRows;
 
     if (saveError || !savedPlacement) {
       return NextResponse.json(

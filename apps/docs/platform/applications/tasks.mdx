@@ -267,6 +267,12 @@ Per-user placement lives on `task_user_overrides` with `personal_board_id`,
 `personal_list_id`, `personal_sort_key`, `personal_added_at`, and
 `personal_placed_at`.
 
+Placement writes must go through `upsert_personal_task_placement`. Drag clients
+should pass the previous and next visible task ids when available, and the RPC
+uses `calculate_personal_task_placement_sort_key` to compute a sort key against
+the combined personal list of native personal tasks and placed external task
+references.
+
 - `personal_board_id` points to the destination personal board after an
   external task is planned there.
 - `personal_list_id` points to the real personal list that owns the planning

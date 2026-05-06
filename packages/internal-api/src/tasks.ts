@@ -82,6 +82,8 @@ export interface CurrentUserTaskPersonalPlacementPayload {
   personal_board_id: string;
   personal_list_id?: string | null;
   personal_sort_key?: number | null;
+  previous_task_id?: string | null;
+  next_task_id?: string | null;
 }
 
 export interface CurrentUserTaskPersonalPlacementResponse {

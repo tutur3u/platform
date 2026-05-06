@@ -26270,6 +26270,17 @@ export type Database = {
         };
         Returns: string;
       };
+      calculate_personal_task_placement_sort_key: {
+        Args: {
+          p_next_task_id?: string;
+          p_personal_board_id: string;
+          p_personal_list_id: string;
+          p_previous_task_id?: string;
+          p_requested_sort_key?: number;
+          p_user_id: string;
+        };
+        Returns: number;
+      };
       calculate_productivity_score: {
         Args: { category_color: string; duration_seconds: number };
         Returns: number;
@@ -30043,6 +30054,24 @@ export type Database = {
       upsert_calendar_events_and_count: {
         Args: { events: Json };
         Returns: Json;
+      };
+      upsert_personal_task_placement: {
+        Args: {
+          p_next_task_id?: string;
+          p_personal_board_id: string;
+          p_personal_list_id?: string;
+          p_personal_sort_key?: number;
+          p_previous_task_id?: string;
+          p_task_id: string;
+          p_user_id: string;
+        };
+        Returns: {
+          personal_added_at: string;
+          personal_board_id: string;
+          personal_list_id: string;
+          personal_placed_at: string;
+          personal_sort_key: number;
+        }[];
       };
       upsert_realtime_log_aggregations: {
         Args: { p_logs: Json };

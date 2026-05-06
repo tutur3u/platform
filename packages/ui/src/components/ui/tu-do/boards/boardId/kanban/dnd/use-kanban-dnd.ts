@@ -55,6 +55,22 @@ function usesPersonalPlacement(task: Task) {
   );
 }
 
+function getNeighborTaskIds(tasks: Task[], taskId: string) {
+  const taskIndex = tasks.findIndex((task) => task.id === taskId);
+
+  if (taskIndex === -1) {
+    return {
+      previousTaskId: null,
+      nextTaskId: null,
+    };
+  }
+
+  return {
+    previousTaskId: tasks[taskIndex - 1]?.id ?? null,
+    nextTaskId: tasks[taskIndex + 1]?.id ?? null,
+  };
+}
+
 export function useKanbanDnd({
   wsId,
   boardId,
@@ -99,7 +115,11 @@ export function useKanbanDnd({
     async (
       task: Task,
       targetListId: string,
-      newSortKey: number | null
+      newSortKey: number | null,
+      order?: {
+        previousTaskId?: string | null;
+        nextTaskId?: string | null;
+      }
     ): Promise<Task> => {
       if (!boardId) {
         throw new Error('Board ID is required');
@@ -143,6 +163,8 @@ export function useKanbanDnd({
               personal_board_id: targetBoardId,
               personal_list_id: targetListId,
               personal_sort_key: newSortKey,
+              previous_task_id: order?.previousTaskId ?? null,
+              next_task_id: order?.nextTaskId ?? null,
             });
 
         if (isStagingTarget) {
@@ -155,8 +177,10 @@ export function useKanbanDnd({
           assignees: task.assignees,
           labels: task.labels,
           projects: task.projects,
-          list_id: nextTask.list_id,
-          sort_key: nextTask.sort_key,
+          list_id: response?.task?.list_id ?? nextTask.list_id,
+          sort_key: response?.task?.sort_key ?? nextTask.sort_key,
+          personal_sort_key:
+            response?.task?.personal_sort_key ?? nextTask.personal_sort_key,
           is_personal_external_default: isStagingTarget,
         } as Task;
 
@@ -572,12 +596,22 @@ export function useKanbanDnd({
 
       // Calculate new sort_key based on drop location
       let newSortKey: number | null;
+      let personalPlacementOrder:
+        | {
+            previousTaskId: string | null;
+            nextTaskId: string | null;
+          }
+        | undefined;
 
       if (targetIsExternalStaging) {
         newSortKey = null;
       } else if (isCompletionList) {
         try {
           if (targetListTasks.length === 0) {
+            personalPlacementOrder = {
+              previousTaskId: null,
+              nextTaskId: null,
+            };
             newSortKey = await calculateSortKeyWithRetry(
               null,
               null,
@@ -586,6 +620,10 @@ export function useKanbanDnd({
             );
           } else {
             const firstTask = targetListTasks[0];
+            personalPlacementOrder = {
+              previousTaskId: null,
+              nextTaskId: firstTask?.id ?? null,
+            };
             newSortKey = await calculateSortKeyWithRetry(
               null,
               firstTask?.sort_key ?? null,
@@ -631,6 +669,10 @@ export function useKanbanDnd({
         const newIndex = reorderedTasks.findIndex(
           (t) => t.id === activeTask.id
         );
+        personalPlacementOrder = getNeighborTaskIds(
+          reorderedTasks,
+          activeTask.id
+        );
 
         try {
           if (reorderedTasks.length === 1) {
@@ -674,6 +716,10 @@ export function useKanbanDnd({
       } else {
         try {
           if (targetListTasks.length === 0) {
+            personalPlacementOrder = {
+              previousTaskId: null,
+              nextTaskId: null,
+            };
             newSortKey = await calculateSortKeyWithRetry(
               null,
               null,
@@ -682,6 +728,10 @@ export function useKanbanDnd({
             );
           } else if (overType === 'Column') {
             const firstTask = targetListTasks[0];
+            personalPlacementOrder = {
+              previousTaskId: null,
+              nextTaskId: firstTask?.id ?? null,
+            };
             newSortKey = await calculateSortKeyWithRetry(
               null,
               firstTask?.sort_key ?? null,
@@ -690,6 +740,10 @@ export function useKanbanDnd({
             );
           } else {
             const lastTask = targetListTasks[targetListTasks.length - 1];
+            personalPlacementOrder = {
+              previousTaskId: lastTask?.id ?? null,
+              nextTaskId: null,
+            };
             newSortKey = await calculateSortKeyWithRetry(
               lastTask?.sort_key ?? null,
               null,
@@ -934,7 +988,8 @@ export function useKanbanDnd({
               await movePersonalPlacementTask(
                 activeTask,
                 targetListId,
-                newSortKey
+                newSortKey,
+                personalPlacementOrder
               );
             } catch (error) {
               console.error('Failed to update personal task placement:', error);

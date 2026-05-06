@@ -5,29 +5,18 @@ const TASK_ID = '11111111-1111-4111-8111-111111111111';
 const SOURCE_WS_ID = '22222222-2222-4222-8222-222222222222';
 const PERSONAL_WS_ID = '33333333-3333-4333-8333-333333333333';
 const PERSONAL_BOARD_ID = '44444444-4444-4444-8444-444444444444';
+const PERSONAL_LIST_ID = '77777777-7777-4777-8777-777777777777';
+const PREVIOUS_TASK_ID = '88888888-8888-4888-8888-888888888888';
+const NEXT_TASK_ID = '99999999-9999-4999-8999-999999999999';
 
 const mocks = vi.hoisted(() => {
   const sourceTaskMaybeSingle = vi.fn();
   const targetBoardMaybeSingle = vi.fn();
-  const existingPlacementMaybeSingle = vi.fn();
-  const savedPlacementSingle = vi.fn();
-  const upsertPlacement = vi.fn(() => ({
-    select: vi.fn(() => ({
-      single: savedPlacementSingle,
-    })),
-  }));
-
-  const overridesEqUser = vi.fn(() => ({
-    maybeSingle: existingPlacementMaybeSingle,
-  }));
-  const overridesEqTask = vi.fn(() => ({
-    eq: overridesEqUser,
-  }));
-  const overridesSelect = vi.fn(() => ({
-    eq: overridesEqTask,
-  }));
+  const targetListMaybeSingle = vi.fn();
+  const placementRpc = vi.fn();
 
   const adminClient = {
+    rpc: placementRpc,
     from: vi.fn((table: string) => {
       if (table === 'tasks') {
         return {
@@ -51,10 +40,23 @@ const mocks = vi.hoisted(() => {
         };
       }
 
+      if (table === 'task_lists') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              maybeSingle: targetListMaybeSingle,
+            })),
+          })),
+        };
+      }
+
       if (table === 'task_user_overrides') {
         return {
-          select: overridesSelect,
-          upsert: upsertPlacement,
+          update: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(),
+            })),
+          })),
         };
       }
 
@@ -66,11 +68,10 @@ const mocks = vi.hoisted(() => {
 
   return {
     adminClient,
-    existingPlacementMaybeSingle,
-    savedPlacementSingle,
+    placementRpc,
     sourceTaskMaybeSingle,
     targetBoardMaybeSingle,
-    upsertPlacement,
+    targetListMaybeSingle,
     verifyWorkspaceMembershipType,
   };
 });
@@ -86,6 +87,9 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/utils/task-helper', () => ({
   getPersonalExternalStagingListId: (boardId: string) =>
     `personal-external-staging:${boardId}`,
+  isPersonalExternalStagingListId: (listId: string | null | undefined) =>
+    typeof listId === 'string' &&
+    listId.startsWith('personal-external-staging:'),
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -145,11 +149,11 @@ describe('current-user task personal-placement route', () => {
   beforeEach(() => {
     vi.resetModules();
     mocks.adminClient.from.mockClear();
+    mocks.adminClient.rpc.mockReset();
     mocks.sourceTaskMaybeSingle.mockReset();
     mocks.targetBoardMaybeSingle.mockReset();
-    mocks.existingPlacementMaybeSingle.mockReset();
-    mocks.savedPlacementSingle.mockReset();
-    mocks.upsertPlacement.mockClear();
+    mocks.targetListMaybeSingle.mockReset();
+    mocks.placementRpc.mockReset();
     mocks.verifyWorkspaceMembershipType.mockReset();
   });
 
@@ -172,18 +176,16 @@ describe('current-user task personal-placement route', () => {
       },
       error: null,
     });
-    mocks.existingPlacementMaybeSingle.mockResolvedValue({
-      data: null,
-      error: null,
-    });
-    mocks.savedPlacementSingle.mockResolvedValue({
-      data: {
-        personal_board_id: PERSONAL_BOARD_ID,
-        personal_list_id: null,
-        personal_sort_key: null,
-        personal_added_at: '2026-05-06T01:00:00.000Z',
-        personal_placed_at: null,
-      },
+    mocks.placementRpc.mockResolvedValue({
+      data: [
+        {
+          personal_board_id: PERSONAL_BOARD_ID,
+          personal_list_id: null,
+          personal_sort_key: null,
+          personal_added_at: '2026-05-06T01:00:00.000Z',
+          personal_placed_at: null,
+        },
+      ],
       error: null,
     });
 
@@ -209,15 +211,17 @@ describe('current-user task personal-placement route', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(mocks.upsertPlacement).toHaveBeenCalledWith(
-      expect.objectContaining({
-        task_id: TASK_ID,
-        user_id: 'user-1',
-        personal_board_id: PERSONAL_BOARD_ID,
-        personal_list_id: null,
-        personal_sort_key: null,
-      }),
-      { onConflict: 'task_id,user_id' }
+    expect(mocks.placementRpc).toHaveBeenCalledWith(
+      'upsert_personal_task_placement',
+      {
+        p_task_id: TASK_ID,
+        p_user_id: 'user-1',
+        p_personal_board_id: PERSONAL_BOARD_ID,
+        p_personal_list_id: null,
+        p_personal_sort_key: null,
+        p_previous_task_id: null,
+        p_next_task_id: null,
+      }
     );
     const payload = await response.json();
     expect(payload.task).toEqual(
@@ -226,6 +230,95 @@ describe('current-user task personal-placement route', () => {
         is_personal_external: true,
         list_id: `personal-external-staging:${PERSONAL_BOARD_ID}`,
         source_board_id: '66666666-6666-4666-8666-666666666666',
+        source_workspace_id: SOURCE_WS_ID,
+      })
+    );
+  });
+
+  it('places an external task into a personal list through the placement RPC', async () => {
+    mocks.sourceTaskMaybeSingle.mockResolvedValue({
+      data: sourceTaskRow(),
+      error: null,
+    });
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
+    mocks.targetBoardMaybeSingle.mockResolvedValue({
+      data: {
+        id: PERSONAL_BOARD_ID,
+        ws_id: PERSONAL_WS_ID,
+        deleted_at: null,
+        archived_at: null,
+        workspaces: {
+          id: PERSONAL_WS_ID,
+          personal: true,
+        },
+      },
+      error: null,
+    });
+    mocks.targetListMaybeSingle.mockResolvedValue({
+      data: {
+        id: PERSONAL_LIST_ID,
+        board_id: PERSONAL_BOARD_ID,
+        deleted: false,
+      },
+      error: null,
+    });
+    mocks.placementRpc.mockResolvedValue({
+      data: [
+        {
+          personal_board_id: PERSONAL_BOARD_ID,
+          personal_list_id: PERSONAL_LIST_ID,
+          personal_sort_key: 1_500_000,
+          personal_added_at: '2026-05-06T01:00:00.000Z',
+          personal_placed_at: '2026-05-06T02:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    const { PUT } = await import(
+      '@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route'
+    );
+    const response = await (PUT as PlacementRouteHandler)(
+      new NextRequest(
+        `http://localhost/api/v1/users/me/tasks/${TASK_ID}/personal-placement`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            personal_board_id: PERSONAL_BOARD_ID,
+            personal_list_id: PERSONAL_LIST_ID,
+            previous_task_id: PREVIOUS_TASK_ID,
+            next_task_id: NEXT_TASK_ID,
+          }),
+        }
+      ),
+      {
+        user: { id: 'user-1' },
+        supabase: {},
+      },
+      { taskId: TASK_ID }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.placementRpc).toHaveBeenCalledWith(
+      'upsert_personal_task_placement',
+      {
+        p_task_id: TASK_ID,
+        p_user_id: 'user-1',
+        p_personal_board_id: PERSONAL_BOARD_ID,
+        p_personal_list_id: PERSONAL_LIST_ID,
+        p_personal_sort_key: null,
+        p_previous_task_id: PREVIOUS_TASK_ID,
+        p_next_task_id: NEXT_TASK_ID,
+      }
+    );
+    const payload = await response.json();
+    expect(payload.task).toEqual(
+      expect.objectContaining({
+        id: TASK_ID,
+        is_personal_external: true,
+        list_id: PERSONAL_LIST_ID,
+        personal_list_id: PERSONAL_LIST_ID,
+        sort_key: 1_500_000,
         source_workspace_id: SOURCE_WS_ID,
       })
     );
@@ -275,6 +368,6 @@ describe('current-user task personal-placement route', () => {
     await expect(response.json()).resolves.toEqual({
       error: 'Destination board must be personal',
     });
-    expect(mocks.upsertPlacement).not.toHaveBeenCalled();
+    expect(mocks.placementRpc).not.toHaveBeenCalled();
   });
 });
