@@ -398,6 +398,8 @@ export {
   type TulearnRole,
   type TulearnStudentSummary,
   type TulearnWorkspaceSummary,
+  type UpdateTulearnProfilePayload,
+  updateTulearnProfile,
 } from './tulearn';
 export {
   getNextWorkspaceUserGroupsPageParam,
