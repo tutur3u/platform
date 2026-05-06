@@ -57,18 +57,13 @@ function getCanonicalPublicRedirect(request: NextRequest) {
   const pathLocale = getPathLocale(request.nextUrl.pathname);
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
 
-  if (!unlocalizedPath.startsWith('/login')) return null;
+  if (unlocalizedPath !== '/') return null;
 
   const url = new URL(request.url);
   let changed = false;
 
   if (pathLocale === defaultLocale) {
-    url.pathname = unlocalizedPath;
-    changed = true;
-  }
-
-  if (url.searchParams.get('next') === '/') {
-    url.searchParams.delete('next');
+    url.pathname = '/';
     changed = true;
   }
 
@@ -78,7 +73,7 @@ function getCanonicalPublicRedirect(request: NextRequest) {
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
     const guardResponse = await guardApiProxyRequest(request, {
-      prefixBase: 'proxy:learn:api',
+      prefixBase: 'proxy:teach:api',
     });
     return guardResponse ?? NextResponse.next();
   }
@@ -106,7 +101,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
   }
 
-  return intlMiddleware(request);
+  const response = intlMiddleware(request);
+  response.cookies.set(LOCALE_COOKIE_NAME, getPreferredLocale(request));
+  return response;
 }
 
 export const config = {

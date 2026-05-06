@@ -26,8 +26,8 @@ export async function PATCH(request: NextRequest) {
     email: parsed.data.email,
     data: {
       display_name: parsed.data.displayName,
-      auth_client: 'tulearn',
-      origin: 'TULEARN',
+      auth_client: 'learn',
+      origin: 'LEARN',
     },
   });
 

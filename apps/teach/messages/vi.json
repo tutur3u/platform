@@ -1,0 +1,29 @@
+{
+  "teach": {
+    "byline": "bởi Tuturuuu",
+    "familyBody": "Xuất bản ghi chú bàn giao dễ hiểu bên cạnh tiến độ Learn, chế độ phụ huynh và hồ sơ workspace trung tâm.",
+    "familyTitle": "Bàn giao không cần thêm cổng riêng",
+    "footer": "Teach giữ vai trò gọn nhẹ: lên kế hoạch trong ngữ cảnh, quản lý trên Tuturuuu và đưa học viên sang Learn.",
+    "handoffBody": "Mở bản xem trước cho học viên với cùng ngữ cảnh workspace giáo dục thay vì đoán học viên sẽ thấy gì.",
+    "handoffTitle": "Sẵn sàng xem trước Learn",
+    "heroLead": "Teach là bề mặt đồng hành cho giáo viên lên kế hoạch vòng học, đọc tín hiệu lớp học và quay lại nền tảng Tuturuuu khi cần chỉnh dữ liệu.",
+    "heroPanelBody": "Một lối vào dành cho giáo viên, trong khi dữ liệu giáo dục, xác thực và vận hành workspace vẫn thuộc nền tảng.",
+    "heroPanelTitle": "Không nhân đôi hệ quản trị",
+    "heroWord1": "Dạy",
+    "heroWord2": "có",
+    "heroWord3": "tín hiệu",
+    "learn": "Learn",
+    "loopTitle": "Lên kế hoạch, đọc tín hiệu, bàn giao.",
+    "openPlatform": "Mở nền tảng",
+    "planBody": "Phác thảo vòng học tiếp theo, rồi mở apps/web để xử lý dữ liệu workspace thật.",
+    "planTitle": "Lên kế hoạch vòng học",
+    "platform": "Nền tảng",
+    "previewLearn": "Xem trước Learn",
+    "signalBody": "Tập trung vào điều cần giáo viên xử lý, không tạo thêm một bản sao dashboard.",
+    "signalTitle": "Đọc tín hiệu",
+    "studioBody": "Tập hợp mục tiêu bài học, trọng tâm luyện tập và nhịp ôn trước khi mở workspace giáo dục đầy đủ của Tuturuuu.",
+    "studioTitle": "Studio lớp học",
+    "syncBody": "Teach chuyển tiếp API được bảo vệ về apps/web để quyền sở hữu workspace luôn tập trung.",
+    "syncTitle": "Hoạt động qua nền tảng"
+  }
+}

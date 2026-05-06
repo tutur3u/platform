@@ -21,6 +21,16 @@ const DOMAINS = {
     href: DEV_MODE ? 'http://localhost:7805' : 'https://nova.ai.vn',
     logo: '/media/logos/nova/nova-transparent.png',
   },
+  LEARN: {
+    name: 'Learn',
+    href: DEV_MODE ? 'http://localhost:7812' : 'https://learn.tuturuuu.com',
+    logo: TUTURUUU_LOGO_URL,
+  },
+  TEACH: {
+    name: 'Teach',
+    href: DEV_MODE ? 'http://localhost:7813' : 'https://teach.tuturuuu.com',
+    logo: TUTURUUU_LOGO_URL,
+  },
 } as const;
 
 interface LoginProps {

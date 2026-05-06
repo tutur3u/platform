@@ -1,4 +1,4 @@
-import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
+import { mapUrlToApp } from '@tuturuuu/auth/cross-app';
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH, MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
@@ -140,33 +140,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     if (validated) {
       if (validated.isExternal && validated.targetApp) {
-        // External app - generate cross-app token and redirect
-        const token = await generateCrossAppToken(
-          supabase,
-          validated.targetApp,
-          'platform'
-        );
-
-        if (token) {
-          const redirectUrl = new URL(validated.url);
-          redirectUrl.searchParams.set('token', token);
-          redirectUrl.searchParams.set('originApp', 'platform');
-          redirectUrl.searchParams.set('targetApp', validated.targetApp);
-
-          console.log(
-            '[auth/callback] Cross-app redirect to:',
-            validated.targetApp
-          );
-          return NextResponse.redirect(redirectUrl);
-        }
-
-        // Failed to generate token - redirect to login page of the external app
-        // so the user can try logging in directly there
-        console.error(
-          '[auth/callback] Failed to generate cross-app token for:',
-          validated.targetApp
-        );
-        return NextResponse.redirect(new URL(validated.url));
+        // External app - return to the login page first so the user confirms
+        // the active platform account before a cross-app token is generated.
+        const loginUrl = new URL('/login', requestUrl.origin);
+        loginUrl.searchParams.set('returnUrl', validated.url);
+        return NextResponse.redirect(loginUrl);
       }
 
       // Same-origin URL - redirect directly

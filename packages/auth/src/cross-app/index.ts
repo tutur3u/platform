@@ -176,21 +176,21 @@ export async function revokeAllCrossAppTokens(
  */
 export function mapUrlToApp(url: string): string | null {
   const decodedUrl = decodeURIComponent(url);
+  let parsedUrl: URL;
 
   try {
-    new URL(decodedUrl);
+    parsedUrl = new URL(decodedUrl);
   } catch {
     console.error('Invalid URL format:', decodedUrl);
     return null;
   }
 
-  const noTrailingSlash = decodedUrl.replace(/\/$/, '');
-  const appIdentifier = APP_DOMAIN_MAP.find((domain) =>
-    noTrailingSlash.startsWith(domain.url)
+  const appIdentifier = APP_DOMAIN_MAP.find(
+    (domain) => new URL(domain.url).origin === parsedUrl.origin
   )?.name;
 
   if (!appIdentifier) {
-    console.warn('No app identifier found for URL:', noTrailingSlash);
+    console.warn('No app identifier found for URL:', parsedUrl.origin);
   }
 
   return appIdentifier || null;

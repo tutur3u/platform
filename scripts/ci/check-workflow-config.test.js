@@ -16,6 +16,7 @@ const targetApps = [
   ['rewise', '@tuturuuu/rewise'],
   ['shortener', '@tuturuuu/shortener'],
   ['tasks', '@tuturuuu/tasks'],
+  ['teach', '@tuturuuu/teach'],
   ['track', '@tuturuuu/track'],
   ['learn', '@tuturuuu/learn'],
 ];
@@ -30,6 +31,7 @@ const vercelWorkflows = [
   'rewise',
   'shortener',
   'tasks',
+  'teach',
   'track',
   'learn',
 ].flatMap((app) => [
@@ -71,6 +73,7 @@ function createFixtureRoot() {
       rewise: ['@tuturuuu/satellite'],
       shortener: ['@tuturuuu/vercel'],
       tasks: ['@tuturuuu/internal-api'],
+      teach: ['@tuturuuu/ui'],
       track: ['@tuturuuu/satellite'],
       learn: ['@tuturuuu/ui'],
     };

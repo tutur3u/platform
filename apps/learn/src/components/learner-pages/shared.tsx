@@ -108,10 +108,10 @@ export function LoadingState() {
   const t = useTranslations();
   return (
     <div className="grid grid-flow-dense gap-3 md:grid-cols-6">
-      <div className="h-64 animate-pulse rounded-[2rem] border border-border bg-card md:col-span-3 md:row-span-2" />
-      <div className="h-32 animate-pulse rounded-[2rem] border border-border bg-card md:col-span-3" />
-      <div className="h-32 animate-pulse rounded-[2rem] border border-border bg-card md:col-span-2" />
-      <div className="h-32 animate-pulse rounded-[2rem] border border-border bg-card md:col-span-1" />
+      <div className="h-64 animate-pulse border-2 border-foreground bg-card shadow-[6px_6px_0_var(--foreground)] md:col-span-3 md:row-span-2" />
+      <div className="h-32 animate-pulse border-2 border-foreground bg-card shadow-[5px_5px_0_var(--foreground)] md:col-span-3" />
+      <div className="h-32 animate-pulse border-2 border-foreground bg-card shadow-[5px_5px_0_var(--foreground)] md:col-span-2" />
+      <div className="h-32 animate-pulse border-2 border-foreground bg-card shadow-[5px_5px_0_var(--foreground)] md:col-span-1" />
       <span className="sr-only">{t('common.loading')}</span>
     </div>
   );
@@ -125,8 +125,8 @@ export function EmptyState({
   label: string;
 }) {
   return (
-    <div className="rounded-[2rem] border border-dynamic-green/30 border-dashed bg-dynamic-green/10 p-8 text-center">
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-background text-dynamic-green shadow-sm">
+    <div className="border-2 border-foreground border-dashed bg-dynamic-green/10 p-8 text-center shadow-[7px_7px_0_var(--foreground)]">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center border-2 border-foreground bg-background text-dynamic-green shadow-[4px_4px_0_var(--foreground)]">
         <Sparkles className="h-7 w-7" />
       </div>
       <p className="mx-auto max-w-md text-muted-foreground leading-7">
@@ -150,8 +150,8 @@ export function Section({
 }) {
   return (
     <div className="space-y-8" ref={refValue}>
-      <section className="rounded-[2rem] border border-border bg-background p-6 shadow-sm md:p-8">
-        <h1 className="max-w-5xl text-balance font-bold text-[clamp(2.5rem,5vw,4.75rem)] leading-none tracking-normal">
+      <section className="border-2 border-foreground bg-background p-6 shadow-[8px_8px_0_var(--foreground)] md:p-8">
+        <h1 className="max-w-5xl text-balance font-black text-[clamp(2.5rem,5vw,4.75rem)] leading-none tracking-normal">
           {title}
         </h1>
         {description ? (

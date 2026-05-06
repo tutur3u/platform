@@ -1,0 +1,29 @@
+{
+  "teach": {
+    "byline": "by Tuturuuu",
+    "familyBody": "Publish handoff notes that make sense beside Learn progress, parent views, and the central workspace record.",
+    "familyTitle": "Handoff without duplicate portals",
+    "footer": "Teach stays light: plan in context, manage in Tuturuuu, and send learners to Learn.",
+    "handoffBody": "Open learner previews with the same education workspace context instead of guessing what students will see.",
+    "handoffTitle": "Learner-preview ready",
+    "heroLead": "Teach is the companion surface for educators who plan class loops, review classroom signals, and jump back to the Tuturuuu platform when records need to change.",
+    "heroPanelBody": "A teacher-first front door that keeps actual education data, authentication, and workspace operations in the platform.",
+    "heroPanelTitle": "No duplicate admin stack",
+    "heroWord1": "Teach",
+    "heroWord2": "with",
+    "heroWord3": "signal",
+    "learn": "Learn",
+    "loopTitle": "Plan, signal, hand off.",
+    "openPlatform": "Open platform",
+    "planBody": "Sketch the next class loop, then jump into apps/web for the real workspace objects.",
+    "planTitle": "Plan the loop",
+    "platform": "Platform",
+    "previewLearn": "Preview Learn",
+    "signalBody": "Keep attention on what needs teaching action, not another dashboard copy.",
+    "signalTitle": "Read the signal",
+    "studioBody": "Collect lesson intent, practice focus, and review rhythm before opening the full Tuturuuu education workspace.",
+    "studioTitle": "Classroom studio",
+    "syncBody": "Teach forwards protected API traffic to apps/web so workspace ownership stays centralized.",
+    "syncTitle": "Works through the platform"
+  }
+}

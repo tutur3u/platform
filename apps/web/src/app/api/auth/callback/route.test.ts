@@ -4,7 +4,6 @@ import { GET } from './route';
 
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
-  generateCrossAppToken: vi.fn(),
   mapUrlToApp: vi.fn(),
 }));
 
@@ -15,9 +14,6 @@ vi.mock('@tuturuuu/auth/cross-app', async () => {
 
   return {
     ...actual,
-    generateCrossAppToken: (
-      ...args: Parameters<typeof mocks.generateCrossAppToken>
-    ) => mocks.generateCrossAppToken(...args),
     mapUrlToApp: (...args: Parameters<typeof mocks.mapUrlToApp>) =>
       mocks.mapUrlToApp(...args),
   };
@@ -36,7 +32,6 @@ describe('auth callback route', () => {
         exchangeCodeForSession: vi.fn().mockResolvedValue(undefined),
       },
     });
-    mocks.generateCrossAppToken.mockResolvedValue('cross-app-token');
     mocks.mapUrlToApp.mockReturnValue(null);
   });
 
@@ -55,7 +50,7 @@ describe('auth callback route', () => {
     );
   });
 
-  it('keeps trusted external app returnUrl values intact', async () => {
+  it('routes trusted external app returnUrl values through login confirmation', async () => {
     mocks.mapUrlToApp.mockReturnValue('mail');
 
     const externalReturnUrl = encodeURIComponent('https://mail.tuturuuu.com');
@@ -66,7 +61,7 @@ describe('auth callback route', () => {
     );
 
     expect(response.headers.get('location')).toBe(
-      'https://mail.tuturuuu.com/?token=cross-app-token&originApp=platform&targetApp=mail'
+      'http://localhost/login?returnUrl=https%3A%2F%2Fmail.tuturuuu.com'
     );
   });
 });

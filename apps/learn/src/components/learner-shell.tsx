@@ -71,12 +71,12 @@ export function LearnerShell({
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-muted/25">
-      <aside className="fixed inset-x-0 bottom-0 z-20 border-border border-t bg-background/95 shadow-2xl backdrop-blur-xl md:inset-y-4 md:right-auto md:left-4 md:w-24 md:rounded-[2rem] md:border">
+    <div className="min-h-screen overflow-x-hidden bg-dynamic-yellow/10">
+      <aside className="fixed inset-x-0 bottom-0 z-20 border-foreground border-t-2 bg-background shadow-[0_-6px_0_var(--foreground)] md:inset-y-4 md:right-auto md:left-4 md:w-24 md:border-2 md:shadow-[7px_7px_0_var(--foreground)]">
         <div className="hidden h-24 items-center justify-center md:flex">
-          <div className="relative flex h-14 w-14 items-center justify-center rounded-[1.35rem] bg-dynamic-green text-primary-foreground shadow-sm">
+          <div className="relative flex h-14 w-14 items-center justify-center border-2 border-foreground bg-dynamic-yellow text-foreground shadow-[4px_4px_0_var(--foreground)]">
             <GraduationCap className="h-7 w-7" />
-            <span className="absolute -right-1 -bottom-1 flex h-5 w-5 items-center justify-center rounded-full border border-background bg-dynamic-orange text-primary-foreground">
+            <span className="absolute -right-2 -bottom-2 flex h-6 w-6 items-center justify-center border-2 border-foreground bg-dynamic-orange text-primary-foreground">
               <Sparkles className="h-3 w-3" />
             </span>
           </div>
@@ -98,9 +98,9 @@ export function LearnerShell({
                     <Link
                       aria-label={label}
                       className={cn(
-                        'group flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl text-muted-foreground transition duration-200 hover:-translate-y-0.5 hover:bg-dynamic-green/10 hover:text-dynamic-green md:h-16',
+                        'group flex h-14 min-w-0 flex-col items-center justify-center gap-1 border-2 border-transparent text-muted-foreground transition duration-200 hover:-translate-y-0.5 hover:border-foreground hover:bg-dynamic-yellow/15 hover:text-foreground md:h-16',
                         isActive &&
-                          'bg-dynamic-green text-primary-foreground shadow-sm hover:bg-dynamic-green hover:text-primary-foreground'
+                          'border-foreground bg-dynamic-yellow text-foreground shadow-[4px_4px_0_var(--foreground)] hover:bg-dynamic-yellow hover:text-foreground'
                       )}
                       href={href}
                     >
@@ -111,7 +111,7 @@ export function LearnerShell({
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent
-                    className="hidden rounded-2xl border border-dynamic-green/30 bg-dynamic-green/10 px-3 py-2 font-semibold text-dynamic-green text-xs shadow-xl backdrop-blur-xl md:block"
+                    className="hidden rounded-none border-2 border-foreground bg-background px-3 py-2 font-black text-foreground text-xs shadow-[4px_4px_0_var(--foreground)] md:block"
                     side="right"
                     sideOffset={12}
                   >
@@ -125,9 +125,9 @@ export function LearnerShell({
       </aside>
       <main className="min-h-screen pb-44 md:pb-8 md:pl-32">
         <header className="sticky top-0 z-10 px-4 py-3 md:px-8 md:pt-5">
-          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 rounded-[1.75rem] border border-border/70 bg-background/90 p-3 shadow-sm backdrop-blur-xl">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 border-2 border-foreground bg-background p-3 shadow-[7px_7px_0_var(--foreground)]">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-dynamic-green/15 text-dynamic-green">
+              <div className="flex h-12 w-12 items-center justify-center border-2 border-foreground bg-dynamic-yellow text-foreground shadow-[3px_3px_0_var(--foreground)]">
                 <Rocket className="h-6 w-6" />
               </div>
               <div>
@@ -142,7 +142,7 @@ export function LearnerShell({
                 <span className="sr-only">{t('workspace.switcher')}</span>
                 <select
                   aria-label={t('workspace.switcher')}
-                  className="h-11 min-w-40 rounded-2xl border border-border bg-background px-4 font-medium text-sm shadow-sm"
+                  className="h-11 min-w-40 rounded-none border-2 border-foreground bg-background px-4 font-bold text-sm shadow-[3px_3px_0_var(--foreground)]"
                   onChange={(event) => router.push(`/${event.target.value}`)}
                   value={wsId}
                 >
@@ -160,7 +160,7 @@ export function LearnerShell({
                   </span>
                   <select
                     aria-label={t('settings.linkedStudents')}
-                    className="h-11 min-w-40 rounded-2xl border border-dynamic-blue/25 bg-dynamic-blue/10 px-4 font-medium text-dynamic-blue text-sm shadow-sm"
+                    className="h-11 min-w-40 rounded-none border-2 border-foreground bg-dynamic-blue/10 px-4 font-bold text-dynamic-blue text-sm shadow-[3px_3px_0_var(--foreground)]"
                     onChange={(event) => {
                       const studentId = event.target.value;
                       router.push(
@@ -182,14 +182,14 @@ export function LearnerShell({
                   </select>
                 </label>
               ) : null}
-              <div className="hidden items-center gap-2 rounded-2xl border border-dynamic-orange/25 bg-dynamic-orange/10 px-3 py-2 font-semibold text-dynamic-orange text-sm sm:flex">
+              <div className="hidden items-center gap-2 border-2 border-foreground bg-dynamic-orange/10 px-3 py-2 font-black text-dynamic-orange text-sm shadow-[3px_3px_0_var(--foreground)] sm:flex">
                 <Flame className="h-4 w-4" />
                 {t('home.streak')}
               </div>
               <LanguageSwitcher compact />
               <form action="/api/auth/logout" method="post">
                 <Button
-                  className="h-11 rounded-2xl"
+                  className="h-11 rounded-none border-2 border-foreground font-bold shadow-[3px_3px_0_var(--foreground)] active:translate-x-1 active:translate-y-1 active:shadow-none"
                   size="sm"
                   type="submit"
                   variant="secondary"
@@ -212,9 +212,9 @@ export function LearnerShell({
 export function NoWorkspaceState() {
   const t = useTranslations();
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/25 p-6">
-      <div className="max-w-lg rounded-[2rem] border border-dynamic-orange/25 bg-background p-8 text-center shadow-sm">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-dynamic-orange/15 text-dynamic-orange">
+    <div className="flex min-h-screen items-center justify-center bg-dynamic-yellow/10 p-6">
+      <div className="max-w-lg border-2 border-foreground bg-background p-8 text-center shadow-[9px_9px_0_var(--foreground)]">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center border-2 border-foreground bg-dynamic-orange/15 text-dynamic-orange shadow-[4px_4px_0_var(--foreground)]">
           <GraduationCap className="h-8 w-8" />
         </div>
         <h1 className="font-bold text-3xl tracking-normal">

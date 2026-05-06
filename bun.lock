@@ -546,6 +546,35 @@
         "typescript": "^6.0.3",
       },
     },
+    "apps/teach": {
+      "name": "@tuturuuu/teach",
+      "version": "0.1.0",
+      "dependencies": {
+        "@formatjs/intl-localematcher": "^0.8.6",
+        "@gsap/react": "^2.1.2",
+        "@tuturuuu/auth": "workspace:*",
+        "@tuturuuu/icons": "workspace:*",
+        "@tuturuuu/satellite": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "gsap": "^3.15.0",
+        "negotiator": "^1.0.0",
+        "next": "^16.2.4",
+        "next-intl": "^4.11.0",
+        "react": "^19.2.5",
+        "react-dom": "^19.2.5",
+      },
+      "devDependencies": {
+        "@tailwindcss/postcss": "^4.2.4",
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/negotiator": "^0.6.4",
+        "@types/node": "^25.6.0",
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "typescript": "^6.0.3",
+      },
+    },
     "apps/track": {
       "name": "@tuturuuu/track",
       "version": "0.1.0",
@@ -2893,6 +2922,8 @@
     "@tuturuuu/supabase": ["@tuturuuu/supabase@workspace:packages/supabase"],
 
     "@tuturuuu/tasks": ["@tuturuuu/tasks@workspace:apps/tasks"],
+
+    "@tuturuuu/teach": ["@tuturuuu/teach@workspace:apps/teach"],
 
     "@tuturuuu/track": ["@tuturuuu/track@workspace:apps/track"],
 

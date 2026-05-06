@@ -44,6 +44,7 @@ surfaces.
 | `apps/tasks` | Next.js, port 7809 | Task management satellite app | `bun dev:tasks` |
 | `apps/track` | Next.js, port 7810 | Time tracking satellite app | `bun dev:track` |
 | `apps/learn` | Next.js, port 7812 | Learning experience app | `bun dev:learn` |
+| `apps/teach` | Next.js, port 7813 | Teacher companion app | `bun dev:teach` |
 | `apps/external` | Next.js, port 3000 | SDK and integration demo app | `bun dev:external` |
 | `apps/playground` | Next.js, port 3003 | Experimentation sandbox | package-local `bun dev` |
 | `apps/mobile` | Flutter | Mobile workspace tools | `bun dev:mobile` |

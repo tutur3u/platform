@@ -45,15 +45,17 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as z from 'zod';
 import { DEV_MODE } from '@/constants/common';
+import { useAccountSwitcher } from '@/context/account-switcher-context';
 import {
   AUTH_OAUTH_PROVIDERS,
   type AuthOAuthProvider,
   getAuthOAuthProviderOptions,
 } from '@/lib/auth/oauth-providers';
 import { passwordLoginAction } from './actions';
+import { InternalAppAccountConfirmation } from './internal-app-account-confirmation';
 import { LoginQrCard } from './login-qr-card';
 import { completeVerifiedMfaSignIn } from './mfa-navigation';
 import { SocialLoginButton } from './social-login-button';
@@ -100,6 +102,15 @@ interface MobileMfaApprovalChallenge {
   secret: string;
 }
 
+function getReturnAppName(returnApp: string | null) {
+  if (returnApp === 'learn') return 'Learn';
+  if (returnApp === 'tulearn') return 'Learn';
+  if (returnApp === 'teach') return 'Teach';
+  if (returnApp === 'nova') return 'Nova';
+  if (returnApp === 'cms') return 'CMS';
+  return returnApp ?? 'the app';
+}
+
 function SocialLogoMask({ src, alt }: { src: string; alt: string }) {
   return (
     <span
@@ -139,6 +150,20 @@ export default function LoginForm() {
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const {
+    accounts,
+    activeAccountId,
+    isInitialized: accountSwitcherInitialized,
+    switchAccount,
+  } = useAccountSwitcher();
+  const returnApp = useMemo(() => {
+    const returnUrl = searchParams.get('returnUrl');
+    if (!returnUrl) return null;
+    return returnUrl.startsWith('/') ? 'web' : mapUrlToApp(returnUrl);
+  }, [searchParams]);
+  const isInternalAppReturn =
+    returnApp !== null && returnApp !== 'web' && returnApp !== 'platform';
+  const returnAppName = getReturnAppName(returnApp);
 
   const processEmailInput = useCallback((value: string): string => {
     const trimmedValue = value.trim();
@@ -224,6 +249,10 @@ export default function LoginForm() {
   const [mobileMfaChallenge, setMobileMfaChallenge] =
     useState<MobileMfaApprovalChallenge | null>(null);
   const [mobileMfaHandled, setMobileMfaHandled] = useState(false);
+  const [confirmingReturn, setConfirmingReturn] = useState(false);
+  const [switchingAccountId, setSwitchingAccountId] = useState<string | null>(
+    null
+  );
   const autoOAuthProviderRef = useRef<AuthOAuthProvider | null>(null);
   const oauthErrorToastKeyRef = useRef<string | null>(null);
   const captchaRefPassword = useRef<TurnstileInstance>(null);
@@ -464,6 +493,16 @@ export default function LoginForm() {
       const multiAccount = searchParams.get('multiAccount');
       const returnUrl = searchParams.get('returnUrl');
 
+      if (returnUrl && isInternalAppReturn) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        setUser(user);
+        setReadyForAuth(true);
+        setLoading(false);
+        return;
+      }
+
       if (multiAccount === 'true' || returnUrl) {
         try {
           await processNextUrl();
@@ -484,8 +523,54 @@ export default function LoginForm() {
 
       window.location.reload();
     },
-    [needsMFA, processNextUrl, router, searchParams]
+    [
+      isInternalAppReturn,
+      needsMFA,
+      processNextUrl,
+      router,
+      searchParams,
+      supabase.auth,
+    ]
   );
+
+  const continueToInternalApp = useCallback(async () => {
+    setConfirmingReturn(true);
+
+    try {
+      await processNextUrl();
+    } catch (error) {
+      console.error('[login] Failed to continue to internal app:', error);
+      toast.error(t('login.internal_app_continue_failed'));
+      setConfirmingReturn(false);
+    }
+  }, [processNextUrl, t]);
+
+  const switchToStoredAccount = useCallback(
+    async (accountId: string) => {
+      setSwitchingAccountId(accountId);
+
+      const result = await switchAccount(accountId, {
+        targetRoute: `${window.location.pathname}${window.location.search}`,
+      });
+
+      if (!result.success) {
+        toast.error(t('login.account_switch_failed'), {
+          description: result.error,
+        });
+        setSwitchingAccountId(null);
+      }
+    },
+    [switchAccount, t]
+  );
+
+  const handleUseAnotherAccount = useCallback(async () => {
+    setLoading(true);
+    await supabase.auth.signOut({ scope: 'local' });
+    setUser(null);
+    setRequiresMFA(false);
+    setReadyForAuth(true);
+    setLoading(false);
+  }, [supabase.auth]);
 
   const handleQrAuthenticated = useCallback(
     async (session: QrLoginSessionPayload) => {
@@ -935,6 +1020,11 @@ export default function LoginForm() {
       }
 
       if (user && !requiresMFA) {
+        if (isInternalAppReturn) {
+          setReadyForAuth(true);
+          return;
+        }
+
         try {
           await processNextUrl();
         } catch (error) {
@@ -952,7 +1042,14 @@ export default function LoginForm() {
     if (initialized) {
       void processUrl();
     }
-  }, [initialized, processNextUrl, requiresMFA, searchParams, user]);
+  }, [
+    initialized,
+    isInternalAppReturn,
+    processNextUrl,
+    requiresMFA,
+    searchParams,
+    user,
+  ]);
 
   useEffect(() => {
     const result = mobileMfaPollQuery.data;
@@ -1022,6 +1119,24 @@ export default function LoginForm() {
       <div className="flex h-full w-full items-center justify-center">
         <LoadingIndicator />
       </div>
+    );
+  }
+
+  if (user && !requiresMFA && isInternalAppReturn) {
+    return (
+      <InternalAppAccountConfirmation
+        accounts={accounts}
+        activeAccountId={activeAccountId}
+        appName={returnAppName}
+        confirming={confirmingReturn}
+        currentEmail={user.email ?? t('login.unknown_account')}
+        currentUserId={user.id}
+        isAccountSwitcherReady={accountSwitcherInitialized}
+        onContinue={() => void continueToInternalApp()}
+        onSwitchAccount={(accountId) => void switchToStoredAccount(accountId)}
+        onUseAnotherAccount={() => void handleUseAnotherAccount()}
+        switchingAccountId={switchingAccountId}
+      />
     );
   }
 

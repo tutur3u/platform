@@ -23,3 +23,10 @@ export const BASE_URL =
   (process.env.NODE_ENV === 'production'
     ? 'https://learn.tuturuuu.com'
     : `http://localhost:${PORT}`);
+
+export const WEB_APP_URL =
+  process.env.NEXT_PUBLIC_WEB_APP_URL ||
+  process.env.WEB_APP_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'https://tuturuuu.com'
+    : `http://localhost:${CENTRAL_PORT}`);
