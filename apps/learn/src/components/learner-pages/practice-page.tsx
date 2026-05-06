@@ -11,6 +11,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import {
+  BrutalCard,
+  BrutalIcon,
   EmptyState,
   type IconComponent,
   LoadingState,
@@ -58,11 +60,8 @@ export function PracticePage({ wsId }: { wsId: string }) {
       title={t('practice.title')}
     >
       <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <div
-          className="rounded-[2.25rem] border border-dynamic-green/25 bg-background p-6 shadow-sm md:p-8"
-          data-tulearn-reveal
-        >
-          <Badge className="mb-5 bg-dynamic-blue/15 text-dynamic-blue hover:bg-dynamic-blue/15">
+        <BrutalCard className="bg-background p-6 md:p-8">
+          <Badge className="mb-5 rounded-none border-2 border-foreground bg-dynamic-yellow text-foreground hover:bg-dynamic-yellow">
             {practice.data.item.courseName}
           </Badge>
           <h2 className="font-bold text-[clamp(2rem,4vw,4.25rem)] leading-none tracking-normal">
@@ -74,10 +73,8 @@ export function PracticePage({ wsId }: { wsId: string }) {
           {result ? (
             <div
               className={cn(
-                'mt-8 rounded-[1.75rem] border p-5',
-                result.correct
-                  ? 'border-dynamic-green/25 bg-dynamic-green/10'
-                  : 'border-dynamic-orange/25 bg-dynamic-orange/10'
+                'mt-8 border-2 border-foreground p-5 shadow-[5px_5px_0_var(--foreground)]',
+                result.correct ? 'bg-dynamic-yellow/20' : 'bg-background'
               )}
             >
               <p className="font-bold text-2xl tracking-normal">
@@ -95,7 +92,7 @@ export function PracticePage({ wsId }: { wsId: string }) {
           ) : null}
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
             <Button
-              className="h-12 rounded-full bg-dynamic-green text-primary-foreground hover:bg-dynamic-green/90"
+              className="h-12 rounded-none border-2 border-foreground bg-dynamic-yellow font-black text-foreground shadow-[4px_4px_0_var(--foreground)] hover:bg-dynamic-yellow active:translate-x-1 active:translate-y-1 active:shadow-none"
               disabled={submit.isPending}
               onClick={() => submit.mutate(true)}
             >
@@ -103,7 +100,7 @@ export function PracticePage({ wsId }: { wsId: string }) {
               {t('practice.submitCorrect')}
             </Button>
             <Button
-              className="h-12 rounded-full"
+              className="h-12 rounded-none border-2 border-foreground font-black shadow-[4px_4px_0_var(--foreground)] active:translate-x-1 active:translate-y-1 active:shadow-none"
               disabled={submit.isPending}
               onClick={() => submit.mutate(false)}
               variant="secondary"
@@ -111,8 +108,8 @@ export function PracticePage({ wsId }: { wsId: string }) {
               {t('practice.submitIncorrect')}
             </Button>
           </div>
-        </div>
-        <aside className="space-y-3" data-tulearn-reveal>
+        </BrutalCard>
+        <aside className="space-y-3" data-learn-reveal>
           <PracticeHint
             icon={Heart}
             label={t('home.hearts')}
@@ -148,10 +145,10 @@ function PracticeHint({
   value: string;
 }) {
   return (
-    <div className="rounded-[1.75rem] border border-border bg-card p-5">
-      <Icon className="mb-4 h-6 w-6 text-dynamic-green" />
+    <BrutalCard className="p-5">
+      <BrutalIcon className="mb-4 h-10 w-10" icon={Icon} />
       <p className="text-muted-foreground text-sm">{label}</p>
       <p className="mt-1 font-bold text-xl tracking-normal">{value}</p>
-    </div>
+    </BrutalCard>
   );
 }

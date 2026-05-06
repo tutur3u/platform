@@ -6,6 +6,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import { BrutalCard } from './shared';
 
 export function AssignmentRow({
   action,
@@ -19,18 +20,15 @@ export function AssignmentRow({
   const t = useTranslations();
 
   return (
-    <div
-      className="grid gap-4 rounded-[1.75rem] border border-border bg-card p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-dynamic-green/30 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
-      data-tulearn-reveal
-    >
+    <BrutalCard className="grid gap-4 p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <div
             className={cn(
-              'flex h-10 w-10 items-center justify-center rounded-2xl',
+              'flex h-10 w-10 items-center justify-center border-2 border-foreground',
               assignment.is_completed
-                ? 'bg-dynamic-green text-primary-foreground'
-                : 'bg-dynamic-orange/10 text-dynamic-orange'
+                ? 'bg-dynamic-yellow text-foreground'
+                : 'bg-background text-foreground'
             )}
           >
             {assignment.is_completed ? (
@@ -43,7 +41,7 @@ export function AssignmentRow({
             {assignment.title ?? t('assignments.untitled')}
           </h3>
           {assignment.is_completed ? (
-            <Badge className="bg-dynamic-green/15 text-dynamic-green hover:bg-dynamic-green/15">
+            <Badge className="rounded-none border-2 border-foreground bg-dynamic-yellow text-foreground hover:bg-dynamic-yellow">
               {completedLabel}
             </Badge>
           ) : null}
@@ -53,6 +51,6 @@ export function AssignmentRow({
         </p>
       </div>
       {action}
-    </div>
+    </BrutalCard>
   );
 }

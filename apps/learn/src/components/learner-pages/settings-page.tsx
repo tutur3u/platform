@@ -2,7 +2,10 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Languages, Moon, Sun, Target } from '@tuturuuu/icons';
-import { getTulearnBootstrap } from '@tuturuuu/internal-api';
+import {
+  getTulearnBootstrap,
+  updateTulearnProfile,
+} from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -11,7 +14,13 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { type ReactNode, useState } from 'react';
 import { LanguageSwitcher } from '../language-switcher';
-import { type IconComponent, Section, usePageMotion } from './shared';
+import {
+  BrutalCard,
+  BrutalIcon,
+  type IconComponent,
+  Section,
+  usePageMotion,
+} from './shared';
 
 export function SettingsPage() {
   const t = useTranslations();
@@ -25,15 +34,8 @@ export function SettingsPage() {
     queryKey: ['tulearn', 'bootstrap'],
   });
   const save = useMutation({
-    mutationFn: async () => {
-      const response = await fetch('/api/settings/profile', {
-        body: JSON.stringify({ displayName, email: email || undefined }),
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' },
-        method: 'PATCH',
-      });
-      if (!response.ok) throw new Error('Unable to update profile');
-    },
+    mutationFn: () =>
+      updateTulearnProfile({ displayName, email: email || undefined }),
   });
 
   return (
@@ -43,10 +45,7 @@ export function SettingsPage() {
       title={t('settings.title')}
     >
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
-        <div
-          className="rounded-[2rem] border border-border bg-card p-6 shadow-sm"
-          data-tulearn-reveal
-        >
+        <BrutalCard className="p-6">
           <h2 className="font-bold text-2xl tracking-normal">
             {t('settings.profile')}
           </h2>
@@ -54,7 +53,7 @@ export function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="display-name">{t('settings.displayName')}</Label>
               <Input
-                className="h-12 rounded-2xl"
+                className="h-12 rounded-none border-2 border-foreground"
                 id="display-name"
                 onChange={(event) => setDisplayName(event.target.value)}
                 placeholder={bootstrap.data?.profile.display_name ?? ''}
@@ -64,7 +63,7 @@ export function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="email">{t('settings.email')}</Label>
               <Input
-                className="h-12 rounded-2xl"
+                className="h-12 rounded-none border-2 border-foreground"
                 id="email"
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder={bootstrap.data?.profile.email ?? ''}
@@ -74,19 +73,19 @@ export function SettingsPage() {
             </div>
           </div>
           <Button
-            className="mt-6 h-12 rounded-full bg-dynamic-green text-primary-foreground hover:bg-dynamic-green/90"
+            className="mt-6 h-12 rounded-none border-2 border-foreground bg-dynamic-yellow font-black text-foreground shadow-[4px_4px_0_var(--foreground)] hover:bg-dynamic-yellow active:translate-x-1 active:translate-y-1 active:shadow-none"
             disabled={save.isPending}
             onClick={() => save.mutate()}
           >
             {save.isPending ? t('common.saving') : t('common.save')}
           </Button>
-        </div>
+        </BrutalCard>
 
         <div className="space-y-5">
           <SettingsPanel icon={Sun} title={t('settings.theme')}>
             <div className="grid grid-cols-2 gap-3">
               <Button
-                className="h-12 rounded-2xl"
+                className="h-12 rounded-none border-2 border-foreground font-black shadow-[3px_3px_0_var(--foreground)]"
                 onClick={() => setTheme('light')}
                 variant="secondary"
               >
@@ -94,7 +93,7 @@ export function SettingsPage() {
                 {t('settings.light')}
               </Button>
               <Button
-                className="h-12 rounded-2xl"
+                className="h-12 rounded-none border-2 border-foreground font-black shadow-[3px_3px_0_var(--foreground)]"
                 onClick={() => setTheme('dark')}
                 variant="secondary"
               >
@@ -109,10 +108,10 @@ export function SettingsPage() {
               {['light', 'balanced', 'challenge'].map((mode) => (
                 <button
                   className={cn(
-                    'min-h-11 rounded-2xl border px-4 py-3 text-left font-medium transition',
+                    'min-h-11 border-2 border-foreground px-4 py-3 text-left font-black shadow-[3px_3px_0_var(--foreground)] transition active:translate-x-1 active:translate-y-1 active:shadow-none',
                     focusMode === mode
-                      ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
-                      : 'border-border bg-background hover:bg-muted'
+                      ? 'bg-dynamic-yellow text-foreground'
+                      : 'bg-background hover:bg-dynamic-yellow/15'
                   )}
                   key={mode}
                   onClick={() => setFocusMode(mode)}
@@ -130,10 +129,7 @@ export function SettingsPage() {
         </div>
       </div>
 
-      <div
-        className="rounded-[2rem] border border-dynamic-blue/20 bg-dynamic-blue/10 p-6"
-        data-tulearn-reveal
-      >
+      <BrutalCard className="bg-dynamic-yellow/15 p-6">
         <h2 className="font-bold text-2xl tracking-normal">
           {t('settings.linkedStudents')}
         </h2>
@@ -141,7 +137,7 @@ export function SettingsPage() {
           {bootstrap.data?.linkedStudents.length ? (
             bootstrap.data.linkedStudents.map((student) => (
               <span
-                className="rounded-full border border-dynamic-blue/25 bg-background px-4 py-2 font-medium text-dynamic-blue text-sm"
+                className="border-2 border-foreground bg-background px-4 py-2 font-black text-sm shadow-[3px_3px_0_var(--foreground)]"
                 key={student.id}
               >
                 {student.name ?? t('common.learner')}
@@ -151,7 +147,7 @@ export function SettingsPage() {
             <p className="text-muted-foreground">{t('common.empty')}</p>
           )}
         </div>
-      </div>
+      </BrutalCard>
     </Section>
   );
 }
@@ -166,17 +162,12 @@ function SettingsPanel({
   title: string;
 }) {
   return (
-    <div
-      className="rounded-[2rem] border border-border bg-card p-5 shadow-sm"
-      data-tulearn-reveal
-    >
+    <BrutalCard className="p-5">
       <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-dynamic-green/10 text-dynamic-green">
-          <Icon className="h-5 w-5" />
-        </div>
+        <BrutalIcon className="h-10 w-10" icon={Icon} />
         <h2 className="font-bold text-xl tracking-normal">{title}</h2>
       </div>
       {children}
-    </div>
+    </BrutalCard>
   );
 }

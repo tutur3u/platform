@@ -22,7 +22,7 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
   return (
     <fieldset
       className={cn(
-        'inline-flex items-center gap-1 rounded-2xl border border-dynamic-blue/25 bg-dynamic-blue/10 p-1 text-dynamic-blue shadow-sm',
+        'inline-flex items-center gap-1 border-2 border-foreground bg-background p-1 text-foreground shadow-[3px_3px_0_var(--foreground)]',
         compact ? 'h-11' : 'w-full'
       )}
     >
@@ -30,7 +30,7 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
       <div
         aria-hidden="true"
         className={cn(
-          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-background/80',
+          'flex h-9 w-9 shrink-0 items-center justify-center border-2 border-foreground bg-dynamic-yellow',
           compact && 'hidden sm:flex'
         )}
       >
@@ -43,10 +43,8 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
           <Link
             aria-current={active ? 'true' : undefined}
             className={cn(
-              'inline-flex h-9 min-w-10 flex-1 items-center justify-center rounded-xl px-3 font-semibold text-sm transition',
-              active
-                ? 'bg-dynamic-blue text-primary-foreground shadow-sm'
-                : 'text-dynamic-blue hover:bg-background/80'
+              'inline-flex h-9 min-w-10 flex-1 items-center justify-center px-3 font-black text-sm transition',
+              active ? 'bg-dynamic-yellow' : 'hover:bg-dynamic-yellow/15'
             )}
             href={href}
             key={option.value}

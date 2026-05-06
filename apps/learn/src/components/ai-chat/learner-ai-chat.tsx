@@ -2,38 +2,26 @@
 
 import { DefaultChatTransport } from '@tuturuuu/ai/core';
 import { useChat } from '@tuturuuu/ai/react';
-import type { UIMessage } from '@tuturuuu/ai/types';
-import {
-  BookOpen,
-  Bot,
-  HeartPulse,
-  LoaderCircle,
-  RotateCcw,
-  Send,
-  Sparkles,
-  User,
-} from '@tuturuuu/icons';
+import { RotateCcw, Send } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import {
+  CoachSidebar,
+  EmptyChat,
+  MessageBubble,
+  ThinkingIndicator,
+} from './learner-ai-chat-panels';
 
 const LEARNER_AI_MODEL = 'google/gemini-3-flash';
-
-function getMessageText(message: UIMessage) {
-  return message.parts
-    .map((part) => (part.type === 'text' ? part.text : ''))
-    .filter(Boolean)
-    .join('\n');
-}
 
 export function LearnerAiChat({ wsId }: { wsId: string }) {
   const t = useTranslations();
   const [input, setInput] = useState('');
   const [resetKey, setResetKey] = useState(0);
   const chatId = useMemo(
-    () => `tulearn-${wsId}-${resetKey}-${crypto.randomUUID()}`,
+    () => `learn-${wsId}-${resetKey}-${crypto.randomUUID()}`,
     [resetKey, wsId]
   );
   const transport = useMemo(
@@ -69,64 +57,13 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
   };
 
   return (
-    <div className="grid min-h-[calc(100vh-12rem)] gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
-      <aside className="space-y-4">
-        <section className="rounded-[2rem] border border-dynamic-green/25 bg-dynamic-green/10 p-5">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-background text-dynamic-green shadow-sm">
-            <Bot className="h-6 w-6" />
-          </div>
-          <h2 className="font-bold text-2xl tracking-normal">
-            {t('aiChat.coachTitle')}
-          </h2>
-          <p className="mt-3 text-muted-foreground text-sm leading-6">
-            {t('aiChat.coachDescription')}
-          </p>
-        </section>
+    <div className="grid min-h-[calc(100dvh-12rem)] gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
+      <CoachSidebar />
 
-        <section className="grid gap-3">
-          {[
-            {
-              icon: HeartPulse,
-              label: t('aiChat.featurePractice'),
-              tone: 'green',
-            },
-            {
-              icon: BookOpen,
-              label: t('aiChat.featureLessons'),
-              tone: 'blue',
-            },
-            {
-              icon: Sparkles,
-              label: t('aiChat.featureExplain'),
-              tone: 'orange',
-            },
-          ].map((feature) => {
-            const Icon = feature.icon;
-            return (
-              <div
-                className={cn(
-                  'flex items-center gap-3 rounded-[1.35rem] border bg-card p-4 font-semibold text-sm',
-                  feature.tone === 'green' &&
-                    'border-dynamic-green/20 text-dynamic-green',
-                  feature.tone === 'blue' &&
-                    'border-dynamic-blue/20 text-dynamic-blue',
-                  feature.tone === 'orange' &&
-                    'border-dynamic-orange/20 text-dynamic-orange'
-                )}
-                key={feature.label}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {feature.label}
-              </div>
-            );
-          })}
-        </section>
-      </aside>
-
-      <section className="flex min-h-0 flex-col overflow-hidden rounded-[2rem] border border-border bg-background shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-border border-b p-4">
+      <section className="flex min-h-0 flex-col overflow-hidden border-2 border-foreground bg-background shadow-[9px_9px_0_var(--foreground)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-foreground border-b-2 p-4">
           <div>
-            <h1 className="font-bold text-2xl tracking-normal">
+            <h1 className="font-black text-3xl tracking-normal">
               {t('aiChat.title')}
             </h1>
             <p className="text-muted-foreground text-sm">
@@ -134,7 +71,7 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
             </p>
           </div>
           <Button
-            className="rounded-full"
+            className="rounded-none border-2 border-foreground font-black shadow-[3px_3px_0_var(--foreground)] active:translate-x-1 active:translate-y-1 active:shadow-none"
             onClick={() => {
               if (isBusy) stop();
               setResetKey((current) => current + 1);
@@ -157,24 +94,19 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
           ) : (
             <EmptyChat onPickPrompt={submit} />
           )}
-          {isBusy ? (
-            <div className="flex items-center gap-2 rounded-2xl border border-dynamic-blue/20 bg-dynamic-blue/10 px-4 py-3 font-medium text-dynamic-blue text-sm">
-              <LoaderCircle className="h-4 w-4 animate-spin" />
-              {t('aiChat.thinking')}
-            </div>
-          ) : null}
+          {isBusy ? <ThinkingIndicator /> : null}
         </div>
 
         <form
-          className="border-border border-t bg-card/70 p-3"
+          className="border-foreground border-t-2 bg-card p-3"
           onSubmit={(event) => {
             event.preventDefault();
             submit(input);
           }}
         >
-          <div className="flex items-end gap-2 rounded-[1.5rem] border border-border bg-background p-2 shadow-sm">
+          <div className="flex items-end gap-2 border-2 border-foreground bg-background p-2 shadow-[4px_4px_0_var(--foreground)]">
             <Textarea
-              className="max-h-40 min-h-12 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
+              className="max-h-40 min-h-12 resize-none rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0"
               disabled={isBusy}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => {
@@ -187,7 +119,7 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
               value={input}
             />
             <Button
-              className="h-11 rounded-2xl bg-dynamic-green text-primary-foreground hover:bg-dynamic-green/90"
+              className="h-11 rounded-none border-2 border-foreground bg-dynamic-yellow text-foreground shadow-[3px_3px_0_var(--foreground)] hover:bg-dynamic-yellow active:translate-x-1 active:translate-y-1 active:shadow-none"
               disabled={!input.trim() || isBusy}
               size="icon"
               type="submit"
@@ -199,81 +131,5 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
         </form>
       </section>
     </div>
-  );
-}
-
-function EmptyChat({
-  onPickPrompt,
-}: {
-  onPickPrompt: (prompt: string) => void | Promise<void>;
-}) {
-  const t = useTranslations();
-  const prompts = [
-    t('aiChat.promptReview'),
-    t('aiChat.promptExplain'),
-    t('aiChat.promptQuiz'),
-  ];
-
-  return (
-    <div className="flex min-h-full flex-col items-center justify-center gap-5 rounded-[1.75rem] border border-dynamic-green/20 border-dashed bg-dynamic-green/5 p-8 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-dynamic-green text-primary-foreground shadow-sm">
-        <Sparkles className="h-8 w-8" />
-      </div>
-      <div>
-        <h2 className="font-bold text-3xl tracking-normal">
-          {t('aiChat.emptyTitle')}
-        </h2>
-        <p className="mx-auto mt-3 max-w-xl text-muted-foreground leading-7">
-          {t('aiChat.emptyDescription')}
-        </p>
-      </div>
-      <div className="grid w-full max-w-2xl gap-2 sm:grid-cols-3">
-        {prompts.map((prompt) => (
-          <button
-            className="rounded-2xl border border-border bg-background px-4 py-3 text-left font-medium text-sm transition hover:border-dynamic-green/30 hover:bg-dynamic-green/10 hover:text-dynamic-green"
-            key={prompt}
-            onClick={() => onPickPrompt(prompt)}
-            type="button"
-          >
-            {prompt}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function MessageBubble({ message }: { message: UIMessage }) {
-  const text = getMessageText(message);
-  const isUser = message.role === 'user';
-  const Icon = isUser ? User : Bot;
-
-  if (!text) return null;
-
-  return (
-    <article
-      className={cn('flex gap-3', isUser ? 'justify-end' : 'justify-start')}
-    >
-      {!isUser ? (
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-dynamic-green/10 text-dynamic-green">
-          <Icon className="h-5 w-5" />
-        </div>
-      ) : null}
-      <div
-        className={cn(
-          'max-w-[min(42rem,85%)] whitespace-pre-wrap rounded-[1.5rem] px-4 py-3 text-sm leading-7',
-          isUser
-            ? 'bg-dynamic-green text-primary-foreground'
-            : 'border border-border bg-card text-foreground'
-        )}
-      >
-        {text}
-      </div>
-      {isUser ? (
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-dynamic-blue/10 text-dynamic-blue">
-          <Icon className="h-5 w-5" />
-        </div>
-      ) : null}
-    </article>
   );
 }

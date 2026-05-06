@@ -5,7 +5,7 @@ import type { TulearnCourseSummary } from '@tuturuuu/internal-api';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { courseThemes } from './shared';
+import { BrutalCard, courseThemes } from './shared';
 
 export function CourseCard({
   course,
@@ -22,20 +22,19 @@ export function CourseCard({
   const nodes = Math.max(1, Math.min(course.totalModules || 1, 6));
 
   return (
-    <article
+    <BrutalCard
       className={cn(
-        'group rounded-[2rem] border bg-card p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md md:p-6',
-        theme.border
+        'group p-5 md:p-6',
+        index % 2 === 0 ? 'bg-card' : 'bg-dynamic-yellow/10'
       )}
-      data-stack-card={stacked ? '' : undefined}
-      data-tulearn-reveal
+      stacked={stacked}
     >
       <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_18rem] md:items-center">
         <div>
           <div className="mb-5 flex items-center gap-3">
             <div
               className={cn(
-                'flex h-14 w-14 items-center justify-center rounded-[1.25rem]',
+                'flex h-14 w-14 items-center justify-center border-2 border-foreground shadow-[3px_3px_0_var(--foreground)]',
                 theme.surface,
                 theme.text
               )}
@@ -70,14 +69,10 @@ export function CourseCard({
             return (
               <div
                 className={cn(
-                  'flex aspect-square min-h-11 items-center justify-center rounded-2xl border transition duration-300 group-hover:scale-105',
-                  completed &&
-                    'border-dynamic-green/30 bg-dynamic-green text-primary-foreground',
-                  current &&
-                    'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
-                  !completed &&
-                    !current &&
-                    'border-border bg-muted/50 text-muted-foreground'
+                  'flex aspect-square min-h-11 items-center justify-center border-2 border-foreground transition duration-300 group-hover:scale-105',
+                  completed && 'bg-dynamic-yellow text-foreground',
+                  current && 'bg-background text-foreground',
+                  !completed && !current && 'bg-muted/50 text-muted-foreground'
                 )}
                 key={`${course.id}-${nodeIndex}`}
               >
@@ -93,6 +88,6 @@ export function CourseCard({
           })}
         </div>
       </div>
-    </article>
+    </BrutalCard>
   );
 }

@@ -9,6 +9,8 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
 import {
+  BrutalCard,
+  BrutalIcon,
   EmptyState,
   LoadingState,
   Section,
@@ -47,27 +49,24 @@ export function ReportsPage({ wsId }: { wsId: string }) {
 
 function ReportCard({ report }: { report: TulearnReportSummary }) {
   return (
-    <article
-      className="rounded-[2rem] border border-dynamic-blue/20 bg-card p-6 shadow-sm"
-      data-tulearn-reveal
-    >
-      <LineChart className="mb-5 h-7 w-7 text-dynamic-blue" />
+    <BrutalCard className="bg-card p-6">
+      <BrutalIcon className="mb-5" icon={LineChart} />
       <h3 className="font-bold text-2xl tracking-normal">{report.title}</h3>
       <p className="mt-3 line-clamp-5 text-muted-foreground leading-7">
         {report.feedback || report.content}
       </p>
       <div className="mt-5 flex flex-wrap items-center gap-2">
         {report.course ? (
-          <Badge className="bg-dynamic-blue/15 text-dynamic-blue hover:bg-dynamic-blue/15">
+          <Badge className="rounded-none border-2 border-foreground bg-background text-foreground hover:bg-background">
             {report.course.name}
           </Badge>
         ) : null}
         {report.score != null ? (
-          <Badge className="bg-dynamic-green/15 text-dynamic-green hover:bg-dynamic-green/15">
+          <Badge className="rounded-none border-2 border-foreground bg-dynamic-yellow text-foreground hover:bg-dynamic-yellow">
             {report.score}
           </Badge>
         ) : null}
       </div>
-    </article>
+    </BrutalCard>
   );
 }

@@ -8,7 +8,7 @@ import type {
 import { Link } from '@/i18n/navigation';
 import { AssignmentRow } from './assignment-row';
 import { MarkCard } from './mark-card';
-import { EmptyState } from './shared';
+import { BrutalCard, EmptyState } from './shared';
 
 export function FeatureList({
   actionHref,
@@ -28,15 +28,12 @@ export function FeatureList({
   type: 'assignment' | 'mark';
 }) {
   return (
-    <section
-      className="rounded-[2rem] border border-border bg-card p-6 shadow-sm"
-      data-tulearn-reveal
-    >
+    <BrutalCard className="p-6">
       <div className="mb-5 flex items-center justify-between gap-4">
         <h2 className="font-bold text-2xl tracking-normal">{title}</h2>
         {actionHref && actionLabel ? (
           <Link
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-border px-4 font-semibold text-sm transition hover:bg-muted"
+            className="inline-flex h-10 items-center justify-center gap-2 border-2 border-foreground bg-dynamic-yellow px-4 font-black text-sm shadow-[3px_3px_0_var(--foreground)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
             href={actionHref}
           >
             {actionLabel}
@@ -62,6 +59,6 @@ export function FeatureList({
         )}
       </div>
       {!items.length ? <EmptyState label={emptyLabel} /> : null}
-    </section>
+    </BrutalCard>
   );
 }

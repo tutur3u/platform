@@ -2,30 +2,19 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
-  BookOpen,
   ClipboardCheck,
-  Flame,
-  Heart,
   Rocket,
   ShieldCheck,
-  Sparkles,
   Star,
   Target,
   Trophy,
-  Zap,
 } from '@tuturuuu/icons';
 import { getTulearnHome } from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation';
 import { CourseCard } from './course-card';
 import { FeatureList } from './feature-list';
-import {
-  MiniPanel,
-  MissionPanel,
-  QuestCard,
-  QuestPanel,
-  StatBubble,
-} from './home-panels';
+import { HomeHero } from './home-hero';
+import { MiniPanel, MissionPanel, QuestCard, QuestPanel } from './home-panels';
 import {
   EmptyState,
   LoadingState,
@@ -94,76 +83,20 @@ export function HomePage({ wsId }: { wsId: string }) {
   ];
 
   return (
-    <div className="space-y-24" ref={scopeRef}>
-      <section
-        className="relative isolate overflow-hidden rounded-[2.25rem] border border-dynamic-green/20 bg-background p-6 shadow-sm md:p-9"
-        data-tulearn-reveal
-      >
-        <div
-          aria-hidden="true"
-          className="absolute -top-24 -right-20 h-72 w-72 rounded-full bg-dynamic-green/15 blur-3xl"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute -bottom-24 left-1/4 h-72 w-72 rounded-full bg-dynamic-orange/10 blur-3xl"
-        />
-        <div className="relative grid gap-10 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-end">
-          <div>
-            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-dynamic-green/25 bg-dynamic-green/10 px-4 py-2 font-semibold text-dynamic-green text-sm">
-              <Sparkles className="h-4 w-4" />
-              {t('home.dailyGoal')}
-            </div>
-            <h1 className="max-w-5xl text-balance font-bold text-[clamp(2.8rem,6vw,5.75rem)] leading-[0.92] tracking-normal">
-              {t('home.heroTitle', { name: studentName })}
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg text-muted-foreground leading-8">
-              {home.data.recommendedPractice?.title ??
-                t('home.heroDescription')}
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-dynamic-green px-6 font-semibold text-primary-foreground transition hover:bg-dynamic-green/90 active:translate-y-px"
-                href={practiceHref}
-              >
-                <Zap className="h-4 w-4" />
-                {t('home.startPractice')}
-              </Link>
-              <Link
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-background px-6 font-semibold transition hover:bg-muted active:translate-y-px"
-                href={coursesHref}
-              >
-                <BookOpen className="h-4 w-4" />
-                {t('home.openMap')}
-              </Link>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <StatBubble
-              icon={Sparkles}
-              label={t('home.xp')}
-              value={state.xp_total}
-            />
-            <StatBubble
-              accent="orange"
-              icon={Flame}
-              label={t('home.streak')}
-              value={state.current_streak}
-            />
-            <StatBubble
-              accent="blue"
-              icon={Heart}
-              label={t('home.hearts')}
-              value={`${state.hearts}/${state.max_hearts}`}
-            />
-          </div>
-        </div>
-      </section>
+    <div className="space-y-20" ref={scopeRef}>
+      <HomeHero
+        coursesHref={coursesHref}
+        hearts={state.hearts}
+        lead={home.data.recommendedPractice?.title ?? t('home.heroDescription')}
+        maxHearts={state.max_hearts}
+        practiceHref={practiceHref}
+        streak={state.current_streak}
+        studentName={studentName}
+        xp={state.xp_total}
+      />
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div
-          className="grid grid-flow-dense gap-3 md:grid-cols-6"
-          data-tulearn-reveal
-        >
+        <div className="grid grid-flow-dense gap-4 md:grid-cols-6">
           <MissionPanel
             actionHref={nextCourse ? coursesHref : practiceHref}
             actionLabel={
@@ -200,8 +133,8 @@ export function HomePage({ wsId }: { wsId: string }) {
             }
           />
         </div>
-        <div className="space-y-3" data-tulearn-reveal>
-          <h2 className="font-bold text-2xl tracking-normal">
+        <div className="space-y-3" data-learn-reveal>
+          <h2 className="font-black text-2xl tracking-normal">
             {t('home.dailyQuests')}
           </h2>
           {quests.map((quest) => (
@@ -215,7 +148,7 @@ export function HomePage({ wsId }: { wsId: string }) {
         data-journey
       >
         <div className="h-fit" data-pin-title>
-          <h2 className="font-bold text-[clamp(2rem,4vw,3.75rem)] leading-none tracking-normal">
+          <h2 className="font-black text-[clamp(2rem,4vw,3.75rem)] leading-none tracking-normal">
             {t('home.learningPath')}
           </h2>
           <p className="mt-4 text-muted-foreground leading-7">
