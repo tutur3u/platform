@@ -219,6 +219,31 @@ export default function PostsClient({
     [setQueryState]
   );
 
+  const handleApprovalCompleted = useCallback(
+    async (processedPost: PostEmail) => {
+      const currentPosts = postsData.data ?? [];
+      const processedKey = createPostEmailKey(processedPost);
+      const processedIndex = currentPosts.findIndex(
+        (post) => createPostEmailKey(post) === processedKey
+      );
+      const nextPost =
+        processedIndex >= 0
+          ? (currentPosts[processedIndex + 1] ??
+            currentPosts[processedIndex - 1] ??
+            null)
+          : (currentPosts[0] ?? null);
+
+      setSelectedPost(nextPost);
+      setPosts({
+        ...posts,
+        selected: nextPost ? createPostEmailKey(nextPost) : null,
+      });
+
+      await refetch();
+    },
+    [posts, postsData.data, refetch, setPosts]
+  );
+
   useEffect(() => {
     if (posts.selected && postsData?.data) {
       const found = postsData.data.find(
@@ -366,6 +391,7 @@ export default function PostsClient({
             postEmail={selectedPost}
             canApprovePosts={canApprovePosts}
             canForceSendPosts={canForceSendPosts}
+            onApprovalCompleted={handleApprovalCompleted}
           />
         </div>
       </div>

@@ -33,11 +33,13 @@ export function PostDisplay({
   postEmail,
   canApprovePosts = false,
   canForceSendPosts = false,
+  onApprovalCompleted,
 }: {
   wsId: string;
   postEmail: PostEmail | null;
   canApprovePosts?: boolean;
   canForceSendPosts?: boolean;
+  onApprovalCompleted?: (postEmail: PostEmail) => void | Promise<void>;
 }) {
   const locale = useLocale();
   const t = useTranslations('post-email-data-table');
@@ -130,6 +132,7 @@ export function PostDisplay({
                   queueStatus={postEmail.queue_status}
                   canRemoveApproval={postEmail.can_remove_approval}
                   compact
+                  onCompleted={() => onApprovalCompleted?.(postEmail)}
                 />
               )}
               {canShowForceSend && (

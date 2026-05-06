@@ -26,7 +26,7 @@ interface Props {
   queueStatus?: string;
   canRemoveApproval?: boolean;
   compact?: boolean;
-  onCompleted?: () => void;
+  onCompleted?: () => void | Promise<void>;
 }
 
 export function PostApprovalActions({
@@ -93,8 +93,12 @@ export function PostApprovalActions({
       await queryClient.invalidateQueries({
         queryKey: ['group-post-checks'],
       });
-      router.refresh();
-      onCompleted?.();
+
+      if (onCompleted) {
+        await onCompleted();
+      } else {
+        router.refresh();
+      }
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : tCommon('error'));
