@@ -252,6 +252,12 @@ The virtual lane is presentation-only: it has no `task_lists` row, no list
 actions, no create-task form, no list reordering, and can be collapsed per board
 when the user wants to focus on planned lists.
 
+By default the external lane shows only open source tasks from normal task
+lists. Source tasks in `documents`, `done`, or `closed` lists are filtered out
+unless the lane-level compact filters explicitly include them. Lane sorting is
+also local to the external lane, so changing it does not reorder the user's real
+personal lists.
+
 Per-user placement lives on `task_user_overrides` with `personal_board_id`,
 `personal_list_id`, `personal_sort_key`, `personal_added_at`, and
 `personal_placed_at`.
