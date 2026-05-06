@@ -343,11 +343,13 @@ export {
   listWorkspaceTaskProjects,
   listWorkspaceTasks,
   moveWorkspaceTask,
+  removeCurrentUserTaskPersonalPlacement,
   removeWorkspaceTaskLabel,
   resolveTaskProjectWorkspaceId,
   updateWorkspaceTask,
   updateWorkspaceTaskBoard,
   updateWorkspaceTaskList,
+  upsertCurrentUserTaskPersonalPlacement,
 } from './tasks';
 export {
   type TaskSchedulingUpdatePayload,
