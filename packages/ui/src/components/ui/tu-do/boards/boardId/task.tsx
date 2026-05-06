@@ -818,6 +818,54 @@ function TaskCardInner({
   // Removed explicit drag handle – entire card is now draggable for better UX.
   // Keep attributes/listeners to spread onto root interactive area.
 
+  const openExternalTask = useCallback(async () => {
+    const sourceWorkspaceId = task.source_workspace_id;
+    const sourceBoardId = task.source_board_id;
+
+    if (sourceWorkspaceId && sourceBoardId) {
+      try {
+        const { task: sourceTask } = await getWorkspaceTask(
+          sourceWorkspaceId,
+          task.id
+        );
+        let sourceLists: TaskList[] | undefined;
+
+        try {
+          sourceLists = (
+            await listWorkspaceTaskLists(sourceWorkspaceId, sourceBoardId)
+          ).lists;
+        } catch {
+          sourceLists = undefined;
+        }
+
+        openTask(sourceTask as Task, sourceBoardId, sourceLists, false, {
+          taskWsId: sourceWorkspaceId,
+          taskWorkspacePersonal: false,
+        });
+        return;
+      } catch {
+        const opened = await openTaskById(task.id);
+        if (opened) return;
+      }
+    } else {
+      const opened = await openTaskById(task.id);
+      if (opened) return;
+    }
+
+    openTask(task, sourceBoardId ?? boardId, availableLists, false, {
+      taskWsId: sourceWorkspaceId ?? effectiveWorkspaceId,
+      taskWorkspacePersonal: sourceWorkspaceId ? false : isPersonalWorkspace,
+    });
+  }, [
+    task,
+    boardId,
+    availableLists,
+    effectiveWorkspaceId,
+    isPersonalWorkspace,
+    openTask,
+    openTaskById,
+  ]);
+
   const handleCardClick = useCallback(
     (e: React.MouseEvent) => {
       // Check if only Shift is held (without CMD/Ctrl) for multiselect
@@ -839,7 +887,7 @@ function TaskCardInner({
       ) {
         // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
         if (isPersonalExternalTask) {
-          void openTaskById(task.id);
+          void openExternalTask();
           return;
         }
 
@@ -857,7 +905,7 @@ function TaskCardInner({
       dialogState,
       onSelect,
       openTask,
-      openTaskById,
+      openExternalTask,
     ]
   );
 
@@ -1603,6 +1651,8 @@ function TaskCardInner({
                   {taskTicketIdentifier}
                 </Badge>
               )}
+            </div>
+            <div className="mb-1">
               {/* Task Name */}
               <button
                 type="button"
