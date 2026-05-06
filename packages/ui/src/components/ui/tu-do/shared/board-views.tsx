@@ -590,6 +590,7 @@ export function BoardViews({
             tasks={effectiveTasks}
             lists={filteredLists}
             isPersonalWorkspace={workspace.personal}
+            preserveTaskOrder={!!filters.sortBy}
             searchQuery={filters.searchQuery}
           />
         );

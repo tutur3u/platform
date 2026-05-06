@@ -27,6 +27,9 @@ let kanbanBoardProps:
       typeof import('../../boards/boardId/kanban')['KanbanBoard']
     >
   | undefined;
+let listViewProps:
+  | React.ComponentProps<typeof import('../list-view')['ListView']>
+  | undefined;
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -82,7 +85,10 @@ vi.mock('../../boards/boardId/kanban', () => ({
 }));
 
 vi.mock('../list-view', () => ({
-  ListView: () => <div data-testid="list-view">List</div>,
+  ListView: (props: any) => {
+    listViewProps = props;
+    return <div data-testid="list-view">List</div>;
+  },
 }));
 
 vi.mock('../../boards/boardId/timeline-board', () => ({
@@ -180,6 +186,7 @@ describe('BoardViews', () => {
   beforeEach(() => {
     boardHeaderProps = undefined;
     kanbanBoardProps = undefined;
+    listViewProps = undefined;
     createTaskMock.mockReset();
     loadListPageMock.mockReset();
     vi.mocked(listWorkspaceTasks).mockReset();
@@ -351,6 +358,24 @@ describe('BoardViews', () => {
     await waitFor(() => {
       expect(listWorkspaceTasks).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('preserves board-level sorted task order when rendering list view', async () => {
+    renderBoardViews();
+
+    await act(async () => {
+      boardHeaderProps?.onFiltersChange({
+        ...boardHeaderProps.filters,
+        sortBy: 'name-asc',
+      });
+      boardHeaderProps?.onViewChange('list');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('list-view')).toBeInTheDocument();
+    });
+
+    expect(listViewProps?.preserveTaskOrder).toBe(true);
   });
 
   it('eagerly fetches the full board task set when switching to timeline view', async () => {
