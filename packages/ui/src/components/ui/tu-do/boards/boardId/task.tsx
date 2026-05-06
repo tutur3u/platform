@@ -196,7 +196,7 @@ function TaskCardInner({
   const { createSubtask } = useTaskDialogContext();
 
   // Use centralized task dialog
-  const { openTask } = useTaskDialog();
+  const { openTask, openTaskById } = useTaskDialog();
 
   // Guarded select handler for Radix DropdownMenuItem to avoid immediate action on context open
   const handleMenuItemSelect = useCallback(
@@ -625,6 +625,18 @@ function TaskCardInner({
     task.source_workspace_id && task.source_board_id
       ? `/${task.source_workspace_id}${tasksHref(`/boards/${task.source_board_id}`)}`
       : null;
+  const taskTicketPrefix =
+    'ticket_prefix' in task && typeof task.ticket_prefix === 'string'
+      ? task.ticket_prefix
+      : null;
+  const taskTicketIdentifier = getTicketIdentifier(
+    isPersonalExternalTask ? taskTicketPrefix : boardConfig?.ticket_prefix,
+    task.display_number
+  );
+  const externalSourceLabel =
+    task.source_workspace_name ??
+    task.source_board_name ??
+    tTasks('external_task');
 
   const dragDisabled =
     dialogState.editDialogOpen ||
@@ -826,12 +838,18 @@ function TaskCardInner({
         !dialogState.newProjectDialogOpen
       ) {
         // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
+        if (isPersonalExternalTask) {
+          void openTaskById(task.id);
+          return;
+        }
+
         openTask(task, boardId, availableLists);
       }
     },
     [
       task,
       boardId,
+      isPersonalExternalTask,
       isMultiSelectMode,
       availableLists,
       isDragging,
@@ -839,6 +857,7 @@ function TaskCardInner({
       dialogState,
       onSelect,
       openTask,
+      openTaskById,
     ]
   );
 
@@ -1545,32 +1564,18 @@ function TaskCardInner({
         {/* Header */}
         <div className="flex items-start gap-1">
           <div className="min-w-0 flex-1">
-            <div className="mb-1 flex flex-col gap-1">
-              {/* Ticket Identifier */}
-              {taskList?.status !== 'documents' && (
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    'w-fit px-1 py-0 font-mono text-[10px]',
-                    getTicketBadgeColorClasses(taskList, task.priority)
-                  )}
-                  title={t('ticket_id_label', {
-                    id: getTicketIdentifier(
-                      boardConfig?.ticket_prefix,
-                      task.display_number
-                    ),
-                  })}
-                >
-                  {getTicketIdentifier(
-                    boardConfig?.ticket_prefix,
-                    task.display_number
-                  )}
-                </Badge>
+            <div
+              className={cn(
+                'mb-1 flex gap-1',
+                isPersonalExternalTask
+                  ? 'items-center justify-between'
+                  : 'flex-col'
               )}
+            >
               {isPersonalExternalTask && (
                 <Badge
                   variant="secondary"
-                  className="h-5 w-fit max-w-full gap-1 border border-dynamic-cyan/30 bg-dynamic-cyan/10 px-1.5 text-[10px] text-dynamic-cyan"
+                  className="h-5 min-w-0 max-w-[70%] gap-1 border border-dynamic-cyan/30 bg-dynamic-cyan/10 px-1.5 text-[10px] text-dynamic-cyan"
                   title={[
                     task.source_workspace_name,
                     task.source_board_name,
@@ -1580,11 +1585,22 @@ function TaskCardInner({
                     .join(' / ')}
                 >
                   <ExternalLink className="h-2.5 w-2.5 shrink-0" />
-                  <span className="truncate">
-                    {task.source_workspace_name ??
-                      task.source_board_name ??
-                      tTasks('external_task')}
-                  </span>
+                  <span className="truncate">{externalSourceLabel}</span>
+                </Badge>
+              )}
+              {/* Ticket Identifier */}
+              {taskList?.status !== 'documents' && (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'w-fit px-1 py-0 font-mono text-[10px]',
+                    getTicketBadgeColorClasses(taskList, task.priority)
+                  )}
+                  title={t('ticket_id_label', {
+                    id: taskTicketIdentifier,
+                  })}
+                >
+                  {taskTicketIdentifier}
                 </Badge>
               )}
               {/* Task Name */}

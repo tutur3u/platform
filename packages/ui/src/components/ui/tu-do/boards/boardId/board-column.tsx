@@ -11,7 +11,6 @@ import {
   Filter,
   GripVertical,
   Loader2,
-  MoveRight,
   RotateCcw,
 } from '@tuturuuu/icons';
 import type { ExternalTaskSortBy } from '@tuturuuu/internal-api/tasks';
@@ -716,15 +715,8 @@ export function BoardColumn({
         />
       )}
 
-      <div className="rounded-b-xl border-t p-3 backdrop-blur-sm">
-        {isExternalStaging ? (
-          <div className="flex items-center gap-2 rounded-lg border border-dynamic-cyan/35 border-dashed bg-dynamic-cyan/8 px-3 py-2 text-dynamic-cyan text-xs">
-            <MoveRight className="h-3.5 w-3.5 shrink-0" />
-            <span className="leading-snug">
-              {tTasks('external_tasks_drag_affordance')}
-            </span>
-          </div>
-        ) : (
+      {!isExternalStaging && (
+        <div className="rounded-b-xl border-t p-3 backdrop-blur-sm">
           <Button
             variant="ghost"
             size="sm"
@@ -737,8 +729,8 @@ export function BoardColumn({
           >
             + {t('add_task')}
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </Card>
   );
 }
