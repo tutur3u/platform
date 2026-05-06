@@ -3,12 +3,17 @@
 import {
   CheckCircle2,
   ExternalLink,
+  MoveRight,
   RotateCcw,
   Trash2,
   UserCheck,
   UserMinus,
   UserX,
 } from '@tuturuuu/icons';
+import {
+  removeCurrentUserTaskPersonalPlacement,
+  upsertCurrentUserTaskPersonalPlacement,
+} from '@tuturuuu/internal-api';
 import type { TaskWithRelations } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import {
@@ -18,6 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { toast } from '@tuturuuu/ui/sonner';
 import { TaskDueDateMenu } from '@tuturuuu/ui/tu-do/boards/boardId/menus/task-due-date-menu';
 import { TaskLabelsMenu } from '@tuturuuu/ui/tu-do/boards/boardId/menus/task-labels-menu';
 import { TaskPriorityMenu } from '@tuturuuu/ui/tu-do/boards/boardId/menus/task-priority-menu';
@@ -37,6 +43,7 @@ interface MyTaskContextMenuProps {
   availableLabels: Array<{ id: string; name: string; color: string }>;
   onTaskUpdate: () => void;
   onCreateNewLabel?: () => void;
+  onPlaceOnPersonalBoard?: (task: TaskWithRelations) => void;
   children: React.ReactNode;
 }
 
@@ -50,6 +57,7 @@ export function MyTaskContextMenu({
   availableLabels,
   onTaskUpdate,
   onCreateNewLabel,
+  onPlaceOnPersonalBoard,
   children,
 }: MyTaskContextMenuProps) {
   const t = useTranslations('ws-tasks');
@@ -76,6 +84,8 @@ export function MyTaskContextMenu({
   const isListDone = task.list?.status === 'done';
   const isPersonallyCompleted = !!task.overrides?.completed_at;
   const isPersonallyUnassigned = !!task.overrides?.personally_unassigned;
+  const personalBoardId = task.overrides?.personal_board_id ?? null;
+  const personalListId = task.overrides?.personal_list_id ?? null;
 
   const handleMenuItemSelect = useCallback(
     (e: Event, action: () => void) => {
@@ -107,6 +117,34 @@ export function MyTaskContextMenu({
     task.list?.board?.ws_id && task.list?.board?.id
       ? `/${task.list.board.ws_id}${tasksHref(`/boards/${task.list.board.id}`)}`
       : null;
+
+  const handleMoveToExternalStaging = async () => {
+    if (!personalBoardId) return;
+
+    try {
+      await upsertCurrentUserTaskPersonalPlacement(task.id, {
+        personal_board_id: personalBoardId,
+        personal_list_id: null,
+        personal_sort_key: null,
+      });
+      toast.success(t('moved_to_external_staging'));
+      onTaskUpdate();
+      onOpenChange(false);
+    } catch {
+      toast.error(t('failed_update_personal_placement'));
+    }
+  };
+
+  const handleRemoveFromPersonalBoard = async () => {
+    try {
+      await removeCurrentUserTaskPersonalPlacement(task.id);
+      toast.success(t('removed_from_personal_board'));
+      onTaskUpdate();
+      onOpenChange(false);
+    } catch {
+      toast.error(t('failed_update_personal_placement'));
+    }
+  };
 
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange} modal={false}>
@@ -234,16 +272,61 @@ export function MyTaskContextMenu({
         )}
 
         {!isFromPersonalWorkspace && (
-          <DropdownMenuItem
-            onSelect={(e) =>
-              handleMenuItemSelect(e, () => void handleUnassignMe())
-            }
-            disabled={isLoading}
-            className="text-dynamic-red focus:text-dynamic-red"
-          >
-            <UserX className="mr-2 h-4 w-4" />
-            {t('unassign_me')}
-          </DropdownMenuItem>
+          <>
+            {onPlaceOnPersonalBoard && !personalBoardId && (
+              <DropdownMenuItem
+                onSelect={(e) =>
+                  handleMenuItemSelect(e, () => {
+                    onPlaceOnPersonalBoard(task);
+                    onOpenChange(false);
+                  })
+                }
+                disabled={isLoading}
+              >
+                <MoveRight className="mr-2 h-4 w-4 text-dynamic-cyan" />
+                {t('place_on_personal_board')}
+              </DropdownMenuItem>
+            )}
+            {personalBoardId && personalListId && (
+              <DropdownMenuItem
+                onSelect={(e) =>
+                  handleMenuItemSelect(
+                    e,
+                    () => void handleMoveToExternalStaging()
+                  )
+                }
+                disabled={isLoading}
+              >
+                <MoveRight className="mr-2 h-4 w-4 text-dynamic-cyan" />
+                {t('move_to_external_staging')}
+              </DropdownMenuItem>
+            )}
+            {personalBoardId && (
+              <DropdownMenuItem
+                onSelect={(e) =>
+                  handleMenuItemSelect(
+                    e,
+                    () => void handleRemoveFromPersonalBoard()
+                  )
+                }
+                disabled={isLoading}
+                className="text-dynamic-red focus:text-dynamic-red"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {t('remove_from_personal_board')}
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              onSelect={(e) =>
+                handleMenuItemSelect(e, () => void handleUnassignMe())
+              }
+              disabled={isLoading}
+              className="text-dynamic-red focus:text-dynamic-red"
+            >
+              <UserX className="mr-2 h-4 w-4" />
+              {t('unassign_me')}
+            </DropdownMenuItem>
+          </>
         )}
 
         {boardUrl && (
@@ -258,16 +341,22 @@ export function MyTaskContextMenu({
           </>
         )}
 
-        <DropdownMenuSeparator />
+        {!personalBoardId && (
+          <>
+            <DropdownMenuSeparator />
 
-        <DropdownMenuItem
-          onSelect={(e) => handleMenuItemSelect(e, () => void handleDelete())}
-          disabled={isLoading}
-          className="text-dynamic-red focus:text-dynamic-red"
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          {t('delete')}
-        </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={(e) =>
+                handleMenuItemSelect(e, () => void handleDelete())
+              }
+              disabled={isLoading}
+              className="text-dynamic-red focus:text-dynamic-red"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              {t('delete')}
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

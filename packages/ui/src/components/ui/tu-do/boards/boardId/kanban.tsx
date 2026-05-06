@@ -86,6 +86,7 @@ export function KanbanBoard({
   setIsMultiSelectMode,
 }: Props) {
   const tLayout = useTranslations('ws-task-boards.layout_settings');
+  const tTasks = useTranslations('ws-tasks');
   const invalidColumnMoveMessage = tLayout.has('cannot_reorder_across_statuses')
     ? tLayout('cannot_reorder_across_statuses')
     : 'Task lists can only be reordered within the same status group';
@@ -133,6 +134,10 @@ export function KanbanBoard({
   }));
 
   const orderedColumns = useMemo(() => sortKanbanColumns(columns), [columns]);
+  const orderedRealColumns = useMemo(
+    () => orderedColumns.filter((column) => !column.is_external_staging),
+    [orderedColumns]
+  );
   const columnsId = useMemo(
     () => orderedColumns.map((col) => col.id),
     [orderedColumns]
@@ -173,7 +178,7 @@ export function KanbanBoard({
     wsId: workspaceId,
     boardId: boardId ?? '',
     selectedTasks,
-    columns: orderedColumns,
+    columns: orderedRealColumns,
     workspaceLabels,
     workspaceProjects,
     weekStartsOn,
@@ -191,7 +196,9 @@ export function KanbanBoard({
       try {
         if (targetBoardId === (boardId ?? '')) {
           // Same board: find the target list name for the toast
-          const targetList = columns.find((c) => c.id === targetListId);
+          const targetList = orderedRealColumns.find(
+            (c) => c.id === targetListId
+          );
           await bulkOps.bulkMoveToList(targetListId, targetList?.name ?? '');
         } else {
           await bulkOps.bulkMoveToBoard(targetBoardId, targetListId);
@@ -203,12 +210,12 @@ export function KanbanBoard({
         console.error('Failed to move tasks:', error);
       }
     },
-    [selectedTasks, boardId, columns, bulkOps, clearSelection]
+    [selectedTasks, boardId, orderedRealColumns, bulkOps, clearSelection]
   );
 
   // Keyboard Shortcuts
   useKeyboardShortcuts({
-    columns,
+    columns: orderedRealColumns,
     boardId,
     filters,
     selectedTasks,
@@ -243,6 +250,10 @@ export function KanbanBoard({
     clearSelection,
     persistListPositions,
     invalidColumnMoveMessage,
+    invalidExternalStagingMoveMessage: tTasks('external_tasks_only_warning'),
+    personalPlacementUpdateFailedMessage: tTasks(
+      'failed_update_personal_placement'
+    ),
     reorderTaskMutation,
     taskHeightsRef,
     scrollContainerRef,
@@ -311,7 +322,7 @@ export function KanbanBoard({
         menuProps={{
           workspace,
           boardConfig,
-          columns,
+          columns: orderedRealColumns,
           bulkWorking,
           estimationOptions,
           appliedSets: appliedSetsMap,

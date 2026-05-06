@@ -20,6 +20,19 @@ export interface Task {
   deleted_at?: string;
   estimation_points?: number | null;
   sort_key?: number | null;
+  source_workspace_id?: string | null;
+  source_workspace_name?: string | null;
+  source_board_id?: string | null;
+  source_board_name?: string | null;
+  source_list_id?: string | null;
+  source_list_name?: string | null;
+  source_list_status?: string | null;
+  personal_board_id?: string | null;
+  personal_list_id?: string | null;
+  personal_sort_key?: number | null;
+  personal_added_at?: string | null;
+  personal_placed_at?: string | null;
+  is_personal_external?: boolean;
   // Scheduling fields
   total_duration?: number | null; // Duration in hours
   is_splittable?: boolean | null;

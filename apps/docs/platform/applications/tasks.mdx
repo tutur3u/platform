@@ -242,6 +242,29 @@ Task create/update API routes silently drop assignee ids that no longer belong
 to the workspace. This lets stale task assignments be cleaned up during the next
 save instead of blocking unrelated edits such as description updates.
 
+#### Personal external task staging
+
+Personal task boards can reference tasks from other workspaces without cloning
+or moving the source task. The per-user placement lives on
+`task_user_overrides` with `personal_board_id`, `personal_list_id`,
+`personal_sort_key`, `personal_added_at`, and `personal_placed_at`.
+
+- `personal_board_id` points to the destination personal board.
+- `personal_list_id = null` means the task is staged in the virtual
+  `External tasks` lane for that personal board.
+- Dragging from the virtual lane into a real personal list sets
+  `personal_list_id` and `personal_sort_key`.
+- Dragging a placed external task back to the virtual lane clears only
+  `personal_list_id`, `personal_sort_key`, and `personal_placed_at`.
+- The virtual lane has no `task_lists` row, no list actions, no create-task
+  form, and no list reordering.
+
+Source task fields, including `tasks.list_id`, must not be changed when a task
+is added to, placed on, moved within, staged from, or removed from a personal
+board. Routes that read personal board tasks should keep filtering inaccessible
+source tasks out instead of surfacing stale placements to users who no longer
+have source-workspace access.
+
 ```sql
 CREATE TABLE workspace_boards (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

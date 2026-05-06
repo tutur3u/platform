@@ -13,4 +13,5 @@ export interface TaskList {
   color: SupportedColor;
   position: number;
   href?: string;
+  is_external_staging?: boolean;
 }

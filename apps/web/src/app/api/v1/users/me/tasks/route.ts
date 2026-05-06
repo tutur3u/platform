@@ -39,6 +39,11 @@ interface RpcTaskRow {
   override_estimation_override: number | null;
   override_personally_unassigned: boolean | null;
   override_notes: string | null;
+  override_personal_board_id: string | null;
+  override_personal_list_id: string | null;
+  override_personal_sort_key: number | null;
+  override_personal_added_at: string | null;
+  override_personal_placed_at: string | null;
   list_data: Record<string, unknown> | null;
   assignees_data: Array<{ user: Record<string, unknown> | null }>;
   labels_data: Array<{ label: Record<string, unknown> | null }>;
@@ -124,6 +129,11 @@ export const GET = withSessionAuth(
                 personally_unassigned:
                   row.override_personally_unassigned ?? false,
                 notes: row.override_notes,
+                personal_board_id: row.override_personal_board_id,
+                personal_list_id: row.override_personal_list_id,
+                personal_sort_key: row.override_personal_sort_key,
+                personal_added_at: row.override_personal_added_at,
+                personal_placed_at: row.override_personal_placed_at,
                 created_at: '',
                 updated_at: '',
               }

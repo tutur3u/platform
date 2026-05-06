@@ -7,9 +7,15 @@ import type {
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
+import { upsertCurrentUserTaskPersonalPlacement } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
+import {
+  getPersonalExternalStagingBoardId,
+  getPersonalExternalStagingListId,
+  isPersonalExternalStagingListId,
+} from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBoardBroadcast } from '../../../../shared/board-broadcast-context';
@@ -31,9 +37,19 @@ interface UseKanbanDndProps {
     updates: Array<{ listId: string; newPosition: number }>
   ) => Promise<void>;
   invalidColumnMoveMessage?: string;
+  invalidExternalStagingMoveMessage?: string;
+  personalPlacementUpdateFailedMessage?: string;
   reorderTaskMutation: any;
   taskHeightsRef: React.RefObject<Map<string, number>>;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
+}
+
+function usesPersonalPlacement(task: Task) {
+  return (
+    task.is_personal_external === true ||
+    Boolean(task.personal_board_id) ||
+    isPersonalExternalStagingListId(task.list_id)
+  );
 }
 
 export function useKanbanDnd({
@@ -47,6 +63,8 @@ export function useKanbanDnd({
   clearSelection,
   persistListPositions,
   invalidColumnMoveMessage,
+  invalidExternalStagingMoveMessage,
+  personalPlacementUpdateFailedMessage,
   reorderTaskMutation,
   taskHeightsRef,
   scrollContainerRef,
@@ -74,6 +92,88 @@ export function useKanbanDnd({
   const lastTargetListIdRef = useRef<string | null>(null);
 
   const queryClient = useQueryClient();
+  const movePersonalPlacementTask = useCallback(
+    async (
+      task: Task,
+      targetListId: string,
+      newSortKey: number | null
+    ): Promise<Task> => {
+      if (!boardId) {
+        throw new Error('Board ID is required');
+      }
+
+      const stagingBoardId = getPersonalExternalStagingBoardId(targetListId);
+      const targetBoardId = stagingBoardId ?? boardId;
+      const isStagingTarget = stagingBoardId !== null;
+      const nextTask = {
+        ...task,
+        list_id: isStagingTarget
+          ? getPersonalExternalStagingListId(targetBoardId)
+          : targetListId,
+        sort_key: isStagingTarget ? null : newSortKey,
+        personal_board_id: targetBoardId,
+        personal_list_id: isStagingTarget ? null : targetListId,
+        personal_sort_key: isStagingTarget ? null : newSortKey,
+        personal_placed_at: isStagingTarget ? null : new Date().toISOString(),
+        is_personal_external: true,
+        _localMutationAt: Date.now(),
+      } as Task & { _localMutationAt: number };
+
+      const previousTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        boardId,
+      ]);
+
+      queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) =>
+        old?.map((candidate) =>
+          candidate.id === task.id ? nextTask : candidate
+        )
+      );
+
+      setOptimisticUpdateInProgress((prev) => new Set(prev).add(task.id));
+
+      try {
+        const response = await upsertCurrentUserTaskPersonalPlacement(task.id, {
+          personal_board_id: targetBoardId,
+          personal_list_id: isStagingTarget ? null : targetListId,
+          personal_sort_key: isStagingTarget ? null : newSortKey,
+        });
+
+        const savedTask = {
+          ...task,
+          ...response.task,
+          assignees: task.assignees,
+          labels: task.labels,
+          projects: task.projects,
+          list_id: nextTask.list_id,
+          sort_key: nextTask.sort_key,
+        } as Task;
+
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) =>
+            old?.map((candidate) =>
+              candidate.id === task.id ? savedTask : candidate
+            )
+        );
+
+        return savedTask;
+      } catch (error) {
+        if (previousTasks) {
+          queryClient.setQueryData(['tasks', boardId], previousTasks);
+        }
+        throw error;
+      } finally {
+        setOptimisticUpdateInProgress((prev) => {
+          const next = new Set(prev);
+          next.delete(task.id);
+          return next;
+        });
+      }
+    },
+    [boardId, queryClient]
+  );
+
   // Use the extracted calculateSortKeyWithRetry helper
   const calculateSortKeyWithRetry = useCallback(
     (
@@ -288,6 +388,14 @@ export function useKanbanDnd({
       const overColumn = over.data?.current?.column;
 
       if (activeColumn && overColumn && activeColumn.id !== overColumn.id) {
+        if (
+          activeColumn.is_external_staging ||
+          overColumn.is_external_staging
+        ) {
+          resetDragState(true);
+          return;
+        }
+
         if (activeColumn.status !== overColumn.status) {
           toast.warning(
             invalidColumnMoveMessage ??
@@ -402,6 +510,19 @@ export function useKanbanDnd({
 
       // Find the target list to check its status
       const targetList = columns.find((col) => String(col.id) === targetListId);
+      const targetIsExternalStaging =
+        isPersonalExternalStagingListId(targetListId) ||
+        targetList?.is_external_staging === true;
+      const activeUsesPersonalPlacement = usesPersonalPlacement(activeTask);
+
+      if (targetIsExternalStaging && !activeUsesPersonalPlacement) {
+        toast.warning(
+          invalidExternalStagingMoveMessage ??
+            'Only external tasks can use the staging lane'
+        );
+        resetDragState(true);
+        return;
+      }
 
       // IMPORTANT: For "done" and "closed" lists, always place at first position (top)
       const isCompletionList =
@@ -439,9 +560,11 @@ export function useKanbanDnd({
       });
 
       // Calculate new sort_key based on drop location
-      let newSortKey: number;
+      let newSortKey: number | null;
 
-      if (isCompletionList) {
+      if (targetIsExternalStaging) {
+        newSortKey = null;
+      } else if (isCompletionList) {
         try {
           if (targetListTasks.length === 0) {
             newSortKey = await calculateSortKeyWithRetry(
@@ -572,7 +695,8 @@ export function useKanbanDnd({
 
       const needsUpdate =
         targetListId !== originalListId ||
-        (activeTask.sort_key ?? MAX_SAFE_INTEGER_SORT) !== newSortKey;
+        (newSortKey !== null &&
+          (activeTask.sort_key ?? MAX_SAFE_INTEGER_SORT) !== newSortKey);
 
       if (needsUpdate) {
         if (isMultiSelectMode && selectedTasks.size > 1) {
@@ -591,6 +715,18 @@ export function useKanbanDnd({
               new Date(b.created_at).getTime()
             );
           });
+
+          if (
+            targetIsExternalStaging &&
+            sortedTasksToMove.some((task) => !usesPersonalPlacement(task))
+          ) {
+            toast.warning(
+              invalidExternalStagingMoveMessage ??
+                'Only external tasks can use the staging lane'
+            );
+            resetDragState(true);
+            return;
+          }
 
           const targetListTasksExcludingMoved = targetListTasks.filter(
             (t) => !selectedTasks.has(t.id)
@@ -621,6 +757,11 @@ export function useKanbanDnd({
 
           try {
             for (const task of sortedTasksToMove) {
+              if (targetIsExternalStaging) {
+                await movePersonalPlacementTask(task, targetListId, null);
+                continue;
+              }
+
               let batchSortKey: number;
               const positionInSimulated = simulatedTargetList.findIndex(
                 (t) => t.id === task.id
@@ -737,26 +878,34 @@ export function useKanbanDnd({
                 }
               }
 
-              reorderTaskMutation.mutate(
-                {
-                  taskId: task.id,
-                  newListId: targetListId,
-                  newSortKey: batchSortKey,
-                },
-                {
-                  onSuccess: (updatedTask: Task) => {
-                    broadcast?.('task:upsert', {
-                      task: {
-                        id: updatedTask.id,
-                        list_id: updatedTask.list_id,
-                        sort_key: updatedTask.sort_key,
-                        completed_at: updatedTask.completed_at,
-                        closed_at: updatedTask.closed_at,
-                      },
-                    });
+              if (usesPersonalPlacement(task)) {
+                await movePersonalPlacementTask(
+                  task,
+                  targetListId,
+                  batchSortKey
+                );
+              } else {
+                reorderTaskMutation.mutate(
+                  {
+                    taskId: task.id,
+                    newListId: targetListId,
+                    newSortKey: batchSortKey,
                   },
-                }
-              );
+                  {
+                    onSuccess: (updatedTask: Task) => {
+                      broadcast?.('task:upsert', {
+                        task: {
+                          id: updatedTask.id,
+                          list_id: updatedTask.list_id,
+                          sort_key: updatedTask.sort_key,
+                          completed_at: updatedTask.completed_at,
+                          closed_at: updatedTask.closed_at,
+                        },
+                      });
+                    },
+                  }
+                );
+              }
             }
           } catch (error) {
             console.error(
@@ -769,26 +918,44 @@ export function useKanbanDnd({
 
           clearSelection();
         } else {
-          reorderTaskMutation.mutate(
-            {
-              taskId: activeTask.id,
-              newListId: targetListId,
-              newSortKey,
-            },
-            {
-              onSuccess: (updatedTask: Task) => {
-                broadcast?.('task:upsert', {
-                  task: {
-                    id: updatedTask.id,
-                    list_id: updatedTask.list_id,
-                    sort_key: updatedTask.sort_key,
-                    completed_at: updatedTask.completed_at,
-                    closed_at: updatedTask.closed_at,
-                  },
-                });
-              },
+          if (activeUsesPersonalPlacement || targetIsExternalStaging) {
+            try {
+              await movePersonalPlacementTask(
+                activeTask,
+                targetListId,
+                newSortKey
+              );
+            } catch (error) {
+              console.error('Failed to update personal task placement:', error);
+              toast.error(
+                personalPlacementUpdateFailedMessage ??
+                  'Failed to update personal task placement'
+              );
+              resetDragState(true);
+              return;
             }
-          );
+          } else {
+            reorderTaskMutation.mutate(
+              {
+                taskId: activeTask.id,
+                newListId: targetListId,
+                newSortKey: newSortKey ?? MAX_SAFE_INTEGER_SORT,
+              },
+              {
+                onSuccess: (updatedTask: Task) => {
+                  broadcast?.('task:upsert', {
+                    task: {
+                      id: updatedTask.id,
+                      list_id: updatedTask.list_id,
+                      sort_key: updatedTask.sort_key,
+                      completed_at: updatedTask.completed_at,
+                      closed_at: updatedTask.closed_at,
+                    },
+                  });
+                },
+              }
+            );
+          }
         }
 
         requestAnimationFrame(() => {

@@ -9,7 +9,9 @@ import {
   listWorkspaceTaskBoards,
   listWorkspaceTaskLists,
   listWorkspaceTasks,
+  removeCurrentUserTaskPersonalPlacement,
   updateWorkspaceTaskBoard,
+  upsertCurrentUserTaskPersonalPlacement,
 } from './tasks';
 
 function createJsonResponse(payload: unknown) {
@@ -188,6 +190,52 @@ describe('workspace board internal-api helpers', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       'https://internal.example.com/api/v1/workspaces/ws-1/tasks?limit=50&completed=exclude&closed=exclude',
       expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('updates and removes current-user personal task placements', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse({ task: { id: 'task-1' } }))
+      .mockResolvedValueOnce(createJsonResponse({ success: true }));
+
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await upsertCurrentUserTaskPersonalPlacement(
+      'task-1',
+      {
+        personal_board_id: 'board-1',
+        personal_list_id: null,
+        personal_sort_key: null,
+      },
+      options
+    );
+
+    await removeCurrentUserTaskPersonalPlacement('task-1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/users/me/tasks/task-1/personal-placement',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({
+          personal_board_id: 'board-1',
+          personal_list_id: null,
+          personal_sort_key: null,
+        }),
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/users/me/tasks/task-1/personal-placement',
+      expect.objectContaining({
+        method: 'DELETE',
         cache: 'no-store',
       })
     );
