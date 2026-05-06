@@ -64,7 +64,11 @@ function UserCard({
       ? tableT('delivery_issue_reason_missing_email')
       : recipient.delivery_issue_reason === 'missing_sender_platform_user'
         ? tableT('delivery_issue_reason_missing_sender_platform_user')
+        : recipient.delivery_issue_reason === 'blacklisted_email_or_domain'
+          ? tableT('delivery_issue_reason_blacklisted_email_or_domain')
         : null;
+  const isEmailBlocked =
+    recipient.delivery_issue_reason === 'blacklisted_email_or_domain';
   const stageIconClassName = cn(
     'mr-1 h-3.5 w-3.5',
     stageAppearance.iconClassName
@@ -193,7 +197,7 @@ function UserCard({
         </div>
       )}
 
-      {recipient.review_stage === 'undeliverable' && deliveryIssueMessage && (
+      {deliveryIssueMessage && (
         <div className="mb-3 rounded border border-dynamic-orange/20 bg-dynamic-orange/5 p-2 text-dynamic-orange text-sm">
           {deliveryIssueMessage}
         </div>
@@ -221,7 +225,11 @@ function UserCard({
         </div>
       )}
 
-      {canApprovePosts && post.id && recipient.user_id && hasExistingCheck && (
+      {canApprovePosts &&
+        !isEmailBlocked &&
+        post.id &&
+        recipient.user_id &&
+        hasExistingCheck && (
         <div className="mt-4">
           <PostApprovalActions
             wsId={wsId}
