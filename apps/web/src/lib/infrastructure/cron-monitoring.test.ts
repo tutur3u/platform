@@ -54,6 +54,7 @@ describe('readCronMonitoringSnapshot', () => {
       expect(snapshot.jobs).toHaveLength(1);
       expect(snapshot.jobs[0]?.id).toBe('payment-products');
     } finally {
+      restoreEnv();
       fs.rmSync(tempDir, { force: true, recursive: true });
     }
   });
@@ -74,6 +75,7 @@ describe('readCronMonitoringSnapshot', () => {
       expect(snapshot.jobs).toHaveLength(1);
       expect(snapshot.jobs[0]?.path).toBe('/api/cron/payment/products');
     } finally {
+      restoreEnv();
       fs.rmSync(tempDir, { force: true, recursive: true });
     }
   });
