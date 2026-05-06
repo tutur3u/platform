@@ -205,14 +205,17 @@ export default function EditableReportPreview({
   const lastResetSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const nextSignature = JSON.stringify(formValues);
+    const nextSignature = JSON.stringify({
+      reportId: report.id ?? null,
+      formValues,
+    });
     if (lastResetSignatureRef.current === nextSignature) {
       return;
     }
 
     lastResetSignatureRef.current = nextSignature;
     form.reset(formValues);
-  }, [form, formValues]);
+  }, [form, formValues, report.id]);
 
   const title = useWatch({ control: form.control, name: 'title' });
   const content = useWatch({ control: form.control, name: 'content' });
