@@ -22,7 +22,7 @@
     "sb:typegen": "cd ../database && bun sb:typegen"
   },
   "dependencies": {
-    "@formatjs/intl-localematcher": "^0.8.5",
+    "@formatjs/intl-localematcher": "^0.8.6",
     "@gsap/react": "^2.1.2",
     "@tanstack/react-query": "^5.100.9",
     "@tuturuuu/ai": "workspace:*",

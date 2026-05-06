@@ -24,7 +24,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@formatjs/intl-localematcher": "^0.8.5",
+    "@formatjs/intl-localematcher": "^0.8.6",
     "@hookform/resolvers": "^5.2.2",
     "@mantine/charts": "^9.1.1",
     "@mantine/core": "^9.1.1",
