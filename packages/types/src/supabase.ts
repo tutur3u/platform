@@ -12164,6 +12164,11 @@ export type Database = {
           due_date_override: string | null;
           estimation_override: number | null;
           notes: string | null;
+          personal_added_at: string | null;
+          personal_board_id: string | null;
+          personal_list_id: string | null;
+          personal_placed_at: string | null;
+          personal_sort_key: number | null;
           personally_unassigned: boolean;
           priority_override:
             | Database['public']['Enums']['task_priority']
@@ -12179,6 +12184,11 @@ export type Database = {
           due_date_override?: string | null;
           estimation_override?: number | null;
           notes?: string | null;
+          personal_added_at?: string | null;
+          personal_board_id?: string | null;
+          personal_list_id?: string | null;
+          personal_placed_at?: string | null;
+          personal_sort_key?: number | null;
           personally_unassigned?: boolean;
           priority_override?:
             | Database['public']['Enums']['task_priority']
@@ -12194,6 +12204,11 @@ export type Database = {
           due_date_override?: string | null;
           estimation_override?: number | null;
           notes?: string | null;
+          personal_added_at?: string | null;
+          personal_board_id?: string | null;
+          personal_list_id?: string | null;
+          personal_placed_at?: string | null;
+          personal_sort_key?: number | null;
           personally_unassigned?: boolean;
           priority_override?:
             | Database['public']['Enums']['task_priority']
@@ -12204,6 +12219,20 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'task_user_overrides_personal_board_id_fkey';
+            columns: ['personal_board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_user_overrides_personal_list_id_fkey';
+            columns: ['personal_list_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_lists';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'task_user_overrides_task_id_fkey';
             columns: ['task_id'];
@@ -28109,6 +28138,11 @@ export type Database = {
           override_due_date_override: string;
           override_estimation_override: number;
           override_notes: string;
+          override_personal_added_at: string;
+          override_personal_board_id: string;
+          override_personal_list_id: string;
+          override_personal_placed_at: string;
+          override_personal_sort_key: number;
           override_personally_unassigned: boolean;
           override_priority_override: Database['public']['Enums']['task_priority'];
           override_self_managed: boolean;
@@ -28946,6 +28980,14 @@ export type Database = {
       };
       is_user_whitelisted: {
         Args: { user_id_param: string };
+        Returns: boolean;
+      };
+      is_valid_personal_task_placement: {
+        Args: {
+          p_personal_board_id: string;
+          p_personal_list_id: string;
+          p_user_id: string;
+        };
         Returns: boolean;
       };
       is_workspace_owner: {

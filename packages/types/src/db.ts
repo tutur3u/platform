@@ -321,7 +321,21 @@ export type TaskWithRelations = {
   overrides?: TaskUserOverride | null;
 };
 
-export type TaskUserOverride = Tables<'task_user_overrides'>;
+type TaskUserOverrideRow = Tables<'task_user_overrides'>;
+export type TaskUserOverride = Omit<
+  TaskUserOverrideRow,
+  | 'personal_added_at'
+  | 'personal_board_id'
+  | 'personal_list_id'
+  | 'personal_placed_at'
+  | 'personal_sort_key'
+> & {
+  personal_board_id?: string | null;
+  personal_list_id?: string | null;
+  personal_sort_key?: number | null;
+  personal_added_at?: string | null;
+  personal_placed_at?: string | null;
+};
 export type UserBoardListOverride = Tables<'user_board_list_overrides'>;
 export type UserScopeOverrideStatus =
   Database['public']['Enums']['user_scope_override_status'];
