@@ -1,3 +1,5 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { redirect } from 'next/navigation';
 import { BASE_URL, WEB_APP_URL } from '@/constants/common';
 
@@ -13,8 +15,18 @@ export default async function LoginPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const params = await searchParams;
+  const nextPath = normalizeNextPath(params.next);
+  const supabase = await createClient();
+  const { user } = await resolveAuthenticatedSessionUser(supabase).catch(
+    () => ({ user: null })
+  );
+
+  if (user) {
+    redirect(nextPath);
+  }
+
   const returnUrl = new URL('/verify-token', BASE_URL);
-  returnUrl.searchParams.set('nextUrl', normalizeNextPath(params.next));
+  returnUrl.searchParams.set('nextUrl', nextPath);
 
   const loginUrl = new URL('/login', WEB_APP_URL);
   loginUrl.searchParams.set('returnUrl', returnUrl.toString());

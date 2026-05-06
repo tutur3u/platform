@@ -30,7 +30,7 @@ const workLoops = [
   { icon: BookOpenCheck, key: 'handoff' },
 ] as const;
 
-export function TeachNav() {
+export function TeachNav({ dashboardHref }: { dashboardHref: string }) {
   const t = useTranslations('teach');
   return (
     <nav
@@ -56,7 +56,7 @@ export function TeachNav() {
       </div>
       <div className="hidden items-center gap-3 md:flex">
         <TeachThemeControl compact />
-        <InternalHeaderLink href="/login?next=/dashboard">
+        <InternalHeaderLink href={dashboardHref}>
           {t('dashboard')}
         </InternalHeaderLink>
         <HeaderLink href={WEB_APP_URL}>{t('platform')}</HeaderLink>
@@ -66,7 +66,7 @@ export function TeachNav() {
   );
 }
 
-export function TeachHero() {
+export function TeachHero({ dashboardHref }: { dashboardHref: string }) {
   const t = useTranslations('teach');
   return (
     <section className="mx-auto grid min-h-[calc(100dvh-5rem)] max-w-7xl items-center gap-12 px-5 py-16 md:grid-cols-[minmax(0,1fr)_30rem] md:px-8">
@@ -85,9 +85,7 @@ export function TeachHero() {
           {t('heroLead')}
         </p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-          <HeroLink href="/login?next=/dashboard">
-            {t('openDashboard')}
-          </HeroLink>
+          <HeroLink href={dashboardHref}>{t('openDashboard')}</HeroLink>
           <HeroLink href={LEARN_APP_URL} secondary>
             {t('previewLearn')}
           </HeroLink>
@@ -182,13 +180,13 @@ export function TeachWorkLoop() {
   );
 }
 
-export function TeachFooter() {
+export function TeachFooter({ dashboardHref }: { dashboardHref: string }) {
   const t = useTranslations('teach');
   return (
     <footer className="border-border border-t-2 bg-background px-5 py-12 md:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <p className="max-w-2xl font-black text-2xl">{t('footer')}</p>
-        <HeroLink href="/login?next=/dashboard">{t('openDashboard')}</HeroLink>
+        <HeroLink href={dashboardHref}>{t('openDashboard')}</HeroLink>
       </div>
     </footer>
   );

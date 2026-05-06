@@ -7,7 +7,7 @@ Learn lives in `apps/learn` and runs locally on port `7812`. It is the learner-f
 
 ## Ownership model
 
-Learn does not render its own login portal. Its `/login` route redirects to the platform login at `apps/web` with a `returnUrl` pointing back to `/verify-token`. Web-style Supabase cookies are kept on the Learn app after token verification.
+Learn does not render its own login portal. Its `/login` route first checks for an existing Learn Supabase session. If the session is already present, it redirects inside Learn to the requested `next` path, usually `/dashboard`. Otherwise it redirects to the platform login at `apps/web` with a `returnUrl` pointing back to `/verify-token`. Web-style Supabase cookies are kept on the Learn app after token verification.
 
 Social auth providers still run on `apps/web` because OAuth provider callbacks are registered for `tuturuuu.com`. After the platform login confirms the current account, `apps/web` generates a cross-app token for the `learn` target app, redirects back to `/verify-token`, and Learn creates its own domain-scoped Supabase session through `POST /api/auth/verify-app-token`.
 
@@ -57,7 +57,7 @@ Learn learner pages keep the public `apps/learn/src/components/learner-pages.tsx
 
 Keep Learn learner files under 400 LOC and individual components under 200 LOC. When a screen grows, split reusable cards, rows, panels, and route-specific helpers into adjacent modules before final verification instead of letting `learner-pages.tsx` or any route screen become a monolith again.
 
-Language switching is handled inside Learn with `next-intl` localized navigation links. Keep English and Vietnamese strings in `apps/learn/messages/en.json` and `apps/learn/messages/vi.json`, then run `bun i18n:sort`.
+Language switching is handled inside Learn with `next-intl`, but locale prefixes are hidden from URLs. Legacy locale-prefixed paths such as `/vi/dashboard` are canonicalized back to `/dashboard` while preserving the selected locale in `NEXT_LOCALE`. Keep English and Vietnamese strings in `apps/learn/messages/en.json` and `apps/learn/messages/vi.json`, then run `bun i18n:sort`.
 
 ## Verification
 

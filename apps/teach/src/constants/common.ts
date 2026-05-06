@@ -1,4 +1,4 @@
-export const LOCALE_COOKIE_NAME = 'tuturuuu-locale';
+export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
 
 export const PORT = process.env.PORT || 7813;
 export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;

@@ -42,8 +42,8 @@ function getPathLocale(pathname: string) {
     : null;
 }
 
-function getLoginPath(locale: Locale) {
-  return locale === defaultLocale ? '/login' : `/${locale}/login`;
+function getLoginPath() {
+  return '/login';
 }
 
 function getNextValue(request: NextRequest) {
@@ -54,7 +54,6 @@ function getNextValue(request: NextRequest) {
 }
 
 function getCanonicalPublicRedirect(request: NextRequest) {
-  const pathLocale = getPathLocale(request.nextUrl.pathname);
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
 
   if (unlocalizedPath !== '/') return null;
@@ -62,12 +61,24 @@ function getCanonicalPublicRedirect(request: NextRequest) {
   const url = new URL(request.url);
   let changed = false;
 
-  if (pathLocale === defaultLocale) {
-    url.pathname = '/';
+  if (url.searchParams.get('next') === '/') {
+    url.searchParams.delete('next');
     changed = true;
   }
 
   return changed ? NextResponse.redirect(url) : null;
+}
+
+function getCanonicalLocaleRedirect(request: NextRequest) {
+  const pathLocale = getPathLocale(request.nextUrl.pathname);
+  if (!pathLocale) return null;
+
+  const url = new URL(request.url);
+  url.pathname = stripLocale(request.nextUrl.pathname);
+
+  const response = NextResponse.redirect(url);
+  response.cookies.set(LOCALE_COOKIE_NAME, pathLocale);
+  return response;
 }
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
@@ -77,6 +88,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     });
     return guardResponse ?? NextResponse.next();
   }
+
+  const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);
+  if (canonicalLocaleRedirect) return canonicalLocaleRedirect;
 
   const canonicalPublicRedirect = getCanonicalPublicRedirect(request);
   if (canonicalPublicRedirect) return canonicalPublicRedirect;
@@ -92,8 +106,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
-      const locale = getPreferredLocale(request);
-      const url = new URL(getLoginPath(locale), request.url);
+      const url = new URL(getLoginPath(), request.url);
       const next = getNextValue(request);
 
       if (next) url.searchParams.set('next', next);

@@ -20,7 +20,7 @@ const landingCards = [
   { icon: LineChart, key: 'progress' },
 ] as const;
 
-export function LearnLanding() {
+export function LearnLanding({ dashboardHref }: { dashboardHref: string }) {
   const t = useTranslations('landing');
 
   return (
@@ -37,7 +37,7 @@ export function LearnLanding() {
         </div>
         <Link
           className="inline-flex h-10 items-center justify-center gap-2 border-2 border-border bg-background px-4 font-black text-sm shadow-[3px_3px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
-          href="/login?next=/dashboard"
+          href={dashboardHref}
         >
           {t('signIn')}
           <ArrowRight className="h-4 w-4" />
@@ -59,7 +59,7 @@ export function LearnLanding() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
               className="inline-flex h-12 items-center justify-center gap-2 border-2 border-border bg-primary px-5 font-black text-primary-foreground shadow-[4px_4px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
-              href="/login?next=/dashboard"
+              href={dashboardHref}
             >
               {t('start')}
               <ArrowRight className="h-4 w-4" />

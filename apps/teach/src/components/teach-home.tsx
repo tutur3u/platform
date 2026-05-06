@@ -14,7 +14,7 @@ import {
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-export function TeachHome() {
+export function TeachHome({ dashboardHref }: { dashboardHref: string }) {
   const rootRef = useRef<HTMLElement>(null);
 
   useGSAP(
@@ -57,11 +57,11 @@ export function TeachHome() {
       ref={rootRef}
       className="min-h-screen w-full max-w-full overflow-x-hidden bg-root-background text-foreground"
     >
-      <TeachNav />
-      <TeachHero />
+      <TeachNav dashboardHref={dashboardHref} />
+      <TeachHero dashboardHref={dashboardHref} />
       <TeachFeatureGrid />
       <TeachWorkLoop />
-      <TeachFooter />
+      <TeachFooter dashboardHref={dashboardHref} />
     </main>
   );
 }
