@@ -53,10 +53,15 @@ interface TransactionAttachmentsFieldProps {
   disabled?: boolean;
   existingAttachments?: WorkspaceStorageListItem[];
   existingAttachmentsError?: boolean;
+  existingAttachmentsHasMore?: boolean;
   existingAttachmentsLoading?: boolean;
+  existingAttachmentsLoadingMore?: boolean;
+  existingAttachmentsRefreshing?: boolean;
+  existingAttachmentsTotal?: number;
   maxFileCount?: number;
   maxSizeBytes?: number;
   onChange: (attachments: TransactionAttachmentDraft[]) => void;
+  onLoadMoreExisting?: () => void;
   onRefreshExisting?: () => void;
   transactionId?: string;
   wsId?: string;
@@ -396,10 +401,15 @@ export function TransactionAttachmentsField({
   disabled = false,
   existingAttachments = [],
   existingAttachmentsError = false,
+  existingAttachmentsHasMore = false,
   existingAttachmentsLoading = false,
+  existingAttachmentsLoadingMore = false,
+  existingAttachmentsRefreshing = false,
+  existingAttachmentsTotal,
   maxFileCount = 10,
   maxSizeBytes = 50 * 1024 * 1024,
   onChange,
+  onLoadMoreExisting,
   onRefreshExisting,
   transactionId,
   wsId,
@@ -410,10 +420,14 @@ export function TransactionAttachmentsField({
   const [previewAttachment, setPreviewAttachment] =
     useState<WorkspaceStorageListItem | null>(null);
 
-  const totalAttachmentCount = attachments.length + existingAttachments.length;
+  const persistedAttachmentCount =
+    existingAttachmentsTotal ?? existingAttachments.length;
+  const totalAttachmentCount = attachments.length + persistedAttachmentCount;
   const selectedCount = attachments.length;
   const availableSlots = Math.max(maxFileCount - totalAttachmentCount, 0);
   const isFull = totalAttachmentCount >= maxFileCount;
+  const isExistingAttachmentsBusy =
+    existingAttachmentsLoading || existingAttachmentsRefreshing;
 
   const handleFilesSelected = (files: FileList | null) => {
     if (!files || files.length === 0) {
@@ -568,25 +582,25 @@ export function TransactionAttachmentsField({
               variant="ghost"
               size="sm"
               className="h-8 gap-1.5"
-              disabled={existingAttachmentsLoading}
+              disabled={isExistingAttachmentsBusy}
               onClick={onRefreshExisting}
             >
               <RefreshCw
                 className={cn(
                   'h-3.5 w-3.5',
-                  existingAttachmentsLoading && 'animate-spin'
+                  isExistingAttachmentsBusy && 'animate-spin'
                 )}
               />
               {t('common.refresh')}
             </Button>
           </div>
 
-          {existingAttachmentsLoading ? (
+          {existingAttachmentsLoading && existingAttachments.length === 0 ? (
             <div className="flex items-center gap-2 rounded-md border border-dashed p-4 text-muted-foreground text-sm">
               <Loader2 className="h-4 w-4 animate-spin" />
               {t('common.loading')}
             </div>
-          ) : existingAttachmentsError ? (
+          ) : existingAttachmentsError && existingAttachments.length === 0 ? (
             <div className="rounded-md border border-dashed p-4 text-destructive text-sm">
               {t('transaction-data-table.attachments_existing_error')}
             </div>
@@ -619,6 +633,28 @@ export function TransactionAttachmentsField({
                   </button>
                 );
               })}
+
+              {existingAttachmentsHasMore || existingAttachmentsLoadingMore ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  disabled={
+                    existingAttachmentsLoadingMore || !onLoadMoreExisting
+                  }
+                  onClick={onLoadMoreExisting}
+                >
+                  {existingAttachmentsLoadingMore ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t('common.loading')}
+                    </>
+                  ) : (
+                    t('common.load_more')
+                  )}
+                </Button>
+              ) : null}
             </div>
           ) : selectedCount === 0 ? (
             <div className="rounded-md border border-dashed p-4 text-center text-muted-foreground text-sm">

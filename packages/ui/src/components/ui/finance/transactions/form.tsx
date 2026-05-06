@@ -1,5 +1,10 @@
 'use client';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { ArrowLeftRight, Paperclip, Settings2, Wallet } from '@tuturuuu/icons';
 import {
   listWorkspaceStorageObjects,
@@ -43,6 +48,8 @@ import {
   type TransactionAttachmentDraft,
   TransactionAttachmentsField,
 } from './transaction-attachments-field';
+
+const TRANSACTION_ATTACHMENT_PAGE_SIZE = 100;
 
 export function TransactionForm({
   wsId,
@@ -355,34 +362,51 @@ export function TransactionForm({
     );
   };
 
-  const attachmentQuery = useQuery({
+  const attachmentQuery = useInfiniteQuery({
     queryKey: [
       'finance-transaction-attachments',
       wsId,
       data?.id,
       data?.transfer?.linked_transaction_id,
+      TRANSACTION_ATTACHMENT_PAGE_SIZE,
     ],
-    queryFn: async () => {
+    queryFn: async ({ pageParam }) => {
       if (!data?.id) {
-        return [];
+        return {
+          data: [],
+          pagination: {
+            limit: TRANSACTION_ATTACHMENT_PAGE_SIZE,
+            offset: pageParam,
+            total: 0,
+          },
+        };
       }
 
-      const result = await listWorkspaceStorageObjects(
+      return listWorkspaceStorageObjects(
         wsId,
         {
-          limit: 1000,
-          offset: 0,
+          limit: TRANSACTION_ATTACHMENT_PAGE_SIZE,
+          offset: pageParam,
           path: joinPath('finance', 'transactions', data.id),
           sortBy: 'created_at',
           sortOrder: 'desc',
         },
         { fetch }
       );
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => {
+      const nextOffset = lastPage.pagination.offset + lastPage.pagination.limit;
 
-      return result.data;
+      return nextOffset < lastPage.pagination.total ? nextOffset : undefined;
     },
     enabled: !!data?.id,
   });
+  const existingAttachments =
+    attachmentQuery.data?.pages.flatMap((page) => page.data) ?? [];
+  const existingAttachmentsTotal =
+    attachmentQuery.data?.pages.at(-1)?.pagination.total ??
+    existingAttachments.length;
 
   const uploadPendingAttachments = async (transactionId?: string) => {
     const pendingAttachments = attachments.filter(
@@ -850,9 +874,19 @@ export function TransactionForm({
               <TransactionAttachmentsField
                 attachments={attachments}
                 disabled={loading || !hasFormPermission}
-                existingAttachments={attachmentQuery.data ?? []}
+                existingAttachments={existingAttachments}
                 existingAttachmentsError={attachmentQuery.isError}
-                existingAttachmentsLoading={attachmentQuery.isFetching}
+                existingAttachmentsHasMore={attachmentQuery.hasNextPage}
+                existingAttachmentsLoading={attachmentQuery.isLoading}
+                existingAttachmentsLoadingMore={
+                  attachmentQuery.isFetchingNextPage
+                }
+                existingAttachmentsRefreshing={
+                  attachmentQuery.isFetching &&
+                  !attachmentQuery.isFetchingNextPage
+                }
+                existingAttachmentsTotal={existingAttachmentsTotal}
+                onLoadMoreExisting={() => void attachmentQuery.fetchNextPage()}
                 onChange={setAttachments}
                 onRefreshExisting={() => void attachmentQuery.refetch()}
                 transactionId={data?.id}
