@@ -107,7 +107,7 @@ Future<bool> openCreateTransactionSheet(
             );
           }
 
-          await repository.createTransaction(
+          final transactionId = await repository.createTransaction(
             wsId: wsId,
             amount: amount,
             description: description,
@@ -121,6 +121,7 @@ Future<bool> openCreateTransactionSheet(
             isCategoryConfidential: isCategoryConfidential,
           );
           await invalidateFinanceMutationCaches(wsId);
+          return transactionId;
         },
   );
 }

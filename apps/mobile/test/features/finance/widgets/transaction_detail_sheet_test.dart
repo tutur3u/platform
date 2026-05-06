@@ -337,7 +337,9 @@ void main() {
                               isAmountConfidential,
                               isDescriptionConfidential,
                               isCategoryConfidential,
-                            }) async {},
+                            }) async {
+                              return null;
+                            },
                       ),
                     );
                   },

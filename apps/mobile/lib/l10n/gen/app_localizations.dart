@@ -7495,6 +7495,72 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{No matches yet} one{1 transaction matched} other{{count} transactions matched}}'**
   String financeActivitySearchResults(int count);
 
+  /// No description provided for @financeAddAttachments.
+  ///
+  /// In en, this message translates to:
+  /// **'Add attachments'**
+  String get financeAddAttachments;
+
+  /// No description provided for @financeAttachmentCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No files selected} one{1 file selected} other{{count} files selected}}'**
+  String financeAttachmentCount(int count);
+
+  /// No description provided for @financeAttachmentEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No attachments selected'**
+  String get financeAttachmentEmpty;
+
+  /// No description provided for @financeAttachmentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach up to {count} files. Max {size} each.'**
+  String financeAttachmentHint(int count, String size);
+
+  /// No description provided for @financeAttachmentLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachment limit reached'**
+  String get financeAttachmentLimitReached;
+
+  /// No description provided for @financeAttachmentRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 file was too large. Max {size}.} other{{count} files were too large or over the limit. Max {size} each.}}'**
+  String financeAttachmentRejected(int count, String size);
+
+  /// No description provided for @financeAttachmentUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 attachment failed to upload} other{{count} attachments failed to upload}}'**
+  String financeAttachmentUploadFailed(int count);
+
+  /// No description provided for @financeAttachmentUploadSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 attachment uploaded} other{{count} attachments uploaded}}'**
+  String financeAttachmentUploadSuccess(int count);
+
+  /// No description provided for @financeAttachmentUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploaded'**
+  String get financeAttachmentUploaded;
+
+  /// No description provided for @financeAttachmentUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading...'**
+  String get financeAttachmentUploading;
+
+  /// No description provided for @financeAttachments.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachments'**
+  String get financeAttachments;
+
   /// No description provided for @financeTransactionDetails.
   ///
   /// In en, this message translates to:

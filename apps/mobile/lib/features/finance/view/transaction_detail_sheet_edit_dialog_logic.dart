@@ -23,6 +23,8 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   bool _isAmountConfidential = false;
   bool _isDescriptionConfidential = false;
   bool _isCategoryConfidential = false;
+  List<_TransactionAttachmentDraft> _attachments =
+      const <_TransactionAttachmentDraft>[];
 
   bool _isLoadingOptions = false;
   String? _optionsError;
@@ -240,7 +242,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
           : _descriptionController.text.trim();
 
       if (_isCreate && _isTransfer) {
-        await widget.repository.createTransfer(
+        final transactionId = await widget.repository.createTransfer(
           wsId: widget.wsId,
           originWalletId: _walletId!,
           destinationWalletId: _destinationWalletId!,
@@ -251,6 +253,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
           reportOptIn: _reportOptIn,
           tagIds: _tagIds,
         );
+        await _uploadPendingAttachments(transactionId);
 
         if (!mounted) return;
         Navigator.of(context).pop(true);
@@ -262,7 +265,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       final signedAmount = isExpense ? -amount.abs() : amount.abs();
 
       if (_isCreate) {
-        await widget.onCreate!(
+        final transactionId = await widget.onCreate!(
           amount: signedAmount,
           description: normalizedDescription,
           takenAt: _takenAt,
@@ -274,6 +277,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
           isDescriptionConfidential: _isDescriptionConfidential,
           isCategoryConfidential: _isCategoryConfidential,
         );
+        await _uploadPendingAttachments(transactionId);
 
         if (!mounted) return;
         Navigator.of(context).pop(true);
@@ -322,6 +326,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
           tagIds: _tagIds,
           refreshedTransactionId: widget.transaction!.id,
         );
+        await _uploadPendingAttachments(widget.transaction!.id);
 
         if (!mounted) return;
         Navigator.of(context).pop(updated);
@@ -341,6 +346,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         isDescriptionConfidential: _isDescriptionConfidential,
         isCategoryConfidential: _isCategoryConfidential,
       );
+      await _uploadPendingAttachments(updated.id);
 
       if (!mounted) return;
       Navigator.of(context).pop(updated);
@@ -370,6 +376,174 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       }
       setState(() => _isSaving = false);
     }
+  }
+
+  Future<void> _pickAttachments() async {
+    final result = await FilePicker.pickFiles(
+      allowMultiple: true,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty || !mounted) {
+      return;
+    }
+
+    final availableSlots = _maxTransactionAttachmentCount - _attachments.length;
+    if (availableSlots <= 0) {
+      _showAttachmentToast(context.l10n.financeAttachmentLimitReached);
+      return;
+    }
+
+    final acceptedFiles = result.files
+        .where((file) => file.size <= _maxTransactionAttachmentSizeBytes)
+        .take(availableSlots)
+        .toList(growable: false);
+
+    final rejectedCount = result.files.length - acceptedFiles.length;
+    if (rejectedCount > 0) {
+      _showAttachmentToast(
+        context.l10n.financeAttachmentRejected(
+          rejectedCount,
+          _formatAttachmentSize(_maxTransactionAttachmentSizeBytes),
+        ),
+      );
+    }
+
+    if (acceptedFiles.isEmpty) {
+      return;
+    }
+
+    final now = DateTime.now().microsecondsSinceEpoch;
+    setState(() {
+      _attachments = <_TransactionAttachmentDraft>[
+        ..._attachments,
+        for (final indexed in acceptedFiles.indexed)
+          _TransactionAttachmentDraft(
+            id: '$now-${indexed.$1}-${indexed.$2.name}',
+            file: indexed.$2,
+          ),
+      ];
+    });
+  }
+
+  void _removeAttachment(String attachmentId) {
+    setState(() {
+      _attachments = _attachments
+          .where((attachment) => attachment.id != attachmentId)
+          .toList(growable: false);
+    });
+  }
+
+  Future<Uint8List?> _readAttachmentBytes(PlatformFile file) async {
+    final bytes = file.bytes;
+    if (bytes != null) {
+      return bytes;
+    }
+
+    final path = file.path;
+    if (path == null || path.isEmpty) {
+      return null;
+    }
+
+    return io.File(path).readAsBytes();
+  }
+
+  void _setAttachmentStatus(
+    String attachmentId,
+    _TransactionAttachmentStatus status,
+  ) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _attachments = _attachments
+          .map(
+            (attachment) => attachment.id == attachmentId
+                ? attachment.copyWith(status: status)
+                : attachment,
+          )
+          .toList(growable: false);
+    });
+  }
+
+  Future<void> _uploadPendingAttachments(String? transactionId) async {
+    final pendingAttachments = _attachments
+        .where(
+          (attachment) =>
+              attachment.status != _TransactionAttachmentStatus.uploaded,
+        )
+        .toList(growable: false);
+    if (transactionId == null ||
+        transactionId.isEmpty ||
+        pendingAttachments.isEmpty) {
+      return;
+    }
+
+    var failedCount = 0;
+    for (final attachment in pendingAttachments) {
+      _setAttachmentStatus(
+        attachment.id,
+        _TransactionAttachmentStatus.uploading,
+      );
+
+      try {
+        final bytes = await _readAttachmentBytes(attachment.file);
+        if (bytes == null) {
+          throw const ApiException(
+            message: 'Missing attachment bytes',
+            statusCode: 0,
+          );
+        }
+
+        await widget.repository.uploadTransactionAttachment(
+          wsId: widget.wsId,
+          transactionId: transactionId,
+          filename: attachment.file.name,
+          bytes: bytes,
+        );
+
+        _setAttachmentStatus(
+          attachment.id,
+          _TransactionAttachmentStatus.uploaded,
+        );
+      } on Exception {
+        failedCount += 1;
+        _setAttachmentStatus(
+          attachment.id,
+          _TransactionAttachmentStatus.error,
+        );
+      }
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    if (failedCount > 0) {
+      _showAttachmentToast(
+        context.l10n.financeAttachmentUploadFailed(failedCount),
+        destructive: true,
+      );
+      return;
+    }
+
+    _showAttachmentToast(
+      context.l10n.financeAttachmentUploadSuccess(pendingAttachments.length),
+    );
+  }
+
+  void _showAttachmentToast(String message, {bool destructive = false}) {
+    final rootCtx = Navigator.of(context, rootNavigator: true).context;
+    if (!rootCtx.mounted) {
+      return;
+    }
+
+    shad.showToast(
+      context: rootCtx,
+      builder: (ctx, overlay) => destructive
+          ? shad.Alert.destructive(content: Text(message))
+          : shad.Alert(content: Text(message)),
+    );
   }
 
   Future<void> _pickWallet() async {

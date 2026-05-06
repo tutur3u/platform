@@ -1589,6 +1589,58 @@
             }
         }
     },
+    "financeAddAttachments": "Thêm tệp đính kèm",
+    "financeAttachmentCount": "{count, plural, =0{Chưa chọn tệp nào} one{Đã chọn 1 tệp} other{Đã chọn {count} tệp}}",
+    "@financeAttachmentCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "financeAttachmentEmpty": "Chưa chọn tệp đính kèm",
+    "financeAttachmentHint": "Đính kèm tối đa {count} tệp. Mỗi tệp tối đa {size}.",
+    "@financeAttachmentHint": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            },
+            "size": {
+                "type": "String"
+            }
+        }
+    },
+    "financeAttachmentLimitReached": "Đã đạt giới hạn tệp đính kèm",
+    "financeAttachmentRejected": "{count, plural, one{1 tệp quá lớn. Tối đa {size}.} other{{count} tệp quá lớn hoặc vượt giới hạn. Mỗi tệp tối đa {size}.}}",
+    "@financeAttachmentRejected": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            },
+            "size": {
+                "type": "String"
+            }
+        }
+    },
+    "financeAttachmentUploadFailed": "{count, plural, one{1 tệp đính kèm tải lên thất bại} other{{count} tệp đính kèm tải lên thất bại}}",
+    "@financeAttachmentUploadFailed": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "financeAttachmentUploadSuccess": "{count, plural, one{Đã tải lên 1 tệp đính kèm} other{Đã tải lên {count} tệp đính kèm}}",
+    "@financeAttachmentUploadSuccess": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "financeAttachmentUploaded": "Đã tải lên",
+    "financeAttachmentUploading": "Đang tải lên...",
+    "financeAttachments": "Tệp đính kèm",
     "financeTransactionDetails": "Chi tiết giao dịch",
     "financeCreateTransaction": "Tạo giao dịch",
     "financeEditTransaction": "Sửa giao dịch",

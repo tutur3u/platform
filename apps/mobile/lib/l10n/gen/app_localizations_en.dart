@@ -3879,6 +3879,74 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get financeAddAttachments => 'Add attachments';
+
+  @override
+  String financeAttachmentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files selected',
+      one: '1 file selected',
+      zero: 'No files selected',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeAttachmentEmpty => 'No attachments selected';
+
+  @override
+  String financeAttachmentHint(int count, String size) {
+    return 'Attach up to $count files. Max $size each.';
+  }
+
+  @override
+  String get financeAttachmentLimitReached => 'Attachment limit reached';
+
+  @override
+  String financeAttachmentRejected(int count, String size) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files were too large or over the limit. Max $size each.',
+      one: '1 file was too large. Max $size.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String financeAttachmentUploadFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count attachments failed to upload',
+      one: '1 attachment failed to upload',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String financeAttachmentUploadSuccess(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count attachments uploaded',
+      one: '1 attachment uploaded',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeAttachmentUploaded => 'Uploaded';
+
+  @override
+  String get financeAttachmentUploading => 'Uploading...';
+
+  @override
+  String get financeAttachments => 'Attachments';
+
+  @override
   String get financeTransactionDetails => 'Transaction details';
 
   @override

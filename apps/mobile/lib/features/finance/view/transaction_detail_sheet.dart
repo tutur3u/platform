@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io' as io;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart' hide AlertDialog, TextField;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -46,7 +48,7 @@ typedef TransactionSaveHandler =
     });
 
 typedef TransactionCreateHandler =
-    Future<void> Function({
+    Future<String?> Function({
       required double amount,
       String? description,
       DateTime? takenAt,

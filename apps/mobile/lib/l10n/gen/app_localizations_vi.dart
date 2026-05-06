@@ -3855,6 +3855,74 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get financeAddAttachments => 'Thêm tệp đính kèm';
+
+  @override
+  String financeAttachmentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã chọn $count tệp',
+      one: 'Đã chọn 1 tệp',
+      zero: 'Chưa chọn tệp nào',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeAttachmentEmpty => 'Chưa chọn tệp đính kèm';
+
+  @override
+  String financeAttachmentHint(int count, String size) {
+    return 'Đính kèm tối đa $count tệp. Mỗi tệp tối đa $size.';
+  }
+
+  @override
+  String get financeAttachmentLimitReached => 'Đã đạt giới hạn tệp đính kèm';
+
+  @override
+  String financeAttachmentRejected(int count, String size) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tệp quá lớn hoặc vượt giới hạn. Mỗi tệp tối đa $size.',
+      one: '1 tệp quá lớn. Tối đa $size.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String financeAttachmentUploadFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tệp đính kèm tải lên thất bại',
+      one: '1 tệp đính kèm tải lên thất bại',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String financeAttachmentUploadSuccess(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã tải lên $count tệp đính kèm',
+      one: 'Đã tải lên 1 tệp đính kèm',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeAttachmentUploaded => 'Đã tải lên';
+
+  @override
+  String get financeAttachmentUploading => 'Đang tải lên...';
+
+  @override
+  String get financeAttachments => 'Tệp đính kèm';
+
+  @override
   String get financeTransactionDetails => 'Chi tiết giao dịch';
 
   @override

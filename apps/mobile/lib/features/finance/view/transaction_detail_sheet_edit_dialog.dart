@@ -345,6 +345,16 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                 ),
                 const shad.Gap(12),
                 _FormSectionCard(
+                  title: l10n.financeAttachments,
+                  child: _TransactionAttachmentPicker(
+                    attachments: _attachments,
+                    isSaving: _isSaving,
+                    onPickAttachments: _pickAttachments,
+                    onRemoveAttachment: _removeAttachment,
+                  ),
+                ),
+                const shad.Gap(12),
+                _FormSectionCard(
                   title: l10n.settingsTitle,
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 180),

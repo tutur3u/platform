@@ -1588,6 +1588,58 @@
             }
         }
     },
+    "financeAddAttachments": "Add attachments",
+    "financeAttachmentCount": "{count, plural, =0{No files selected} one{1 file selected} other{{count} files selected}}",
+    "@financeAttachmentCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "financeAttachmentEmpty": "No attachments selected",
+    "financeAttachmentHint": "Attach up to {count} files. Max {size} each.",
+    "@financeAttachmentHint": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            },
+            "size": {
+                "type": "String"
+            }
+        }
+    },
+    "financeAttachmentLimitReached": "Attachment limit reached",
+    "financeAttachmentRejected": "{count, plural, one{1 file was too large. Max {size}.} other{{count} files were too large or over the limit. Max {size} each.}}",
+    "@financeAttachmentRejected": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            },
+            "size": {
+                "type": "String"
+            }
+        }
+    },
+    "financeAttachmentUploadFailed": "{count, plural, one{1 attachment failed to upload} other{{count} attachments failed to upload}}",
+    "@financeAttachmentUploadFailed": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "financeAttachmentUploadSuccess": "{count, plural, one{1 attachment uploaded} other{{count} attachments uploaded}}",
+    "@financeAttachmentUploadSuccess": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "financeAttachmentUploaded": "Uploaded",
+    "financeAttachmentUploading": "Uploading...",
+    "financeAttachments": "Attachments",
     "financeTransactionDetails": "Transaction details",
     "financeCreateTransaction": "Create transaction",
     "financeEditTransaction": "Edit transaction",
