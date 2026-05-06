@@ -59,7 +59,7 @@ export function HomeHero({
           </Link>
         </div>
       </div>
-      <aside className="grid gap-3 border-border border-t-2 bg-muted/50 p-5 lg:border-t-0 lg:border-l-2">
+      <aside className="grid gap-3 border-foreground/70 border-t-2 bg-card p-5 lg:border-t-0 lg:border-l-2">
         <StatBubble icon={Sparkles} label={t('home.xp')} value={xp} />
         <StatBubble icon={Flame} label={t('home.streak')} value={streak} />
         <StatBubble

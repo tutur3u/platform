@@ -14,7 +14,13 @@ import { useTranslations } from 'next-intl';
 import { CourseCard } from './course-card';
 import { FeatureList } from './feature-list';
 import { HomeHero } from './home-hero';
-import { MiniPanel, MissionPanel, QuestCard, QuestPanel } from './home-panels';
+import {
+  LearningPlanStrip,
+  MiniPanel,
+  MissionPanel,
+  QuestCard,
+  QuestPanel,
+} from './home-panels';
 import {
   EmptyState,
   LoadingState,
@@ -93,6 +99,15 @@ export function HomePage({ wsId }: { wsId: string }) {
         streak={state.current_streak}
         studentName={studentName}
         xp={state.xp_total}
+      />
+
+      <LearningPlanStrip
+        assignmentsHref={assignmentsHref}
+        coursesHref={coursesHref}
+        dueAssignments={dueAssignments.length}
+        nextCourse={nextCourse?.name ?? t('home.nextLesson')}
+        practiceHref={practiceHref}
+        progress={averageProgress}
       />
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">

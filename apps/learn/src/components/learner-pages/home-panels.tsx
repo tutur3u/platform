@@ -1,6 +1,12 @@
 'use client';
 
-import { ArrowRight, CheckCircle2, Target } from '@tuturuuu/icons';
+import {
+  ArrowRight,
+  BookOpen,
+  CheckCircle2,
+  ClipboardCheck,
+  Target,
+} from '@tuturuuu/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -18,7 +24,7 @@ export function StatBubble({
 }) {
   return (
     <div
-      className="min-w-0 border-2 border-border bg-background p-4 text-center shadow-[5px_5px_0_var(--border)]"
+      className="min-w-0 border-2 border-foreground/70 bg-background p-4 text-center shadow-[5px_5px_0_var(--foreground)]"
       data-ink-float
     >
       <Icon className="mx-auto mb-2 h-5 w-5" />
@@ -134,6 +140,93 @@ export function MiniPanel({
         {value}
       </p>
     </BrutalCard>
+  );
+}
+
+export function LearningPlanStrip({
+  assignmentsHref,
+  coursesHref,
+  dueAssignments,
+  nextCourse,
+  practiceHref,
+  progress,
+}: {
+  assignmentsHref: string;
+  coursesHref: string;
+  dueAssignments: number;
+  nextCourse: string;
+  practiceHref: string;
+  progress: number;
+}) {
+  const t = useTranslations();
+  const planItems = [
+    {
+      href: practiceHref,
+      icon: Target,
+      meta: t('practice.xpHint'),
+      text: t('home.planPracticeBody'),
+      title: t('home.planPractice'),
+    },
+    {
+      href: assignmentsHref,
+      icon: ClipboardCheck,
+      meta: t('home.questAssignmentsCount', { count: dueAssignments }),
+      text: t('home.planAssignmentsBody'),
+      title: t('home.planAssignments'),
+    },
+    {
+      href: coursesHref,
+      icon: BookOpen,
+      meta: t('home.questProgressDescription', { progress }),
+      text: nextCourse,
+      title: t('home.planCourse'),
+    },
+  ] as const;
+
+  return (
+    <section
+      className="border-2 border-foreground/70 bg-background p-5 shadow-[8px_8px_0_var(--foreground)] md:p-6"
+      data-learn-reveal
+    >
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 className="font-black text-3xl tracking-normal">
+            {t('home.todayPlan')}
+          </h2>
+          <p className="mt-2 max-w-2xl text-muted-foreground leading-7">
+            {t('home.todayPlanDescription')}
+          </p>
+        </div>
+        <div className="border-2 border-border bg-dynamic-yellow/15 px-4 py-2 font-black text-sm shadow-[3px_3px_0_var(--border)]">
+          {t('home.dailyGoal')}
+        </div>
+      </div>
+      <div className="mt-5 grid gap-3 lg:grid-cols-3">
+        {planItems.map(({ href, icon: Icon, meta, text, title }) => (
+          <Link
+            className="group grid min-h-44 gap-4 border-2 border-border bg-card p-4 shadow-[5px_5px_0_var(--border)] transition duration-200 hover:-translate-y-0.5 hover:border-foreground/70 hover:shadow-[7px_7px_0_var(--foreground)]"
+            href={href}
+            key={title}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <span className="flex h-11 w-11 items-center justify-center border-2 border-border bg-dynamic-yellow/15 shadow-[3px_3px_0_var(--border)]">
+                <Icon className="h-5 w-5" />
+              </span>
+              <span className="max-w-[11rem] text-right text-muted-foreground text-xs leading-5">
+                {meta}
+              </span>
+            </div>
+            <div>
+              <h3 className="font-black text-xl">{title}</h3>
+              <p className="mt-2 line-clamp-2 text-muted-foreground text-sm leading-6">
+                {text}
+              </p>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-foreground" />
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 

@@ -98,6 +98,11 @@
     "nextLesson": "Bài tiếp theo",
     "openMap": "Mở bản đồ",
     "parentSnapshot": "Góc gia đình",
+    "planAssignments": "Xử lý bài tập",
+    "planAssignmentsBody": "Làm phần việc đang hiện trước để không dồn sang ngày mai.",
+    "planCourse": "Tiếp tục khóa học",
+    "planPractice": "Khởi động luyện tập",
+    "planPracticeBody": "Bắt đầu bằng một lượt ôn ngắn trước khi mở bài tiếp theo.",
     "questAssignments": "Dọn bảng nhiệm vụ",
     "questAssignmentsCount": "{count, plural, one {Một bài tập cần chú ý.} other {# bài tập cần chú ý.}}",
     "questBoard": "Bảng nhiệm vụ",
@@ -111,6 +116,8 @@
     "streak": "Chuỗi ngày",
     "studentMode": "Chế độ học viên",
     "title": "Trang chủ",
+    "todayPlan": "Kế hoạch học hôm nay",
+    "todayPlanDescription": "Một lộ trình gọn qua luyện tập, bài tập và tiến độ khóa học của workspace hiện tại.",
     "xp": "XP"
   },
   "landing": {
@@ -191,6 +198,7 @@
     "parentMode": "Chế độ phụ huynh",
     "profile": "Hồ sơ",
     "description": "Cá nhân hóa hồ sơ, giao diện và nhịp học để việc học mỗi ngày nhẹ nhàng hơn.",
+    "system": "Hệ thống",
     "theme": "Giao diện",
     "title": "Cài đặt"
   },

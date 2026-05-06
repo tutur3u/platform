@@ -15,6 +15,7 @@ import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { LEARN_APP_URL, WEB_APP_URL } from '@/constants/common';
 import { Link } from '@/i18n/navigation';
+import { TeachThemeControl } from './teach-theme-control';
 
 const heroImageUrl = 'https://picsum.photos/seed/teach-studio-floor/1280/900';
 const inlineImageUrl = 'https://picsum.photos/seed/teach-marker-board/420/180';
@@ -53,7 +54,8 @@ export function TeachNav() {
           <span className="text-muted-foreground text-xs">{t('byline')}</span>
         </div>
       </div>
-      <div className="hidden gap-3 md:flex">
+      <div className="hidden items-center gap-3 md:flex">
+        <TeachThemeControl compact />
         <InternalHeaderLink href="/login?next=/dashboard">
           {t('dashboard')}
         </InternalHeaderLink>

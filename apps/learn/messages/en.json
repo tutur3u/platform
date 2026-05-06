@@ -98,6 +98,11 @@
     "nextLesson": "Next lesson",
     "openMap": "Open map",
     "parentSnapshot": "Family view",
+    "planAssignments": "Clear assignments",
+    "planAssignmentsBody": "Handle the visible work first so nothing slips into tomorrow.",
+    "planCourse": "Continue course",
+    "planPractice": "Practice warm-up",
+    "planPracticeBody": "Start with a short review before opening the next lesson.",
     "questAssignments": "Clear your quest board",
     "questAssignmentsCount": "{count, plural, one {One assignment needs attention.} other {# assignments need attention.}}",
     "questBoard": "Quest board",
@@ -111,6 +116,8 @@
     "streak": "Streak",
     "studentMode": "Student mode",
     "title": "Home",
+    "todayPlan": "Today's learning plan",
+    "todayPlanDescription": "A compact route through practice, assignments, and course progress for the current workspace.",
     "xp": "XP"
   },
   "landing": {
@@ -191,6 +198,7 @@
     "parentMode": "Parent mode",
     "profile": "Profile",
     "description": "Personalize the learner profile, theme, and study rhythm for a calmer daily routine.",
+    "system": "System",
     "theme": "Theme",
     "title": "Settings"
   },

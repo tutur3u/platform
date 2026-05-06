@@ -26,7 +26,13 @@
     "studioBody": "Course user groups, modules, attendance, reports, and metrics stay framed as one teaching workspace.",
     "studioTitle": "Teacher command surface",
     "syncBody": "Teach forwards protected API traffic to apps/web so workspace ownership stays centralized.",
-    "syncTitle": "Works through the platform"
+    "syncTitle": "Works through the platform",
+    "theme": "Theme",
+    "themeOptions": {
+      "dark": "Dark",
+      "light": "Light",
+      "system": "System"
+    }
   },
   "teachDashboard": {
     "activeGroups": "Active course groups",
@@ -46,6 +52,28 @@
     "metrics": "Metrics",
     "modules": "Modules",
     "openLearn": "Open Learn",
+    "openReports": "Open reports",
+    "operations": {
+      "attendance": {
+        "body": "Reconcile attendance with the current course group before class context goes stale.",
+        "title": "Attendance queue"
+      },
+      "metrics": {
+        "body": "Review the score metrics that will shape learner progress and parent-facing reports.",
+        "title": "Metrics review"
+      },
+      "plan": {
+        "body": "Check module coverage and prepare the next lesson sequence for each active course group.",
+        "title": "Module planning"
+      },
+      "reports": {
+        "body": "Prepare report notes while the group status, attendance, and scores are still nearby.",
+        "title": "Report prep"
+      }
+    },
+    "operationsEyebrow": "Workspace command queue",
+    "operationsLead": "A focused board for the next teaching actions that usually happen after opening course groups.",
+    "operationsTitle": "Teaching operations",
     "reports": "Reports",
     "sessions": "Sessions",
     "teacher": "Teacher",

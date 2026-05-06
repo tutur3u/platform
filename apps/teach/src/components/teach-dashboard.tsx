@@ -1,8 +1,12 @@
 import {
+  Activity,
   ArrowRight,
   BarChart3,
   BookOpenCheck,
   CalendarCheck,
+  ClipboardList,
+  FileText,
+  Gauge,
   GraduationCap,
   Layers3,
   LineChart,
@@ -15,6 +19,8 @@ import type {
 import { getTranslations } from 'next-intl/server';
 import { LEARN_APP_URL, WEB_APP_URL } from '@/constants/common';
 import { Link } from '@/i18n/navigation';
+import { TeachOperationCard } from './teach-operation-card';
+import { TeachThemeControl } from './teach-theme-control';
 
 type TeachGroup = {
   attendance_amount?: number;
@@ -33,6 +39,13 @@ const workflowItems = [
   { icon: BookOpenCheck, key: 'modules' },
   { icon: CalendarCheck, key: 'attendance' },
   { icon: BarChart3, key: 'metrics' },
+] as const;
+
+const operationsItems = [
+  { icon: ClipboardList, key: 'plan' },
+  { icon: CalendarCheck, key: 'attendance' },
+  { icon: FileText, key: 'reports' },
+  { icon: Gauge, key: 'metrics' },
 ] as const;
 
 export async function TeachDashboard({
@@ -94,6 +107,7 @@ export async function TeachDashboard({
               {candidate.name ?? t('workspaceFallback')}
             </Link>
           ))}
+          <TeachThemeControl compact />
           <a
             className="inline-flex h-10 shrink-0 items-center gap-2 border-2 border-border bg-background px-3 font-black text-xs shadow-[2px_2px_0_var(--border)]"
             href={LEARN_APP_URL}
@@ -196,7 +210,7 @@ export async function TeachDashboard({
         <aside className="space-y-4">
           {workflowItems.map(({ icon: Icon, key }, index) => (
             <article
-              className="border-2 border-border bg-card p-5 shadow-[5px_5px_0_var(--border)]"
+              className="border-2 border-foreground/70 bg-card p-5 shadow-[5px_5px_0_var(--foreground)]"
               key={key}
             >
               <div className="flex items-start gap-4">
@@ -219,6 +233,56 @@ export async function TeachDashboard({
           ))}
         </aside>
       </section>
+
+      <section className="mx-auto mt-8 max-w-7xl border-2 border-foreground/70 bg-background p-5 shadow-[8px_8px_0_var(--foreground)] md:p-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="mb-3 inline-flex items-center gap-2 border-2 border-border bg-dynamic-yellow/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
+              <Activity className="h-3.5 w-3.5" />
+              {t('operationsEyebrow')}
+            </p>
+            <h2 className="font-black text-3xl">{t('operationsTitle')}</h2>
+            <p className="mt-2 max-w-2xl text-muted-foreground leading-7">
+              {t('operationsLead')}
+            </p>
+          </div>
+          <a
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 border-2 border-border bg-primary px-3 font-black text-primary-foreground text-xs shadow-[2px_2px_0_var(--border)]"
+            href={`${WEB_APP_URL}/${wsId}/users/reports`}
+          >
+            {t('openReports')}
+            <ArrowRight className="h-3.5 w-3.5" />
+          </a>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {operationsItems.map(({ icon: Icon, key }) => (
+            <TeachOperationCard
+              count={
+                key === 'plan'
+                  ? totalModules
+                  : key === 'attendance'
+                    ? attendanceChecks
+                    : key === 'reports'
+                      ? totalGroups
+                      : sessionCount
+              }
+              href={
+                key === 'plan'
+                  ? `${WEB_APP_URL}/${wsId}/users/groups`
+                  : key === 'attendance'
+                    ? `${WEB_APP_URL}/${wsId}/users/attendance`
+                    : key === 'reports'
+                      ? `${WEB_APP_URL}/${wsId}/users/reports`
+                      : `${WEB_APP_URL}/${wsId}/users/groups/indicators`
+              }
+              icon={Icon}
+              key={key}
+              label={t(`operations.${key}.title`)}
+              text={t(`operations.${key}.body`)}
+            />
+          ))}
+        </div>
+      </section>
     </main>
   );
 }
@@ -233,7 +297,7 @@ function MetricTile({
   value: number;
 }) {
   return (
-    <article className="border-2 border-border bg-card p-4 shadow-[5px_5px_0_var(--border)]">
+    <article className="border-2 border-foreground/70 bg-card p-4 shadow-[5px_5px_0_var(--foreground)]">
       <Icon className="mb-3 h-5 w-5" />
       <p className="font-black text-3xl tabular-nums">{value}</p>
       <p className="text-muted-foreground text-sm">{label}</p>

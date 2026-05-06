@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Languages, Moon, Sun, Target } from '@tuturuuu/icons';
+import { Languages, Monitor, Moon, Sun, Target } from '@tuturuuu/icons';
 import {
   getTulearnBootstrap,
   updateTulearnProfile,
@@ -24,7 +24,7 @@ import {
 
 export function SettingsPage() {
   const t = useTranslations();
-  const { setTheme } = useTheme();
+  const { setTheme, theme } = useTheme();
   const scopeRef = usePageMotion();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -81,29 +81,39 @@ export function SettingsPage() {
           </Button>
         </BrutalCard>
 
-        <div className="space-y-5">
-          <SettingsPanel icon={Sun} title={t('settings.theme')}>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                className="h-12 rounded-none border-2 border-border font-black shadow-[3px_3px_0_var(--border)]"
+        <div className="space-y-5 lg:sticky lg:top-24">
+          <SettingsPanel
+            className="!border-foreground/70 !bg-background !shadow-[7px_7px_0_var(--foreground)]"
+            icon={Sun}
+            title={t('settings.theme')}
+          >
+            <div className="grid gap-3">
+              <ThemeChoice
+                active={(theme ?? 'system') === 'system'}
+                icon={Monitor}
+                label={t('settings.system')}
+                onClick={() => setTheme('system')}
+              />
+              <ThemeChoice
+                active={theme === 'light'}
+                icon={Sun}
+                label={t('settings.light')}
                 onClick={() => setTheme('light')}
-                variant="secondary"
-              >
-                <Sun className="h-4 w-4" />
-                {t('settings.light')}
-              </Button>
-              <Button
-                className="h-12 rounded-none border-2 border-border font-black shadow-[3px_3px_0_var(--border)]"
+              />
+              <ThemeChoice
+                active={theme === 'dark'}
+                icon={Moon}
+                label={t('settings.dark')}
                 onClick={() => setTheme('dark')}
-                variant="secondary"
-              >
-                <Moon className="h-4 w-4" />
-                {t('settings.dark')}
-              </Button>
+              />
             </div>
           </SettingsPanel>
 
-          <SettingsPanel icon={Target} title={t('settings.focusMode')}>
+          <SettingsPanel
+            className="!border-foreground/70 !bg-card !shadow-[7px_7px_0_var(--foreground)]"
+            icon={Target}
+            title={t('settings.focusMode')}
+          >
             <div className="grid gap-2">
               {['light', 'balanced', 'challenge'].map((mode) => (
                 <button
@@ -123,7 +133,11 @@ export function SettingsPage() {
             </div>
           </SettingsPanel>
 
-          <SettingsPanel icon={Languages} title={t('settings.language')}>
+          <SettingsPanel
+            className="!border-foreground/70 !bg-background !shadow-[7px_7px_0_var(--foreground)]"
+            icon={Languages}
+            title={t('settings.language')}
+          >
             <LanguageSwitcher />
           </SettingsPanel>
         </div>
@@ -154,20 +168,52 @@ export function SettingsPage() {
 
 function SettingsPanel({
   children,
+  className,
   icon: Icon,
   title,
 }: {
   children: ReactNode;
+  className?: string;
   icon: IconComponent;
   title: string;
 }) {
   return (
-    <BrutalCard className="p-5">
+    <BrutalCard className={cn('p-5', className)} reveal={false}>
       <div className="mb-4 flex items-center gap-3">
         <BrutalIcon className="h-10 w-10" icon={Icon} />
         <h2 className="font-bold text-xl tracking-normal">{title}</h2>
       </div>
       {children}
     </BrutalCard>
+  );
+}
+
+function ThemeChoice({
+  active,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon: IconComponent;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      aria-pressed={active}
+      className={cn(
+        'h-12 justify-start rounded-none border-2 border-border font-black shadow-[3px_3px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none',
+        active
+          ? '!bg-primary !text-primary-foreground hover:!bg-primary'
+          : '!bg-background !text-foreground hover:!bg-muted'
+      )}
+      onClick={onClick}
+      type="button"
+      variant="secondary"
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </Button>
   );
 }

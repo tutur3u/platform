@@ -26,7 +26,13 @@
     "studioBody": "Nhóm học theo khóa, module, điểm danh, báo cáo và metrics được gom thành một workspace giảng dạy.",
     "studioTitle": "Bề mặt điều phối giáo viên",
     "syncBody": "Teach chuyển tiếp API được bảo vệ về apps/web để quyền sở hữu workspace luôn tập trung.",
-    "syncTitle": "Hoạt động qua nền tảng"
+    "syncTitle": "Hoạt động qua nền tảng",
+    "theme": "Giao diện",
+    "themeOptions": {
+      "dark": "Tối",
+      "light": "Sáng",
+      "system": "Hệ thống"
+    }
   },
   "teachDashboard": {
     "activeGroups": "Nhóm học đang hoạt động",
@@ -46,6 +52,28 @@
     "metrics": "Metrics",
     "modules": "Module",
     "openLearn": "Mở Learn",
+    "openReports": "Mở báo cáo",
+    "operations": {
+      "attendance": {
+        "body": "Đối chiếu điểm danh với nhóm học hiện tại trước khi ngữ cảnh lớp học bị nguội.",
+        "title": "Hàng đợi điểm danh"
+      },
+      "metrics": {
+        "body": "Xem các score metrics sẽ ảnh hưởng đến tiến độ học viên và báo cáo cho phụ huynh.",
+        "title": "Rà soát metrics"
+      },
+      "plan": {
+        "body": "Kiểm tra độ phủ module và chuẩn bị chuỗi bài tiếp theo cho từng nhóm học đang hoạt động.",
+        "title": "Lên kế hoạch module"
+      },
+      "reports": {
+        "body": "Chuẩn bị ghi chú báo cáo khi trạng thái nhóm, điểm danh và điểm số vẫn còn cùng ngữ cảnh.",
+        "title": "Chuẩn bị báo cáo"
+      }
+    },
+    "operationsEyebrow": "Hàng đợi điều phối workspace",
+    "operationsLead": "Một bảng tập trung cho các hành động giảng dạy thường diễn ra sau khi mở nhóm học.",
+    "operationsTitle": "Điều phối dạy học",
     "reports": "Báo cáo",
     "sessions": "Buổi học",
     "teacher": "Giáo viên",
