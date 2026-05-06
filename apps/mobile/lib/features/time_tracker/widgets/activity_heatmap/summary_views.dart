@@ -206,6 +206,7 @@ class _MonthlyCalendarView extends StatelessWidget {
     required this.onSelectDate,
     required this.onPrevMonth,
     required this.onNextMonth,
+    this.onPickMonth,
   });
 
   final Map<String, DailyActivity> activityByDate;
@@ -216,6 +217,7 @@ class _MonthlyCalendarView extends StatelessWidget {
   final ValueChanged<DateTime> onSelectDate;
   final VoidCallback onPrevMonth;
   final VoidCallback onNextMonth;
+  final VoidCallback? onPickMonth;
 
   static const _kWebGreenLight = [
     Color(0xFFF3F4F6),
@@ -315,11 +317,29 @@ class _MonthlyCalendarView extends StatelessWidget {
                     ),
                   ),
                   Expanded(
-                    child: Text(
-                      DateFormat('MMMM yyyy', localeTag).format(selectedMonth),
-                      textAlign: TextAlign.center,
-                      style: theme.typography.small.copyWith(
-                        fontWeight: FontWeight.w700,
+                    child: GestureDetector(
+                      onTap: onPickMonth,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            DateFormat('MMMM yyyy', localeTag).format(
+                              selectedMonth,
+                            ),
+                            textAlign: TextAlign.center,
+                            style: theme.typography.small.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          if (onPickMonth != null) ...[
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.expand_more,
+                              size: 16,
+                              color: theme.colorScheme.mutedForeground,
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ),
