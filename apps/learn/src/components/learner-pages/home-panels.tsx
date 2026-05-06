@@ -18,7 +18,7 @@ export function StatBubble({
 }) {
   return (
     <div
-      className="min-w-0 border-2 border-foreground bg-background p-4 text-center shadow-[5px_5px_0_var(--foreground)]"
+      className="min-w-0 border-2 border-border bg-background p-4 text-center shadow-[5px_5px_0_var(--border)]"
       data-ink-float
     >
       <Icon className="mx-auto mb-2 h-5 w-5" />
@@ -44,11 +44,11 @@ export function MissionPanel({
   title: string;
 }) {
   return (
-    <BrutalCard className="bg-dynamic-yellow/15 p-6 md:col-span-3 md:row-span-2">
+    <BrutalCard className="bg-muted/60 p-6 md:col-span-3 md:row-span-2">
       <div className="flex h-full min-h-72 flex-col justify-between gap-8">
         <div className="flex items-start justify-between gap-4">
           <BrutalIcon icon={Icon} />
-          <p className="border-2 border-foreground bg-background px-4 py-2 font-black text-xl tabular-nums shadow-[4px_4px_0_var(--foreground)]">
+          <p className="border-2 border-border bg-background px-4 py-2 font-black text-xl tabular-nums shadow-[4px_4px_0_var(--border)]">
             {stat}
           </p>
         </div>
@@ -60,7 +60,7 @@ export function MissionPanel({
             {description}
           </p>
           <Link
-            className="mt-6 inline-flex h-11 items-center justify-center gap-2 border-2 border-foreground bg-dynamic-yellow px-5 font-black shadow-[4px_4px_0_var(--foreground)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
+            className="mt-6 inline-flex h-11 items-center justify-center gap-2 border-2 border-border bg-primary px-5 font-black text-primary-foreground shadow-[4px_4px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
             href={actionHref}
           >
             {actionLabel}
@@ -151,13 +151,15 @@ export function QuestCard({
   const Icon = quest.icon;
   return (
     <Link
-      className="group flex items-center gap-3 border-2 border-foreground bg-card p-4 shadow-[5px_5px_0_var(--foreground)] transition duration-200 hover:-translate-y-0.5 hover:bg-dynamic-yellow/15"
+      className="group flex items-center gap-3 border-2 border-border bg-card p-4 shadow-[5px_5px_0_var(--border)] transition duration-200 hover:-translate-y-0.5 hover:bg-muted"
       href={quest.href}
     >
       <div
         className={cn(
-          'flex h-12 w-12 shrink-0 items-center justify-center border-2 border-foreground',
-          quest.complete ? 'bg-dynamic-yellow' : 'bg-background'
+          'flex h-12 w-12 shrink-0 items-center justify-center border-2 border-border',
+          quest.complete
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-background'
         )}
       >
         {quest.complete ? (

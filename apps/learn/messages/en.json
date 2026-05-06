@@ -91,7 +91,7 @@
     "dailyQuests": "Daily quests",
     "hearts": "Hearts",
     "heroDescription": "Choose a tiny mission, protect your hearts, and keep your learning streak moving.",
-    "heroTitle": "Ready for today, {name}?",
+    "heroTitle": "Ready, {name}?",
     "learningPath": "Learning path",
     "learningPathDescription": "Every course becomes a path of checkpoints, current lessons, and wins you can see.",
     "marks": "Recent marks",
@@ -112,6 +112,31 @@
     "studentMode": "Student mode",
     "title": "Home",
     "xp": "XP"
+  },
+  "landing": {
+    "byline": "by Tuturuuu",
+    "cards": {
+      "assignments": {
+        "body": "Assignments stay visible as small next steps, not another admin queue.",
+        "title": "Clear work"
+      },
+      "courses": {
+        "body": "Course modules turn into a learner path with checkpoints, current lessons, and practice.",
+        "title": "Course path"
+      },
+      "progress": {
+        "body": "Reports, marks, and parent views read from the same education workspace teachers manage.",
+        "title": "Shared progress"
+      }
+    },
+    "eyebrow": "Learner landing",
+    "lead": "Learn is the learner-facing app for Tuturuuu education workspaces. Students practice, follow course modules, clear assignments, and read progress without entering the teacher dashboard.",
+    "panelBody": "Auth stays with the Tuturuuu platform. After sign-in, Learn opens the right workspace dashboard for the current learner or linked parent.",
+    "panelTitle": "One account, focused learning",
+    "preview": "See the flow",
+    "signIn": "Sign in",
+    "start": "Open learner dashboard",
+    "title": "Focused lessons, practice, and progress."
   },
   "marks": {
     "description": "Marks are grouped as friendly score cards so students and parents can spot growth quickly.",

@@ -53,7 +53,7 @@ export function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="display-name">{t('settings.displayName')}</Label>
               <Input
-                className="h-12 rounded-none border-2 border-foreground"
+                className="h-12 rounded-none border-2 border-border"
                 id="display-name"
                 onChange={(event) => setDisplayName(event.target.value)}
                 placeholder={bootstrap.data?.profile.display_name ?? ''}
@@ -63,7 +63,7 @@ export function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="email">{t('settings.email')}</Label>
               <Input
-                className="h-12 rounded-none border-2 border-foreground"
+                className="h-12 rounded-none border-2 border-border"
                 id="email"
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder={bootstrap.data?.profile.email ?? ''}
@@ -73,7 +73,7 @@ export function SettingsPage() {
             </div>
           </div>
           <Button
-            className="mt-6 h-12 rounded-none border-2 border-foreground bg-dynamic-yellow font-black text-foreground shadow-[4px_4px_0_var(--foreground)] hover:bg-dynamic-yellow active:translate-x-1 active:translate-y-1 active:shadow-none"
+            className="mt-6 h-12 rounded-none border-2 border-border bg-primary font-black text-primary-foreground shadow-[4px_4px_0_var(--border)] hover:bg-primary active:translate-x-1 active:translate-y-1 active:shadow-none"
             disabled={save.isPending}
             onClick={() => save.mutate()}
           >
@@ -85,7 +85,7 @@ export function SettingsPage() {
           <SettingsPanel icon={Sun} title={t('settings.theme')}>
             <div className="grid grid-cols-2 gap-3">
               <Button
-                className="h-12 rounded-none border-2 border-foreground font-black shadow-[3px_3px_0_var(--foreground)]"
+                className="h-12 rounded-none border-2 border-border font-black shadow-[3px_3px_0_var(--border)]"
                 onClick={() => setTheme('light')}
                 variant="secondary"
               >
@@ -93,7 +93,7 @@ export function SettingsPage() {
                 {t('settings.light')}
               </Button>
               <Button
-                className="h-12 rounded-none border-2 border-foreground font-black shadow-[3px_3px_0_var(--foreground)]"
+                className="h-12 rounded-none border-2 border-border font-black shadow-[3px_3px_0_var(--border)]"
                 onClick={() => setTheme('dark')}
                 variant="secondary"
               >
@@ -108,10 +108,10 @@ export function SettingsPage() {
               {['light', 'balanced', 'challenge'].map((mode) => (
                 <button
                   className={cn(
-                    'min-h-11 border-2 border-foreground px-4 py-3 text-left font-black shadow-[3px_3px_0_var(--foreground)] transition active:translate-x-1 active:translate-y-1 active:shadow-none',
+                    'min-h-11 border-2 border-border px-4 py-3 text-left font-black shadow-[3px_3px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none',
                     focusMode === mode
-                      ? 'bg-dynamic-yellow text-foreground'
-                      : 'bg-background hover:bg-dynamic-yellow/15'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-background hover:bg-muted'
                   )}
                   key={mode}
                   onClick={() => setFocusMode(mode)}
@@ -129,7 +129,7 @@ export function SettingsPage() {
         </div>
       </div>
 
-      <BrutalCard className="bg-dynamic-yellow/15 p-6">
+      <BrutalCard className="bg-muted/60 p-6">
         <h2 className="font-bold text-2xl tracking-normal">
           {t('settings.linkedStudents')}
         </h2>
@@ -137,7 +137,7 @@ export function SettingsPage() {
           {bootstrap.data?.linkedStudents.length ? (
             bootstrap.data.linkedStudents.map((student) => (
               <span
-                className="border-2 border-foreground bg-background px-4 py-2 font-black text-sm shadow-[3px_3px_0_var(--foreground)]"
+                className="border-2 border-border bg-background px-4 py-2 font-black text-sm shadow-[3px_3px_0_var(--border)]"
                 key={student.id}
               >
                 {student.name ?? t('common.learner')}

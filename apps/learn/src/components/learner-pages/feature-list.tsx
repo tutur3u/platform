@@ -33,7 +33,7 @@ export function FeatureList({
         <h2 className="font-bold text-2xl tracking-normal">{title}</h2>
         {actionHref && actionLabel ? (
           <Link
-            className="inline-flex h-10 items-center justify-center gap-2 border-2 border-foreground bg-dynamic-yellow px-4 font-black text-sm shadow-[3px_3px_0_var(--foreground)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
+            className="inline-flex h-10 items-center justify-center gap-2 border-2 border-border bg-primary px-4 font-black text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
             href={actionHref}
           >
             {actionLabel}

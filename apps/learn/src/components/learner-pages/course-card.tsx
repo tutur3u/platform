@@ -25,7 +25,7 @@ export function CourseCard({
     <BrutalCard
       className={cn(
         'group p-5 md:p-6',
-        index % 2 === 0 ? 'bg-card' : 'bg-dynamic-yellow/10'
+        index % 2 === 0 ? 'bg-card' : 'bg-muted/60'
       )}
       stacked={stacked}
     >
@@ -34,7 +34,7 @@ export function CourseCard({
           <div className="mb-5 flex items-center gap-3">
             <div
               className={cn(
-                'flex h-14 w-14 items-center justify-center border-2 border-foreground shadow-[3px_3px_0_var(--foreground)]',
+                'flex h-14 w-14 items-center justify-center border-2 border-border shadow-[3px_3px_0_var(--border)]',
                 theme.surface,
                 theme.text
               )}
@@ -69,8 +69,8 @@ export function CourseCard({
             return (
               <div
                 className={cn(
-                  'flex aspect-square min-h-11 items-center justify-center border-2 border-foreground transition duration-300 group-hover:scale-105',
-                  completed && 'bg-dynamic-yellow text-foreground',
+                  'flex aspect-square min-h-11 items-center justify-center border-2 border-border transition duration-300 group-hover:scale-105',
+                  completed && 'bg-primary text-primary-foreground',
                   current && 'bg-background text-foreground',
                   !completed && !current && 'bg-muted/50 text-muted-foreground'
                 )}

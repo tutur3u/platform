@@ -22,7 +22,7 @@ export type IconComponent = LucideIcon;
 export const courseThemes = [
   {
     icon: BookOpen,
-    surface: 'bg-dynamic-yellow',
+    surface: 'bg-dynamic-yellow/15',
     text: 'text-foreground',
   },
   {
@@ -32,7 +32,7 @@ export const courseThemes = [
   },
   {
     icon: LineChart,
-    surface: 'bg-dynamic-yellow/20',
+    surface: 'bg-muted',
     text: 'text-foreground',
   },
 ] as const;
@@ -126,7 +126,7 @@ function SkeletonBlock({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'animate-pulse border-2 border-foreground bg-card shadow-[7px_7px_0_var(--foreground)]',
+        'animate-pulse border-2 border-border bg-card shadow-[7px_7px_0_var(--border)]',
         className
       )}
     />
@@ -142,10 +142,10 @@ export function EmptyState({
 }) {
   return (
     <div
-      className="border-2 border-foreground border-dashed bg-dynamic-yellow/15 p-8 text-center shadow-[8px_8px_0_var(--foreground)]"
+      className="border-2 border-border border-dashed bg-muted/60 p-8 text-center shadow-[8px_8px_0_var(--border)]"
       data-learn-reveal
     >
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center border-2 border-foreground bg-background shadow-[4px_4px_0_var(--foreground)]">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center border-2 border-border bg-background shadow-[4px_4px_0_var(--border)]">
         <Sparkles className="h-7 w-7" />
       </div>
       <p className="mx-auto max-w-md text-muted-foreground leading-7">
@@ -172,16 +172,16 @@ export function Section({
   return (
     <div className="space-y-8" ref={refValue}>
       <section
-        className="grid gap-6 border-2 border-foreground bg-background p-5 shadow-[9px_9px_0_var(--foreground)] md:grid-cols-[minmax(0,1fr)_16rem] md:p-8"
+        className="grid gap-6 border-2 border-border bg-background p-5 shadow-[9px_9px_0_var(--border)] md:grid-cols-[minmax(0,1fr)_16rem] md:p-8"
         data-learn-reveal
       >
         <div>
           {eyebrow ? (
-            <p className="mb-4 inline-flex border-2 border-foreground bg-dynamic-yellow px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--foreground)]">
+            <p className="mb-4 inline-flex border-2 border-border bg-dynamic-yellow/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
               {eyebrow}
             </p>
           ) : null}
-          <h1 className="max-w-5xl text-balance font-black text-[clamp(2.4rem,5vw,5.25rem)] leading-none tracking-normal">
+          <h1 className="max-w-5xl text-balance font-black text-[clamp(2rem,4vw,3.8rem)] leading-none tracking-normal">
             {title}
           </h1>
           {description ? (
@@ -190,8 +190,8 @@ export function Section({
             </p>
           ) : null}
         </div>
-        <div className="hidden border-2 border-foreground bg-dynamic-yellow/20 p-4 shadow-[5px_5px_0_var(--foreground)] md:block">
-          <div className="h-full border-2 border-foreground border-dashed bg-background/80" />
+        <div className="hidden border-2 border-border bg-muted/60 p-4 shadow-[5px_5px_0_var(--border)] md:block">
+          <div className="h-full border-2 border-border border-dashed bg-background/80" />
         </div>
       </section>
       {children}
@@ -213,7 +213,7 @@ export function BrutalCard({
   return (
     <article
       className={cn(
-        'border-2 border-foreground bg-card shadow-[7px_7px_0_var(--foreground)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[9px_9px_0_var(--foreground)]',
+        'border-2 border-border bg-card shadow-[7px_7px_0_var(--border)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[9px_9px_0_var(--border)]',
         className
       )}
       data-stack-card={stacked ? '' : undefined}
@@ -234,7 +234,7 @@ export function BrutalIcon({
   return (
     <div
       className={cn(
-        'flex h-12 w-12 shrink-0 items-center justify-center border-2 border-foreground bg-dynamic-yellow shadow-[3px_3px_0_var(--foreground)]',
+        'flex h-12 w-12 shrink-0 items-center justify-center border-2 border-border bg-dynamic-yellow/15 shadow-[3px_3px_0_var(--border)]',
         className
       )}
     >
@@ -255,7 +255,7 @@ export function InkLink({
   return (
     <a
       className={cn(
-        'inline-flex h-11 items-center justify-center gap-2 border-2 border-foreground bg-dynamic-yellow px-4 font-black shadow-[4px_4px_0_var(--foreground)] transition active:translate-x-1 active:translate-y-1 active:shadow-none',
+        'inline-flex h-11 items-center justify-center gap-2 border-2 border-border bg-primary px-4 font-black text-primary-foreground shadow-[4px_4px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none',
         className
       )}
       href={href}

@@ -29,8 +29,8 @@ export function CoachSidebar() {
 
   return (
     <aside className="space-y-4">
-      <section className="border-2 border-foreground bg-dynamic-yellow/15 p-5 shadow-[7px_7px_0_var(--foreground)]">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center border-2 border-foreground bg-background shadow-[3px_3px_0_var(--foreground)]">
+      <section className="border-2 border-border bg-dynamic-yellow/15 p-5 shadow-[7px_7px_0_var(--border)]">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center border-2 border-border bg-background shadow-[3px_3px_0_var(--border)]">
           <Bot className="h-6 w-6" />
         </div>
         <h2 className="font-black text-2xl tracking-normal">
@@ -46,7 +46,7 @@ export function CoachSidebar() {
           const Icon = feature.icon;
           return (
             <div
-              className="flex items-center gap-3 border-2 border-foreground bg-card p-4 font-black text-sm shadow-[5px_5px_0_var(--foreground)]"
+              className="flex items-center gap-3 border-2 border-border bg-card p-4 font-black text-sm shadow-[5px_5px_0_var(--border)]"
               key={feature.label}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -72,8 +72,8 @@ export function EmptyChat({
   ];
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center gap-5 border-2 border-foreground border-dashed bg-dynamic-yellow/10 p-8 text-center">
-      <div className="flex h-16 w-16 items-center justify-center border-2 border-foreground bg-dynamic-yellow shadow-[5px_5px_0_var(--foreground)]">
+    <div className="flex min-h-full flex-col items-center justify-center gap-5 border-2 border-border border-dashed bg-dynamic-yellow/10 p-8 text-center">
+      <div className="flex h-16 w-16 items-center justify-center border-2 border-border bg-dynamic-yellow/15 shadow-[5px_5px_0_var(--border)]">
         <Sparkles className="h-8 w-8" />
       </div>
       <div>
@@ -87,7 +87,7 @@ export function EmptyChat({
       <div className="grid w-full max-w-2xl gap-2 sm:grid-cols-3">
         {prompts.map((prompt) => (
           <button
-            className="border-2 border-foreground bg-background px-4 py-3 text-left font-black text-sm shadow-[3px_3px_0_var(--foreground)] transition hover:bg-dynamic-yellow/15 active:translate-x-1 active:translate-y-1 active:shadow-none"
+            className="border-2 border-border bg-background px-4 py-3 text-left font-black text-sm shadow-[3px_3px_0_var(--border)] transition hover:bg-muted active:translate-x-1 active:translate-y-1 active:shadow-none"
             key={prompt}
             onClick={() => onPickPrompt(prompt)}
             type="button"
@@ -103,7 +103,7 @@ export function EmptyChat({
 export function ThinkingIndicator() {
   const t = useTranslations();
   return (
-    <div className="flex items-center gap-2 border-2 border-foreground bg-dynamic-yellow/15 px-4 py-3 font-black text-sm shadow-[4px_4px_0_var(--foreground)]">
+    <div className="flex items-center gap-2 border-2 border-border bg-dynamic-yellow/15 px-4 py-3 font-black text-sm shadow-[4px_4px_0_var(--border)]">
       <LoaderCircle className="h-4 w-4 animate-spin" />
       {t('aiChat.thinking')}
     </div>
@@ -124,9 +124,9 @@ export function MessageBubble({ message }: { message: UIMessage }) {
       {!isUser ? <MessageAvatar icon={Icon} tone="assistant" /> : null}
       <div
         className={cn(
-          'max-w-[min(42rem,85%)] whitespace-pre-wrap border-2 border-foreground px-4 py-3 text-sm leading-7 shadow-[4px_4px_0_var(--foreground)]',
+          'max-w-[min(42rem,85%)] whitespace-pre-wrap border-2 border-border px-4 py-3 text-sm leading-7 shadow-[4px_4px_0_var(--border)]',
           isUser
-            ? 'bg-dynamic-yellow text-foreground'
+            ? 'bg-primary text-primary-foreground'
             : 'bg-card text-foreground'
         )}
       >
@@ -147,8 +147,10 @@ function MessageAvatar({
   return (
     <div
       className={cn(
-        'flex h-10 w-10 shrink-0 items-center justify-center border-2 border-foreground shadow-[3px_3px_0_var(--foreground)]',
-        tone === 'assistant' ? 'bg-background' : 'bg-dynamic-yellow'
+        'flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border shadow-[3px_3px_0_var(--border)]',
+        tone === 'assistant'
+          ? 'bg-background'
+          : 'bg-primary text-primary-foreground'
       )}
     >
       <Icon className="h-5 w-5" />

@@ -22,16 +22,16 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
   return (
     <fieldset
       className={cn(
-        'inline-flex items-center gap-1 border-2 border-foreground bg-background p-1 text-foreground shadow-[3px_3px_0_var(--foreground)]',
-        compact ? 'h-11' : 'w-full'
+        'inline-flex items-center gap-1 border-2 border-border bg-background p-1 text-foreground shadow-[3px_3px_0_var(--border)]',
+        compact ? 'h-10 shrink-0' : 'w-full'
       )}
     >
       <legend className="sr-only">{t('settings.language')}</legend>
       <div
         aria-hidden="true"
         className={cn(
-          'flex h-9 w-9 shrink-0 items-center justify-center border-2 border-foreground bg-dynamic-yellow',
-          compact && 'hidden sm:flex'
+          'flex h-9 w-9 shrink-0 items-center justify-center border-2 border-border bg-dynamic-yellow/15',
+          compact && 'hidden'
         )}
       >
         <Languages className="h-4 w-4" />
@@ -44,14 +44,19 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
             aria-current={active ? 'true' : undefined}
             className={cn(
               'inline-flex h-9 min-w-10 flex-1 items-center justify-center px-3 font-black text-sm transition',
-              active ? 'bg-dynamic-yellow' : 'hover:bg-dynamic-yellow/15'
+              compact && 'h-8 min-w-9 px-2 text-xs',
+              active ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
             )}
             href={href}
             key={option.value}
             locale={option.value}
           >
-            <span className="sm:hidden">{option.shortLabel}</span>
-            <span className="hidden sm:inline">{option.label}</span>
+            <span className={cn(compact ? 'inline' : 'sm:hidden')}>
+              {option.shortLabel}
+            </span>
+            <span className={cn('hidden', !compact && 'sm:inline')}>
+              {option.label}
+            </span>
           </Link>
         );
       })}

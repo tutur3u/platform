@@ -17,10 +17,7 @@ export function MarkCard({
   const theme = courseThemes[index % courseThemes.length] ?? courseThemes[0];
   return (
     <BrutalCard
-      className={cn(
-        'p-6',
-        index % 2 === 0 ? 'bg-card' : 'bg-dynamic-yellow/10'
-      )}
+      className={cn('p-6', index % 2 === 0 ? 'bg-card' : 'bg-muted/60')}
     >
       <BrutalIcon className={cn('mb-5', theme.text)} icon={Trophy} />
       <p className="text-muted-foreground text-sm">

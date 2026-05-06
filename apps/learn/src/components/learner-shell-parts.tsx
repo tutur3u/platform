@@ -59,11 +59,11 @@ export function LearnerNavDock({
   };
 
   return (
-    <aside className="fixed inset-x-0 bottom-0 z-20 border-foreground border-t-2 bg-background shadow-[0_-6px_0_var(--foreground)] md:inset-y-4 md:right-auto md:left-4 md:w-24 md:border-2 md:shadow-[7px_7px_0_var(--foreground)]">
+    <aside className="fixed inset-x-0 bottom-0 z-20 border-border border-t-2 bg-background shadow-[0_-6px_0_var(--border)] md:inset-y-4 md:right-auto md:left-4 md:w-24 md:border-2 md:shadow-[7px_7px_0_var(--border)]">
       <div className="hidden h-24 items-center justify-center md:flex">
-        <div className="relative flex h-14 w-14 items-center justify-center border-2 border-foreground bg-dynamic-yellow text-foreground shadow-[4px_4px_0_var(--foreground)]">
+        <div className="relative flex h-14 w-14 items-center justify-center border-2 border-border bg-dynamic-yellow/15 text-foreground shadow-[4px_4px_0_var(--border)]">
           <GraduationCap className="h-7 w-7" />
-          <span className="absolute -right-2 -bottom-2 flex h-6 w-6 items-center justify-center border-2 border-foreground bg-background">
+          <span className="absolute -right-2 -bottom-2 flex h-6 w-6 items-center justify-center border-2 border-border bg-background">
             <Sparkles className="h-3 w-3" />
           </span>
         </div>
@@ -85,9 +85,9 @@ export function LearnerNavDock({
                   <Link
                     aria-label={label}
                     className={cn(
-                      'group flex h-14 min-w-0 flex-col items-center justify-center gap-1 border-2 border-transparent text-muted-foreground transition duration-200 hover:border-foreground hover:bg-dynamic-yellow/15 hover:text-foreground md:h-16',
+                      'group flex h-14 min-w-0 flex-col items-center justify-center gap-1 border-2 border-transparent text-muted-foreground transition duration-200 hover:border-border hover:bg-dynamic-yellow/15 hover:text-foreground md:h-16',
                       isActive &&
-                        'border-foreground bg-dynamic-yellow text-foreground shadow-[4px_4px_0_var(--foreground)] hover:bg-dynamic-yellow hover:text-foreground'
+                        'border-border bg-primary text-primary-foreground shadow-[4px_4px_0_var(--border)] hover:bg-primary hover:text-primary-foreground'
                     )}
                     href={href}
                   >
@@ -98,7 +98,7 @@ export function LearnerNavDock({
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent
-                  className="hidden rounded-none border-2 border-foreground bg-background px-3 py-2 font-black text-foreground text-xs shadow-[4px_4px_0_var(--foreground)] md:block"
+                  className="hidden rounded-none border-2 border-border bg-background px-3 py-2 font-black text-foreground text-xs shadow-[4px_4px_0_var(--border)] md:block"
                   side="right"
                   sideOffset={12}
                 >
@@ -132,20 +132,20 @@ export function LearnerHeader({
     bootstrap.workspaces[0];
 
   return (
-    <header className="sticky top-0 z-10 px-4 py-3 md:px-8 md:pt-5">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 border-2 border-foreground bg-background p-3 shadow-[7px_7px_0_var(--foreground)]">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center border-2 border-foreground bg-dynamic-yellow text-foreground shadow-[3px_3px_0_var(--foreground)]">
-            <Rocket className="h-6 w-6" />
+    <header className="sticky top-0 z-10 px-4 py-2 md:px-8 md:pt-4">
+      <div className="mx-auto flex max-w-7xl flex-nowrap items-center gap-3 border-2 border-border bg-background/95 p-2 shadow-[5px_5px_0_var(--border)] backdrop-blur">
+        <div className="flex min-w-0 shrink items-center gap-2">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border bg-dynamic-yellow/15 text-foreground shadow-[2px_2px_0_var(--border)]">
+            <Rocket className="h-5 w-5" />
           </div>
-          <div>
-            <p className="font-black text-xl tracking-normal">Learn</p>
-            <p className="text-muted-foreground text-sm">
+          <div className="min-w-0 leading-tight">
+            <p className="font-black text-lg tracking-normal">Learn</p>
+            <p className="truncate text-muted-foreground text-xs">
               {activeWorkspace?.name ?? t('workspace.untitled')}
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="ml-auto flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <WorkspaceSelect
             bootstrap={bootstrap}
             onChange={(value) => router.push(`/${value}`)}
@@ -165,20 +165,20 @@ export function LearnerHeader({
               value={selectedStudentId ?? ''}
             />
           ) : null}
-          <div className="hidden items-center gap-2 border-2 border-foreground bg-dynamic-yellow/15 px-3 py-2 font-black text-sm shadow-[3px_3px_0_var(--foreground)] sm:flex">
+          <div className="hidden h-10 shrink-0 items-center gap-2 border-2 border-border bg-muted px-2.5 font-black text-xs shadow-[2px_2px_0_var(--border)] lg:flex">
             <Flame className="h-4 w-4" />
-            {t('home.streak')}
+            <span>{t('home.streak')}</span>
           </div>
           <LanguageSwitcher compact />
           <form action="/api/auth/logout" method="post">
             <Button
-              className="h-11 rounded-none border-2 border-foreground font-black shadow-[3px_3px_0_var(--foreground)] active:translate-x-1 active:translate-y-1 active:shadow-none"
+              className="h-10 shrink-0 rounded-none border-2 border-border px-3 font-black text-xs shadow-[2px_2px_0_var(--border)] active:translate-x-1 active:translate-y-1 active:shadow-none"
               size="sm"
               type="submit"
               variant="secondary"
             >
               <LogOut className="h-4 w-4" />
-              {t('auth.logout')}
+              <span className="hidden xl:inline">{t('auth.logout')}</span>
             </Button>
           </form>
         </div>
@@ -202,7 +202,7 @@ function WorkspaceSelect({
       <span className="sr-only">{t('workspace.switcher')}</span>
       <select
         aria-label={t('workspace.switcher')}
-        className="h-11 min-w-40 rounded-none border-2 border-foreground bg-background px-4 font-black text-sm shadow-[3px_3px_0_var(--foreground)]"
+        className="h-10 w-36 shrink-0 rounded-none border-2 border-border bg-background px-3 font-black text-xs shadow-[2px_2px_0_var(--border)] sm:w-44"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
@@ -233,7 +233,7 @@ function StudentSelect({
       <span className="sr-only">{t('settings.linkedStudents')}</span>
       <select
         aria-label={t('settings.linkedStudents')}
-        className="h-11 min-w-40 rounded-none border-2 border-foreground bg-dynamic-yellow/15 px-4 font-black text-sm shadow-[3px_3px_0_var(--foreground)]"
+        className="h-10 w-36 shrink-0 rounded-none border-2 border-border bg-muted px-3 font-black text-xs shadow-[2px_2px_0_var(--border)] sm:w-44"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >

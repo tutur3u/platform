@@ -25,9 +25,9 @@ export function AssignmentRow({
         <div className="flex flex-wrap items-center gap-2">
           <div
             className={cn(
-              'flex h-10 w-10 items-center justify-center border-2 border-foreground',
+              'flex h-10 w-10 items-center justify-center border-2 border-border',
               assignment.is_completed
-                ? 'bg-dynamic-yellow text-foreground'
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-background text-foreground'
             )}
           >
@@ -41,7 +41,7 @@ export function AssignmentRow({
             {assignment.title ?? t('assignments.untitled')}
           </h3>
           {assignment.is_completed ? (
-            <Badge className="rounded-none border-2 border-foreground bg-dynamic-yellow text-foreground hover:bg-dynamic-yellow">
+            <Badge className="rounded-none border-2 border-border bg-primary text-primary-foreground hover:bg-primary">
               {completedLabel}
             </Badge>
           ) : null}

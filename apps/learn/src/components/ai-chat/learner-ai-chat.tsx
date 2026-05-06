@@ -60,8 +60,8 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
     <div className="grid min-h-[calc(100dvh-12rem)] gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
       <CoachSidebar />
 
-      <section className="flex min-h-0 flex-col overflow-hidden border-2 border-foreground bg-background shadow-[9px_9px_0_var(--foreground)]">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-foreground border-b-2 p-4">
+      <section className="flex min-h-0 flex-col overflow-hidden border-2 border-border bg-background shadow-[9px_9px_0_var(--border)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-border border-b-2 p-4">
           <div>
             <h1 className="font-black text-3xl tracking-normal">
               {t('aiChat.title')}
@@ -71,7 +71,7 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
             </p>
           </div>
           <Button
-            className="rounded-none border-2 border-foreground font-black shadow-[3px_3px_0_var(--foreground)] active:translate-x-1 active:translate-y-1 active:shadow-none"
+            className="rounded-none border-2 border-border font-black shadow-[3px_3px_0_var(--border)] active:translate-x-1 active:translate-y-1 active:shadow-none"
             onClick={() => {
               if (isBusy) stop();
               setResetKey((current) => current + 1);
@@ -98,13 +98,13 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
         </div>
 
         <form
-          className="border-foreground border-t-2 bg-card p-3"
+          className="border-border border-t-2 bg-card p-3"
           onSubmit={(event) => {
             event.preventDefault();
             submit(input);
           }}
         >
-          <div className="flex items-end gap-2 border-2 border-foreground bg-background p-2 shadow-[4px_4px_0_var(--foreground)]">
+          <div className="flex items-end gap-2 border-2 border-border bg-background p-2 shadow-[4px_4px_0_var(--border)]">
             <Textarea
               className="max-h-40 min-h-12 resize-none rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0"
               disabled={isBusy}
@@ -119,7 +119,7 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
               value={input}
             />
             <Button
-              className="h-11 rounded-none border-2 border-foreground bg-dynamic-yellow text-foreground shadow-[3px_3px_0_var(--foreground)] hover:bg-dynamic-yellow active:translate-x-1 active:translate-y-1 active:shadow-none"
+              className="h-11 rounded-none border-2 border-border bg-primary text-primary-foreground shadow-[3px_3px_0_var(--border)] hover:bg-primary active:translate-x-1 active:translate-y-1 active:shadow-none"
               disabled={!input.trim() || isBusy}
               size="icon"
               type="submit"

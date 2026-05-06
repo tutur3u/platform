@@ -91,7 +91,7 @@
     "dailyQuests": "Nhiệm vụ hôm nay",
     "hearts": "Tim",
     "heroDescription": "Chọn một nhiệm vụ nhỏ, giữ tim và duy trì chuỗi học tập của bạn.",
-    "heroTitle": "Sẵn sàng cho hôm nay chưa, {name}?",
+    "heroTitle": "Sẵn sàng chưa, {name}?",
     "learningPath": "Lộ trình học",
     "learningPathDescription": "Mỗi khóa học trở thành một lộ trình có điểm mốc, bài hiện tại và thành quả dễ thấy.",
     "marks": "Điểm gần đây",
@@ -112,6 +112,31 @@
     "studentMode": "Chế độ học viên",
     "title": "Trang chủ",
     "xp": "XP"
+  },
+  "landing": {
+    "byline": "bởi Tuturuuu",
+    "cards": {
+      "assignments": {
+        "body": "Bài tập luôn hiện thành các bước nhỏ tiếp theo, không phải một hàng đợi quản trị khác.",
+        "title": "Việc học rõ ràng"
+      },
+      "courses": {
+        "body": "Các module khóa học trở thành lộ trình học có điểm mốc, bài hiện tại và phần luyện tập.",
+        "title": "Lộ trình khóa học"
+      },
+      "progress": {
+        "body": "Báo cáo, điểm và chế độ phụ huynh đọc từ cùng workspace giáo dục mà giáo viên quản lý.",
+        "title": "Tiến độ dùng chung"
+      }
+    },
+    "eyebrow": "Trang giới thiệu Learn",
+    "lead": "Learn là ứng dụng dành cho học viên trong workspace giáo dục Tuturuuu. Học viên luyện tập, theo dõi module khóa học, xử lý bài tập và đọc tiến độ mà không vào dashboard giáo viên.",
+    "panelBody": "Xác thực vẫn thuộc nền tảng Tuturuuu. Sau khi đăng nhập, Learn mở đúng dashboard workspace cho học viên hiện tại hoặc phụ huynh được liên kết.",
+    "panelTitle": "Một tài khoản, học tập tập trung",
+    "preview": "Xem luồng học",
+    "signIn": "Đăng nhập",
+    "start": "Mở dashboard học viên",
+    "title": "Bài học, luyện tập và tiến độ tập trung."
   },
   "marks": {
     "description": "Điểm được trình bày thành các thẻ thân thiện để học viên và phụ huynh nhanh chóng thấy tiến bộ.",

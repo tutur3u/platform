@@ -55,7 +55,7 @@ export function AssignmentsPage({ wsId }: { wsId: string }) {
             action={
               !assignment.is_completed ? (
                 <Button
-                  className="h-11 rounded-none border-2 border-foreground bg-dynamic-yellow font-black text-foreground shadow-[3px_3px_0_var(--foreground)] hover:bg-dynamic-yellow active:translate-x-1 active:translate-y-1 active:shadow-none"
+                  className="h-11 rounded-none border-2 border-border bg-primary font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] hover:bg-primary active:translate-x-1 active:translate-y-1 active:shadow-none"
                   disabled={complete.isPending}
                   onClick={() => complete.mutate(assignment.id)}
                   size="sm"

@@ -61,7 +61,7 @@ export function PracticePage({ wsId }: { wsId: string }) {
     >
       <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <BrutalCard className="bg-background p-6 md:p-8">
-          <Badge className="mb-5 rounded-none border-2 border-foreground bg-dynamic-yellow text-foreground hover:bg-dynamic-yellow">
+          <Badge className="mb-5 rounded-none border-2 border-border bg-primary text-primary-foreground hover:bg-primary">
             {practice.data.item.courseName}
           </Badge>
           <h2 className="font-bold text-[clamp(2rem,4vw,4.25rem)] leading-none tracking-normal">
@@ -73,8 +73,8 @@ export function PracticePage({ wsId }: { wsId: string }) {
           {result ? (
             <div
               className={cn(
-                'mt-8 border-2 border-foreground p-5 shadow-[5px_5px_0_var(--foreground)]',
-                result.correct ? 'bg-dynamic-yellow/20' : 'bg-background'
+                'mt-8 border-2 border-border p-5 shadow-[5px_5px_0_var(--border)]',
+                result.correct ? 'bg-muted/60' : 'bg-background'
               )}
             >
               <p className="font-bold text-2xl tracking-normal">
@@ -92,7 +92,7 @@ export function PracticePage({ wsId }: { wsId: string }) {
           ) : null}
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
             <Button
-              className="h-12 rounded-none border-2 border-foreground bg-dynamic-yellow font-black text-foreground shadow-[4px_4px_0_var(--foreground)] hover:bg-dynamic-yellow active:translate-x-1 active:translate-y-1 active:shadow-none"
+              className="h-12 rounded-none border-2 border-border bg-primary font-black text-primary-foreground shadow-[4px_4px_0_var(--border)] hover:bg-primary active:translate-x-1 active:translate-y-1 active:shadow-none"
               disabled={submit.isPending}
               onClick={() => submit.mutate(true)}
             >
@@ -100,7 +100,7 @@ export function PracticePage({ wsId }: { wsId: string }) {
               {t('practice.submitCorrect')}
             </Button>
             <Button
-              className="h-12 rounded-none border-2 border-foreground font-black shadow-[4px_4px_0_var(--foreground)] active:translate-x-1 active:translate-y-1 active:shadow-none"
+              className="h-12 rounded-none border-2 border-border font-black shadow-[4px_4px_0_var(--border)] active:translate-x-1 active:translate-y-1 active:shadow-none"
               disabled={submit.isPending}
               onClick={() => submit.mutate(false)}
               variant="secondary"
