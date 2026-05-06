@@ -1615,9 +1615,7 @@ function TaskCardInner({
             <div
               className={cn(
                 'mb-1 flex gap-1',
-                isPersonalExternalTask
-                  ? 'items-center justify-between'
-                  : 'flex-col'
+                isPersonalExternalTask ? 'flex-wrap items-center' : 'flex-col'
               )}
             >
               {isPersonalExternalTask && (
