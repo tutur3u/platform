@@ -78,6 +78,64 @@ describe('useProgressiveBoardLoader', () => {
     ]);
   });
 
+  it('forwards external lane options and preserves them for revalidation', async () => {
+    const externalTask: Task = {
+      id: 'task-external',
+      display_number: 101,
+      name: 'External task',
+      list_id: 'personal-external-staging:board-1',
+      created_at: '2026-03-19T00:00:00.000Z',
+      source_list_status: 'active',
+    };
+
+    vi.mocked(listWorkspaceTasks).mockResolvedValueOnce({
+      tasks: [externalTask],
+    });
+
+    const { result } = renderHook(
+      () => useProgressiveBoardLoader('personal', 'board-1'),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.loadListPage(
+        'personal-external-staging:board-1',
+        0,
+        {
+          externalIncludeDocuments: true,
+          externalIncludeDoneClosed: true,
+          externalSortBy: 'due-asc',
+        }
+      );
+    });
+
+    expect(listWorkspaceTasks).toHaveBeenCalledWith('personal', {
+      listId: 'personal-external-staging:board-1',
+      limit: 50,
+      offset: 0,
+      externalIncludeDocuments: true,
+      externalIncludeDoneClosed: true,
+      externalSortBy: 'due-asc',
+    });
+
+    vi.mocked(listWorkspaceTasks).mockResolvedValueOnce({
+      tasks: [externalTask],
+    });
+
+    await act(async () => {
+      await result.current.revalidateLoadedLists();
+    });
+
+    expect(listWorkspaceTasks).toHaveBeenLastCalledWith('personal', {
+      listId: 'personal-external-staging:board-1',
+      limit: 50,
+      offset: 0,
+      externalIncludeDocuments: true,
+      externalIncludeDoneClosed: true,
+      externalSortBy: 'due-asc',
+    });
+  });
+
   it('appends newly discovered tasks after merging existing ones', async () => {
     const cachedTask: Task = {
       id: 'task-1',

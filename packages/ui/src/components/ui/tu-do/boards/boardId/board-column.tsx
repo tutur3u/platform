@@ -1,18 +1,36 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
+  ArrowDownAZ,
+  ArrowUpAZ,
+  CalendarClock,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  FileText,
+  Filter,
   GripVertical,
   Loader2,
   MoveRight,
+  RotateCcw,
 } from '@tuturuuu/icons';
+import type { ExternalTaskSortBy } from '@tuturuuu/internal-api/tasks';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -39,6 +57,80 @@ const colorClasses: Record<SupportedColor, string> = {
   INDIGO: 'border-l-dynamic-indigo/50 bg-dynamic-indigo/5',
   CYAN: 'border-l-dynamic-cyan/50 bg-dynamic-cyan/5',
 };
+
+const DEFAULT_EXTERNAL_TASK_SORT_BY: ExternalTaskSortBy = 'created-desc';
+const TERMINAL_EXTERNAL_SOURCE_STATUSES = new Set(['done', 'closed']);
+
+function getTaskTime(value: string | null | undefined) {
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : null;
+}
+
+function compareNullableTaskTime(
+  a: string | null | undefined,
+  b: string | null | undefined,
+  ascending: boolean
+) {
+  const aTime = getTaskTime(a);
+  const bTime = getTaskTime(b);
+
+  if (aTime === null && bTime === null) return 0;
+  if (aTime === null) return 1;
+  if (bTime === null) return -1;
+
+  return ascending ? aTime - bTime : bTime - aTime;
+}
+
+function getExternalSourceSortText(task: Task) {
+  return [
+    task.source_workspace_name,
+    task.source_board_name,
+    task.source_list_name,
+    task.name,
+  ]
+    .filter(Boolean)
+    .join(' / ')
+    .toLowerCase();
+}
+
+function sortExternalTasks(tasks: Task[], sortBy: ExternalTaskSortBy) {
+  const sorted = [...tasks];
+
+  sorted.sort((a, b) => {
+    switch (sortBy) {
+      case 'created-asc':
+        return (
+          compareNullableTaskTime(a.created_at, b.created_at, true) ||
+          a.name.localeCompare(b.name)
+        );
+      case 'due-asc':
+        return (
+          compareNullableTaskTime(a.end_date, b.end_date, true) ||
+          compareNullableTaskTime(a.created_at, b.created_at, false) ||
+          a.name.localeCompare(b.name)
+        );
+      case 'name-asc':
+        return (
+          a.name.localeCompare(b.name) ||
+          compareNullableTaskTime(a.created_at, b.created_at, false)
+        );
+      case 'source-asc':
+        return (
+          getExternalSourceSortText(a).localeCompare(
+            getExternalSourceSortText(b)
+          ) || compareNullableTaskTime(a.created_at, b.created_at, false)
+        );
+      default:
+        return (
+          compareNullableTaskTime(a.created_at, b.created_at, false) ||
+          a.name.localeCompare(b.name)
+        );
+    }
+  });
+
+  return sorted;
+}
 
 interface BoardColumnProps {
   column: TaskList;
@@ -103,6 +195,13 @@ export function BoardColumn({
     isExternalStaging && column.is_external_collapsed === true;
   const listState = pagination[column.id];
   const isInitialLoad = !listState || listState.isInitialLoad;
+  const [externalIncludeDocuments, setExternalIncludeDocuments] =
+    useState(false);
+  const [externalIncludeDoneClosed, setExternalIncludeDoneClosed] =
+    useState(false);
+  const [externalSortBy, setExternalSortBy] = useState<ExternalTaskSortBy>(
+    DEFAULT_EXTERNAL_TASK_SORT_BY
+  );
   const hasActiveFilters =
     !!filters &&
     (filters.labels.length > 0 ||
@@ -115,6 +214,47 @@ export function BoardColumn({
       filters.includeUnassigned ||
       !!filters.sortBy);
   const recoveryRequestedRef = useRef(false);
+  const externalOptionsSignature = `${externalIncludeDocuments}:${externalIncludeDoneClosed}:${externalSortBy}`;
+  const loadedExternalOptionsSignatureRef = useRef<string | null>(null);
+  const externalLoadOptions = useMemo(
+    () =>
+      isExternalStaging
+        ? {
+            externalIncludeDocuments,
+            externalIncludeDoneClosed,
+            externalSortBy,
+          }
+        : undefined,
+    [
+      externalIncludeDocuments,
+      externalIncludeDoneClosed,
+      externalSortBy,
+      isExternalStaging,
+    ]
+  );
+  const loadColumnPage = useCallback(
+    (page: number) => {
+      if (!isExternalStaging) {
+        return loadListPage(column.id, page);
+      }
+
+      loadedExternalOptionsSignatureRef.current = externalOptionsSignature;
+      const promise = loadListPage(column.id, page, externalLoadOptions);
+
+      promise.catch(() => {
+        loadedExternalOptionsSignatureRef.current = null;
+      });
+
+      return promise;
+    },
+    [
+      column.id,
+      externalLoadOptions,
+      externalOptionsSignature,
+      isExternalStaging,
+      loadListPage,
+    ]
+  );
 
   // Viewport detection — trigger first page load when column becomes visible
   const columnRef = useRef<HTMLDivElement>(null);
@@ -124,7 +264,7 @@ export function BoardColumn({
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
-          loadListPage(column.id, 0);
+          loadColumnPage(0);
           observer.disconnect();
         }
       },
@@ -132,7 +272,30 @@ export function BoardColumn({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [column.id, isExternalCollapsed, listState, loadListPage]);
+  }, [isExternalCollapsed, listState, loadColumnPage]);
+
+  useEffect(() => {
+    if (
+      !isExternalStaging ||
+      isExternalCollapsed ||
+      !listState ||
+      listState.isInitialLoad ||
+      listState.isLoading ||
+      loadedExternalOptionsSignatureRef.current === externalOptionsSignature
+    ) {
+      return;
+    }
+
+    loadColumnPage(0);
+  }, [
+    externalOptionsSignature,
+    isExternalCollapsed,
+    isExternalStaging,
+    listState,
+    listState?.isInitialLoad,
+    listState?.isLoading,
+    loadColumnPage,
+  ]);
 
   // Recovery path: if the list metadata says tasks exist but the shared tasks
   // cache was cleared, refetch page 0 for this list so cards reappear.
@@ -148,7 +311,7 @@ export function BoardColumn({
     if (listState.totalCount > 0 && tasks.length === 0) {
       if (recoveryRequestedRef.current) return;
       recoveryRequestedRef.current = true;
-      loadListPage(column.id, 0).finally(() => {
+      loadColumnPage(0).finally(() => {
         recoveryRequestedRef.current = false;
       });
       return;
@@ -156,21 +319,20 @@ export function BoardColumn({
 
     recoveryRequestedRef.current = false;
   }, [
-    column.id,
     hasActiveFilters,
     isExternalCollapsed,
     listState,
     listState?.isLoading,
     listState?.totalCount,
-    loadListPage,
+    loadColumnPage,
     tasks.length,
   ]);
 
   // Load more pages (infinite scroll callback)
   const handleLoadMore = useCallback(() => {
     if (!listState || listState.isLoading || !listState.hasMore) return;
-    loadListPage(column.id, listState.page + 1);
-  }, [column.id, listState, loadListPage]);
+    loadColumnPage(listState.page + 1);
+  }, [listState, loadColumnPage]);
 
   // Helper to translate standard list names
   const translateListName = (name: string | null | undefined): string => {
@@ -225,9 +387,41 @@ export function BoardColumn({
   const colorClass =
     colorClasses[column.color as SupportedColor] || colorClasses.GRAY;
   const statusIcon = statusIcons[column.status];
+  const visibleTasks = useMemo(() => {
+    if (!isExternalStaging) return tasks;
+
+    const filteredTasks = tasks.filter((task) => {
+      const sourceStatus = task.source_list_status;
+
+      if (!externalIncludeDocuments && sourceStatus === 'documents') {
+        return false;
+      }
+
+      if (
+        !externalIncludeDoneClosed &&
+        (task.completed_at ||
+          task.closed_at ||
+          (sourceStatus && TERMINAL_EXTERNAL_SOURCE_STATUSES.has(sourceStatus)))
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+
+    return sortExternalTasks(filteredTasks, externalSortBy);
+  }, [
+    externalIncludeDocuments,
+    externalIncludeDoneClosed,
+    externalSortBy,
+    isExternalStaging,
+    tasks,
+  ]);
 
   // Badge count: prefer totalCount from progressive loader when available
-  const badgeCount = listState?.totalCount ?? tasks.length;
+  const badgeCount = listState?.totalCount ?? visibleTasks.length;
+  const externalFilterCount =
+    (externalIncludeDocuments ? 1 : 0) + (externalIncludeDoneClosed ? 1 : 0);
 
   // Memoize drag handle for performance
   const DragHandle = useMemo(
@@ -276,13 +470,13 @@ export function BoardColumn({
         ref={composedRef}
         style={style}
         className={cn(
-          'group flex h-full w-14 shrink-0 snap-start scroll-mr-[var(--kanban-snap-right-padding)] scroll-ml-[var(--kanban-snap-left-padding)] flex-col items-center rounded-xl border border-dynamic-cyan/45 border-dashed bg-dynamic-cyan/[0.035] py-3 transition-all duration-200',
-          'touch-none select-none hover:shadow-md'
+          'group flex h-full w-14 shrink-0 snap-start scroll-mr-[var(--kanban-snap-right-padding)] scroll-ml-[var(--kanban-snap-left-padding)] flex-col items-center rounded-xl border border-dynamic-cyan/45 border-dashed bg-dynamic-cyan/[0.035] transition-all duration-200',
+          'touch-none select-none overflow-hidden hover:shadow-md'
         )}
       >
         <button
           type="button"
-          className="flex h-full w-full flex-col items-center gap-3 rounded-lg px-1 text-dynamic-cyan transition-colors hover:bg-dynamic-cyan/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-cyan/40"
+          className="flex h-full w-full flex-col items-center gap-3 rounded-xl px-1 py-3 text-dynamic-cyan transition-colors hover:bg-dynamic-cyan/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-cyan/40"
           title={tTasks('expand_external_tasks')}
           aria-label={tTasks('expand_external_tasks')}
           onClick={() => onExternalTasksCollapsedChange?.(false)}
@@ -354,17 +548,128 @@ export function BoardColumn({
         </div>
         <div className="flex items-center gap-1">
           {isExternalStaging ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              className="h-7 w-7 p-0 text-dynamic-cyan hover:bg-dynamic-cyan/10"
-              title={tTasks('collapse_external_tasks')}
-              aria-label={tTasks('collapse_external_tasks')}
-              onClick={() => onExternalTasksCollapsedChange?.(true)}
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-            </Button>
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    className={cn(
+                      'relative h-7 w-7 p-0 text-dynamic-cyan hover:bg-dynamic-cyan/10',
+                      externalFilterCount > 0 && 'bg-dynamic-cyan/10'
+                    )}
+                    title={t('filters')}
+                    aria-label={t('filters')}
+                  >
+                    <Filter className="h-3.5 w-3.5" />
+                    {externalFilterCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-dynamic-cyan px-0.5 font-medium text-[9px] text-background">
+                        {externalFilterCount}
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuCheckboxItem
+                    checked={externalIncludeDoneClosed}
+                    onCheckedChange={(checked) =>
+                      setExternalIncludeDoneClosed(checked === true)
+                    }
+                    onSelect={(event) => event.preventDefault()}
+                  >
+                    <CheckCircle2 className="mr-2 h-3.5 w-3.5 text-dynamic-green" />
+                    {tTasks('external_tasks_show_done_closed')}
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={externalIncludeDocuments}
+                    onCheckedChange={(checked) =>
+                      setExternalIncludeDocuments(checked === true)
+                    }
+                    onSelect={(event) => event.preventDefault()}
+                  >
+                    <FileText className="mr-2 h-3.5 w-3.5 text-dynamic-blue" />
+                    {tTasks('external_tasks_show_documents')}
+                  </DropdownMenuCheckboxItem>
+                  {externalFilterCount > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setExternalIncludeDocuments(false);
+                          setExternalIncludeDoneClosed(false);
+                        }}
+                      >
+                        <RotateCcw className="mr-2 h-3.5 w-3.5" />
+                        {t('reset')}
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    className={cn(
+                      'h-7 w-7 p-0 text-dynamic-cyan hover:bg-dynamic-cyan/10',
+                      externalSortBy !== DEFAULT_EXTERNAL_TASK_SORT_BY &&
+                        'bg-dynamic-cyan/10'
+                    )}
+                    title={t('sort')}
+                    aria-label={t('sort')}
+                  >
+                    {externalSortBy === 'created-asc' ? (
+                      <ArrowUpAZ className="h-3.5 w-3.5" />
+                    ) : (
+                      <ArrowDownAZ className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuRadioGroup
+                    value={externalSortBy}
+                    onValueChange={(value) =>
+                      setExternalSortBy(value as ExternalTaskSortBy)
+                    }
+                  >
+                    <DropdownMenuRadioItem value="created-desc">
+                      <ArrowDownAZ className="mr-2 h-3.5 w-3.5" />
+                      {tTasks('external_tasks_sort_created_desc')}
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="created-asc">
+                      <ArrowUpAZ className="mr-2 h-3.5 w-3.5" />
+                      {tTasks('external_tasks_sort_created_asc')}
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="due-asc">
+                      <CalendarClock className="mr-2 h-3.5 w-3.5" />
+                      {tTasks('external_tasks_sort_due_asc')}
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="name-asc">
+                      <ArrowUpAZ className="mr-2 h-3.5 w-3.5" />
+                      {tTasks('external_tasks_sort_name_asc')}
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="source-asc">
+                      <ArrowUpAZ className="mr-2 h-3.5 w-3.5" />
+                      {tTasks('external_tasks_sort_source_asc')}
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                className="h-7 w-7 p-0 text-dynamic-cyan hover:bg-dynamic-cyan/10"
+                title={tTasks('collapse_external_tasks')}
+                aria-label={tTasks('collapse_external_tasks')}
+                onClick={() => onExternalTasksCollapsedChange?.(true)}
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </Button>
+            </>
           ) : (
             <ListActions
               listId={column.id}
@@ -390,7 +695,7 @@ export function BoardColumn({
         </div>
       ) : (
         <VirtualizedTaskList
-          tasks={tasks}
+          tasks={visibleTasks}
           availableLists={availableLists}
           column={column}
           boardId={boardId}

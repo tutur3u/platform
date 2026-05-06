@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   ListPaginationState,
   ProgressiveLoaderValue,
+  ProgressiveLoadListPageOptions,
 } from './progressive-loader-context';
 
 const PAGE_SIZE = 50;
@@ -27,13 +28,22 @@ export function useProgressiveBoardLoader(
     Record<string, ListPaginationState>
   >({});
   const paginationRef = useRef<Record<string, ListPaginationState>>({});
+  const listOptionsRef = useRef<Record<string, ProgressiveLoadListPageOptions>>(
+    {}
+  );
 
   useEffect(() => {
     paginationRef.current = pagination;
   }, [pagination]);
 
   const loadListPage = useCallback(
-    async (listId: string, page: number = 0) => {
+    async (
+      listId: string,
+      page: number = 0,
+      options?: ProgressiveLoadListPageOptions
+    ) => {
+      listOptionsRef.current[listId] = options ?? {};
+
       // Guard against duplicate in-flight requests for the same page
       setPagination((prev) => {
         const current = prev[listId];
@@ -55,6 +65,7 @@ export function useProgressiveBoardLoader(
           listId,
           limit: PAGE_SIZE,
           offset: page * PAGE_SIZE,
+          ...options,
         });
         const tasks = payload.tasks ?? [];
         const hasMore = tasks.length === PAGE_SIZE;
@@ -164,6 +175,7 @@ export function useProgressiveBoardLoader(
             listId,
             limit: PAGE_SIZE,
             offset: page * PAGE_SIZE,
+            ...listOptionsRef.current[listId],
           })
         )
       );
