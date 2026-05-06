@@ -28,7 +28,7 @@ import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as z from 'zod';
 import {
   MAX_MONTHLY_REPORT_TEXT_LENGTH,
@@ -164,52 +164,55 @@ export default function EditableReportPreview({
 
   const defaultReportTitle = isNew ? getDefaultReportTitle() : '';
 
-  const getFormValues = () => {
+  const latestApprovedTitle = latestApprovedLog?.title || '';
+  const latestApprovedContent = latestApprovedLog?.content || '';
+  const latestApprovedFeedback = latestApprovedLog?.feedback || '';
+  const hasLatestApprovedLog = Boolean(latestApprovedLog);
+
+  const formValues = useMemo(() => {
     const isRejected = report.report_approval_status === 'REJECTED';
-    if (isRejected && latestApprovedLog) {
+    if (isRejected && hasLatestApprovedLog) {
       return {
-        title: latestApprovedLog.title || '',
-        content: latestApprovedLog.content || '',
-        feedback: latestApprovedLog.feedback || '',
+        title: latestApprovedTitle,
+        content: latestApprovedContent,
+        feedback: latestApprovedFeedback,
       };
     }
+
     const reportTitle = report?.title || '';
     return {
       title: reportTitle || defaultReportTitle,
       content: report?.content || '',
       feedback: report?.feedback || '',
     };
-  };
-
-  const form = useForm({
-    resolver: zodResolver(UserReportFormSchema),
-    defaultValues: getFormValues(),
-  });
-
-  useEffect(() => {
-    const isRejected = report.report_approval_status === 'REJECTED';
-    const formValues =
-      isRejected && latestApprovedLog
-        ? {
-            title: latestApprovedLog.title || '',
-            content: latestApprovedLog.content || '',
-            feedback: latestApprovedLog.feedback || '',
-          }
-        : {
-            title: report?.title || defaultReportTitle,
-            content: report?.content || '',
-            feedback: report?.feedback || '',
-          };
-    form.reset(formValues);
   }, [
     report.report_approval_status,
-    latestApprovedLog,
-    defaultReportTitle,
+    hasLatestApprovedLog,
+    latestApprovedTitle,
+    latestApprovedContent,
+    latestApprovedFeedback,
     report?.title,
     report?.content,
     report?.feedback,
-    form,
+    defaultReportTitle,
   ]);
+
+  const form = useForm({
+    resolver: zodResolver(UserReportFormSchema),
+    defaultValues: formValues,
+  });
+
+  const lastResetSignatureRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const nextSignature = JSON.stringify(formValues);
+    if (lastResetSignatureRef.current === nextSignature) {
+      return;
+    }
+
+    lastResetSignatureRef.current = nextSignature;
+    form.reset(formValues);
+  }, [form, formValues]);
 
   const title = useWatch({ control: form.control, name: 'title' });
   const content = useWatch({ control: form.control, name: 'content' });
