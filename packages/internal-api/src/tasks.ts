@@ -109,10 +109,20 @@ export interface ListWorkspaceTasksOptions {
   offset?: number;
   completed?: 'exclude' | 'only';
   closed?: 'exclude' | 'only';
+  externalIncludeDocuments?: boolean;
+  externalIncludeDoneClosed?: boolean;
+  externalSortBy?: ExternalTaskSortBy;
   includeRelationshipSummary?: boolean;
   includeDeleted?: boolean | 'only';
   includeCount?: boolean;
 }
+
+export type ExternalTaskSortBy =
+  | 'created-desc'
+  | 'created-asc'
+  | 'due-asc'
+  | 'name-asc'
+  | 'source-asc';
 
 export interface WorkspaceTasksResponse {
   tasks: WorkspaceTaskApiTask[];
@@ -654,6 +664,9 @@ export async function listWorkspaceTasks(
         offset: options?.offset,
         completed: options?.completed,
         closed: options?.closed,
+        externalIncludeDocuments: options?.externalIncludeDocuments,
+        externalIncludeDoneClosed: options?.externalIncludeDoneClosed,
+        externalSortBy: options?.externalSortBy,
         includeRelationshipSummary: options?.includeRelationshipSummary,
         includeDeleted:
           options?.includeDeleted === 'only'

@@ -147,6 +147,42 @@ type NormalizedRouteTask = Task & {
   task_lists?: TaskRecord['task_lists'];
 };
 
+type ExternalTaskSortBy =
+  | 'created-desc'
+  | 'created-asc'
+  | 'due-asc'
+  | 'name-asc'
+  | 'source-asc';
+type ExternalSourceStatus =
+  | 'not_started'
+  | 'active'
+  | 'documents'
+  | 'done'
+  | 'closed';
+
+const DEFAULT_EXTERNAL_TASK_SORT_BY: ExternalTaskSortBy = 'created-desc';
+const ACTIVE_EXTERNAL_SOURCE_STATUSES: ExternalSourceStatus[] = [
+  'not_started',
+  'active',
+];
+const DOCUMENT_EXTERNAL_SOURCE_STATUS: ExternalSourceStatus = 'documents';
+const TERMINAL_EXTERNAL_SOURCE_STATUSES: ExternalSourceStatus[] = [
+  'done',
+  'closed',
+];
+
+function parseExternalTaskSortBy(value: string | null): ExternalTaskSortBy {
+  switch (value) {
+    case 'created-asc':
+    case 'due-asc':
+    case 'name-asc':
+    case 'source-asc':
+      return value;
+    default:
+      return DEFAULT_EXTERNAL_TASK_SORT_BY;
+  }
+}
+
 function getTaskSourceLocation(task: TaskRecord) {
   const taskList = task.task_lists as
     | {
@@ -334,6 +370,15 @@ export async function GET(
     const assignedToMe = url.searchParams.get('assignedToMe') === 'true';
     const completedMode = url.searchParams.get('completed');
     const closedMode = url.searchParams.get('closed');
+    const externalIncludeDocuments =
+      url.searchParams.get('externalIncludeDocuments') === 'true';
+    const externalIncludeDoneClosed =
+      url.searchParams.get('externalIncludeDoneClosed') === 'true' ||
+      completedMode === 'only' ||
+      closedMode === 'only';
+    const externalSortBy = parseExternalTaskSortBy(
+      url.searchParams.get('externalSortBy')
+    );
     const virtualStagingBoardId = listId
       ? getPersonalExternalStagingBoardId(listId)
       : null;
@@ -756,6 +801,27 @@ export async function GET(
           .is('task_lists.workspace_boards.deleted_at', null)
           .is('task_lists.workspace_boards.archived_at', null);
 
+        const defaultExternalSourceStatuses: ExternalSourceStatus[] = [
+          ...ACTIVE_EXTERNAL_SOURCE_STATUSES,
+          ...(externalIncludeDocuments
+            ? [DOCUMENT_EXTERNAL_SOURCE_STATUS]
+            : []),
+          ...(externalIncludeDoneClosed
+            ? [...TERMINAL_EXTERNAL_SOURCE_STATUSES]
+            : []),
+        ];
+
+        defaultExternalQuery = defaultExternalQuery.in(
+          'task_lists.status',
+          defaultExternalSourceStatuses
+        );
+
+        if (!externalIncludeDoneClosed) {
+          defaultExternalQuery = defaultExternalQuery
+            .is('completed_at', null)
+            .is('closed_at', null);
+        }
+
         if (completedMode === 'exclude') {
           defaultExternalQuery = defaultExternalQuery.is('completed_at', null);
         } else if (completedMode === 'only') {
@@ -797,9 +863,33 @@ export async function GET(
           }
         }
 
-        const defaultExternalResult = await defaultExternalQuery
-          .order('created_at', { ascending: false })
-          .range(0, offset + limit - 1);
+        switch (externalSortBy) {
+          case 'created-asc':
+            defaultExternalQuery = defaultExternalQuery.order('created_at', {
+              ascending: true,
+            });
+            break;
+          case 'due-asc':
+            defaultExternalQuery = defaultExternalQuery
+              .order('end_date', { ascending: true, nullsFirst: false })
+              .order('created_at', { ascending: false });
+            break;
+          case 'name-asc':
+            defaultExternalQuery = defaultExternalQuery
+              .order('name', { ascending: true })
+              .order('created_at', { ascending: false });
+            break;
+          default:
+            defaultExternalQuery = defaultExternalQuery.order('created_at', {
+              ascending: false,
+            });
+            break;
+        }
+
+        const defaultExternalResult = await defaultExternalQuery.range(
+          0,
+          offset + limit - 1
+        );
 
         if (defaultExternalResult.error) {
           return NextResponse.json(

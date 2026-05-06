@@ -195,6 +195,34 @@ describe('workspace board internal-api helpers', () => {
     );
   });
 
+  it('lists workspace tasks with external lane controls', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ tasks: [] }));
+
+    await listWorkspaceTasks(
+      'personal',
+      {
+        listId: 'personal-external-staging:board-1',
+        externalIncludeDocuments: true,
+        externalIncludeDoneClosed: true,
+        externalSortBy: 'due-asc',
+        limit: 50,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/personal/tasks?listId=personal-external-staging%3Aboard-1&limit=50&externalIncludeDocuments=true&externalIncludeDoneClosed=true&externalSortBy=due-asc',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
   it('updates and removes current-user personal task placements', async () => {
     const fetchMock = vi
       .fn()
