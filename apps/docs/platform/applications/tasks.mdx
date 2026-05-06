@@ -258,6 +258,11 @@ unless the lane-level compact filters explicitly include them. Lane sorting is
 also local to the external lane, so changing it does not reorder the user's real
 personal lists.
 
+External task cards should show the source workspace and the source board's
+ticket identifier. Opening an external task must resolve the task by id through
+the current-user task route so the dialog receives the source workspace, source
+board, and source lists instead of the personal board context.
+
 Per-user placement lives on `task_user_overrides` with `personal_board_id`,
 `personal_list_id`, `personal_sort_key`, `personal_added_at`, and
 `personal_placed_at`.
