@@ -152,7 +152,11 @@ const mockTasks: Task[] = [
 
 const mockWorkspaceLabels: WorkspaceLabel[] = [];
 
-function renderBoardViews(overrides?: { lists?: TaskList[]; tasks?: Task[] }) {
+function renderBoardViews(overrides?: {
+  lists?: TaskList[];
+  tasks?: Task[];
+  workspace?: { id: string; personal: boolean };
+}) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -169,7 +173,7 @@ function renderBoardViews(overrides?: { lists?: TaskList[]; tasks?: Task[] }) {
           currentUserId="user-1"
           lists={overrides?.lists ?? mockLists}
           tasks={overrides?.tasks ?? mockTasks}
-          workspace={mockWorkspace as any}
+          workspace={(overrides?.workspace ?? mockWorkspace) as any}
           workspaceLabels={mockWorkspaceLabels}
         />
       </HotkeysProvider>
@@ -251,6 +255,35 @@ describe('BoardViews', () => {
         priorities: [],
         projects: [],
       }
+    );
+  });
+
+  it('pins a virtual external staging list on personal boards without using it for create shortcuts', () => {
+    renderBoardViews({
+      workspace: {
+        ...mockWorkspace,
+        personal: true,
+      },
+    });
+
+    expect(kanbanBoardProps?.lists[0]).toEqual(
+      expect.objectContaining({
+        id: 'personal-external-staging:board-1',
+        is_external_staging: true,
+        name: 'external_tasks',
+      })
+    );
+
+    fireEvent.keyDown(document, { key: 'c' });
+
+    expect(createTaskMock).toHaveBeenCalledTimes(1);
+    expect(createTaskMock).toHaveBeenCalledWith(
+      'board-1',
+      'list-1',
+      mockLists,
+      expect.objectContaining({
+        labels: [],
+      })
     );
   });
 

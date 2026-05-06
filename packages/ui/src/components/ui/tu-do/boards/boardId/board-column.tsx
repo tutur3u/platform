@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Loader2 } from '@tuturuuu/icons';
+import { GripVertical, Loader2, MoveRight } from '@tuturuuu/icons';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -86,9 +86,11 @@ export function BoardColumn({
   wsId,
 }: BoardColumnProps) {
   const t = useTranslations('common');
+  const tTasks = useTranslations('ws-tasks');
   const { createTask } = useTaskDialog();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const { pagination, loadListPage } = useProgressiveLoader();
+  const isExternalStaging = column.is_external_staging === true;
   const listState = pagination[column.id];
   const isInitialLoad = !listState || listState.isInitialLoad;
   const hasActiveFilters =
@@ -174,6 +176,7 @@ export function BoardColumn({
     isDragging,
   } = useSortable({
     id: column.id,
+    disabled: isExternalStaging,
     data: {
       type: 'Column',
       column: {
@@ -264,17 +267,26 @@ export function BoardColumn({
         'hover:shadow-md',
         // Visual feedback for invalid drop (dev only)
         DEV_MODE && isDragging && !isOverlay && 'ring-2 ring-red-400/60',
-        'border-0'
+        isExternalStaging
+          ? 'border border-dynamic-cyan/45 border-dashed bg-dynamic-cyan/[0.035]'
+          : 'border-0'
       )}
     >
       <div className="flex items-center gap-2 rounded-t-xl border-b p-3">
-        {DragHandle}
+        {!isExternalStaging && DragHandle}
         <div className="flex flex-1 items-center gap-2">
           <span className="text-sm">{statusIcon}</span>
           <h3
-            className="cursor-pointer font-semibold text-foreground/90 text-sm hover:underline"
-            onClick={() => setIsEditOpen(true)}
-            title={t('edit_list')}
+            className={cn(
+              'font-semibold text-foreground/90 text-sm',
+              isExternalStaging
+                ? 'cursor-default'
+                : 'cursor-pointer hover:underline'
+            )}
+            onClick={() => {
+              if (!isExternalStaging) setIsEditOpen(true);
+            }}
+            title={isExternalStaging ? undefined : t('edit_list')}
           >
             {translateListName(column.name)}
           </h3>
@@ -289,19 +301,21 @@ export function BoardColumn({
           </Badge>
         </div>
         <div className="flex items-center gap-1">
-          <ListActions
-            listId={column.id}
-            listName={column.name}
-            listStatus={column.status}
-            listColor={column.color as SupportedColor}
-            tasks={tasks}
-            boardId={boardId}
-            wsId={wsId}
-            onUpdate={handleUpdate}
-            onSelectAll={handleSelectAll}
-            isEditOpen={isEditOpen}
-            onEditOpenChange={setIsEditOpen}
-          />
+          {!isExternalStaging && (
+            <ListActions
+              listId={column.id}
+              listName={column.name}
+              listStatus={column.status}
+              listColor={column.color as SupportedColor}
+              tasks={tasks}
+              boardId={boardId}
+              wsId={wsId}
+              onUpdate={handleUpdate}
+              onSelectAll={handleSelectAll}
+              isEditOpen={isEditOpen}
+              onEditOpenChange={setIsEditOpen}
+            />
+          )}
         </div>
       </div>
 
@@ -334,18 +348,27 @@ export function BoardColumn({
       )}
 
       <div className="rounded-b-xl border-t p-3 backdrop-blur-sm">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() =>
-            onAddTask
-              ? onAddTask(column)
-              : createTask(boardId, column.id, [column], filters)
-          }
-          className="w-full justify-start rounded-lg border border-dynamic-gray/40 border-dashed text-muted-foreground text-xs transition-all hover:border-dynamic-gray/60 hover:bg-muted/40 hover:text-foreground"
-        >
-          + {t('add_task')}
-        </Button>
+        {isExternalStaging ? (
+          <div className="flex items-center gap-2 rounded-lg border border-dynamic-cyan/35 border-dashed bg-dynamic-cyan/8 px-3 py-2 text-dynamic-cyan text-xs">
+            <MoveRight className="h-3.5 w-3.5 shrink-0" />
+            <span className="leading-snug">
+              {tTasks('external_tasks_drag_affordance')}
+            </span>
+          </div>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              onAddTask
+                ? onAddTask(column)
+                : createTask(boardId, column.id, [column], filters)
+            }
+            className="w-full justify-start rounded-lg border border-dynamic-gray/40 border-dashed text-muted-foreground text-xs transition-all hover:border-dynamic-gray/60 hover:bg-muted/40 hover:text-foreground"
+          >
+            + {t('add_task')}
+          </Button>
+        )}
       </div>
     </Card>
   );

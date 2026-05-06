@@ -67,6 +67,7 @@ export function KanbanColumns({
   boardRef,
   columnsId,
 }: KanbanColumnsProps) {
+  const realColumns = columns.filter((column) => !column.is_external_staging);
   const snapEdgePadding = columns.length > 0 ? '0.5rem' : '0px';
   const columnGapRem = 0.75;
   const dynamicColumnWidth =
@@ -148,11 +149,11 @@ export function KanbanColumns({
                 column={list}
                 boardId={boardId ?? ''}
                 tasks={listTasks}
-                availableLists={columns}
+                availableLists={realColumns}
                 isPersonalWorkspace={isPersonalWorkspace}
                 onUpdate={onUpdate}
                 onAddTask={() =>
-                  boardId && createTask(boardId, list.id, columns, filters)
+                  boardId && createTask(boardId, list.id, realColumns, filters)
                 }
                 selectedTasks={selectedTasks}
                 isMultiSelectMode={isMultiSelectMode}
