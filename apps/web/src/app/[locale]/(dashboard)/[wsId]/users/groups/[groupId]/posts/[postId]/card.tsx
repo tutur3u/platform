@@ -66,7 +66,7 @@ function UserCard({
         ? tableT('delivery_issue_reason_missing_sender_platform_user')
         : recipient.delivery_issue_reason === 'blacklisted_email_or_domain'
           ? tableT('delivery_issue_reason_blacklisted_email_or_domain')
-        : null;
+          : null;
   const isEmailBlocked =
     recipient.delivery_issue_reason === 'blacklisted_email_or_domain';
   const stageIconClassName = cn(
@@ -230,16 +230,16 @@ function UserCard({
         post.id &&
         recipient.user_id &&
         hasExistingCheck && (
-        <div className="mt-4">
-          <PostApprovalActions
-            wsId={wsId}
-            itemId={`${post.id}:${recipient.user_id}`}
-            approvalStatus={approvalStatus ?? 'PENDING'}
-            queueStatus={recipient.queue_status ?? undefined}
-            canRemoveApproval={Boolean(recipient.can_remove_approval)}
-          />
-        </div>
-      )}
+          <div className="mt-4">
+            <PostApprovalActions
+              wsId={wsId}
+              itemId={`${post.id}:${recipient.user_id}`}
+              approvalStatus={approvalStatus ?? 'PENDING'}
+              queueStatus={recipient.queue_status ?? undefined}
+              canRemoveApproval={Boolean(recipient.can_remove_approval)}
+            />
+          </div>
+        )}
 
       {canUpdateUserGroupsPosts && (
         <div className="mt-4 flex flex-wrap gap-2">
