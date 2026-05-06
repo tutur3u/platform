@@ -88,6 +88,7 @@ function buildPlacedTask(sourceTask: SourceTaskRow, placement: PlacementRow) {
     personal_added_at: placement.personal_added_at,
     personal_placed_at: placement.personal_placed_at,
     is_personal_external: true,
+    is_personal_external_default: false,
     list_id: effectiveListId,
     sort_key: placement.personal_sort_key ?? sourceTask.sort_key,
   };

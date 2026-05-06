@@ -33,6 +33,7 @@ export interface Task {
   personal_added_at?: string | null;
   personal_placed_at?: string | null;
   is_personal_external?: boolean;
+  is_personal_external_default?: boolean;
   // Scheduling fields
   total_duration?: number | null; // Duration in hours
   is_splittable?: boolean | null;

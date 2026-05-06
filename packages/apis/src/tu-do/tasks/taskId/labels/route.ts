@@ -12,6 +12,10 @@ import {
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  addPersonalTaskLabel,
+  removePersonalTaskLabel,
+} from '../../personal-overlays';
 
 const paramsSchema = z.object({
   wsId: z.string().min(1),
@@ -60,6 +64,81 @@ async function verifyTaskInWorkspace(
   }
 
   return null;
+}
+
+async function verifyPersonalExternalTaskAccess(
+  wsId: string,
+  taskId: string,
+  userId: string,
+  supabase: TypedSupabaseClient,
+  sbAdmin: TypedSupabaseClient
+) {
+  const { data: workspace, error: workspaceError } = await sbAdmin
+    .from('workspaces')
+    .select('personal')
+    .eq('id', wsId)
+    .maybeSingle();
+
+  if (workspaceError) {
+    return {
+      ok: false,
+      error: 'Failed to validate workspace',
+      status: 500,
+    } as const;
+  }
+
+  if (workspace?.personal !== true) {
+    return { ok: false, error: 'Task not found', status: 404 } as const;
+  }
+
+  const { data: taskRow, error: taskError } = await sbAdmin
+    .from('tasks')
+    .select(
+      `
+      id,
+      list:task_lists!inner(
+        board:workspace_boards!inner(
+          ws_id
+        )
+      )
+    `
+    )
+    .eq('id', taskId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (taskError) {
+    return {
+      ok: false,
+      error: 'Failed to load task',
+      status: 500,
+    } as const;
+  }
+
+  const sourceWsId = taskRow?.list?.board?.ws_id;
+  if (!sourceWsId || sourceWsId === wsId) {
+    return { ok: false, error: 'Task not found', status: 404 } as const;
+  }
+
+  const sourceMembership = await verifyWorkspaceMembershipType({
+    wsId: sourceWsId,
+    userId,
+    supabase,
+  });
+
+  if (sourceMembership.error === 'membership_lookup_failed') {
+    return {
+      ok: false,
+      error: 'Failed to verify source task access',
+      status: 500,
+    } as const;
+  }
+
+  if (!sourceMembership.ok) {
+    return { ok: false, error: 'Task not found', status: 404 } as const;
+  }
+
+  return { ok: true } as const;
 }
 
 async function verifyWorkspaceMembership(
@@ -168,10 +247,20 @@ export async function POST(
       parsedParams.data.taskId,
       sbAdmin
     );
-    if (taskCheck) {
+    const personalExternalTaskCheck = taskCheck
+      ? await verifyPersonalExternalTaskAccess(
+          wsId,
+          parsedParams.data.taskId,
+          user.id,
+          supabase,
+          sbAdmin
+        )
+      : null;
+
+    if (taskCheck && !personalExternalTaskCheck?.ok) {
       return NextResponse.json(
-        { error: taskCheck.error },
-        { status: taskCheck.status }
+        { error: personalExternalTaskCheck?.error ?? taskCheck.error },
+        { status: personalExternalTaskCheck?.status ?? taskCheck.status }
       );
     }
 
@@ -185,6 +274,17 @@ export async function POST(
         { error: labelCheck.error },
         { status: labelCheck.status }
       );
+    }
+
+    if (personalExternalTaskCheck?.ok) {
+      await addPersonalTaskLabel(
+        sbAdmin,
+        user.id,
+        parsedParams.data.taskId,
+        body.data.labelId
+      );
+
+      return NextResponse.json({ success: true });
     }
 
     const addLabelPayload: TaskActorRpcArgs<'add_task_label_with_actor'> = {
@@ -270,10 +370,20 @@ export async function DELETE(
       parsedParams.data.taskId,
       sbAdmin
     );
-    if (taskCheck) {
+    const personalExternalTaskCheck = taskCheck
+      ? await verifyPersonalExternalTaskAccess(
+          wsId,
+          parsedParams.data.taskId,
+          user.id,
+          supabase,
+          sbAdmin
+        )
+      : null;
+
+    if (taskCheck && !personalExternalTaskCheck?.ok) {
       return NextResponse.json(
-        { error: taskCheck.error },
-        { status: taskCheck.status }
+        { error: personalExternalTaskCheck?.error ?? taskCheck.error },
+        { status: personalExternalTaskCheck?.status ?? taskCheck.status }
       );
     }
 
@@ -287,6 +397,17 @@ export async function DELETE(
         { error: labelCheck.error },
         { status: labelCheck.status }
       );
+    }
+
+    if (personalExternalTaskCheck?.ok) {
+      await removePersonalTaskLabel(
+        sbAdmin,
+        user.id,
+        parsedParams.data.taskId,
+        body.data.labelId
+      );
+
+      return NextResponse.json({ success: true });
     }
 
     const removeLabelPayload: TaskActorRpcArgs<'remove_task_label_with_actor'> =

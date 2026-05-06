@@ -13,6 +13,11 @@ import { deriveTaskDescriptionYjsState } from '@tuturuuu/utils/yjs-task-descript
 import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import {
+  loadPersonalTaskMetadata,
+  replacePersonalTaskLabels,
+  replacePersonalTaskProjects,
+} from '../personal-overlays';
+import {
   paramsSchema,
   restoreTaskSchema,
   type TaskPriority,
@@ -137,6 +142,169 @@ async function getWorkspaceTask(
   }
 
   return { error: null, task: task as TaskRecord };
+}
+
+function isPersonalOverlayOnlyUpdate(body: Record<string, unknown>) {
+  const allowedKeys = new Set(['label_ids', 'project_ids']);
+  const keys = Object.keys(body);
+
+  return (
+    keys.length > 0 &&
+    keys.every((key) => allowedKeys.has(key)) &&
+    (body.label_ids !== undefined || body.project_ids !== undefined)
+  );
+}
+
+async function verifyPersonalExternalTaskAccess(
+  wsId: string,
+  taskId: string,
+  userId: string,
+  supabase: TypedSupabaseClient,
+  sbAdmin: TypedSupabaseClient
+) {
+  const { data: workspace, error: workspaceError } = await sbAdmin
+    .from('workspaces')
+    .select('personal')
+    .eq('id', wsId)
+    .maybeSingle();
+
+  if (workspaceError) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: 'Failed to validate workspace' },
+        { status: 500 }
+      ),
+    } as const;
+  }
+
+  if (workspace?.personal !== true) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Task not found' }, { status: 404 }),
+    } as const;
+  }
+
+  const { data: taskRow, error: taskError } = await sbAdmin
+    .from('tasks')
+    .select(
+      `
+      id,
+      list:task_lists!inner(
+        board:workspace_boards!inner(
+          ws_id
+        )
+      )
+    `
+    )
+    .eq('id', taskId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (taskError) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: 'Failed to load task' },
+        { status: 500 }
+      ),
+    } as const;
+  }
+
+  const sourceWsId = taskRow?.list?.board?.ws_id;
+  if (!sourceWsId || sourceWsId === wsId) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Task not found' }, { status: 404 }),
+    } as const;
+  }
+
+  const sourceMembership = await verifyWorkspaceMembershipType({
+    wsId: sourceWsId,
+    userId,
+    supabase,
+  });
+
+  if (sourceMembership.error === 'membership_lookup_failed') {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: 'Failed to verify source task access' },
+        { status: 500 }
+      ),
+    } as const;
+  }
+
+  if (!sourceMembership.ok) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Task not found' }, { status: 404 }),
+    } as const;
+  }
+
+  return { ok: true } as const;
+}
+
+async function validatePersonalLabelIds(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string,
+  labelIds: string[]
+) {
+  const uniqueLabelIds = [...new Set(labelIds)];
+  if (uniqueLabelIds.length === 0) return null;
+
+  const { data: labels, error } = await sbAdmin
+    .from('workspace_task_labels')
+    .select('id')
+    .eq('ws_id', wsId)
+    .in('id', uniqueLabelIds);
+
+  if (error) {
+    return NextResponse.json(
+      { error: 'Failed to validate task labels' },
+      { status: 500 }
+    );
+  }
+
+  if ((labels ?? []).length !== uniqueLabelIds.length) {
+    return NextResponse.json(
+      { error: 'One or more labels do not belong to this workspace' },
+      { status: 400 }
+    );
+  }
+
+  return null;
+}
+
+async function validatePersonalProjectIds(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string,
+  projectIds: string[]
+) {
+  const uniqueProjectIds = [...new Set(projectIds)];
+  if (uniqueProjectIds.length === 0) return null;
+
+  const { data: projects, error } = await sbAdmin
+    .from('task_projects')
+    .select('id')
+    .eq('ws_id', wsId)
+    .in('id', uniqueProjectIds);
+
+  if (error) {
+    return NextResponse.json(
+      { error: 'Failed to validate task projects' },
+      { status: 500 }
+    );
+  }
+
+  if ((projects ?? []).length !== uniqueProjectIds.length) {
+    return NextResponse.json(
+      { error: 'One or more projects do not belong to this workspace' },
+      { status: 400 }
+    );
+  }
+
+  return null;
 }
 
 function serializeTask(task: TaskRecord) {
@@ -375,6 +543,15 @@ export async function PUT(
     const { user, wsId, taskId } = access;
     const sbAdmin = await createAdminClient();
     const body = updateTaskSchema.parse(await request.json());
+    let normalizedAssigneeIds = body.assignee_ids
+      ? [...new Set(body.assignee_ids)]
+      : undefined;
+    const normalizedLabelIds = body.label_ids
+      ? [...new Set(body.label_ids)]
+      : undefined;
+    const normalizedProjectIds = body.project_ids
+      ? [...new Set(body.project_ids)]
+      : undefined;
     const { task, error } = await getWorkspaceTask(sbAdmin, wsId, taskId);
 
     if (error) {
@@ -386,18 +563,78 @@ export async function PUT(
     }
 
     if (!task) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-    }
+      if (!isPersonalOverlayOnlyUpdate(body)) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
 
-    let normalizedAssigneeIds = body.assignee_ids
-      ? [...new Set(body.assignee_ids)]
-      : undefined;
-    const normalizedLabelIds = body.label_ids
-      ? [...new Set(body.label_ids)]
-      : undefined;
-    const normalizedProjectIds = body.project_ids
-      ? [...new Set(body.project_ids)]
-      : undefined;
+      const externalTaskAccess = await verifyPersonalExternalTaskAccess(
+        wsId,
+        taskId,
+        user.id,
+        access.supabase,
+        sbAdmin
+      );
+
+      if (!externalTaskAccess.ok) {
+        return externalTaskAccess.response;
+      }
+
+      if (normalizedLabelIds !== undefined) {
+        const labelValidationError = await validatePersonalLabelIds(
+          sbAdmin,
+          wsId,
+          normalizedLabelIds
+        );
+
+        if (labelValidationError) {
+          return labelValidationError;
+        }
+
+        await replacePersonalTaskLabels(
+          sbAdmin,
+          user.id,
+          taskId,
+          normalizedLabelIds
+        );
+      }
+
+      if (normalizedProjectIds !== undefined) {
+        const projectValidationError = await validatePersonalProjectIds(
+          sbAdmin,
+          wsId,
+          normalizedProjectIds
+        );
+
+        if (projectValidationError) {
+          return projectValidationError;
+        }
+
+        await replacePersonalTaskProjects(
+          sbAdmin,
+          user.id,
+          taskId,
+          normalizedProjectIds
+        );
+      }
+
+      const metadataByTaskId = await loadPersonalTaskMetadata(
+        sbAdmin,
+        user.id,
+        [taskId]
+      );
+      const metadata = metadataByTaskId.get(taskId);
+
+      return NextResponse.json({
+        task: {
+          id: taskId,
+          labels: metadata?.labels ?? [],
+          projects: metadata?.projects ?? [],
+          label_ids: metadata?.labels.map((label) => label.id) ?? [],
+          project_ids: metadata?.projects.map((project) => project.id) ?? [],
+          is_personal_external: true,
+        },
+      });
+    }
 
     let targetListStatus: string | null = null;
 

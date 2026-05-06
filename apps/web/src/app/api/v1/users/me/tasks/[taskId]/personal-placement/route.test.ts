@@ -83,6 +83,11 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() => Promise.resolve(mocks.adminClient)),
 }));
 
+vi.mock('@tuturuuu/utils/task-helper', () => ({
+  getPersonalExternalStagingListId: (boardId: string) =>
+    `personal-external-staging:${boardId}`,
+}));
+
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: (
     ...args: Parameters<typeof mocks.verifyWorkspaceMembershipType>
