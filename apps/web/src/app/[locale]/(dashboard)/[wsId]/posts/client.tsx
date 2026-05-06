@@ -229,8 +229,8 @@ export default function PostsClient({
       const nextPost =
         processedIndex >= 0
           ? (currentPosts[processedIndex + 1] ??
-              currentPosts[processedIndex - 1] ??
-              null)
+            currentPosts[processedIndex - 1] ??
+            null)
           : (currentPosts[0] ?? null);
 
       setSelectedPost(nextPost);
