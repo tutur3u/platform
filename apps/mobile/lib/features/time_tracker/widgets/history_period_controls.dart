@@ -9,6 +9,7 @@ class HistoryPeriodControls extends StatelessWidget {
     required this.anchorDate,
     required this.onPrevious,
     required this.onNext,
+    this.onSelectPeriod,
     super.key,
   });
 
@@ -16,6 +17,7 @@ class HistoryPeriodControls extends StatelessWidget {
   final DateTime anchorDate;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
+  final VoidCallback? onSelectPeriod;
 
   @override
   Widget build(BuildContext context) {
@@ -44,13 +46,41 @@ class HistoryPeriodControls extends StatelessWidget {
               icon: const Icon(Icons.chevron_left),
             ),
             Expanded(
-              child: Text(
-                periodLabel,
-                style: theme.typography.small.copyWith(
-                  fontWeight: FontWeight.w600,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onSelectPeriod,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 4,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            periodLabel,
+                            style: theme.typography.small.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (onSelectPeriod != null) ...[
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.expand_more,
+                            size: 18,
+                            color: theme.colorScheme.mutedForeground,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
             shad.IconButton.ghost(

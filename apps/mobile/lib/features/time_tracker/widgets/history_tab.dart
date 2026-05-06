@@ -15,6 +15,7 @@ import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/widgets/edit_session_dialog.dart';
 import 'package:mobile/features/time_tracker/widgets/history_period_controls.dart';
+import 'package:mobile/features/time_tracker/widgets/history_period_selector_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/history_stats_accordion.dart';
 import 'package:mobile/features/time_tracker/widgets/session_detail_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/session_tile.dart';
@@ -178,6 +179,16 @@ class _HistoryTabState extends State<HistoryTab> {
                             cubit.goToNextPeriod(
                               wsId,
                               _currentUserId(),
+                              firstDayOfWeek: firstDayOfWeek,
+                            ),
+                          );
+                        },
+                        onSelectPeriod: () {
+                          unawaited(
+                            _pickHistoryPeriod(
+                              context,
+                              state: state,
+                              wsId: wsId,
                               firstDayOfWeek: firstDayOfWeek,
                             ),
                           );
@@ -506,6 +517,42 @@ class _HistoryTabState extends State<HistoryTab> {
       context,
     ).firstDayOfWeekIndex;
     return weekdayByIndex[firstDayOfWeekIndex % 7];
+  }
+
+  Future<void> _pickHistoryPeriod(
+    BuildContext context, {
+    required TimeTrackerState state,
+    required String wsId,
+    required int firstDayOfWeek,
+  }) async {
+    final anchorDate = state.historyAnchorDate ?? DateTime.now();
+    final picked = await showAdaptiveSheet<DateTime>(
+      context: context,
+      useRootNavigator: true,
+      builder: (_) => HistoryPeriodSelectorSheet(
+        viewMode: state.historyViewMode,
+        initialAnchorDate: DateTime(
+          anchorDate.year,
+          anchorDate.month,
+          anchorDate.day,
+        ),
+        firstDayOfWeek: firstDayOfWeek,
+      ),
+    );
+    if (!context.mounted || picked == null || wsId.isEmpty) return;
+
+    final nextAnchor = switch (state.historyViewMode) {
+      HistoryViewMode.day => DateTime(picked.year, picked.month, picked.day),
+      HistoryViewMode.week => DateTime(picked.year, picked.month, picked.day),
+      HistoryViewMode.month => DateTime(picked.year, picked.month),
+    };
+    final cubit = context.read<TimeTrackerCubit>()
+      ..setHistoryContext(anchorDate: nextAnchor);
+    await cubit.loadHistoryInitial(
+      wsId,
+      _currentUserId(),
+      firstDayOfWeek: firstDayOfWeek,
+    );
   }
 }
 
