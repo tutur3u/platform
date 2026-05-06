@@ -1,7 +1,10 @@
 'use client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeftRight, Paperclip, Settings2, Wallet } from '@tuturuuu/icons';
-import { uploadWorkspaceStorageFile } from '@tuturuuu/internal-api';
+import {
+  listWorkspaceStorageObjects,
+  uploadWorkspaceStorageFile,
+} from '@tuturuuu/internal-api';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
@@ -342,6 +345,45 @@ export function TransactionForm({
     );
   };
 
+  const updateAttachmentProgress = (attachmentId: string, progress: number) => {
+    setAttachments((current) =>
+      current.map((attachment) =>
+        attachment.id === attachmentId
+          ? { ...attachment, progress }
+          : attachment
+      )
+    );
+  };
+
+  const attachmentQuery = useQuery({
+    queryKey: [
+      'finance-transaction-attachments',
+      wsId,
+      data?.id,
+      data?.transfer?.linked_transaction_id,
+    ],
+    queryFn: async () => {
+      if (!data?.id) {
+        return [];
+      }
+
+      const result = await listWorkspaceStorageObjects(
+        wsId,
+        {
+          limit: 1000,
+          offset: 0,
+          path: joinPath('finance', 'transactions', data.id),
+          sortBy: 'created_at',
+          sortOrder: 'desc',
+        },
+        { fetch }
+      );
+
+      return result.data;
+    },
+    enabled: !!data?.id,
+  });
+
   const uploadPendingAttachments = async (transactionId?: string) => {
     const pendingAttachments = attachments.filter(
       (attachment) => attachment.status !== 'uploaded'
@@ -354,14 +396,19 @@ export function TransactionForm({
     const results = await Promise.all(
       pendingAttachments.map(async (attachment) => {
         updateAttachmentStatus(attachment.id, 'uploading');
+        updateAttachmentProgress(attachment.id, 0);
 
         try {
           const result = await uploadWorkspaceStorageFile(
             wsId,
             attachment.file,
             {
+              onUploadProgress: (progress) => {
+                updateAttachmentProgress(attachment.id, progress.percent);
+              },
               path: joinPath('finance', 'transactions', transactionId),
-            }
+            },
+            { fetch }
           );
 
           if (!result.finalize?.success) {
@@ -371,6 +418,7 @@ export function TransactionForm({
             );
           }
 
+          updateAttachmentProgress(attachment.id, 100);
           updateAttachmentStatus(attachment.id, 'uploaded');
           return { ok: true };
         } catch {
@@ -381,6 +429,13 @@ export function TransactionForm({
     );
 
     const failedCount = results.filter((result) => !result.ok).length;
+    if (transactionId === data?.id) {
+      await attachmentQuery.refetch();
+      setAttachments((current) =>
+        current.filter((attachment) => attachment.status !== 'uploaded')
+      );
+    }
+
     if (failedCount > 0) {
       toast.error(t('transaction-data-table.attachment_upload_failed'));
       return;
@@ -795,7 +850,13 @@ export function TransactionForm({
               <TransactionAttachmentsField
                 attachments={attachments}
                 disabled={loading || !hasFormPermission}
+                existingAttachments={attachmentQuery.data ?? []}
+                existingAttachmentsError={attachmentQuery.isError}
+                existingAttachmentsLoading={attachmentQuery.isFetching}
                 onChange={setAttachments}
+                onRefreshExisting={() => void attachmentQuery.refetch()}
+                transactionId={data?.id}
+                wsId={wsId}
               />
             </TabsContent>
 

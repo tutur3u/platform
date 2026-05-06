@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
 import {
   createWorkspaceStorageSignedReadUrl,
   WorkspaceStorageError,
@@ -83,7 +84,18 @@ async function resolveSignedUrl(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  if (permissions.withoutPermission('view_drive')) {
+  const canReadFinanceTransactionFile =
+    await canAccessFinanceTransactionStoragePath({
+      access: 'read',
+      normalizedWsId,
+      path: sanitizedPath,
+      permissions,
+      userId: user.id,
+    });
+
+  const canViewDrive = !permissions.withoutPermission('view_drive');
+
+  if (!canViewDrive && !canReadFinanceTransactionFile) {
     return NextResponse.json(
       { message: 'Insufficient permissions' },
       { status: 403 }
@@ -91,6 +103,7 @@ async function resolveSignedUrl(
   }
 
   if (
+    canViewDrive &&
     isTaskImagesPath &&
     permissions.withoutPermission('manage_drive_tasks_directory')
   ) {

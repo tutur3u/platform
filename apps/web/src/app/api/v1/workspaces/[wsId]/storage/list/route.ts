@@ -1,15 +1,18 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_SEARCH_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import {
   getPermissions,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
 import {
   listWorkspaceStorageDirectory,
   WorkspaceStorageError,
@@ -31,15 +34,17 @@ export async function GET(
   try {
     const { wsId } = await params;
     const supabase = await createClient(request);
+    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+
+    if (authError || !user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const permissions = await getPermissions({ wsId: normalizedWsId, request });
 
     if (!permissions) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (permissions.withoutPermission('manage_drive')) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -60,8 +65,27 @@ export async function GET(
     }
 
     const { path, search, limit, offset, sortBy, sortOrder } = parsed.data;
+    const sanitizedPath = sanitizePath(path);
+    if (sanitizedPath === null) {
+      return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
+    }
+
+    const canListStorage =
+      !permissions.withoutPermission('manage_drive') ||
+      (await canAccessFinanceTransactionStoragePath({
+        access: 'read',
+        normalizedWsId,
+        path: sanitizedPath,
+        permissions,
+        userId: user.id,
+      }));
+
+    if (!canListStorage) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
     const result = await listWorkspaceStorageDirectory(normalizedWsId, {
-      path,
+      path: sanitizedPath,
       search,
       limit,
       offset,
