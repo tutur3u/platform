@@ -242,6 +242,21 @@ Task create/update API routes silently drop assignee ids that no longer belong
 to the workspace. This lets stale task assignments be cleaned up during the next
 save instead of blocking unrelated edits such as description updates.
 
+#### Timeline board view
+
+The task board Timeline is task-first: `TimelineBoard` keeps its public props
+stable for board and project views, while the internal model renders one
+scheduled task per readable row grouped by task list. Task titles and source
+metadata belong in the sticky left column; timeline bars should communicate the
+date range only, so narrow zoom levels never hide task names behind clipped bar
+labels.
+
+Keep drag, resize, schedule-from-unscheduled, edit, delete, and context-menu
+actions routed through the same board mutation path used by the other views.
+The row model must preserve personal and external task metadata and keep
+unknown-list tasks grouped under the virtual unknown-list section instead of
+dropping them from the schedule.
+
 #### Personal external tasks
 
 Personal task boards can reference tasks from other workspaces without cloning

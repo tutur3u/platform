@@ -126,24 +126,11 @@ export function buildMonthSegments(days: Date[]) {
   return segments;
 }
 
-function withLaneRows(
+function withTaskRows(
   items: Array<Omit<TimelineItem, 'offsetDays'>>,
   rangeStart: Date
 ): { items: TimelineLaneItem[]; rowCount: number } {
-  const rowEnds: Date[] = [];
-
-  const packedItems = items.map((item) => {
-    let rowIndex = rowEnds.findIndex(
-      (rowEnd) => rowEnd.getTime() < item.start.getTime()
-    );
-
-    if (rowIndex === -1) {
-      rowIndex = rowEnds.length;
-      rowEnds.push(item.end);
-    } else {
-      rowEnds[rowIndex] = item.end;
-    }
-
+  const rowItems = items.map((item, rowIndex) => {
     return {
       ...item,
       rowIndex,
@@ -154,8 +141,8 @@ function withLaneRows(
   });
 
   return {
-    items: packedItems,
-    rowCount: Math.max(1, rowEnds.length),
+    items: rowItems,
+    rowCount: Math.max(1, rowItems.length),
   };
 }
 
@@ -336,7 +323,7 @@ export function buildTimelineModel(
         return left.task.name.localeCompare(right.task.name);
       });
 
-    const { items, rowCount } = withLaneRows(scheduledItems, rangeStart);
+    const { items, rowCount } = withTaskRows(scheduledItems, rangeStart);
 
     return {
       id: String(list.id),
@@ -350,7 +337,7 @@ export function buildTimelineModel(
     .filter((item) => !listById.has(String(item.task.list_id)))
     .sort((left, right) => left.start.getTime() - right.start.getTime());
 
-  const { items: orphanItems, rowCount: orphanRowCount } = withLaneRows(
+  const { items: orphanItems, rowCount: orphanRowCount } = withTaskRows(
     orphanScheduledItems,
     rangeStart
   );
