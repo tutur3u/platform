@@ -149,25 +149,47 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const payload = parsed.data;
+  const sessionSlots =
+    payload.sessions && payload.sessions.length > 0
+      ? payload.sessions
+      : payload.sessionDate && payload.startTime
+        ? Array.from({ length: payload.sessionCount }, () => ({
+            sessionDate: payload.sessionDate as string,
+            startTime: payload.startTime as string,
+            durationMinutes: payload.durationMinutes,
+          }))
+        : null;
+
+  if (!sessionSlots) {
+    return NextResponse.json(
+      {
+        message:
+          'Invalid request: provide sessions[] or sessionDate/startTime fields',
+      },
+      { status: 400 }
+    );
+  }
+
+  const rows = sessionSlots.map((slot) => ({
+    ws_id: wsId,
+    group_id: payload.groupId,
+    student_user_id: payload.studentUserId,
+    teacher_user_id: payload.teacherUserId ?? null,
+    session_date: slot.sessionDate,
+    start_time: slot.startTime,
+    duration_minutes: slot.durationMinutes,
+    reason_type: payload.reasonType,
+    reason_detail: payload.reasonDetail,
+    content: payload.content,
+    attendance_status: payload.attendanceStatus,
+    source_feedback_id: payload.sourceFeedbackId ?? null,
+    created_by: user.id,
+  }));
+
   const { data, error } = await sbAdmin
     .from('workspace_tutoring_sessions')
-    .insert({
-      ws_id: wsId,
-      group_id: payload.groupId,
-      student_user_id: payload.studentUserId,
-      teacher_user_id: payload.teacherUserId ?? null,
-      session_date: payload.sessionDate,
-      start_time: payload.startTime,
-      duration_minutes: payload.durationMinutes,
-      reason_type: payload.reasonType,
-      reason_detail: payload.reasonDetail,
-      content: payload.content,
-      attendance_status: payload.attendanceStatus,
-      source_feedback_id: payload.sourceFeedbackId ?? null,
-      created_by: user.id,
-    })
-    .select('id')
-    .single();
+    .insert(rows)
+    .select('id');
 
   if (error) {
     serverLogger.error('Failed to create tutoring session', error);
@@ -177,5 +199,11 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ id: data.id });
+  const ids = (data ?? []).map((row) => row.id);
+
+  return NextResponse.json({
+    id: ids[0] ?? null,
+    ids,
+    createdCount: ids.length,
+  });
 }

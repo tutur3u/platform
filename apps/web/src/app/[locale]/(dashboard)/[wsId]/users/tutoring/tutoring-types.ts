@@ -9,8 +9,11 @@ import type {
 export interface TutoringFormValues {
   groupId: string;
   studentUserId: string;
-  sessionDate: string;
-  startTime: string;
+  sessionSlots: {
+    sessionDate: string;
+    startTime: string;
+    durationMinutes: number;
+  }[];
   reasonType: TutoringReasonType;
   reasonDetail: string;
   content: string;
@@ -19,8 +22,13 @@ export interface TutoringFormValues {
 export const DEFAULT_FORM: TutoringFormValues = {
   groupId: '',
   studentUserId: '',
-  sessionDate: '',
-  startTime: '18:00',
+  sessionSlots: [
+    {
+      sessionDate: '',
+      startTime: '18:00',
+      durationMinutes: 45,
+    },
+  ],
   reasonType: 'CUSTOM',
   reasonDetail: '',
   content: '',

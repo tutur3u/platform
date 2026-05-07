@@ -467,9 +467,11 @@ export async function listWorkspaceAttendanceExportRecords(
 export async function listWorkspaceBasicUsers(
   workspaceId: string,
   {
+    from = 0,
     limit = 200,
     q,
   }: {
+    from?: number;
     limit?: number;
     q?: string;
   } = {},
@@ -481,7 +483,7 @@ export async function listWorkspaceBasicUsers(
     {
       cache: 'no-store',
       query: {
-        from: 0,
+        from,
         limit,
         q,
       },

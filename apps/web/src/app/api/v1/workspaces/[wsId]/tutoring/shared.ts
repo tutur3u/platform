@@ -17,9 +17,24 @@ export const TutoringSessionCreateSchema = z.object({
   groupId: z.string().uuid(),
   studentUserId: z.string().uuid(),
   teacherUserId: z.string().uuid().nullable().optional(),
-  sessionDate: z.string().date(),
-  startTime: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/),
+  sessions: z
+    .array(
+      z.object({
+        sessionDate: z.string().date(),
+        startTime: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/),
+        durationMinutes: z.number().int().positive().max(480).default(45),
+      })
+    )
+    .min(1)
+    .max(50)
+    .optional(),
+  sessionDate: z.string().date().optional(),
+  startTime: z
+    .string()
+    .regex(/^\d{2}:\d{2}(:\d{2})?$/)
+    .optional(),
   durationMinutes: z.number().int().positive().max(480).default(45),
+  sessionCount: z.number().int().positive().max(50).default(1),
   reasonType: TutoringReasonTypeSchema,
   reasonDetail: z.string().max(5000).default(''),
   content: z.string().max(10000).default(''),
@@ -63,6 +78,8 @@ export const TutoringQueueQuerySchema = z.object({
   groupId: z.string().uuid().optional(),
   studentUserId: z.string().uuid().optional(),
   reasonType: z.enum(['ABSENT_RECOVERY', 'WEAK_SUPPORT', 'BOTH']).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 export const TutoringMarkSchema = z.object({

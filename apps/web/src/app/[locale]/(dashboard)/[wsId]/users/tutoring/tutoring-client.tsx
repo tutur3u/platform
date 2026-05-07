@@ -1,20 +1,27 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   createTutoringSession,
-  listAllWorkspaceUserGroups,
+  getNextWorkspaceUserGroupsPageParam,
   listTutoringQueue,
   listTutoringSessions,
   listWorkspaceBasicUsers,
+  listWorkspaceUserGroups,
   markTutoringSession,
 } from '@tuturuuu/internal-api';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
 import { useMemo, useState } from 'react';
-import { TutoringCreateCard } from './tutoring-create-card';
 import { TutoringQueueCard } from './tutoring-queue-card';
 import { TutoringSessionsCard } from './tutoring-sessions-card';
 import { DEFAULT_FORM, type TutoringFormValues } from './tutoring-types';
@@ -73,7 +80,20 @@ export function TutoringClient({ wsId, canManage }: Props) {
       .withDefault('')
       .withOptions({ shallow: true, throttleMs: 300 })
   );
+  const [queuePage, setQueuePage] = useQueryState(
+    'queuePage',
+    parseAsInteger.withDefault(1).withOptions({ shallow: true })
+  );
+  const [queuePageSize, setQueuePageSize] = useQueryState(
+    'queuePageSize',
+    parseAsInteger.withDefault(20).withOptions({ shallow: true })
+  );
   const [form, setForm] = useState<TutoringFormValues>(DEFAULT_FORM);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [queueGroupSearch, setQueueGroupSearch] = useState('');
+  const [queueStudentSearch, setQueueStudentSearch] = useState('');
+  const [debouncedQueueGroupSearch] = useDebounce(queueGroupSearch, 250);
+  const [debouncedQueueStudentSearch] = useDebounce(queueStudentSearch, 250);
 
   const sessionsQuery = useQuery({
     queryKey: [
@@ -117,24 +137,89 @@ export function TutoringClient({ wsId, canManage }: Props) {
       queueReasonType,
       queueGroupId,
       queueStudentId,
+      queuePage,
+      queuePageSize,
     ],
     queryFn: () =>
       listTutoringQueue(wsId, {
         reasonType: queueReasonType === 'all' ? undefined : queueReasonType,
         groupId: queueGroupId === 'all' ? undefined : queueGroupId,
         studentUserId: queueStudentId === 'all' ? undefined : queueStudentId,
+        page: queuePage,
+        pageSize: queuePageSize,
       }),
+    placeholderData: keepPreviousData,
   });
   const groupsQuery = useQuery({
     queryKey: ['tutoring-groups', wsId],
-    queryFn: () => listAllWorkspaceUserGroups(wsId, { status: 'active' }),
+    queryFn: () =>
+      listWorkspaceUserGroups(wsId, {
+        status: 'active',
+        page: 1,
+        pageSize: 200,
+      }).then((response) => response.data),
   });
   const studentsQuery = useQuery({
     queryKey: ['tutoring-students', wsId],
     queryFn: () => listWorkspaceBasicUsers(wsId, { limit: 200 }),
   });
 
+  const queueFilterGroupsQuery = useInfiniteQuery({
+    queryKey: ['tutoring-queue-filter-groups', wsId, debouncedQueueGroupSearch],
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      listWorkspaceUserGroups(wsId, {
+        status: 'active',
+        q: debouncedQueueGroupSearch || undefined,
+        page: pageParam,
+        pageSize: 20,
+      }),
+    getNextPageParam: (lastPage, allPages) =>
+      getNextWorkspaceUserGroupsPageParam(lastPage, allPages),
+  });
+
+  const queueFilterStudentsQuery = useInfiniteQuery({
+    queryKey: [
+      'tutoring-queue-filter-students',
+      wsId,
+      debouncedQueueStudentSearch,
+    ],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      listWorkspaceBasicUsers(wsId, {
+        from: pageParam,
+        limit: 20,
+        q: debouncedQueueStudentSearch || undefined,
+      }),
+    getNextPageParam: (lastPage, allPages) => {
+      const loadedCount = allPages.reduce(
+        (total, page) => total + page.data.length,
+        0
+      );
+      if (loadedCount >= (lastPage.count ?? 0) || lastPage.data.length < 20) {
+        return undefined;
+      }
+
+      return loadedCount;
+    },
+  });
+
+  const queueFilterGroups = useMemo(
+    () =>
+      queueFilterGroupsQuery.data?.pages.flatMap((page) => page.data ?? []) ??
+      [],
+    [queueFilterGroupsQuery.data?.pages]
+  );
+
+  const queueFilterStudents = useMemo(
+    () =>
+      queueFilterStudentsQuery.data?.pages.flatMap((page) => page.data ?? []) ??
+      [],
+    [queueFilterStudentsQuery.data?.pages]
+  );
+
   const queueRows = useMemo(() => {
+    if (queueQuery.isLoading) return undefined;
     const rows = queueQuery.data?.data ?? [];
     const keyword = queueSearch.trim().toLowerCase();
     if (!keyword) return rows;
@@ -149,26 +234,44 @@ export function TutoringClient({ wsId, canManage }: Props) {
         .toLowerCase();
       return haystack.includes(keyword);
     });
-  }, [queueQuery.data?.data, queueSearch]);
+  }, [queueQuery.data?.data, queueSearch, queueQuery.isLoading]);
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      if (!form.groupId || !form.studentUserId || !form.sessionDate) {
+      if (
+        !form.groupId ||
+        !form.studentUserId ||
+        form.sessionSlots.length < 1
+      ) {
         throw new Error(t('missing_required'));
       }
+
+      for (const slot of form.sessionSlots) {
+        if (!slot.sessionDate || !slot.startTime) {
+          throw new Error(t('missing_required'));
+        }
+        if (slot.durationMinutes < 1 || slot.durationMinutes > 480) {
+          throw new Error(t('invalid_duration'));
+        }
+      }
+
       return createTutoringSession(wsId, {
         groupId: form.groupId,
         studentUserId: form.studentUserId,
-        sessionDate: form.sessionDate,
-        startTime: form.startTime,
+        sessions: form.sessionSlots,
         reasonType: form.reasonType,
         reasonDetail: form.reasonDetail,
         content: form.content,
       });
     },
-    onSuccess: () => {
-      toast.success(t('created'));
+    onSuccess: ({ createdCount }) => {
+      toast.success(
+        createdCount > 1
+          ? t('created_multiple', { count: createdCount })
+          : t('created')
+      );
       setForm(DEFAULT_FORM);
+      setCreateDialogOpen(false);
       void queryClient.invalidateQueries({
         queryKey: ['tutoring-sessions', wsId],
       });
@@ -211,16 +314,6 @@ export function TutoringClient({ wsId, canManage }: Props) {
       </TabsList>
 
       <TabsContent value="sessions" className="space-y-4">
-        {canManage ? (
-          <TutoringCreateCard
-            form={form}
-            groups={groupsQuery.data ?? []}
-            students={studentsQuery.data?.data ?? []}
-            isSubmitting={createMutation.isPending}
-            onChange={setForm}
-            onSubmit={() => createMutation.mutate()}
-          />
-        ) : null}
         <TutoringSessionsCard
           canManage={canManage}
           sessions={sessionsQuery.data?.data ?? []}
@@ -233,6 +326,9 @@ export function TutoringClient({ wsId, canManage }: Props) {
           attendanceStatus={sessionAttendance}
           groupId={sessionGroupId}
           studentUserId={sessionStudentId}
+          createForm={form}
+          isCreating={createMutation.isPending}
+          createDialogOpen={createDialogOpen}
           onReasonTypeChange={(value) => {
             void setSessionReasonType(value);
             void setSessionPage(1);
@@ -249,6 +345,9 @@ export function TutoringClient({ wsId, canManage }: Props) {
             void setSessionStudentId(value);
             void setSessionPage(1);
           }}
+          onCreateFormChange={setForm}
+          onCreate={() => createMutation.mutate()}
+          onCreateDialogOpenChange={setCreateDialogOpen}
           onParamsChange={({ page, pageSize }) => {
             if (page) void setSessionPage(page);
             if (pageSize) void setSessionPageSize(Number(pageSize));
@@ -270,21 +369,57 @@ export function TutoringClient({ wsId, canManage }: Props) {
         <TutoringQueueCard
           canManage={canManage}
           queue={queueRows}
-          groups={groupsQuery.data ?? []}
-          students={studentsQuery.data?.data ?? []}
+          count={queueQuery.data?.count ?? 0}
+          page={queueQuery.data?.page ?? queuePage}
+          pageSize={queueQuery.data?.pageSize ?? queuePageSize}
+          groups={queueFilterGroups}
+          students={queueFilterStudents}
           reasonType={queueReasonType}
           groupId={queueGroupId}
           studentUserId={queueStudentId}
           search={queueSearch}
-          onReasonTypeChange={(value) => void setQueueReasonType(value)}
-          onGroupIdChange={(value) => void setQueueGroupId(value)}
-          onStudentUserIdChange={(value) => void setQueueStudentId(value)}
+          onGroupSearchChange={setQueueGroupSearch}
+          onStudentSearchChange={setQueueStudentSearch}
+          groupHasMore={Boolean(queueFilterGroupsQuery.hasNextPage)}
+          studentHasMore={Boolean(queueFilterStudentsQuery.hasNextPage)}
+          groupsLoadingMore={queueFilterGroupsQuery.isFetchingNextPage}
+          studentsLoadingMore={queueFilterStudentsQuery.isFetchingNextPage}
+          onLoadMoreGroups={() => {
+            if (queueFilterGroupsQuery.hasNextPage) {
+              void queueFilterGroupsQuery.fetchNextPage();
+            }
+          }}
+          onLoadMoreStudents={() => {
+            if (queueFilterStudentsQuery.hasNextPage) {
+              void queueFilterStudentsQuery.fetchNextPage();
+            }
+          }}
+          isFetching={queueQuery.isFetching && !queueQuery.isLoading}
+          onReasonTypeChange={(value) => {
+            void setQueueReasonType(value);
+            void setQueuePage(1);
+          }}
+          onGroupIdChange={(value) => {
+            void setQueueGroupId(value);
+            void setQueueStudentId('all');
+            void setQueuePage(1);
+          }}
+          onStudentUserIdChange={(value) => {
+            void setQueueStudentId(value);
+            void setQueuePage(1);
+          }}
           onSearchChange={(value) => void setQueueSearch(value)}
+          onParamsChange={({ page, pageSize }) => {
+            if (page) void setQueuePage(page);
+            if (pageSize) void setQueuePageSize(Number(pageSize));
+          }}
           onResetFilters={() => {
             void setQueueReasonType('all');
             void setQueueGroupId('all');
             void setQueueStudentId('all');
             void setQueueSearch('');
+            void setQueuePage(1);
+            void setQueuePageSize(20);
           }}
           onActivate={(item) => {
             const nextReason =
@@ -295,9 +430,19 @@ export function TutoringClient({ wsId, canManage }: Props) {
               ...current,
               groupId: item.group_id,
               studentUserId: item.student_user_id,
+              sessionSlots: Array.from(
+                { length: Math.max(1, item.absence_deficit) },
+                () => ({
+                  sessionDate: '',
+                  startTime: '18:00',
+                  durationMinutes: 45,
+                })
+              ),
               reasonType: nextReason,
               reasonDetail: item.feedback_content,
+              content: item.feedback_content,
             }));
+            setCreateDialogOpen(true);
             void setTab('sessions');
           }}
         />

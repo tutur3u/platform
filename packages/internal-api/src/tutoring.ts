@@ -71,9 +71,15 @@ export interface CreateTutoringSessionPayload {
   groupId: string;
   studentUserId: string;
   teacherUserId?: string | null;
-  sessionDate: string;
-  startTime: string;
+  sessions?: {
+    sessionDate: string;
+    startTime: string;
+    durationMinutes: number;
+  }[];
+  sessionDate?: string;
+  startTime?: string;
   durationMinutes?: number;
+  sessionCount?: number;
   reasonType: TutoringReasonType;
   reasonDetail?: string;
   content?: string;
@@ -119,7 +125,11 @@ export async function createTutoringSession(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ id: string }>(`${basePath(workspaceId)}/sessions`, {
+  return client.json<{
+    id: string | null;
+    ids: string[];
+    createdCount: number;
+  }>(`${basePath(workspaceId)}/sessions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -176,14 +186,20 @@ export async function generateTutoringMessagePreview(
 
 export async function listTutoringQueue(
   workspaceId: string,
-  params: InternalApiQuery = {},
+  params: InternalApiQuery & { page?: number; pageSize?: number } = {},
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ data: TutoringQueueItem[] }>(
-    `${basePath(workspaceId)}/queue`,
-    { cache: 'no-store', query: params }
-  );
+  return client.json<{
+    data: TutoringQueueItem[];
+    count: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }>(`${basePath(workspaceId)}/queue`, {
+    cache: 'no-store',
+    query: params,
+  });
 }
 
 export async function exportTutoringSessions(

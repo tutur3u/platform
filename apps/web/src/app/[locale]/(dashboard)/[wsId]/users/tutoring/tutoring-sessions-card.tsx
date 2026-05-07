@@ -9,8 +9,15 @@ import type {
 } from '@tuturuuu/internal-api';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -22,6 +29,8 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { XLSX } from '@tuturuuu/ui/xlsx';
 import { useTranslations } from 'next-intl';
 import { jsonToCSV } from 'react-papaparse';
+import { TutoringCreateCard } from './tutoring-create-card';
+import type { TutoringFormValues } from './tutoring-types';
 import {
   getDisplayName,
   STATUS_ACTIONS,
@@ -40,10 +49,16 @@ interface Props {
   studentUserId: string;
   groups: UserGroup[];
   students: WorkspaceBasicUserRecord[];
+  createForm: TutoringFormValues;
+  isCreating: boolean;
+  createDialogOpen: boolean;
   onReasonTypeChange: (value: string) => void;
   onAttendanceStatusChange: (value: string) => void;
   onGroupIdChange: (value: string) => void;
   onStudentUserIdChange: (value: string) => void;
+  onCreateFormChange: (next: TutoringFormValues) => void;
+  onCreate: () => void;
+  onCreateDialogOpenChange: (open: boolean) => void;
   onParamsChange: (params: { page?: number; pageSize?: string }) => void;
   onResetFilters: () => void;
   isMarking: boolean;
@@ -73,10 +88,16 @@ export function TutoringSessionsCard({
   studentUserId,
   groups,
   students,
+  createForm,
+  isCreating,
+  createDialogOpen,
   onReasonTypeChange,
   onAttendanceStatusChange,
   onGroupIdChange,
   onStudentUserIdChange,
+  onCreateFormChange,
+  onCreate,
+  onCreateDialogOpenChange,
   onParamsChange,
   onResetFilters,
   isMarking,
@@ -111,6 +132,21 @@ export function TutoringSessionsCard({
           />
         ),
         cell: ({ row }) => getDisplayName(row.original.student),
+      },
+      {
+        id: 'teacher',
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            t={tableT}
+            column={column}
+            title={t('teacher')}
+          />
+        ),
+        cell: ({ row }) =>
+          row.original.teacher?.display_name ??
+          row.original.teacher?.full_name ??
+          row.original.teacher?.email ??
+          '-',
       },
       {
         id: 'group',
@@ -197,7 +233,35 @@ export function TutoringSessionsCard({
 
   return (
     <section className="space-y-3">
-      <h3 className="font-semibold text-lg">{t('schedule_title')}</h3>
+      <FeatureSummary
+        title={<h3 className="font-semibold text-lg">{t('schedule_title')}</h3>}
+        action={
+          canManage ? (
+            <Dialog
+              open={createDialogOpen}
+              onOpenChange={onCreateDialogOpenChange}
+            >
+              <Button size="sm" onClick={() => onCreateDialogOpenChange(true)}>
+                {t('create')}
+              </Button>
+              <DialogContent className="sm:max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle>{t('create_session')}</DialogTitle>
+                </DialogHeader>
+                <TutoringCreateCard
+                  form={createForm}
+                  groups={groups}
+                  students={students}
+                  isSubmitting={isCreating}
+                  showTitle={false}
+                  onChange={onCreateFormChange}
+                  onSubmit={onCreate}
+                />
+              </DialogContent>
+            </Dialog>
+          ) : null
+        }
+      />
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="outline" onClick={handleExportDetailedCsv}>
           <Download className="mr-2 h-4 w-4" />
