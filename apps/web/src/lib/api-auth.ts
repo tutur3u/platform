@@ -133,16 +133,16 @@ interface CacheConfig {
 
 type SessionAuthRateLimitKind = 'method' | 'read' | 'mutate';
 
-/** Default rate limits — reads stay open, mutations remain strict. */
+/** Default rate limits — reads stay open, mutations allow a moderate burst. */
 const DEFAULT_MUTATE_RATE_LIMIT: RateLimitConfig = {
   windowMs: 60000,
-  maxRequests: 20,
+  maxRequests: 60,
 };
 
 interface SessionAuthOptions {
   /**
    * IP-based rate limit config. Overrides the method-aware defaults.
-   * Defaults: GET/HEAD are not rate-limited, mutations → 20 req/min.
+   * Defaults: GET/HEAD are not rate-limited, mutations → 60 req/min.
    * Set `false` to disable rate limiting entirely (not recommended).
    */
   rateLimit?: RateLimitConfig | false;

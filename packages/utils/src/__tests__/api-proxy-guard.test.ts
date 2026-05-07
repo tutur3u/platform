@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   limit: vi.fn(),
+  ratelimitConfigs: [] as Array<{ limit: number; window: string }>,
   ratelimitPrefixes: [] as string[],
   redis: vi.fn(),
   extractIp: vi.fn(),
@@ -15,6 +16,7 @@ vi.mock('@upstash/ratelimit', () => {
     prefix: string;
 
     static slidingWindow(limit: number, window: string) {
+      mocks.ratelimitConfigs.push({ limit, window });
       return { limit, window };
     }
 
@@ -74,6 +76,7 @@ describe('guardApiProxyRequest', () => {
   beforeEach(() => {
     vi.resetModules();
     mocks.limit.mockReset();
+    mocks.ratelimitConfigs.length = 0;
     mocks.ratelimitPrefixes.length = 0;
     mocks.redis.mockReset();
     mocks.extractIp.mockReset();
@@ -459,6 +462,35 @@ describe('guardApiProxyRequest', () => {
     expect(response?.status).toBe(429);
     expect(response?.headers.get('X-RateLimit-Limit')).toBe('12');
     expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
+  });
+
+  it('uses a larger anonymous default mutation burst budget per minute', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValue({
+      success: true,
+      limit: 30,
+      remaining: 29,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/tasks/task-1', 'PUT'),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 30,
+      window: '1 m',
+    });
   });
 
   it('bypasses trusted cron traffic only when credentials are present', async () => {

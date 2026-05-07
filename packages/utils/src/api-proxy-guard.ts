@@ -82,25 +82,25 @@ function createConfig(
 }
 
 const DEFAULT_ANONYMOUS_READ_RATE_LIMITS: RateLimitConfig[] = [
-  createConfig('minute', '1 m', 20, 'API_PROXY_ANON_READ_LIMIT_MINUTE'),
+  createConfig('minute', '1 m', 60, 'API_PROXY_ANON_READ_LIMIT_MINUTE'),
   createConfig('hour', '1 h', 240, 'API_PROXY_ANON_READ_LIMIT_HOUR'),
   createConfig('day', '1 d', 1200, 'API_PROXY_ANON_READ_LIMIT_DAY'),
 ];
 
 const DEFAULT_ANONYMOUS_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
-  createConfig('minute', '1 m', 12, 'API_PROXY_ANON_MUTATE_LIMIT_MINUTE'),
+  createConfig('minute', '1 m', 30, 'API_PROXY_ANON_MUTATE_LIMIT_MINUTE'),
   createConfig('hour', '1 h', 120, 'API_PROXY_ANON_MUTATE_LIMIT_HOUR'),
   createConfig('day', '1 d', 600, 'API_PROXY_ANON_MUTATE_LIMIT_DAY'),
 ];
 
 const DEFAULT_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
-  { window: 'minute', limit: 30, duration: '1 m' },
+  { window: 'minute', limit: 60, duration: '1 m' },
   { window: 'hour', limit: 300, duration: '1 h' },
   { window: 'day', limit: 2000, duration: '1 d' },
 ];
 
 const USERS_ME_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
-  { window: 'minute', limit: 20, duration: '1 m' },
+  { window: 'minute', limit: 60, duration: '1 m' },
   { window: 'hour', limit: 200, duration: '1 h' },
   { window: 'day', limit: 1200, duration: '1 d' },
 ];
