@@ -32022,6 +32022,7 @@ export type Database = {
       task_board_status:
         | 'not_started'
         | 'active'
+        | 'review'
         | 'done'
         | 'closed'
         | 'documents';
@@ -34158,6 +34159,7 @@ export const Constants = {
       task_board_status: [
         'not_started',
         'active',
+        'review',
         'done',
         'closed',
         'documents',
