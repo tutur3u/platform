@@ -176,6 +176,11 @@ const RESOLVED_EXTERNAL_SOURCE_STATUSES: ExternalSourceStatus[] = [
   'closed',
 ];
 const DOCUMENT_EXTERNAL_SOURCE_STATUS: ExternalSourceStatus = 'documents';
+const TASK_LIST_STATUSES = new Set<ExternalSourceStatus>([
+  ...ACTIVE_EXTERNAL_SOURCE_STATUSES,
+  ...RESOLVED_EXTERNAL_SOURCE_STATUSES,
+  DOCUMENT_EXTERNAL_SOURCE_STATUS,
+]);
 
 type PersonalTaskBoardExternalCountRow = {
   list_id: string | null;
@@ -192,6 +197,17 @@ function parseExternalTaskSortBy(value: string | null): ExternalTaskSortBy {
     default:
       return DEFAULT_EXTERNAL_TASK_SORT_BY;
   }
+}
+
+function parseTaskListStatuses(value: string | null): ExternalSourceStatus[] {
+  if (!value) return [];
+
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry): entry is ExternalSourceStatus =>
+      TASK_LIST_STATUSES.has(entry as ExternalSourceStatus)
+    );
 }
 
 function matchesExternalLaneFilters(
@@ -459,6 +475,9 @@ export async function GET(
     const assignedToMe = url.searchParams.get('assignedToMe') === 'true';
     const completedMode = url.searchParams.get('completed');
     const closedMode = url.searchParams.get('closed');
+    const listStatuses = parseTaskListStatuses(
+      url.searchParams.get('listStatuses')
+    );
     const externalIncludeDocuments =
       url.searchParams.get('externalIncludeDocuments') === 'true';
     const externalIncludeDoneClosed =
@@ -723,6 +742,8 @@ export async function GET(
       query = query
         .is('closed_at', null)
         .in('task_lists.status', ['not_started', 'active']);
+    } else if (listStatuses.length > 0) {
+      query = query.in('task_lists.status', listStatuses);
     }
 
     if (completedMode === 'exclude') {
@@ -960,13 +981,17 @@ export async function GET(
           .is('task_lists.workspace_boards.archived_at', null);
 
         const defaultExternalSourceStatuses: ExternalSourceStatus[] = [
-          ...ACTIVE_EXTERNAL_SOURCE_STATUSES,
-          ...(externalIncludeDocuments
-            ? [DOCUMENT_EXTERNAL_SOURCE_STATUS]
-            : []),
-          ...(externalIncludeDoneClosed
-            ? [...RESOLVED_EXTERNAL_SOURCE_STATUSES]
-            : []),
+          ...(listStatuses.length > 0
+            ? listStatuses
+            : [
+                ...ACTIVE_EXTERNAL_SOURCE_STATUSES,
+                ...(externalIncludeDocuments
+                  ? [DOCUMENT_EXTERNAL_SOURCE_STATUS]
+                  : []),
+                ...(externalIncludeDoneClosed
+                  ? [...RESOLVED_EXTERNAL_SOURCE_STATUSES]
+                  : []),
+              ]),
         ];
 
         defaultExternalQuery = defaultExternalQuery.in(

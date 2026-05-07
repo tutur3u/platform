@@ -271,8 +271,12 @@ describe('CLI commands', () => {
       expect.objectContaining({
         completed: 'exclude',
         closed: 'exclude',
+        externalIncludeDocuments: false,
+        externalIncludeDoneClosed: false,
         forTimeTracking: true,
+        includeCount: true,
         limit: 50,
+        listStatuses: ['not_started', 'active'],
         offset: 0,
       })
     );
@@ -283,8 +287,12 @@ describe('CLI commands', () => {
         assignedToMe: true,
         completed: 'exclude',
         closed: 'exclude',
+        externalIncludeDocuments: false,
+        externalIncludeDoneClosed: false,
         forTimeTracking: true,
+        includeCount: true,
         limit: 50,
+        listStatuses: ['not_started', 'active'],
         offset: 0,
       })
     );
@@ -298,6 +306,95 @@ describe('CLI commands', () => {
         source_workspace_name: 'Tuturuuu',
         workspace_name: 'Tuturuuu',
       }),
+    ]);
+    expect(response.pagination).toEqual(
+      expect.objectContaining({
+        page: 1,
+        pageCount: 1,
+        pageSize: 50,
+        total: 2,
+      })
+    );
+  });
+
+  it('defaults bare task lists to the personal workspace even when another workspace is selected', async () => {
+    const tasksList = vi
+      .fn()
+      .mockResolvedValueOnce({
+        count: 1,
+        tasks: [
+          {
+            id: 'personal-task',
+            name: 'Personal task',
+            priority: 'normal',
+            task_lists: { status: 'active' },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        count: 1,
+        tasks: [
+          {
+            board_name: 'Engineering',
+            id: 'assigned-task',
+            name: 'Assigned task',
+            priority: 'normal',
+            task_lists: { status: 'active' },
+          },
+        ],
+      });
+    const client = {
+      tasks: {
+        list: tasksList,
+      },
+      workspaces: {
+        list: vi.fn().mockResolvedValue([
+          {
+            id: 'team-ws',
+            name: 'Tuturuuu',
+            personal: false,
+          },
+          {
+            id: 'personal-ws',
+            name: 'Personal',
+            personal: true,
+          },
+        ]),
+      },
+    };
+
+    const { response, workspaceName } = await listTasksForCli(
+      client as any,
+      {
+        baseUrl: 'https://tuturuuu.com',
+        currentWorkspaceId: 'team-ws',
+        session: {
+          accessToken: 'token',
+          refreshToken: 'refresh',
+        },
+      },
+      'team-ws',
+      {}
+    );
+
+    expect(tasksList).toHaveBeenNthCalledWith(
+      1,
+      'personal-ws',
+      expect.objectContaining({
+        listStatuses: ['not_started', 'active'],
+      })
+    );
+    expect(tasksList).toHaveBeenNthCalledWith(
+      2,
+      'team-ws',
+      expect.objectContaining({
+        assignedToMe: true,
+      })
+    );
+    expect(workspaceName).toBe('Personal');
+    expect(response.tasks.map((task) => task.id)).toEqual([
+      'personal-task',
+      'assigned-task',
     ]);
   });
 
@@ -368,7 +465,21 @@ describe('CLI commands', () => {
       {}
     );
 
+    expect(tasksList).toHaveBeenNthCalledWith(
+      1,
+      'personal-ws',
+      expect.objectContaining({
+        listStatuses: ['not_started', 'active'],
+      })
+    );
     expect(response.tasks.map((task) => task.id)).toEqual(['active-task']);
+    expect(response.pagination).toEqual(
+      expect.objectContaining({
+        page: 1,
+        pageCount: 1,
+        total: 1,
+      })
+    );
   });
 
   it('includes review list tasks when requested', async () => {
@@ -419,6 +530,7 @@ describe('CLI commands', () => {
       'team-ws',
       expect.objectContaining({
         forTimeTracking: false,
+        listStatuses: ['not_started', 'active', 'review'],
         limit: 50,
         offset: 0,
       })
@@ -502,6 +614,7 @@ describe('CLI commands', () => {
       1,
       'personal-ws',
       expect.objectContaining({
+        includeCount: true,
         limit: 4,
         offset: 0,
       })
@@ -511,6 +624,7 @@ describe('CLI commands', () => {
       'team-ws',
       expect.objectContaining({
         assignedToMe: true,
+        includeCount: true,
         limit: 4,
         offset: 0,
       })
@@ -519,5 +633,14 @@ describe('CLI commands', () => {
       'external-normal',
       'personal-low',
     ]);
+    expect(response.pagination).toEqual({
+      hasNextPage: false,
+      hasPreviousPage: true,
+      offset: 2,
+      page: 2,
+      pageCount: 2,
+      pageSize: 2,
+      total: 4,
+    });
   });
 });

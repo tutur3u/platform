@@ -105,6 +105,7 @@ export interface CurrentUserTaskDialogResponse {
 export interface ListWorkspaceTasksOptions {
   boardId?: string;
   listId?: string;
+  listStatuses?: string[];
   q?: string;
   identifier?: string;
   limit?: number;
@@ -131,6 +132,15 @@ export type ExternalTaskSortBy =
 export interface WorkspaceTasksResponse {
   tasks: WorkspaceTaskApiTask[];
   count?: number;
+  pagination?: {
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    offset: number;
+    page: number;
+    pageCount: number;
+    pageSize: number;
+    total: number;
+  };
 }
 
 export type WorkspaceTaskBoardListItem = Pick<
@@ -662,6 +672,7 @@ export async function listWorkspaceTasks(
       query: {
         boardId: options?.boardId,
         listId: options?.listId,
+        listStatuses: options?.listStatuses?.join(','),
         q: options?.q,
         identifier: options?.identifier,
         limit: options?.limit,

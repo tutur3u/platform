@@ -181,6 +181,7 @@ describe('workspace board internal-api helpers', () => {
         closed: 'exclude',
         forTimeTracking: true,
         limit: 50,
+        listStatuses: ['not_started', 'active'],
       },
       {
         baseUrl: 'https://internal.example.com',
@@ -189,7 +190,7 @@ describe('workspace board internal-api helpers', () => {
     );
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://internal.example.com/api/v1/workspaces/ws-1/tasks?limit=50&completed=exclude&closed=exclude&forTimeTracking=true',
+      'https://internal.example.com/api/v1/workspaces/ws-1/tasks?listStatuses=not_started%2Cactive&limit=50&completed=exclude&closed=exclude&forTimeTracking=true',
       expect.objectContaining({
         cache: 'no-store',
       })

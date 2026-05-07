@@ -164,7 +164,7 @@ const helpTopics: Record<string, HelpTopic> = {
       'bulk --ids <ids>             run a bulk task operation',
     ],
     description:
-      'Task lists are sorted by priority and due date. In the personal workspace, unscoped lists include assigned tasks from other accessible workspaces. Use task UUIDs or board identifiers like VHP-12 for task CRUD. Omit ids in a TTY to choose with the keyboard.',
+      'Task lists are sorted by priority and due date. Unscoped lists start from the personal workspace and include assigned tasks from other accessible workspaces. Human-readable lists show total tasks and page/max page. Use task UUIDs or board identifiers like VHP-12 for task CRUD. Omit ids in a TTY to choose with the keyboard.',
     examples: [
       'ttr tasks',
       'ttr tasks --compact',
@@ -177,7 +177,7 @@ const helpTopics: Record<string, HelpTopic> = {
       'ttr tasks move <task-id> --list <done-list-id>',
     ],
     options: [
-      '--all                        include done and closed tasks',
+      '--all                        include all task-list statuses and task states',
       '--done, --completed          show completed tasks',
       '--closed                     show closed tasks',
       '--documents, --document      show document-list tasks',

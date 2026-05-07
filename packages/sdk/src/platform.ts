@@ -1,4 +1,8 @@
-import type { InternalApiClientOptions } from '@tuturuuu/internal-api/client';
+import {
+  encodePathSegment,
+  getInternalApiClient,
+  type InternalApiClientOptions,
+} from '@tuturuuu/internal-api/client';
 import {
   addWorkspaceTaskLabel,
   type BulkWorkspaceTaskOperation,
@@ -31,7 +35,6 @@ import {
   listWorkspaceTaskBoards,
   listWorkspaceTaskLists,
   listWorkspaceTaskProjects,
-  listWorkspaceTasks,
   type MoveWorkspaceTaskPayload,
   moveWorkspaceTask,
   removeWorkspaceTaskLabel,
@@ -41,6 +44,7 @@ import {
   updateWorkspaceTask,
   updateWorkspaceTaskBoard,
   updateWorkspaceTaskList,
+  type WorkspaceTasksResponse,
   type WorkspaceTaskUpdatePayload,
 } from '@tuturuuu/internal-api/tasks';
 import {
@@ -61,6 +65,10 @@ export interface TuturuuuUserClientConfig {
 }
 
 const SESSION_REFRESH_SKEW_MS = 60_000;
+
+type CliListWorkspaceTasksOptions = ListWorkspaceTasksOptions & {
+  listStatuses?: string[];
+};
 
 function getAuthorizationHeader(accessToken: string) {
   return `Bearer ${accessToken}`;
@@ -250,11 +258,38 @@ export class TasksClient {
     );
   }
 
-  list(workspaceId: string, options?: ListWorkspaceTasksOptions) {
-    return listWorkspaceTasks(
-      workspaceId,
-      options,
-      this.client.getClientOptions()
+  list(workspaceId: string, options?: CliListWorkspaceTasksOptions) {
+    const client = getInternalApiClient(this.client.getClientOptions());
+
+    return client.json<WorkspaceTasksResponse>(
+      `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks`,
+      {
+        query: {
+          boardId: options?.boardId,
+          listId: options?.listId,
+          listStatuses: options?.listStatuses?.join(','),
+          q: options?.q,
+          identifier: options?.identifier,
+          limit: options?.limit,
+          offset: options?.offset,
+          assignedToMe: options?.assignedToMe,
+          completed: options?.completed,
+          closed: options?.closed,
+          externalIncludeDocuments: options?.externalIncludeDocuments,
+          externalIncludeDoneClosed: options?.externalIncludeDoneClosed,
+          externalSortBy: options?.externalSortBy,
+          forTimeTracking: options?.forTimeTracking,
+          includeRelationshipSummary: options?.includeRelationshipSummary,
+          includeDeleted:
+            options?.includeDeleted === 'only'
+              ? 'only'
+              : options?.includeDeleted === true
+                ? 'all'
+                : undefined,
+          includeCount: options?.includeCount,
+        },
+        cache: 'no-store',
+      }
     );
   }
 
