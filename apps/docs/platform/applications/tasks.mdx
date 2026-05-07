@@ -220,6 +220,20 @@ in mobile Settings. The web settings dialog exposes the same preference for the
 Boards page, keeping the board picker available for users who prefer the
 previous flow.
 
+#### Task list status semantics
+
+Task list `status` is a workflow category, not the list display name. The
+`review` status sits between `active` and `done`: moving a task into a review
+list marks the task as completed for storage, reminders, and analytics, but the
+task is not terminal and can still show the same done checkbox/action used by
+active tasks.
+
+Review lists are for walkthrough or acceptance queues. Task cards in `review`,
+`done`, or `closed` lists should not show due-date or overdue treatment because
+those tasks are already resolved for deadline purposes. Mobile list mode still
+shows `review` lists by default; only `documents`, `done`, and `closed` are
+hidden when no explicit list or status filter is selected.
+
 #### Mobile board caching
 
 The mobile task-board flow restores workspace boards, board metadata, and per-list
@@ -271,8 +285,9 @@ assigned external tasks exist, the lane opens by default unless the user has
 saved an explicit collapsed or expanded preference for that board.
 
 By default the external lane shows only open source tasks from normal task
-lists. Source tasks in `documents`, `done`, or `closed` lists are filtered out
-unless the lane-level compact filters explicitly include them. Lane sorting is
+lists. Source tasks in `documents`, `review`, `done`, or `closed` lists are
+filtered out unless the lane-level compact filters explicitly include resolved
+tasks. Lane sorting is
 also local to the external lane, so changing it does not reorder the user's real
 personal lists.
 
