@@ -91,11 +91,19 @@ export function useProgressiveBoardLoader(
           listId,
           limit: PAGE_SIZE,
           offset: page * PAGE_SIZE,
+          includeCount: true,
           ...options,
         });
         const tasks = payload.tasks ?? [];
-        const hasMore = tasks.length === PAGE_SIZE;
-        const totalCount = page * PAGE_SIZE + tasks.length + (hasMore ? 1 : 0);
+        const loadedThrough = page * PAGE_SIZE + tasks.length;
+        const totalCount =
+          typeof payload.count === 'number'
+            ? Math.max(payload.count, loadedThrough)
+            : loadedThrough + (tasks.length === PAGE_SIZE ? 1 : 0);
+        const hasMore =
+          typeof payload.count === 'number'
+            ? loadedThrough < payload.count
+            : tasks.length === PAGE_SIZE;
         const result = {
           tasks,
           hasMore,
@@ -196,6 +204,7 @@ export function useProgressiveBoardLoader(
             listId,
             limit: PAGE_SIZE,
             offset: page * PAGE_SIZE,
+            includeCount: true,
             ...listOptionsRef.current[listId],
           })
         )
@@ -204,9 +213,20 @@ export function useProgressiveBoardLoader(
       const mergedListTasks = pageResults.flatMap(
         (result) => result.tasks ?? []
       );
+      const lastPageTasks = pageResults[pageResults.length - 1]?.tasks ?? [];
+      const exactCount = pageResults.find(
+        (result) => typeof result.count === 'number'
+      )?.count;
+      const loadedThrough = targetPage * PAGE_SIZE + lastPageTasks.length;
+      const totalCount =
+        typeof exactCount === 'number'
+          ? Math.max(exactCount, loadedThrough)
+          : mergedListTasks.length +
+            (lastPageTasks.length === PAGE_SIZE ? 1 : 0);
       const hasMore =
-        (pageResults[pageResults.length - 1]?.tasks?.length ?? 0) === PAGE_SIZE;
-      const totalCount = mergedListTasks.length + (hasMore ? 1 : 0);
+        typeof exactCount === 'number'
+          ? loadedThrough < exactCount
+          : lastPageTasks.length === PAGE_SIZE;
 
       queryClient.setQueryData(
         ['tasks', boardId],

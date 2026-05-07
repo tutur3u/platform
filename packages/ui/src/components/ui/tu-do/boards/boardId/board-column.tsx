@@ -417,8 +417,11 @@ export function BoardColumn({
     tasks,
   ]);
 
-  // Badge count: prefer totalCount from progressive loader when available
-  const badgeCount = listState?.totalCount ?? visibleTasks.length;
+  const badgeCount = listState
+    ? listState.hasMore
+      ? Math.max(listState.totalCount, visibleTasks.length)
+      : visibleTasks.length
+    : visibleTasks.length;
   const externalFilterCount =
     (externalIncludeDocuments ? 1 : 0) + (externalIncludeDoneClosed ? 1 : 0);
 

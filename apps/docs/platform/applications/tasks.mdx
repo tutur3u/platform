@@ -295,6 +295,12 @@ movement fields such as `list_id`, `sort_key`, `personal_list_id`, and
 `personal_sort_key`, which prevents stale list pages from flashing a card back
 to its previous position while the mutation response is still settling.
 
+Personal-board list badges must use exact `includeCount` responses, not a
+page-size estimate from progressive loading. External reference counts should be
+resolved through `get_personal_task_board_external_counts` so placed external
+tasks, default external-lane tasks, source-workspace access, and external-lane
+filters stay aligned with the records the board can actually show.
+
 - `personal_board_id` points to the destination personal board after an
   external task is planned there.
 - `personal_list_id` points to the real personal list that owns the planning

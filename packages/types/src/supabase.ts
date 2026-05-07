@@ -27677,6 +27677,17 @@ export type Database = {
         Args: { p_period?: string; p_ws_id: string };
         Returns: Json;
       };
+      get_personal_task_board_external_counts: {
+        Args: {
+          p_include_documents?: boolean;
+          p_include_done_closed?: boolean;
+          p_personal_board_id: string;
+        };
+        Returns: {
+          list_id: string;
+          task_count: number;
+        }[];
+      };
       get_platform_ai_credit_overview: { Args: never; Returns: Json };
       get_possible_excluded_groups: {
         Args: { _ws_id: string; included_groups: string[] };

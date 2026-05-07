@@ -171,6 +171,11 @@ const TERMINAL_EXTERNAL_SOURCE_STATUSES: ExternalSourceStatus[] = [
   'closed',
 ];
 
+type PersonalTaskBoardExternalCountRow = {
+  list_id: string | null;
+  task_count: number | null;
+};
+
 function parseExternalTaskSortBy(value: string | null): ExternalTaskSortBy {
   switch (value) {
     case 'created-asc':
@@ -181,6 +186,36 @@ function parseExternalTaskSortBy(value: string | null): ExternalTaskSortBy {
     default:
       return DEFAULT_EXTERNAL_TASK_SORT_BY;
   }
+}
+
+function matchesExternalLaneFilters(
+  task: TaskRecord,
+  includeDocuments: boolean,
+  includeDoneClosed: boolean
+) {
+  const sourceStatus = getTaskSourceLocation(task).list?.status;
+  const taskStatusFields = task as TaskRecord & {
+    completed_at?: string | null;
+    closed_at?: string | null;
+  };
+
+  if (!includeDocuments && sourceStatus === DOCUMENT_EXTERNAL_SOURCE_STATUS) {
+    return false;
+  }
+
+  if (
+    !includeDoneClosed &&
+    (taskStatusFields.completed_at ||
+      taskStatusFields.closed_at ||
+      (sourceStatus &&
+        TERMINAL_EXTERNAL_SOURCE_STATUSES.includes(
+          sourceStatus as ExternalSourceStatus
+        )))
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 function getTaskSourceLocation(task: TaskRecord) {
@@ -249,6 +284,57 @@ function filterAccessibleExternalRecords(
       accessibleWorkspaceIds.has(sourceWsId)
     );
   });
+}
+
+async function loadPersonalTaskBoardExternalCounts(
+  supabase: TypedSupabaseClient,
+  personalBoardId: string,
+  options: {
+    includeDocuments: boolean;
+    includeDoneClosed: boolean;
+  }
+) {
+  const { data, error } = await supabase.rpc(
+    'get_personal_task_board_external_counts',
+    {
+      p_personal_board_id: personalBoardId,
+      p_include_documents: options.includeDocuments,
+      p_include_done_closed: options.includeDoneClosed,
+    }
+  );
+
+  if (error) {
+    throw new Error('PERSONAL_EXTERNAL_COUNTS_QUERY_FAILED');
+  }
+
+  return new Map(
+    ((data ?? []) as PersonalTaskBoardExternalCountRow[])
+      .filter((row) => row.list_id)
+      .map((row) => [row.list_id as string, row.task_count ?? 0] as const)
+  );
+}
+
+function resolvePersonalExternalTaskCount(
+  countsByListId: Map<string, number> | null,
+  personalBoardId: string | null,
+  listId: string | null,
+  virtualStagingBoardId: string | null
+) {
+  if (!countsByListId || !personalBoardId) {
+    return null;
+  }
+
+  if (virtualStagingBoardId) {
+    return (
+      countsByListId.get(getPersonalExternalStagingListId(personalBoardId)) ?? 0
+    );
+  }
+
+  if (listId) {
+    return countsByListId.get(listId) ?? 0;
+  }
+
+  return [...countsByListId.values()].reduce((sum, value) => sum + value, 0);
 }
 
 function applyPersonalExternalTask(
@@ -400,6 +486,32 @@ export async function GET(
     }
 
     const isPersonalWorkspace = workspaceRow?.personal === true;
+    const personalExternalCountBoardId = virtualStagingBoardId ?? boardId;
+    let personalExternalTaskCountByListId: Map<string, number> | null = null;
+
+    if (
+      includeCount &&
+      isPersonalWorkspace &&
+      !forTimeTracking &&
+      personalExternalCountBoardId
+    ) {
+      try {
+        personalExternalTaskCountByListId =
+          await loadPersonalTaskBoardExternalCounts(
+            supabase,
+            personalExternalCountBoardId,
+            {
+              includeDocuments: externalIncludeDocuments,
+              includeDoneClosed: externalIncludeDoneClosed,
+            }
+          );
+      } catch {
+        return NextResponse.json(
+          { error: 'Failed to load personal external task counts' },
+          { status: 500 }
+        );
+      }
+    }
 
     const timeTrackingSelect = `
         id,
@@ -680,6 +792,14 @@ export async function GET(
       (boardId || listId || virtualStagingBoardId)
     ) {
       const targetPersonalBoardId = virtualStagingBoardId ?? boardId;
+      const personalExternalTaskCountOverride =
+        resolvePersonalExternalTaskCount(
+          personalExternalTaskCountByListId,
+          targetPersonalBoardId,
+          listId,
+          virtualStagingBoardId
+        );
+      externalTaskCount = personalExternalTaskCountOverride ?? 0;
       let placements: PersonalTaskPlacementRow[] = [];
 
       let placementQuery = targetPersonalBoardId
@@ -722,7 +842,9 @@ export async function GET(
 
         placements =
           (placementResult.data as PersonalTaskPlacementRow[] | null) ?? [];
-        externalTaskCount += placementResult.count ?? placements.length;
+        if (personalExternalTaskCountOverride === null) {
+          externalTaskCount += placementResult.count ?? placements.length;
+        }
       }
 
       const placedTaskIds = placements.map((placement) => placement.task_id);
@@ -796,7 +918,17 @@ export async function GET(
             placedRecords,
             accessibleWorkspaceIds,
             normalizedWorkspaceId
-          ).map((record) => [record.id, record] as const)
+          )
+            .filter(
+              (record) =>
+                !virtualStagingBoardId ||
+                matchesExternalLaneFilters(
+                  record,
+                  externalIncludeDocuments,
+                  externalIncludeDoneClosed
+                )
+            )
+            .map((record) => [record.id, record] as const)
         );
 
         externalTasks.push(
@@ -964,11 +1096,15 @@ export async function GET(
           );
 
         externalTasks.push(...defaultExternalTasks);
-        externalTaskCount +=
-          defaultExternalResult.count ?? defaultExternalTasks.length;
+        if (personalExternalTaskCountOverride === null) {
+          externalTaskCount +=
+            defaultExternalResult.count ?? defaultExternalTasks.length;
+        }
       }
 
-      externalTaskCount = externalTasks.length;
+      if (personalExternalTaskCountOverride === null) {
+        externalTaskCount = externalTasks.length;
+      }
       if (virtualStagingBoardId) {
         externalTasks = externalTasks.slice(offset, offset + limit);
       }
