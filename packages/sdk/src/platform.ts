@@ -67,6 +67,7 @@ export interface TuturuuuUserClientConfig {
 const SESSION_REFRESH_SKEW_MS = 60_000;
 
 type CliListWorkspaceTasksOptions = ListWorkspaceTasksOptions & {
+  includeArchivedBoards?: boolean;
   listStatuses?: string[];
 };
 
@@ -280,6 +281,7 @@ export class TasksClient {
           externalSortBy: options?.externalSortBy,
           forTimeTracking: options?.forTimeTracking,
           includeRelationshipSummary: options?.includeRelationshipSummary,
+          includeArchivedBoards: options?.includeArchivedBoards,
           includeDeleted:
             options?.includeDeleted === 'only'
               ? 'only'

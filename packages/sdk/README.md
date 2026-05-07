@@ -139,8 +139,9 @@ workspaces; selecting a board/list or passing `--workspace` scopes the result
 back to that context. `ttr tasks` shows open tasks by default by excluding rows with
 `completed_at` or `closed_at` and by limiting task-list statuses to
 `not_started` and `active`. That default hides tasks in `documents`, `review`,
-`done`, and `closed` lists; use `--all`, `--documents`, `--review`, `--done`,
-`--closed`, `--include-documents`, `--include-review`, `--include-done`, or
+`done`, and `closed` lists, and tasks from archived boards; use `--all`,
+`--include-archived`, `--documents`, `--review`, `--done`, `--closed`,
+`--include-documents`, `--include-review`, `--include-done`, or
 `--include-closed` to adjust that filter. Results are paginated at 50 tasks by
 default; use `--page`/`--page-size` or `--limit`/`--offset` to page through
 larger task sets. Human-readable task lists show a footer with the total task

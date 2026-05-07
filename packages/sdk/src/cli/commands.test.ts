@@ -274,6 +274,7 @@ describe('CLI commands', () => {
         externalIncludeDocuments: false,
         externalIncludeDoneClosed: false,
         forTimeTracking: true,
+        includeArchivedBoards: false,
         includeCount: true,
         limit: 50,
         listStatuses: ['not_started', 'active'],
@@ -290,6 +291,7 @@ describe('CLI commands', () => {
         externalIncludeDocuments: false,
         externalIncludeDoneClosed: false,
         forTimeTracking: true,
+        includeArchivedBoards: false,
         includeCount: true,
         limit: 50,
         listStatuses: ['not_started', 'active'],
@@ -538,6 +540,56 @@ describe('CLI commands', () => {
     expect(response.tasks.map((task) => task.id)).toEqual([
       'active-task',
       'review-task',
+    ]);
+  });
+
+  it('includes archived board tasks when requested', async () => {
+    const tasksList = vi.fn().mockResolvedValueOnce({
+      tasks: [
+        {
+          id: 'archived-board-task',
+          name: 'Archived board task',
+          task_lists: { status: 'active' },
+        },
+      ],
+    });
+    const client = {
+      tasks: {
+        list: tasksList,
+      },
+      workspaces: {
+        list: vi.fn().mockResolvedValue([
+          {
+            id: 'team-ws',
+            name: 'Tuturuuu',
+            personal: false,
+          },
+        ]),
+      },
+    };
+
+    const { response } = await listTasksForCli(
+      client as any,
+      {
+        baseUrl: 'https://tuturuuu.com',
+        currentWorkspaceId: 'team-ws',
+        session: {
+          accessToken: 'token',
+          refreshToken: 'refresh',
+        },
+      },
+      'team-ws',
+      { 'include-archived': true }
+    );
+
+    expect(tasksList).toHaveBeenCalledWith(
+      'team-ws',
+      expect.objectContaining({
+        includeArchivedBoards: true,
+      })
+    );
+    expect(response.tasks.map((task) => task.id)).toEqual([
+      'archived-board-task',
     ]);
   });
 

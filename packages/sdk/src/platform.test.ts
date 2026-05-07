@@ -129,13 +129,14 @@ describe('TuturuuuUserClient', () => {
     });
 
     await client.tasks.list('ws-1', {
+      includeArchivedBoards: true,
       includeCount: true,
       limit: 5,
       listStatuses: ['not_started', 'active'],
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/tasks?listStatuses=not_started%2Cactive&limit=5&includeCount=true',
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/tasks?listStatuses=not_started%2Cactive&limit=5&includeArchivedBoards=true&includeCount=true',
       expect.objectContaining({
         cache: 'no-store',
       })

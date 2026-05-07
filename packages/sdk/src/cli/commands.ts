@@ -80,7 +80,12 @@ interface TaskPaginationSummary {
 }
 
 type CliListWorkspaceTasksOptions = ListWorkspaceTasksOptions & {
+  includeArchivedBoards?: boolean;
   listStatuses?: string[];
+};
+
+type CliWorkspaceTasksResponse = WorkspaceTasksResponse & {
+  pagination?: TaskPaginationSummary;
 };
 
 function upgradeCli() {
@@ -283,6 +288,8 @@ function getCliTaskListOptions(
     forTimeTracking:
       activeStatusesOnly &&
       !(getFlag(flags, 'list') || getFlag(flags, 'list-id')),
+    includeArchivedBoards:
+      flags.all === true || flags['include-archived'] === true,
     includeCount: true,
     includeDeleted: flags.deleted === true,
     limit: pagination.limit,
@@ -386,7 +393,7 @@ export async function listTasksForCli(
   _config: CliConfig,
   workspaceId: string,
   flags: Record<string, FlagValue>
-): Promise<{ response: WorkspaceTasksResponse; workspaceName?: string }> {
+): Promise<{ response: CliWorkspaceTasksResponse; workspaceName?: string }> {
   const options = getCliTaskListOptions(flags);
   const workspaces = await client.workspaces.list();
   const requestedWorkspace = resolveWorkspace(workspaceId, workspaces);

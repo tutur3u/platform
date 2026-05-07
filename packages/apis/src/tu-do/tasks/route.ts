@@ -478,6 +478,8 @@ export async function GET(
     const listStatuses = parseTaskListStatuses(
       url.searchParams.get('listStatuses')
     );
+    const includeArchivedBoards =
+      url.searchParams.get('includeArchivedBoards') === 'true';
     const externalIncludeDocuments =
       url.searchParams.get('externalIncludeDocuments') === 'true';
     const externalIncludeDoneClosed =
@@ -736,6 +738,10 @@ export async function GET(
       query = query.is('deleted_at', null).eq('task_lists.deleted', false);
     } else if (includeDeletedMode === 'only') {
       query = query.not('deleted_at', 'is', null) as typeof query;
+    }
+
+    if (!includeArchivedBoards) {
+      query = query.is('task_lists.workspace_boards.archived_at', null);
     }
 
     if (forTimeTracking) {

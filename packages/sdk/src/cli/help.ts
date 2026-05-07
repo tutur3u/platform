@@ -177,11 +177,12 @@ const helpTopics: Record<string, HelpTopic> = {
       'ttr tasks move <task-id> --list <done-list-id>',
     ],
     options: [
-      '--all                        include all task-list statuses and task states',
+      '--all                        include all task-list statuses, task states, and archived boards',
       '--done, --completed          show completed tasks',
       '--closed                     show closed tasks',
       '--documents, --document      show document-list tasks',
       '--review                     show review-list tasks',
+      '--include-archived           include tasks from archived boards',
       '--include-documents          include document-list tasks in default lists',
       '--include-review             include review-list tasks in default lists',
       '--include-done               include completed tasks in default lists',

@@ -118,6 +118,7 @@ export interface ListWorkspaceTasksOptions {
   externalSortBy?: ExternalTaskSortBy;
   forTimeTracking?: boolean;
   includeRelationshipSummary?: boolean;
+  includeArchivedBoards?: boolean;
   includeDeleted?: boolean | 'only';
   includeCount?: boolean;
 }
@@ -685,6 +686,7 @@ export async function listWorkspaceTasks(
         externalSortBy: options?.externalSortBy,
         forTimeTracking: options?.forTimeTracking,
         includeRelationshipSummary: options?.includeRelationshipSummary,
+        includeArchivedBoards: options?.includeArchivedBoards,
         includeDeleted:
           options?.includeDeleted === 'only'
             ? 'only'
