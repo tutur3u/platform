@@ -20,8 +20,8 @@
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
-    "react": "^19.2.5",
-    "react-email": "^6.0.8"
+    "react": "^19.2.6",
+    "react-email": "^6.1.1"
   },
   "devDependencies": {
     "@react-email/preview-server": "^5.2.10",

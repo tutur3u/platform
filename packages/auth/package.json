@@ -26,8 +26,8 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "next": "^16.2.4",
-    "react": "^19.2.5",
+    "next": "^16.2.5",
+    "react": "^19.2.6",
     "zod": "^4.4.3"
   },
   "devDependencies": {

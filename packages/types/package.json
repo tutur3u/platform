@@ -17,8 +17,8 @@
   },
   "dependencies": {
     "@tiptap/react": "3.22.5",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "zod": "^4.4.3"
   },
   "devDependencies": {
