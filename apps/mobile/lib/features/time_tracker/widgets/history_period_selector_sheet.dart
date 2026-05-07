@@ -112,6 +112,18 @@ class _HistoryPeriodSelectorSheetState
 
   Widget _buildDayPicker(BuildContext context, AppLocalizations l10n) {
     final now = DateTime.now();
+    final firstDate = DateTime(2020);
+    final lastDate = DateTime(now.year + 5, 12, 31);
+    final initialDate = DateTime(
+      widget.initialAnchorDate.year,
+      widget.initialAnchorDate.month,
+      widget.initialAnchorDate.day,
+    );
+    final clampedInitialDate = initialDate.isBefore(firstDate)
+        ? firstDate
+        : initialDate.isAfter(lastDate)
+        ? lastDate
+        : initialDate;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -122,13 +134,9 @@ class _HistoryPeriodSelectorSheetState
         ),
         const shad.Gap(8),
         CalendarDatePicker(
-          initialDate: DateTime(
-            widget.initialAnchorDate.year,
-            widget.initialAnchorDate.month,
-            widget.initialAnchorDate.day,
-          ),
-          firstDate: DateTime(2020),
-          lastDate: DateTime(now.year + 5, 12, 31),
+          initialDate: clampedInitialDate,
+          firstDate: firstDate,
+          lastDate: lastDate,
           onDateChanged: (date) => Navigator.of(context).pop(
             DateTime(date.year, date.month, date.day),
           ),
@@ -138,6 +146,7 @@ class _HistoryPeriodSelectorSheetState
   }
 
   Widget _buildWeekPicker(BuildContext context, AppLocalizations l10n) {
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
     if (_showYearPicker) {
       return _buildYearPickerGrid(
         context,
@@ -156,7 +165,7 @@ class _HistoryPeriodSelectorSheetState
     );
     final now = DateTime.now();
     final currentWeekStart = _weekStart(now, widget.firstDayOfWeek);
-    final monthLabel = DateFormat.yMMMM().format(
+    final monthLabel = DateFormat.yMMMM(localeTag).format(
       DateTime(_selectedYear, _selectedMonth),
     );
     return SizedBox(
@@ -192,6 +201,8 @@ class _HistoryPeriodSelectorSheetState
                   end: end,
                   isSelected: isSelected,
                   isCurrent: isCurrent,
+                  localeTag: localeTag,
+                  currentLabel: l10n.timerHistoryPickerCurrent,
                   onTap: () => Navigator.of(context).pop(start),
                 );
               },
@@ -203,6 +214,7 @@ class _HistoryPeriodSelectorSheetState
   }
 
   Widget _buildMonthPicker(BuildContext context, AppLocalizations l10n) {
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
     if (_showYearPicker) {
       return _buildYearPickerGrid(context, l10n, onYearSelected: _selectYear);
     }
@@ -247,6 +259,7 @@ class _HistoryPeriodSelectorSheetState
                     monthDate.month == selected.month;
                 return _MonthCell(
                   monthDate: monthDate,
+                  localeTag: localeTag,
                   isSelected: isSelected,
                   onTap: () => Navigator.of(context).pop(monthDate),
                 );
@@ -271,7 +284,7 @@ class _HistoryPeriodSelectorSheetState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _HeaderRow(
-            title: 'Year',
+            title: l10n.timerHistoryPickerYearTitle,
             onClose: () => Navigator.maybePop(context),
           ),
           const shad.Gap(16),
@@ -424,15 +437,19 @@ class _WeekRow extends StatelessWidget {
   const _WeekRow({
     required this.start,
     required this.end,
+    required this.localeTag,
     required this.isSelected,
     required this.isCurrent,
+    required this.currentLabel,
     required this.onTap,
   });
 
   final DateTime start;
   final DateTime end;
+  final String localeTag;
   final bool isSelected;
   final bool isCurrent;
+  final String currentLabel;
   final VoidCallback onTap;
 
   @override
@@ -466,8 +483,8 @@ class _WeekRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${DateFormat.MMMd().format(start)} – '
-                      '${DateFormat.MMMd().format(end)}',
+                      '${DateFormat.MMMd(localeTag).format(start)} – '
+                      '${DateFormat.MMMd(localeTag).format(end)}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.small.copyWith(
@@ -479,7 +496,7 @@ class _WeekRow extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(
-                          'Current',
+                          currentLabel,
                           style: theme.typography.small.copyWith(
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
@@ -510,17 +527,19 @@ class _MonthCell extends StatelessWidget {
     required this.onTap,
     this.monthDate,
     this.label,
+    this.localeTag,
   });
 
   final DateTime? monthDate;
   final String? label;
+  final String? localeTag;
   final bool isSelected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final text = label ?? DateFormat.MMM().format(monthDate!);
+    final text = label ?? DateFormat.MMM(localeTag).format(monthDate!);
     final bgColor = isSelected
         ? theme.colorScheme.primary
         : theme.colorScheme.muted.withValues(alpha: 0.08);

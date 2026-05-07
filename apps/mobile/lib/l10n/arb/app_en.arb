@@ -1791,6 +1791,8 @@
     "timerHistoryTotalTime": "Total time",
     "timerHistoryLoadMore": "Load more",
     "timerHistoryEndOfList": "You reached the end of the list",
+    "timerHistoryPickerYearTitle": "Year",
+    "timerHistoryPickerCurrent": "Current",
     "timerToday": "Today",
     "timerThisWeek": "This week",
     "timerThisMonth": "This month",

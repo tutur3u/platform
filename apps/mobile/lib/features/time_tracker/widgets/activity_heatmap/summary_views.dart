@@ -317,29 +317,39 @@ class _MonthlyCalendarView extends StatelessWidget {
                     ),
                   ),
                   Expanded(
-                    child: GestureDetector(
-                      onTap: onPickMonth,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            DateFormat('MMMM yyyy', localeTag).format(
-                              selectedMonth,
-                            ),
-                            textAlign: TextAlign.center,
-                            style: theme.typography.small.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: onPickMonth,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 4,
                           ),
-                          if (onPickMonth != null) ...[
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.expand_more,
-                              size: 16,
-                              color: theme.colorScheme.mutedForeground,
-                            ),
-                          ],
-                        ],
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                DateFormat('MMMM yyyy', localeTag).format(
+                                  selectedMonth,
+                                ),
+                                textAlign: TextAlign.center,
+                                style: theme.typography.small.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              if (onPickMonth != null) ...[
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.expand_more,
+                                  size: 16,
+                                  color: theme.colorScheme.mutedForeground,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),

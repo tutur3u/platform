@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
+import 'package:mobile/features/time_tracker/utils/first_day_of_week.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class HistoryPeriodControls extends StatelessWidget {
@@ -22,18 +23,17 @@ class HistoryPeriodControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final firstDayOfWeek = _weekdayFromMaterialLocalizations(
-      MaterialLocalizations.of(context).firstDayOfWeekIndex,
-    );
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
+    final firstDayOfWeek = firstDayOfWeekForContext(context);
     final period = _periodRange(viewMode, anchorDate, firstDayOfWeek);
     final periodLabel = switch (viewMode) {
-      HistoryViewMode.day => DateFormat.yMMMEd().format(period.start),
+      HistoryViewMode.day => DateFormat.yMMMEd(localeTag).format(period.start),
       HistoryViewMode.week => () {
-        final weekStartLabel = DateFormat.MMMd().format(period.start);
-        final weekEndLabel = DateFormat.MMMd().format(period.end);
+        final weekStartLabel = DateFormat.MMMd(localeTag).format(period.start);
+        final weekEndLabel = DateFormat.MMMd(localeTag).format(period.end);
         return '$weekStartLabel – $weekEndLabel';
       }(),
-      HistoryViewMode.month => DateFormat.yMMMM().format(period.start),
+      HistoryViewMode.month => DateFormat.yMMMM(localeTag).format(period.start),
     };
 
     return Column(
@@ -117,18 +117,5 @@ class HistoryPeriodControls extends StatelessWidget {
         final end = DateTime(anchor.year, anchor.month + 1, 0);
         return (start: start, end: end);
     }
-  }
-
-  int _weekdayFromMaterialLocalizations(int firstDayOfWeekIndex) {
-    const weekdayByIndex = [
-      DateTime.sunday,
-      DateTime.monday,
-      DateTime.tuesday,
-      DateTime.wednesday,
-      DateTime.thursday,
-      DateTime.friday,
-      DateTime.saturday,
-    ];
-    return weekdayByIndex[firstDayOfWeekIndex % 7];
   }
 }

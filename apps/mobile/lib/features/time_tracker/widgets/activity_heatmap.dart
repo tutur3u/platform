@@ -11,6 +11,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
+import 'package:mobile/features/time_tracker/utils/first_day_of_week.dart';
 import 'package:mobile/features/time_tracker/widgets/history_period_selector_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -75,22 +76,6 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
     unawaited(context.push(targetUri.toString()));
   }
 
-  int _firstDayOfWeek(BuildContext context) {
-    const weekdayByIndex = [
-      DateTime.sunday,
-      DateTime.monday,
-      DateTime.tuesday,
-      DateTime.wednesday,
-      DateTime.thursday,
-      DateTime.friday,
-      DateTime.saturday,
-    ];
-    final firstDayOfWeekIndex = MaterialLocalizations.of(
-      context,
-    ).firstDayOfWeekIndex;
-    return weekdayByIndex[firstDayOfWeekIndex % 7];
-  }
-
   Future<void> _pickMonth(BuildContext context) async {
     final picked = await showAdaptiveSheet<DateTime>(
       context: context,
@@ -101,7 +86,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
           _selectedMonth.year,
           _selectedMonth.month,
         ),
-        firstDayOfWeek: _firstDayOfWeek(context),
+        firstDayOfWeek: firstDayOfWeekForContext(context),
       ),
     );
     if (!mounted || picked == null) {
