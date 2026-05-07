@@ -6,16 +6,15 @@ Learn, Teach, and future non-`apps/web` education apps use a confident Neobrutal
 
 `apps/web` remains the canonical admin platform and may keep its own dashboard language. Education satellites must feel complementary, not like duplicate admin dashboards.
 
-## 2. Color Palette & Roles
+## 2. Theme-Adaptive Color Roles
 
-- **Chalk Paper** (#FFFDF2) - Primary education satellite canvas.
-- **Card Paper** (#FFFFFF) - Content surfaces, forms, and panels.
-- **Charcoal Ink** (#18181B) - Primary text, heavy borders, and offset shadows. Never use pure black.
-- **Muted Graphite** (#71717A) - Secondary text, help text, and quiet metadata.
-- **Ink Border** (#18181B) - Two-pixel structural outlines and divider rules.
-- **Signal Amber** (#EAB308) - The single accent for primary CTAs, active navigation, and key classroom moments.
+- Use semantic theme tokens for structure: `bg-root-background`, `bg-background`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, and shadow values based on `--border` or `--foreground`.
+- Use dynamic playful accents for education-specific meaning: `bg-dynamic-yellow`, `bg-dynamic-green`, `bg-dynamic-cyan`, `bg-dynamic-pink`, `bg-dynamic-orange`, and `bg-dynamic-purple`, usually at `/10` to `/15` for surfaces and icon tiles.
+- Accent colors should be distributed by function: yellow for daily goals, green for practice or attendance, cyan for modules and maps, pink for assignments and reports, orange for metrics, purple for AI or preview moments.
+- Color must work in light, dark, and system themes. Do not hard-code raw hex values or one-off Tailwind color families for app surfaces.
+- Heavy ink borders and offset shadows remain structural, but the surrounding cards should carry multiple dynamic accents so Learn and Teach feel playful instead of monochrome.
 
-Avoid purple/blue neon, glowing shadows, oversized gradients, and one-hue palettes.
+Avoid purple/blue neon, glowing shadows, oversized gradients, low-contrast translucent side panels, and one-hue palettes.
 
 ## 3. Typography Rules
 
@@ -28,7 +27,7 @@ Hero headings must use wide containers such as `max-w-6xl` and clamp sizing so t
 
 ## 4. Component Stylings
 
-- **Buttons:** Rectangular, two-pixel Charcoal Ink borders, Signal Amber primary fill, offset shadow, and tactile active translate. No neon outer glow.
+- **Buttons:** Rectangular, two-pixel ink borders, theme-safe foreground/background fills, offset shadow, and tactile active translate. Primary actions may use semantic `bg-primary`; supporting actions should use dynamic accent surfaces instead of another plain neutral block.
 - **Cards:** Use hard bordered paper blocks with offset shadows. Use cards for meaningful repeated objects only; do not nest cards inside cards.
 - **Inputs:** Label above input, square corners, two-pixel border, clear inline error text below. No floating labels.
 - **Navigation:** Compact, hard-bordered dock or strip with icon buttons and tooltips when labels are hidden.
@@ -37,7 +36,7 @@ Hero headings must use wide containers such as `max-w-6xl` and clamp sizing so t
 
 ## 5. Layout Principles
 
-Use CSS Grid first. Bento grids must use `grid-flow-dense` and mathematically fill their rows with no empty cells. Avoid generic three-equal-card rows; use asymmetric grids, split work loops, and horizontal rhythm. All layouts collapse to one column below 768px and must never create horizontal scroll.
+Use CSS Grid first. Bento grids must use `grid-flow-dense` and mathematically fill their rows with no empty cells. Avoid generic three-equal-card rows; use asymmetric grids, split work loops, and horizontal rhythm. Auth-gated dashboards should stack secondary rails below the main content until there is enough room for every card to keep readable text on one line or wrapped cleanly without clipping. All layouts collapse to one column below 768px and must never create horizontal scroll.
 
 Every major page follows Navigation, Attention, Interest, Desire, and Action. The first viewport should show the product identity immediately while leaving a hint of the next section visible on common desktop and mobile heights.
 
@@ -56,7 +55,7 @@ Protected education data, workspace writes, and administrative workflows stay in
 - No emojis.
 - No local login portals in Learn or Teach.
 - No pure black (`#000000`).
-- No neon glows, purple-blue AI gradients, or oversaturated accents.
+- No neon glows, purple-blue AI gradients, hard-coded raw colors, or oversaturated accents.
 - No decorative stamp icons, scroll prompts, or bouncing chevrons.
 - No generic names like "John Doe", "Acme", or "Nexus".
 - No AI copywriting cliches such as "Elevate", "Seamless", "Unleash", or "Next-Gen".

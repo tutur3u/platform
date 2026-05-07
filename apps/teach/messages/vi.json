@@ -44,6 +44,39 @@
     "emptyGroupsBody": "Hãy tạo workspace user groups trong apps/web trước. Teach sẽ trình bày mỗi nhóm như một nhóm học theo khóa với module, điểm danh, báo cáo và metrics.",
     "emptyGroupsTitle": "Chưa có nhóm học theo khóa",
     "eyebrow": "Workspace giáo viên cho {name}",
+    "featureGrid": {
+      "eyebrow": "Bộ điều phối giáo viên",
+      "items": {
+        "attendance": {
+          "body": "Mở bề mặt điểm danh tập trung cho các nhóm trong workspace đã chọn.",
+          "title": "Nhịp điểm danh"
+        },
+        "groups": {
+          "body": "Dùng workspace user groups như nhóm học theo khóa có người phụ trách rõ ràng.",
+          "title": "Nhóm khóa học"
+        },
+        "metrics": {
+          "body": "Rà soát score metrics trước khi chúng thành tiến độ hiển thị cho học viên và phụ huynh.",
+          "title": "Phòng metrics"
+        },
+        "modules": {
+          "body": "Giữ chuỗi bài, độ phủ module và bước tiếp theo gắn với cùng một nhóm học.",
+          "title": "Bản đồ module"
+        },
+        "preview": {
+          "body": "Mở ứng dụng học viên để kiểm tra lộ trình khóa học hiển thị bên ngoài Teach.",
+          "title": "Xem như học viên"
+        },
+        "reports": {
+          "body": "Chuẩn bị vòng báo cáo từ cùng nhóm học, điểm danh và score metrics.",
+          "title": "Xưởng báo cáo"
+        }
+      },
+      "lead": "Sáu luồng giảng dạy thường dùng luôn hiện rõ để Teach giống dashboard điều phối lớp học, không phải landing page.",
+      "previewValue": "Live",
+      "primaryAction": "Mở nhóm",
+      "title": "Trung tâm điều phối nhóm học"
+    },
     "groupsLead": "Trong apps/web đây là workspace user groups. Trong Teach, hãy hiểu mỗi nhóm là một nhóm học theo khóa có học viên, module, điểm danh, báo cáo và metrics.",
     "groupsTitle": "Nhóm học theo khóa",
     "lead": "Quản lý vòng dạy học mà không biến Teach thành một bản sao quản trị nền tảng. Dashboard tập trung vào nhóm, module, điểm danh tập trung, báo cáo và score metrics.",

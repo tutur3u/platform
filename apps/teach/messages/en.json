@@ -44,6 +44,39 @@
     "emptyGroupsBody": "Create workspace user groups in apps/web first. Teach will present each group as a course group with modules, attendance, reports, and metrics.",
     "emptyGroupsTitle": "No course user groups yet",
     "eyebrow": "Teacher workspace for {name}",
+    "featureGrid": {
+      "eyebrow": "Teacher control deck",
+      "items": {
+        "attendance": {
+          "body": "Open the centralized attendance surface for the selected workspace groups.",
+          "title": "Attendance pulse"
+        },
+        "groups": {
+          "body": "Use workspace user groups as course cohorts with a clear teaching owner.",
+          "title": "Course groups"
+        },
+        "metrics": {
+          "body": "Review score metrics before they become learner and parent-facing progress.",
+          "title": "Metrics lab"
+        },
+        "modules": {
+          "body": "Keep lesson sequence, module coverage, and next steps tied to the group.",
+          "title": "Module map"
+        },
+        "preview": {
+          "body": "Open the learner app to inspect how the course path appears outside Teach.",
+          "title": "Learner preview"
+        },
+        "reports": {
+          "body": "Prepare reporting loops from the same groups, attendance, and score metrics.",
+          "title": "Report studio"
+        }
+      },
+      "lead": "Six high-frequency teaching paths stay visible so Teach feels like a classroom operations dashboard, not a landing page.",
+      "previewValue": "Live",
+      "primaryAction": "Open groups",
+      "title": "Course group command center"
+    },
     "groupsLead": "In apps/web these are workspace user groups. In Teach, treat each one as a course group with learners, modules, attendance, reports, and metrics.",
     "groupsTitle": "Course user groups",
     "lead": "Manage the teaching loop without turning Teach into a second platform admin. The dashboard focuses on groups, modules, centralized attendance, reports, and score metrics.",

@@ -55,6 +55,8 @@ Courses, modules, quiz sets, flashcards, assignments, monthly reports, and marks
 
 Learn learner pages keep the public `apps/learn/src/components/learner-pages.tsx` entrypoint as a thin barrel export. Route-level screens live under `apps/learn/src/components/learner-pages/*`, with shared page motion, loading, empty state, and section primitives in `shared.tsx`.
 
+The home dashboard should be a real learner workspace, not a landing page. Keep daily plan, quest board, learner toolkit, course path, assignments, marks, reports, practice, and AI Chat entrypoints visible as responsive Neobrutalist panels. Secondary rails should stack below the main grid until there is enough width for readable cards, and color should use dynamic theme tokens rather than a single accent.
+
 Keep Learn learner files under 400 LOC and individual components under 200 LOC. When a screen grows, split reusable cards, rows, panels, and route-specific helpers into adjacent modules before final verification instead of letting `learner-pages.tsx` or any route screen become a monolith again.
 
 Language switching is handled inside Learn with `next-intl`, but locale prefixes are hidden from URLs. Legacy locale-prefixed paths such as `/vi/dashboard` are canonicalized back to `/dashboard` while preserving the selected locale in `NEXT_LOCALE`. Keep English and Vietnamese strings in `apps/learn/messages/en.json` and `apps/learn/messages/vi.json`, then run `bun i18n:sort`.

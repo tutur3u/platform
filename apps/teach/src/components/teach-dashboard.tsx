@@ -16,9 +16,12 @@ import type {
   TulearnBootstrapResponse,
   TulearnWorkspaceSummary,
 } from '@tuturuuu/internal-api';
+import { cn } from '@tuturuuu/utils/format';
 import { getTranslations } from 'next-intl/server';
 import { LEARN_APP_URL, WEB_APP_URL } from '@/constants/common';
 import { Link } from '@/i18n/navigation';
+import { TeachDashboardFeatureGrid } from './teach-dashboard-feature-grid';
+import { TeachMetricTile } from './teach-metric-tile';
 import { TeachOperationCard } from './teach-operation-card';
 import { TeachThemeControl } from './teach-theme-control';
 
@@ -35,17 +38,17 @@ type TeachGroup = {
 };
 
 const workflowItems = [
-  { icon: UsersRound, key: 'groups' },
-  { icon: BookOpenCheck, key: 'modules' },
-  { icon: CalendarCheck, key: 'attendance' },
-  { icon: BarChart3, key: 'metrics' },
+  { accent: 'bg-dynamic-yellow/15', icon: UsersRound, key: 'groups' },
+  { accent: 'bg-dynamic-cyan/15', icon: BookOpenCheck, key: 'modules' },
+  { accent: 'bg-dynamic-green/15', icon: CalendarCheck, key: 'attendance' },
+  { accent: 'bg-dynamic-orange/15', icon: BarChart3, key: 'metrics' },
 ] as const;
 
 const operationsItems = [
-  { icon: ClipboardList, key: 'plan' },
-  { icon: CalendarCheck, key: 'attendance' },
-  { icon: FileText, key: 'reports' },
-  { icon: Gauge, key: 'metrics' },
+  { accent: 'bg-dynamic-cyan/15', icon: ClipboardList, key: 'plan' },
+  { accent: 'bg-dynamic-green/15', icon: CalendarCheck, key: 'attendance' },
+  { accent: 'bg-dynamic-pink/15', icon: FileText, key: 'reports' },
+  { accent: 'bg-dynamic-orange/15', icon: Gauge, key: 'metrics' },
 ] as const;
 
 export async function TeachDashboard({
@@ -147,28 +150,40 @@ export async function TeachDashboard({
         </div>
 
         <aside className="grid gap-3">
-          <MetricTile
+          <TeachMetricTile
+            accentClassName="bg-dynamic-yellow/15"
             icon={UsersRound}
             label={t('activeGroups')}
             value={totalGroups}
           />
-          <MetricTile
+          <TeachMetricTile
+            accentClassName="bg-dynamic-cyan/15"
             icon={Layers3}
             label={t('modules')}
             value={totalModules}
           />
-          <MetricTile
+          <TeachMetricTile
+            accentClassName="bg-dynamic-green/15"
             icon={CalendarCheck}
             label={t('sessions')}
             value={sessionCount}
           />
-          <MetricTile
+          <TeachMetricTile
+            accentClassName="bg-dynamic-pink/15"
             icon={LineChart}
             label={t('attendanceChecks')}
             value={attendanceChecks}
           />
         </aside>
       </section>
+
+      <TeachDashboardFeatureGrid
+        attendanceChecks={attendanceChecks}
+        sessionCount={sessionCount}
+        totalGroups={totalGroups}
+        totalModules={totalModules}
+        wsId={wsId}
+      />
 
       <section className="mx-auto mt-8 grid max-w-7xl gap-5 xl:grid-cols-[minmax(0,1fr)_25rem]">
         <div className="space-y-4">
@@ -208,13 +223,18 @@ export async function TeachDashboard({
         </div>
 
         <aside className="space-y-4">
-          {workflowItems.map(({ icon: Icon, key }, index) => (
+          {workflowItems.map(({ accent, icon: Icon, key }, index) => (
             <article
               className="border-2 border-foreground/70 bg-card p-5 shadow-[5px_5px_0_var(--foreground)]"
               key={key}
             >
               <div className="flex items-start gap-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-border bg-dynamic-yellow/15">
+                <span
+                  className={cn(
+                    'flex h-11 w-11 shrink-0 items-center justify-center border-2 border-border',
+                    accent
+                  )}
+                >
                   <Icon className="h-5 w-5" />
                 </span>
                 <div>
@@ -255,8 +275,9 @@ export async function TeachDashboard({
           </a>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {operationsItems.map(({ icon: Icon, key }) => (
+          {operationsItems.map(({ accent, icon: Icon, key }) => (
             <TeachOperationCard
+              accentClassName={accent}
               count={
                 key === 'plan'
                   ? totalModules
@@ -284,24 +305,6 @@ export async function TeachDashboard({
         </div>
       </section>
     </main>
-  );
-}
-
-function MetricTile({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof UsersRound;
-  label: string;
-  value: number;
-}) {
-  return (
-    <article className="border-2 border-foreground/70 bg-card p-4 shadow-[5px_5px_0_var(--foreground)]">
-      <Icon className="mb-3 h-5 w-5" />
-      <p className="font-black text-3xl tabular-nums">{value}</p>
-      <p className="text-muted-foreground text-sm">{label}</p>
-    </article>
   );
 }
 

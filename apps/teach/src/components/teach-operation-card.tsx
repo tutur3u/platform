@@ -1,12 +1,15 @@
 import { ArrowRight, type LucideIcon } from '@tuturuuu/icons';
+import { cn } from '@tuturuuu/utils/format';
 
 export function TeachOperationCard({
+  accentClassName = 'bg-dynamic-yellow/15',
   count,
   href,
   icon: Icon,
   label,
   text,
 }: {
+  accentClassName?: string;
   count: number;
   href: string;
   icon: LucideIcon;
@@ -19,7 +22,12 @@ export function TeachOperationCard({
       href={href}
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="flex h-11 w-11 items-center justify-center border-2 border-border bg-dynamic-yellow/15 shadow-[3px_3px_0_var(--border)]">
+        <span
+          className={cn(
+            'flex h-11 w-11 items-center justify-center border-2 border-border shadow-[3px_3px_0_var(--border)]',
+            accentClassName
+          )}
+        >
           <Icon className="h-5 w-5" />
         </span>
         <span className="border-2 border-border bg-background px-3 py-1 font-black text-xl tabular-nums shadow-[2px_2px_0_var(--border)]">

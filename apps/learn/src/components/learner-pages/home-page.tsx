@@ -16,6 +16,7 @@ import { FeatureList } from './feature-list';
 import { HomeHero } from './home-hero';
 import {
   LearningPlanStrip,
+  LearningToolkitPanel,
   MiniPanel,
   MissionPanel,
   QuestCard,
@@ -36,6 +37,8 @@ export function HomePage({ wsId }: { wsId: string }) {
   const practiceHref = useStudentHref(`/${wsId}/practice`);
   const coursesHref = useStudentHref(`/${wsId}/courses`);
   const assignmentsHref = useStudentHref(`/${wsId}/assignments`);
+  const aiHref = useStudentHref(`/${wsId}/ai-chat`);
+  const reportsHref = useStudentHref(`/${wsId}/reports`);
   const home = useQuery({
     queryFn: () => getTulearnHome(wsId, studentId),
     queryKey: ['tulearn', wsId, studentId, 'home'],
@@ -65,6 +68,7 @@ export function HomePage({ wsId }: { wsId: string }) {
       description: t('home.questPracticeDescription'),
       href: practiceHref,
       icon: Target,
+      surface: 'bg-dynamic-green/15',
       title: t('home.questPractice'),
     },
     {
@@ -75,6 +79,7 @@ export function HomePage({ wsId }: { wsId: string }) {
           : t('assignments.empty'),
       href: assignmentsHref,
       icon: ClipboardCheck,
+      surface: 'bg-dynamic-pink/15',
       title: t('home.questAssignments'),
     },
     {
@@ -84,6 +89,7 @@ export function HomePage({ wsId }: { wsId: string }) {
       }),
       href: coursesHref,
       icon: Star,
+      surface: 'bg-dynamic-cyan/15',
       title: t('home.questProgress'),
     },
   ];
@@ -110,7 +116,7 @@ export function HomePage({ wsId }: { wsId: string }) {
         progress={averageProgress}
       />
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)]">
         <div className="grid grid-flow-dense gap-4 md:grid-cols-6">
           <MissionPanel
             actionHref={nextCourse ? coursesHref : practiceHref}
@@ -131,6 +137,7 @@ export function HomePage({ wsId }: { wsId: string }) {
             icon={ShieldCheck}
             label={t('home.parentSnapshot')}
             span="wide"
+            tone="green"
             value={
               home.data.readOnly
                 ? t('settings.parentMode')
@@ -141,6 +148,7 @@ export function HomePage({ wsId }: { wsId: string }) {
             icon={Trophy}
             label={t('home.recentWin')}
             span="compact"
+            tone="pink"
             value={
               home.data.marks[0]?.metric.name ??
               home.data.recommendedPractice?.courseName ??
@@ -148,15 +156,26 @@ export function HomePage({ wsId }: { wsId: string }) {
             }
           />
         </div>
-        <div className="space-y-3" data-learn-reveal>
+        <aside
+          className="min-w-0 space-y-3 self-start xl:sticky xl:top-24"
+          data-learn-reveal
+        >
           <h2 className="font-black text-2xl tracking-normal">
             {t('home.dailyQuests')}
           </h2>
           {quests.map((quest) => (
             <QuestCard key={quest.title} quest={quest} />
           ))}
-        </div>
+        </aside>
       </section>
+
+      <LearningToolkitPanel
+        aiHref={aiHref}
+        assignmentsHref={assignmentsHref}
+        coursesHref={coursesHref}
+        practiceHref={practiceHref}
+        reportsHref={reportsHref}
+      />
 
       <section
         className="grid gap-10 lg:grid-cols-[18rem_minmax(0,1fr)]"
