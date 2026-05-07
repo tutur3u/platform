@@ -7,7 +7,7 @@ const updateListSchema = z
   .object({
     name: z.string().trim().min(1).max(255).optional(),
     status: z
-      .enum(['not_started', 'active', 'done', 'closed', 'documents'])
+      .enum(['not_started', 'active', 'review', 'done', 'closed', 'documents'])
       .optional(),
     color: supportedColorSchema.optional(),
     position: z.number().int().min(0).optional(),
@@ -69,7 +69,13 @@ export async function PATCH(
 
     const updates: {
       name?: string;
-      status?: 'not_started' | 'active' | 'done' | 'closed' | 'documents';
+      status?:
+        | 'not_started'
+        | 'active'
+        | 'review'
+        | 'done'
+        | 'closed'
+        | 'documents';
       color?: SupportedColor;
       position?: number;
       deleted?: boolean;

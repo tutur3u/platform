@@ -239,7 +239,7 @@ export const TASK_TOOL_DECLARATIONS = [
           type: Type.ARRAY,
           items: { type: Type.STRING },
           description:
-            'Filter by task list status: "not_started", "active", "done", "closed". Default: ["not_started", "active"]',
+            'Filter by task list status: "not_started", "active", "review", "done", "closed". Default: ["not_started", "active"]',
         },
         includeCompleted: {
           type: Type.BOOLEAN,
@@ -438,7 +438,7 @@ export const VISUALIZATION_TOOL_DECLARATIONS = [
           type: Type.ARRAY,
           items: { type: Type.STRING },
           description:
-            'Filter by task list status: "not_started", "active", "done", "closed". Default: ["not_started", "active"]',
+            'Filter by task list status: "not_started", "active", "review", "done", "closed". Default: ["not_started", "active"]',
         },
         includeCompleted: {
           type: Type.BOOLEAN,

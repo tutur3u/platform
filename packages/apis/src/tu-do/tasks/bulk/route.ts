@@ -7,6 +7,11 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database } from '@tuturuuu/types';
 import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import {
+  isTaskBoardCompletedStatus,
+  isTaskBoardResolvedStatus,
+  isTaskBoardTerminalStatus,
+} from '@tuturuuu/utils/task-list-status';
+import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -149,10 +154,6 @@ type UpdateFieldsPayload = {
   deleted_at?: string | null;
 };
 
-function isCompletionStatus(status: string | null | undefined) {
-  return status === 'done' || status === 'closed';
-}
-
 function buildMoveTaskUpdates(
   operationTimestamp: string,
   task: TaskContextRow,
@@ -160,16 +161,22 @@ function buildMoveTaskUpdates(
 ): MoveTaskUpdates {
   const sourceStatus = task.task_lists?.status ?? null;
   const targetStatus = targetList.status;
-  const sourceIsCompletion = isCompletionStatus(sourceStatus);
-  const targetIsCompletion = isCompletionStatus(targetStatus);
-  const transitioningIntoCompletion = !sourceIsCompletion && targetIsCompletion;
-  const transitioningOutOfCompletion =
-    sourceIsCompletion && !targetIsCompletion;
+  const sourceIsResolved = isTaskBoardResolvedStatus(sourceStatus);
+  const targetIsResolved = isTaskBoardResolvedStatus(targetStatus);
+  const sourceIsCompleted = isTaskBoardCompletedStatus(sourceStatus);
+  const targetIsCompleted = isTaskBoardCompletedStatus(targetStatus);
+  const sourceIsTerminal = isTaskBoardTerminalStatus(sourceStatus);
+  const targetIsTerminal = isTaskBoardTerminalStatus(targetStatus);
+  const transitioningIntoResolved = !sourceIsResolved && targetIsResolved;
+  const transitioningOutOfResolved = sourceIsResolved && !targetIsResolved;
 
   let closedAt: string | null;
-  if (transitioningIntoCompletion) {
+  if (!sourceIsTerminal && targetIsTerminal) {
     closedAt = operationTimestamp;
-  } else if (transitioningOutOfCompletion) {
+  } else if (
+    targetStatus === 'review' ||
+    (sourceIsTerminal && !targetIsTerminal)
+  ) {
     closedAt = null;
   } else {
     closedAt = task.closed_at;
@@ -178,15 +185,18 @@ function buildMoveTaskUpdates(
   let completed: boolean | null;
   let completedAt: string | null;
 
-  if (transitioningIntoCompletion) {
+  if (transitioningIntoResolved) {
     completed = true;
-    completedAt = operationTimestamp;
-  } else if (transitioningOutOfCompletion) {
+    completedAt = targetIsCompleted ? operationTimestamp : task.completed_at;
+  } else if (transitioningOutOfResolved) {
     completed = false;
     completedAt = null;
   } else {
-    completed = task.completed;
-    completedAt = task.completed_at;
+    completed = targetIsResolved ? true : task.completed;
+    completedAt =
+      targetIsCompleted && !sourceIsCompleted && !task.completed_at
+        ? operationTimestamp
+        : task.completed_at;
   }
 
   const movedToDifferentBoard =

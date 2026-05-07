@@ -50,14 +50,14 @@ export async function GET(request: Request) {
     const workspaceFilter = isPersonal ? undefined : wsId || undefined;
 
     // Fetch accessible tasks using the RPC function
-    // Match the tasks page: include 'done' list status to get all tasks
+    // Match the tasks page: include review/done list statuses to get all tasks
     const { data: rpcTasks, error: tasksError } = await supabase.rpc(
       'get_user_accessible_tasks',
       {
         p_user_id: user.id,
         p_ws_id: workspaceFilter,
         p_include_deleted: false,
-        p_list_statuses: ['not_started', 'active', 'done'],
+        p_list_statuses: ['not_started', 'active', 'review', 'done'],
       }
     );
 

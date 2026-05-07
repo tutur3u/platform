@@ -241,7 +241,7 @@ async function getMyTasks(
       p_user_id: userId,
       p_ws_id: normalizedWsId,
       p_include_deleted: false,
-      p_list_statuses: ['not_started', 'active', 'done'],
+      p_list_statuses: ['not_started', 'active', 'review', 'done'],
     }
   );
 
@@ -753,6 +753,7 @@ async function getWorkspaceMembers(
 type TaskListStatus =
   | 'not_started'
   | 'active'
+  | 'review'
   | 'done'
   | 'closed'
   | 'documents';
@@ -764,7 +765,14 @@ async function getTasksByAssignee(wsId: string, args: Record<string, unknown>) {
   const rawListStatuses = args.listStatuses as string[] | undefined;
   const listStatuses: TaskListStatus[] = rawListStatuses
     ? (rawListStatuses.filter((s) =>
-        ['not_started', 'active', 'done', 'closed', 'documents'].includes(s)
+        [
+          'not_started',
+          'active',
+          'review',
+          'done',
+          'closed',
+          'documents',
+        ].includes(s)
       ) as TaskListStatus[])
     : ['not_started', 'active'];
   const includeCompleted = (args.includeCompleted as boolean) ?? false;
@@ -940,6 +948,7 @@ async function visualizeAssigneeTasks(
 function expandQuery(query: string): string {
   const expansions: Record<string, string> = {
     todo: 'todo task to-do to do pending incomplete not done',
+    review: 'review awaiting review walkthrough qa testing approval',
     done: 'done completed finished closed resolved',
     wip: 'wip work in progress working on in-progress active ongoing',
     bug: 'bug issue problem error defect fix broken',
@@ -1021,7 +1030,7 @@ async function visualizeTaskList(
         p_user_id: userId,
         p_ws_id: normalizedWsId,
         p_include_deleted: false,
-        p_list_statuses: ['not_started', 'active', 'done'],
+        p_list_statuses: ['not_started', 'active', 'review', 'done'],
       }
     );
 
@@ -1173,7 +1182,7 @@ async function visualizeTimeline(
         p_user_id: userId,
         p_ws_id: normalizedWsId,
         p_include_deleted: false,
-        p_list_statuses: ['not_started', 'active', 'done'],
+        p_list_statuses: ['not_started', 'active', 'review', 'done'],
       }
     );
 
@@ -1328,7 +1337,7 @@ async function visualizeStatusBreakdown(
       p_user_id: userId,
       p_ws_id: normalizedWsId,
       p_include_deleted: false,
-      p_list_statuses: ['not_started', 'active', 'done', 'closed'],
+      p_list_statuses: ['not_started', 'active', 'review', 'done', 'closed'],
     }
   );
 

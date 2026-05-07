@@ -17,6 +17,10 @@ import {
   getPersonalExternalStagingListId,
 } from '@tuturuuu/utils/task-helper';
 import {
+  isTaskBoardCompletedStatus,
+  isTaskBoardResolvedStatus,
+} from '@tuturuuu/utils/task-list-status';
+import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -156,6 +160,7 @@ type ExternalTaskSortBy =
 type ExternalSourceStatus =
   | 'not_started'
   | 'active'
+  | 'review'
   | 'documents'
   | 'done'
   | 'closed';
@@ -165,11 +170,12 @@ const ACTIVE_EXTERNAL_SOURCE_STATUSES: ExternalSourceStatus[] = [
   'not_started',
   'active',
 ];
-const DOCUMENT_EXTERNAL_SOURCE_STATUS: ExternalSourceStatus = 'documents';
-const TERMINAL_EXTERNAL_SOURCE_STATUSES: ExternalSourceStatus[] = [
+const RESOLVED_EXTERNAL_SOURCE_STATUSES: ExternalSourceStatus[] = [
+  'review',
   'done',
   'closed',
 ];
+const DOCUMENT_EXTERNAL_SOURCE_STATUS: ExternalSourceStatus = 'documents';
 
 type PersonalTaskBoardExternalCountRow = {
   list_id: string | null;
@@ -207,10 +213,7 @@ function matchesExternalLaneFilters(
     !includeDoneClosed &&
     (taskStatusFields.completed_at ||
       taskStatusFields.closed_at ||
-      (sourceStatus &&
-        TERMINAL_EXTERNAL_SOURCE_STATUSES.includes(
-          sourceStatus as ExternalSourceStatus
-        )))
+      isTaskBoardResolvedStatus(sourceStatus))
   ) {
     return false;
   }
@@ -962,7 +965,7 @@ export async function GET(
             ? [DOCUMENT_EXTERNAL_SOURCE_STATUS]
             : []),
           ...(externalIncludeDoneClosed
-            ? [...TERMINAL_EXTERNAL_SOURCE_STATUSES]
+            ? [...RESOLVED_EXTERNAL_SOURCE_STATUSES]
             : []),
         ];
 
@@ -1411,10 +1414,9 @@ export async function POST(
 
     const sort_key = calculateTopSortKey(firstTask?.sort_key ?? null);
     const now = new Date().toISOString();
-    const isDoneList = listRow.status === 'done';
+    const isCompletedList = isTaskBoardCompletedStatus(listRow.status);
     const isClosedList = listRow.status === 'closed';
-    const shouldArchive = isDoneList || isClosedList;
-    const completionTimestamp = isDoneList ? now : null;
+    const completionTimestamp = isCompletedList ? now : null;
     const normalizedDescription = description?.trim() || null;
     const normalizedDescriptionYjsState =
       description_yjs_state === undefined
@@ -1431,9 +1433,9 @@ export async function POST(
       end_date: end_date ?? null,
       estimation_points: estimation_points ?? null,
       sort_key,
-      completed: isDoneList,
+      completed: isCompletedList,
       completed_at: completionTimestamp,
-      closed_at: shouldArchive ? now : null,
+      closed_at: isClosedList ? now : null,
     };
 
     const { data, error } = await sbAdmin
