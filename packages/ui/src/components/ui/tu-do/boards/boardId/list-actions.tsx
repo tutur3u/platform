@@ -77,7 +77,7 @@ export function ListActions({
   const broadcast = useBoardBroadcast();
 
   const allowedStatuses = useMemo<TaskBoardStatus[]>(() => {
-    return ['documents', 'not_started', 'active', 'done', 'closed'];
+    return ['documents', 'not_started', 'active', 'review', 'done', 'closed'];
   }, []);
 
   const moveAllTasksFromListMutation = useMoveAllTasksFromList(

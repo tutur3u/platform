@@ -10,6 +10,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
+import type { useTranslations } from 'next-intl';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import {
   ContextMenu,
@@ -57,7 +58,7 @@ interface TimelineTaskRowProps {
     mode: TimelineInteractionMode,
     event: ReactPointerEvent
   ) => void;
-  t: (key: string) => string;
+  t: ReturnType<typeof useTranslations>;
 }
 
 export function TimelineTaskRow({

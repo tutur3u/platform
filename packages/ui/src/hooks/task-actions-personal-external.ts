@@ -6,6 +6,10 @@ import {
 } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import {
+  isTaskBoardCompletedStatus,
+  isTaskBoardTerminalStatus,
+} from '@tuturuuu/utils/task-list-status';
 
 export function isPersonalExternalTask(task?: Task) {
   return (
@@ -138,8 +142,8 @@ export async function moveExternalTaskToPersonalList({
       }
     }
 
-    const isDoneTarget = targetList.status === 'done';
-    const isClosedTarget = targetList.status === 'closed';
+    const isCompletedTarget = isTaskBoardCompletedStatus(targetList.status);
+    const isClosedTarget = isTaskBoardTerminalStatus(targetList.status);
     const optimisticTask = {
       ...task,
       list_id: targetList.id,
@@ -148,8 +152,8 @@ export async function moveExternalTaskToPersonalList({
       personal_placed_at: now,
       is_personal_external: true,
       is_personal_external_default: false,
-      completed_at: isDoneTarget ? now : task.completed_at,
-      closed_at: isDoneTarget || isClosedTarget ? now : task.closed_at,
+      completed_at: isCompletedTarget ? (task.completed_at ?? now) : null,
+      closed_at: isClosedTarget ? (task.closed_at ?? now) : null,
     } as Task;
 
     upsertLocallyMutatedTask({

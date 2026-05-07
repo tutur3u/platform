@@ -6,6 +6,7 @@ import {
   CircleCheck,
   CircleDashed,
   CircleX,
+  ClipboardCheck,
   FileText,
   Loader2,
 } from '@tuturuuu/icons';
@@ -33,6 +34,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
+import { getDefaultTaskListColorForStatus } from '@tuturuuu/utils/task-list-status';
 import { useEffect, useState } from 'react';
 
 interface CreateListDialogProps {
@@ -58,6 +60,7 @@ interface CreateListDialogProps {
     // Status labels
     backlog?: string;
     active?: string;
+    review?: string;
     doneStatus?: string;
     closed?: string;
     documents?: string;
@@ -74,6 +77,11 @@ const statusConfig = {
     icon: Circle,
     label: 'Active',
     color: 'text-dynamic-blue',
+  },
+  review: {
+    icon: ClipboardCheck,
+    label: 'Review',
+    color: 'text-dynamic-orange',
   },
   done: {
     icon: CircleCheck,
@@ -110,26 +118,10 @@ const statuses: TaskBoardStatus[] = [
   'documents',
   'not_started',
   'active',
+  'review',
   'done',
   'closed',
 ];
-
-function getDefaultColorForStatus(status: TaskBoardStatus): SupportedColor {
-  switch (status) {
-    case 'documents':
-      return 'CYAN';
-    case 'not_started':
-      return 'GRAY';
-    case 'active':
-      return 'BLUE';
-    case 'done':
-      return 'GREEN';
-    case 'closed':
-      return 'PURPLE';
-    default:
-      return 'BLUE';
-  }
-}
 
 export function CreateListDialog({
   open,
@@ -162,6 +154,7 @@ export function CreateListDialog({
     // Status labels
     backlog: translations?.backlog ?? 'Backlog',
     active: translations?.active ?? 'Active',
+    review: translations?.review ?? 'Review',
     doneStatus: translations?.doneStatus ?? 'Done',
     closed: translations?.closed ?? 'Closed',
     documents: translations?.documents ?? 'Documents',
@@ -170,6 +163,7 @@ export function CreateListDialog({
   const statusLabels: Record<TaskBoardStatus, string> = {
     not_started: t.backlog,
     active: t.active,
+    review: t.review,
     done: t.doneStatus,
     closed: t.closed,
     documents: t.documents,
@@ -182,7 +176,7 @@ export function CreateListDialog({
     resolvedInitialStatus
   );
   const [newListColor, setNewListColor] = useState<SupportedColor>(
-    getDefaultColorForStatus(resolvedInitialStatus)
+    getDefaultTaskListColorForStatus(resolvedInitialStatus)
   );
 
   // Sync initial fields when dialog opens
@@ -191,12 +185,13 @@ export function CreateListDialog({
 
     setNewListName(initialName);
     setNewListStatus(resolvedInitialStatus);
-    setNewListColor(getDefaultColorForStatus(resolvedInitialStatus));
+    setNewListColor(getDefaultTaskListColorForStatus(resolvedInitialStatus));
   }, [initialName, open, resolvedInitialStatus]);
 
   useEffect(() => {
     if (!open) return;
-    const expectedDefaultColor = getDefaultColorForStatus(newListStatus);
+    const expectedDefaultColor =
+      getDefaultTaskListColorForStatus(newListStatus);
     setNewListColor((current) =>
       current === expectedDefaultColor ? current : expectedDefaultColor
     );
@@ -205,7 +200,7 @@ export function CreateListDialog({
   const resetForm = () => {
     setNewListName('');
     setNewListStatus(resolvedInitialStatus);
-    setNewListColor(getDefaultColorForStatus(resolvedInitialStatus));
+    setNewListColor(getDefaultTaskListColorForStatus(resolvedInitialStatus));
   };
 
   const createListMutation = useMutation({

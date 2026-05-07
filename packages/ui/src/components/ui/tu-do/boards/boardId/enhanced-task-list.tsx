@@ -87,6 +87,7 @@ const statusIcons = {
   documents: '📄',
   not_started: '⚪',
   active: '🔵',
+  review: 'R',
   done: '🟢',
   closed: '🟣',
 };
@@ -116,6 +117,7 @@ export function EnhancedTaskList({
     const translations: Record<string, string> = {
       todo: t('list_name_to_do'),
       inprogress: t('list_name_in_progress'),
+      review: t('list_name_review'),
       done: t('list_name_done'),
       closed: t('list_name_closed'),
     };

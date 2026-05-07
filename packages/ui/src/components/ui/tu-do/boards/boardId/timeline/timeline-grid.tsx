@@ -4,6 +4,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
+import type { useTranslations } from 'next-intl';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { getListStatusBadgeClasses } from './timeline-display';
 import { TimelineTaskRow } from './timeline-task-row';
@@ -57,7 +58,7 @@ interface TimelineGridProps {
   ) => void;
   onClearDropPreview: (listId: string) => void;
   onLaneDrop: (listId: string) => void | Promise<void>;
-  t: (key: string) => string;
+  t: ReturnType<typeof useTranslations>;
 }
 
 export function TimelineGrid({

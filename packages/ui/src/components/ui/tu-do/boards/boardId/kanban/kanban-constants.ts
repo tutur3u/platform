@@ -23,8 +23,9 @@ export const STATUS_ORDER = {
   documents: 0,
   not_started: 1,
   active: 2,
-  done: 3,
-  closed: 4,
+  review: 3,
+  done: 4,
+  closed: 5,
 } as const;
 
 /**

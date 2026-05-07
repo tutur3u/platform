@@ -7,6 +7,11 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
+import {
+  isTaskBoardCompletedStatus,
+  isTaskBoardResolvedStatus,
+  isTaskBoardTerminalStatus,
+} from '@tuturuuu/utils/task-list-status';
 import { addDays } from 'date-fns';
 import { useCallback } from 'react';
 import { useBoardBroadcast } from '../components/ui/tu-do/shared/board-broadcast-context';
@@ -909,12 +914,17 @@ export function useTaskActions({
         boardId,
       ]);
 
-      // Determine if target list is a completion list
+      // Determine if target list represents resolved workflow state
       const targetList = availableLists.find(
         (list) => list.id === targetListId
       );
-      const isCompletionList =
-        targetList?.status === 'done' || targetList?.status === 'closed';
+      const isCompletionList = isTaskBoardResolvedStatus(targetList?.status);
+      const isTargetCompletedList = isTaskBoardCompletedStatus(
+        targetList?.status
+      );
+      const isTargetTerminalList = isTaskBoardTerminalStatus(
+        targetList?.status
+      );
       const now = new Date().toISOString();
 
       if (isPersonalExternalTask(task) && !shouldBulkMove && targetList) {
@@ -966,25 +976,24 @@ export function useTaskActions({
                 const currentList = availableLists.find(
                   (list) => list.id === t.list_id
                 );
-                const wasInCompletionList =
-                  currentList?.status === 'done' ||
-                  currentList?.status === 'closed';
+                const wasInCompletionList = isTaskBoardResolvedStatus(
+                  currentList?.status
+                );
 
                 return markLocallyMutatedTask({
                   ...t,
                   list_id: targetListId,
                   // Set closed_at based on target list status
-                  closed_at: isCompletionList
-                    ? now
+                  closed_at: isTargetTerminalList
+                    ? (t.closed_at ?? now)
                     : wasInCompletionList
                       ? null
                       : t.closed_at,
-                  completed_at:
-                    targetList?.status === 'done'
-                      ? now
-                      : wasInCompletionList
-                        ? null
-                        : t.completed_at,
+                  completed_at: isTargetCompletedList
+                    ? (t.completed_at ?? now)
+                    : wasInCompletionList
+                      ? null
+                      : t.completed_at,
                 } as Task);
               }
               return t;

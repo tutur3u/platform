@@ -65,6 +65,7 @@ import {
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
+import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import { getDescriptionMetadata } from '@tuturuuu/utils/text-helper';
 import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -729,6 +730,7 @@ function TaskCardInner({
 
   const now = new Date();
   const isOverdue = task.end_date && new Date(task.end_date) < now;
+  const isResolvedListStatus = isTaskBoardResolvedStatus(taskList?.status);
   const startDate = task.start_date ? new Date(task.start_date) : null;
   const endDate = task.end_date ? new Date(task.end_date) : null;
 
@@ -1584,6 +1586,7 @@ function TaskCardInner({
         (!!task.closed_at || !!task.completed_at) && 'opacity-70 saturate-75',
         // Overdue state
         isOverdue &&
+          !isResolvedListStatus &&
           !(!!task.closed_at || !!task.completed_at) &&
           'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
         // Hover state (no transitions)
@@ -1596,11 +1599,13 @@ function TaskCardInner({
       )}
     >
       {/* Overdue indicator */}
-      {isOverdue && !(!!task.closed_at || !!task.completed_at) && (
-        <div className="absolute top-0 right-0 h-0 w-0 border-t-20 border-t-dynamic-red border-l-20 border-l-transparent">
-          <AlertCircle className="absolute -top-4 -right-4.5 h-3 w-3" />
-        </div>
-      )}
+      {isOverdue &&
+        !isResolvedListStatus &&
+        !(!!task.closed_at || !!task.completed_at) && (
+          <div className="absolute top-0 right-0 h-0 w-0 border-t-20 border-t-dynamic-red border-l-20 border-l-transparent">
+            <AlertCircle className="absolute -top-4 -right-4.5 h-3 w-3" />
+          </div>
+        )}
       {/* Selection indicator */}
       {isMultiSelectMode && (
         <div
@@ -2119,68 +2124,66 @@ function TaskCardInner({
           )}
         </div>
         {/* Dates Section (improved layout & conditional rendering) */}
-        {/* Hide dates when task is in done/closed list */}
-        {(startDate || endDate) &&
-          taskList?.status !== 'done' &&
-          taskList?.status !== 'closed' && (
-            <div className="mb-1 space-y-0.5 text-[10px] leading-snug">
-              {/* Show start only if in the future (hide historical start for visual simplicity) */}
-              {startDate && startDate > now && (
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <Clock className="h-2.5 w-2.5 shrink-0" />
-                  <span className="truncate">
-                    {t('starts_at', {
-                      date: formatSmartDate(
-                        startDate,
-                        {
-                          today: t('today'),
-                          tomorrow: t('tomorrow'),
-                          yesterday: t('yesterday'),
-                        },
-                        dateLocale
-                      ),
+        {/* Hide dates when the list itself represents resolved work. */}
+        {(startDate || endDate) && !isResolvedListStatus && (
+          <div className="mb-1 space-y-0.5 text-[10px] leading-snug">
+            {/* Show start only if in the future (hide historical start for visual simplicity) */}
+            {startDate && startDate > now && (
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Clock className="h-2.5 w-2.5 shrink-0" />
+                <span className="truncate">
+                  {t('starts_at', {
+                    date: formatSmartDate(
+                      startDate,
+                      {
+                        today: t('today'),
+                        tomorrow: t('tomorrow'),
+                        yesterday: t('yesterday'),
+                      },
+                      dateLocale
+                    ),
+                  })}
+                </span>
+              </div>
+            )}
+            {endDate && (
+              <div
+                className={cn(
+                  'flex items-center gap-1',
+                  isOverdue && !task.closed_at
+                    ? 'font-medium text-dynamic-red'
+                    : 'text-muted-foreground'
+                )}
+              >
+                <Calendar className="h-2.5 w-2.5 shrink-0" />
+                <span className="truncate">
+                  {t('due_at', {
+                    date: formatSmartDate(
+                      endDate,
+                      {
+                        today: t('today'),
+                        tomorrow: t('tomorrow'),
+                        yesterday: t('yesterday'),
+                      },
+                      dateLocale
+                    ),
+                  })}
+                </span>
+                {isOverdue && !task.closed_at ? (
+                  <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
+                    {t('overdue')}
+                  </Badge>
+                ) : (
+                  <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
+                    {format(endDate, `MMM dd '${t('at')}' ${timePattern}`, {
+                      locale: dateLocale,
                     })}
                   </span>
-                </div>
-              )}
-              {endDate && (
-                <div
-                  className={cn(
-                    'flex items-center gap-1',
-                    isOverdue && !task.closed_at
-                      ? 'font-medium text-dynamic-red'
-                      : 'text-muted-foreground'
-                  )}
-                >
-                  <Calendar className="h-2.5 w-2.5 shrink-0" />
-                  <span className="truncate">
-                    {t('due_at', {
-                      date: formatSmartDate(
-                        endDate,
-                        {
-                          today: t('today'),
-                          tomorrow: t('tomorrow'),
-                          yesterday: t('yesterday'),
-                        },
-                        dateLocale
-                      ),
-                    })}
-                  </span>
-                  {isOverdue && !task.closed_at ? (
-                    <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
-                      {t('overdue')}
-                    </Badge>
-                  ) : (
-                    <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-                      {format(endDate, `MMM dd '${t('at')}' ${timePattern}`, {
-                        locale: dateLocale,
-                      })}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </div>
+        )}
         {taskList?.status === 'done' || taskList?.status === 'closed' ? (
           /*
             Completion and Closed Dates Section

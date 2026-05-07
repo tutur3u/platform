@@ -1103,6 +1103,7 @@ export function BoardHeader({
             changeColor: t('ws-task-boards.layout_settings.change_color'),
             backlog: t('ws-task-boards.layout_settings.backlog'),
             active: t('ws-task-boards.layout_settings.active'),
+            review: t('ws-task-boards.layout_settings.review'),
             doneStatus: t('ws-task-boards.layout_settings.done_status'),
             closed: t('ws-task-boards.layout_settings.closed'),
             documents: t('ws-task-boards.layout_settings.documents'),

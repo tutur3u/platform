@@ -9,6 +9,11 @@ import {
 } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import {
+  isTaskBoardCompletedStatus,
+  isTaskBoardResolvedStatus,
+  isTaskBoardTerminalStatus,
+} from '../task-list-status';
 import { transformTaskRecord } from './transformers';
 
 type ReorderTaskCacheInput = {
@@ -33,8 +38,9 @@ export function mergeOptimisticReorderedTaskIntoCache(
 ) {
   if (!tasks) return tasks;
 
-  const shouldArchive =
-    targetListStatus === 'done' || targetListStatus === 'closed';
+  const targetIsResolved = isTaskBoardResolvedStatus(targetListStatus);
+  const targetIsCompleted = isTaskBoardCompletedStatus(targetListStatus);
+  const targetIsTerminal = isTaskBoardTerminalStatus(targetListStatus);
   const mutationTimestamp = new Date(localMutationAt).toISOString();
 
   return tasks.map((task) => {
@@ -44,7 +50,13 @@ export function mergeOptimisticReorderedTaskIntoCache(
       ...task,
       list_id: newListId,
       sort_key: newSortKey,
-      closed_at: shouldArchive ? mutationTimestamp : null,
+      completed: targetIsResolved ? targetIsCompleted : false,
+      completed_at: targetIsCompleted
+        ? (task.completed_at ?? mutationTimestamp)
+        : null,
+      closed_at: targetIsTerminal
+        ? (task.closed_at ?? mutationTimestamp)
+        : null,
       _localMutationAt: localMutationAt,
     } as LocallyMutatedTask;
   });
@@ -138,8 +150,7 @@ export function useReorderTask(boardId: string, wsId: string) {
         | TaskList[]
         | undefined;
       const list = targetList?.find((l) => l.id === newListId);
-      const isCompletionList =
-        list?.status === 'done' || list?.status === 'closed';
+      const isCompletionList = isTaskBoardResolvedStatus(list?.status);
 
       // If moving to completion list, start fetching blocked task IDs asynchronously
       // Don't await here to avoid blocking the optimistic update

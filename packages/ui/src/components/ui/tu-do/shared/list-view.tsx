@@ -52,6 +52,7 @@ import {
 } from '@tuturuuu/ui/table';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import { format, isPast, isToday, isTomorrow } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import Image from 'next/image';
@@ -211,6 +212,15 @@ export function ListView({
   }, [sortedTasks, displayCount]);
 
   const hasMore = displayCount < sortedTasks.length;
+  const listsById = useMemo(
+    () => new Map(lists.map((list) => [list.id, list])),
+    [lists]
+  );
+
+  const getTaskList = useCallback(
+    (task: Task) => (task.list_id ? listsById.get(task.list_id) : undefined),
+    [listsById]
+  );
 
   function handleSort(field: ListViewSortField) {
     if (field === sortField) {
@@ -287,12 +297,10 @@ export function ListView({
   }
 
   function renderTaskStatus(task: Task) {
+    const list = getTaskList(task);
+
     // Documents lists don't support completion status
-    const isInDocumentsList =
-      task.list_id &&
-      lists?.some(
-        (list) => list.id === task.list_id && list.status === 'documents'
-      );
+    const isInDocumentsList = list?.status === 'documents';
 
     if (isInDocumentsList) {
       return (
@@ -310,23 +318,21 @@ export function ListView({
       );
     }
 
-    // Check if task is in a "done" list but not individually archived
-    const isInDoneList =
-      task.list_id &&
-      lists?.some((list) => list.id === task.list_id && list.status === 'done');
+    const isInCompletedList =
+      list?.status === 'review' || list?.status === 'done';
 
     return (
       <div className="flex items-center justify-center">
         <div
           className={cn(
             'h-4 w-4 rounded-full border-2',
-            isInDoneList
+            isInCompletedList
               ? 'animate-pulse border-amber-500/30 bg-amber-500/60 [animation-duration:4s]'
               : 'border-muted-foreground/30'
           )}
           title={
-            isInDoneList
-              ? 'Task is in Done list but not individually checked'
+            isInCompletedList
+              ? `Task is in ${list.status === 'review' ? 'Review' : 'Done'} list but not individually checked`
               : undefined
           }
         />
@@ -440,214 +446,225 @@ export function ListView({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {displayedTasks.map((task) => (
-                  <TableRow
-                    key={task.id}
-                    className={cn(
-                      'group h-11 cursor-pointer border-b transition-all duration-200',
-                      'hover:bg-muted/50 hover:shadow-sm',
-                      task.closed_at && 'opacity-60 saturate-50',
-                      selectedTasks.has(task.id) &&
-                        'bg-linear-to-r from-primary/10 via-primary/5 to-transparent shadow-sm ring-1 ring-primary/20',
-                      task.end_date &&
-                        new Date(task.end_date) < new Date() &&
-                        !task.closed_at &&
-                        !task.completed_at &&
-                        'border-l-2 border-l-dynamic-red/70 bg-dynamic-red/5'
-                    )}
-                    onClick={(e) => {
-                      if (
-                        (e.target as HTMLElement).closest(
-                          'input[type="checkbox"], button'
-                        )
-                      ) {
-                        return;
-                      }
-                      openTask(task, boardId, lists);
-                    }}
-                  >
-                    <TableCell className="px-2.5 py-0">
-                      <Checkbox
-                        checked={selectedTasks.has(task.id)}
-                        onCheckedChange={(checked) =>
-                          handleSelectTask(task.id, !!checked)
+                {displayedTasks.map((task) => {
+                  const taskList = getTaskList(task);
+                  const taskIsInResolvedList = isTaskBoardResolvedStatus(
+                    taskList?.status
+                  );
+                  const taskIsPastDue = Boolean(
+                    task.end_date &&
+                      isPast(new Date(task.end_date)) &&
+                      !task.closed_at &&
+                      !task.completed_at &&
+                      !taskIsInResolvedList
+                  );
+
+                  return (
+                    <TableRow
+                      key={task.id}
+                      className={cn(
+                        'group h-11 cursor-pointer border-b transition-all duration-200',
+                        'hover:bg-muted/50 hover:shadow-sm',
+                        task.closed_at && 'opacity-60 saturate-50',
+                        selectedTasks.has(task.id) &&
+                          'bg-linear-to-r from-primary/10 via-primary/5 to-transparent shadow-sm ring-1 ring-primary/20',
+                        taskIsPastDue &&
+                          'border-l-2 border-l-dynamic-red/70 bg-dynamic-red/5'
+                      )}
+                      onClick={(e) => {
+                        if (
+                          (e.target as HTMLElement).closest(
+                            'input[type="checkbox"], button'
+                          )
+                        ) {
+                          return;
                         }
-                        aria-label={`Select task ${task.name}`}
-                        className="h-3.5 w-3.5"
-                      />
-                    </TableCell>
-                    {columnVisibility.status && (
-                      <TableCell className="px-2 py-0 text-center">
-                        {renderTaskStatus(task)}
+                        openTask(task, boardId, lists);
+                      }}
+                    >
+                      <TableCell className="px-2.5 py-0">
+                        <Checkbox
+                          checked={selectedTasks.has(task.id)}
+                          onCheckedChange={(checked) =>
+                            handleSelectTask(task.id, !!checked)
+                          }
+                          aria-label={`Select task ${task.name}`}
+                          className="h-3.5 w-3.5"
+                        />
                       </TableCell>
-                    )}
-                    {columnVisibility.name && (
-                      <TableCell className="px-2 py-0">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={cn(
-                              'truncate text-sm',
-                              task.completed_at &&
-                                'text-muted-foreground line-through'
-                            )}
-                          >
-                            {task.name}
-                          </span>
-                          {task.labels && task.labels.length > 0 && (
-                            <div className="flex items-center gap-1">
-                              {task.labels.slice(0, 2).map((label) => (
-                                <Badge
-                                  key={label.id}
-                                  variant="outline"
-                                  style={(() => {
-                                    const styles = computeAccessibleLabelStyles(
-                                      label.color,
-                                      isDark
-                                    );
-                                    return styles
-                                      ? {
-                                          backgroundColor: styles.bg,
-                                          borderColor: styles.border,
-                                          color: styles.text,
-                                        }
-                                      : undefined;
-                                  })()}
-                                  className="h-4 px-1.5 text-[10px]"
-                                >
-                                  {label.name}
-                                </Badge>
-                              ))}
-                              {task.labels.length > 2 && (
-                                <span className="text-muted-foreground text-xs">
-                                  +{task.labels.length - 2}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                    )}
-                    {columnVisibility.priority && (
-                      <TableCell className="px-2 py-0">
-                        {task.priority && (
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              'h-5 border p-1 font-medium text-[10px] transition-all',
-                              task.priority === 'critical' &&
-                                'border-dynamic-red/50 bg-dynamic-red/20 text-dynamic-red shadow-dynamic-red/20 shadow-sm',
-                              task.priority === 'high' &&
-                                'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
-                              task.priority === 'normal' &&
-                                'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow',
-                              task.priority === 'low' &&
-                                'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue'
-                            )}
-                          >
-                            {task.priority === 'critical' && (
-                              <Icon
-                                iconNode={unicornHead}
-                                className="h-3 w-3"
-                              />
-                            )}
-                            {task.priority === 'high' && (
-                              <Icon iconNode={horseHead} className="h-3 w-3" />
-                            )}
-                            {task.priority === 'normal' && (
-                              <Rabbit className="h-3 w-3" />
-                            )}
-                            {task.priority === 'low' && (
-                              <Turtle className="h-3 w-3" />
-                            )}
-                          </Badge>
-                        )}
-                      </TableCell>
-                    )}
-                    {columnVisibility.end_date && (
-                      <TableCell className="px-2 py-0">
-                        {task.end_date && (
-                          <div className="flex items-center gap-1.5">
+                      {columnVisibility.status && (
+                        <TableCell className="px-2 py-0 text-center">
+                          {renderTaskStatus(task)}
+                        </TableCell>
+                      )}
+                      {columnVisibility.name && (
+                        <TableCell className="px-2 py-0">
+                          <div className="flex items-center gap-2">
                             <span
                               className={cn(
-                                'font-medium text-xs transition-colors',
-                                isPast(new Date(task.end_date)) &&
-                                  !task.closed_at &&
-                                  !task.completed_at
-                                  ? 'text-dynamic-red'
-                                  : 'text-muted-foreground'
+                                'truncate text-sm',
+                                task.completed_at &&
+                                  'text-muted-foreground line-through'
                               )}
                             >
-                              {formatDate(task.end_date)}
+                              {task.name}
                             </span>
-                            {isPast(new Date(task.end_date)) &&
-                              !task.closed_at &&
-                              !task.completed_at && (
+                            {task.labels && task.labels.length > 0 && (
+                              <div className="flex items-center gap-1">
+                                {task.labels.slice(0, 2).map((label) => (
+                                  <Badge
+                                    key={label.id}
+                                    variant="outline"
+                                    style={(() => {
+                                      const styles =
+                                        computeAccessibleLabelStyles(
+                                          label.color,
+                                          isDark
+                                        );
+                                      return styles
+                                        ? {
+                                            backgroundColor: styles.bg,
+                                            borderColor: styles.border,
+                                            color: styles.text,
+                                          }
+                                        : undefined;
+                                    })()}
+                                    className="h-4 px-1.5 text-[10px]"
+                                  >
+                                    {label.name}
+                                  </Badge>
+                                ))}
+                                {task.labels.length > 2 && (
+                                  <span className="text-muted-foreground text-xs">
+                                    +{task.labels.length - 2}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
+                      {columnVisibility.priority && (
+                        <TableCell className="px-2 py-0">
+                          {task.priority && (
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                'h-5 border p-1 font-medium text-[10px] transition-all',
+                                task.priority === 'critical' &&
+                                  'border-dynamic-red/50 bg-dynamic-red/20 text-dynamic-red shadow-dynamic-red/20 shadow-sm',
+                                task.priority === 'high' &&
+                                  'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
+                                task.priority === 'normal' &&
+                                  'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow',
+                                task.priority === 'low' &&
+                                  'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue'
+                              )}
+                            >
+                              {task.priority === 'critical' && (
+                                <Icon
+                                  iconNode={unicornHead}
+                                  className="h-3 w-3"
+                                />
+                              )}
+                              {task.priority === 'high' && (
+                                <Icon
+                                  iconNode={horseHead}
+                                  className="h-3 w-3"
+                                />
+                              )}
+                              {task.priority === 'normal' && (
+                                <Rabbit className="h-3 w-3" />
+                              )}
+                              {task.priority === 'low' && (
+                                <Turtle className="h-3 w-3" />
+                              )}
+                            </Badge>
+                          )}
+                        </TableCell>
+                      )}
+                      {columnVisibility.end_date && (
+                        <TableCell className="px-2 py-0">
+                          {task.end_date && !taskIsInResolvedList && (
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={cn(
+                                  'font-medium text-xs transition-colors',
+                                  taskIsPastDue
+                                    ? 'text-dynamic-red'
+                                    : 'text-muted-foreground'
+                                )}
+                              >
+                                {formatDate(task.end_date)}
+                              </span>
+                              {taskIsPastDue && (
                                 <Badge className="h-4 bg-dynamic-red px-1 text-[9px] text-white">
                                   {tc('overdue')}
                                 </Badge>
                               )}
-                          </div>
-                        )}
-                      </TableCell>
-                    )}
-                    {columnVisibility.assignees && (
-                      <TableCell className="px-2 py-0">
-                        {task.assignees && task.assignees.length > 0 && (
-                          <div className="flex -space-x-1">
-                            {task.assignees.slice(0, 2).map((assignee) => (
-                              <div
-                                key={assignee.id}
-                                className="relative inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full border border-background bg-muted"
-                                title={
-                                  assignee.display_name ||
-                                  assignee.email ||
-                                  'User'
-                                }
-                              >
-                                {assignee.avatar_url ? (
-                                  <Image
-                                    src={assignee.avatar_url}
-                                    alt={
-                                      assignee.display_name ||
-                                      assignee.email ||
-                                      'User'
-                                    }
-                                    width={20}
-                                    height={20}
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  <span className="text-[9px]">
-                                    {(assignee.display_name ||
-                                      assignee.email ||
-                                      '?')[0]?.toUpperCase()}
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-                            {task.assignees.length > 2 && (
-                              <span className="ml-1 text-muted-foreground text-xs">
-                                +{task.assignees.length - 2}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </TableCell>
-                    )}
-                    {columnVisibility.actions && (
-                      <TableCell className="px-2 py-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                          onClick={() => openTask(task, boardId, lists)}
-                        >
-                          <MoreHorizontal className="h-3 w-3" />
-                        </Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
+                            </div>
+                          )}
+                        </TableCell>
+                      )}
+                      {columnVisibility.assignees && (
+                        <TableCell className="px-2 py-0">
+                          {task.assignees && task.assignees.length > 0 && (
+                            <div className="flex -space-x-1">
+                              {task.assignees.slice(0, 2).map((assignee) => (
+                                <div
+                                  key={assignee.id}
+                                  className="relative inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full border border-background bg-muted"
+                                  title={
+                                    assignee.display_name ||
+                                    assignee.email ||
+                                    'User'
+                                  }
+                                >
+                                  {assignee.avatar_url ? (
+                                    <Image
+                                      src={assignee.avatar_url}
+                                      alt={
+                                        assignee.display_name ||
+                                        assignee.email ||
+                                        'User'
+                                      }
+                                      width={20}
+                                      height={20}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : (
+                                    <span className="text-[9px]">
+                                      {(assignee.display_name ||
+                                        assignee.email ||
+                                        '?')[0]?.toUpperCase()}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                              {task.assignees.length > 2 && (
+                                <span className="ml-1 text-muted-foreground text-xs">
+                                  +{task.assignees.length - 2}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                      )}
+                      {columnVisibility.actions && (
+                        <TableCell className="px-2 py-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                            onClick={() => openTask(task, boardId, lists)}
+                          >
+                            <MoreHorizontal className="h-3 w-3" />
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TooltipProvider>

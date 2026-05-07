@@ -23,6 +23,7 @@ import {
   CircleCheck,
   CircleDashed,
   CircleX,
+  ClipboardCheck,
   FileText,
   GripVertical,
   MoreVertical,
@@ -111,6 +112,7 @@ interface BoardLayoutSettingsProps {
     // Status labels
     backlog?: string;
     active?: string;
+    review?: string;
     doneStatus?: string;
     closed?: string;
     documents?: string;
@@ -146,6 +148,13 @@ const statusConfig = {
     color: 'text-dynamic-blue',
     bgColor: 'bg-dynamic-blue/10',
     borderColor: 'border-dynamic-blue/30',
+  },
+  review: {
+    icon: ClipboardCheck,
+    label: 'Review',
+    color: 'text-dynamic-orange',
+    bgColor: 'bg-dynamic-orange/10',
+    borderColor: 'border-dynamic-orange/30',
   },
   done: {
     icon: CircleCheck,
@@ -198,6 +207,7 @@ interface SortableListItemProps {
     deleteList?: string;
     backlog?: string;
     active?: string;
+    review?: string;
     doneStatus?: string;
     closed?: string;
     documents?: string;
@@ -231,6 +241,7 @@ function SortableListItem({
     deleteList: translations?.deleteList ?? 'Delete List',
     backlog: translations?.backlog ?? 'Backlog',
     active: translations?.active ?? 'Active',
+    review: translations?.review ?? 'Review',
     doneStatus: translations?.doneStatus ?? 'Done',
     closed: translations?.closed ?? 'Closed',
     documents: translations?.documents ?? 'Documents',
@@ -249,6 +260,7 @@ function SortableListItem({
   const statusLabels: Record<TaskBoardStatus, string> = {
     not_started: t.backlog,
     active: t.active,
+    review: t.review,
     done: t.doneStatus,
     closed: t.closed,
     documents: t.documents,
@@ -259,6 +271,7 @@ function SortableListItem({
   const listDisplayName = translateTaskListNameForDisplay(rawListName, {
     toDo: statusLabels.not_started,
     inProgress: statusLabels.active,
+    review: statusLabels.review,
     done: statusLabels.done,
     closed: statusLabels.closed,
     documents: statusLabels.documents,
@@ -499,6 +512,7 @@ export function BoardLayoutSettings({
       // Status labels
       backlog: translations?.backlog ?? 'Backlog',
       active: translations?.active ?? 'Active',
+      review: translations?.review ?? 'Review',
       doneStatus: translations?.doneStatus ?? 'Done',
       closed: translations?.closed ?? 'Closed',
       documents: translations?.documents ?? 'Documents',
@@ -525,6 +539,7 @@ export function BoardLayoutSettings({
     () => ({
       not_started: t.backlog,
       active: t.active,
+      review: t.review,
       done: t.doneStatus,
       closed: t.closed,
       documents: t.documents,
@@ -862,7 +877,7 @@ export function BoardLayoutSettings({
   };
 
   const statuses = useMemo<TaskBoardStatus[]>(
-    () => ['documents', 'not_started', 'active', 'done', 'closed'],
+    () => ['documents', 'not_started', 'active', 'review', 'done', 'closed'],
     []
   );
 
@@ -969,6 +984,7 @@ export function BoardLayoutSettings({
                                     deleteList: t.deleteList,
                                     backlog: t.backlog,
                                     active: t.active,
+                                    review: t.review,
                                     doneStatus: t.doneStatus,
                                     closed: t.closed,
                                     documents: t.documents,

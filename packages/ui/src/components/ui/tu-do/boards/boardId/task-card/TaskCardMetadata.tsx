@@ -9,6 +9,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
+import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import { getDescriptionMetadata } from '@tuturuuu/utils/text-helper';
 import { memo } from 'react';
 import { TaskEstimationDisplay } from '../../../shared/task-estimation-display';
@@ -32,8 +33,8 @@ export const TaskCardMetadata = memo(function TaskCardMetadata({
 }: TaskCardMetadataProps) {
   const descriptionMeta = getDescriptionMetadata(task.description);
 
-  // Hide metadata when in done/closed list
-  if (taskList?.status === 'done' || taskList?.status === 'closed') {
+  // Hide metadata when the list itself represents resolved work.
+  if (isTaskBoardResolvedStatus(taskList?.status)) {
     return null;
   }
 

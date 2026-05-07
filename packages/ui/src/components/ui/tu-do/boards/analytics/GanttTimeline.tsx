@@ -13,7 +13,7 @@ import { cn } from '@tuturuuu/utils/format';
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';
   selectedBoard: string | null;
-  statusFilter: 'all' | 'not_started' | 'active' | 'done' | 'closed';
+  statusFilter: 'all' | 'not_started' | 'active' | 'review' | 'done' | 'closed';
 }
 
 interface TimeMarker {
@@ -136,9 +136,11 @@ export function GanttTimeline({
                         'absolute h-full cursor-pointer rounded transition-all hover:opacity-90',
                         task.status === 'active'
                           ? 'bg-blue-500'
-                          : task.status === 'done' || task.status === 'closed'
-                            ? 'bg-green-500'
-                            : 'bg-gray-400'
+                          : task.status === 'review'
+                            ? 'bg-orange-500'
+                            : task.status === 'done' || task.status === 'closed'
+                              ? 'bg-green-500'
+                              : 'bg-gray-400'
                       )}
                       style={{
                         left: `${task.startOffset}%`,
@@ -161,6 +163,14 @@ export function GanttTimeline({
                               left: '50%',
                               transform: 'translateX(-50%)',
                             }}
+                          />
+                        )}
+
+                        {/* Review (Orange) */}
+                        {task.status === 'review' && (
+                          <div
+                            className="h-2 w-2 rounded-full bg-orange-500 opacity-70"
+                            style={{ right: '0%' }}
                           />
                         )}
 
@@ -254,6 +264,8 @@ export function GanttTimeline({
                         'border font-medium text-xs',
                         task.status === 'done' &&
                           'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400',
+                        task.status === 'review' &&
+                          'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-900/20 dark:text-orange-400',
                         task.status === 'closed' &&
                           'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
                         task.status === 'active' &&
@@ -266,6 +278,11 @@ export function GanttTimeline({
                         <span className="flex items-center gap-1">
                           <span className="h-1.5 w-1.5 rounded-full bg-green-500"></span>
                           Done
+                        </span>
+                      ) : task.status === 'review' ? (
+                        <span className="flex items-center gap-1">
+                          <span className="h-1.5 w-1.5 rounded-full bg-orange-500"></span>
+                          Review
                         </span>
                       ) : task.status === 'closed' ? (
                         <span className="flex items-center gap-1">

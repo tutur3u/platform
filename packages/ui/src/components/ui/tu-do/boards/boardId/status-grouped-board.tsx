@@ -458,6 +458,7 @@ export function StatusGroupedBoard({
   const statuses: TaskBoardStatus[] = [
     'not_started',
     'active',
+    'review',
     'done',
     'closed',
   ];
@@ -473,7 +474,7 @@ export function StatusGroupedBoard({
       >
         <div
           className={cn(
-            'grid h-full grid-cols-1 gap-3 overflow-y-auto pb-4 lg:grid-cols-2 xl:grid-cols-4',
+            'grid h-full grid-cols-1 gap-3 overflow-y-auto pb-4 lg:grid-cols-2 xl:grid-cols-5',
             hideTasksMode && 'pt-0'
           )}
         >
