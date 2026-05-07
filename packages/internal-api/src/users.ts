@@ -164,6 +164,18 @@ export interface ListWorkspaceAttendanceExportResponse {
   nextOffset?: number;
 }
 
+export interface WorkspaceBasicUserRecord {
+  id: string;
+  full_name: string | null;
+  display_name: string | null;
+  email: string | null;
+}
+
+export interface ListWorkspaceBasicUsersResponse {
+  count: number;
+  data: WorkspaceBasicUserRecord[];
+}
+
 export type UpdateCurrentUserDefaultWorkspaceResponse = {
   success: boolean;
 };
@@ -447,6 +459,31 @@ export async function listWorkspaceAttendanceExportRecords(
         limit,
         offset,
         startDate,
+      },
+    }
+  );
+}
+
+export async function listWorkspaceBasicUsers(
+  workspaceId: string,
+  {
+    limit = 200,
+    q,
+  }: {
+    limit?: number;
+    q?: string;
+  } = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ListWorkspaceBasicUsersResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users`,
+    {
+      cache: 'no-store',
+      query: {
+        from: 0,
+        limit,
+        q,
       },
     }
   );

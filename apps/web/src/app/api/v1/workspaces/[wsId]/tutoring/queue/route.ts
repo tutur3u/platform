@@ -1,0 +1,234 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { TutoringQueueQuerySchema } from '../shared';
+
+interface Params {
+  params: Promise<{ wsId: string }>;
+}
+
+type QueueItem = {
+  group_id: string;
+  student_user_id: string;
+  group_name: string;
+  student_name: string;
+  reason_type: 'ABSENT_RECOVERY' | 'WEAK_SUPPORT' | 'BOTH';
+  absence_deficit: number;
+  feedback_content: string;
+  source_feedback_id: string | null;
+};
+
+function nameOf(value: {
+  full_name: string | null;
+  display_name: string | null;
+  email: string | null;
+}) {
+  return (
+    value.full_name?.trim() ||
+    value.display_name?.trim() ||
+    value.email?.trim() ||
+    'Unknown'
+  );
+}
+
+export async function GET(request: Request, { params }: Params) {
+  const { wsId } = await params;
+  const permissions = await getPermissions({ wsId, request });
+
+  if (!permissions) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  if (permissions.withoutPermission('view_user_groups')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
+
+  const parsed = TutoringQueueQuerySchema.safeParse(
+    Object.fromEntries(new URL(request.url).searchParams.entries())
+  );
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid query', issues: parsed.error.issues },
+      { status: 400 }
+    );
+  }
+
+  const sbAdmin = await createAdminClient();
+
+  const { data: attendanceRows, error: attendanceError } = await sbAdmin
+    .from('user_group_attendance')
+    .select('group_id,user_id,status,workspace_user_groups!inner(ws_id)')
+    .eq('workspace_user_groups.ws_id', wsId)
+    .in('status', ['ABSENT', 'Absent', 'absent']);
+
+  if (attendanceError) {
+    serverLogger.error(
+      'Failed to load attendance deficits for tutoring queue',
+      attendanceError
+    );
+    return NextResponse.json(
+      { message: 'Failed to load queue' },
+      { status: 500 }
+    );
+  }
+
+  const { data: completedRows, error: completedError } = await sbAdmin
+    .from('workspace_tutoring_sessions')
+    .select('group_id,student_user_id')
+    .eq('ws_id', wsId)
+    .eq('reason_type', 'ABSENT_RECOVERY')
+    .eq('attendance_status', 'DONE');
+
+  if (completedError) {
+    serverLogger.error(
+      'Failed to load completed tutoring sessions',
+      completedError
+    );
+    return NextResponse.json(
+      { message: 'Failed to load queue' },
+      { status: 500 }
+    );
+  }
+
+  let feedbackQuery = sbAdmin
+    .from('user_feedbacks')
+    .select(
+      `id,content,user_id,group_id,created_at,
+      user:workspace_users!user_feedbacks_user_id_fkey!inner(ws_id)`
+    )
+    .eq('require_attention', true)
+    .eq('user.ws_id', wsId)
+    .order('created_at', { ascending: false });
+
+  if (parsed.data.groupId)
+    feedbackQuery = feedbackQuery.eq('group_id', parsed.data.groupId);
+  if (parsed.data.studentUserId)
+    feedbackQuery = feedbackQuery.eq('user_id', parsed.data.studentUserId);
+
+  const { data: feedbackRows, error: feedbackError } = await feedbackQuery;
+
+  if (feedbackError) {
+    serverLogger.error(
+      'Failed to load attention feedback for tutoring queue',
+      feedbackError
+    );
+    return NextResponse.json(
+      { message: 'Failed to load queue' },
+      { status: 500 }
+    );
+  }
+
+  const absenceCountMap = new Map<string, number>();
+  for (const row of attendanceRows ?? []) {
+    const key = `${row.group_id}:${row.user_id}`;
+    absenceCountMap.set(key, (absenceCountMap.get(key) ?? 0) + 1);
+  }
+
+  const completedCountMap = new Map<string, number>();
+  for (const row of completedRows ?? []) {
+    const key = `${row.group_id}:${row.student_user_id}`;
+    completedCountMap.set(key, (completedCountMap.get(key) ?? 0) + 1);
+  }
+
+  const keySet = new Set<string>();
+  for (const key of absenceCountMap.keys()) keySet.add(key);
+  for (const row of feedbackRows ?? [])
+    keySet.add(`${row.group_id}:${row.user_id}`);
+
+  const pairs = [...keySet].map((key) => {
+    const [groupId, studentId] = key.split(':');
+    return { groupId, studentId, key };
+  });
+
+  const groupIds = [...new Set(pairs.map((item) => item.groupId))].filter(
+    (value): value is string => Boolean(value)
+  );
+  const studentIds = [...new Set(pairs.map((item) => item.studentId))].filter(
+    (value): value is string => Boolean(value)
+  );
+  const { data: groups } = await sbAdmin
+    .from('workspace_user_groups')
+    .select('id,name')
+    .in('id', groupIds);
+  const { data: students } = await sbAdmin
+    .from('workspace_users')
+    .select('id,full_name,display_name,email')
+    .in('id', studentIds);
+
+  const groupMap = new Map((groups ?? []).map((group) => [group.id, group]));
+  const studentMap = new Map(
+    (students ?? []).map((student) => [student.id, student])
+  );
+
+  const latestFeedbackMap = new Map<string, { id: string; content: string }>();
+  for (const row of feedbackRows ?? []) {
+    const key = `${row.group_id}:${row.user_id}`;
+    if (!latestFeedbackMap.has(key)) {
+      latestFeedbackMap.set(key, { id: row.id, content: row.content });
+    }
+  }
+
+  const queue: QueueItem[] = pairs
+    .map(({ groupId, studentId, key }) => {
+      if (!groupId || !studentId) {
+        return null;
+      }
+
+      const deficit = Math.max(
+        0,
+        (absenceCountMap.get(key) ?? 0) - (completedCountMap.get(key) ?? 0)
+      );
+      const feedback = latestFeedbackMap.get(key);
+      const hasAbsent = deficit > 0;
+      const hasWeak = Boolean(feedback);
+
+      if (!hasAbsent && !hasWeak) return null;
+
+      const reasonType: QueueItem['reason_type'] = hasAbsent
+        ? hasWeak
+          ? 'BOTH'
+          : 'ABSENT_RECOVERY'
+        : 'WEAK_SUPPORT';
+
+      return {
+        group_id: groupId,
+        student_user_id: studentId,
+        group_name: groupMap.get(groupId)?.name ?? 'Unknown group',
+        student_name: nameOf(
+          studentMap.get(studentId) ?? {
+            full_name: null,
+            display_name: null,
+            email: null,
+          }
+        ),
+        reason_type: reasonType,
+        absence_deficit: deficit,
+        feedback_content: feedback?.content ?? '',
+        source_feedback_id: feedback?.id ?? null,
+      };
+    })
+    .filter((value): value is QueueItem => value !== null)
+    .filter((item) => {
+      if (
+        parsed.data.reasonType &&
+        item.reason_type !== parsed.data.reasonType
+      ) {
+        return false;
+      }
+      if (parsed.data.groupId && item.group_id !== parsed.data.groupId)
+        return false;
+      if (
+        parsed.data.studentUserId &&
+        item.student_user_id !== parsed.data.studentUserId
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+  return NextResponse.json({ data: queue });
+}

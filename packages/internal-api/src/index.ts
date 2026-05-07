@@ -402,6 +402,19 @@ export {
   updateTulearnProfile,
 } from './tulearn';
 export {
+  createTutoringSession,
+  exportTutoringSessions,
+  generateTutoringMessagePreview,
+  listTutoringQueue,
+  listTutoringSessions,
+  markTutoringSession,
+  type TutoringAttendanceStatus,
+  type TutoringQueueItem,
+  type TutoringReasonType,
+  type TutoringSessionRecord,
+  updateTutoringSession,
+} from './tutoring';
+export {
   getNextWorkspaceUserGroupsPageParam,
   listAllWorkspaceUserGroups,
   listWorkspaceUserGroups,
@@ -419,7 +432,9 @@ export {
   getUserCalendarSettings,
   getUserConfig,
   getUserWorkspaceConfig,
+  type ListWorkspaceBasicUsersResponse,
   listWorkspaceAttendanceExportRecords,
+  listWorkspaceBasicUsers,
   type NormalizedRootNavigationConfig,
   normalizeRootNavigationConfig,
   parseRootNavigationConfig,
@@ -431,6 +446,7 @@ export {
   updateUserConfig,
   updateUserWorkspaceConfig,
   uploadCurrentUserAvatar,
+  type WorkspaceBasicUserRecord,
 } from './users';
 export {
   createWorkspaceUserFeedback,

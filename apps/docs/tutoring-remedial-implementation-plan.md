@@ -146,6 +146,36 @@ Treat `user_feedbacks.require_attention` as a first-class source for `Weak Suppo
 5. **Phase 5**: detailed + payroll exports.
 6. **Phase 6**: warning rules (stale content, long-pending candidates).
 
+## Implementation Snapshot (May 2026)
+
+The following foundation has been implemented:
+
+- **DB**
+  - `workspace_tutoring_sessions` migration created and applied.
+- **API routes** (`apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/*`)
+  - `GET/POST /sessions`
+  - `PUT /sessions/[id]`
+  - `POST /sessions/[id]/mark`
+  - `POST /sessions/[id]/message-preview`
+  - `GET /queue`
+  - `GET /export`
+- **Internal API client**
+  - Added `packages/internal-api/src/tutoring.ts` and exported from `packages/internal-api/src/index.ts`.
+- **Dashboard UI**
+  - Added users-domain tutoring page at `apps/web/src/app/[locale]/(dashboard)/[wsId]/users/tutoring`.
+  - Added a schedule tab and pending queue tab with status-marking controls.
+  - Migrated schedule + pending tabs to client-rendered DataTable surfaces with client-side fetches through `@tuturuuu/internal-api` and URL filter state via `nuqs` (matching the users/groups and users/database interaction model).
+  - Tutoring DataTable surfaces now use root/common translation scope for shared table labels (`refresh`, `view options`, pagination strings) while keeping `ws-tutoring` keys for tutoring-specific copy.
+- **Navigation + i18n**
+  - Added Users -> Tutoring navigation entry.
+  - Added translation keys in both `apps/web/messages/en.json` and `apps/web/messages/vi.json`.
+
+### Current Limitations / Next Iterations
+
+- Current create form uses raw IDs for group/student (intentionally minimal bootstrap).
+- Queue derivation currently computes deficit as `absent_count - done_absent_recovery_count`; configurable recovery rules are not wired yet.
+- Parent message preview currently uses a fixed template and does not yet support workspace-level template customization.
+
 ## Open Decisions
 
 1. Should `WEAK_SUPPORT` candidates auto-create pending sessions or only suggestions?
