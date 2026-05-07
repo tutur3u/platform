@@ -115,6 +115,7 @@ export interface ListWorkspaceTasksOptions {
   externalIncludeDocuments?: boolean;
   externalIncludeDoneClosed?: boolean;
   externalSortBy?: ExternalTaskSortBy;
+  forTimeTracking?: boolean;
   includeRelationshipSummary?: boolean;
   includeDeleted?: boolean | 'only';
   includeCount?: boolean;
@@ -671,6 +672,7 @@ export async function listWorkspaceTasks(
         externalIncludeDocuments: options?.externalIncludeDocuments,
         externalIncludeDoneClosed: options?.externalIncludeDoneClosed,
         externalSortBy: options?.externalSortBy,
+        forTimeTracking: options?.forTimeTracking,
         includeRelationshipSummary: options?.includeRelationshipSummary,
         includeDeleted:
           options?.includeDeleted === 'only'
