@@ -133,12 +133,15 @@ ttr tasks --json --no-update-check
 Task commands cover workspaces, boards, lists, tasks, labels, projects,
 relationships, moves, and bulk task updates. Read-oriented groups list by
 default, so `ttr tasks` and `ttr workspaces` are equivalent to their explicit
-`list` forms. `ttr tasks` shows open tasks by default by excluding rows with
+`list` forms. In the personal workspace, unscoped `ttr tasks` lists personal
+tasks plus open tasks assigned to the user in other accessible workspaces;
+selecting a board/list or passing `--workspace` scopes the result back to that
+context. `ttr tasks` shows open tasks by default by excluding rows with
 `completed_at` or `closed_at`; use `--all`, `--done`, `--closed`,
 `--include-done`, or `--include-closed` to adjust that filter. Add `--compact`
 to task lists when an agent only needs the task title, task list name, and
-workspace name. Task lists are ordered by priority and due date, with prettier
-due dates and configured task-list colors in table output. Use `--json` on read
+per-task workspace name. Task lists are ordered by priority and due date, with
+prettier due dates and configured task-list colors in table output. Use `--json` on read
 commands when another agent or script needs machine-readable output. `tasks
 create`, `boards create`, and `lists create` accept a quoted positional name as
 a shorthand for `--name`. Task CRUD accepts either the task UUID or the board

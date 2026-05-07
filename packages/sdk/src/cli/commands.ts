@@ -1,4 +1,9 @@
 import { spawn } from 'node:child_process';
+import type {
+  ListWorkspaceTasksOptions,
+  WorkspaceTaskApiTask,
+  WorkspaceTasksResponse,
+} from '@tuturuuu/internal-api/tasks';
 import packageJson from '../../package.json';
 import { TuturuuuUserClient } from '../platform';
 import {
@@ -24,7 +29,12 @@ import {
   writeCliConfig,
 } from './config';
 import { getGlobalHelp, getHelpOutput } from './help';
-import { render, renderWhoami, sortTaskResponseForCli } from './render';
+import {
+  render,
+  renderWhoami,
+  sortTaskResponseForCli,
+  sortTasksForCli,
+} from './render';
 import {
   chooseBoard,
   chooseLabel,
@@ -36,7 +46,6 @@ import {
   type ListedLabel,
   type ListedList,
   type ListedProject,
-  resolveWorkspaceName,
   selectBoardId,
   selectListId,
   selectTaskId,
@@ -45,6 +54,14 @@ import { checkForCliUpdate, isCliUpdateCheckDisabled } from './update';
 
 const doneActions = new Set(['complete', 'completed', 'done', 'mark-done']);
 const closeActions = new Set(['archive', 'close', 'closed', 'mark-closed']);
+
+type ListedWorkspace = Awaited<
+  ReturnType<TuturuuuUserClient['workspaces']['list']>
+>[number];
+type CliTask = WorkspaceTaskApiTask & {
+  workspace_id?: string | null;
+  workspace_name?: string | null;
+};
 
 function upgradeCli() {
   process.stdout.write('Upgrading Tuturuuu CLI with Bun...\n');
@@ -89,6 +106,163 @@ function getBoardListStatus(
     return 'deleted';
   }
   return 'active';
+}
+
+function resolveWorkspace(workspaceId: string, workspaces: ListedWorkspace[]) {
+  return workspaces.find(
+    (entry) =>
+      entry.id === workspaceId ||
+      (workspaceId === 'personal' && entry.personal === true)
+  );
+}
+
+function hasTaskListScope(config: CliConfig, flags: Record<string, FlagValue>) {
+  return Boolean(
+    getFlag(flags, 'board') ||
+      getFlag(flags, 'board-id') ||
+      getFlag(flags, 'list') ||
+      getFlag(flags, 'list-id') ||
+      config.currentBoardId ||
+      config.currentListId
+  );
+}
+
+function getCliTaskListOptions(
+  config: CliConfig,
+  flags: Record<string, FlagValue>
+): ListWorkspaceTasksOptions {
+  return {
+    boardId:
+      getFlag(flags, 'board') ||
+      getFlag(flags, 'board-id') ||
+      config.currentBoardId,
+    ...getTaskStateFilters(flags),
+    includeCount: flags.count === true,
+    includeDeleted: flags.deleted === true,
+    limit: getFlag(flags, 'limit')
+      ? Number(getFlag(flags, 'limit'))
+      : undefined,
+    listId:
+      getFlag(flags, 'list') ||
+      getFlag(flags, 'list-id') ||
+      config.currentListId,
+    offset: getFlag(flags, 'offset')
+      ? Number(getFlag(flags, 'offset'))
+      : undefined,
+    q: getFlag(flags, 'q'),
+  };
+}
+
+function annotateTaskWorkspace(
+  task: WorkspaceTaskApiTask,
+  workspace: ListedWorkspace,
+  options: { source?: boolean } = {}
+): CliTask {
+  return {
+    ...task,
+    ...(options.source
+      ? {
+          source_workspace_id: task.source_workspace_id ?? workspace.id,
+          source_workspace_name: task.source_workspace_name ?? workspace.name,
+        }
+      : {}),
+    workspace_id: workspace.id,
+    workspace_name: workspace.name,
+  };
+}
+
+function shouldIncludeAssignedExternalTasks(
+  workspace: ListedWorkspace | undefined,
+  config: CliConfig,
+  flags: Record<string, FlagValue>
+) {
+  if (!workspace?.personal) return false;
+  if (getFlag(flags, 'workspace') || getFlag(flags, 'ws')) return false;
+  return !hasTaskListScope(config, flags);
+}
+
+export async function listTasksForCli(
+  client: TuturuuuUserClient,
+  config: CliConfig,
+  workspaceId: string,
+  flags: Record<string, FlagValue>
+): Promise<{ response: WorkspaceTasksResponse; workspaceName?: string }> {
+  const options = getCliTaskListOptions(config, flags);
+  const workspaces = await client.workspaces.list();
+  const currentWorkspace = resolveWorkspace(workspaceId, workspaces);
+  const workspaceName = currentWorkspace?.name || workspaceId;
+  const fallbackWorkspace = {
+    id: workspaceId,
+    name: workspaceName,
+  } as ListedWorkspace;
+  const baseResponse = await client.tasks.list(workspaceId, options);
+
+  if (
+    !shouldIncludeAssignedExternalTasks(currentWorkspace, config, flags) ||
+    !currentWorkspace
+  ) {
+    return {
+      response: {
+        ...baseResponse,
+        tasks: baseResponse.tasks.map((task) =>
+          annotateTaskWorkspace(task, currentWorkspace ?? fallbackWorkspace)
+        ),
+      },
+      workspaceName,
+    };
+  }
+
+  const baseTaskIds = new Set(baseResponse.tasks.map((task) => task.id));
+  const externalWorkspaces = workspaces.filter(
+    (workspace) => !workspace.personal && workspace.id !== currentWorkspace.id
+  );
+  const externalResponses = await Promise.all(
+    externalWorkspaces.map(async (workspace) => ({
+      workspace,
+      response: await client.tasks.list(workspace.id, {
+        ...options,
+        assignedToMe: true,
+        boardId: undefined,
+        listId: undefined,
+        offset: undefined,
+      }),
+    }))
+  );
+  const externalTasks = externalResponses.flatMap(({ response, workspace }) =>
+    response.tasks
+      .filter((task) => !baseTaskIds.has(task.id))
+      .map((task) => annotateTaskWorkspace(task, workspace, { source: true }))
+  );
+  const baseTasks = baseResponse.tasks.map((task) =>
+    annotateTaskWorkspace(task, currentWorkspace)
+  );
+  const combinedTasks = [...baseTasks, ...externalTasks];
+  const tasks =
+    typeof options.limit === 'number'
+      ? (sortTasksForCli(combinedTasks).slice(
+          0,
+          options.limit
+        ) as WorkspaceTaskApiTask[])
+      : combinedTasks;
+  const count =
+    typeof baseResponse.count === 'number' ||
+    externalResponses.some(({ response }) => typeof response.count === 'number')
+      ? (baseResponse.count ?? baseTasks.length) +
+        externalResponses.reduce(
+          (sum, { response }) =>
+            sum + (response.count ?? response.tasks.length),
+          0
+        )
+      : undefined;
+
+  return {
+    response: {
+      ...baseResponse,
+      tasks,
+      ...(typeof count === 'number' ? { count } : {}),
+    },
+    workspaceName,
+  };
 }
 
 function getClient(config: CliConfig) {
@@ -655,24 +829,12 @@ export async function runCli(argv = process.argv.slice(2)) {
 
   if (group === 'tasks') {
     if (action === 'list') {
-      const workspaceName =
-        flags.compact === true
-          ? resolveWorkspaceName(workspaceId, await client.workspaces.list())
-          : undefined;
-      const taskResponse = await client.tasks.list(workspaceId, {
-        boardId: getFlag(flags, 'board') || config.currentBoardId,
-        ...getTaskStateFilters(flags),
-        includeCount: flags.count === true,
-        includeDeleted: flags.deleted === true,
-        limit: getFlag(flags, 'limit')
-          ? Number(getFlag(flags, 'limit'))
-          : undefined,
-        listId: getFlag(flags, 'list') || config.currentListId,
-        offset: getFlag(flags, 'offset')
-          ? Number(getFlag(flags, 'offset'))
-          : undefined,
-        q: getFlag(flags, 'q'),
-      });
+      const { response: taskResponse, workspaceName } = await listTasksForCli(
+        client,
+        config,
+        workspaceId,
+        flags
+      );
       render(sortTaskResponseForCli(taskResponse), {
         compact: flags.compact === true,
         currentWorkspaceId: workspaceId,

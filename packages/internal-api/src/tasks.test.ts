@@ -195,6 +195,32 @@ describe('workspace board internal-api helpers', () => {
     );
   });
 
+  it('lists workspace tasks assigned to the current user', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ tasks: [] }));
+
+    await listWorkspaceTasks(
+      'ws-1',
+      {
+        assignedToMe: true,
+        completed: 'exclude',
+        closed: 'exclude',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/tasks?assignedToMe=true&completed=exclude&closed=exclude',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
   it('lists workspace tasks with external lane controls', async () => {
     const fetchMock = vi
       .fn()

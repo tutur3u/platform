@@ -165,6 +165,38 @@ describe('CLI rendering', () => {
     expect(output).toContain('■ Done');
   });
 
+  it('shows per-task workspace names for mixed workspace task rows', () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    render(
+      {
+        tasks: [
+          {
+            board_name: 'Tasks',
+            id: 'task-1',
+            list_name: 'Upcoming',
+            name: 'Personal task',
+            workspace_name: 'Personal',
+          },
+          {
+            board_name: 'Engineering',
+            id: 'task-2',
+            list_name: 'In Progress',
+            name: 'Assigned external task',
+            source_workspace_name: 'Tuturuuu',
+          },
+        ],
+      },
+      { group: 'tasks' }
+    );
+
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(output).toContain('Personal / Tasks');
+    expect(output).toContain('Tuturuuu / Engineering');
+  });
+
   it('renders configured colors in task list rows', () => {
     const write = vi
       .spyOn(process.stdout, 'write')

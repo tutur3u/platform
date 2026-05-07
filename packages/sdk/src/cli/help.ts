@@ -152,7 +152,7 @@ const helpTopics: Record<string, HelpTopic> = {
   },
   tasks: {
     commands: [
-      'list                         list open tasks by default',
+      'list                         list open tasks plus assigned external tasks in personal workspace',
       'use [id]                     select a task',
       'get [id]                     show task details',
       'create [name]                create a task',
@@ -164,7 +164,7 @@ const helpTopics: Record<string, HelpTopic> = {
       'bulk --ids <ids>             run a bulk task operation',
     ],
     description:
-      'Task lists are sorted by priority and due date. Use task UUIDs or board identifiers like VHP-12 for task CRUD. Omit ids in a TTY to choose with the keyboard.',
+      'Task lists are sorted by priority and due date. In the personal workspace, unscoped lists include assigned tasks from other accessible workspaces. Use task UUIDs or board identifiers like VHP-12 for task CRUD. Omit ids in a TTY to choose with the keyboard.',
     examples: [
       'ttr tasks',
       'ttr tasks --compact',
@@ -180,7 +180,7 @@ const helpTopics: Record<string, HelpTopic> = {
       '--closed                     show closed tasks',
       '--include-done               include completed tasks in default lists',
       '--include-closed             include closed tasks in default lists',
-      '--compact                    show title, task list, and workspace only',
+      '--compact                    show title, task list, and per-task workspace only',
       '--board <id>                 filter by board or choose source board',
       '--list <id>                  filter by list or choose target list',
       '--limit <n>, --offset <n>     paginate list output',
@@ -367,11 +367,11 @@ export function getGlobalHelp() {
     '  The personal workspace is selected by default.',
     '',
     'Task list filters:',
-    '  tasks                       open tasks only',
+    '  tasks                       open personal tasks plus assigned external tasks',
     '  tasks --all                 include done and closed tasks',
     '  tasks --done                completed tasks',
     '  tasks --closed              closed tasks',
-    '  tasks --compact             title, list, and workspace only',
+    '  tasks --compact             title, list, and per-task workspace only',
     '',
     'Scoped help:',
     '  ttr tasks --help',

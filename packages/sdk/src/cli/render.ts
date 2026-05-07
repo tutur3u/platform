@@ -293,7 +293,21 @@ function getTaskListColor(task: unknown) {
 
 function getTaskBoardName(task: unknown) {
   const record = asRecord(task);
-  return asString(record.board_name, asString(record.board_id, 'No board'));
+  const boardName = asString(
+    record.board_name,
+    asString(record.board_id, 'No board')
+  );
+  const workspaceName = getTaskWorkspaceName(task);
+
+  return workspaceName ? `${workspaceName} / ${boardName}` : boardName;
+}
+
+function getTaskWorkspaceName(task: unknown, fallback = '') {
+  const record = asRecord(task);
+  return asString(
+    record.source_workspace_name,
+    asString(record.workspace_name, fallback)
+  );
 }
 
 function getTaskStatus(task: unknown) {
@@ -777,7 +791,10 @@ function renderTasks(data: unknown, options: RenderOptions) {
       sortTasksForCli(tasks).map((task) => ({
         Title: asString(asRecord(task).name, 'Untitled task'),
         List: getTaskListName(task),
-        Workspace: options.workspaceName || options.currentWorkspaceId || '',
+        Workspace: getTaskWorkspaceName(
+          task,
+          options.workspaceName || options.currentWorkspaceId || ''
+        ),
         __ListColor: getTaskListColor(task),
       })),
       {

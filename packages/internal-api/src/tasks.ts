@@ -109,6 +109,7 @@ export interface ListWorkspaceTasksOptions {
   identifier?: string;
   limit?: number;
   offset?: number;
+  assignedToMe?: boolean;
   completed?: 'exclude' | 'only';
   closed?: 'exclude' | 'only';
   externalIncludeDocuments?: boolean;
@@ -664,6 +665,7 @@ export async function listWorkspaceTasks(
         identifier: options?.identifier,
         limit: options?.limit,
         offset: options?.offset,
+        assignedToMe: options?.assignedToMe,
         completed: options?.completed,
         closed: options?.closed,
         externalIncludeDocuments: options?.externalIncludeDocuments,

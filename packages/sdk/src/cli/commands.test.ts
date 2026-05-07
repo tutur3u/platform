@@ -4,6 +4,7 @@ import {
   getTaskClosePayload,
   getTaskDonePayload,
   getTaskUpdatePayload,
+  listTasksForCli,
   runCli,
 } from './commands';
 
@@ -204,5 +205,89 @@ describe('CLI commands', () => {
       completed_at: null,
       list_id: 'closed-list-1',
     });
+  });
+
+  it('includes assigned external workspace tasks for the personal task list', async () => {
+    const tasksList = vi
+      .fn()
+      .mockResolvedValueOnce({
+        tasks: [
+          {
+            id: 'personal-task',
+            name: 'Personal task',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        tasks: [
+          {
+            board_name: 'Engineering',
+            id: 'external-task',
+            name: 'Assigned external task',
+          },
+        ],
+      });
+    const client = {
+      tasks: {
+        list: tasksList,
+      },
+      workspaces: {
+        list: vi.fn().mockResolvedValue([
+          {
+            id: 'personal-ws',
+            name: 'Personal',
+            personal: true,
+          },
+          {
+            id: 'team-ws',
+            name: 'Tuturuuu',
+            personal: false,
+          },
+        ]),
+      },
+    };
+
+    const { response } = await listTasksForCli(
+      client as any,
+      {
+        baseUrl: 'https://tuturuuu.com',
+        currentWorkspaceId: 'personal-ws',
+        session: {
+          accessToken: 'token',
+          refreshToken: 'refresh',
+        },
+      },
+      'personal-ws',
+      {}
+    );
+
+    expect(tasksList).toHaveBeenNthCalledWith(
+      1,
+      'personal-ws',
+      expect.objectContaining({
+        completed: 'exclude',
+        closed: 'exclude',
+      })
+    );
+    expect(tasksList).toHaveBeenNthCalledWith(
+      2,
+      'team-ws',
+      expect.objectContaining({
+        assignedToMe: true,
+        completed: 'exclude',
+        closed: 'exclude',
+      })
+    );
+    expect(response.tasks).toEqual([
+      expect.objectContaining({
+        id: 'personal-task',
+        workspace_name: 'Personal',
+      }),
+      expect.objectContaining({
+        id: 'external-task',
+        source_workspace_name: 'Tuturuuu',
+        workspace_name: 'Tuturuuu',
+      }),
+    ]);
   });
 });
