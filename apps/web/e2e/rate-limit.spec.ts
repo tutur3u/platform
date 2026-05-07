@@ -16,13 +16,16 @@ import { resetDbRateLimits } from './helpers/rate-limits';
  * Cross-IP isolation itself is covered in unit + pgTAP tests because the local
  * Playwright -> Next.js dev transport may normalize spoofed client-IP headers.
  *
- * Both layers return 429 with `X-RateLimit-*` headers but differ in body:
+ * Both app-owned layers return 429 with `X-RateLimit-*` headers but differ in body:
  *   - Proxy 429:       { error, message }              + Retry-After header
  *   - Session auth 429: { error, message, code }       (no Retry-After)
  *
  * Default limits for `/api/v1/users/me/*`:
  *   GET/HEAD  → not rate-limited
- *   Mutations → 20 requests per 60 s window
+ *   Mutations → 60 requests per 60 s window
+ *
+ * Header/assertion tests use the stricter `/users/me/full-name` route-level
+ * limit so the app limiter trips before Supabase Auth's backend protection.
  */
 
 /** Safe, lightweight endpoint — reads/writes a user config value. */
@@ -30,6 +33,7 @@ const CONFIG_URL = '/api/v1/users/me/configs/RATE_LIMIT_E2E_TEST';
 
 /** Custom-limited endpoint: 10 req/min for PATCH (session auth layer). */
 const FULL_NAME_URL = '/api/v1/users/me/full-name';
+const FULL_NAME_RATE_LIMIT = 10;
 
 function clientHeaders(addr: string) {
   return {
@@ -70,12 +74,9 @@ async function fireGets(
   );
 }
 
-/**
- * Fire `count` concurrent PUT requests with a specific IP.
- */
-async function firePuts(
+async function patchFullName(
   request: {
-    put: (
+    patch: (
       url: string,
       opts?: object
     ) => Promise<{
@@ -84,17 +85,30 @@ async function firePuts(
       json(): Promise<unknown>;
     }>;
   },
+  addr: string,
+  index = 0
+) {
+  return request.patch(FULL_NAME_URL, {
+    headers: clientHeaders(addr),
+    data: { full_name: `E2E Test ${index}` },
+  });
+}
+
+/**
+ * Fire `count` sequential PATCH requests with a specific IP.
+ */
+async function fireFullNamePatches(
+  request: Parameters<typeof patchFullName>[0],
   count: number,
   addr: string
 ) {
-  return Promise.all(
-    Array.from({ length: count }, () =>
-      request.put(CONFIG_URL, {
-        headers: clientHeaders(addr),
-        data: { value: 'rate-limit-test' },
-      })
-    )
-  );
+  const responses: Awaited<ReturnType<typeof patchFullName>>[] = [];
+
+  for (let i = 0; i < count; i++) {
+    responses.push(await patchFullName(request, addr, i));
+  }
+
+  return responses;
 }
 
 // ---------------------------------------------------------------------------
@@ -132,21 +146,19 @@ test.describe('Rate limiting (session auth)', () => {
     expect(responses.every((r) => r.status() === 200)).toBe(true);
   });
 
-  test('Mutation rate limit: 429 after 20 requests', async ({
+  test('Mutation rate limit: 429 after the route budget is exhausted', async ({
     context,
   }, testInfo) => {
     const addr = ip(2, testInfo.retry);
-    const total = 25;
+    const total = FULL_NAME_RATE_LIMIT + 5;
 
-    const responses = await firePuts(context.request, total, addr);
+    const responses = await fireFullNamePatches(context.request, total, addr);
 
-    const ok = responses.filter((r) => r.status() === 200).length;
+    const passed = responses.filter((r) => r.status() !== 429).length;
     const limited = responses.filter((r) => r.status() === 429).length;
 
-    expect(ok).toBeGreaterThanOrEqual(18);
-    expect(ok).toBeLessThanOrEqual(22);
-    expect(limited).toBeGreaterThanOrEqual(3);
-    expect(ok + limited).toBe(total);
+    expect(passed).toBe(FULL_NAME_RATE_LIMIT);
+    expect(limited).toBe(total - FULL_NAME_RATE_LIMIT);
   });
 
   // -----------------------------------------------------------------------
@@ -158,20 +170,21 @@ test.describe('Rate limiting (session auth)', () => {
   }, testInfo) => {
     const addr = ip(3, testInfo.retry);
 
-    // Exhaust the mutation budget (21 requests — limit is 20)
-    await firePuts(context.request, 21, addr);
+    // Exhaust the custom mutation budget.
+    await fireFullNamePatches(context.request, FULL_NAME_RATE_LIMIT, addr);
 
     // The next request is guaranteed to be rate-limited
-    const res = await context.request.put(CONFIG_URL, {
-      headers: clientHeaders(addr),
-      data: { value: 'rate-limit-test' },
-    });
+    const res = await patchFullName(
+      context.request,
+      addr,
+      FULL_NAME_RATE_LIMIT
+    );
 
     expect(res.status()).toBe(429);
 
     // -- Headers (set by both proxy and session-auth layers) --
     const headers = res.headers();
-    expect(headers['x-ratelimit-limit']).toBe('20');
+    expect(headers['x-ratelimit-limit']).toBe(FULL_NAME_RATE_LIMIT.toString());
     expect(headers['x-ratelimit-remaining']).toBe('0');
     expect(headers['x-ratelimit-reset']).toBeDefined();
 
@@ -207,10 +220,16 @@ test.describe('Rate limiting (session auth)', () => {
   }, testInfo) => {
     const addr = ip(4, testInfo.retry);
 
-    // Exhaust mutation budget (25 PUTs — limit is 20)
-    const putResponses = await firePuts(context.request, 25, addr);
-    const putLimited = putResponses.filter((r) => r.status() === 429).length;
-    expect(putLimited).toBeGreaterThanOrEqual(3);
+    // Exhaust mutation budget on a custom-limited route.
+    const patchResponses = await fireFullNamePatches(
+      context.request,
+      FULL_NAME_RATE_LIMIT + 3,
+      addr
+    );
+    const patchLimited = patchResponses.filter(
+      (r) => r.status() === 429
+    ).length;
+    expect(patchLimited).toBe(3);
 
     // GET with the SAME IP should still succeed — reads are intentionally open.
     const getRes = await context.request.get(CONFIG_URL, {
@@ -231,14 +250,11 @@ test.describe('Rate limiting (session auth)', () => {
     // Send requests sequentially (no concurrency) for deterministic counting.
     // The in-memory rate limiter is synchronous so sequential requests give
     // exact results: exactly `limit` requests pass, then the next gets 429.
-    const limit = 20;
+    const limit = FULL_NAME_RATE_LIMIT;
     let passedCount = 0;
 
     for (let i = 0; i < limit + 3; i++) {
-      const res = await context.request.put(CONFIG_URL, {
-        headers: clientHeaders(addr),
-        data: { value: 'remaining-test' },
-      });
+      const res = await patchFullName(context.request, addr, i);
 
       if (res.status() === 429) {
         // First 429 — verify remaining and limit headers
@@ -269,16 +285,9 @@ test.describe('Rate limiting (session auth)', () => {
     context,
   }, testInfo) => {
     const addr = ip(6, testInfo.retry);
-    const total = 15;
+    const total = FULL_NAME_RATE_LIMIT + 5;
 
-    const responses = await Promise.all(
-      Array.from({ length: total }, () =>
-        context.request.patch(FULL_NAME_URL, {
-          headers: clientHeaders(addr),
-          data: { full_name: 'E2E Test' },
-        })
-      )
-    );
+    const responses = await fireFullNamePatches(context.request, total, addr);
 
     // Requests that pass rate limiting may return 200 (success) or 500
     // (handler error, e.g. DB write failure) — we only care whether the
@@ -286,10 +295,9 @@ test.describe('Rate limiting (session auth)', () => {
     const passed = responses.filter((r) => r.status() !== 429).length;
     const limited = responses.filter((r) => r.status() === 429).length;
 
-    // Custom limit is 10 req/min; allow ±2 tolerance
-    expect(passed).toBeGreaterThanOrEqual(8);
-    expect(passed).toBeLessThanOrEqual(12);
-    expect(limited).toBeGreaterThanOrEqual(3);
+    // Custom limit is 10 req/min.
+    expect(passed).toBe(FULL_NAME_RATE_LIMIT);
+    expect(limited).toBe(total - FULL_NAME_RATE_LIMIT);
     expect(passed + limited).toBe(total);
   });
 });
