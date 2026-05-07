@@ -112,6 +112,7 @@ describe('useTaskActions', () => {
     source_workspace_id: 'source-ws',
     source_board_id: 'source-board',
     source_list_id: 'source-list',
+    source_list_status: 'active',
   } as unknown as Task;
 
   const mockSourceLists = [
@@ -140,6 +141,18 @@ describe('useTaskActions', () => {
       position: 1,
     } as unknown as TaskList,
     {
+      id: 'source-review-list',
+      name: 'Source Review',
+      board_id: 'source-board',
+      status: 'review',
+      created_at: '2025-01-01T00:00:00Z',
+      archived: false,
+      deleted: false,
+      creator_id: 'user-1',
+      color: null,
+      position: 2,
+    } as unknown as TaskList,
+    {
       id: 'source-closed-list',
       name: 'Source Closed',
       board_id: 'source-board',
@@ -149,7 +162,7 @@ describe('useTaskActions', () => {
       deleted: false,
       creator_id: 'user-1',
       color: null,
-      position: 2,
+      position: 3,
     } as unknown as TaskList,
   ];
 
@@ -1559,6 +1572,193 @@ describe('useTaskActions', () => {
         }),
       ]);
       expect(setMenuOpen).toHaveBeenCalledWith(false);
+    });
+
+    it('moves an external task source list when the personal move changes status', async () => {
+      const sourceDoneExternalTask = {
+        ...mockExternalTask,
+        source_list_id: 'source-done-list',
+        source_list_status: 'done',
+        completed_at: '2026-05-07T03:00:00.000Z',
+      } as unknown as Task;
+      const targetList = {
+        id: 'list-2',
+        name: 'Later',
+        board_id: 'board-1',
+        status: 'active',
+        created_at: '2025-01-01T00:00:00Z',
+        archived: false,
+        deleted: false,
+        creator_id: 'user-1',
+        color: null,
+        position: 3,
+      } as unknown as TaskList;
+      queryClient.setQueryData(['tasks', 'board-1'], [sourceDoneExternalTask]);
+      mockListWorkspaceTaskLists.mockResolvedValueOnce({
+        lists: mockSourceLists,
+      });
+      mockUpsertCurrentUserTaskPersonalPlacement.mockResolvedValueOnce({
+        task: {
+          ...sourceDoneExternalTask,
+          list_id: 'list-2',
+          personal_list_id: 'list-2',
+          personal_sort_key: 2_000_000,
+          sort_key: 2_000_000,
+          completed_at: null,
+          closed_at: null,
+        },
+      });
+      mockUpdateWorkspaceTask.mockResolvedValueOnce({
+        task: {
+          ...sourceDoneExternalTask,
+          list_id: 'source-list',
+          completed_at: null,
+          closed_at: null,
+        },
+      });
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: sourceDoneExternalTask,
+            boardId: 'board-1',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: [...mockAvailableLists, targetList],
+            onUpdate: vi.fn(),
+            setIsLoading: vi.fn(),
+            setMenuOpen: vi.fn(),
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.handleMoveToList('list-2');
+      });
+
+      expect(mockListWorkspaceTaskLists).toHaveBeenCalledWith(
+        'source-ws',
+        'source-board'
+      );
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith(
+        'source-ws',
+        'task-1',
+        {
+          list_id: 'source-list',
+        }
+      );
+      expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
+        expect.objectContaining({
+          id: 'task-1',
+          list_id: 'list-2',
+          personal_list_id: 'list-2',
+          source_list_id: 'source-list',
+          source_list_status: 'active',
+          completed_at: null,
+          closed_at: null,
+          _localMutationAt: expect.any(Number),
+        }),
+      ]);
+    });
+
+    it('falls back to a source not-started list when no matching non-terminal source list exists', async () => {
+      const sourceDoneExternalTask = {
+        ...mockExternalTask,
+        source_list_id: 'source-done-list',
+        source_list_status: 'done',
+        completed_at: '2026-05-07T03:00:00.000Z',
+      } as unknown as Task;
+      const targetList = {
+        id: 'review-list',
+        name: 'Review',
+        board_id: 'board-1',
+        status: 'review',
+        created_at: '2025-01-01T00:00:00Z',
+        archived: false,
+        deleted: false,
+        creator_id: 'user-1',
+        color: null,
+        position: 3,
+      } as unknown as TaskList;
+      const sourceNotStartedList = {
+        id: 'source-not-started-list',
+        name: 'Source Not Started',
+        board_id: 'source-board',
+        status: 'not_started',
+        created_at: '2025-01-01T00:00:00Z',
+        archived: false,
+        deleted: false,
+        creator_id: 'user-1',
+        color: null,
+        position: 0,
+      } as unknown as TaskList;
+      queryClient.setQueryData(['tasks', 'board-1'], [sourceDoneExternalTask]);
+      mockListWorkspaceTaskLists.mockResolvedValueOnce({
+        lists: [
+          sourceNotStartedList,
+          ...mockSourceLists.filter(
+            (list) => list.status !== 'review' && list.status !== 'active'
+          ),
+        ],
+      });
+      mockUpsertCurrentUserTaskPersonalPlacement.mockResolvedValueOnce({
+        task: {
+          ...sourceDoneExternalTask,
+          list_id: 'review-list',
+          personal_list_id: 'review-list',
+          personal_sort_key: 2_000_000,
+          sort_key: 2_000_000,
+          completed_at: null,
+          closed_at: null,
+        },
+      });
+      mockUpdateWorkspaceTask.mockResolvedValueOnce({
+        task: {
+          ...sourceDoneExternalTask,
+          list_id: 'source-not-started-list',
+          completed_at: null,
+          closed_at: null,
+        },
+      });
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: sourceDoneExternalTask,
+            boardId: 'board-1',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: [...mockAvailableLists, targetList],
+            onUpdate: vi.fn(),
+            setIsLoading: vi.fn(),
+            setMenuOpen: vi.fn(),
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.handleMoveToList('review-list');
+      });
+
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith(
+        'source-ws',
+        'task-1',
+        {
+          list_id: 'source-not-started-list',
+        }
+      );
+      expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
+        expect.objectContaining({
+          id: 'task-1',
+          list_id: 'review-list',
+          personal_list_id: 'review-list',
+          source_list_id: 'source-not-started-list',
+          source_list_status: 'not_started',
+          completed_at: null,
+          closed_at: null,
+          _localMutationAt: expect.any(Number),
+        }),
+      ]);
     });
 
     it('should set loading when target list not found', async () => {

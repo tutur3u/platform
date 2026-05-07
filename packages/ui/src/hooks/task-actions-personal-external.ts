@@ -5,6 +5,7 @@ import {
   upsertCurrentUserTaskPersonalPlacement,
 } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
   isTaskBoardCompletedStatus,
@@ -17,8 +18,35 @@ export function isPersonalExternalTask(task?: Task) {
   );
 }
 
-function findFirstListByStatus(lists: TaskList[], status: 'done' | 'closed') {
+function findFirstListByStatus(lists: TaskList[], status: TaskBoardStatus) {
   return lists.find((list) => list.status === status && !list.deleted) ?? null;
+}
+
+function getSourceStatusCandidates(status: TaskBoardStatus) {
+  if (isTaskBoardTerminalStatus(status)) {
+    return [status];
+  }
+
+  return Array.from(
+    new Set<TaskBoardStatus>([status, 'active', 'not_started'])
+  );
+}
+
+function findFirstMatchingSourceList(
+  lists: TaskList[],
+  status: TaskBoardStatus
+) {
+  const candidates = getSourceStatusCandidates(status);
+
+  for (const candidate of candidates) {
+    const matchingList = findFirstListByStatus(lists, candidate);
+
+    if (matchingList) {
+      return matchingList;
+    }
+  }
+
+  return null;
 }
 
 function mergeTaskIntoCache(current: Task[] | undefined, nextTask: Task) {
@@ -111,7 +139,7 @@ export async function moveExternalTaskToPersonalList({
   queryClient: QueryClient;
   task: Task;
   targetList: TaskList;
-  sourceStatus?: 'done' | 'closed';
+  sourceStatus?: TaskBoardStatus;
   placementPosition?: 'top' | 'end';
 }) {
   const personalBoardId = task.personal_board_id ?? boardId;
@@ -124,9 +152,21 @@ export async function moveExternalTaskToPersonalList({
   ]);
   const now = new Date().toISOString();
   let sourceTargetList: TaskList | null = null;
+  const desiredSourceStatus = sourceStatus ?? targetList.status;
+  const hasKnownSourceStatusChange = Boolean(
+    task.source_list_status && task.source_list_status !== desiredSourceStatus
+  );
+  const shouldInspectSourceList = Boolean(
+    sourceStatus ||
+      hasKnownSourceStatusChange ||
+      (!task.source_list_status &&
+        task.source_list_id &&
+        sourceWorkspaceId &&
+        sourceBoardId)
+  );
 
   try {
-    if (sourceStatus) {
+    if (shouldInspectSourceList) {
       if (!sourceWorkspaceId || !sourceBoardId) {
         throw new Error('Source board is required');
       }
@@ -135,10 +175,29 @@ export async function moveExternalTaskToPersonalList({
         sourceWorkspaceId,
         sourceBoardId
       );
-      sourceTargetList = findFirstListByStatus(sourceLists, sourceStatus);
+      const currentSourceList =
+        sourceLists.find(
+          (list) => list.id === task.source_list_id && !list.deleted
+        ) ?? null;
+      const currentSourceStatus =
+        task.source_list_status ?? currentSourceList?.status ?? null;
+      const shouldMoveSourceTask =
+        Boolean(sourceStatus) ||
+        Boolean(
+          currentSourceStatus && currentSourceStatus !== desiredSourceStatus
+        );
 
-      if (!sourceTargetList) {
-        throw new Error(`Source board has no ${sourceStatus} list`);
+      if (shouldMoveSourceTask) {
+        sourceTargetList = findFirstMatchingSourceList(
+          sourceLists,
+          desiredSourceStatus
+        );
+
+        if (!sourceTargetList) {
+          throw new Error(
+            `Source board has no ${getSourceStatusCandidates(desiredSourceStatus).join(' or ')} list`
+          );
+        }
       }
     }
 
@@ -182,7 +241,7 @@ export async function moveExternalTaskToPersonalList({
 
     let sourceTask: Task | undefined;
 
-    if (sourceStatus && sourceWorkspaceId && sourceTargetList) {
+    if (sourceWorkspaceId && sourceTargetList) {
       const sourceResponse = await updateWorkspaceTask(
         sourceWorkspaceId,
         task.id,

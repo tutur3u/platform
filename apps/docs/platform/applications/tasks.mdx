@@ -350,15 +350,17 @@ filters stay aligned with the records the board can actually show.
 Source task fields, including `tasks.list_id`, `task_labels`, and
 `task_project_tasks`, must not be changed when a task appears in the external
 lane, is planned into a personal list, is moved within the personal board, or
-returns to the external lane. Routes that read personal board tasks should keep
-filtering inaccessible source tasks out instead of surfacing stale placements to
-users who no longer have source-workspace access.
+returns to the external lane unless the personal move changes the task's
+workflow status. Routes that read personal board tasks should keep filtering
+inaccessible source tasks out instead of surfacing stale placements to users who
+no longer have source-workspace access.
 
-Done and closed actions are the exception to the source-list rule. Marking a
-placed external task as done or closed moves the personal reference to the first
-matching personal list and also moves the source task to the first matching
-`done` or `closed` list on its original board. Regular personal-list moves still
-update only the user's placement.
+When a placed external task moves to a personal list with a different workflow
+status, the source task must also move to the first matching list on its original
+board. `done` and `closed` targets require the matching terminal source list.
+Non-terminal targets first try the same source status, then fall back to
+`active` and `not_started` lists so tasks moved out of source `done` or `closed`
+queues do not keep completed or closed card state.
 
 ```sql
 CREATE TABLE workspace_boards (
