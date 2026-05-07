@@ -46,14 +46,14 @@ List<TaskBoardTask> sortTaskBoardListViewTasksForList(
   List<TaskBoardTask> tasks,
 ) {
   final status = TaskBoardList.normalizeSupportedStatus(list.status);
-  if (status != 'done' && status != 'closed') {
+  if (status != 'review' && status != 'done' && status != 'closed') {
     return tasks;
   }
 
   final sorted = List<TaskBoardTask>.from(tasks)
     ..sort((a, b) {
-      final aTimestamp = status == 'done' ? a.completedAt : a.closedAt;
-      final bTimestamp = status == 'done' ? b.completedAt : b.closedAt;
+      final aTimestamp = status == 'closed' ? a.closedAt : a.completedAt;
+      final bTimestamp = status == 'closed' ? b.closedAt : b.completedAt;
       return _taskBoardListViewDateValue(
         bTimestamp,
       ).compareTo(_taskBoardListViewDateValue(aTimestamp));

@@ -1053,6 +1053,7 @@
     "taskBoardDetailNoFilterOptions": "Không có tùy chọn",
     "taskBoardDetailStatusNotStarted": "Chưa bắt đầu",
     "taskBoardDetailStatusActive": "Đang thực hiện",
+    "taskBoardDetailStatusReview": "Chờ duyệt",
     "taskBoardDetailStatusDone": "Hoàn thành",
     "taskBoardDetailStatusClosed": "Đã đóng",
     "taskBoardDetailStatusDocuments": "Tài liệu",

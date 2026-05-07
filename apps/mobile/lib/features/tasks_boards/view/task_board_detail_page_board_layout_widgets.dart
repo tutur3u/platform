@@ -26,6 +26,7 @@ class _TaskBoardBoardLayoutSheet extends StatelessWidget {
       'documents',
       'not_started',
       'active',
+      'review',
       'done',
       'closed',
     ];

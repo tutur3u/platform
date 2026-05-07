@@ -1053,6 +1053,7 @@
     "taskBoardDetailNoFilterOptions": "No options available",
     "taskBoardDetailStatusNotStarted": "Not started",
     "taskBoardDetailStatusActive": "Active",
+    "taskBoardDetailStatusReview": "Review",
     "taskBoardDetailStatusDone": "Done",
     "taskBoardDetailStatusClosed": "Closed",
     "taskBoardDetailStatusDocuments": "Documents",

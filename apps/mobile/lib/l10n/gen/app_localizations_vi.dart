@@ -2453,6 +2453,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailStatusActive => 'Đang thực hiện';
 
   @override
+  String get taskBoardDetailStatusReview => 'Chờ duyệt';
+
+  @override
   String get taskBoardDetailStatusDone => 'Hoàn thành';
 
   @override

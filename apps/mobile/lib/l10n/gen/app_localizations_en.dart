@@ -2477,6 +2477,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailStatusActive => 'Active';
 
   @override
+  String get taskBoardDetailStatusReview => 'Review';
+
+  @override
   String get taskBoardDetailStatusDone => 'Done';
 
   @override

@@ -4771,6 +4771,12 @@ abstract class AppLocalizations {
   /// **'Active'**
   String get taskBoardDetailStatusActive;
 
+  /// No description provided for @taskBoardDetailStatusReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get taskBoardDetailStatusReview;
+
   /// No description provided for @taskBoardDetailStatusDone.
   ///
   /// In en, this message translates to:
