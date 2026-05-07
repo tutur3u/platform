@@ -88,7 +88,7 @@ export function KanbanColumns({
   return (
     <div
       ref={boardRef}
-      className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth"
+      className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth"
       style={
         {
           '--kanban-snap-left-padding': snapEdgePadding,
