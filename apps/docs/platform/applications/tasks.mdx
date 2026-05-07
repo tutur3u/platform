@@ -285,6 +285,9 @@ evicting the placed external task until the server view catches up.
 Optimistic placement writes should upsert the task into both the progressive
 board task cache and any full-board cache that is already mounted, because stale
 list reloads can briefly remove the card before the destination list refetches.
+The card renderer should hide only the active pre-drop drag source; once a
+placement mutation is optimistic, the real destination card must stay visible
+even if the sortable layer still reports that task id as dragging.
 
 - `personal_board_id` points to the destination personal board after an
   external task is planned there.

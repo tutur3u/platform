@@ -120,6 +120,7 @@ import {
 } from './menus';
 import { TaskActions } from './task-actions';
 import { TaskCardCheckbox } from './task-card/TaskCardCheckbox';
+import { getTaskCardVisibilityState } from './task-card/task-card-visibility';
 import { TaskCustomDateDialog } from './task-dialogs/TaskCustomDateDialog';
 import { TaskDeleteDialog } from './task-dialogs/TaskDeleteDialog';
 import { TaskNewLabelDialog } from './task-dialogs/TaskNewLabelDialog';
@@ -675,6 +676,12 @@ function TaskCardInner({
       disabled: dragDisabled,
       transition: null, // Disable @dnd-kit's built-in transitions
     });
+
+  const cardVisibilityState = getTaskCardVisibilityState({
+    isDragging,
+    optimisticUpdateInProgress:
+      optimisticUpdateInProgress?.has(task.id) ?? false,
+  });
 
   const setCardRefs = useCallback(
     (node: HTMLDivElement | null) => {
@@ -1568,8 +1575,9 @@ function TaskCardInner({
         // Task list or priority-based styling
         getCardColorClasses(),
         showBlockedByCallout && 'bg-dynamic-red/[0.03]',
-        // When dragging OR undergoing optimistic update, make invisible but keep in layout
-        (isDragging || optimisticUpdateInProgress?.has(task.id)) && 'opacity-0',
+        // Hide only the live drag source. Optimistically moved cards must stay visible.
+        cardVisibilityState.hidden && 'opacity-0',
+        cardVisibilityState.pending && 'opacity-90',
         isOverlay &&
           'scale-105 shadow-2xl ring-2 ring-primary/50 backdrop-blur-sm',
         // Closed state (closed tasks)
