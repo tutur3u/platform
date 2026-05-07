@@ -66,6 +66,7 @@ describe('useProgressiveBoardLoader', () => {
     });
 
     expect(listWorkspaceTasks).toHaveBeenCalledWith('ws-1', {
+      boardId: 'board-1',
       listId: 'list-1',
       limit: 50,
       offset: 0,
@@ -110,6 +111,7 @@ describe('useProgressiveBoardLoader', () => {
     });
 
     expect(listWorkspaceTasks).toHaveBeenCalledWith('personal', {
+      boardId: 'board-1',
       listId: 'personal-external-staging:board-1',
       limit: 50,
       offset: 0,
@@ -127,6 +129,7 @@ describe('useProgressiveBoardLoader', () => {
     });
 
     expect(listWorkspaceTasks).toHaveBeenLastCalledWith('personal', {
+      boardId: 'board-1',
       listId: 'personal-external-staging:board-1',
       limit: 50,
       offset: 0,

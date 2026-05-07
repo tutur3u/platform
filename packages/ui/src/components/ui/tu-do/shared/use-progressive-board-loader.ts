@@ -62,6 +62,7 @@ export function useProgressiveBoardLoader(
 
       try {
         const payload = await listWorkspaceTasks(wsId, {
+          boardId,
           listId,
           limit: PAGE_SIZE,
           offset: page * PAGE_SIZE,
@@ -172,6 +173,7 @@ export function useProgressiveBoardLoader(
       const pageResults = await Promise.all(
         pageIndices.map((page) =>
           listWorkspaceTasks(wsId, {
+            boardId,
             listId,
             limit: PAGE_SIZE,
             offset: page * PAGE_SIZE,

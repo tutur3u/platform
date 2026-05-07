@@ -273,6 +273,11 @@ uses `calculate_personal_task_placement_sort_key` to compute a sort key against
 the combined personal list of native personal tasks and placed external task
 references.
 
+Per-list task loading for personal boards must include the personal `boardId`
+alongside `listId`; the API needs both values to load placed external
+references for real personal lists and to keep already-placed external tasks out
+of the virtual external lane.
+
 - `personal_board_id` points to the destination personal board after an
   external task is planned there.
 - `personal_list_id` points to the real personal list that owns the planning

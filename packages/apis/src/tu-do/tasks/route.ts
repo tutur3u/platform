@@ -679,7 +679,7 @@ export async function GET(
       !forTimeTracking &&
       (boardId || listId || virtualStagingBoardId)
     ) {
-      const targetPersonalBoardId = boardId ?? virtualStagingBoardId;
+      const targetPersonalBoardId = virtualStagingBoardId ?? boardId;
       let placements: PersonalTaskPlacementRow[] = [];
 
       let placementQuery = targetPersonalBoardId
@@ -726,11 +726,34 @@ export async function GET(
       }
 
       const placedTaskIds = placements.map((placement) => placement.task_id);
-      const placedOnThisBoardTaskIds = new Set(
+      let placedOnThisBoardTaskIds = new Set(
         placements
           .filter((placement) => placement.personal_list_id)
           .map((placement) => placement.task_id)
       );
+
+      if (virtualStagingBoardId && targetPersonalBoardId) {
+        const { data: placedPlacementRows, error: placedPlacementsError } =
+          await (sbAdmin as any)
+            .from('task_user_overrides')
+            .select('task_id')
+            .eq('user_id', user.id)
+            .eq('personal_board_id', targetPersonalBoardId)
+            .not('personal_list_id', 'is', null);
+
+        if (placedPlacementsError) {
+          return NextResponse.json(
+            { error: 'Failed to load personal task placements' },
+            { status: 500 }
+          );
+        }
+
+        placedOnThisBoardTaskIds = new Set(
+          ((placedPlacementRows as { task_id?: string | null }[] | null) ?? [])
+            .map((placement) => placement.task_id)
+            .filter((taskId): taskId is string => Boolean(taskId))
+        );
+      }
 
       if (placedTaskIds.length > 0) {
         const { data: placedTaskRows, error: placedTasksError } = await sbAdmin
