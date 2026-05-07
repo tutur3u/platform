@@ -14,6 +14,31 @@ const PAGE_SIZE = 50;
 const LOCAL_MUTATION_MARKER_TTL_MS = 30_000;
 const REVALIDATE_LIST_CONCURRENCY = 2;
 
+function hasFreshLocalMutation(task: Task) {
+  const localTask = task as Task & { _localMutationAt?: number };
+  const localMutationAt = localTask._localMutationAt;
+
+  return (
+    typeof localMutationAt === 'number' &&
+    Date.now() - localMutationAt < LOCAL_MUTATION_MARKER_TTL_MS
+  );
+}
+
+function hasLocallyProtectedMoveDifference(task: Task, incomingTask: Task) {
+  const current = task as Task & { completed?: boolean | null };
+  const incoming = incomingTask as Task & { completed?: boolean | null };
+
+  return (
+    current.list_id !== incoming.list_id ||
+    current.sort_key !== incoming.sort_key ||
+    current.personal_list_id !== incoming.personal_list_id ||
+    current.personal_sort_key !== incoming.personal_sort_key ||
+    current.completed !== incoming.completed ||
+    current.completed_at !== incoming.completed_at ||
+    current.closed_at !== incoming.closed_at
+  );
+}
+
 /**
  * Manages per-list pagination state and merges results into the shared
  * ['tasks', boardId] TanStack Query cache. Each list loads independently;
@@ -93,19 +118,13 @@ export function useProgressiveBoardLoader(
               incomingById.delete(task.id);
 
               // Guard against stale in-flight list responses overriding a task
-              // that was moved locally while the server response is catching up.
-              if (task.list_id !== incomingTask.list_id) {
-                const localTask = task as Task & {
-                  _localMutationAt?: number;
-                };
-                const localMutationAt = localTask._localMutationAt;
-                const hasFreshLocalMutation =
-                  typeof localMutationAt === 'number' &&
-                  Date.now() - localMutationAt < LOCAL_MUTATION_MARKER_TTL_MS;
-
-                if (hasFreshLocalMutation) {
-                  return task;
-                }
+              // that was moved or reordered locally while the server response
+              // is catching up.
+              if (
+                hasFreshLocalMutation(task) &&
+                hasLocallyProtectedMoveDifference(task, incomingTask)
+              ) {
+                return task;
               }
 
               const taskWithoutLocalMutationAt = {
@@ -199,23 +218,14 @@ export function useProgressiveBoardLoader(
 
           const merged: Task[] = [];
 
-          const hasFreshLocalMutation = (task: Task) => {
-            const localTask = task as Task & { _localMutationAt?: number };
-            const localMutationAt = localTask._localMutationAt;
-            return (
-              typeof localMutationAt === 'number' &&
-              Date.now() - localMutationAt < LOCAL_MUTATION_MARKER_TTL_MS
-            );
-          };
-
           for (const task of existing) {
             const incomingTask = incomingById.get(task.id);
             if (incomingTask) {
               incomingById.delete(task.id);
 
               if (
-                task.list_id !== incomingTask.list_id &&
-                hasFreshLocalMutation(task)
+                hasFreshLocalMutation(task) &&
+                hasLocallyProtectedMoveDifference(task, incomingTask)
               ) {
                 merged.push(task);
                 continue;

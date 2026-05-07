@@ -288,6 +288,12 @@ list reloads can briefly remove the card before the destination list refetches.
 The card renderer should hide only the active pre-drop drag source; once a
 placement mutation is optimistic, the real destination card must stay visible
 even if the sortable layer still reports that task id as dragging.
+Native task reorders and external personal-placement moves should both stamp a
+fresh `_localMutationAt` marker on optimistic writes and on the server-confirmed
+cache merge. Progressive list loading treats that marker as authority for
+movement fields such as `list_id`, `sort_key`, `personal_list_id`, and
+`personal_sort_key`, which prevents stale list pages from flashing a card back
+to its previous position while the mutation response is still settling.
 
 - `personal_board_id` points to the destination personal board after an
   external task is planned there.

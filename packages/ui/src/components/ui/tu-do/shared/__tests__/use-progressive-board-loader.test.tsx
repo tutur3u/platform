@@ -298,6 +298,45 @@ describe('useProgressiveBoardLoader', () => {
     ]);
   });
 
+  it('does not overwrite a fresh local reorder when a stale response has the old sort key', async () => {
+    const locallyReorderedTask = {
+      id: 'task-1',
+      display_number: 1,
+      name: 'Task',
+      list_id: 'todo-list',
+      sort_key: 2_000_000,
+      created_at: '2026-03-19T00:00:00.000Z',
+      _localMutationAt: Date.now(),
+    } as Task;
+
+    queryClient.setQueryData(['tasks', 'board-1'], [locallyReorderedTask]);
+
+    vi.mocked(listWorkspaceTasks).mockResolvedValueOnce({
+      tasks: [
+        {
+          ...locallyReorderedTask,
+          sort_key: 1_000_000,
+        },
+      ],
+    });
+
+    const { result } = renderHook(
+      () => useProgressiveBoardLoader('ws-1', 'board-1'),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.loadListPage('todo-list', 0);
+    });
+
+    expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
+      {
+        ...locallyReorderedTask,
+        _localMutationAt: expect.any(Number),
+      },
+    ]);
+  });
+
   it('overwrites local mutation when _localMutationAt precedes request start', async () => {
     const cachedTask = {
       id: 'task-1',
