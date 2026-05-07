@@ -282,6 +282,9 @@ Optimistic personal-placement moves must keep a fresh `_localMutationAt` marker
 after the placement API response is merged. Loaded-list revalidation may still
 return a pre-move page briefly, and the marker prevents that stale response from
 evicting the placed external task until the server view catches up.
+Optimistic placement writes should upsert the task into both the progressive
+board task cache and any full-board cache that is already mounted, because stale
+list reloads can briefly remove the card before the destination list refetches.
 
 - `personal_board_id` points to the destination personal board after an
   external task is planned there.
@@ -302,6 +305,12 @@ lane, is planned into a personal list, is moved within the personal board, or
 returns to the external lane. Routes that read personal board tasks should keep
 filtering inaccessible source tasks out instead of surfacing stale placements to
 users who no longer have source-workspace access.
+
+Done and closed actions are the exception to the source-list rule. Marking a
+placed external task as done or closed moves the personal reference to the first
+matching personal list and also moves the source task to the first matching
+`done` or `closed` list on its original board. Regular personal-list moves still
+update only the user's placement.
 
 ```sql
 CREATE TABLE workspace_boards (

@@ -1969,24 +1969,22 @@ function TaskCardInner({
                   )}
 
                   {/* Move Menu */}
-                  {!isPersonalExternalTask &&
-                    availableLists.length > 0 &&
-                    effectiveWorkspaceId && (
-                      <TaskMoveMenu
-                        currentListId={task.list_id}
-                        availableLists={availableLists}
-                        isLoading={isLoading}
-                        onMoveToList={handleMoveToList}
-                        onMenuItemSelect={handleMenuItemSelect}
-                        onRequestOpenCreateDialog={() => {
-                          setMenuOpen(false);
-                          setIsCreateListDialogOpen(true);
-                        }}
-                        translations={{
-                          move: t('move'),
-                        }}
-                      />
-                    )}
+                  {availableLists.length > 0 && effectiveWorkspaceId && (
+                    <TaskMoveMenu
+                      currentListId={task.list_id}
+                      availableLists={availableLists}
+                      isLoading={isLoading}
+                      onMoveToList={handleMoveToList}
+                      onMenuItemSelect={handleMenuItemSelect}
+                      onRequestOpenCreateDialog={() => {
+                        setMenuOpen(false);
+                        setIsCreateListDialogOpen(true);
+                      }}
+                      translations={{
+                        move: t('move'),
+                      }}
+                    />
+                  )}
 
                   {isPersonalExternalTask && (
                     <>

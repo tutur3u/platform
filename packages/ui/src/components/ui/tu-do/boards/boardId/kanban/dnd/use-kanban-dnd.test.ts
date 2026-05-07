@@ -1,6 +1,9 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { describe, expect, it } from 'vitest';
-import { mergePersonalPlacementMutationTask } from './use-kanban-dnd';
+import {
+  mergePersonalPlacementMutationTask,
+  mergeTaskIntoBoardTaskCache,
+} from './use-kanban-dnd';
 
 function createTask(overrides: Partial<Task> = {}): Task {
   return {
@@ -89,5 +92,43 @@ describe('mergePersonalPlacementMutationTask', () => {
         _localMutationAt: 654_321,
       })
     );
+  });
+});
+
+describe('mergeTaskIntoBoardTaskCache', () => {
+  it('updates an existing task in the board cache', () => {
+    const existingTask = createTask({ list_id: 'source-list' });
+    const nextTask = createTask({
+      list_id: 'target-list',
+      personal_list_id: 'target-list',
+      personal_sort_key: 2_000_000,
+    });
+
+    expect(mergeTaskIntoBoardTaskCache([existingTask], nextTask)).toEqual([
+      expect.objectContaining({
+        id: existingTask.id,
+        list_id: 'target-list',
+        personal_list_id: 'target-list',
+        personal_sort_key: 2_000_000,
+      }),
+    ]);
+  });
+
+  it('adds a moved task when a stale board cache no longer contains it', () => {
+    const otherTask = createTask({ id: 'other-task' });
+    const movedTask = createTask({
+      id: 'task-1',
+      list_id: 'target-list',
+      personal_list_id: 'target-list',
+    });
+
+    expect(mergeTaskIntoBoardTaskCache([otherTask], movedTask)).toEqual([
+      otherTask,
+      expect.objectContaining({
+        id: 'task-1',
+        list_id: 'target-list',
+        personal_list_id: 'target-list',
+      }),
+    ]);
   });
 });
