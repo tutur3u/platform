@@ -57,6 +57,17 @@ const DEFAULT_TASK_FILTERS: TaskFilters = {
   includeUnassigned: false,
 };
 
+function hasAssignedExternalTasks(tasks: Task[], boardId: string) {
+  const externalStagingListId = getPersonalExternalStagingListId(boardId);
+
+  return tasks.some(
+    (task) =>
+      task.is_personal_external === true ||
+      task.list_id === externalStagingListId ||
+      Boolean(task.source_workspace_id)
+  );
+}
+
 interface Props {
   workspace: Workspace;
   workspaceTier?: WorkspaceProductTier | null;
@@ -180,21 +191,30 @@ export function BoardViews({
       return;
     }
 
+    const storedValue = window.localStorage.getItem(
+      `${EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX}:${board.id}`
+    );
+    const storedPreference =
+      storedValue === null ? null : storedValue === 'true';
+
     setExternalTasksCollapsed(
-      window.localStorage.getItem(
-        `${EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX}:${board.id}`
-      ) === 'true'
+      storedPreference ?? !hasAssignedExternalTasks(tasks, board.id)
     );
-  }, [board.id, workspace.personal]);
+  }, [board.id, tasks, workspace.personal]);
 
-  useEffect(() => {
-    if (!workspace.personal || typeof window === 'undefined') return;
+  const handleExternalTasksCollapsedChange = useCallback(
+    (collapsed: boolean) => {
+      setExternalTasksCollapsed(collapsed);
 
-    window.localStorage.setItem(
-      `${EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX}:${board.id}`,
-      String(externalTasksCollapsed)
-    );
-  }, [board.id, externalTasksCollapsed, workspace.personal]);
+      if (!workspace.personal || typeof window === 'undefined') return;
+
+      window.localStorage.setItem(
+        `${EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX}:${board.id}`,
+        String(collapsed)
+      );
+    },
+    [board.id, workspace.personal]
+  );
 
   // Detect whether any filter is active (requires all data to be loaded)
   const hasActiveFilters = useMemo(
@@ -645,7 +665,7 @@ export function BoardViews({
             filters={filters}
             isMultiSelectMode={isMultiSelectMode}
             setIsMultiSelectMode={setIsMultiSelectMode}
-            onExternalTasksCollapsedChange={setExternalTasksCollapsed}
+            onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
           />
         );
       case 'list':
@@ -685,7 +705,7 @@ export function BoardViews({
             filters={filters}
             isMultiSelectMode={isMultiSelectMode}
             setIsMultiSelectMode={setIsMultiSelectMode}
-            onExternalTasksCollapsedChange={setExternalTasksCollapsed}
+            onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
           />
         );
     }

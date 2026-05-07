@@ -250,7 +250,10 @@ appear by default in a virtual `External tasks` lane on each personal board.
 
 The virtual lane is presentation-only: it has no `task_lists` row, no list
 actions, no create-task form, no list reordering, and can be collapsed per board
-when the user wants to focus on planned lists.
+when the user wants to focus on planned lists. Personal boards default the lane
+to collapsed when the board has no assigned external task references; once
+assigned external tasks exist, the lane opens by default unless the user has
+saved an explicit collapsed or expanded preference for that board.
 
 By default the external lane shows only open source tasks from normal task
 lists. Source tasks in `documents`, `done`, or `closed` lists are filtered out
