@@ -12157,6 +12157,134 @@ export type Database = {
           },
         ];
       };
+      task_user_override_labels: {
+        Row: {
+          created_at: string;
+          label_id: string;
+          task_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          label_id: string;
+          task_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          label_id?: string;
+          task_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_user_override_labels_label_id_fkey';
+            columns: ['label_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_task_labels';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_user_override_labels_task_id_user_id_fkey';
+            columns: ['task_id', 'user_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_user_overrides';
+            referencedColumns: ['task_id', 'user_id'];
+          },
+          {
+            foreignKeyName: 'task_user_override_labels_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_user_override_labels_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_user_override_labels_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_user_override_labels_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_user_override_projects: {
+        Row: {
+          created_at: string;
+          project_id: string;
+          task_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          project_id: string;
+          task_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          project_id?: string;
+          task_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_user_override_projects_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_user_override_projects_task_id_user_id_fkey';
+            columns: ['task_id', 'user_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_user_overrides';
+            referencedColumns: ['task_id', 'user_id'];
+          },
+          {
+            foreignKeyName: 'task_user_override_projects_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_user_override_projects_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_user_override_projects_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_user_override_projects_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_user_overrides: {
         Row: {
           completed_at: string | null;
@@ -12164,6 +12292,11 @@ export type Database = {
           due_date_override: string | null;
           estimation_override: number | null;
           notes: string | null;
+          personal_added_at: string | null;
+          personal_board_id: string | null;
+          personal_list_id: string | null;
+          personal_placed_at: string | null;
+          personal_sort_key: number | null;
           personally_unassigned: boolean;
           priority_override:
             | Database['public']['Enums']['task_priority']
@@ -12179,6 +12312,11 @@ export type Database = {
           due_date_override?: string | null;
           estimation_override?: number | null;
           notes?: string | null;
+          personal_added_at?: string | null;
+          personal_board_id?: string | null;
+          personal_list_id?: string | null;
+          personal_placed_at?: string | null;
+          personal_sort_key?: number | null;
           personally_unassigned?: boolean;
           priority_override?:
             | Database['public']['Enums']['task_priority']
@@ -12194,6 +12332,11 @@ export type Database = {
           due_date_override?: string | null;
           estimation_override?: number | null;
           notes?: string | null;
+          personal_added_at?: string | null;
+          personal_board_id?: string | null;
+          personal_list_id?: string | null;
+          personal_placed_at?: string | null;
+          personal_sort_key?: number | null;
           personally_unassigned?: boolean;
           priority_override?:
             | Database['public']['Enums']['task_priority']
@@ -12204,6 +12347,20 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'task_user_overrides_personal_board_id_fkey';
+            columns: ['personal_board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_user_overrides_personal_list_id_fkey';
+            columns: ['personal_list_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_lists';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'task_user_overrides_task_id_fkey';
             columns: ['task_id'];
@@ -26113,6 +26270,17 @@ export type Database = {
         };
         Returns: string;
       };
+      calculate_personal_task_placement_sort_key: {
+        Args: {
+          p_next_task_id?: string;
+          p_personal_board_id: string;
+          p_personal_list_id: string;
+          p_previous_task_id?: string;
+          p_requested_sort_key?: number;
+          p_user_id: string;
+        };
+        Returns: number;
+      };
       calculate_productivity_score: {
         Args: { category_color: string; duration_seconds: number };
         Returns: number;
@@ -28109,6 +28277,11 @@ export type Database = {
           override_due_date_override: string;
           override_estimation_override: number;
           override_notes: string;
+          override_personal_added_at: string;
+          override_personal_board_id: string;
+          override_personal_list_id: string;
+          override_personal_placed_at: string;
+          override_personal_sort_key: number;
           override_personally_unassigned: boolean;
           override_priority_override: Database['public']['Enums']['task_priority'];
           override_self_managed: boolean;
@@ -28946,6 +29119,14 @@ export type Database = {
       };
       is_user_whitelisted: {
         Args: { user_id_param: string };
+        Returns: boolean;
+      };
+      is_valid_personal_task_placement: {
+        Args: {
+          p_personal_board_id: string;
+          p_personal_list_id: string;
+          p_user_id: string;
+        };
         Returns: boolean;
       };
       is_workspace_owner: {
@@ -29873,6 +30054,24 @@ export type Database = {
       upsert_calendar_events_and_count: {
         Args: { events: Json };
         Returns: Json;
+      };
+      upsert_personal_task_placement: {
+        Args: {
+          p_next_task_id?: string;
+          p_personal_board_id: string;
+          p_personal_list_id?: string;
+          p_personal_sort_key?: number;
+          p_previous_task_id?: string;
+          p_task_id: string;
+          p_user_id: string;
+        };
+        Returns: {
+          personal_added_at: string;
+          personal_board_id: string;
+          personal_list_id: string;
+          personal_placed_at: string;
+          personal_sort_key: number;
+        }[];
       };
       upsert_realtime_log_aggregations: {
         Args: { p_logs: Json };

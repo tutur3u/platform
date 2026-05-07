@@ -3,7 +3,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Loader2 } from '@tuturuuu/icons';
+import { Loader2, MoveRight } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { cn } from '@tuturuuu/utils/format';
@@ -218,7 +218,9 @@ function VirtualizedTaskListInner({
   isLoadingMore,
 }: VirtualizedTaskListProps) {
   const t = useTranslations('common');
+  const tTasks = useTranslations('ws-tasks');
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const isExternalStaging = column.is_external_staging === true;
   const { setNodeRef: setDroppableRef, isOver: isColumnDragOverRaw } =
     useDroppable({
       id: `column-surface-${column.id}`,
@@ -433,7 +435,21 @@ function VirtualizedTaskListInner({
       )}
       {tasks.length === 0 ? (
         <div className="flex h-32 items-center justify-center text-muted-foreground">
-          <p className="text-center text-sm">{t('no_tasks_yet')}</p>
+          {isExternalStaging ? (
+            <div className="flex max-w-56 flex-col items-center gap-2 text-center">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-dynamic-cyan/30 border-dashed bg-dynamic-cyan/10 text-dynamic-cyan">
+                <MoveRight className="h-4 w-4" />
+              </div>
+              <p className="font-medium text-foreground text-sm">
+                {tTasks('external_tasks_empty')}
+              </p>
+              <p className="text-muted-foreground text-xs leading-snug">
+                {tTasks('external_tasks_empty_description')}
+              </p>
+            </div>
+          ) : (
+            <p className="text-center text-sm">{t('no_tasks_yet')}</p>
+          )}
         </div>
       ) : shouldVirtualize ? (
         <SortableContext

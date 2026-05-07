@@ -21,4 +21,20 @@ describe('mapUrlToApp', () => {
       'cms'
     );
   });
+
+  it('maps the Learn production URL to the learn app', () => {
+    expect(
+      mapUrlToApp('https://learn.tuturuuu.com/verify-token?nextUrl=%2F')
+    ).toBe('learn');
+  });
+
+  it('maps the Teach development URL to the teach app', () => {
+    expect(mapUrlToApp('http://localhost:7813/verify-token?nextUrl=%2F')).toBe(
+      'teach'
+    );
+  });
+
+  it('rejects hostname prefix lookalikes', () => {
+    expect(mapUrlToApp('https://learn.tuturuuu.com.evil.test')).toBeNull();
+  });
 });

@@ -49,6 +49,14 @@ interface Params {
   }>;
 }
 
+interface DeleteTransactionOptions {
+  onBeforeDeleteFiles?: (input: {
+    request: Request;
+    transactionId: string;
+    wsId: string;
+  }) => Promise<void> | void;
+}
+
 const TransactionUpdateSchema = z.object({
   description: z.string().optional(),
   amount: z.number().optional(),
@@ -411,7 +419,11 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(req: Request, { params }: Params) {
+export async function deleteTransaction(
+  req: Request,
+  { params }: Params,
+  options: DeleteTransactionOptions = {}
+) {
   const paramsValidation = TransactionRouteParamsSchema.safeParse(await params);
 
   if (!paramsValidation.success) {
@@ -535,6 +547,17 @@ export async function DELETE(req: Request, { params }: Params) {
     }
   }
 
+  if (options.onBeforeDeleteFiles) {
+    try {
+      await options.onBeforeDeleteFiles({ request: req, transactionId, wsId });
+    } catch {
+      return NextResponse.json(
+        { message: 'Failed to delete transaction files' },
+        { status: 500 }
+      );
+    }
+  }
+
   const { error } = await sbAdmin
     .from('wallet_transactions')
     .delete()
@@ -577,4 +600,8 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   return NextResponse.json({ message: 'success' });
+}
+
+export async function DELETE(req: Request, params: Params) {
+  return deleteTransaction(req, params);
 }

@@ -52,7 +52,6 @@ import {
 } from '@tuturuuu/ui/table';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { priorityCompare } from '@tuturuuu/utils/task-helper';
 import { format, isPast, isToday, isTomorrow } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import Image from 'next/image';
@@ -63,6 +62,11 @@ import { useBulkOperations } from '../boards/boardId/kanban/bulk/bulk-operations
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { computeAccessibleLabelStyles } from '../utils/label-colors';
 import { useBoardBroadcast } from './board-broadcast-context';
+import {
+  type ListViewSortField,
+  type ListViewSortOrder,
+  sortListViewTasks,
+} from './list-view-sorting';
 
 interface Props {
   workspaceId: string;
@@ -70,19 +74,10 @@ interface Props {
   tasks: Task[];
   lists: TaskList[];
   isPersonalWorkspace?: boolean;
+  preserveTaskOrder?: boolean;
   searchQuery?: string;
   weekStartsOn?: 0 | 1 | 6;
 }
-
-type SortField =
-  | 'name'
-  | 'priority'
-  | 'start_date'
-  | 'end_date'
-  | 'assignees'
-  | 'created_at'
-  | 'status';
-type SortOrder = 'asc' | 'desc';
 
 interface ColumnVisibility {
   status: boolean;
@@ -100,6 +95,7 @@ export function ListView({
   tasks,
   lists,
   isPersonalWorkspace = false,
+  preserveTaskOrder = false,
   searchQuery,
   weekStartsOn = 0,
 }: Props) {
@@ -111,8 +107,8 @@ export function ListView({
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
-  const [sortField, setSortField] = useState<SortField>('created_at');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [sortField, setSortField] = useState<ListViewSortField>('created_at');
+  const [sortOrder, setSortOrder] = useState<ListViewSortOrder>('desc');
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const previousWorkspaceIdRef = useRef(workspaceId);
   const previousBoardIdRef = useRef(boardId);
@@ -201,100 +197,22 @@ export function ListView({
 
   // Apply sorting only (filters are handled by parent)
   const sortedTasks = useMemo(() => {
-    const sorted = [...localTasks];
-
-    // If there's an active search query, preserve the search ranking from parent
-    // and skip local sorting
-    if (searchQuery && searchQuery.trim().length > 0) {
-      return sorted;
-    }
-
-    // Sort tasks
-    sorted.sort((a, b) => {
-      // Primary sort: Always prioritize uncompleted tasks (non-closed) first
-      const aCompleted = !!a.closed_at;
-      const bCompleted = !!b.closed_at;
-
-      if (aCompleted !== bCompleted) {
-        // Uncompleted (false) should come before completed (true)
-        return aCompleted ? 1 : -1;
-      }
-
-      // Secondary sort: Apply the selected sort field
-      let comparison = 0;
-
-      switch (sortField) {
-        case 'name':
-          comparison = a.name.localeCompare(b.name);
-          break;
-        case 'priority': {
-          const aPriority = a.priority ?? null;
-          const bPriority = b.priority ?? null;
-          comparison = priorityCompare(aPriority, bPriority);
-          break;
-        }
-        case 'start_date': {
-          const aDate = a.start_date
-            ? new Date(a.start_date).getTime()
-            : Number.MAX_SAFE_INTEGER;
-          const bDate = b.start_date
-            ? new Date(b.start_date).getTime()
-            : Number.MAX_SAFE_INTEGER;
-          comparison = aDate - bDate;
-          break;
-        }
-        case 'end_date': {
-          const aDate = a.end_date
-            ? new Date(a.end_date).getTime()
-            : Number.MAX_SAFE_INTEGER;
-          const bDate = b.end_date
-            ? new Date(b.end_date).getTime()
-            : Number.MAX_SAFE_INTEGER;
-          comparison = aDate - bDate;
-          break;
-        }
-        case 'created_at': {
-          const aCreated = new Date(a.created_at).getTime();
-          const bCreated = new Date(b.created_at).getTime();
-          comparison = aCreated - bCreated;
-          break;
-        }
-        case 'assignees': {
-          const aLength = a.assignees?.length || 0;
-          const bLength = b.assignees?.length || 0;
-          comparison = aLength - bLength;
-          break;
-        }
-        case 'status': {
-          // Tri-state: closed > completed > active
-          const getStatus = (task: Task) => {
-            if (task.closed_at) return 'closed';
-            if (task.completed_at) return 'completed';
-            return 'active';
-          };
-
-          const statusOrder = { closed: 2, completed: 1, active: 0 };
-          const aStatus = getStatus(a);
-          const bStatus = getStatus(b);
-          comparison = statusOrder[aStatus] - statusOrder[bStatus];
-          break;
-        }
-      }
-
-      return sortOrder === 'desc' ? -comparison : comparison;
+    return sortListViewTasks(localTasks, {
+      preserveTaskOrder,
+      searchQuery,
+      sortField,
+      sortOrder,
     });
+  }, [localTasks, preserveTaskOrder, searchQuery, sortField, sortOrder]);
 
-    return sorted;
-  }, [localTasks, sortField, sortOrder, searchQuery]);
-
-  // Display tasks with infinite scroll
+  // Display tasks with incremental rendering
   const displayedTasks = useMemo(() => {
     return sortedTasks.slice(0, displayCount);
   }, [sortedTasks, displayCount]);
 
   const hasMore = displayCount < sortedTasks.length;
 
-  function handleSort(field: SortField) {
+  function handleSort(field: ListViewSortField) {
     if (field === sortField) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -303,7 +221,7 @@ export function ListView({
     }
   }
 
-  function getSortIcon(field: SortField) {
+  function getSortIcon(field: ListViewSortField) {
     if (sortField !== field) {
       return <ArrowDownUp className="ml-2 h-3 w-3 text-muted-foreground" />;
     }

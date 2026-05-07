@@ -242,6 +242,76 @@ Task create/update API routes silently drop assignee ids that no longer belong
 to the workspace. This lets stale task assignments be cleaned up during the next
 save instead of blocking unrelated edits such as description updates.
 
+#### Personal external tasks
+
+Personal task boards can reference tasks from other workspaces without cloning
+or moving the source task. Assigned tasks from accessible source workspaces
+appear by default in a virtual `External tasks` lane on each personal board.
+
+The virtual lane is presentation-only: it has no `task_lists` row, no list
+actions, no create-task form, no list reordering, and can be collapsed per board
+when the user wants to focus on planned lists.
+
+By default the external lane shows only open source tasks from normal task
+lists. Source tasks in `documents`, `done`, or `closed` lists are filtered out
+unless the lane-level compact filters explicitly include them. Lane sorting is
+also local to the external lane, so changing it does not reorder the user's real
+personal lists.
+
+External task cards should show the source workspace and the source board's
+ticket identifier. Opening an external task must resolve the task by id through
+the current-user task route so the dialog receives the source workspace, source
+board, and source lists instead of the personal board context.
+
+Per-user placement lives on `task_user_overrides` with `personal_board_id`,
+`personal_list_id`, `personal_sort_key`, `personal_added_at`, and
+`personal_placed_at`.
+
+Placement writes must go through `upsert_personal_task_placement`. Drag clients
+should pass the previous and next visible task ids when available, and the RPC
+uses `calculate_personal_task_placement_sort_key` to compute a sort key against
+the combined personal list of native personal tasks and placed external task
+references.
+
+Per-list task loading for personal boards must include the personal `boardId`
+alongside `listId`; the API needs both values to load placed external
+references for real personal lists and to keep already-placed external tasks out
+of the virtual external lane.
+
+Optimistic personal-placement moves must keep a fresh `_localMutationAt` marker
+after the placement API response is merged. Loaded-list revalidation may still
+return a pre-move page briefly, and the marker prevents that stale response from
+evicting the placed external task until the server view catches up.
+Optimistic placement writes should upsert the task into both the progressive
+board task cache and any full-board cache that is already mounted, because stale
+list reloads can briefly remove the card before the destination list refetches.
+
+- `personal_board_id` points to the destination personal board after an
+  external task is planned there.
+- `personal_list_id` points to the real personal list that owns the planning
+  position.
+- Dragging from the virtual lane into a real personal list creates or updates
+  the personal placement.
+- Dragging a placed external task back to the virtual lane removes the personal
+  placement so the task returns to the default external view.
+- Personal-only label and project overlays live in
+  `task_user_override_labels` and `task_user_override_projects`. Those rows
+  reference labels/projects owned by the user's personal workspace and are
+  loaded only for that owner.
+
+Source task fields, including `tasks.list_id`, `task_labels`, and
+`task_project_tasks`, must not be changed when a task appears in the external
+lane, is planned into a personal list, is moved within the personal board, or
+returns to the external lane. Routes that read personal board tasks should keep
+filtering inaccessible source tasks out instead of surfacing stale placements to
+users who no longer have source-workspace access.
+
+Done and closed actions are the exception to the source-list rule. Marking a
+placed external task as done or closed moves the personal reference to the first
+matching personal list and also moves the source task to the first matching
+`done` or `closed` list on its original board. Regular personal-list moves still
+update only the user's placement.
+
 ```sql
 CREATE TABLE workspace_boards (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

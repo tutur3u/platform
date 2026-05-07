@@ -36,6 +36,7 @@ import { useTranslations } from 'next-intl';
 import { type MouseEvent, useState } from 'react';
 import { useTasksHref } from '../tasks-route-context';
 import { MyTaskContextMenu } from './my-task-context-menu';
+import { PersonalPlacementDialog } from './personal-placement-dialog';
 import { MY_TASKS_QUERY_KEY, type MyTasksData } from './use-my-tasks-query';
 
 interface TaskListWithCompletionProps {
@@ -66,6 +67,9 @@ export default function TaskListWithCompletion({
     new Set()
   );
   const [contextMenuTaskId, setContextMenuTaskId] = useState<string | null>(
+    null
+  );
+  const [placementTask, setPlacementTask] = useState<TaskWithRelations | null>(
     null
   );
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
@@ -369,6 +373,7 @@ export default function TaskListWithCompletion({
             availableLabels={availableLabels}
             onTaskUpdate={onTaskUpdate ?? (() => {})}
             onCreateNewLabel={onCreateNewLabel}
+            onPlaceOnPersonalBoard={isPersonal ? setPlacementTask : undefined}
           >
             <div
               onContextMenu={(e) => {
@@ -736,6 +741,15 @@ export default function TaskListWithCompletion({
           </MyTaskContextMenu>
         );
       })}
+
+      <PersonalPlacementDialog
+        task={placementTask}
+        open={placementTask !== null}
+        onOpenChange={(open) => {
+          if (!open) setPlacementTask(null);
+        }}
+        onPlaced={onTaskUpdate}
+      />
 
       {hasMoreTasks && (
         <div className="flex justify-center pt-6">

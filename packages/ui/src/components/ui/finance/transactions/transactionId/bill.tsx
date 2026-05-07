@@ -4,6 +4,7 @@ import { File, FileText, ImageIcon, X } from '@tuturuuu/icons';
 import {
   listWorkspaceStorageObjects,
   uploadWorkspaceStorageFile,
+  type WorkspaceStorageListItem,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -24,6 +25,8 @@ interface Props {
   wsId: string;
   transactionId: string;
 }
+
+const TRANSACTION_BILL_OBJECT_PAGE_SIZE = 100;
 
 export function Bill({ wsId, transactionId }: Props) {
   const [files, setFiles] = useState<StatedFile[]>([]);
@@ -227,15 +230,26 @@ export async function uploadBill(
     : '';
   let newFileName = fileName;
 
-  const existingObjects = await listWorkspaceStorageObjects(wsId, {
-    path: joinPath('finance', 'transactions', transactionId),
-    limit: 1000,
-    offset: 0,
-  });
-  const existingFileName = existingObjects.data.filter(
+  const existingObjects: WorkspaceStorageListItem[] = [];
+  let offset = 0;
+  let total = 0;
+
+  do {
+    const result = await listWorkspaceStorageObjects(wsId, {
+      path: joinPath('finance', 'transactions', transactionId),
+      limit: TRANSACTION_BILL_OBJECT_PAGE_SIZE,
+      offset,
+    });
+
+    existingObjects.push(...result.data);
+    offset = result.pagination.offset + result.pagination.limit;
+    total = result.pagination.total;
+  } while (offset < total);
+
+  const existingFileName = existingObjects.filter(
     (entry) => entry.name === fileName
   );
-  const existingFileNames = existingObjects.data.filter((entry) =>
+  const existingFileNames = existingObjects.filter((entry) =>
     entry.name.toLowerCase().startsWith(`${baseName.toLowerCase()}(`)
   );
 

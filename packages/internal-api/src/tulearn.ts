@@ -163,6 +163,11 @@ export interface CompleteTulearnAssignmentPayload {
   completed: boolean;
 }
 
+export interface UpdateTulearnProfilePayload {
+  displayName: string;
+  email?: string;
+}
+
 function studentQuery(studentId?: string | null) {
   return studentId ? { studentId } : undefined;
 }
@@ -312,4 +317,17 @@ export async function listTulearnMarks(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/marks`,
     { cache: 'no-store', query: studentQuery(studentId) }
   );
+}
+
+export async function updateTulearnProfile(
+  payload: UpdateTulearnProfilePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean }>('/api/settings/profile', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+  });
 }

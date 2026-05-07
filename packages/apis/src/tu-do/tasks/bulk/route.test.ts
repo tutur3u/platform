@@ -4,13 +4,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => {
   const getUser = vi.fn();
   const normalizeWorkspaceId = vi.fn();
+  const resolveAuthenticatedSessionUser = vi.fn();
+  const sourceWorkspaceMembersIn = vi.fn();
   const workspaceMembersMaybeSingle = vi.fn();
 
   const taskListMaybeSingle = vi.fn();
+  const externalTasksIs = vi.fn();
   const tasksEq = vi.fn();
   const taskAssigneesIn = vi.fn();
   const taskProjectsMaybeSingle = vi.fn();
+  const taskUserOverrideLabelsInsert = vi.fn();
+  const taskUserOverridesUpsert = vi.fn();
   const workspaceLabelsMaybeSingle = vi.fn();
+  const workspacesMaybeSingle = vi.fn();
   const rpc = vi.fn();
 
   const sessionSupabase = {
@@ -22,6 +28,7 @@ const mocks = vi.hoisted(() => {
         return {
           select: vi.fn(() => ({
             eq: vi.fn(() => ({
+              in: sourceWorkspaceMembersIn,
               eq: vi.fn(() => ({
                 maybeSingle: workspaceMembersMaybeSingle,
               })),
@@ -63,6 +70,7 @@ const mocks = vi.hoisted(() => {
           select: vi.fn(() => ({
             in: vi.fn(() => ({
               eq: tasksEq,
+              is: externalTasksIs,
             })),
           })),
         };
@@ -88,6 +96,28 @@ const mocks = vi.hoisted(() => {
         };
       }
 
+      if (table === 'task_user_overrides') {
+        return {
+          upsert: taskUserOverridesUpsert,
+        };
+      }
+
+      if (table === 'task_user_override_labels') {
+        return {
+          insert: taskUserOverrideLabelsInsert,
+        };
+      }
+
+      if (table === 'workspaces') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              maybeSingle: workspacesMaybeSingle,
+            })),
+          })),
+        };
+      }
+
       throw new Error(`Unexpected admin table: ${table}`);
     }),
     rpc,
@@ -95,18 +125,30 @@ const mocks = vi.hoisted(() => {
 
   return {
     adminSupabase,
+    externalTasksIs,
     getUser,
     normalizeWorkspaceId,
+    resolveAuthenticatedSessionUser,
     rpc,
     sessionSupabase,
+    sourceWorkspaceMembersIn,
     taskAssigneesIn,
     taskListMaybeSingle,
     taskProjectsMaybeSingle,
+    taskUserOverrideLabelsInsert,
+    taskUserOverridesUpsert,
     tasksEq,
     workspaceLabelsMaybeSingle,
     workspaceMembersMaybeSingle,
+    workspacesMaybeSingle,
   };
 });
+
+vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
+  resolveAuthenticatedSessionUser: (
+    ...args: Parameters<typeof mocks.resolveAuthenticatedSessionUser>
+  ) => mocks.resolveAuthenticatedSessionUser(...args),
+}));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
@@ -138,6 +180,12 @@ describe('task bulk route', () => {
         },
       },
       error: null,
+    });
+    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+      user: {
+        id: '11111111-1111-4111-8111-111111111111',
+      },
+      authError: null,
     });
     mocks.normalizeWorkspaceId.mockResolvedValue(
       '00000000-0000-0000-0000-000000000000'
@@ -198,12 +246,20 @@ describe('task bulk route', () => {
     });
 
     mocks.taskAssigneesIn.mockResolvedValue({ data: [], error: null });
+    mocks.externalTasksIs.mockResolvedValue({ data: [], error: null });
+    mocks.sourceWorkspaceMembersIn.mockResolvedValue({ data: [], error: null });
+    mocks.taskUserOverridesUpsert.mockResolvedValue({ error: null });
+    mocks.taskUserOverrideLabelsInsert.mockResolvedValue({ error: null });
     mocks.taskProjectsMaybeSingle.mockResolvedValue({
       data: { id: '44444444-4444-4444-8444-444444444444' },
       error: null,
     });
     mocks.workspaceLabelsMaybeSingle.mockResolvedValue({
       data: { id: '55555555-5555-4555-8555-555555555555' },
+      error: null,
+    });
+    mocks.workspacesMaybeSingle.mockResolvedValue({
+      data: { personal: true },
       error: null,
     });
 
@@ -643,5 +699,77 @@ describe('task bulk route', () => {
       'add_task_label_with_actor',
       expect.any(Object)
     );
+  });
+
+  it('writes personal label overlays for accessible external tasks', async () => {
+    const { POST } = await import('./route.js');
+
+    const externalTaskId = '66666666-6666-4666-8666-666666666666';
+    const sourceWorkspaceId = '77777777-7777-4777-8777-777777777777';
+
+    mocks.rpc.mockReset();
+    mocks.tasksEq.mockResolvedValueOnce({ data: [], error: null });
+    mocks.externalTasksIs.mockResolvedValueOnce({
+      data: [
+        {
+          id: externalTaskId,
+          task_lists: {
+            workspace_boards: {
+              ws_id: sourceWorkspaceId,
+            },
+          },
+        },
+      ],
+      error: null,
+    });
+    mocks.sourceWorkspaceMembersIn.mockResolvedValueOnce({
+      data: [{ ws_id: sourceWorkspaceId }],
+      error: null,
+    });
+
+    const response = await POST(
+      asNextRequest(
+        new Request('http://localhost/api/v1/workspaces/ws-1/tasks/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskIds: [externalTaskId],
+            operation: {
+              type: 'add_label',
+              labelId: '55555555-5555-4555-8555-555555555555',
+            },
+          }),
+        })
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual(
+      expect.objectContaining({
+        successCount: 1,
+        failCount: 0,
+        succeededTaskIds: [externalTaskId],
+      })
+    );
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.taskUserOverridesUpsert).toHaveBeenCalledWith(
+      {
+        task_id: externalTaskId,
+        user_id: '11111111-1111-4111-8111-111111111111',
+      },
+      expect.objectContaining({
+        onConflict: 'task_id,user_id',
+      })
+    );
+    expect(mocks.taskUserOverrideLabelsInsert).toHaveBeenCalledWith({
+      task_id: externalTaskId,
+      user_id: '11111111-1111-4111-8111-111111111111',
+      label_id: '55555555-5555-4555-8555-555555555555',
+    });
   });
 });

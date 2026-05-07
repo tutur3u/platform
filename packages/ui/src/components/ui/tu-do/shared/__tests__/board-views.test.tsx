@@ -8,7 +8,6 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
@@ -17,6 +16,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getBoardConfigKey } from '../board-config-storage';
 import { BoardViews } from '../board-views';
 
+const listWorkspaceTasksMock = vi.hoisted(() => vi.fn());
 const createTaskMock = vi.fn();
 const loadListPageMock = vi.fn();
 let boardHeaderProps:
@@ -26,6 +26,9 @@ let kanbanBoardProps:
   | React.ComponentProps<
       typeof import('../../boards/boardId/kanban')['KanbanBoard']
     >
+  | undefined;
+let listViewProps:
+  | React.ComponentProps<typeof import('../list-view')['ListView']>
   | undefined;
 
 vi.mock('next-intl', () => ({
@@ -47,7 +50,7 @@ vi.mock('../../hooks/useTaskDialog', () => ({
 }));
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
-  listWorkspaceTasks: vi.fn(),
+  listWorkspaceTasks: listWorkspaceTasksMock,
 }));
 
 vi.mock('../progressive-loader-context', () => ({
@@ -82,7 +85,10 @@ vi.mock('../../boards/boardId/kanban', () => ({
 }));
 
 vi.mock('../list-view', () => ({
-  ListView: () => <div data-testid="list-view">List</div>,
+  ListView: (props: any) => {
+    listViewProps = props;
+    return <div data-testid="list-view">List</div>;
+  },
 }));
 
 vi.mock('../../boards/boardId/timeline-board', () => ({
@@ -146,7 +152,11 @@ const mockTasks: Task[] = [
 
 const mockWorkspaceLabels: WorkspaceLabel[] = [];
 
-function renderBoardViews(overrides?: { lists?: TaskList[]; tasks?: Task[] }) {
+function renderBoardViews(overrides?: {
+  lists?: TaskList[];
+  tasks?: Task[];
+  workspace?: { id: string; personal: boolean };
+}) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -163,7 +173,7 @@ function renderBoardViews(overrides?: { lists?: TaskList[]; tasks?: Task[] }) {
           currentUserId="user-1"
           lists={overrides?.lists ?? mockLists}
           tasks={overrides?.tasks ?? mockTasks}
-          workspace={mockWorkspace as any}
+          workspace={(overrides?.workspace ?? mockWorkspace) as any}
           workspaceLabels={mockWorkspaceLabels}
         />
       </HotkeysProvider>
@@ -180,10 +190,11 @@ describe('BoardViews', () => {
   beforeEach(() => {
     boardHeaderProps = undefined;
     kanbanBoardProps = undefined;
+    listViewProps = undefined;
     createTaskMock.mockReset();
     loadListPageMock.mockReset();
-    vi.mocked(listWorkspaceTasks).mockReset();
-    vi.mocked(listWorkspaceTasks).mockResolvedValue({ tasks: mockTasks });
+    listWorkspaceTasksMock.mockReset();
+    listWorkspaceTasksMock.mockResolvedValue({ tasks: mockTasks });
     window.localStorage.clear();
   });
 
@@ -245,6 +256,72 @@ describe('BoardViews', () => {
         projects: [],
       }
     );
+  });
+
+  it('pins a virtual external task list on personal boards without using it for create shortcuts', () => {
+    renderBoardViews({
+      workspace: {
+        ...mockWorkspace,
+        personal: true,
+      },
+    });
+
+    expect(kanbanBoardProps?.lists[0]).toEqual(
+      expect.objectContaining({
+        id: 'personal-external-staging:board-1',
+        is_external_collapsed: false,
+        is_external_staging: true,
+        name: 'external_tasks',
+      })
+    );
+
+    fireEvent.keyDown(document, { key: 'c' });
+
+    expect(createTaskMock).toHaveBeenCalledTimes(1);
+    expect(createTaskMock).toHaveBeenCalledWith(
+      'board-1',
+      'list-1',
+      mockLists,
+      expect.objectContaining({
+        labels: [],
+      })
+    );
+  });
+
+  it('persists the collapsed external task list state per personal board', async () => {
+    window.localStorage.setItem(
+      'personal-board-external-tasks-collapsed:board-1',
+      'true'
+    );
+
+    renderBoardViews({
+      workspace: {
+        ...mockWorkspace,
+        personal: true,
+      },
+    });
+
+    await waitFor(() => {
+      expect(kanbanBoardProps?.lists[0]).toEqual(
+        expect.objectContaining({
+          id: 'personal-external-staging:board-1',
+          is_external_collapsed: true,
+          is_external_staging: true,
+        })
+      );
+    });
+
+    act(() => {
+      kanbanBoardProps?.onExternalTasksCollapsedChange?.(false);
+    });
+
+    await waitFor(() => {
+      expect(
+        window.localStorage.getItem(
+          'personal-board-external-tasks-collapsed:board-1'
+        )
+      ).toBe('false');
+    });
   });
 
   it('excludes deleted lists from active board views and create shortcuts', () => {
@@ -342,15 +419,33 @@ describe('BoardViews', () => {
   it('eagerly fetches the full board task set when switching to list view', async () => {
     renderBoardViews();
 
-    expect(listWorkspaceTasks).not.toHaveBeenCalled();
+    expect(listWorkspaceTasksMock).not.toHaveBeenCalled();
 
     await act(async () => {
       boardHeaderProps?.onViewChange('list');
     });
 
     await waitFor(() => {
-      expect(listWorkspaceTasks).toHaveBeenCalledTimes(1);
+      expect(listWorkspaceTasksMock).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('preserves board-level sorted task order when rendering list view', async () => {
+    renderBoardViews();
+
+    await act(async () => {
+      boardHeaderProps?.onFiltersChange({
+        ...boardHeaderProps.filters,
+        sortBy: 'name-asc',
+      });
+      boardHeaderProps?.onViewChange('list');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('list-view')).toBeInTheDocument();
+    });
+
+    expect(listViewProps?.preserveTaskOrder).toBe(true);
   });
 
   it('eagerly fetches the full board task set when switching to timeline view', async () => {
@@ -361,7 +456,7 @@ describe('BoardViews', () => {
     });
 
     await waitFor(() => {
-      expect(listWorkspaceTasks).toHaveBeenCalledTimes(1);
+      expect(listWorkspaceTasksMock).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -391,7 +486,7 @@ describe('BoardViews', () => {
     });
 
     await waitFor(() => {
-      expect(listWorkspaceTasks).toHaveBeenCalledTimes(1);
+      expect(listWorkspaceTasksMock).toHaveBeenCalledTimes(1);
     });
   });
 

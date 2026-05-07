@@ -2,6 +2,7 @@ export { reorderTask, useReorderTask } from './task/reorder';
 export { transformAssignees, transformTaskRecord } from './task/transformers';
 export * from './task-helper/board';
 export * from './task-helper/bulk-actions';
+export * from './task-helper/personal-external-staging';
 export * from './task-helper/recycle-bin';
 export * from './task-helper/relationships';
 export { getTicketIdentifier } from './task-helper/shared';

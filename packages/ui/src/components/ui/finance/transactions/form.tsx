@@ -1,7 +1,17 @@
 'use client';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { ArrowLeftRight, Paperclip, Settings2, Wallet } from '@tuturuuu/icons';
-import { uploadWorkspaceStorageFile } from '@tuturuuu/internal-api';
+import {
+  deleteWorkspaceStorageObjects,
+  listWorkspaceStorageObjects,
+  uploadWorkspaceStorageFile,
+  type WorkspaceStorageListItem,
+} from '@tuturuuu/internal-api';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
@@ -40,6 +50,8 @@ import {
   type TransactionAttachmentDraft,
   TransactionAttachmentsField,
 } from './transaction-attachments-field';
+
+const TRANSACTION_ATTACHMENT_PAGE_SIZE = 100;
 
 export function TransactionForm({
   wsId,
@@ -342,6 +354,86 @@ export function TransactionForm({
     );
   };
 
+  const updateAttachmentProgress = (attachmentId: string, progress: number) => {
+    setAttachments((current) =>
+      current.map((attachment) =>
+        attachment.id === attachmentId
+          ? { ...attachment, progress }
+          : attachment
+      )
+    );
+  };
+
+  const attachmentQuery = useInfiniteQuery({
+    queryKey: [
+      'finance-transaction-attachments',
+      wsId,
+      data?.id,
+      data?.transfer?.linked_transaction_id,
+      TRANSACTION_ATTACHMENT_PAGE_SIZE,
+    ],
+    queryFn: async ({ pageParam }) => {
+      if (!data?.id) {
+        return {
+          data: [],
+          pagination: {
+            limit: TRANSACTION_ATTACHMENT_PAGE_SIZE,
+            offset: pageParam,
+            total: 0,
+          },
+        };
+      }
+
+      return listWorkspaceStorageObjects(
+        wsId,
+        {
+          limit: TRANSACTION_ATTACHMENT_PAGE_SIZE,
+          offset: pageParam,
+          path: joinPath('finance', 'transactions', data.id),
+          sortBy: 'created_at',
+          sortOrder: 'desc',
+        },
+        { fetch }
+      );
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => {
+      const nextOffset = lastPage.pagination.offset + lastPage.pagination.limit;
+
+      return nextOffset < lastPage.pagination.total ? nextOffset : undefined;
+    },
+    enabled: !!data?.id,
+  });
+
+  const removeExistingAttachmentMutation = useMutation({
+    mutationFn: async (attachment: WorkspaceStorageListItem) => {
+      if (!data?.id) {
+        throw new Error('Missing transaction ID');
+      }
+
+      await deleteWorkspaceStorageObjects(
+        wsId,
+        [joinPath('finance', 'transactions', data.id, attachment.name)],
+        { fetch }
+      );
+
+      return attachment;
+    },
+    onSuccess: async () => {
+      await attachmentQuery.refetch();
+      toast.success(t('transaction-data-table.attachment_delete_success'));
+    },
+    onError: () => {
+      toast.error(t('transaction-data-table.attachment_delete_failed'));
+    },
+  });
+
+  const existingAttachments =
+    attachmentQuery.data?.pages.flatMap((page) => page.data) ?? [];
+  const existingAttachmentsTotal =
+    attachmentQuery.data?.pages.at(-1)?.pagination.total ??
+    existingAttachments.length;
+
   const uploadPendingAttachments = async (transactionId?: string) => {
     const pendingAttachments = attachments.filter(
       (attachment) => attachment.status !== 'uploaded'
@@ -354,14 +446,19 @@ export function TransactionForm({
     const results = await Promise.all(
       pendingAttachments.map(async (attachment) => {
         updateAttachmentStatus(attachment.id, 'uploading');
+        updateAttachmentProgress(attachment.id, 0);
 
         try {
           const result = await uploadWorkspaceStorageFile(
             wsId,
             attachment.file,
             {
+              onUploadProgress: (progress) => {
+                updateAttachmentProgress(attachment.id, progress.percent);
+              },
               path: joinPath('finance', 'transactions', transactionId),
-            }
+            },
+            { fetch }
           );
 
           if (!result.finalize?.success) {
@@ -371,6 +468,7 @@ export function TransactionForm({
             );
           }
 
+          updateAttachmentProgress(attachment.id, 100);
           updateAttachmentStatus(attachment.id, 'uploaded');
           return { ok: true };
         } catch {
@@ -381,6 +479,13 @@ export function TransactionForm({
     );
 
     const failedCount = results.filter((result) => !result.ok).length;
+    if (transactionId === data?.id) {
+      await attachmentQuery.refetch();
+      setAttachments((current) =>
+        current.filter((attachment) => attachment.status !== 'uploaded')
+      );
+    }
+
     if (failedCount > 0) {
       toast.error(t('transaction-data-table.attachment_upload_failed'));
       return;
@@ -795,7 +900,33 @@ export function TransactionForm({
               <TransactionAttachmentsField
                 attachments={attachments}
                 disabled={loading || !hasFormPermission}
+                existingAttachments={existingAttachments}
+                existingAttachmentsError={attachmentQuery.isError}
+                existingAttachmentsHasMore={attachmentQuery.hasNextPage}
+                existingAttachmentsLoading={attachmentQuery.isLoading}
+                existingAttachmentsLoadingMore={
+                  attachmentQuery.isFetchingNextPage
+                }
+                existingAttachmentsRefreshing={
+                  attachmentQuery.isFetching &&
+                  !attachmentQuery.isFetchingNextPage
+                }
+                existingAttachmentsTotal={existingAttachmentsTotal}
+                onLoadMoreExisting={() => void attachmentQuery.fetchNextPage()}
                 onChange={setAttachments}
+                onRefreshExisting={() => void attachmentQuery.refetch()}
+                onRemoveExistingAttachment={async (attachment) => {
+                  await removeExistingAttachmentMutation.mutateAsync(
+                    attachment
+                  );
+                }}
+                removingExistingAttachmentName={
+                  removeExistingAttachmentMutation.isPending
+                    ? (removeExistingAttachmentMutation.variables?.name ?? null)
+                    : null
+                }
+                transactionId={data?.id}
+                wsId={wsId}
               />
             </TabsContent>
 

@@ -343,11 +343,13 @@ export {
   listWorkspaceTaskProjects,
   listWorkspaceTasks,
   moveWorkspaceTask,
+  removeCurrentUserTaskPersonalPlacement,
   removeWorkspaceTaskLabel,
   resolveTaskProjectWorkspaceId,
   updateWorkspaceTask,
   updateWorkspaceTaskBoard,
   updateWorkspaceTaskList,
+  upsertCurrentUserTaskPersonalPlacement,
 } from './tasks';
 export {
   type TaskSchedulingUpdatePayload,
@@ -396,6 +398,8 @@ export {
   type TulearnRole,
   type TulearnStudentSummary,
   type TulearnWorkspaceSummary,
+  type UpdateTulearnProfilePayload,
+  updateTulearnProfile,
 } from './tulearn';
 export {
   getNextWorkspaceUserGroupsPageParam,

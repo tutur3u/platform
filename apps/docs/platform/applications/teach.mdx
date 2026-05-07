@@ -1,0 +1,43 @@
+---
+title: Teach teacher companion app
+description: Teacher-facing education companion app for Tuturuuu workspaces.
+---
+
+Teach lives in `apps/teach` and runs locally on port `7813`. It is a teacher-facing companion to `apps/web` and `apps/learn`: teachers can orient around lesson loops, classroom signals, and learner handoffs, but protected education data and administrative mutations remain centralized in `apps/web`.
+
+## Ownership model
+
+Teach is not a separate education admin stack. It links teachers into `apps/web` for workspace records, course data, reports, assignments, parent links, and operational settings. The app forwards `/api/v1/*` traffic to the central web app through the satellite rewrite and API proxy guard.
+
+Teach does not render its own login portal. Its `/login` route first checks for an existing Teach Supabase session. If the session is already present, it redirects inside Teach to the requested `next` path, usually `/dashboard`. Otherwise it redirects to the platform login at `apps/web` with a `returnUrl` pointing back to `/verify-token`. After the platform login confirms the account, `apps/web` generates a cross-app token for the `teach` target app and redirects back. Teach finishes its local Supabase session through `POST /api/auth/verify-app-token`.
+
+Learn follows the same platform-login pattern: the learner app keeps `/verify-token` for cross-app session completion, but `/login` delegates account selection to `apps/web`.
+
+Teach and Learn both hide locale prefixes from public and protected URLs. Legacy locale-prefixed paths such as `/vi/dashboard` redirect to the unprefixed canonical path while preserving the selected locale in `NEXT_LOCALE`.
+
+## Visual direction
+
+All non-`apps/web` education apps use the shared Neobrutalist design language from `apps/learn/DESIGN.md`: heavy foreground borders, offset shadows, paper-like surfaces, compact responsive grids, and theme-adaptive dynamic accents. Teach uses this language for public teacher orientation surfaces and protected dashboards.
+
+Teach should read as a teacher operations dashboard, not a landing page. The protected surface should keep course user groups, modules, centralized attendance, reports, score metrics, and learner-preview handoffs visible as first-class cards. Use multiple dynamic accent roles across these work loops and keep rails readable in light, dark, and system themes.
+
+## Verification
+
+After changing Teach code, run:
+
+```bash
+bun i18n:sort
+bun type-check:teach
+bun check
+```
+
+Run focused route or component tests when login bridging, cross-app token handling, or protected API forwarding changes.
+
+## CI and deployment
+
+Teach has dedicated Vercel workflows:
+
+- `.github/workflows/vercel-preview-teach.yaml`
+- `.github/workflows/vercel-production-teach.yaml`
+
+Both workflows are registered in `tuturuuu.ts` and use the shared `ci-check.yml` switchboard. They require the standard Vercel secrets plus `VERCEL_TEACH_PROJECT_ID`; production also uses the shared production Supabase secrets.

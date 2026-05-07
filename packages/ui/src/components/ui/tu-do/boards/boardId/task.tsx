@@ -13,6 +13,7 @@ import {
   CircleSlash,
   Clock,
   Copy,
+  ExternalLink,
   FileText,
   Image as ImageIcon,
   Link2,
@@ -21,6 +22,7 @@ import {
   ListTree,
   Loader2,
   MoreHorizontal,
+  MoveRight,
   Play,
   Share2,
   SquareCenterlineDashedVertical,
@@ -31,6 +33,7 @@ import {
   getWorkspaceTask,
   listWorkspaceTaskLists,
   listWorkspaceTaskProjects,
+  removeCurrentUserTaskPersonalPlacement,
 } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -57,6 +60,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import {
   createTask,
+  getPersonalExternalStagingListId,
   getTicketIdentifier,
   useBoardConfig,
   useWorkspaceLabels,
@@ -92,6 +96,7 @@ import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
 import { TaskShareDialog } from '../../shared/task-share-dialog';
 import { TaskViewerAvatarsComponent } from '../../shared/user-presence-avatars';
+import { useTasksHref } from '../../tasks-route-context';
 import {
   getCardColorClasses as getCardColorClassesUtil,
   getListTextColorClass,
@@ -162,6 +167,8 @@ function TaskCardInner({
   const queryClient = useQueryClient();
   const broadcast = useBoardBroadcast();
   const t = useTranslations('common');
+  const tTasks = useTranslations('ws-tasks');
+  const tasksHref = useTasksHref();
   const locale = useLocale();
   const dateLocale = locale === 'vi' ? vi : enUS;
   const { weekStartsOn, timeFormat } = useCalendarPreferences();
@@ -189,7 +196,7 @@ function TaskCardInner({
   const { createSubtask } = useTaskDialogContext();
 
   // Use centralized task dialog
-  const { openTask } = useTaskDialog();
+  const { openTask, openTaskById } = useTaskDialog();
 
   // Guarded select handler for Radix DropdownMenuItem to avoid immediate action on context open
   const handleMenuItemSelect = useCallback(
@@ -612,6 +619,24 @@ function TaskCardInner({
 
   // Check if task is optimistically added (pending realtime confirmation)
   const isOptimistic = '_isOptimistic' in task && task._isOptimistic === true;
+  const isPersonalExternalTask =
+    task.is_personal_external === true || Boolean(task.personal_board_id);
+  const sourceBoardUrl =
+    task.source_workspace_id && task.source_board_id
+      ? `/${task.source_workspace_id}${tasksHref(`/boards/${task.source_board_id}`)}`
+      : null;
+  const taskTicketPrefix =
+    'ticket_prefix' in task && typeof task.ticket_prefix === 'string'
+      ? task.ticket_prefix
+      : null;
+  const taskTicketIdentifier = getTicketIdentifier(
+    isPersonalExternalTask ? taskTicketPrefix : boardConfig?.ticket_prefix,
+    task.display_number
+  );
+  const externalSourceLabel =
+    task.source_workspace_name ??
+    task.source_board_name ??
+    tTasks('external_task');
 
   const dragDisabled =
     dialogState.editDialogOpen ||
@@ -793,6 +818,54 @@ function TaskCardInner({
   // Removed explicit drag handle – entire card is now draggable for better UX.
   // Keep attributes/listeners to spread onto root interactive area.
 
+  const openExternalTask = useCallback(async () => {
+    const sourceWorkspaceId = task.source_workspace_id;
+    const sourceBoardId = task.source_board_id;
+
+    if (sourceWorkspaceId && sourceBoardId) {
+      try {
+        const { task: sourceTask } = await getWorkspaceTask(
+          sourceWorkspaceId,
+          task.id
+        );
+        let sourceLists: TaskList[] | undefined;
+
+        try {
+          sourceLists = (
+            await listWorkspaceTaskLists(sourceWorkspaceId, sourceBoardId)
+          ).lists;
+        } catch {
+          sourceLists = undefined;
+        }
+
+        openTask(sourceTask as Task, sourceBoardId, sourceLists, false, {
+          taskWsId: sourceWorkspaceId,
+          taskWorkspacePersonal: false,
+        });
+        return;
+      } catch {
+        const opened = await openTaskById(task.id);
+        if (opened) return;
+      }
+    } else {
+      const opened = await openTaskById(task.id);
+      if (opened) return;
+    }
+
+    openTask(task, sourceBoardId ?? boardId, availableLists, false, {
+      taskWsId: sourceWorkspaceId ?? effectiveWorkspaceId,
+      taskWorkspacePersonal: sourceWorkspaceId ? false : isPersonalWorkspace,
+    });
+  }, [
+    task,
+    boardId,
+    availableLists,
+    effectiveWorkspaceId,
+    isPersonalWorkspace,
+    openTask,
+    openTaskById,
+  ]);
+
   const handleCardClick = useCallback(
     (e: React.MouseEvent) => {
       // Check if only Shift is held (without CMD/Ctrl) for multiselect
@@ -813,12 +886,18 @@ function TaskCardInner({
         !dialogState.newProjectDialogOpen
       ) {
         // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
+        if (isPersonalExternalTask) {
+          void openExternalTask();
+          return;
+        }
+
         openTask(task, boardId, availableLists);
       }
     },
     [
       task,
       boardId,
+      isPersonalExternalTask,
       isMultiSelectMode,
       availableLists,
       isDragging,
@@ -826,6 +905,7 @@ function TaskCardInner({
       dialogState,
       onSelect,
       openTask,
+      openExternalTask,
     ]
   );
 
@@ -864,6 +944,65 @@ function TaskCardInner({
     setMenuOpen(false);
     // Open subtask creation dialog - the relationship will be created when the user saves
     createSubtask(task.id, task.name, boardId, task.list_id, availableLists);
+  };
+
+  const handleMoveToExternalStaging = async () => {
+    if (!task.personal_board_id) return;
+
+    setIsLoading(true);
+    setMenuOpen(false);
+
+    try {
+      await removeCurrentUserTaskPersonalPlacement(task.id);
+
+      const localMutationAt = Date.now();
+      queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) =>
+        old?.map((candidate) =>
+          candidate.id === task.id
+            ? {
+                ...candidate,
+                list_id: getPersonalExternalStagingListId(
+                  task.personal_board_id ?? boardId
+                ),
+                sort_key: null,
+                personal_list_id: null,
+                personal_sort_key: null,
+                personal_placed_at: null,
+                is_personal_external: true,
+                is_personal_external_default: true,
+                _localMutationAt: localMutationAt,
+              }
+            : candidate
+        )
+      );
+
+      toast.success(tTasks('moved_to_external_tasks'));
+    } catch (error) {
+      console.error('Failed to move task to external staging:', error);
+      toast.error(tTasks('failed_update_personal_placement'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRemoveFromPersonalBoard = async () => {
+    setIsLoading(true);
+    setMenuOpen(false);
+
+    try {
+      await removeCurrentUserTaskPersonalPlacement(task.id);
+
+      queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) =>
+        old?.filter((candidate) => candidate.id !== task.id)
+      );
+
+      toast.success(tTasks('removed_from_personal_board'));
+    } catch (error) {
+      console.error('Failed to remove task from personal board:', error);
+      toast.error(tTasks('failed_update_personal_placement'));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const taskBadges = useMemo(() => {
@@ -1475,7 +1614,28 @@ function TaskCardInner({
         {/* Header */}
         <div className="flex items-start gap-1">
           <div className="min-w-0 flex-1">
-            <div className="mb-1 flex flex-col gap-1">
+            <div
+              className={cn(
+                'mb-1 flex gap-1',
+                isPersonalExternalTask ? 'flex-wrap items-center' : 'flex-col'
+              )}
+            >
+              {isPersonalExternalTask && (
+                <Badge
+                  variant="secondary"
+                  className="h-5 min-w-0 max-w-[70%] gap-1 border border-dynamic-cyan/30 bg-dynamic-cyan/10 px-1.5 text-[10px] text-dynamic-cyan"
+                  title={[
+                    task.source_workspace_name,
+                    task.source_board_name,
+                    task.source_list_name,
+                  ]
+                    .filter(Boolean)
+                    .join(' / ')}
+                >
+                  <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+                  <span className="truncate">{externalSourceLabel}</span>
+                </Badge>
+              )}
               {/* Ticket Identifier */}
               {taskList?.status !== 'documents' && (
                 <Badge
@@ -1485,18 +1645,14 @@ function TaskCardInner({
                     getTicketBadgeColorClasses(taskList, task.priority)
                   )}
                   title={t('ticket_id_label', {
-                    id: getTicketIdentifier(
-                      boardConfig?.ticket_prefix,
-                      task.display_number
-                    ),
+                    id: taskTicketIdentifier,
                   })}
                 >
-                  {getTicketIdentifier(
-                    boardConfig?.ticket_prefix,
-                    task.display_number
-                  )}
+                  {taskTicketIdentifier}
                 </Badge>
               )}
+            </div>
+            <div className="mb-1">
               {/* Task Name */}
               <button
                 type="button"
@@ -1830,6 +1986,49 @@ function TaskCardInner({
                     />
                   )}
 
+                  {isPersonalExternalTask && (
+                    <>
+                      {task.personal_board_id && task.personal_list_id && (
+                        <DropdownMenuItem
+                          onSelect={(e) =>
+                            handleMenuItemSelect(
+                              e as unknown as Event,
+                              () => void handleMoveToExternalStaging()
+                            )
+                          }
+                          className="cursor-pointer"
+                          disabled={isLoading}
+                        >
+                          <MoveRight className="h-4 w-4 text-dynamic-cyan" />
+                          {tTasks('move_to_external_tasks')}
+                        </DropdownMenuItem>
+                      )}
+                      {sourceBoardUrl && (
+                        <DropdownMenuItem asChild>
+                          <Link href={sourceBoardUrl}>
+                            <ExternalLink className="h-4 w-4 text-foreground" />
+                            {tTasks('open_source_board')}
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      {!task.is_personal_external_default && (
+                        <DropdownMenuItem
+                          onSelect={(e) =>
+                            handleMenuItemSelect(e as unknown as Event, () => {
+                              void handleRemoveFromPersonalBoard();
+                            })
+                          }
+                          className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
+                          disabled={isLoading}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          {tTasks('remove_from_personal_board')}
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+
                   {/* Assignee Actions - Show if not personal workspace */}
                   {!isPersonalWorkspace && (
                     <TaskAssigneesMenu
@@ -1882,18 +2081,20 @@ function TaskCardInner({
                     {t('add_subtask')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onSelect={(e) =>
-                      handleMenuItemSelect(e as unknown as Event, () => {
-                        dialogActions.openDeleteDialog();
-                        setMenuOpen(false);
-                      })
-                    }
-                    className="cursor-pointer"
-                  >
-                    <Trash2 className="h-4 w-4 text-dynamic-red" />
-                    {t('delete_task')}
-                  </DropdownMenuItem>
+                  {!isPersonalExternalTask && (
+                    <DropdownMenuItem
+                      onSelect={(e) =>
+                        handleMenuItemSelect(e as unknown as Event, () => {
+                          dialogActions.openDeleteDialog();
+                          setMenuOpen(false);
+                        })
+                      }
+                      className="cursor-pointer"
+                    >
+                      <Trash2 className="h-4 w-4 text-dynamic-red" />
+                      {t('delete_task')}
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
@@ -2272,7 +2473,7 @@ function TaskCardInner({
         />
       )}
 
-      {!isOverlay && (
+      {!isOverlay && !isPersonalExternalTask && (
         <TaskActions taskId={task.id} boardId={boardId} onUpdate={onUpdate} />
       )}
     </Card>

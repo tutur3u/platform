@@ -1,0 +1,135 @@
+{
+  "teach": {
+    "byline": "bởi Tuturuuu",
+    "dashboard": "Dashboard",
+    "familyBody": "Xuất bản ghi chú bàn giao dễ hiểu bên cạnh tiến độ Learn, chế độ phụ huynh và hồ sơ workspace trung tâm.",
+    "familyTitle": "Bàn giao không cần thêm cổng riêng",
+    "footer": "Teach giữ vai trò gọn nhẹ: lên kế hoạch trong ngữ cảnh, quản lý trên Tuturuuu và đưa học viên sang Learn.",
+    "handoffBody": "Mở bản xem trước cho học viên với cùng ngữ cảnh workspace giáo dục thay vì đoán học viên sẽ thấy gì.",
+    "handoffTitle": "Sẵn sàng xem trước Learn",
+    "heroLead": "Teach là ứng dụng dành cho giáo viên quản lý nhóm học theo khóa, tín hiệu lớp học và vòng làm việc hằng ngày giữa module, điểm danh, báo cáo và metrics.",
+    "heroPanelBody": "Trang giới thiệu nằm ở đây. Sau khi đăng nhập, giáo viên vào dashboard workspace dùng cùng tài khoản Tuturuuu trung tâm.",
+    "heroPanelTitle": "Landing bên ngoài, dashboard bên trong",
+    "heroWord1": "Dạy",
+    "heroWord2": "có",
+    "heroWord3": "tín hiệu",
+    "learn": "Learn",
+    "loopTitle": "Lên kế hoạch, đọc tín hiệu, bàn giao.",
+    "openPlatform": "Mở nền tảng",
+    "openDashboard": "Mở dashboard",
+    "planBody": "Phác thảo vòng học tiếp theo, rồi mở apps/web để xử lý dữ liệu workspace thật.",
+    "planTitle": "Lên kế hoạch vòng học",
+    "platform": "Nền tảng",
+    "previewLearn": "Xem trước Learn",
+    "signalBody": "Tập trung vào điều cần giáo viên xử lý, không tạo thêm một bản sao dashboard.",
+    "signalTitle": "Đọc tín hiệu",
+    "studioBody": "Nhóm học theo khóa, module, điểm danh, báo cáo và metrics được gom thành một workspace giảng dạy.",
+    "studioTitle": "Bề mặt điều phối giáo viên",
+    "syncBody": "Teach chuyển tiếp API được bảo vệ về apps/web để quyền sở hữu workspace luôn tập trung.",
+    "syncTitle": "Hoạt động qua nền tảng",
+    "theme": "Giao diện",
+    "themeOptions": {
+      "dark": "Tối",
+      "light": "Sáng",
+      "system": "Hệ thống"
+    }
+  },
+  "teachDashboard": {
+    "activeGroups": "Nhóm học đang hoạt động",
+    "allGroups": "Tất cả user groups",
+    "attendance": "Điểm danh",
+    "attendanceChecks": "Lượt điểm danh",
+    "checkAttendance": "Điểm danh",
+    "courseModules": "Module",
+    "emptyGroupsBody": "Hãy tạo workspace user groups trong apps/web trước. Teach sẽ trình bày mỗi nhóm như một nhóm học theo khóa với module, điểm danh, báo cáo và metrics.",
+    "emptyGroupsTitle": "Chưa có nhóm học theo khóa",
+    "eyebrow": "Workspace giáo viên cho {name}",
+    "featureGrid": {
+      "eyebrow": "Bộ điều phối giáo viên",
+      "items": {
+        "attendance": {
+          "body": "Mở bề mặt điểm danh tập trung cho các nhóm trong workspace đã chọn.",
+          "title": "Nhịp điểm danh"
+        },
+        "groups": {
+          "body": "Dùng workspace user groups như nhóm học theo khóa có người phụ trách rõ ràng.",
+          "title": "Nhóm khóa học"
+        },
+        "metrics": {
+          "body": "Rà soát score metrics trước khi chúng thành tiến độ hiển thị cho học viên và phụ huynh.",
+          "title": "Phòng metrics"
+        },
+        "modules": {
+          "body": "Giữ chuỗi bài, độ phủ module và bước tiếp theo gắn với cùng một nhóm học.",
+          "title": "Bản đồ module"
+        },
+        "preview": {
+          "body": "Mở ứng dụng học viên để kiểm tra lộ trình khóa học hiển thị bên ngoài Teach.",
+          "title": "Xem như học viên"
+        },
+        "reports": {
+          "body": "Chuẩn bị vòng báo cáo từ cùng nhóm học, điểm danh và score metrics.",
+          "title": "Xưởng báo cáo"
+        }
+      },
+      "lead": "Sáu luồng giảng dạy thường dùng luôn hiện rõ để Teach giống dashboard điều phối lớp học, không phải landing page.",
+      "previewValue": "Live",
+      "primaryAction": "Mở nhóm",
+      "title": "Trung tâm điều phối nhóm học"
+    },
+    "groupsLead": "Trong apps/web đây là workspace user groups. Trong Teach, hãy hiểu mỗi nhóm là một nhóm học theo khóa có học viên, module, điểm danh, báo cáo và metrics.",
+    "groupsTitle": "Nhóm học theo khóa",
+    "lead": "Quản lý vòng dạy học mà không biến Teach thành một bản sao quản trị nền tảng. Dashboard tập trung vào nhóm, module, điểm danh tập trung, báo cáo và score metrics.",
+    "manager": "Quản lý: {name}",
+    "manageInPlatform": "Quản lý hồ sơ trên nền tảng",
+    "metrics": "Metrics",
+    "modules": "Module",
+    "openLearn": "Mở Learn",
+    "openReports": "Mở báo cáo",
+    "operations": {
+      "attendance": {
+        "body": "Đối chiếu điểm danh với nhóm học hiện tại trước khi ngữ cảnh lớp học bị nguội.",
+        "title": "Hàng đợi điểm danh"
+      },
+      "metrics": {
+        "body": "Xem các score metrics sẽ ảnh hưởng đến tiến độ học viên và báo cáo cho phụ huynh.",
+        "title": "Rà soát metrics"
+      },
+      "plan": {
+        "body": "Kiểm tra độ phủ module và chuẩn bị chuỗi bài tiếp theo cho từng nhóm học đang hoạt động.",
+        "title": "Lên kế hoạch module"
+      },
+      "reports": {
+        "body": "Chuẩn bị ghi chú báo cáo khi trạng thái nhóm, điểm danh và điểm số vẫn còn cùng ngữ cảnh.",
+        "title": "Chuẩn bị báo cáo"
+      }
+    },
+    "operationsEyebrow": "Hàng đợi điều phối workspace",
+    "operationsLead": "Một bảng tập trung cho các hành động giảng dạy thường diễn ra sau khi mở nhóm học.",
+    "operationsTitle": "Điều phối dạy học",
+    "reports": "Báo cáo",
+    "sessions": "Buổi học",
+    "teacher": "Giáo viên",
+    "title": "Điều phối dashboard dạy học hôm nay.",
+    "unassigned": "Chưa phân công",
+    "workflow": {
+      "attendance": {
+        "body": "Điểm danh tập trung cho nhóm, rồi giữ kết quả gắn với cùng hồ sơ workspace.",
+        "title": "Điểm danh một lần"
+      },
+      "groups": {
+        "body": "Bắt đầu từ workspace user groups và đọc chúng như nhóm học theo khóa riêng trong Teach.",
+        "title": "Quản lý nhóm học"
+      },
+      "metrics": {
+        "body": "Điểm trong lớp ánh xạ sang metrics của nền tảng, nên báo cáo nhất quán giữa Teach, Learn và apps/web.",
+        "title": "Xem score metrics"
+      },
+      "modules": {
+        "body": "Gắn chuỗi bài học vào nhóm để học viên thấy đúng lộ trình module trong Learn.",
+        "title": "Sắp xếp module"
+      }
+    },
+    "workspaceFallback": "Workspace giáo dục"
+  }
+}

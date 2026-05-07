@@ -62,6 +62,32 @@ export interface WorkspaceTaskApiTask extends Task {
   ticket_prefix?: string | null;
   deleted_at?: string;
   list_deleted?: boolean;
+  source_workspace_id?: string | null;
+  source_workspace_name?: string | null;
+  source_board_id?: string | null;
+  source_board_name?: string | null;
+  source_list_id?: string | null;
+  source_list_name?: string | null;
+  source_list_status?: string | null;
+  personal_board_id?: string | null;
+  personal_list_id?: string | null;
+  personal_sort_key?: number | null;
+  personal_added_at?: string | null;
+  personal_placed_at?: string | null;
+  is_personal_external?: boolean;
+  is_personal_external_default?: boolean;
+}
+
+export interface CurrentUserTaskPersonalPlacementPayload {
+  personal_board_id: string;
+  personal_list_id?: string | null;
+  personal_sort_key?: number | null;
+  previous_task_id?: string | null;
+  next_task_id?: string | null;
+}
+
+export interface CurrentUserTaskPersonalPlacementResponse {
+  task: WorkspaceTaskApiTask;
 }
 
 export interface WorkspaceTaskResponse {
@@ -85,10 +111,20 @@ export interface ListWorkspaceTasksOptions {
   offset?: number;
   completed?: 'exclude' | 'only';
   closed?: 'exclude' | 'only';
+  externalIncludeDocuments?: boolean;
+  externalIncludeDoneClosed?: boolean;
+  externalSortBy?: ExternalTaskSortBy;
   includeRelationshipSummary?: boolean;
   includeDeleted?: boolean | 'only';
   includeCount?: boolean;
 }
+
+export type ExternalTaskSortBy =
+  | 'created-desc'
+  | 'created-asc'
+  | 'due-asc'
+  | 'name-asc'
+  | 'source-asc';
 
 export interface WorkspaceTasksResponse {
   tasks: WorkspaceTaskApiTask[];
@@ -630,6 +666,9 @@ export async function listWorkspaceTasks(
         offset: options?.offset,
         completed: options?.completed,
         closed: options?.closed,
+        externalIncludeDocuments: options?.externalIncludeDocuments,
+        externalIncludeDoneClosed: options?.externalIncludeDoneClosed,
+        externalSortBy: options?.externalSortBy,
         includeRelationshipSummary: options?.includeRelationshipSummary,
         includeDeleted:
           options?.includeDeleted === 'only'
@@ -678,6 +717,39 @@ export async function getCurrentUserTask(
   return client.json<CurrentUserTaskDialogResponse>(
     `/api/v1/users/me/tasks/${encodePathSegment(taskId)}`,
     {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function upsertCurrentUserTaskPersonalPlacement(
+  taskId: string,
+  payload: CurrentUserTaskPersonalPlacementPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CurrentUserTaskPersonalPlacementResponse>(
+    `/api/v1/users/me/tasks/${encodePathSegment(taskId)}/personal-placement`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function removeCurrentUserTaskPersonalPlacement(
+  taskId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true }>(
+    `/api/v1/users/me/tasks/${encodePathSegment(taskId)}/personal-placement`,
+    {
+      method: 'DELETE',
       cache: 'no-store',
     }
   );

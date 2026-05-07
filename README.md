@@ -43,7 +43,8 @@ surfaces.
 | `apps/shortener` | Next.js, port 3002 | URL shortener | `bun dev:shortener` |
 | `apps/tasks` | Next.js, port 7809 | Task management satellite app | `bun dev:tasks` |
 | `apps/track` | Next.js, port 7810 | Time tracking satellite app | `bun dev:track` |
-| `apps/tulearn` | Next.js, port 7812 | Learning experience app | `bun dev:tulearn` |
+| `apps/learn` | Next.js, port 7812 | Learning experience app | `bun dev:learn` |
+| `apps/teach` | Next.js, port 7813 | Teacher companion app | `bun dev:teach` |
 | `apps/external` | Next.js, port 3000 | SDK and integration demo app | `bun dev:external` |
 | `apps/playground` | Next.js, port 3003 | Experimentation sandbox | package-local `bun dev` |
 | `apps/mobile` | Flutter | Mobile workspace tools | `bun dev:mobile` |
@@ -157,7 +158,7 @@ bun dev:rewise
 bun dev:shortener
 bun dev:tasks
 bun dev:track
-bun dev:tulearn
+bun dev:learn
 ```
 
 ### Mobile

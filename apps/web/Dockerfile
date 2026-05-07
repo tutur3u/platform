@@ -26,8 +26,9 @@ COPY apps/rewise/package.json ./apps/rewise/package.json
 COPY apps/shortener/package.json ./apps/shortener/package.json
 COPY apps/storage-unzip-proxy/package.json ./apps/storage-unzip-proxy/package.json
 COPY apps/tasks/package.json ./apps/tasks/package.json
+COPY apps/teach/package.json ./apps/teach/package.json
 COPY apps/track/package.json ./apps/track/package.json
-COPY apps/tulearn/package.json ./apps/tulearn/package.json
+COPY apps/learn/package.json ./apps/learn/package.json
 COPY apps/web/package.json ./apps/web/package.json
 COPY packages/ai/package.json ./packages/ai/package.json
 COPY packages/apis/package.json ./packages/apis/package.json

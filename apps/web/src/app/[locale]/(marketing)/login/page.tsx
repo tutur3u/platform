@@ -21,6 +21,16 @@ const DOMAINS = {
     href: DEV_MODE ? 'http://localhost:7805' : 'https://nova.ai.vn',
     logo: '/media/logos/nova/nova-transparent.png',
   },
+  LEARN: {
+    name: 'Learn',
+    href: DEV_MODE ? 'http://localhost:7812' : 'https://learn.tuturuuu.com',
+    logo: TUTURUUU_LOGO_URL,
+  },
+  TEACH: {
+    name: 'Teach',
+    href: DEV_MODE ? 'http://localhost:7813' : 'https://teach.tuturuuu.com',
+    logo: TUTURUUU_LOGO_URL,
+  },
 } as const;
 
 interface LoginProps {
@@ -65,6 +75,9 @@ export default function Login({ searchParams }: LoginProps) {
       />
     </Link>
   );
+  const usesTuturuuuLogo =
+    currentDomain?.logo === DOMAINS.TUTURUUU.logo ||
+    currentDomain === DOMAINS.TUTURUUU;
 
   return (
     <div className="min-h-screen">
@@ -78,13 +91,26 @@ export default function Login({ searchParams }: LoginProps) {
           <div className="mb-8 text-center">
             {currentDomain && currentDomain !== DOMAINS.TUTURUUU ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-center gap-4">
-                  <div className="relative">{renderLogo(DOMAINS.TUTURUUU)}</div>
-                  <div className="flex items-center justify-center">
-                    <XIcon className="size-8 text-muted-foreground/60" />
+                {usesTuturuuuLogo ? (
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <div className="relative">
+                      {renderLogo(DOMAINS.TUTURUUU)}
+                    </div>
+                    <div className="rounded-full border border-border/70 bg-muted/40 px-3 py-1 font-medium text-muted-foreground text-xs">
+                      {currentDomain.name}
+                    </div>
                   </div>
-                  <div className="relative">{renderLogo(currentDomain)}</div>
-                </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="relative">
+                      {renderLogo(DOMAINS.TUTURUUU)}
+                    </div>
+                    <div className="flex items-center justify-center">
+                      <XIcon className="size-8 text-muted-foreground/60" />
+                    </div>
+                    <div className="relative">{renderLogo(currentDomain)}</div>
+                  </div>
+                )}
                 <p className="text-muted-foreground text-sm">
                   {t('login.powered-by', { domain: currentDomain.name })}
                 </p>

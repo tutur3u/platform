@@ -12196,6 +12196,7 @@
     }
   },
   "ws-tasks": {
+    "collapse_external_tasks": "Thu gọn Công việc bên ngoài",
     "completed": "Đã hoàn thành",
     "due_today": "Đến hạn hôm nay",
     "errors": {
@@ -12203,12 +12204,33 @@
       "no_list_selected": "Chưa chọn danh sách",
       "no_tasks_to_create": "Không có nhiệm vụ để tạo"
     },
+    "expand_external_tasks": "Mở rộng Công việc bên ngoài",
+    "external_task": "Công việc bên ngoài",
+    "external_tasks": "Công việc bên ngoài",
+    "external_tasks_drag_affordance": "Kéo vào một danh sách cá nhân để lên kế hoạch tại đây. Kéo lại về Công việc bên ngoài để bỏ khỏi kế hoạch.",
+    "external_tasks_empty": "Chưa có công việc bên ngoài",
+    "external_tasks_empty_description": "Các công việc được giao cho bạn từ không gian làm việc khác sẽ tự động xuất hiện ở đây.",
+    "external_tasks_only_warning": "Chỉ công việc bên ngoài mới dùng được làn này.",
+    "failed_update_personal_placement": "Không thể cập nhật vị trí cá nhân.",
     "last_30_days": "30 ngày qua",
+    "move_to_external_staging": "Chuyển về Công việc bên ngoài",
+    "move_to_external_tasks": "Chuyển về Công việc bên ngoài",
+    "moved_to_external_staging": "Đã chuyển về Công việc bên ngoài.",
+    "moved_to_external_tasks": "Đã chuyển về Công việc bên ngoài.",
     "my_tasks_description": "Xem và quản lý tất cả nhiệm vụ được giao cho bạn trên tất cả các bảng",
     "no_due_date": "Không có ngày đến hạn",
+    "no_personal_boards_available": "Không có bảng cá nhân nào.",
     "no_tasks": "Không tìm thấy nhiệm vụ",
     "no_tasks_assigned": "Bạn chưa được giao nhiệm vụ nào",
+    "open_source_board": "Mở bảng nguồn",
     "overdue": "Quá hạn",
+    "personal_workspace": "Không gian cá nhân",
+    "place_on_personal_board": "Đặt vào bảng cá nhân",
+    "place_on_personal_board_description": "Chọn một bảng cá nhân. Công việc bên ngoài tự động xuất hiện trong làn Công việc bên ngoài cho đến khi bạn kéo vào một danh sách thật.",
+    "placed_on_personal_board": "Đã đặt vào bảng cá nhân.",
+    "remove_from_personal_board": "Xóa khỏi bảng cá nhân",
+    "removed_from_personal_board": "Đã xóa khỏi bảng cá nhân.",
+    "untitled_board": "Bảng chưa đặt tên",
     "upcoming": "Sắp tới"
   },
   "ws-tasks-labels": {
