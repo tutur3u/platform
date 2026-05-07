@@ -278,6 +278,11 @@ alongside `listId`; the API needs both values to load placed external
 references for real personal lists and to keep already-placed external tasks out
 of the virtual external lane.
 
+Optimistic personal-placement moves must keep a fresh `_localMutationAt` marker
+after the placement API response is merged. Loaded-list revalidation may still
+return a pre-move page briefly, and the marker prevents that stale response from
+evicting the placed external task until the server view catches up.
+
 - `personal_board_id` points to the destination personal board after an
   external task is planned there.
 - `personal_list_id` points to the real personal list that owns the planning

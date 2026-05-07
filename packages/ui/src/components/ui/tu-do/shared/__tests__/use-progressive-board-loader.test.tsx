@@ -389,6 +389,47 @@ describe('useProgressiveBoardLoader', () => {
     ]);
   });
 
+  it('preserves a freshly placed external task when destination list revalidation misses it', async () => {
+    const placedExternalTask = {
+      id: 'task-external',
+      display_number: 43,
+      name: 'Placed external task',
+      list_id: 'personal-list-2',
+      created_at: '2026-05-07T00:00:00.000Z',
+      sort_key: 1_500_000,
+      personal_board_id: 'board-1',
+      personal_list_id: 'personal-list-2',
+      personal_sort_key: 1_500_000,
+      is_personal_external: true,
+      is_personal_external_default: false,
+      _localMutationAt: Date.now(),
+    } as Task;
+
+    queryClient.setQueryData(['tasks', 'board-1'], [placedExternalTask]);
+
+    vi.mocked(listWorkspaceTasks).mockResolvedValueOnce({
+      tasks: [],
+    });
+
+    const { result } = renderHook(
+      () => useProgressiveBoardLoader('personal', 'board-1'),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.loadListPage('personal-list-2', 0);
+    });
+
+    expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
+      expect.objectContaining({
+        id: 'task-external',
+        list_id: 'personal-list-2',
+        personal_list_id: 'personal-list-2',
+        _localMutationAt: expect.any(Number),
+      }),
+    ]);
+  });
+
   it('revalidates loaded lists without clearing other list tasks', async () => {
     const existingOtherListTask: Task = {
       id: 'task-other',

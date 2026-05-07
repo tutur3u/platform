@@ -955,6 +955,7 @@ function TaskCardInner({
     try {
       await removeCurrentUserTaskPersonalPlacement(task.id);
 
+      const localMutationAt = Date.now();
       queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) =>
         old?.map((candidate) =>
           candidate.id === task.id
@@ -969,6 +970,7 @@ function TaskCardInner({
                 personal_placed_at: null,
                 is_personal_external: true,
                 is_personal_external_default: true,
+                _localMutationAt: localMutationAt,
               }
             : candidate
         )

@@ -71,6 +71,27 @@ function getNeighborTaskIds(tasks: Task[], taskId: string) {
   };
 }
 
+export function mergePersonalPlacementMutationTask(
+  task: Task,
+  nextTask: Task & { _localMutationAt: number },
+  responseTask: Task | undefined,
+  isStagingTarget: boolean
+) {
+  return {
+    ...nextTask,
+    ...(responseTask ?? {}),
+    assignees: task.assignees,
+    labels: task.labels,
+    projects: task.projects,
+    list_id: responseTask?.list_id ?? nextTask.list_id,
+    sort_key: responseTask?.sort_key ?? nextTask.sort_key,
+    personal_sort_key:
+      responseTask?.personal_sort_key ?? nextTask.personal_sort_key,
+    is_personal_external_default: isStagingTarget,
+    _localMutationAt: nextTask._localMutationAt,
+  } as Task & { _localMutationAt: number };
+}
+
 export function useKanbanDnd({
   wsId,
   boardId,
@@ -171,18 +192,12 @@ export function useKanbanDnd({
           await removeCurrentUserTaskPersonalPlacement(task.id);
         }
 
-        const savedTask = {
-          ...task,
-          ...(response?.task ?? nextTask),
-          assignees: task.assignees,
-          labels: task.labels,
-          projects: task.projects,
-          list_id: response?.task?.list_id ?? nextTask.list_id,
-          sort_key: response?.task?.sort_key ?? nextTask.sort_key,
-          personal_sort_key:
-            response?.task?.personal_sort_key ?? nextTask.personal_sort_key,
-          is_personal_external_default: isStagingTarget,
-        } as Task;
+        const savedTask = mergePersonalPlacementMutationTask(
+          task,
+          nextTask,
+          response?.task,
+          isStagingTarget
+        );
 
         queryClient.setQueryData(
           ['tasks', boardId],
