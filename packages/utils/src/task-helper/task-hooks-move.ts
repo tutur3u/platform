@@ -2,10 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { moveWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import {
-  isTaskBoardCompletedStatus,
-  isTaskBoardResolvedStatus,
-} from '../task-list-status';
+import { isTaskBoardCompletedStatus } from '../task-list-status';
 
 import { getBrowserApiOptions } from './shared';
 import { moveTask } from './task-operations';
@@ -16,14 +13,13 @@ function applyOptimisticMoveToList(
   list?: TaskList
 ): Task {
   const now = new Date().toISOString();
-  const targetIsResolved = isTaskBoardResolvedStatus(list?.status);
   const targetIsCompleted = isTaskBoardCompletedStatus(list?.status);
   const targetIsClosed = list?.status === 'closed';
 
   return {
     ...task,
     list_id: newListId,
-    completed: targetIsResolved ? targetIsCompleted : false,
+    completed: targetIsCompleted,
     completed_at: targetIsCompleted ? (task.completed_at ?? now) : null,
     closed_at: targetIsClosed ? (task.closed_at ?? now) : null,
   } as Task;

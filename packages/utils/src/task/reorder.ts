@@ -38,7 +38,6 @@ export function mergeOptimisticReorderedTaskIntoCache(
 ) {
   if (!tasks) return tasks;
 
-  const targetIsResolved = isTaskBoardResolvedStatus(targetListStatus);
   const targetIsCompleted = isTaskBoardCompletedStatus(targetListStatus);
   const targetIsTerminal = isTaskBoardTerminalStatus(targetListStatus);
   const mutationTimestamp = new Date(localMutationAt).toISOString();
@@ -50,7 +49,7 @@ export function mergeOptimisticReorderedTaskIntoCache(
       ...task,
       list_id: newListId,
       sort_key: newSortKey,
-      completed: targetIsResolved ? targetIsCompleted : false,
+      completed: targetIsCompleted,
       completed_at: targetIsCompleted
         ? (task.completed_at ?? mutationTimestamp)
         : null,

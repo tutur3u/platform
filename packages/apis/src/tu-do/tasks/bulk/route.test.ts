@@ -565,7 +565,7 @@ describe('task bulk route', () => {
       })
     );
 
-    // active -> review should stamp completed_at without closing the task
+    // active -> review should clear completion timestamps without closing the task
     mocks.taskListMaybeSingle.mockResolvedValueOnce({
       data: {
         id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
@@ -630,7 +630,7 @@ describe('task bulk route', () => {
         taskMetaById: {
           '44444444-4444-4444-8444-444444444444': expect.objectContaining({
             list_id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
-            completed_at: '2026-04-09T10:00:00.000Z',
+            completed_at: null,
             closed_at: null,
           }),
         },
@@ -643,8 +643,8 @@ describe('task bulk route', () => {
       expect.objectContaining({
         p_task_updates: expect.objectContaining({
           list_id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
-          completed: true,
-          completed_at: '2026-04-09T10:00:00.000Z',
+          completed: false,
+          completed_at: null,
           closed_at: null,
         }),
       })

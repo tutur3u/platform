@@ -92,7 +92,9 @@ class TaskBoardList extends Equatable {
 
   bool get isClosed => normalizeSupportedStatus(status) == 'closed';
 
-  bool get completesWork => isReview || isDone || isClosed;
+  bool get completesWork => isDone || isClosed;
+
+  bool get suppressesDeadlines => isReview || isDone || isClosed;
 
   Map<String, dynamic> toJson() => {
     'id': id,

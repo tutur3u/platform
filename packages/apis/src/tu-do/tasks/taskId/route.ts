@@ -839,14 +839,15 @@ export async function PUT(
       const isTargetTerminal = isTaskBoardTerminalStatus(effectiveTargetStatus);
       const isSourceTerminal = isTaskBoardTerminalStatus(sourceListStatus);
 
-      if (isTargetResolved) {
+      if (effectiveTargetStatus === 'review') {
+        nextClosedAt = null;
+        nextCompletedAt = null;
+        nextCompleted = false;
+      } else if (isTargetResolved) {
         const timestamp = new Date().toISOString();
         if (!isSourceTerminal && isTargetTerminal) {
           nextClosedAt = timestamp;
-        } else if (
-          effectiveTargetStatus === 'review' ||
-          (isSourceTerminal && !isTargetTerminal)
-        ) {
+        } else if (isSourceTerminal && !isTargetTerminal) {
           nextClosedAt = null;
         }
         nextCompletedAt = isTargetCompleted

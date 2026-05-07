@@ -617,7 +617,7 @@ bool _taskIsOverdue(TaskBoardTask task) {
 }
 
 bool _taskIsOverdueForList(TaskBoardTask task, TaskBoardList? list) {
-  if (_taskIsCompletedInBoard(task, list)) return false;
+  if (_taskListSuppressesDeadlines(list)) return false;
   return _taskIsOverdue(task);
 }
 
@@ -626,6 +626,9 @@ bool _taskIsCompletedInBoard(TaskBoardTask task, [TaskBoardList? list]) {
 }
 
 bool _taskListDone(TaskBoardList? list) => list?.completesWork ?? false;
+
+bool _taskListSuppressesDeadlines(TaskBoardList? list) =>
+    list?.suppressesDeadlines ?? false;
 
 bool _hasChips(
   String? estimationLabel,

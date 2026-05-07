@@ -25,11 +25,15 @@ export function isTaskBoardStatus(
 }
 
 export function isTaskBoardCompletedStatus(status: string | null | undefined) {
-  return status === 'review' || status === 'done';
+  return status === 'done';
 }
 
 export function isTaskBoardResolvedStatus(status: string | null | undefined) {
-  return isTaskBoardCompletedStatus(status) || status === 'closed';
+  return (
+    status === 'review' ||
+    isTaskBoardCompletedStatus(status) ||
+    status === 'closed'
+  );
 }
 
 export function isTaskBoardTerminalStatus(status: string | null | undefined) {

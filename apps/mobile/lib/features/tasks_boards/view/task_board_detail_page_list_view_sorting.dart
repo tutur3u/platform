@@ -46,7 +46,7 @@ List<TaskBoardTask> sortTaskBoardListViewTasksForList(
   List<TaskBoardTask> tasks,
 ) {
   final status = TaskBoardList.normalizeSupportedStatus(list.status);
-  if (status != 'review' && status != 'done' && status != 'closed') {
+  if (status != 'done' && status != 'closed') {
     return tasks;
   }
 

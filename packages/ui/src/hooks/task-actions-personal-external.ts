@@ -207,14 +207,16 @@ export async function moveExternalTaskToPersonalList({
         personal_sort_key:
           placedTask.personal_sort_key ?? optimisticTask.personal_sort_key,
         sort_key: placedTask.sort_key ?? optimisticTask.sort_key,
-        completed_at:
-          sourceTask?.completed_at ??
-          placedTask.completed_at ??
-          optimisticTask.completed_at,
-        closed_at:
-          sourceTask?.closed_at ??
-          placedTask.closed_at ??
-          optimisticTask.closed_at,
+        completed_at: isCompletedTarget
+          ? (sourceTask?.completed_at ??
+            placedTask.completed_at ??
+            optimisticTask.completed_at)
+          : null,
+        closed_at: isClosedTarget
+          ? (sourceTask?.closed_at ??
+            placedTask.closed_at ??
+            optimisticTask.closed_at)
+          : null,
         source_list_id:
           sourceTargetList?.id ??
           placedTask.source_list_id ??

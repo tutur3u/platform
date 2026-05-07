@@ -224,9 +224,9 @@ previous flow.
 
 Task list `status` is a workflow category, not the list display name. The
 `review` status sits between `active` and `done`: moving a task into a review
-list marks the task as completed for storage, reminders, and analytics, but the
-task is not terminal and can still show the same done checkbox/action used by
-active tasks.
+list resolves the task for deadline/reminder filtering, but it must not set
+`completed`, `completed_at`, or `closed_at`. Review tasks should keep the same
+unchecked checkbox and non-completed visual treatment used by active tasks.
 
 Review lists are for walkthrough or acceptance queues. Task cards in `review`,
 `done`, or `closed` lists should not show due-date or overdue treatment because

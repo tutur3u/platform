@@ -282,7 +282,10 @@ export async function POST(
     let completed: boolean | null;
     let completedAt: string | null;
 
-    if (!isSourceResolvedList && isTargetResolvedList) {
+    if (targetListStatus === 'review') {
+      completed = false;
+      completedAt = null;
+    } else if (!isSourceResolvedList && isTargetResolvedList) {
       completed = true;
       completedAt = isTargetCompletedList
         ? completionTimestamp

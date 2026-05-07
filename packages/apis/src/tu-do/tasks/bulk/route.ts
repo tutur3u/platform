@@ -185,7 +185,10 @@ function buildMoveTaskUpdates(
   let completed: boolean | null;
   let completedAt: string | null;
 
-  if (transitioningIntoResolved) {
+  if (targetStatus === 'review') {
+    completed = false;
+    completedAt = null;
+  } else if (transitioningIntoResolved) {
     completed = true;
     completedAt = targetIsCompleted ? operationTimestamp : task.completed_at;
   } else if (transitioningOutOfResolved) {

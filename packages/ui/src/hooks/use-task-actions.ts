@@ -972,26 +972,26 @@ export function useTaskActions({
             if (!old) return old;
             return old.map((t) => {
               if (tasksToMove.includes(t.id)) {
-                // Determine the current list status
                 const currentList = availableLists.find(
                   (list) => list.id === t.list_id
                 );
                 const wasInCompletionList = isTaskBoardResolvedStatus(
                   currentList?.status
                 );
+                const isMovingToReview = targetList?.status === 'review';
 
                 return markLocallyMutatedTask({
                   ...t,
                   list_id: targetListId,
-                  // Set closed_at based on target list status
+                  completed: isTargetCompletedList,
                   closed_at: isTargetTerminalList
                     ? (t.closed_at ?? now)
-                    : wasInCompletionList
+                    : wasInCompletionList || isMovingToReview
                       ? null
                       : t.closed_at,
                   completed_at: isTargetCompletedList
                     ? (t.completed_at ?? now)
-                    : wasInCompletionList
+                    : wasInCompletionList || isMovingToReview
                       ? null
                       : t.completed_at,
                 } as Task);
