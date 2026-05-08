@@ -217,6 +217,50 @@ export function TutoringSessionsCard({
             title={t('status')}
           />
         ),
+        cell: ({ row }) => {
+          const status = row.original.attendance_status;
+          if (status === 'PENDING') {
+            return (
+              <Badge
+                variant="outline"
+                className="rounded-full border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400"
+              >
+                {t('status_pending')}
+              </Badge>
+            );
+          }
+          if (status === 'DONE') {
+            return (
+              <Badge
+                variant="outline"
+                className="rounded-full border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400"
+              >
+                {t('status_done')}
+              </Badge>
+            );
+          }
+          if (status === 'NO_SHOW') {
+            return (
+              <Badge
+                variant="outline"
+                className="rounded-full border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400"
+              >
+                {t('status_no_show')}
+              </Badge>
+            );
+          }
+          if (status === 'CANCELLED') {
+            return (
+              <Badge
+                variant="outline"
+                className="rounded-full border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-400"
+              >
+                {t('status_cancelled')}
+              </Badge>
+            );
+          }
+          return status;
+        },
       },
       {
         id: 'actions',
@@ -237,11 +281,23 @@ export function TutoringSessionsCard({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {STATUS_ACTIONS.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
+                {STATUS_ACTIONS.map((status) => {
+                  const label =
+                    status === 'PENDING'
+                      ? t('status_pending')
+                      : status === 'DONE'
+                        ? t('status_done')
+                        : status === 'NO_SHOW'
+                          ? t('status_no_show')
+                          : status === 'CANCELLED'
+                            ? t('status_cancelled')
+                            : status;
+                  return (
+                    <SelectItem key={status} value={status}>
+                      {label}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -351,10 +407,12 @@ export function TutoringSessionsCard({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t('all_statuses')}</SelectItem>
-                <SelectItem value="PENDING">PENDING</SelectItem>
-                <SelectItem value="DONE">DONE</SelectItem>
-                <SelectItem value="NO_SHOW">NO_SHOW</SelectItem>
-                <SelectItem value="CANCELLED">CANCELLED</SelectItem>
+                <SelectItem value="PENDING">{t('status_pending')}</SelectItem>
+                <SelectItem value="DONE">{t('status_done')}</SelectItem>
+                <SelectItem value="NO_SHOW">{t('status_no_show')}</SelectItem>
+                <SelectItem value="CANCELLED">
+                  {t('status_cancelled')}
+                </SelectItem>
               </SelectContent>
             </Select>
 
