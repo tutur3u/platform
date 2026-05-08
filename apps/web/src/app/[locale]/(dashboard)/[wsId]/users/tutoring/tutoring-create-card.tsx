@@ -1,20 +1,26 @@
 'use client';
 
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Plus, X } from '@tuturuuu/icons';
-import type { WorkspaceBasicUserRecord } from '@tuturuuu/internal-api';
+import {
+  listWorkspaceBasicUsers,
+  type WorkspaceBasicUserRecord,
+} from '@tuturuuu/internal-api';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { getDisplayName, type TutoringFormValues } from './tutoring-types';
 
 const DEFAULT_DURATION_MINUTES = 45;
 
 interface Props {
+  wsId: string;
   form: TutoringFormValues;
   groups: UserGroup[];
   isSubmitting: boolean;
@@ -25,6 +31,7 @@ interface Props {
 }
 
 export function TutoringCreateCard({
+  wsId,
   form,
   groups,
   isSubmitting,
@@ -34,6 +41,46 @@ export function TutoringCreateCard({
   onSubmit,
 }: Props) {
   const t = useTranslations('ws-tutoring');
+  const [studentSearch, setStudentSearch] = useState('');
+  const [debouncedStudentSearch] = useDebounce(studentSearch, 250);
+
+  const studentsQuery = useInfiniteQuery({
+    queryKey: ['tutoring-create-students', wsId, debouncedStudentSearch],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      listWorkspaceBasicUsers(wsId, {
+        from: pageParam,
+        limit: 20,
+        q: debouncedStudentSearch || undefined,
+      }),
+    getNextPageParam: (lastPage, allPages) => {
+      const loadedCount = allPages.reduce(
+        (total, page) => total + page.data.length,
+        0
+      );
+
+      if (loadedCount >= (lastPage.count ?? 0) || lastPage.data.length < 20) {
+        return undefined;
+      }
+
+      return loadedCount;
+    },
+  });
+
+  const queriedStudents = useMemo(() => {
+    const pages = studentsQuery.data?.pages ?? [];
+    const deduped = new Map<string, WorkspaceBasicUserRecord>();
+
+    for (const page of pages) {
+      for (const student of page.data ?? []) {
+        if (!deduped.has(student.id)) {
+          deduped.set(student.id, student);
+        }
+      }
+    }
+
+    return [...deduped.values()];
+  }, [studentsQuery.data?.pages]);
 
   const groupOptions = useMemo<ComboboxOption[]>(
     () =>
@@ -45,23 +92,45 @@ export function TutoringCreateCard({
   );
 
   const studentOptions = useMemo<ComboboxOption[]>(() => {
-    const options = students.map((student) => ({
-      label: `${getDisplayName(student)} (${student.id})`,
-      value: student.id,
-    }));
+    const options: ComboboxOption[] = [];
+    const seen = new Set<string>();
 
-    if (
-      form.studentUserId &&
-      !options.some((option) => option.value === form.studentUserId)
-    ) {
+    for (const student of queriedStudents) {
+      if (seen.has(student.id)) {
+        continue;
+      }
+
+      options.push({
+        label: getDisplayName(student),
+        value: student.id,
+      });
+      seen.add(student.id);
+    }
+
+    if (options.length === 0) {
+      for (const student of students) {
+        if (seen.has(student.id)) {
+          continue;
+        }
+
+        options.push({
+          label: getDisplayName(student),
+          value: student.id,
+        });
+        seen.add(student.id);
+      }
+    }
+
+    if (form.studentUserId && !seen.has(form.studentUserId)) {
       options.unshift({
-        label: form.studentUserId,
+        label: form.studentLabel || t('student'),
         value: form.studentUserId,
       });
+      seen.add(form.studentUserId);
     }
 
     return options;
-  }, [form.studentUserId, students]);
+  }, [form.studentLabel, form.studentUserId, queriedStudents, students, t]);
 
   return (
     <section className="space-y-3">
@@ -87,17 +156,39 @@ export function TutoringCreateCard({
           <Combobox
             options={studentOptions}
             selected={form.studentUserId}
-            onChange={(value) =>
-              onChange({ ...form, studentUserId: value as string })
-            }
+            onChange={(value) => {
+              const selectedValue = value as string;
+              const selectedOption = studentOptions.find(
+                (option) => option.value === selectedValue
+              );
+
+              onChange({
+                ...form,
+                studentUserId: selectedValue,
+                studentLabel: selectedOption?.label || form.studentLabel,
+              });
+            }}
             placeholder={t('select_student')}
             searchPlaceholder={t('search_students')}
             emptyText={t('no_students')}
+            onSearchChange={setStudentSearch}
+            hasMore={Boolean(studentsQuery.hasNextPage)}
+            loadingMore={studentsQuery.isFetchingNextPage}
+            onLoadMore={() => {
+              if (studentsQuery.hasNextPage) {
+                void studentsQuery.fetchNextPage();
+              }
+            }}
           />
         </div>
         <div className="space-y-3 md:col-span-2">
           <div className="flex items-center justify-between">
-            <Label>{t('session_slots')}</Label>
+            <div className="flex items-center gap-2">
+              <Label>{t('session_slots')}</Label>
+              <span className="text-muted-foreground text-sm">
+                {form.sessionSlots.length}
+              </span>
+            </div>
             <Button
               type="button"
               size="sm"
@@ -122,7 +213,7 @@ export function TutoringCreateCard({
             </Button>
           </div>
 
-          <div className="space-y-2">
+          <div className="max-h-[50vh] space-y-2 overflow-y-auto">
             {form.sessionSlots.map((slot, index) => (
               <div
                 key={`session-slot-${index + 1}`}

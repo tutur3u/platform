@@ -38,20 +38,26 @@ import {
   toPayrollRows,
 } from './tutoring-types';
 
-interface Props {
-  canManage: boolean;
-  count: number;
-  page: number;
-  pageSize: number;
+interface TutoringSessionsFilters {
   reasonType: string;
   attendanceStatus: string;
   groupId: string;
   studentUserId: string;
-  groups: UserGroup[];
-  students: WorkspaceBasicUserRecord[];
-  createForm: TutoringFormValues;
-  isCreating: boolean;
-  createDialogOpen: boolean;
+}
+
+interface TutoringSessionsCreateState {
+  form: TutoringFormValues;
+  isSubmitting: boolean;
+  open: boolean;
+}
+
+interface TutoringSessionsPagination {
+  count: number;
+  page: number;
+  pageSize: number;
+}
+
+interface TutoringSessionsActions {
   onReasonTypeChange: (value: string) => void;
   onAttendanceStatusChange: (value: string) => void;
   onGroupIdChange: (value: string) => void;
@@ -61,9 +67,20 @@ interface Props {
   onCreateDialogOpenChange: (open: boolean) => void;
   onParamsChange: (params: { page?: number; pageSize?: string }) => void;
   onResetFilters: () => void;
-  isMarking: boolean;
-  sessions: TutoringSessionRecord[];
   onMark: (id: string, status: TutoringAttendanceStatus) => void;
+}
+
+interface Props {
+  wsId: string;
+  canManage: boolean;
+  sessions: TutoringSessionRecord[];
+  groups: UserGroup[];
+  students: WorkspaceBasicUserRecord[];
+  filters: TutoringSessionsFilters;
+  create: TutoringSessionsCreateState;
+  pagination: TutoringSessionsPagination;
+  isMarking: boolean;
+  actions: TutoringSessionsActions;
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -78,31 +95,16 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 export function TutoringSessionsCard({
+  wsId,
   canManage,
-  count,
-  page,
-  pageSize,
-  reasonType,
-  attendanceStatus,
-  groupId,
-  studentUserId,
+  sessions,
   groups,
   students,
-  createForm,
-  isCreating,
-  createDialogOpen,
-  onReasonTypeChange,
-  onAttendanceStatusChange,
-  onGroupIdChange,
-  onStudentUserIdChange,
-  onCreateFormChange,
-  onCreate,
-  onCreateDialogOpenChange,
-  onParamsChange,
-  onResetFilters,
+  filters,
+  create,
+  pagination,
   isMarking,
-  sessions,
-  onMark,
+  actions,
 }: Props) {
   const t = useTranslations('ws-tutoring');
   const tCommon = useTranslations();
@@ -193,7 +195,7 @@ export function TutoringSessionsCard({
                     ? 'default'
                     : 'outline'
                 }
-                onClick={() => onMark(row.original.id, status)}
+                onClick={() => actions.onMark(row.original.id, status)}
                 disabled={!canManage || isMarking}
               >
                 {status}
@@ -238,10 +240,13 @@ export function TutoringSessionsCard({
         action={
           canManage ? (
             <Dialog
-              open={createDialogOpen}
-              onOpenChange={onCreateDialogOpenChange}
+              open={create.open}
+              onOpenChange={actions.onCreateDialogOpenChange}
             >
-              <Button size="sm" onClick={() => onCreateDialogOpenChange(true)}>
+              <Button
+                size="sm"
+                onClick={() => actions.onCreateDialogOpenChange(true)}
+              >
                 {t('create')}
               </Button>
               <DialogContent className="sm:max-w-3xl">
@@ -249,13 +254,14 @@ export function TutoringSessionsCard({
                   <DialogTitle>{t('create_session')}</DialogTitle>
                 </DialogHeader>
                 <TutoringCreateCard
-                  form={createForm}
+                  wsId={wsId}
+                  form={create.form}
                   groups={groups}
                   students={students}
-                  isSubmitting={isCreating}
+                  isSubmitting={create.isSubmitting}
                   showTitle={false}
-                  onChange={onCreateFormChange}
-                  onSubmit={onCreate}
+                  onChange={actions.onCreateFormChange}
+                  onSubmit={actions.onCreate}
                 />
               </DialogContent>
             </Dialog>
@@ -280,16 +286,19 @@ export function TutoringSessionsCard({
       <DataTable
         t={tCommon}
         data={sessions}
-        count={count}
-        pageIndex={page > 0 ? page - 1 : 0}
-        pageSize={pageSize}
+        count={pagination.count}
+        pageIndex={pagination.page > 0 ? pagination.page - 1 : 0}
+        pageSize={pagination.pageSize}
         namespace="tutoring-sessions-table"
         columnGenerator={columns}
         disableSearch
-        setParams={onParamsChange}
+        setParams={actions.onParamsChange}
         filters={
           <div className="flex flex-wrap items-center gap-2">
-            <Select value={reasonType} onValueChange={onReasonTypeChange}>
+            <Select
+              value={filters.reasonType}
+              onValueChange={actions.onReasonTypeChange}
+            >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder={t('reason')} />
               </SelectTrigger>
@@ -306,8 +315,8 @@ export function TutoringSessionsCard({
             </Select>
 
             <Select
-              value={attendanceStatus}
-              onValueChange={onAttendanceStatusChange}
+              value={filters.attendanceStatus}
+              onValueChange={actions.onAttendanceStatusChange}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder={t('status')} />
@@ -321,7 +330,10 @@ export function TutoringSessionsCard({
               </SelectContent>
             </Select>
 
-            <Select value={groupId} onValueChange={onGroupIdChange}>
+            <Select
+              value={filters.groupId}
+              onValueChange={actions.onGroupIdChange}
+            >
               <SelectTrigger className="w-52">
                 <SelectValue placeholder={t('group')} />
               </SelectTrigger>
@@ -335,7 +347,10 @@ export function TutoringSessionsCard({
               </SelectContent>
             </Select>
 
-            <Select value={studentUserId} onValueChange={onStudentUserIdChange}>
+            <Select
+              value={filters.studentUserId}
+              onValueChange={actions.onStudentUserIdChange}
+            >
               <SelectTrigger className="w-56">
                 <SelectValue placeholder={t('student')} />
               </SelectTrigger>
@@ -350,12 +365,12 @@ export function TutoringSessionsCard({
             </Select>
           </div>
         }
-        resetParams={onResetFilters}
+        resetParams={actions.onResetFilters}
         isFiltered={
-          reasonType !== 'all' ||
-          attendanceStatus !== 'all' ||
-          groupId !== 'all' ||
-          studentUserId !== 'all'
+          filters.reasonType !== 'all' ||
+          filters.attendanceStatus !== 'all' ||
+          filters.groupId !== 'all' ||
+          filters.studentUserId !== 'all'
         }
       />
     </section>

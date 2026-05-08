@@ -43,6 +43,32 @@ function buildWorkspaceUsersRpcQuery(
     .order('display_name', { ascending: true, nullsFirst: false });
 }
 
+function applyPagination({
+  query,
+  from,
+  limit,
+  to,
+}: {
+  query: ReturnType<typeof buildWorkspaceUsersRpcQuery>;
+  from: number;
+  limit: number;
+  to: number;
+}) {
+  if (!Number.isNaN(from) && !Number.isNaN(to) && to >= from) {
+    query.range(from, to);
+    return;
+  }
+
+  if (!Number.isNaN(from) && !Number.isNaN(limit) && limit > 0) {
+    query.range(from, from + limit - 1);
+    return;
+  }
+
+  if (!Number.isNaN(limit) && limit > 0) {
+    query.limit(limit);
+  }
+}
+
 const CreateUserSchema = z.object({
   full_name: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
   display_name: z.string().max(MAX_NAME_LENGTH).optional(),
@@ -87,9 +113,7 @@ async function getDataWithApiKey(
   const to = parseInt(searchParams.get('to') || '-1', 10);
   const limit = parseInt(searchParams.get('limit') || '50', 10);
   const mainQuery = buildWorkspaceUsersRpcQuery(sbAdmin, wsId, query ?? '');
-  if (!Number.isNaN(from) && !Number.isNaN(to) && to >= from)
-    mainQuery.range(from, to);
-  if (!Number.isNaN(limit)) mainQuery.limit(limit);
+  applyPagination({ query: mainQuery, from, to, limit });
 
   const [apiCheck, response] = await Promise.all([apiCheckQuery, mainQuery]);
 
@@ -130,9 +154,7 @@ async function getDataFromSession(
   const to = parseInt(searchParams.get('to') || '-1', 10);
   const limit = parseInt(searchParams.get('limit') || '50', 10);
   const mainQuery = buildWorkspaceUsersRpcQuery(sbAdmin, wsId, query ?? '');
-  if (!Number.isNaN(from) && !Number.isNaN(to) && to >= from)
-    mainQuery.range(from, to);
-  if (!Number.isNaN(limit)) mainQuery.limit(limit);
+  applyPagination({ query: mainQuery, from, to, limit });
 
   const { data, count, error } = await mainQuery;
 

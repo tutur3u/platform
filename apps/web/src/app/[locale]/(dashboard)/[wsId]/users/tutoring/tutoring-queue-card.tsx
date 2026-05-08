@@ -1,10 +1,16 @@
 'use client';
 
+import { useInfiniteQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Loader2 } from '@tuturuuu/icons';
 import type {
   TutoringQueueItem,
   WorkspaceBasicUserRecord,
+} from '@tuturuuu/internal-api';
+import {
+  getNextWorkspaceUserGroupsPageParam,
+  listWorkspaceBasicUsers,
+  listWorkspaceUserGroups,
 } from '@tuturuuu/internal-api';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
@@ -12,6 +18,7 @@ import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Select,
@@ -21,71 +28,112 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { getDisplayName, queueSummary } from './tutoring-types';
 
-interface Props {
-  canManage: boolean;
-  groups: UserGroup[];
-  students: WorkspaceBasicUserRecord[];
+interface TutoringQueueFilters {
   reasonType: string;
   groupId: string;
   studentUserId: string;
   search: string;
-  onGroupSearchChange: (value: string) => void;
-  onStudentSearchChange: (value: string) => void;
-  groupHasMore: boolean;
-  studentHasMore: boolean;
-  groupsLoadingMore: boolean;
-  studentsLoadingMore: boolean;
-  onLoadMoreGroups: () => void;
-  onLoadMoreStudents: () => void;
-  isFetching: boolean;
+}
+
+interface TutoringQueuePagination {
   count: number;
   page: number;
   pageSize: number;
+}
+
+interface TutoringQueueLookupState {
+  groups: UserGroup[];
+  students: WorkspaceBasicUserRecord[];
+}
+
+interface TutoringQueueActions {
   onReasonTypeChange: (value: string) => void;
   onGroupIdChange: (value: string) => void;
   onStudentUserIdChange: (value: string) => void;
   onSearchChange: (value: string) => void;
   onParamsChange: (params: { page?: number; pageSize?: string }) => void;
   onResetFilters: () => void;
-  queue: TutoringQueueItem[] | undefined;
   onActivate: (item: TutoringQueueItem) => void;
 }
 
+interface Props {
+  wsId: string;
+  canManage: boolean;
+  queue: TutoringQueueItem[] | undefined;
+  filters: TutoringQueueFilters;
+  pagination: TutoringQueuePagination;
+  lookup: TutoringQueueLookupState;
+  isFetching: boolean;
+  actions: TutoringQueueActions;
+}
+
 export function TutoringQueueCard({
+  wsId,
   canManage,
-  groups,
-  students,
-  reasonType,
-  groupId,
-  studentUserId,
-  search,
-  onGroupSearchChange,
-  onStudentSearchChange,
-  groupHasMore,
-  studentHasMore,
-  groupsLoadingMore,
-  studentsLoadingMore,
-  onLoadMoreGroups,
-  onLoadMoreStudents,
-  isFetching,
-  count,
-  page,
-  pageSize,
-  onReasonTypeChange,
-  onGroupIdChange,
-  onStudentUserIdChange,
-  onSearchChange,
-  onParamsChange,
-  onResetFilters,
   queue,
-  onActivate,
+  filters,
+  pagination,
+  lookup,
+  isFetching,
+  actions,
 }: Props) {
   const t = useTranslations('ws-tutoring');
   const tCommon = useTranslations();
   const summary = queueSummary(queue ?? []);
+  const [groupSearch, setGroupSearch] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
+  const [debouncedGroupSearch] = useDebounce(groupSearch, 250);
+  const [debouncedStudentSearch] = useDebounce(studentSearch, 250);
+
+  const groupsQuery = useInfiniteQuery({
+    queryKey: ['tutoring-queue-filter-groups', wsId, debouncedGroupSearch],
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      listWorkspaceUserGroups(wsId, {
+        status: 'active',
+        q: debouncedGroupSearch || undefined,
+        page: pageParam,
+        pageSize: 20,
+      }),
+    getNextPageParam: (lastPage, allPages) =>
+      getNextWorkspaceUserGroupsPageParam(lastPage, allPages),
+  });
+
+  const studentsQuery = useInfiniteQuery({
+    queryKey: ['tutoring-queue-filter-students', wsId, debouncedStudentSearch],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      listWorkspaceBasicUsers(wsId, {
+        from: pageParam,
+        limit: 20,
+        q: debouncedStudentSearch || undefined,
+      }),
+    getNextPageParam: (lastPage, allPages) => {
+      const loadedCount = allPages.reduce(
+        (total, page) => total + page.data.length,
+        0
+      );
+      if (loadedCount >= (lastPage.count ?? 0) || lastPage.data.length < 20) {
+        return undefined;
+      }
+
+      return loadedCount;
+    },
+  });
+
+  const loadedGroups = useMemo(
+    () => groupsQuery.data?.pages.flatMap((page) => page.data ?? []) ?? [],
+    [groupsQuery.data?.pages]
+  );
+  const loadedStudents = useMemo(
+    () => studentsQuery.data?.pages.flatMap((page) => page.data ?? []) ?? [],
+    [studentsQuery.data?.pages]
+  );
+  const groups = loadedGroups.length > 0 ? loadedGroups : lookup.groups;
+  const students = loadedStudents.length > 0 ? loadedStudents : lookup.students;
 
   const studentMap = useMemo(() => {
     const map = new Map<string, WorkspaceBasicUserRecord>();
@@ -212,7 +260,7 @@ export function TutoringQueueCard({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => onActivate(row.original)}
+                onClick={() => actions.onActivate(row.original)}
               >
                 {t('activate')}
               </Button>
@@ -243,23 +291,28 @@ export function TutoringQueueCard({
         <DataTable
           t={tCommon}
           data={queue}
-          count={count}
-          pageIndex={page > 0 ? page - 1 : 0}
-          pageSize={pageSize}
+          count={pagination.count}
+          pageIndex={pagination.page > 0 ? pagination.page - 1 : 0}
+          pageSize={pagination.pageSize}
           namespace="tutoring-queue-table"
           columnGenerator={columns}
           disableSearch
-          setParams={onParamsChange}
+          setParams={actions.onParamsChange}
           filters={
             <div className="flex flex-wrap items-center gap-2">
               <Input
-                value={search}
-                onChange={(event) => onSearchChange(event.currentTarget.value)}
+                value={filters.search}
+                onChange={(event) =>
+                  actions.onSearchChange(event.currentTarget.value)
+                }
                 placeholder={t('search_queue')}
                 className="h-9 w-56"
               />
 
-              <Select value={reasonType} onValueChange={onReasonTypeChange}>
+              <Select
+                value={filters.reasonType}
+                onValueChange={actions.onReasonTypeChange}
+              >
                 <SelectTrigger className="w-44">
                   <SelectValue placeholder={t('reason')} />
                 </SelectTrigger>
@@ -277,37 +330,47 @@ export function TutoringQueueCard({
 
               <Combobox
                 options={groupOptions}
-                selected={groupId}
-                onChange={(value) => onGroupIdChange(value as string)}
+                selected={filters.groupId}
+                onChange={(value) => actions.onGroupIdChange(value as string)}
                 placeholder={t('all_groups')}
                 searchPlaceholder={t('search_groups')}
-                onSearchChange={onGroupSearchChange}
-                hasMore={groupHasMore}
-                loadingMore={groupsLoadingMore}
-                onLoadMore={onLoadMoreGroups}
+                onSearchChange={setGroupSearch}
+                hasMore={Boolean(groupsQuery.hasNextPage)}
+                loadingMore={groupsQuery.isFetchingNextPage}
+                onLoadMore={() => {
+                  if (groupsQuery.hasNextPage) {
+                    void groupsQuery.fetchNextPage();
+                  }
+                }}
                 className="w-52"
               />
 
               <Combobox
                 options={studentOptions}
-                selected={studentUserId}
-                onChange={(value) => onStudentUserIdChange(value as string)}
+                selected={filters.studentUserId}
+                onChange={(value) =>
+                  actions.onStudentUserIdChange(value as string)
+                }
                 placeholder={t('all_students')}
                 searchPlaceholder={t('search_students')}
-                onSearchChange={onStudentSearchChange}
-                hasMore={studentHasMore}
-                loadingMore={studentsLoadingMore}
-                onLoadMore={onLoadMoreStudents}
+                onSearchChange={setStudentSearch}
+                hasMore={Boolean(studentsQuery.hasNextPage)}
+                loadingMore={studentsQuery.isFetchingNextPage}
+                onLoadMore={() => {
+                  if (studentsQuery.hasNextPage) {
+                    void studentsQuery.fetchNextPage();
+                  }
+                }}
                 className="w-56"
               />
             </div>
           }
-          resetParams={onResetFilters}
+          resetParams={actions.onResetFilters}
           isFiltered={
-            search.trim().length > 0 ||
-            reasonType !== 'all' ||
-            groupId !== 'all' ||
-            studentUserId !== 'all'
+            filters.search.trim().length > 0 ||
+            filters.reasonType !== 'all' ||
+            filters.groupId !== 'all' ||
+            filters.studentUserId !== 'all'
           }
         />
       </div>

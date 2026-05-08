@@ -9,6 +9,7 @@ import type {
 export interface TutoringFormValues {
   groupId: string;
   studentUserId: string;
+  studentLabel?: string;
   sessionSlots: {
     sessionDate: string;
     startTime: string;
@@ -22,6 +23,7 @@ export interface TutoringFormValues {
 export const DEFAULT_FORM: TutoringFormValues = {
   groupId: '',
   studentUserId: '',
+  studentLabel: undefined,
   sessionSlots: [
     {
       sessionDate: '',
