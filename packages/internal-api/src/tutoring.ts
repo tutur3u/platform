@@ -75,6 +75,7 @@ export interface CreateTutoringSessionPayload {
     sessionDate: string;
     startTime: string;
     durationMinutes: number;
+    teacherUserId?: string | null;
   }[];
   sessionDate?: string;
   startTime?: string;

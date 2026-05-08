@@ -389,6 +389,7 @@ export function TutoringClient({ wsId, canManage }: Props) {
                     sessionDate: '',
                     startTime: '18:00',
                     durationMinutes: 45,
+                    teacherUserId: '',
                   })
                 ),
                 reasonType: nextReason,

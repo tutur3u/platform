@@ -14,6 +14,7 @@ export interface TutoringFormValues {
     sessionDate: string;
     startTime: string;
     durationMinutes: number;
+    teacherUserId: string;
   }[];
   reasonType: TutoringReasonType;
   reasonDetail: string;
@@ -29,6 +30,7 @@ export const DEFAULT_FORM: TutoringFormValues = {
       sessionDate: '',
       startTime: '18:00',
       durationMinutes: 45,
+      teacherUserId: '',
     },
   ],
   reasonType: 'CUSTOM',

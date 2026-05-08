@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TablesUpdate } from '@tuturuuu/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -7,6 +8,28 @@ import { TutoringSessionUpdateSchema } from '../../shared';
 
 interface Params {
   params: Promise<{ wsId: string; id: string }>;
+}
+
+async function isGroupTeacher(
+  wsId: string,
+  groupId: string,
+  teacherUserId: string,
+  sbAdmin: TypedSupabaseClient
+) {
+  const { data, error } = await sbAdmin
+    .from('workspace_user_groups_users')
+    .select('user_id,user:workspace_users!inner(ws_id)')
+    .eq('group_id', groupId)
+    .eq('user_id', teacherUserId)
+    .eq('role', 'TEACHER')
+    .eq('user.ws_id', wsId)
+    .maybeSingle();
+
+  if (error) {
+    return { isValid: false, error };
+  }
+
+  return { isValid: Boolean(data), error: null };
 }
 
 export async function PUT(request: Request, { params }: Params) {
@@ -60,7 +83,65 @@ export async function PUT(request: Request, { params }: Params) {
   if (parsed.data.resolvedAt !== undefined)
     updates.resolved_at = parsed.data.resolvedAt;
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+
+  if (parsed.data.teacherUserId) {
+    const { data: session, error: sessionError } = await sbAdmin
+      .from('workspace_tutoring_sessions')
+      .select('group_id')
+      .eq('id', id)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (sessionError) {
+      serverLogger.error('Failed to load tutoring session for teacher update', {
+        error: sessionError,
+        sessionId: id,
+        wsId,
+      });
+
+      return NextResponse.json(
+        { message: 'Failed to validate teacher assignment' },
+        { status: 500 }
+      );
+    }
+
+    if (!session) {
+      return NextResponse.json(
+        { message: 'Session not found' },
+        { status: 404 }
+      );
+    }
+
+    const teacherCheck = await isGroupTeacher(
+      wsId,
+      session.group_id,
+      parsed.data.teacherUserId,
+      sbAdmin
+    );
+
+    if (teacherCheck.error) {
+      serverLogger.error('Failed to validate tutoring teacher assignment', {
+        error: teacherCheck.error,
+        sessionId: id,
+        teacherUserId: parsed.data.teacherUserId,
+        wsId,
+      });
+
+      return NextResponse.json(
+        { message: 'Failed to validate teacher assignment' },
+        { status: 500 }
+      );
+    }
+
+    if (!teacherCheck.isValid) {
+      return NextResponse.json(
+        { message: 'Teacher must be a manager of the selected group' },
+        { status: 400 }
+      );
+    }
+  }
+
   const { data, error } = await sbAdmin
     .from('workspace_tutoring_sessions')
     .update(updates)

@@ -249,7 +249,7 @@ export function TutoringSessionsCard({
               >
                 {t('create')}
               </Button>
-              <DialogContent className="sm:max-w-3xl">
+              <DialogContent className="sm:max-w-4xl">
                 <DialogHeader>
                   <DialogTitle>{t('create_session')}</DialogTitle>
                 </DialogHeader>

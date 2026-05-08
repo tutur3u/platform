@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
@@ -13,6 +14,34 @@ import {
 
 interface Params {
   params: Promise<{ wsId: string }>;
+}
+
+async function listGroupTeacherIds(
+  wsId: string,
+  groupId: string,
+  teacherUserIds: string[],
+  sbAdmin: TypedSupabaseClient
+) {
+  if (teacherUserIds.length === 0) {
+    return { teacherIds: new Set<string>(), error: null };
+  }
+
+  const { data, error } = await sbAdmin
+    .from('workspace_user_groups_users')
+    .select('user_id,user:workspace_users!inner(ws_id)')
+    .eq('group_id', groupId)
+    .in('user_id', teacherUserIds)
+    .eq('role', 'TEACHER')
+    .eq('user.ws_id', wsId);
+
+  if (error) {
+    return { teacherIds: new Set<string>(), error };
+  }
+
+  return {
+    teacherIds: new Set((data ?? []).map((row) => row.user_id).filter(Boolean)),
+    error: null,
+  };
 }
 
 export async function GET(request: Request, { params }: Params) {
@@ -40,7 +69,7 @@ export async function GET(request: Request, { params }: Params) {
     );
   }
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
   const { page, pageSize } = parsed.data;
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
@@ -149,6 +178,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const payload = parsed.data;
+
   const sessionSlots =
     payload.sessions && payload.sessions.length > 0
       ? payload.sessions
@@ -157,6 +187,7 @@ export async function POST(request: Request, { params }: Params) {
             sessionDate: payload.sessionDate as string,
             startTime: payload.startTime as string,
             durationMinutes: payload.durationMinutes,
+            teacherUserId: payload.teacherUserId ?? null,
           }))
         : null;
 
@@ -170,11 +201,55 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
+  const teacherIdsToValidate = [
+    ...new Set(
+      sessionSlots
+        .map((slot) => slot.teacherUserId)
+        .filter((teacherUserId): teacherUserId is string =>
+          Boolean(teacherUserId)
+        )
+    ),
+  ];
+
+  if (teacherIdsToValidate.length > 0) {
+    const teacherCheck = await listGroupTeacherIds(
+      wsId,
+      payload.groupId,
+      teacherIdsToValidate,
+      sbAdmin
+    );
+
+    if (teacherCheck.error) {
+      serverLogger.error('Failed to validate tutoring teacher assignment', {
+        error: teacherCheck.error,
+        groupId: payload.groupId,
+        teacherUserId: payload.teacherUserId,
+        wsId,
+      });
+
+      return NextResponse.json(
+        { message: 'Failed to validate teacher assignment' },
+        { status: 500 }
+      );
+    }
+
+    const allTeachersValid = teacherIdsToValidate.every((teacherUserId) =>
+      teacherCheck.teacherIds.has(teacherUserId)
+    );
+
+    if (!allTeachersValid) {
+      return NextResponse.json(
+        { message: 'Teacher must be a manager of the selected group' },
+        { status: 400 }
+      );
+    }
+  }
+
   const rows = sessionSlots.map((slot) => ({
     ws_id: wsId,
     group_id: payload.groupId,
     student_user_id: payload.studentUserId,
-    teacher_user_id: payload.teacherUserId ?? null,
+    teacher_user_id: slot.teacherUserId ?? payload.teacherUserId ?? null,
     session_date: slot.sessionDate,
     start_time: slot.startTime,
     duration_minutes: slot.durationMinutes,

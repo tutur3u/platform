@@ -132,6 +132,34 @@ export function TutoringCreateCard({
     return options;
   }, [form.studentLabel, form.studentUserId, queriedStudents, students, t]);
 
+  const teacherOptions = useMemo<ComboboxOption[]>(() => {
+    const selectedGroup = groups.find((group) => group.id === form.groupId);
+    const managers = selectedGroup?.managers ?? [];
+    const options: ComboboxOption[] = [];
+    const seen = new Set<string>();
+
+    for (const manager of managers) {
+      if (!manager.id || seen.has(manager.id)) {
+        continue;
+      }
+
+      options.push({
+        label:
+          manager.full_name ||
+          manager.display_name ||
+          manager.email ||
+          manager.id,
+        value: manager.id,
+      });
+      seen.add(manager.id);
+    }
+
+    return options;
+  }, [form.groupId, groups]);
+
+  const singleTeacherId =
+    teacherOptions.length === 1 ? teacherOptions[0]?.value : undefined;
+
   return (
     <section className="space-y-3">
       {showTitle ? (
@@ -143,9 +171,38 @@ export function TutoringCreateCard({
           <Combobox
             options={groupOptions}
             selected={form.groupId}
-            onChange={(value) =>
-              onChange({ ...form, groupId: value as string })
-            }
+            onChange={(value) => {
+              const nextGroupId = value as string;
+              const nextGroup = groups.find(
+                (group) => group.id === nextGroupId
+              );
+              const managerIds = new Set(
+                (nextGroup?.managers ?? [])
+                  .map((manager) => manager.id)
+                  .filter((managerId): managerId is string =>
+                    Boolean(managerId)
+                  )
+              );
+              const nextSingleTeacherId =
+                managerIds.size === 1 ? [...managerIds][0] : undefined;
+
+              onChange({
+                ...form,
+                groupId: nextGroupId,
+                sessionSlots: form.sessionSlots.map((slot) => {
+                  if (nextSingleTeacherId) {
+                    return { ...slot, teacherUserId: nextSingleTeacherId };
+                  }
+
+                  return {
+                    ...slot,
+                    teacherUserId: managerIds.has(slot.teacherUserId)
+                      ? slot.teacherUserId
+                      : '',
+                  };
+                }),
+              });
+            }}
             placeholder={t('select_group')}
             searchPlaceholder={t('search_groups')}
             emptyText={t('no_groups')}
@@ -202,6 +259,7 @@ export function TutoringCreateCard({
                       sessionDate: '',
                       startTime: '18:00',
                       durationMinutes: DEFAULT_DURATION_MINUTES,
+                      teacherUserId: singleTeacherId ?? '',
                     },
                   ],
                 })
@@ -213,97 +271,138 @@ export function TutoringCreateCard({
             </Button>
           </div>
 
-          <div className="max-h-[50vh] space-y-2 overflow-y-auto">
+          <div className="max-h-[55vh] space-y-3 overflow-y-auto">
             {form.sessionSlots.map((slot, index) => (
               <div
                 key={`session-slot-${index + 1}`}
-                className="grid gap-2 rounded-md border border-border/60 p-3 md:grid-cols-[1fr_1fr_1fr_auto]"
+                className="relative rounded-lg border bg-muted/30 p-4"
               >
-                <div>
-                  <Label htmlFor={`sessionDate-${index}`}>{t('date')}</Label>
-                  <Input
-                    id={`sessionDate-${index}`}
-                    type="date"
-                    value={slot.sessionDate}
-                    onChange={(event) =>
-                      onChange({
-                        ...form,
-                        sessionSlots: form.sessionSlots.map((current, i) =>
-                          i === index
-                            ? { ...current, sessionDate: event.target.value }
-                            : current
-                        ),
-                      })
-                    }
-                  />
-                </div>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-destructive"
+                  onClick={() =>
+                    onChange({
+                      ...form,
+                      sessionSlots:
+                        form.sessionSlots.length > 1
+                          ? form.sessionSlots.filter((_, i) => i !== index)
+                          : form.sessionSlots,
+                    })
+                  }
+                  disabled={form.sessionSlots.length <= 1}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
 
-                <div>
-                  <Label htmlFor={`startTime-${index}`}>{t('time')}</Label>
-                  <Input
-                    id={`startTime-${index}`}
-                    type="time"
-                    value={slot.startTime}
-                    onChange={(event) =>
-                      onChange({
-                        ...form,
-                        sessionSlots: form.sessionSlots.map((current, i) =>
-                          i === index
-                            ? { ...current, startTime: event.target.value }
-                            : current
-                        ),
-                      })
-                    }
-                  />
-                </div>
+                <div className="grid gap-3 pt-1 pr-10 sm:grid-cols-3">
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor={`sessionDate-${index}`}
+                      className="font-medium text-xs"
+                    >
+                      {t('date')}
+                    </Label>
+                    <Input
+                      id={`sessionDate-${index}`}
+                      type="date"
+                      value={slot.sessionDate}
+                      onChange={(event) =>
+                        onChange({
+                          ...form,
+                          sessionSlots: form.sessionSlots.map((current, i) =>
+                            i === index
+                              ? { ...current, sessionDate: event.target.value }
+                              : current
+                          ),
+                        })
+                      }
+                    />
+                  </div>
 
-                <div>
-                  <Label htmlFor={`durationMinutes-${index}`}>
-                    {t('duration_minutes')}
-                  </Label>
-                  <Input
-                    id={`durationMinutes-${index}`}
-                    type="number"
-                    min={1}
-                    max={480}
-                    step={1}
-                    value={slot.durationMinutes}
-                    onChange={(event) =>
-                      onChange({
-                        ...form,
-                        sessionSlots: form.sessionSlots.map((current, i) =>
-                          i === index
-                            ? {
-                                ...current,
-                                durationMinutes:
-                                  Number.parseInt(event.target.value, 10) ||
-                                  DEFAULT_DURATION_MINUTES,
-                              }
-                            : current
-                        ),
-                      })
-                    }
-                  />
-                </div>
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor={`startTime-${index}`}
+                      className="font-medium text-xs"
+                    >
+                      {t('time')}
+                    </Label>
+                    <Input
+                      id={`startTime-${index}`}
+                      type="time"
+                      value={slot.startTime}
+                      onChange={(event) =>
+                        onChange({
+                          ...form,
+                          sessionSlots: form.sessionSlots.map((current, i) =>
+                            i === index
+                              ? { ...current, startTime: event.target.value }
+                              : current
+                          ),
+                        })
+                      }
+                    />
+                  </div>
 
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    onClick={() =>
-                      onChange({
-                        ...form,
-                        sessionSlots:
-                          form.sessionSlots.length > 1
-                            ? form.sessionSlots.filter((_, i) => i !== index)
-                            : form.sessionSlots,
-                      })
-                    }
-                    disabled={form.sessionSlots.length <= 1}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor={`durationMinutes-${index}`}
+                      className="font-medium text-xs"
+                    >
+                      {t('duration_minutes')}
+                    </Label>
+                    <Input
+                      id={`durationMinutes-${index}`}
+                      type="number"
+                      min={1}
+                      max={480}
+                      step={1}
+                      value={slot.durationMinutes}
+                      onChange={(event) =>
+                        onChange({
+                          ...form,
+                          sessionSlots: form.sessionSlots.map((current, i) =>
+                            i === index
+                              ? {
+                                  ...current,
+                                  durationMinutes:
+                                    Number.parseInt(event.target.value, 10) ||
+                                    DEFAULT_DURATION_MINUTES,
+                                }
+                              : current
+                          ),
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-1 sm:col-span-3">
+                    <Label className="font-medium text-xs">
+                      {t('teacher')}
+                    </Label>
+                    <Combobox
+                      options={teacherOptions}
+                      selected={slot.teacherUserId}
+                      onChange={(value) =>
+                        onChange({
+                          ...form,
+                          sessionSlots: form.sessionSlots.map((current, i) =>
+                            i === index
+                              ? {
+                                  ...current,
+                                  teacherUserId: (value as string) || '',
+                                }
+                              : current
+                          ),
+                        })
+                      }
+                      placeholder={t('select_teacher')}
+                      searchPlaceholder={t('search_teachers')}
+                      emptyText={t('no_teachers')}
+                      disabled={!form.groupId}
+                    />
+                  </div>
                 </div>
               </div>
             ))}

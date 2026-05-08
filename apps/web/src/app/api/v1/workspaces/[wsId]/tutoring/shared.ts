@@ -23,6 +23,7 @@ export const TutoringSessionCreateSchema = z.object({
         sessionDate: z.string().date(),
         startTime: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/),
         durationMinutes: z.number().int().positive().max(480).default(45),
+        teacherUserId: z.string().uuid().nullable().optional(),
       })
     )
     .min(1)
