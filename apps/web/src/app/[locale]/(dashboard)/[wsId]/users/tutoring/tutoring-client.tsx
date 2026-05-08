@@ -1,14 +1,8 @@
 'use client';
 
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createTutoringSession,
-  listTutoringQueue,
   listTutoringSessions,
   listWorkspaceBasicUsers,
   listWorkspaceUserGroups,
@@ -18,7 +12,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { TutoringQueueCard } from './tutoring-queue-card';
 import { TutoringSessionsCard } from './tutoring-sessions-card';
 import {
@@ -127,26 +121,6 @@ export function TutoringClient({ wsId, canManage }: Props) {
         pageSize: sessionPageSize,
       }),
   });
-  const queueQuery = useQuery({
-    queryKey: [
-      'tutoring-queue',
-      wsId,
-      queueReasonType,
-      queueGroupId,
-      queueStudentId,
-      queuePage,
-      queuePageSize,
-    ],
-    queryFn: () =>
-      listTutoringQueue(wsId, {
-        reasonType: queueReasonType === 'all' ? undefined : queueReasonType,
-        groupId: queueGroupId === 'all' ? undefined : queueGroupId,
-        studentUserId: queueStudentId === 'all' ? undefined : queueStudentId,
-        page: queuePage,
-        pageSize: queuePageSize,
-      }),
-    placeholderData: keepPreviousData,
-  });
   const groupsQuery = useQuery({
     queryKey: ['tutoring-groups', wsId],
     queryFn: () =>
@@ -160,24 +134,6 @@ export function TutoringClient({ wsId, canManage }: Props) {
     queryKey: ['tutoring-students', wsId],
     queryFn: () => listWorkspaceBasicUsers(wsId, { limit: 200 }),
   });
-
-  const queueRows = useMemo(() => {
-    if (queueQuery.isLoading) return undefined;
-    const rows = queueQuery.data?.data ?? [];
-    const keyword = queueSearch.trim().toLowerCase();
-    if (!keyword) return rows;
-    return rows.filter((item) => {
-      const haystack = [
-        item.student_name,
-        item.group_name,
-        item.reason_type,
-        item.feedback_content,
-      ]
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(keyword);
-    });
-  }, [queueQuery.data?.data, queueSearch, queueQuery.isLoading]);
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -276,24 +232,6 @@ export function TutoringClient({ wsId, canManage }: Props) {
     },
   };
 
-  const queueProps = {
-    filters: {
-      reasonType: queueReasonType,
-      groupId: queueGroupId,
-      studentUserId: queueStudentId,
-      search: queueSearch,
-    },
-    pagination: {
-      count: queueQuery.data?.count ?? 0,
-      page: queueQuery.data?.page ?? queuePage,
-      pageSize: queueQuery.data?.pageSize ?? queuePageSize,
-    },
-    lookup: {
-      groups: groupsQuery.data ?? [],
-      students: studentsQuery.data?.data ?? [],
-    },
-  };
-
   return (
     <Tabs
       value={tab === 'queue' ? 'queue' : 'sessions'}
@@ -357,11 +295,21 @@ export function TutoringClient({ wsId, canManage }: Props) {
         <TutoringQueueCard
           wsId={wsId}
           canManage={canManage}
-          queue={queueRows}
-          filters={queueProps.filters}
-          pagination={queueProps.pagination}
-          lookup={queueProps.lookup}
-          isFetching={queueQuery.isFetching && !queueQuery.isLoading}
+          enabled={tab === 'queue'}
+          filters={{
+            reasonType: queueReasonType,
+            groupId: queueGroupId,
+            studentUserId: queueStudentId,
+            search: queueSearch,
+          }}
+          pagination={{
+            page: queuePage,
+            pageSize: queuePageSize,
+          }}
+          lookup={{
+            groups: groupsQuery.data ?? [],
+            students: studentsQuery.data?.data ?? [],
+          }}
           actions={{
             onReasonTypeChange: (value) => {
               void setQueueReasonType(value);

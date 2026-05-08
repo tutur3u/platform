@@ -1,6 +1,10 @@
 'use client';
 
-import { useInfiniteQuery } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+} from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Loader2 } from '@tuturuuu/icons';
 import type {
@@ -9,10 +13,12 @@ import type {
 } from '@tuturuuu/internal-api';
 import {
   getNextWorkspaceUserGroupsPageParam,
+  listTutoringQueue,
   listWorkspaceBasicUsers,
   listWorkspaceUserGroups,
 } from '@tuturuuu/internal-api';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -27,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { getDisplayName, queueSummary } from './tutoring-types';
@@ -39,7 +46,6 @@ interface TutoringQueueFilters {
 }
 
 interface TutoringQueuePagination {
-  count: number;
   page: number;
   pageSize: number;
 }
@@ -62,27 +68,67 @@ interface TutoringQueueActions {
 interface Props {
   wsId: string;
   canManage: boolean;
-  queue: TutoringQueueItem[] | undefined;
+  enabled: boolean;
   filters: TutoringQueueFilters;
   pagination: TutoringQueuePagination;
   lookup: TutoringQueueLookupState;
-  isFetching: boolean;
   actions: TutoringQueueActions;
 }
 
 export function TutoringQueueCard({
   wsId,
   canManage,
-  queue,
+  enabled,
   filters,
   pagination,
   lookup,
-  isFetching,
   actions,
 }: Props) {
   const t = useTranslations('ws-tutoring');
   const tCommon = useTranslations();
-  const summary = queueSummary(queue ?? []);
+  const queueQuery = useQuery({
+    queryKey: [
+      'tutoring-queue',
+      wsId,
+      filters.reasonType,
+      filters.groupId,
+      filters.studentUserId,
+      pagination.page,
+      pagination.pageSize,
+    ],
+    queryFn: () =>
+      listTutoringQueue(wsId, {
+        reasonType:
+          filters.reasonType === 'all' ? undefined : filters.reasonType,
+        groupId: filters.groupId === 'all' ? undefined : filters.groupId,
+        studentUserId:
+          filters.studentUserId === 'all' ? undefined : filters.studentUserId,
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+      }),
+    placeholderData: keepPreviousData,
+    enabled,
+  });
+  const queueRows = useMemo(() => {
+    if (queueQuery.isLoading) return undefined;
+    const rows = queueQuery.data?.data ?? [];
+    const keyword = filters.search.trim().toLowerCase();
+    if (!keyword) return rows;
+
+    return rows.filter((item) => {
+      const haystack = [
+        item.student_name,
+        item.group_name,
+        item.reason_type,
+        item.feedback_content,
+      ]
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(keyword);
+    });
+  }, [filters.search, queueQuery.data?.data, queueQuery.isLoading]);
+  const summary = queueSummary(queueRows ?? []);
+  const isFetching = queueQuery.isFetching && !queueQuery.isLoading;
   const [groupSearch, setGroupSearch] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
   const [debouncedGroupSearch] = useDebounce(groupSearch, 250);
@@ -153,7 +199,7 @@ export function TutoringQueueCard({
     ];
 
     const seen = new Set(options.map((option) => option.value));
-    for (const item of queue ?? []) {
+    for (const item of queueRows ?? []) {
       if (!item.group_id || seen.has(item.group_id)) {
         continue;
       }
@@ -166,7 +212,7 @@ export function TutoringQueueCard({
     }
 
     return options;
-  }, [groups, queue, t]);
+  }, [groups, queueRows, t]);
 
   const studentOptions: ComboboxOption[] = useMemo(() => {
     const options: ComboboxOption[] = [
@@ -178,7 +224,7 @@ export function TutoringQueueCard({
     ];
 
     const seen = new Set(options.map((option) => option.value));
-    for (const item of queue ?? []) {
+    for (const item of queueRows ?? []) {
       if (!item.student_user_id || seen.has(item.student_user_id)) {
         continue;
       }
@@ -191,7 +237,7 @@ export function TutoringQueueCard({
     }
 
     return options;
-  }, [queue, students, t]);
+  }, [queueRows, students, t]);
 
   const columns = ({ t: tableT }: { t: ReturnType<typeof useTranslations> }) =>
     [
@@ -230,6 +276,47 @@ export function TutoringQueueCard({
             title={t('reason')}
           />
         ),
+        cell: ({ row }) => {
+          const reason = row.original.reason_type;
+          if (reason === 'BOTH') {
+            return (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant="outline"
+                    className="cursor-help rounded-full border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-400"
+                  >
+                    {t('both_reason')}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t('both_reason_tooltip')}</p>
+                </TooltipContent>
+              </Tooltip>
+            );
+          }
+          if (reason === 'ABSENT_RECOVERY') {
+            return (
+              <Badge
+                variant="outline"
+                className="rounded-full border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400"
+              >
+                {t('absent_recovery')}
+              </Badge>
+            );
+          }
+          if (reason === 'WEAK_SUPPORT') {
+            return (
+              <Badge
+                variant="outline"
+                className="rounded-full border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-400"
+              >
+                {t('weak_support')}
+              </Badge>
+            );
+          }
+          return reason;
+        },
       },
       {
         accessorKey: 'absence_deficit',
@@ -290,10 +377,10 @@ export function TutoringQueueCard({
         )}
         <DataTable
           t={tCommon}
-          data={queue}
-          count={pagination.count}
-          pageIndex={pagination.page > 0 ? pagination.page - 1 : 0}
-          pageSize={pagination.pageSize}
+          data={queueRows}
+          count={queueQuery.data?.count ?? 0}
+          pageIndex={(queueQuery.data?.page ?? pagination.page) - 1}
+          pageSize={queueQuery.data?.pageSize ?? pagination.pageSize}
           namespace="tutoring-queue-table"
           columnGenerator={columns}
           disableSearch

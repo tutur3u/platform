@@ -55,7 +55,16 @@ export function getDisplayName(
   user: WorkspaceBasicUserRecord | null | undefined
 ) {
   if (!user) return '-';
-  return user.full_name ?? user.display_name ?? user.email ?? '-';
+  const fullName = user.full_name?.trim();
+  if (fullName) return fullName;
+
+  const displayName = user.display_name?.trim();
+  if (displayName) return displayName;
+
+  const email = user.email?.trim();
+  if (email) return email;
+
+  return '-';
 }
 
 export function toDetailedRows(sessions: TutoringSessionRecord[]) {

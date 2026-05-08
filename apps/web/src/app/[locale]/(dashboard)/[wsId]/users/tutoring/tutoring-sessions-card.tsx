@@ -8,6 +8,7 @@ import type {
   WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
@@ -18,6 +19,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -144,11 +151,7 @@ export function TutoringSessionsCard({
             title={t('teacher')}
           />
         ),
-        cell: ({ row }) =>
-          row.original.teacher?.display_name ??
-          row.original.teacher?.full_name ??
-          row.original.teacher?.email ??
-          '-',
+        cell: ({ row }) => getDisplayName(row.original.teacher),
       },
       {
         id: 'group',
@@ -170,6 +173,40 @@ export function TutoringSessionsCard({
             title={t('reason')}
           />
         ),
+        cell: ({ row }) => {
+          const reason = row.original.reason_type;
+          if (reason === 'ABSENT_RECOVERY') {
+            return (
+              <Badge
+                variant="outline"
+                className="rounded-full border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400"
+              >
+                {t('absent_recovery')}
+              </Badge>
+            );
+          }
+          if (reason === 'WEAK_SUPPORT') {
+            return (
+              <Badge
+                variant="outline"
+                className="rounded-full border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-400"
+              >
+                {t('weak_support')}
+              </Badge>
+            );
+          }
+          if (reason === 'CUSTOM') {
+            return (
+              <Badge
+                variant="outline"
+                className="rounded-full border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-400"
+              >
+                {t('custom_reason')}
+              </Badge>
+            );
+          }
+          return reason;
+        },
       },
       {
         accessorKey: 'attendance_status',
@@ -185,22 +222,28 @@ export function TutoringSessionsCard({
         id: 'actions',
         header: () => <div className="text-right">{t('actions')}</div>,
         cell: ({ row }) => (
-          <div className="flex justify-end gap-1">
-            {STATUS_ACTIONS.map((status) => (
-              <Button
-                key={status}
-                size="sm"
-                variant={
-                  row.original.attendance_status === status
-                    ? 'default'
-                    : 'outline'
-                }
-                onClick={() => actions.onMark(row.original.id, status)}
-                disabled={!canManage || isMarking}
-              >
-                {status}
-              </Button>
-            ))}
+          <div className="flex justify-end">
+            <Select
+              value={row.original.attendance_status}
+              onValueChange={(value) =>
+                actions.onMark(
+                  row.original.id,
+                  value as TutoringAttendanceStatus
+                )
+              }
+              disabled={!canManage || isMarking}
+            >
+              <SelectTrigger className="h-9 w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_ACTIONS.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         ),
       },
@@ -268,21 +311,6 @@ export function TutoringSessionsCard({
           ) : null
         }
       />
-      <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="outline" onClick={handleExportDetailedCsv}>
-          <Download className="mr-2 h-4 w-4" />
-          {t('export_detailed_csv')}
-        </Button>
-        <Button size="sm" variant="outline" onClick={handleExportPayrollCsv}>
-          <Download className="mr-2 h-4 w-4" />
-          {t('export_payroll_csv')}
-        </Button>
-        <Button size="sm" variant="outline" onClick={handleExportDetailedXlsx}>
-          <Download className="mr-2 h-4 w-4" />
-          {t('export_detailed_xlsx')}
-        </Button>
-      </div>
-
       <DataTable
         t={tCommon}
         data={sessions}
@@ -366,6 +394,31 @@ export function TutoringSessionsCard({
           </div>
         }
         resetParams={actions.onResetFilters}
+        toolbarActions={
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto h-8 w-full md:w-fit"
+              >
+                <Download className="h-4 w-4" />
+                {tCommon('common.export')}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportDetailedCsv}>
+                {t('export_detailed_csv')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportPayrollCsv}>
+                {t('export_payroll_csv')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportDetailedXlsx}>
+                {t('export_detailed_xlsx')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        }
         isFiltered={
           filters.reasonType !== 'all' ||
           filters.attendanceStatus !== 'all' ||

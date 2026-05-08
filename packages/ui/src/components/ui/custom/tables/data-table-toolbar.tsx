@@ -93,8 +93,6 @@ export function DataTableToolbar<TData>({
         )}
       </div>
 
-      {toolbarActions}
-
       {importContent && (
         <Dialog>
           <DialogTrigger asChild>
@@ -130,6 +128,7 @@ export function DataTableToolbar<TData>({
             editContent={editContent}
           />
         )}
+        {toolbarActions}
         {hasData && (
           <DataTableRefreshButton
             onRefresh={onRefresh}

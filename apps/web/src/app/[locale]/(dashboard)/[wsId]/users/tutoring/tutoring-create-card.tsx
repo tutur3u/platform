@@ -179,6 +179,23 @@ export function TutoringCreateCard({
 
     return t('conflict_student_slots', { slotA, slotB });
   }, [firstConflict, t]);
+  const hasRequiredFields = useMemo(() => {
+    if (!form.groupId || !form.studentUserId || form.sessionSlots.length < 1) {
+      return false;
+    }
+
+    return form.sessionSlots.every((slot) => {
+      const hasDate = Boolean(slot.sessionDate);
+      const hasTime = Boolean(slot.startTime);
+      const hasTeacher = Boolean(slot.teacherUserId);
+      const hasValidDuration =
+        Number.isFinite(slot.durationMinutes) &&
+        slot.durationMinutes >= 1 &&
+        slot.durationMinutes <= 480;
+
+      return hasDate && hasTime && hasTeacher && hasValidDuration;
+    });
+  }, [form]);
 
   return (
     <section className="space-y-3">
@@ -442,7 +459,9 @@ export function TutoringCreateCard({
         <Button
           className="md:col-span-2"
           onClick={onSubmit}
-          disabled={isSubmitting || Boolean(firstConflict)}
+          disabled={
+            isSubmitting || Boolean(firstConflict) || !hasRequiredFields
+          }
         >
           {t('create')}
         </Button>
