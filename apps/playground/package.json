@@ -24,14 +24,14 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.68",
+    "@ai-sdk/google": "^3.0.70",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "dayjs": "^1.11.20",
-    "next": "^16.2.5",
+    "next": "^16.2.6",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "zod": "^4.4.3"
@@ -39,7 +39,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.4",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.6.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "babel-plugin-react-compiler": "^1.0.0",
