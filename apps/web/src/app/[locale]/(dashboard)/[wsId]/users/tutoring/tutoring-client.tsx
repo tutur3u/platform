@@ -21,7 +21,11 @@ import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
 import { useMemo, useState } from 'react';
 import { TutoringQueueCard } from './tutoring-queue-card';
 import { TutoringSessionsCard } from './tutoring-sessions-card';
-import { DEFAULT_FORM, type TutoringFormValues } from './tutoring-types';
+import {
+  DEFAULT_FORM,
+  findSessionSlotConflicts,
+  type TutoringFormValues,
+} from './tutoring-types';
 
 interface Props {
   wsId: string;
@@ -192,6 +196,18 @@ export function TutoringClient({ wsId, canManage }: Props) {
         if (slot.durationMinutes < 1 || slot.durationMinutes > 480) {
           throw new Error(t('invalid_duration'));
         }
+      }
+
+      const slotConflicts = findSessionSlotConflicts(form);
+      if (slotConflicts.length > 0) {
+        const firstConflict = slotConflicts[0];
+        const slotA = (firstConflict?.firstIndex ?? 0) + 1;
+        const slotB = (firstConflict?.secondIndex ?? 0) + 1;
+        if (firstConflict?.conflictType === 'teacher') {
+          throw new Error(t('conflict_teacher_slots', { slotA, slotB }));
+        }
+
+        throw new Error(t('conflict_student_slots', { slotA, slotB }));
       }
 
       return createTutoringSession(wsId, {

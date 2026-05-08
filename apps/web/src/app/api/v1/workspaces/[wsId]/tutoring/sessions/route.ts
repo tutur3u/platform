@@ -8,8 +8,11 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
+  findConflictsWithExistingSessions,
+  findConflictsWithinSlots,
   TutoringSessionCreateSchema,
   TutoringSessionListQuerySchema,
+  type TutoringSessionSlotInput,
 } from '../shared';
 
 interface Params {
@@ -40,6 +43,75 @@ async function listGroupTeacherIds(
 
   return {
     teacherIds: new Set((data ?? []).map((row) => row.user_id).filter(Boolean)),
+    error: null,
+  };
+}
+
+async function listPotentialSchedulingConflicts(
+  wsId: string,
+  slots: TutoringSessionSlotInput[],
+  sbAdmin: TypedSupabaseClient
+) {
+  const sessionDates = [...new Set(slots.map((slot) => slot.sessionDate))];
+  const teacherIds = [
+    ...new Set(
+      slots
+        .map((slot) => slot.teacherUserId)
+        .filter((teacherUserId): teacherUserId is string =>
+          Boolean(teacherUserId)
+        )
+    ),
+  ];
+  const studentIds = [...new Set(slots.map((slot) => slot.studentUserId))];
+
+  if (sessionDates.length === 0) {
+    return { data: [], error: null };
+  }
+
+  const teacherQuery =
+    teacherIds.length > 0
+      ? sbAdmin
+          .from('workspace_tutoring_sessions')
+          .select(
+            'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
+          )
+          .eq('ws_id', wsId)
+          .in('session_date', sessionDates)
+          .in('teacher_user_id', teacherIds)
+      : Promise.resolve({ data: [], error: null });
+
+  const studentQuery = sbAdmin
+    .from('workspace_tutoring_sessions')
+    .select(
+      'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
+    )
+    .eq('ws_id', wsId)
+    .in('session_date', sessionDates)
+    .in('student_user_id', studentIds);
+
+  const [teacherResult, studentResult] = await Promise.all([
+    teacherQuery,
+    studentQuery,
+  ]);
+
+  if (teacherResult.error) {
+    return { data: [], error: teacherResult.error };
+  }
+
+  if (studentResult.error) {
+    return { data: [], error: studentResult.error };
+  }
+
+  const merged = new Map<string, (typeof studentResult.data)[number]>();
+  for (const row of teacherResult.data ?? []) {
+    merged.set(row.id, row);
+  }
+  for (const row of studentResult.data ?? []) {
+    merged.set(row.id, row);
+  }
+
+  return {
+    data: [...merged.values()],
     error: null,
   };
 }
@@ -243,6 +315,64 @@ export async function POST(request: Request, { params }: Params) {
         { status: 400 }
       );
     }
+  }
+
+  const slotsForConflictCheck: TutoringSessionSlotInput[] = sessionSlots.map(
+    (slot) => ({
+      durationMinutes: slot.durationMinutes,
+      sessionDate: slot.sessionDate,
+      startTime: slot.startTime,
+      studentUserId: payload.studentUserId,
+      teacherUserId: slot.teacherUserId ?? payload.teacherUserId ?? null,
+    })
+  );
+
+  const internalConflicts = findConflictsWithinSlots(slotsForConflictCheck);
+  if (internalConflicts.length > 0) {
+    return NextResponse.json(
+      {
+        message: 'Scheduling conflict detected in the submitted sessions',
+        code: 'SCHEDULING_CONFLICT',
+        conflicts: internalConflicts,
+      },
+      { status: 409 }
+    );
+  }
+
+  const potentialConflicts = await listPotentialSchedulingConflicts(
+    wsId,
+    slotsForConflictCheck,
+    sbAdmin
+  );
+
+  if (potentialConflicts.error) {
+    serverLogger.error('Failed to validate tutoring session conflicts', {
+      error: potentialConflicts.error,
+      groupId: payload.groupId,
+      studentUserId: payload.studentUserId,
+      wsId,
+    });
+
+    return NextResponse.json(
+      { message: 'Failed to validate scheduling conflicts' },
+      { status: 500 }
+    );
+  }
+
+  const existingConflicts = findConflictsWithExistingSessions(
+    slotsForConflictCheck,
+    potentialConflicts.data
+  );
+
+  if (existingConflicts.length > 0) {
+    return NextResponse.json(
+      {
+        message: 'Scheduling conflict detected with existing sessions',
+        code: 'SCHEDULING_CONFLICT',
+        conflicts: existingConflicts,
+      },
+      { status: 409 }
+    );
   }
 
   const rows = sessionSlots.map((slot) => ({

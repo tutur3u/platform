@@ -21,6 +21,12 @@ export interface TutoringFormValues {
   content: string;
 }
 
+export interface TutoringSessionSlotConflict {
+  firstIndex: number;
+  secondIndex: number;
+  conflictType: 'teacher' | 'student';
+}
+
 export const DEFAULT_FORM: TutoringFormValues = {
   groupId: '',
   studentUserId: '',
@@ -98,4 +104,96 @@ export function queueSummary(queue: TutoringQueueItem[]) {
     (item) => item.reason_type !== 'ABSENT_RECOVERY'
   ).length;
   return { absent, weak };
+}
+
+function parseTimeToMinutes(time: string) {
+  const [rawHour = '0', rawMinute = '0'] = time.split(':');
+  const hour = Number.parseInt(rawHour, 10);
+  const minute = Number.parseInt(rawMinute, 10);
+
+  if (
+    Number.isNaN(hour) ||
+    Number.isNaN(minute) ||
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    return null;
+  }
+
+  return hour * 60 + minute;
+}
+
+function slotsOverlap(
+  startMinutesA: number,
+  durationMinutesA: number,
+  startMinutesB: number,
+  durationMinutesB: number
+) {
+  const endA = startMinutesA + durationMinutesA;
+  const endB = startMinutesB + durationMinutesB;
+  return startMinutesA < endB && startMinutesB < endA;
+}
+
+export function findSessionSlotConflicts(
+  form: TutoringFormValues
+): TutoringSessionSlotConflict[] {
+  const conflicts: TutoringSessionSlotConflict[] = [];
+  const { sessionSlots } = form;
+
+  for (let i = 0; i < sessionSlots.length; i += 1) {
+    const current = sessionSlots[i];
+    const currentStart = current ? parseTimeToMinutes(current.startTime) : null;
+
+    if (!current || currentStart === null || !current.sessionDate) {
+      continue;
+    }
+
+    for (let j = i + 1; j < sessionSlots.length; j += 1) {
+      const next = sessionSlots[j];
+      const nextStart = next ? parseTimeToMinutes(next.startTime) : null;
+
+      if (!next || nextStart === null || !next.sessionDate) {
+        continue;
+      }
+
+      if (current.sessionDate !== next.sessionDate) {
+        continue;
+      }
+
+      if (
+        !slotsOverlap(
+          currentStart,
+          current.durationMinutes,
+          nextStart,
+          next.durationMinutes
+        )
+      ) {
+        continue;
+      }
+
+      if (
+        current.teacherUserId &&
+        next.teacherUserId &&
+        current.teacherUserId === next.teacherUserId
+      ) {
+        conflicts.push({
+          conflictType: 'teacher',
+          firstIndex: i,
+          secondIndex: j,
+        });
+      }
+
+      if (form.studentUserId) {
+        conflicts.push({
+          conflictType: 'student',
+          firstIndex: i,
+          secondIndex: j,
+        });
+      }
+    }
+  }
+
+  return conflicts;
 }

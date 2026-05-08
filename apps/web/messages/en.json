@@ -16404,6 +16404,8 @@
     "all_statuses": "All statuses",
     "all_students": "All students",
     "both_reason": "Both",
+    "conflict_student_slots": "Session {slotA} conflicts with session {slotB} for the selected student",
+    "conflict_teacher_slots": "Session {slotA} conflicts with session {slotB} for the selected teacher",
     "content": "Content",
     "create": "Create session",
     "create_failed": "Failed to create tutoring session",

@@ -16404,6 +16404,8 @@
     "all_statuses": "Tất cả trạng thái",
     "all_students": "Tất cả học viên",
     "both_reason": "Cả hai",
+    "conflict_student_slots": "Buổi {slotA} bị trùng lịch với buổi {slotB} cho học viên đã chọn",
+    "conflict_teacher_slots": "Buổi {slotA} bị trùng lịch với buổi {slotB} cho giáo viên đã chọn",
     "content": "Nội dung",
     "create": "Tạo buổi",
     "create_failed": "Không thể tạo buổi phụ đạo",
