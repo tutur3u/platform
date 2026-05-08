@@ -5,7 +5,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import * as React from 'react';
-import { type DateRange, DayPicker } from 'react-day-picker';
+import { type ClassNames, type DateRange, DayPicker } from 'react-day-picker';
 import { useCalendarPreferences } from '../../hooks/use-calendar-preferences';
 import { buttonVariants } from './button';
 import {
@@ -16,25 +16,111 @@ import {
   SelectValue,
 } from './select';
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
+type DayPickerProps = React.ComponentProps<typeof DayPicker>;
+type DistributiveOmit<T, K extends keyof any> = T extends unknown
+  ? Omit<T, K>
+  : never;
+
+type LegacyCalendarClassName =
+  | 'caption'
+  | 'head_row'
+  | 'nav_button'
+  | 'row'
+  | 'table'
+  | 'tbody';
+
+type CalendarClassNames = Partial<ClassNames> &
+  Partial<Record<LegacyCalendarClassName, string>>;
+
+export type CalendarProps = DistributiveOmit<
+  DayPickerProps,
+  'autoFocus' | 'classNames' | 'endMonth' | 'startMonth'
+> & {
   onSubmit?: (date: Date) => void;
   minDate?: Date;
+  fromDate?: Date;
+  toDate?: Date;
+  initialFocus?: boolean;
+  autoFocus?: boolean;
+  startMonth?: Date;
+  endMonth?: Date;
+  classNames?: CalendarClassNames;
   preferences?: {
     weekStartsOn?: 0 | 1 | 6;
     timezone?: string;
   };
 };
 
+function normalizeClassNames(classNames: CalendarClassNames) {
+  const {
+    caption,
+    head_row,
+    nav_button,
+    row,
+    table,
+    tbody,
+    ...currentClassNames
+  } = classNames;
+
+  const normalizedClassNames: Partial<ClassNames> = { ...currentClassNames };
+
+  if (caption) {
+    normalizedClassNames.month_caption = cn(
+      normalizedClassNames.month_caption,
+      caption
+    );
+  }
+
+  if (head_row) {
+    normalizedClassNames.weekdays = cn(normalizedClassNames.weekdays, head_row);
+  }
+
+  if (nav_button) {
+    normalizedClassNames.button_next = cn(
+      normalizedClassNames.button_next,
+      nav_button
+    );
+    normalizedClassNames.button_previous = cn(
+      normalizedClassNames.button_previous,
+      nav_button
+    );
+  }
+
+  if (row) {
+    normalizedClassNames.week = cn(normalizedClassNames.week, row);
+  }
+
+  if (table) {
+    normalizedClassNames.month_grid = cn(
+      normalizedClassNames.month_grid,
+      table
+    );
+  }
+
+  if (tbody) {
+    normalizedClassNames.weeks = cn(normalizedClassNames.weeks, tbody);
+  }
+
+  return normalizedClassNames;
+}
+
 function Calendar({
   className,
   classNames,
   onSubmit,
   minDate,
+  fromDate,
+  toDate,
+  initialFocus,
+  autoFocus,
+  startMonth,
+  endMonth,
   preferences: preferencesProp,
   ...props
 }: CalendarProps) {
   const contextPreferences = useCalendarPreferences();
   const preferences = preferencesProp ?? contextPreferences;
+  const dayPickerProps = props as DayPickerProps;
 
   const selected = 'selected' in props ? props.selected : undefined;
 
@@ -220,29 +306,28 @@ function Calendar({
         </div>
 
         <DayPicker
-          {...props}
+          {...dayPickerProps}
           month={month}
           onMonthChange={setMonth}
           defaultMonth={initialMonth}
           showOutsideDays={true}
           weekStartsOn={props.weekStartsOn ?? preferences.weekStartsOn}
           className={cn('', className)}
-          classNames={{
+          classNames={normalizeClassNames({
             root: 'bg-transparent',
             months: 'flex flex-col',
             month:
               'space-y-4 max-w-[calc(100vw-4rem)] text-center p-2 font-semibold shrink-0',
-            caption: 'hidden',
+            month_caption: 'hidden',
             nav: 'hidden',
-            nav_button: 'hidden',
-            table: 'w-full border-collapse',
-            head_row: 'grid grid-cols-7 gap-1',
+            button_next: 'hidden',
+            button_previous: 'hidden',
+            month_grid: 'w-full border-collapse',
             weeks: 'flex flex-col gap-1',
-            week: 'flex justify-center gap-1',
-            weekdays: 'flex justify-evenly justify-center w-full mb-2',
+            week: 'grid grid-cols-7 gap-1 mt-2',
+            weekdays: 'grid w-full grid-cols-7 gap-1 mb-2',
             weekday:
               'text-muted-foreground rounded-md font-normal text-[0.8rem] text-center',
-            row: 'grid grid-cols-7 gap-1 mt-2',
             day: 'text-center text-sm p-0 relative w-9',
             day_button: cn(
               buttonVariants({ variant: 'ghost' }),
@@ -260,11 +345,12 @@ function Calendar({
             range_end: 'bg-primary! text-primary-foreground! rounded-r-md',
             range_middle: 'aria-selected:bg-primary/20',
             hidden: 'invisible',
-            month_grid: 'w-full',
-            month_caption: 'hidden',
             ...classNames,
-          }}
-          disabled={minDate ? { before: minDate } : undefined}
+          })}
+          startMonth={startMonth ?? fromDate}
+          endMonth={endMonth ?? toDate}
+          autoFocus={autoFocus ?? initialFocus}
+          disabled={minDate ? { before: minDate } : dayPickerProps.disabled}
         />
       </div>
     </div>
