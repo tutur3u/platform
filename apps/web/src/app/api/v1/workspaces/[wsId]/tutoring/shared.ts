@@ -21,7 +21,12 @@ export const TutoringSessionCreateSchema = z.object({
     .array(
       z.object({
         sessionDate: z.string().date(),
-        startTime: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/),
+        startTime: z
+          .string()
+          .regex(
+            /^\d{1,2}:\d{2}(?::\d{2})?(?:\s?(?:AM|PM|am|pm))?$/,
+            'Invalid time format'
+          ),
         durationMinutes: z.number().int().positive().max(480).default(45),
         teacherUserId: z.string().uuid().nullable().optional(),
       })
@@ -32,7 +37,10 @@ export const TutoringSessionCreateSchema = z.object({
   sessionDate: z.string().date().optional(),
   startTime: z
     .string()
-    .regex(/^\d{2}:\d{2}(:\d{2})?$/)
+    .regex(
+      /^\d{1,2}:\d{2}(?::\d{2})?(?:\s?(?:AM|PM|am|pm))?$/,
+      'Invalid time format'
+    )
     .optional(),
   durationMinutes: z.number().int().positive().max(480).default(45),
   sessionCount: z.number().int().positive().max(50).default(1),
@@ -49,7 +57,10 @@ export const TutoringSessionUpdateSchema = z
     sessionDate: z.string().date().optional(),
     startTime: z
       .string()
-      .regex(/^\d{2}:\d{2}(:\d{2})?$/)
+      .regex(
+        /^\d{1,2}:\d{2}(?::\d{2})?(?:\s?(?:AM|PM|am|pm))?$/,
+        'Invalid time format'
+      )
       .optional(),
     durationMinutes: z.number().int().positive().max(480).optional(),
     reasonType: TutoringReasonTypeSchema.optional(),
@@ -106,18 +117,31 @@ export interface TutoringSessionConflict {
 }
 
 function parseTimeToMinutes(time: string) {
-  const [rawHour = '0', rawMinute = '0'] = time.split(':');
-  const hour = Number.parseInt(rawHour, 10);
+  const normalized = time.trim();
+  const meridiemMatch = normalized.match(/\s?(AM|PM)$/i);
+  const meridiem = meridiemMatch?.[1]?.toUpperCase();
+  const timePart = meridiem
+    ? normalized.slice(0, meridiemMatch?.index ?? normalized.length).trim()
+    : normalized;
+  const [rawHour = '0', rawMinute = '0'] = timePart.split(':');
+  let hour = Number.parseInt(rawHour, 10);
   const minute = Number.parseInt(rawMinute, 10);
 
-  if (
-    Number.isNaN(hour) ||
-    Number.isNaN(minute) ||
-    hour < 0 ||
-    hour > 23 ||
-    minute < 0 ||
-    minute > 59
-  ) {
+  if (Number.isNaN(hour) || Number.isNaN(minute) || minute < 0 || minute > 59) {
+    return null;
+  }
+
+  if (meridiem) {
+    if (hour < 1 || hour > 12) {
+      return null;
+    }
+
+    if (meridiem === 'AM') {
+      hour = hour % 12;
+    } else {
+      hour = (hour % 12) + 12;
+    }
+  } else if (hour < 0 || hour > 23) {
     return null;
   }
 

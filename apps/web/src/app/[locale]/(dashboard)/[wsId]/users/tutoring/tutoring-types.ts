@@ -107,18 +107,31 @@ export function queueSummary(queue: TutoringQueueItem[]) {
 }
 
 function parseTimeToMinutes(time: string) {
-  const [rawHour = '0', rawMinute = '0'] = time.split(':');
-  const hour = Number.parseInt(rawHour, 10);
+  const normalized = time.trim();
+  const meridiemMatch = normalized.match(/\s?(AM|PM)$/i);
+  const meridiem = meridiemMatch?.[1]?.toUpperCase();
+  const timePart = meridiem
+    ? normalized.slice(0, meridiemMatch?.index ?? normalized.length).trim()
+    : normalized;
+  const [rawHour = '0', rawMinute = '0'] = timePart.split(':');
+  let hour = Number.parseInt(rawHour, 10);
   const minute = Number.parseInt(rawMinute, 10);
 
-  if (
-    Number.isNaN(hour) ||
-    Number.isNaN(minute) ||
-    hour < 0 ||
-    hour > 23 ||
-    minute < 0 ||
-    minute > 59
-  ) {
+  if (Number.isNaN(hour) || Number.isNaN(minute) || minute < 0 || minute > 59) {
+    return null;
+  }
+
+  if (meridiem) {
+    if (hour < 1 || hour > 12) {
+      return null;
+    }
+
+    if (meridiem === 'AM') {
+      hour = hour % 12;
+    } else {
+      hour = (hour % 12) + 12;
+    }
+  } else if (hour < 0 || hour > 23) {
     return null;
   }
 

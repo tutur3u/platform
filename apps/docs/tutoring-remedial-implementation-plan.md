@@ -182,3 +182,9 @@ The following foundation has been implemented:
    - Recommended: suggestion-only queue + manual activation.
 2. Should turning off `require_attention` auto-close related pending queue items?
 3. Payroll formula: count per session, duration-weighted, or configurable rate table?
+
+## Session Retrospective (2026-05-08)
+
+- Issue: scheduling conflicts could be missed when time strings arrived in 12-hour format (for example `06:00 PM`) while overlap parsing expected 24-hour-only values.
+- Fix: conflict parsing now normalizes both 24-hour (`18:00`, `18:00:00`) and 12-hour (`06:00 PM`) formats in client pre-submit checks and server conflict checks.
+- Guardrail: tutoring create/update API validation now accepts both time formats so localized time input cannot bypass overlap detection.

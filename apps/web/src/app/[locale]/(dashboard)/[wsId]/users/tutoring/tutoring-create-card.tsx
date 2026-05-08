@@ -15,7 +15,11 @@ import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import { getDisplayName, type TutoringFormValues } from './tutoring-types';
+import {
+  findSessionSlotConflicts,
+  getDisplayName,
+  type TutoringFormValues,
+} from './tutoring-types';
 
 const DEFAULT_DURATION_MINUTES = 45;
 
@@ -159,6 +163,22 @@ export function TutoringCreateCard({
 
   const singleTeacherId =
     teacherOptions.length === 1 ? teacherOptions[0]?.value : undefined;
+  const slotConflicts = useMemo(() => findSessionSlotConflicts(form), [form]);
+  const firstConflict = slotConflicts[0];
+  const slotConflictMessage = useMemo(() => {
+    if (!firstConflict) {
+      return null;
+    }
+
+    const slotA = firstConflict.firstIndex + 1;
+    const slotB = firstConflict.secondIndex + 1;
+
+    if (firstConflict.conflictType === 'teacher') {
+      return t('conflict_teacher_slots', { slotA, slotB });
+    }
+
+    return t('conflict_student_slots', { slotA, slotB });
+  }, [firstConflict, t]);
 
   return (
     <section className="space-y-3">
@@ -422,10 +442,15 @@ export function TutoringCreateCard({
         <Button
           className="md:col-span-2"
           onClick={onSubmit}
-          disabled={isSubmitting}
+          disabled={isSubmitting || Boolean(firstConflict)}
         >
           {t('create')}
         </Button>
+        {slotConflictMessage ? (
+          <p className="text-destructive text-sm md:col-span-2">
+            {slotConflictMessage}
+          </p>
+        ) : null}
       </div>
     </section>
   );
