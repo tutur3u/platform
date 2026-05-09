@@ -55,6 +55,7 @@ type Limiters = {
 const limiterCache = new Map<string, Limiters>();
 const GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN =
   /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
+const DISABLED_LIMITERS: Limiters = { get: [], mutate: [] };
 
 const NO_READ_RATE_LIMITS: RateLimitConfig[] = [];
 
@@ -300,11 +301,10 @@ async function getRateLimiters(
     return cached;
   }
 
-  const redis = await getUpstashRatelimitRedisClient();
+  const redis = await getUpstashRatelimitRedisClient().catch(() => null);
   if (!redis) {
-    const disabled = { get: [], mutate: [] };
-    limiterCache.set(cacheKey, disabled);
-    return disabled;
+    limiterCache.set(cacheKey, DISABLED_LIMITERS);
+    return DISABLED_LIMITERS;
   }
 
   const limiters = {
@@ -314,6 +314,11 @@ async function getRateLimiters(
 
   limiterCache.set(cacheKey, limiters);
   return limiters;
+}
+
+function disableRateLimiters(cacheKey: string): Limiters {
+  limiterCache.set(cacheKey, DISABLED_LIMITERS);
+  return DISABLED_LIMITERS;
 }
 
 function getRoutePolicy(
@@ -526,15 +531,14 @@ export async function guardApiProxyRequest(
       const routePolicy = getRoutePolicy(req, routePolicies);
       const isRead = req.method === 'GET' || req.method === 'HEAD';
       const rateLimits = getEffectiveRateLimits(routePolicy, callerClass);
-      const limiters = await getRateLimiters(
-        getPathScopedRateLimitPrefix(
-          options.prefixBase,
-          routePolicy,
-          callerClass,
-          req.nextUrl.pathname
-        ),
-        rateLimits
+      const limiterPrefix = getPathScopedRateLimitPrefix(
+        options.prefixBase,
+        routePolicy,
+        callerClass,
+        req.nextUrl.pathname
       );
+      const limiterCacheKey = `${limiterPrefix}:${JSON.stringify(rateLimits)}`;
+      const limiters = await getRateLimiters(limiterPrefix, rateLimits);
       const activeLimiters = isRead ? limiters.get : limiters.mutate;
 
       for (const { limiter, window } of activeLimiters) {
@@ -542,7 +546,16 @@ export async function guardApiProxyRequest(
           continue;
         }
 
-        const { success, limit, remaining, reset } = await limiter.limit(ip);
+        let result: Awaited<ReturnType<Ratelimit['limit']>>;
+
+        try {
+          result = await limiter.limit(ip);
+        } catch {
+          disableRateLimiters(limiterCacheKey);
+          break;
+        }
+
+        const { success, limit, remaining, reset } = result;
 
         if (isDev) {
           const consumed = limit - remaining;

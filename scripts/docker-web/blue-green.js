@@ -14,7 +14,7 @@ const {
   stopComposeServicesIfPresent,
   waitForComposeServiceHealthy,
 } = require('./compose.js');
-const { getComposeEnvironment, WEB_ENV_FILE } = require('./env.js');
+const { getComposeEnvironment } = require('./env.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const DOCKER_WEB_RUNTIME_DIR = path.join(ROOT_DIR, 'tmp', 'docker-web');
@@ -32,6 +32,7 @@ const BLUE_GREEN_DRAIN_STATUS_PATH = '/__platform/drain-status';
 const BLUE_GREEN_DRAIN_POLL_MS = 1_000;
 const BLUE_GREEN_DRAIN_TIMEOUT_MS = 5 * 60_000;
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
+const CLOUDFLARED_SERVICE = 'cloudflared';
 const BLUE_GREEN_SUPPORT_SERVICES = [
   'markitdown',
   'pronunciation-assessor',
@@ -358,6 +359,10 @@ function getBlueGreenProdServicesWithProxyOption(
     services.push('redis', 'serverless-redis-http');
   }
 
+  if (hasComposeProfile(parsed.composeGlobalArgs, 'cloudflared')) {
+    services.push(CLOUDFLARED_SERVICE);
+  }
+
   return services;
 }
 
@@ -429,7 +434,7 @@ async function buildBlueGreenServices({
 
 async function refreshBlueGreenProxyIfRunning({
   env,
-  envFilePath = WEB_ENV_FILE,
+  envFilePath,
   fsImpl = fs,
   paths = getBlueGreenPaths(),
   rootDir = ROOT_DIR,
@@ -670,9 +675,10 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
   const composeFile = getComposeFile(parsed.mode);
   const env = getComposeEnvironment({
     baseEnv: options.env ?? process.env,
-    envFilePath: options.envFilePath ?? WEB_ENV_FILE,
+    envFilePath: options.envFilePath,
     fsImpl: options.fsImpl ?? fs,
     rootDir: options.rootDir,
+    withCloudflared: hasComposeProfile(parsed.composeGlobalArgs, 'cloudflared'),
     withRedis: hasComposeProfile(parsed.composeGlobalArgs, 'redis'),
     withSupportServices: true,
   });
@@ -869,9 +875,10 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
   const composeFile = getComposeFile(parsed.mode);
   const env = getComposeEnvironment({
     baseEnv: options.env ?? process.env,
-    envFilePath: options.envFilePath ?? WEB_ENV_FILE,
+    envFilePath: options.envFilePath,
     fsImpl: options.fsImpl ?? fs,
     rootDir: options.rootDir,
+    withCloudflared: hasComposeProfile(parsed.composeGlobalArgs, 'cloudflared'),
     withRedis: hasComposeProfile(parsed.composeGlobalArgs, 'redis'),
     withSupportServices: true,
   });
@@ -975,7 +982,7 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
 
   await refreshBlueGreenProxyIfRunning({
     env: standbyEnv,
-    envFilePath: options.envFilePath ?? WEB_ENV_FILE,
+    envFilePath: options.envFilePath,
     fsImpl,
     paths,
     rootDir: options.rootDir ?? ROOT_DIR,
@@ -994,9 +1001,10 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
   const composeFile = getComposeFile(parsed.mode);
   const env = getComposeEnvironment({
     baseEnv: options.env ?? process.env,
-    envFilePath: options.envFilePath ?? WEB_ENV_FILE,
+    envFilePath: options.envFilePath,
     fsImpl: options.fsImpl ?? fs,
     rootDir: options.rootDir,
+    withCloudflared: hasComposeProfile(parsed.composeGlobalArgs, 'cloudflared'),
     withRedis: hasComposeProfile(parsed.composeGlobalArgs, 'redis'),
     withSupportServices: true,
   });
@@ -1158,6 +1166,7 @@ module.exports = {
   BLUE_GREEN_PROXY_CONFIG_FILE,
   BLUE_GREEN_PROXY_DRAIN_MS,
   BLUE_GREEN_PROXY_SERVICE,
+  CLOUDFLARED_SERVICE,
   BLUE_GREEN_RUNTIME_DIR,
   BLUE_GREEN_STATE_FILE,
   BLUE_GREEN_STAMP_FILE,

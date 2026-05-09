@@ -7,6 +7,7 @@ const path = require('node:path');
 const {
   BLUE_GREEN_PROXY_SERVICE,
   BLUE_GREEN_SUPPORT_SERVICES,
+  CLOUDFLARED_SERVICE,
   COMPOSE_FILE,
   DEFAULT_BUILDER_NAME,
   DOCKER_HOST_ALIAS,
@@ -17,9 +18,11 @@ const {
   PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
   clearBlueGreenRuntime,
+  ensureRequiredComposeEnvironment,
   getBlueGreenPaths,
   getComposeEnvironment,
   getComposeFile,
+  getInPlaceProdServices,
   parseArgs,
   parseEnvFile,
   readBlueGreenActiveColor,
@@ -129,6 +132,23 @@ test('parseArgs allows dockerized commands to disable the bundled redis stack', 
     withSupabase: false,
     withRedis: false,
   });
+});
+
+test('parseArgs enables cloudflared as an explicit Docker profile', () => {
+  const parsed = parseArgs(['up', '--mode', 'prod', '--with-cloudflared']);
+
+  assert.deepEqual(parsed.composeGlobalArgs, [
+    '--profile',
+    'cloudflared',
+    '--profile',
+    'redis',
+  ]);
+  assert.deepEqual(getInPlaceProdServices(parsed), [
+    'web',
+    'redis',
+    'serverless-redis-http',
+    CLOUDFLARED_SERVICE,
+  ]);
 });
 
 test('parseArgs accepts build resource throttling flags', () => {
@@ -346,6 +366,48 @@ test('parseEnvFile ignores comments and unquotes values', () => {
     SUPABASE_ANON_KEY: 'value-with-#-inside',
     SUPABASE_SECRET_KEY: 'test-secret',
   });
+});
+
+test('getComposeEnvironment prefers root .env.local and falls back to apps/web/.env.local', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-root-env-')
+  );
+  const rootEnvFile = path.join(tempDir, '.env.local');
+  const legacyEnvFile = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(legacyEnvFile), { recursive: true });
+    fs.writeFileSync(
+      legacyEnvFile,
+      'NEXT_PUBLIC_SUPABASE_URL=https://legacy.supabase.co\n'
+    );
+    fs.writeFileSync(
+      rootEnvFile,
+      'NEXT_PUBLIC_SUPABASE_URL=https://root.supabase.co\n'
+    );
+
+    const rootEnv = getComposeEnvironment({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath: rootEnvFile,
+      rootDir: tempDir,
+    });
+
+    assert.equal(rootEnv.SUPABASE_SERVER_URL, 'https://root.supabase.co');
+    assert.equal(rootEnv.DOCKER_WEB_ENV_FILE, '.env.local');
+
+    fs.rmSync(rootEnvFile, { force: true });
+
+    const legacyEnv = getComposeEnvironment({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath: rootEnvFile,
+      rootDir: tempDir,
+    });
+
+    assert.equal(legacyEnv.SUPABASE_SERVER_URL, 'https://legacy.supabase.co');
+    assert.equal(legacyEnv.DOCKER_WEB_ENV_FILE, 'apps/web/.env.local');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('rewriteLocalhostUrl maps local URLs to the Docker host alias', () => {
@@ -646,6 +708,117 @@ test('getComposeEnvironment treats blank redis env overrides as missing', () => 
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
+});
+
+test('getComposeEnvironment ignores stale generic Upstash env for Docker Redis', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-stale-upstash-env-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co\n'
+    );
+
+    const env = getComposeEnvironment({
+      baseEnv: {
+        PATH: 'test-path',
+        UPSTASH_REDIS_REST_TOKEN: 'stale-upstash-token',
+        UPSTASH_REDIS_REST_URL: 'https://resolved-kingfish-21146.upstash.io',
+      },
+      envFilePath,
+      rootDir: tempDir,
+    });
+
+    assert.notEqual(env.UPSTASH_REDIS_REST_TOKEN, 'stale-upstash-token');
+    assert.match(env.UPSTASH_REDIS_REST_TOKEN, /^[a-f0-9]{64}$/u);
+    assert.equal(env.UPSTASH_REDIS_REST_URL, 'http://serverless-redis-http:80');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getComposeEnvironment allows Docker-specific Redis overrides', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-docker-redis-env-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co\n'
+    );
+
+    const env = getComposeEnvironment({
+      baseEnv: {
+        DOCKER_UPSTASH_REDIS_REST_TOKEN: 'docker-token',
+        DOCKER_UPSTASH_REDIS_REST_URL: 'https://redis.example.test',
+        PATH: 'test-path',
+      },
+      envFilePath,
+      rootDir: tempDir,
+    });
+
+    assert.equal(env.UPSTASH_REDIS_REST_TOKEN, 'docker-token');
+    assert.equal(env.UPSTASH_REDIS_REST_URL, 'https://redis.example.test');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getComposeEnvironment resolves cloudflared tokens from Docker env files', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-cloudflared-env-')
+  );
+  const envFilePath = path.join(tempDir, '.env.local');
+
+  try {
+    fs.writeFileSync(
+      envFilePath,
+      [
+        'CLOUDFLARED_TOKEN=cloudflared-token',
+        'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co',
+      ].join('\n')
+    );
+
+    const env = getComposeEnvironment({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath,
+      rootDir: tempDir,
+      withCloudflared: true,
+    });
+
+    assert.equal(env.CLOUDFLARED_TOKEN, 'cloudflared-token');
+    assert.equal(env.DOCKER_WEB_WITH_CLOUDFLARED, '1');
+    assert.doesNotThrow(() =>
+      ensureRequiredComposeEnvironment(env, {
+        withCloudflared: true,
+        withRedis: true,
+      })
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('ensureRequiredComposeEnvironment requires a cloudflared token when enabled', () => {
+  assert.throws(
+    () =>
+      ensureRequiredComposeEnvironment(
+        {
+          SUPABASE_SERVER_URL: 'https://project-ref.supabase.co',
+          UPSTASH_REDIS_REST_TOKEN: 'token',
+          UPSTASH_REDIS_REST_URL: 'http://serverless-redis-http:80',
+        },
+        { withCloudflared: true, withRedis: true }
+      ),
+    /Missing required Docker runtime env: CLOUDFLARED_TOKEN/
+  );
 });
 
 test('getComposeFile resolves the expected compose file for each mode', () => {
@@ -955,7 +1128,7 @@ test('runDockerWebWorkflow starts and resets Supabase before Docker when request
   ]);
 });
 
-test('runDockerWebWorkflow throws a clear error when apps/web/.env.local is missing', async () => {
+test('runDockerWebWorkflow throws a clear error when Docker env files are missing', async () => {
   await assert.rejects(
     () =>
       runDockerWebWorkflow(parseArgs(['up']), {
@@ -968,7 +1141,7 @@ test('runDockerWebWorkflow throws a clear error when apps/web/.env.local is miss
           stdout: '',
         }),
       }),
-    /Missing required env file/
+    /Missing required env file: \.env\.local or apps\/web\/\.env\.local/
   );
 });
 

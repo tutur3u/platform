@@ -316,6 +316,7 @@ function validateDockerCompose(
     '      target: dev',
     '      - .:/workspace',
     '      - platform-bun-install:/root/.bun/install/cache',
+    '      - path: .env.local',
     '      - SUPABASE_SERVER_URL',
     '      - UPSTASH_REDIS_REST_TOKEN',
     '      - UPSTASH_REDIS_REST_URL',
@@ -325,6 +326,10 @@ function validateDockerCompose(
       '${' +
       'UPSTASH_REDIS_REST_TOKEN:-platform-local-redis-token' +
       '}',
+    '  cloudflared:',
+    '    profiles: ["cloudflared"]',
+    '    image: cloudflare/cloudflared:latest',
+    '        "$' + '{' + 'CLOUDFLARED_TOKEN:-' + '}",',
   ];
 
   for (const packageWorkspaceDir of packageWorkspaceDirs) {
@@ -356,6 +361,7 @@ function validateDockerProdCompose(composeContent) {
     '  buildkit:',
     '  web-blue-green-watcher:',
     '  web-cron-runner:',
+    '  cloudflared:',
     '  markitdown:',
     '  storage-unzip-proxy:',
     '  web-proxy:',
@@ -371,7 +377,10 @@ function validateDockerProdCompose(composeContent) {
     '      - ./tmp/docker-web/buildkit/buildkitd.toml:/etc/buildkit/buildkitd.toml:ro',
     '    env_file:',
     '      - path: apps/web/.env.local',
+    '      - path: .env.local',
+    '      - CLOUDFLARED_TOKEN',
     '      - DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://buildkit:1234',
+    '      - DOCKER_WEB_WITH_CLOUDFLARED',
     '      - GITHUB_TOKEN',
     '      - PLATFORM_LOG_DRAIN_DATABASE_URL=postgres://platform_log_drain:platform_log_drain@log-drain-postgres:5432/platform_log_drain',
     '      - PLATFORM_LOG_DRAIN_ENABLED=' +
@@ -408,6 +417,7 @@ function validateDockerProdCompose(composeContent) {
       '}' +
       '/node_modules',
     '    image: nginx:1.27-alpine',
+    '    image: cloudflare/cloudflared:latest',
     'http://127.0.0.1:7803/__platform/drain-status',
     'http://127.0.0.1:8000/health',
     'http://127.0.0.1:8788/health',
@@ -416,7 +426,7 @@ function validateDockerProdCompose(composeContent) {
     "ps | grep -q '[w]atch-blue-green-deploy.js'",
     "ps | grep -q '[w]atch-web-crons.js'",
     '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',
-    '      required: true',
+    '      required: false',
     '    - DISCORD_APP_DEPLOYMENT_URL',
     '    - DRIVE_AUTO_EXTRACT_PROXY_TOKEN',
     '    - DRIVE_AUTO_EXTRACT_PROXY_URL',
@@ -462,6 +472,7 @@ function validateDockerProdCompose(composeContent) {
       '${' +
       'UPSTASH_REDIS_REST_TOKEN:-platform-local-redis-token' +
       '}',
+    '    file: $' + '{' + 'DOCKER_WEB_ENV_FILE:-apps/web/.env.local' + '}',
   ];
 
   for (const snippet of requiredSnippets) {

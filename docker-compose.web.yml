@@ -32,6 +32,8 @@ services:
     env_file:
       - path: apps/web/.env.local
         required: false
+      - path: .env.local
+        required: false
     environment:
       - CHOKIDAR_INTERVAL=1000
       - CHOKIDAR_USEPOLLING=1
@@ -138,6 +140,23 @@ services:
       - platform-web-log-drain-postgres:/var/lib/postgresql/data
       - ./apps/web/docker/log-drain-init.sql:/docker-entrypoint-initdb.d/001-log-drain.sql:ro
 
+  cloudflared:
+    profiles: ["cloudflared"]
+    command:
+      [
+        "tunnel",
+        "--no-autoupdate",
+        "run",
+        "--token",
+        "${CLOUDFLARED_TOKEN:-}",
+      ]
+    depends_on:
+      web:
+        condition: service_started
+    image: cloudflare/cloudflared:latest
+    init: true
+    restart: unless-stopped
+
   redis:
     profiles: ["redis"]
     image: redis:7-alpine
@@ -178,6 +197,8 @@ services:
       context: apps/pronunciation-assessor
     env_file:
       - path: apps/web/.env.local
+        required: false
+      - path: .env.local
         required: false
     environment:
       - PORT=8010

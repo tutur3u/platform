@@ -18,9 +18,13 @@ const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const MAX_DEPLOYMENTS = 3;
 const PROD_COMPOSE_FILE = getComposeFile('prod');
 
+function isTruthyEnv(value) {
+  return /^(1|true|yes)$/iu.test(String(value ?? '').trim());
+}
+
 function getWatcherComposeEnv({
   baseEnv = process.env,
-  envFilePath = WEB_ENV_FILE,
+  envFilePath,
   fsImpl = fs,
   rootDir = ROOT_DIR,
 } = {}) {
@@ -29,6 +33,7 @@ function getWatcherComposeEnv({
     envFilePath,
     fsImpl,
     rootDir,
+    withCloudflared: isTruthyEnv(baseEnv.DOCKER_WEB_WITH_CLOUDFLARED),
     withRedis: true,
   });
 }

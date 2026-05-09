@@ -3,7 +3,8 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
-const WEB_ENV_FILE = path.join(ROOT_DIR, 'apps', 'web', '.env.local');
+const WEB_ENV_FILE = path.join(ROOT_DIR, '.env.local');
+const LEGACY_WEB_ENV_FILE = path.join(ROOT_DIR, 'apps', 'web', '.env.local');
 const DOCKER_WEB_RUNTIME_DIR = path.join(ROOT_DIR, 'tmp', 'docker-web');
 const DOCKER_WEB_REDIS_TOKEN_FILE = path.join(
   DOCKER_WEB_RUNTIME_DIR,
@@ -81,6 +82,62 @@ function parseEnvFile(envFilePath, fsImpl = fs) {
   return values;
 }
 
+function getWebEnvFileCandidates({
+  envFilePath = WEB_ENV_FILE,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const rootEnvFile = path.join(rootDir, '.env.local');
+  const legacyEnvFile = path.join(rootDir, 'apps', 'web', '.env.local');
+
+  if (path.resolve(envFilePath) !== path.resolve(rootEnvFile)) {
+    return [envFilePath];
+  }
+
+  return [legacyEnvFile, rootEnvFile];
+}
+
+function parseWebEnvFiles({
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const values = {};
+
+  for (const candidatePath of getWebEnvFileCandidates({
+    envFilePath,
+    rootDir,
+  })) {
+    Object.assign(values, parseEnvFile(candidatePath, fsImpl));
+  }
+
+  return values;
+}
+
+function resolveWebEnvFile({
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const candidates = getWebEnvFileCandidates({
+    envFilePath,
+    rootDir,
+  }).reverse();
+  return candidates.find((candidatePath) => fsImpl.existsSync(candidatePath));
+}
+
+function getComposeEnvFileValue({
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const resolvedEnvFile = resolveWebEnvFile({ envFilePath, fsImpl, rootDir });
+  if (!resolvedEnvFile) {
+    return undefined;
+  }
+
+  return path.relative(rootDir, resolvedEnvFile) || '.env.local';
+}
+
 function rewriteLocalhostUrl(rawUrl) {
   if (!rawUrl) {
     return undefined;
@@ -110,13 +167,19 @@ function getFirstNonBlank(values) {
 
 function getComposeEnvironment({
   baseEnv = process.env,
-  envFilePath = WEB_ENV_FILE,
+  envFilePath,
   fsImpl = fs,
   rootDir = ROOT_DIR,
+  withCloudflared = false,
   withSupportServices = false,
   withRedis = true,
 } = {}) {
-  const envFile = parseEnvFile(envFilePath, fsImpl);
+  const resolvedEnvFilePath = envFilePath ?? path.join(rootDir, '.env.local');
+  const envFile = parseWebEnvFiles({
+    envFilePath: resolvedEnvFilePath,
+    fsImpl,
+    rootDir,
+  });
   const nextPublicSupabaseUrl =
     envFile.NEXT_PUBLIC_SUPABASE_URL ?? baseEnv.NEXT_PUBLIC_SUPABASE_URL;
   const dockerInternalSupabaseUrl = rewriteLocalhostUrl(
@@ -135,6 +198,13 @@ function getComposeEnvironment({
       getFirstNonBlank([baseEnv.DOCKER_WEB_COMPOSE_PROJECT_NAME]) ??
       path.basename(rootDir),
     DOCKER_BUILDKIT: baseEnv.DOCKER_BUILDKIT ?? '1',
+    DOCKER_WEB_ENV_FILE:
+      baseEnv.DOCKER_WEB_ENV_FILE ??
+      getComposeEnvFileValue({
+        envFilePath: resolvedEnvFilePath,
+        fsImpl,
+        rootDir,
+      }),
   };
 
   if (dockerInternalSupabaseUrl) {
@@ -152,6 +222,19 @@ function getComposeEnvironment({
     composeEnv.UPSTASH_REDIS_REST_TOKEN = dockerRedisRuntime.token;
     composeEnv.UPSTASH_REDIS_REST_URL = dockerRedisRuntime.url;
     composeEnv.SRH_TOKEN = dockerRedisRuntime.token;
+  }
+
+  if (withCloudflared) {
+    const cloudflaredRuntime = getDockerCloudflaredRuntime({
+      baseEnv,
+      envFile,
+    });
+
+    if (cloudflaredRuntime.token) {
+      composeEnv.CLOUDFLARED_TOKEN = cloudflaredRuntime.token;
+    }
+
+    composeEnv.DOCKER_WEB_WITH_CLOUDFLARED = '1';
   }
 
   if (withSupportServices) {
@@ -196,7 +279,7 @@ function getComposeEnvironment({
 
 function ensureRequiredComposeEnvironment(
   composeEnv,
-  { withRedis = true } = {}
+  { withCloudflared = false, withRedis = true } = {}
 ) {
   const missing = [];
 
@@ -218,6 +301,14 @@ function ensureRequiredComposeEnvironment(
     }
   }
 
+  if (
+    withCloudflared &&
+    (typeof composeEnv.CLOUDFLARED_TOKEN !== 'string' ||
+      composeEnv.CLOUDFLARED_TOKEN.trim().length === 0)
+  ) {
+    missing.push('CLOUDFLARED_TOKEN');
+  }
+
   if (missing.length > 0) {
     throw new Error(
       `Missing required Docker runtime env: ${missing.join(', ')}`
@@ -225,12 +316,27 @@ function ensureRequiredComposeEnvironment(
   }
 }
 
-function ensureWebEnvFile(fsImpl = fs, envFilePath = WEB_ENV_FILE) {
-  if (!fsImpl.existsSync(envFilePath)) {
-    throw new Error(
-      `Missing required env file: ${path.relative(ROOT_DIR, envFilePath)}`
-    );
+function ensureWebEnvFile(fsImpl = fs, envFilePath, rootDir = ROOT_DIR) {
+  const resolvedEnvFilePath = envFilePath ?? path.join(rootDir, '.env.local');
+
+  if (
+    resolveWebEnvFile({ envFilePath: resolvedEnvFilePath, fsImpl, rootDir })
+  ) {
+    return;
   }
+
+  const candidates = getWebEnvFileCandidates({
+    envFilePath: resolvedEnvFilePath,
+    rootDir,
+  })
+    .slice()
+    .reverse()
+    .map(
+      (candidatePath) => path.relative(rootDir, candidatePath) || '.env.local'
+    )
+    .join(' or ');
+
+  throw new Error(`Missing required env file: ${candidates}`);
 }
 
 function ensureProductionRedisToken(
@@ -328,29 +434,34 @@ function getDockerRedisRuntime({
   fsImpl = fs,
   rootDir = ROOT_DIR,
 } = {}) {
-  const envToken = getFirstNonBlank([
-    baseEnv.DOCKER_UPSTASH_REDIS_REST_TOKEN,
-    baseEnv.UPSTASH_REDIS_REST_TOKEN,
-  ]);
-  const envUrl = getFirstNonBlank([
-    baseEnv.DOCKER_UPSTASH_REDIS_REST_URL,
-    baseEnv.UPSTASH_REDIS_REST_URL,
-  ]);
+  const envToken = getFirstNonBlank([baseEnv.DOCKER_UPSTASH_REDIS_REST_TOKEN]);
+  const envUrl = getFirstNonBlank([baseEnv.DOCKER_UPSTASH_REDIS_REST_URL]);
   const token =
     envToken ??
     getPersistedDockerRedisToken(getDockerWebRuntimePaths(rootDir), fsImpl) ??
     generateDockerRedisToken();
 
-  if (
-    token !== baseEnv.DOCKER_UPSTASH_REDIS_REST_TOKEN &&
-    token !== baseEnv.UPSTASH_REDIS_REST_TOKEN
-  ) {
+  if (token !== baseEnv.DOCKER_UPSTASH_REDIS_REST_TOKEN) {
     writeDockerRedisToken(token, getDockerWebRuntimePaths(rootDir), fsImpl);
   }
 
   return {
     token,
     url: envUrl ?? DOCKER_REDIS_SERVICE_URL,
+  };
+}
+
+function getDockerCloudflaredRuntime({
+  baseEnv = process.env,
+  envFile = {},
+} = {}) {
+  return {
+    token: getFirstNonBlank([
+      baseEnv.DOCKER_CLOUDFLARED_TOKEN,
+      baseEnv.CLOUDFLARED_TOKEN,
+      envFile.DOCKER_CLOUDFLARED_TOKEN,
+      envFile.CLOUDFLARED_TOKEN,
+    ]),
   };
 }
 
@@ -459,6 +570,7 @@ module.exports = {
   DOCKER_WEB_RUNTIME_DIR,
   DOCKER_WEB_STORAGE_UNZIP_TOKEN_FILE,
   DOCKER_HOST_ALIAS,
+  LEGACY_WEB_ENV_FILE,
   WEB_ENV_FILE,
   ensureProductionRedisToken,
   ensureRequiredComposeEnvironment,
@@ -467,13 +579,17 @@ module.exports = {
   generateDockerRedisToken,
   generateDockerServiceToken,
   getComposeEnvironment,
+  getDockerCloudflaredRuntime,
   getDockerCronRuntime,
   getDockerMarkitdownRuntime,
   getDockerRedisRuntime,
   getDockerStorageUnzipRuntime,
   getDockerWebRuntimePaths,
+  getWebEnvFileCandidates,
   getPersistedDockerRedisToken,
   parseEnvFile,
+  parseWebEnvFiles,
+  resolveWebEnvFile,
   rewriteLocalhostUrl,
   stripUnquotedInlineComment,
   writeDockerRedisToken,
