@@ -13,6 +13,38 @@ export interface MobileVersionPoliciesPayload {
   webOtpEnabled: boolean;
 }
 
+export interface ExternalAppRegistration {
+  allowedScopes: string[];
+  createdAt: string | null;
+  createdBy: string | null;
+  displayName: string;
+  enabled: boolean;
+  id: string;
+  origins: string[];
+  secretIssuedAt: string | null;
+  secretLastFour: string | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+}
+
+export interface ExternalAppsResponse {
+  apps: ExternalAppRegistration[];
+}
+
+export interface SaveExternalAppPayload {
+  allowedScopes?: string[];
+  displayName: string;
+  enabled: boolean;
+  id: string;
+  issueSecret?: boolean;
+  origins: string[];
+}
+
+export interface SaveExternalAppResponse {
+  app: ExternalAppRegistration;
+  secret: string | null;
+}
+
 export type InfrastructurePushAppFlavor =
   | 'development'
   | 'production'
@@ -842,6 +874,48 @@ export async function updateMobileVersionPolicies(
     },
     method: 'PUT',
   });
+}
+
+export async function listExternalApps(options?: InternalApiClientOptions) {
+  const client = getInternalApiClient(options);
+  return client.json<ExternalAppsResponse>(
+    '/api/v1/infrastructure/external-apps',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function saveExternalApp(
+  payload: SaveExternalAppPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<SaveExternalAppResponse>(
+    '/api/v1/infrastructure/external-apps',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function rotateExternalAppSecret(
+  appId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<SaveExternalAppResponse>(
+    `/api/v1/infrastructure/external-apps/${encodeURIComponent(appId)}/secrets`,
+    {
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
 }
 
 export async function getBlueGreenMonitoringSnapshot(

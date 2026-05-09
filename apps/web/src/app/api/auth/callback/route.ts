@@ -1,9 +1,11 @@
-import { mapUrlToApp } from '@tuturuuu/auth/cross-app';
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH, MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
+import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const queryParamsSchema = z.object({
   code: z.string().max(MAX_NAME_LENGTH).nullable(),
@@ -23,12 +25,16 @@ const queryParamsSchema = z.object({
  * Allows:
  * - Relative paths (same origin)
  * - Same-origin absolute URLs
- * - Trusted internal app domains (for cross-app auth)
+ * - Trusted internal app domains and registered external app origins
  */
-function validateRedirectUrl(
+async function validateRedirectUrl(
   encodedUrl: string,
   requestOrigin: string
-): { url: string; isExternal: boolean; targetApp: string | null } | null {
+): Promise<{
+  url: string;
+  isExternal: boolean;
+  targetApp: string | null;
+} | null> {
   try {
     const decodedUrl = decodeURIComponent(encodedUrl);
 
@@ -58,14 +64,21 @@ function validateRedirectUrl(
       };
     }
 
-    // Check if it's a trusted internal app domain
-    const targetApp = mapUrlToApp(decodedUrl);
+    // Check if it's a trusted internal app domain or registered external app.
+    const targetApp =
+      getAppDomainMap().find(
+        (domain) => new URL(domain.url).origin === url.origin
+      )?.name ??
+      (await getExternalAppByReturnUrl(decodedUrl))?.id ??
+      null;
     if (targetApp) {
       return { url: decodedUrl, isExternal: true, targetApp };
     }
 
     // Untrusted external URL
-    console.warn('[auth/callback] Untrusted returnUrl:', decodedUrl);
+    serverLogger.warn('[auth/callback] Untrusted returnUrl', {
+      returnUrl: decodedUrl,
+    });
     return null;
   } catch {
     // Invalid URL format
@@ -85,10 +98,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   });
 
   if (!parseResult.success) {
-    console.error(
-      '[auth/callback] Invalid query parameters:',
-      parseResult.error
-    );
+    serverLogger.warn('[auth/callback] Invalid query parameters', {
+      error: parseResult.error.message,
+    });
     return NextResponse.redirect(new URL('/onboarding', requestUrl.origin));
   }
 
@@ -111,10 +123,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       await supabase.auth.exchangeCodeForSession(_code);
     } catch (error) {
       // Log error server-side only (not in response)
-      console.error(
-        '[auth/callback] Failed to exchange code for session:',
-        error
-      );
+      serverLogger.warn('[auth/callback] Failed to exchange code for session', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       // Return safe error response without leaking details
       return NextResponse.redirect(
         new URL('/login?error=auth_failed', requestUrl.origin)
@@ -126,7 +137,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   if (multiAccount) {
     const addAccountUrl = new URL('/add-account', requestUrl.origin);
     if (_returnUrl) {
-      const validated = validateRedirectUrl(_returnUrl, requestUrl.origin);
+      const validated = await validateRedirectUrl(
+        _returnUrl,
+        requestUrl.origin
+      );
       if (validated) {
         addAccountUrl.searchParams.set('returnUrl', validated.url);
       }
@@ -136,7 +150,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   // Handle returnUrl with cross-app token generation for external apps
   if (_returnUrl) {
-    const validated = validateRedirectUrl(_returnUrl, requestUrl.origin);
+    const validated = await validateRedirectUrl(_returnUrl, requestUrl.origin);
 
     if (validated) {
       if (validated.isExternal && validated.targetApp) {
@@ -156,7 +170,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     // Invalid returnUrl - fall back to default
-    console.warn('[auth/callback] Invalid returnUrl, using default');
+    serverLogger.warn('[auth/callback] Invalid returnUrl, using default');
   }
 
   // Use nextUrl or fall back to default

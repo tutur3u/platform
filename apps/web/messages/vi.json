@@ -4650,6 +4650,55 @@
     "experimental_feature": "Tính năng thử nghiệm",
     "experimental_notice": "Đây là một tính năng thử nghiệm đang trong quá trình phát triển. Nó có thể không hoạt động như mong đợi và có thể thay đổi trong tương lai."
   },
+  "external-apps-settings": {
+    "actions": {
+      "create": "Tạo ứng dụng",
+      "rotate_secret": "Xoay vòng secret",
+      "save": "Lưu"
+    },
+    "description": "Đăng ký origin của ứng dụng bên ngoài và cấp app secret dùng một lần cho đăng nhập tập trung và điều phối API qua Tuturuuu.",
+    "fields": {
+      "app_id": "App ID",
+      "display_name": "Tên hiển thị",
+      "enabled": "Bật",
+      "issue_secret": "Cấp secret ngay",
+      "origins": "Origin được phép",
+      "scopes": "Phạm vi API được phép"
+    },
+    "messages": {
+      "rotate_error": "Xoay vòng secret thất bại",
+      "rotate_success": "Đã xoay vòng secret",
+      "save_error": "Lưu ứng dụng bên ngoài thất bại",
+      "save_success": "Đã lưu ứng dụng bên ngoài"
+    },
+    "new_app": {
+      "title": "Ứng dụng bên ngoài mới"
+    },
+    "registered": {
+      "empty": "Chưa có ứng dụng bên ngoài nào được đăng ký.",
+      "title": "Ứng dụng đã đăng ký"
+    },
+    "secret": {
+      "copy": "Sao chép",
+      "copy_success": "Đã sao chép secret",
+      "description": "Lưu secret này cho {appId}. Secret chỉ hiển thị một lần và Tuturuuu chỉ lưu hash.",
+      "dismiss": "Đóng",
+      "title": "App secret dùng một lần",
+      "value_label": "App secret vừa tạo"
+    },
+    "status": {
+      "disabled": "Đã tắt",
+      "enabled": "Đang bật"
+    },
+    "summary": {
+      "last_secret": "Secret gần nhất",
+      "no_secret": "Chưa cấp",
+      "origins": "Origin",
+      "scopes": "Phạm vi",
+      "secret_suffix": "Kết thúc bằng {suffix}"
+    },
+    "title": "Ứng dụng bên ngoài"
+  },
   "external-projects": {
     "epm": {
       "activity_feed_title": "Luồng hoạt động",
@@ -6195,6 +6244,7 @@
     "email_blacklist": "Danh sách đen email",
     "email_templates": "Mẫu Email",
     "entity_creation_limits": "Giới hạn tạo thực thể",
+    "external_apps": "Ứng dụng bên ngoài",
     "features": "Tính năng",
     "infrastructure": "Cơ sở hạ tầng",
     "integrations": "Dịch vụ tích hợp",

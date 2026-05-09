@@ -95,6 +95,68 @@ export const APP_DOMAIN_MAP = [
 
 export type AppName = (typeof APP_DOMAIN_MAP)[number]['name'];
 
+export type AppDomain = {
+  kind?: 'external' | 'internal';
+  name: string;
+  url: string;
+};
+
+function parseExternalAppDomainEntry(entry: string): AppDomain | null {
+  const trimmed = entry.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const separatorIndex = trimmed.indexOf(':');
+
+  if (separatorIndex <= 0) {
+    return null;
+  }
+
+  const name = trimmed.slice(0, separatorIndex).trim().toLowerCase();
+  const url = trimmed.slice(separatorIndex + 1).trim();
+
+  if (!/^[a-z0-9_-]{1,64}$/u.test(name)) {
+    return null;
+  }
+
+  try {
+    return {
+      kind: 'external',
+      name,
+      url: new URL(url).origin,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function getConfiguredExternalAppDomains(): AppDomain[] {
+  const configured =
+    process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS ??
+    process.env.TUTURUUU_EXTERNAL_APP_DOMAINS;
+
+  if (!configured?.trim()) {
+    return [];
+  }
+
+  return configured
+    .split(/[,\n]/u)
+    .map(parseExternalAppDomainEntry)
+    .filter((entry): entry is AppDomain => Boolean(entry));
+}
+
+export function getAppDomainMap(): AppDomain[] {
+  return [
+    ...APP_DOMAIN_MAP.map((domain) => ({
+      ...domain,
+      kind: 'internal' as const,
+    })),
+    ...getConfiguredExternalAppDomains(),
+  ];
+}
+
 export const INTERNAL_DOMAINS = [
   ...PRODUCTION_INTERNAL_APP_DOMAINS,
   ...DEV_INTERNAL_APP_DOMAINS,

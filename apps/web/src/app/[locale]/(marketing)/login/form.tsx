@@ -2,7 +2,7 @@
 
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
+import { mapUrlToApp } from '@tuturuuu/auth/cross-app';
 import {
   ArrowLeft,
   Eye,
@@ -13,6 +13,7 @@ import {
   Smartphone,
 } from '@tuturuuu/icons';
 import {
+  createCrossAppReturnUrlWithInternalApi,
   createMfaMobileApprovalChallengeWithInternalApi,
   getOtpSettings,
   pollMfaMobileApprovalChallengeWithInternalApi,
@@ -444,8 +445,6 @@ export default function LoginForm() {
       const isRelativePath = returnUrl.startsWith('/');
       const returnApp = isRelativePath ? 'web' : mapUrlToApp(returnUrl);
 
-      if (!returnApp) throw new Error('Invalid returnUrl');
-
       if (returnApp === 'web' || returnApp === 'platform') {
         const redirectUrl = new URL(returnUrl, window.location.origin);
         router.push(redirectUrl.pathname + redirectUrl.search);
@@ -453,17 +452,11 @@ export default function LoginForm() {
         return;
       }
 
-      const token = await generateCrossAppToken(supabase, returnApp, 'web');
+      const { returnUrl: crossAppReturnUrl } =
+        await createCrossAppReturnUrlWithInternalApi({ returnUrl });
       await supabase.auth.refreshSession();
 
-      if (!token) {
-        throw new Error('Failed to generate token');
-      }
-
-      const nextUrl = new URL(decodeURIComponent(returnUrl));
-      nextUrl.searchParams.set('token', token);
-      nextUrl.searchParams.set('originApp', 'web');
-      nextUrl.searchParams.set('targetApp', returnApp);
+      const nextUrl = new URL(crossAppReturnUrl);
 
       if (multiAccount === 'true') {
         nextUrl.searchParams.set('multiAccount', 'true');

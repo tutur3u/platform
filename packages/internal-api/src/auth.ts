@@ -148,6 +148,15 @@ export interface ApproveMfaMobileApprovalResponse {
   success?: boolean;
 }
 
+export interface CreateCrossAppReturnUrlPayload {
+  returnUrl: string;
+}
+
+export interface CreateCrossAppReturnUrlResponse {
+  returnUrl: string;
+  targetApp: string;
+}
+
 async function parseAuthResponse<T>(response: Response): Promise<T> {
   const payload = (await response.json().catch(() => null)) as T | null;
 
@@ -330,4 +339,20 @@ export async function approveMfaMobileApprovalWithInternalApi(
     }
   );
   return parseAuthResponse<ApproveMfaMobileApprovalResponse>(response);
+}
+
+export async function createCrossAppReturnUrlWithInternalApi(
+  payload: CreateCrossAppReturnUrlPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.fetch('/api/v1/auth/cross-app-return', {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
+  });
+  return parseAuthResponse<CreateCrossAppReturnUrlResponse>(response);
 }

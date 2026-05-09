@@ -1203,6 +1203,14 @@ export async function WorkspaceNavigationLinks({
               disabled: withoutPermission('manage_workspace_roles'),
             },
             {
+              title: t('infrastructure-tabs.external_apps'),
+              href: `/${personalOrWsId}/infrastructure/external-apps`,
+              icon: <KeyRound className="h-5 w-5" />,
+              disabled:
+                withoutPermission('manage_workspace_secrets') &&
+                withoutPermission('manage_workspace_roles'),
+            },
+            {
               title: t('infrastructure-tabs.email_blacklist'),
               href: `/${personalOrWsId}/infrastructure/email-blacklist`,
               icon: <MailX className="h-5 w-5" />,
