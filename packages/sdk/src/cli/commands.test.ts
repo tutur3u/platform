@@ -82,6 +82,48 @@ describe('CLI commands', () => {
   });
 
   it.each([
+    ['finance', '--help'],
+    ['help', 'finance'],
+    ['finance', 'help'],
+  ])('prints finance group help for %s', async (...args) => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(args);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Usage: ttr finance <resource> [action] [id] [options]'
+      )
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('Finance commands use the selected workspace')
+    );
+  });
+
+  it.each([
+    ['finance', 'transactions', '--help'],
+    ['help', 'finance', 'transactions'],
+    ['finance', 'help', 'transactions'],
+  ])('prints finance resource help for %s', async (...args) => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(args);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Usage: ttr finance transactions [list|get|create|update|delete|export|stats|category-breakdown|spending-trends] [id]'
+      )
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('ttr finance transactions create')
+    );
+  });
+
+  it.each([
     ['tasks', 'create', '--help'],
     ['help', 'tasks', 'create'],
     ['tasks', 'help', 'create'],

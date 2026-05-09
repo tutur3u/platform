@@ -38,7 +38,7 @@ const doc = await client.documents.create({
 
 ## Features
 
-- ✅ **Bun CLI** - Use `ttr` for browser login, workspace discovery, and task workflows
+- ✅ **Bun CLI** - Use `ttr` for browser login, workspace discovery, task workflows, and finance CRUD
 - ✅ **Headless Login** - Copy a short-lived CLI token from the browser when no local browser callback is available
 - ✅ **Storage Operations** - Upload, download, list, delete files and folders
 - ✅ **Direct Uploads** - Generate signed URLs for client-side uploads without proxying
@@ -78,6 +78,10 @@ ttr tasks create --list <list-id> --name "Write release notes"
 ttr tasks done <task-id>
 ttr tasks close <task-id>
 ttr tasks update <task-id> --json-payload '{"completed":true}'
+ttr finance wallets
+ttr finance transactions --page-size 10
+ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09
+ttr finance budgets status
 ```
 
 Login opens the browser and creates a fresh session specifically labeled for
@@ -111,6 +115,8 @@ Scoped help is available without login, saved config reads, or update checks:
 ```bash
 ttr --help
 ttr upgrade --help
+ttr finance --help
+ttr finance transactions --help
 ttr tasks --help
 ttr tasks create --help
 ttr tasks done --help
@@ -160,6 +166,28 @@ completed stamps `completed_at` so Tuturuuu moves it to the first
 [task-id]` as the quick shortcut. Use `ttr tasks close [task-id]` to stamp
 `closed_at`; pass `--list <closed-list-id>` to choose a specific closed
 destination.
+
+Finance commands cover workspace wallets, transactions, categories, budgets,
+and recurring transactions through the same authenticated internal APIs as the
+web app. Use `--workspace` or `--ws` to target a specific workspace, and
+`--json-payload` to pass explicit create/update fields for scripted workflows.
+
+Common finance examples:
+
+```bash
+ttr finance wallets
+ttr finance wallets create "Cash" --currency VND --balance 0 --type STANDARD
+ttr finance wallets update <wallet-id> --name "Operating Cash"
+ttr finance transactions --page-size 10
+ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09
+ttr finance transactions update <transaction-id> --category <category-id>
+ttr finance transactions export --wallets <wallet-id> --start 2026-05-01 --end 2026-05-31
+ttr finance categories create "Travel" --expense --color blue
+ttr finance budgets create "Marketing" --amount 1000000 --period monthly --start-date 2026-05-01
+ttr finance budgets status
+ttr finance recurring create "Rent" --amount 5000000 --wallet <wallet-id> --frequency monthly --start-date 2026-05-01
+ttr finance recurring upcoming --days-ahead 30
+```
 
 Common task examples:
 

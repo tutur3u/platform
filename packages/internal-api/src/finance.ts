@@ -3,7 +3,10 @@ import type {
   FinanceBudgetStatus,
   Wallet,
 } from '@tuturuuu/types';
-import type { TransactionCategoryWithStats } from '@tuturuuu/types/primitives/TransactionCategory';
+import type {
+  TransactionCategory,
+  TransactionCategoryWithStats,
+} from '@tuturuuu/types/primitives/TransactionCategory';
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -31,8 +34,62 @@ export async function getWallet(
 ) {
   const client = getInternalApiClient(options);
   return client.json<Wallet>(
-    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}`,
+    `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}`,
     {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWallet(
+  workspaceId: string,
+  payload: WalletPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/wallets`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWallet(
+  workspaceId: string,
+  walletId: string,
+  payload: WalletPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteWallet(
+  workspaceId: string,
+  walletId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}`,
+    {
+      method: 'DELETE',
       cache: 'no-store',
     }
   );
@@ -74,6 +131,44 @@ export interface FinanceBudgetUpsertPayload {
   alert_threshold?: number | null;
   category_id?: string | null;
   wallet_id?: string | null;
+}
+
+export type WalletPayload = Partial<
+  Pick<
+    Wallet,
+    | 'balance'
+    | 'currency'
+    | 'description'
+    | 'icon'
+    | 'id'
+    | 'image_src'
+    | 'limit'
+    | 'name'
+    | 'payment_date'
+    | 'report_opt_in'
+    | 'statement_date'
+    | 'type'
+  >
+>;
+
+export interface TransactionPayload {
+  description?: string;
+  amount?: number;
+  origin_wallet_id?: string;
+  category_id?: string;
+  taken_at?: string | Date;
+  report_opt_in?: boolean;
+  tag_ids?: string[];
+  is_amount_confidential?: boolean;
+  is_description_confidential?: boolean;
+  is_category_confidential?: boolean;
+}
+
+export interface TransactionCategoryPayload {
+  name?: string;
+  is_expense?: boolean;
+  icon?: string | null;
+  color?: string | null;
 }
 
 export interface RecurringTransactionPayload {
@@ -121,6 +216,11 @@ export type TransactionExportQuery = {
   transactionType?: 'income' | 'expense';
   start?: string;
   end?: string;
+};
+
+export type ListTransactionsQuery = {
+  page?: string | number;
+  itemsPerPage?: string | number;
 };
 
 function appendFinanceArrayParam(
@@ -224,6 +324,157 @@ export async function listTransactionCategories(
   return client.json<TransactionCategoryWithStats[]>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/categories`,
     {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getTransactionCategory(
+  workspaceId: string,
+  categoryId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<TransactionCategory>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/categories/${encodePathSegment(categoryId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createTransactionCategory(
+  workspaceId: string,
+  payload: TransactionCategoryPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string; data: TransactionCategory }>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/categories`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateTransactionCategory(
+  workspaceId: string,
+  categoryId: string,
+  payload: TransactionCategoryPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/categories/${encodePathSegment(categoryId)}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteTransactionCategory(
+  workspaceId: string,
+  categoryId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/categories/${encodePathSegment(categoryId)}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listTransactions(
+  workspaceId: string,
+  query: ListTransactionsQuery = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<unknown[]>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/transactions`,
+    {
+      query,
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getTransaction(
+  workspaceId: string,
+  transactionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<unknown>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/${encodePathSegment(transactionId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createTransaction(
+  workspaceId: string,
+  payload: TransactionPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string; transaction_id: string }>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/transactions`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateTransaction(
+  workspaceId: string,
+  transactionId: string,
+  payload: TransactionPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/${encodePathSegment(transactionId)}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteTransaction(
+  workspaceId: string,
+  transactionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/${encodePathSegment(transactionId)}`,
+    {
+      method: 'DELETE',
       cache: 'no-store',
     }
   );

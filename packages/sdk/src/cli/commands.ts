@@ -28,6 +28,7 @@ import {
   readCliConfig,
   writeCliConfig,
 } from './config';
+import { runFinanceCommand } from './finance';
 import { getGlobalHelp, getHelpOutput } from './help';
 import {
   render,
@@ -1418,6 +1419,17 @@ export async function runCli(argv = process.argv.slice(2)) {
       );
       return;
     }
+  }
+
+  if (group === 'finance') {
+    await runFinanceCommand({
+      client,
+      flags,
+      json,
+      positionals,
+      workspaceId,
+    });
+    return;
   }
 
   throw new Error(

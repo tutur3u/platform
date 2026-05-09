@@ -1,7 +1,7 @@
 ---
 title: 'tuturuuu'
 description: 'Official TypeScript/JavaScript SDK for the Tuturuuu platform'
-updatedAt: '2026-05-03'
+updatedAt: '2026-05-09'
 ---
 
 # Tuturuuu SDK
@@ -107,6 +107,10 @@ ttr tasks create --list <list-id> --name "Write release notes"
 ttr tasks done <task-id>
 ttr tasks close <task-id>
 ttr tasks update <task-id> --json-payload '{"completed":true}'
+ttr finance wallets
+ttr finance transactions --page-size 10
+ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09
+ttr finance budgets status
 ```
 
 `ttr login` opens the browser and creates a fresh Supabase session specifically
@@ -151,6 +155,8 @@ not require login, do not read the saved config, and do not run the update check
 ```bash
 ttr --help
 ttr upgrade --help
+ttr finance --help
+ttr finance transactions --help
 ttr tasks --help
 ttr tasks create --help
 ttr tasks done --help
@@ -216,6 +222,38 @@ pass `--list <done-list-id>` or include `list_id` in `--json-payload` to choose
 another done destination. Use `ttr tasks done [task-id]` as the quick shortcut.
 Use `ttr tasks close [task-id]` to stamp `closed_at`; pass `--list
 <closed-list-id>` to choose a specific closed destination.
+
+### Finance CLI
+
+Finance commands use the selected workspace and the same authenticated internal
+APIs as the web app. Use `--workspace` or `--ws` to target a different
+workspace, and use `--json-payload` when a script needs to send fields that do
+not have dedicated flags yet.
+
+```bash
+# Wallet CRUD.
+ttr finance wallets
+ttr finance wallets get <wallet-id>
+ttr finance wallets create "Cash" --currency VND --balance 0 --type STANDARD
+ttr finance wallets update <wallet-id> --name "Operating Cash"
+ttr finance wallets delete <wallet-id>
+
+# Transaction CRUD and reporting helpers.
+ttr finance transactions --page-size 10
+ttr finance transactions get <transaction-id>
+ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09
+ttr finance transactions update <transaction-id> --category <category-id>
+ttr finance transactions delete <transaction-id>
+ttr finance transactions export --wallets <wallet-id> --start 2026-05-01 --end 2026-05-31
+ttr finance transactions stats --start 2026-05-01 --end 2026-05-31
+
+# Categories, budgets, and recurring transactions.
+ttr finance categories create "Travel" --expense --color blue
+ttr finance budgets create "Marketing" --amount 1000000 --period monthly --start-date 2026-05-01
+ttr finance budgets status
+ttr finance recurring create "Rent" --amount 5000000 --wallet <wallet-id> --frequency monthly --start-date 2026-05-01
+ttr finance recurring upcoming --days-ahead 30
+```
 
 Common task workflows:
 

@@ -33,7 +33,21 @@ export {
 export type { ExternalProjectsClientConfig } from './external-projects';
 export { ExternalProjectsClient } from './external-projects';
 export type { TuturuuuUserClientConfig } from './platform';
-export { TasksClient, TuturuuuUserClient, WorkspacesClient } from './platform';
+export {
+  TasksClient,
+  TuturuuuUserClient,
+  WorkspacesClient,
+} from './platform';
+export type {
+  FinanceBudgetUpsertPayload,
+  ListTransactionsQuery,
+  RecurringTransactionPayload,
+  TransactionCategoryPayload,
+  TransactionExportQuery,
+  TransactionPayload,
+  WalletPayload,
+} from './platform-finance';
+export { FinanceClient } from './platform-finance';
 export {
   getEpmDeliveryQueryKey,
   getEpmDeliveryQueryOptions,
