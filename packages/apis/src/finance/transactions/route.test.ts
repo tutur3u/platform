@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => {
   const getUser = vi.fn();
   const linkedUserSingle = vi.fn();
   const walletMaybeSingle = vi.fn();
+  const transactionInsert = vi.fn();
   const transactionSingle = vi.fn();
   const tagInsert = vi.fn();
   const transactionRpc = vi.fn();
@@ -61,11 +62,7 @@ const mocks = vi.hoisted(() => {
 
       if (table === 'wallet_transactions') {
         return {
-          insert: vi.fn(() => ({
-            select: vi.fn(() => ({
-              single: transactionSingle,
-            })),
-          })),
+          insert: transactionInsert,
         };
       }
 
@@ -83,6 +80,12 @@ const mocks = vi.hoisted(() => {
     rpc: vi.fn(),
   };
 
+  transactionInsert.mockImplementation(() => ({
+    select: vi.fn(() => ({
+      single: transactionSingle,
+    })),
+  }));
+
   return {
     adminSupabase,
     getPermissions,
@@ -90,6 +93,7 @@ const mocks = vi.hoisted(() => {
     linkedUserSingle,
     sessionSupabase,
     tagInsert,
+    transactionInsert,
     transactionRpc,
     transactionTagsIn,
     transactionSingle,
@@ -107,6 +111,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
     mocks.getPermissions(...args),
   getWorkspaceConfig: (...args: Parameters<typeof mocks.getWorkspaceConfig>) =>
     mocks.getWorkspaceConfig(...args),
+  normalizeWorkspaceId: vi.fn((id: string) => Promise.resolve(id)),
   verifyWorkspaceMembershipType: vi.fn(() =>
     Promise.resolve({ ok: true, membershipType: 'MEMBER' as const })
   ),
@@ -219,6 +224,61 @@ describe('transactions route', () => {
     ]);
   });
 
+  it('returns pagination metadata when includeCount is requested', async () => {
+    const { GET } = await import('./route.js');
+
+    mocks.transactionRpc.mockResolvedValue({
+      data: [
+        {
+          id: 'transaction-1',
+          amount: -150,
+          taken_at: '2026-03-30T08:00:00.000Z',
+          total_count: 12,
+        },
+      ],
+      error: null,
+    });
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/workspaces/ws-1/transactions?page=2&itemsPerPage=5&includeCount=true'
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      count: 12,
+      data: [
+        expect.objectContaining({
+          id: 'transaction-1',
+        }),
+      ],
+      pagination: {
+        hasNextPage: true,
+        hasPreviousPage: true,
+        limit: 5,
+        offset: 5,
+        page: 2,
+        pageCount: 3,
+        pageSize: 5,
+        total: 12,
+      },
+    });
+    expect(mocks.transactionRpc).toHaveBeenCalledWith(
+      'get_wallet_transactions_with_permissions',
+      expect.objectContaining({
+        p_include_count: true,
+        p_limit: 5,
+        p_offset: 5,
+      })
+    );
+  });
+
   it('creates transactions and tags through sbAdmin after permission checks', async () => {
     const { POST } = await import('./route.js');
 
@@ -254,11 +314,49 @@ describe('transactions route', () => {
     expect(mocks.adminSupabase.from).toHaveBeenCalledWith(
       'wallet_transaction_tags'
     );
+    expect(mocks.transactionInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        platform_creator_id: 'user-1',
+        taken_at: '2026-03-30T08:00:00.000Z',
+      })
+    );
+    expect(mocks.transactionSingle).toHaveBeenCalled();
     expect(mocks.sessionSupabase.from).not.toHaveBeenCalledWith(
       'wallet_transactions'
     );
     expect(mocks.sessionSupabase.from).not.toHaveBeenCalledWith(
       'wallet_transaction_tags'
+    );
+  });
+
+  it('rejects invalid transaction dates before insert', async () => {
+    const { POST } = await import('./route.js');
+
+    const response = await POST(
+      new Request('http://localhost/api/workspaces/ws-1/transactions', {
+        method: 'POST',
+        body: JSON.stringify({
+          amount: 150,
+          origin_wallet_id: '3c9a5c7f-4f0d-4f15-9477-cbf1c7bc7445',
+          taken_at: 'not-a-date',
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Invalid transaction date',
+    });
+    expect(mocks.adminSupabase.from).not.toHaveBeenCalledWith(
+      'wallet_transactions'
     );
   });
 

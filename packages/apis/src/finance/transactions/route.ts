@@ -3,11 +3,11 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { canUseRequestedFinanceWalletOnCreate } from '@tuturuuu/utils/finance';
 import {
   getPermissions,
   getWorkspaceConfig,
+  normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -33,6 +33,12 @@ const TransactionSchema = z.object({
   is_description_confidential: z.boolean().optional(),
   is_category_confidential: z.boolean().optional(),
 });
+
+function normalizeTransactionDate(value: string | Date) {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
   const sbAdmin = await createAdminClient();
@@ -65,6 +71,7 @@ export async function GET(req: Request, { params }: Params) {
   // Extract and validate query parameters for pagination
   const pageParam = url.searchParams.get('page');
   const itemsPerPageParam = url.searchParams.get('itemsPerPage');
+  const includeCount = url.searchParams.get('includeCount') === 'true';
 
   const page = Math.max(1, parseInt(pageParam || '1', 10));
   const itemsPerPage = Math.max(1, parseInt(itemsPerPageParam || '25', 10));
@@ -88,6 +95,7 @@ export async function GET(req: Request, { params }: Params) {
       p_transaction_ids: undefined,
       p_limit: itemsPerPage,
       p_offset: offset,
+      p_include_count: includeCount || undefined,
     }
   );
 
@@ -119,7 +127,29 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(enrichedData ?? []);
+  if (!includeCount) {
+    return NextResponse.json(enrichedData ?? []);
+  }
+
+  const total = Number(
+    (sortedData[0] as { total_count?: number })?.total_count ?? 0
+  );
+  const pageCount = Math.max(1, Math.ceil(total / itemsPerPage));
+
+  return NextResponse.json({
+    count: total,
+    data: enrichedData ?? [],
+    pagination: {
+      hasNextPage: offset + itemsPerPage < total,
+      hasPreviousPage: offset > 0,
+      limit: itemsPerPage,
+      offset,
+      page,
+      pageCount,
+      pageSize: itemsPerPage,
+      total,
+    },
+  });
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -153,8 +183,14 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  // Resolve workspace ID (handles "internal" slug)
-  const resolvedWsId = resolveWorkspaceId(wsId);
+  let resolvedWsId: string;
+
+  try {
+    resolvedWsId = await normalizeWorkspaceId(wsId, supabase);
+  } catch {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   const defaultWalletId = await getWorkspaceConfig(wsId, 'default_wallet_id');
 
   // Get the virtual_user_id for this workspace
@@ -221,6 +257,14 @@ export async function POST(req: Request, { params }: Params) {
   const data = parsed.data;
   const tagIds = data.tag_ids;
   delete data.tag_ids;
+  const takenAt = normalizeTransactionDate(data.taken_at);
+
+  if (!takenAt) {
+    return NextResponse.json(
+      { message: 'Invalid transaction date' },
+      { status: 400 }
+    );
+  }
 
   // Check if any confidential flags are being set
   const hasConfidentialFields =
@@ -276,12 +320,10 @@ export async function POST(req: Request, { params }: Params) {
       description: data.description,
       wallet_id: data.origin_wallet_id,
       category_id: data.category_id || null,
-      taken_at:
-        typeof data.taken_at === 'string'
-          ? new Date(data.taken_at).toISOString()
-          : data.taken_at.toISOString(),
+      taken_at: takenAt,
       report_opt_in: data.report_opt_in || false,
       creator_id: wsUser.virtual_user_id,
+      platform_creator_id: user.id,
       is_amount_confidential: data.is_amount_confidential || false,
       is_description_confidential: data.is_description_confidential || false,
       is_category_confidential: data.is_category_confidential || false,
