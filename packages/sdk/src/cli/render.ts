@@ -12,6 +12,7 @@ type ColorCode = 1 | 2 | 22 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 90;
 export interface RenderOptions {
   compact?: boolean;
   currentWorkspaceId?: string;
+  financeResource?: string;
   group?: string;
   json?: boolean;
   workspaceName?: string;
@@ -760,6 +761,125 @@ function renderProjects(data: unknown) {
   );
 }
 
+function formatFinanceDate(value: unknown) {
+  if (typeof value !== 'string' || !value.trim()) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('en', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+}
+
+function formatFinanceAmount(value: unknown) {
+  if (typeof value !== 'number') return value ?? '';
+  return new Intl.NumberFormat('en', {
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function financeRows(data: unknown, resource?: string) {
+  const record = asRecord(data);
+  const rows =
+    asArray(record.data).length > 0 ? asArray(record.data) : asArray(data);
+
+  switch (resource) {
+    case 'wallets':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Name: asString(row.name, 'Untitled wallet'),
+          Id: asString(row.id),
+          Type: asString(row.type),
+          Balance: formatFinanceAmount(row.balance),
+          Currency: asString(row.currency),
+        };
+      });
+    case 'transactions':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Date: formatFinanceDate(row.taken_at),
+          Amount: formatFinanceAmount(row.amount),
+          Description: asString(row.description),
+          Wallet: asString(row.wallet, asString(row.wallet_name)),
+          Category: asString(row.category, asString(row.category_name)),
+          Id: asString(row.id, asString(row.transaction_id)),
+        };
+      });
+    case 'categories':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Name: asString(row.name, 'Untitled category'),
+          Id: asString(row.id),
+          Type: row.is_expense === false ? 'income' : 'expense',
+          Amount: formatFinanceAmount(row.amount),
+          Count: row.transaction_count ?? '',
+          Color: asString(row.color),
+        };
+      });
+    case 'budgets':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Name: asString(row.name, 'Untitled budget'),
+          Id: asString(row.id),
+          Amount: formatFinanceAmount(row.amount),
+          Period: asString(row.period),
+          Start: formatFinanceDate(row.start_date),
+          End: formatFinanceDate(row.end_date),
+        };
+      });
+    case 'budget-status':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Name: asString(row.budget_name, 'Untitled budget'),
+          Id: asString(row.budget_id),
+          Amount: formatFinanceAmount(row.amount),
+          Spent: formatFinanceAmount(row.spent),
+          Remaining: formatFinanceAmount(row.remaining),
+          Used: row.percentage_used ? `${row.percentage_used}%` : '',
+        };
+      });
+    case 'recurring':
+    case 'upcoming-recurring':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Name: asString(row.name, 'Untitled recurring transaction'),
+          Id: asString(row.id),
+          Amount: formatFinanceAmount(row.amount),
+          Frequency: asString(row.frequency),
+          Next: formatFinanceDate(row.next_occurrence),
+          Active: row.is_active === false ? 'no' : 'yes',
+        };
+      });
+    default:
+      return rows.map(asRecord);
+  }
+}
+
+function renderFinance(data: unknown, resource?: string) {
+  const record = asRecord(data);
+  if (Array.isArray(data) || Array.isArray(record.data)) {
+    renderTable(financeRows(data, resource));
+    if (typeof record.count === 'number') {
+      process.stdout.write(`${color.dim(`${record.count} total`)}\n`);
+    }
+    return;
+  }
+
+  if (record.message && Object.keys(record).length <= 2) {
+    process.stdout.write(`${asString(record.message)}\n`);
+    return;
+  }
+
+  renderTable(financeRows([data], resource));
+}
+
 function getTaskRows(tasks: unknown[]) {
   return sortTasksForCli(tasks).map((task) => {
     const record = asRecord(task);
@@ -902,6 +1022,9 @@ export function render(data: unknown, options: RenderOptions = {}) {
       return;
     case 'projects':
       renderProjects(data);
+      return;
+    case 'finance':
+      renderFinance(data, options.financeResource);
       return;
     default:
       break;

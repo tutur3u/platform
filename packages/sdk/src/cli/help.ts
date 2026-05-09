@@ -42,6 +42,30 @@ const helpTopics: Record<string, HelpTopic> = {
     examples: ['ttr config set-base-url http://localhost:7803'],
     usage: 'ttr config set-base-url <url>',
   },
+  finance: {
+    commands: [
+      'wallets [list|get|create|update|delete]',
+      'transactions [list|get|create|update|delete|export|stats]',
+      'categories [list|get|create|update|delete]',
+      'budgets [list|status|create|update|delete]',
+      'recurring [list|upcoming|create|update|delete]',
+    ],
+    description:
+      'Finance commands use the selected workspace and the same authenticated internal APIs as the web app.',
+    examples: [
+      'ttr finance wallets',
+      'ttr finance transactions --page-size 10',
+      'ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09',
+      'ttr finance categories create "Travel" --expense --color blue',
+      'ttr finance budgets status',
+    ],
+    options: [
+      '--workspace, --ws <id>        override the selected workspace',
+      '--json-payload <json>         send explicit create/update payload fields',
+      '--json                       print machine-readable JSON',
+    ],
+    usage: 'ttr finance <resource> [action] [id] [options]',
+  },
   labels: {
     commands: [
       'list                         list labels',
@@ -223,6 +247,112 @@ const helpTopics: Record<string, HelpTopic> = {
 };
 
 const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
+  finance: {
+    budgets: {
+      examples: [
+        'ttr finance budgets',
+        'ttr finance budgets status',
+        'ttr finance budgets create "Marketing" --amount 1000000 --period monthly --start-date 2026-05-01',
+        'ttr finance budgets update <budget-id> --json-payload \'{"amount":1200000}\'',
+      ],
+      options: [
+        '--name <name>               budget name; positional text is also accepted',
+        '--amount <number>           budget amount',
+        '--period <monthly|yearly|custom>',
+        '--start-date <iso>          budget start date',
+        '--end-date <iso>            budget end date',
+        '--wallet <id>               wallet id',
+        '--category <id>             category id',
+        '--alert-threshold <number>  alert threshold percentage',
+        '--json-payload <json>       explicit payload override',
+        '--json                      print machine-readable JSON',
+      ],
+      usage: 'ttr finance budgets [list|status|create|update|delete] [id]',
+    },
+    categories: {
+      examples: [
+        'ttr finance categories',
+        'ttr finance categories create "Revenue" --income --color green',
+        'ttr finance categories update <category-id> --name Travel',
+      ],
+      options: [
+        '--name <name>               category name; positional text is also accepted',
+        '--expense                   mark as expense category',
+        '--income                    mark as income category',
+        '--icon <name>               icon name',
+        '--color <color>             category color',
+        '--json-payload <json>       explicit payload override',
+        '--json                      print machine-readable JSON',
+      ],
+      usage: 'ttr finance categories [list|get|create|update|delete] [id]',
+    },
+    recurring: {
+      examples: [
+        'ttr finance recurring',
+        'ttr finance recurring upcoming --days-ahead 30',
+        'ttr finance recurring create "Rent" --amount 5000000 --wallet <wallet-id> --frequency monthly --start-date 2026-05-01',
+      ],
+      options: [
+        '--name <name>               recurring transaction name',
+        '--amount <number>           amount',
+        '--wallet <id>               wallet id',
+        '--category <id>             category id',
+        '--frequency <daily|weekly|monthly|yearly>',
+        '--start-date <iso>          start date',
+        '--end-date <iso>            optional end date',
+        '--days-ahead <number>       upcoming window',
+        '--json-payload <json>       explicit payload override',
+        '--json                      print machine-readable JSON',
+      ],
+      usage: 'ttr finance recurring [list|upcoming|create|update|delete] [id]',
+    },
+    transactions: {
+      examples: [
+        'ttr finance transactions --page-size 10',
+        'ttr finance transactions get <transaction-id>',
+        'ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09',
+        'ttr finance transactions update <transaction-id> --category <category-id>',
+        'ttr finance transactions export --wallets <wallet-id> --start 2026-05-01 --end 2026-05-31',
+      ],
+      options: [
+        '--amount <number>           transaction amount',
+        '--wallet <id>               origin wallet id',
+        '--category <id>             category id',
+        '--taken-at <iso>            transaction date/time',
+        '--description <text>        transaction description',
+        '--tags <ids>                comma-separated tag ids',
+        '--page <n>, --page-size <n> paginate list/export output',
+        '--start <iso>, --end <iso>  metric/export date range',
+        '--type <income|expense>     export transaction type filter',
+        '--json-payload <json>       explicit payload override',
+        '--json                      print machine-readable JSON',
+      ],
+      usage:
+        'ttr finance transactions [list|get|create|update|delete|export|stats|category-breakdown|spending-trends] [id]',
+    },
+    wallets: {
+      examples: [
+        'ttr finance wallets',
+        'ttr finance wallets get <wallet-id>',
+        'ttr finance wallets create "Cash" --currency VND --balance 0 --type STANDARD',
+        'ttr finance wallets update <wallet-id> --name "Operating Cash"',
+      ],
+      options: [
+        '--name <name>               wallet name; positional text is also accepted',
+        '--currency <code>           currency code',
+        '--balance <number>          wallet balance',
+        '--type <STANDARD|CREDIT>    wallet type',
+        '--description <text>        wallet description',
+        '--report-opt-in <boolean>   include in reports',
+        '--limit <number>            credit limit',
+        '--statement-date <number>   credit statement day',
+        '--payment-date <number>     credit payment day',
+        '--json-payload <json>       explicit payload override',
+        '--json                      print machine-readable JSON',
+      ],
+      usage: 'ttr finance wallets [list|get|create|update|delete] [id]',
+    },
+  },
   tasks: {
     bulk: {
       examples: [
@@ -362,6 +492,7 @@ export function getGlobalHelp() {
     '  upgrade',
     '  whoami',
     '  config set-base-url <url>',
+    '  finance <wallets|transactions|categories|budgets|recurring>',
     '  workspaces [list]|use [id]',
     '  boards [list]|use|create|update|delete',
     '  lists [list]|use|create|update --board <id>',
@@ -383,6 +514,8 @@ export function getGlobalHelp() {
     '  tasks --compact             title, list, and per-task workspace only',
     '',
     'Scoped help:',
+    '  ttr finance --help',
+    '  ttr finance transactions --help',
     '  ttr tasks --help',
     '  ttr tasks create --help',
     '  ttr help workspaces',

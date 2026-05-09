@@ -54,6 +54,7 @@ import {
 import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
 import { refreshCliSession } from './cli/auth';
 import { type CliSession, normalizeBaseUrl } from './cli/config';
+import { FinanceClient } from './platform-finance';
 
 export interface TuturuuuUserClientConfig {
   accessToken: string;
@@ -420,6 +421,7 @@ export class TuturuuuUserClient {
   private refreshPromise?: Promise<CliSession>;
   private refreshToken?: string;
 
+  readonly finance: FinanceClient;
   readonly tasks: TasksClient;
   readonly users: UsersClient;
   readonly workspaces: WorkspacesClient;
@@ -431,6 +433,7 @@ export class TuturuuuUserClient {
     this.fetchImpl = config.fetch || globalThis.fetch;
     this.onSessionRefresh = config.onSessionRefresh;
     this.refreshToken = config.refreshToken;
+    this.finance = new FinanceClient(this);
     this.tasks = new TasksClient(this);
     this.users = new UsersClient(this);
     this.workspaces = new WorkspacesClient(this);

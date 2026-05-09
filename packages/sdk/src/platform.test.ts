@@ -146,4 +146,37 @@ describe('TuturuuuUserClient', () => {
       'Bearer access-token'
     );
   });
+
+  it('passes finance requests through the authenticated internal API client', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ message: 'success' }));
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await client.finance.updateTransaction('ws-1', 'tx-1', {
+      amount: 125_000,
+      origin_wallet_id: 'wallet-1',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/workspaces/ws-1/transactions/tx-1',
+      expect.objectContaining({
+        body: JSON.stringify({
+          amount: 125_000,
+          origin_wallet_id: 'wallet-1',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    const requestInit = fetchMock.mock.calls[0]?.[1];
+    expect(new Headers(requestInit?.headers).get('authorization')).toBe(
+      'Bearer access-token'
+    );
+  });
 });
