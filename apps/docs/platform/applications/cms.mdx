@@ -1,7 +1,7 @@
 ---
 title: 'CMS'
 description: 'Dedicated Tuturuuu CMS app for workspace content operations and root-level project linking.'
-updatedAt: '2026-04-26'
+updatedAt: '2026-05-09'
 ---
 
 ## Overview
@@ -40,6 +40,7 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 ## API Ownership
 
 - `apps/cms` rewrites `/api/:path*` to `apps/web`.
+- The rewrite target must resolve to the central web app, not the CMS app origin. Prefer `INTERNAL_WEB_API_ORIGIN`, `NEXT_PUBLIC_WEB_APP_URL`, or `WEB_APP_URL` for the central origin. If a deployment-level `NEXT_PUBLIC_APP_URL` points at `cms.tuturuuu.com` or the current CMS Vercel preview URL, the CMS config ignores it and falls back to `https://tuturuuu.com` to avoid self-rewriting `/api/*` requests.
 - New CMS backend behavior should be added in `apps/web`, then exposed through `packages/internal-api`.
 - The root linking console reads the workspace-indexed binding summary from `GET /api/v1/admin/external-project-bindings`.
 - The root linking console may load its initial server-render payload directly with the request-scoped CMS Supabase admin path after `getCmsWorkspaceAccess` proves root admin access. Avoid server-to-server Internal API fetches during that initial render, because production auth/origin forwarding failures turn `/internal/projects` into a hard RSC error page. Keep workspace-secret lookups batched; one `.in('ws_id', allWorkspaceIds)` query can exceed PostgREST/proxy URL limits and return `400 Bad Request` in production.
