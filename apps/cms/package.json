@@ -10,6 +10,8 @@
     "build": "next build --turbopack",
     "start": "next start",
     "preview": "next build --turbopack && next start -p 7811 --turbopack",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "stop": "cd ../database && bun sb:stop",
     "sb:status": "cd ../database && bun sb:status",
     "sb:start": "cd ../database && bun sb:start",

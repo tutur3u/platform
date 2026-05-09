@@ -1,13 +1,44 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({
+  createClient: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/supabase/next/client', () => ({
+  createClient: () => mocks.createClient(),
+}));
 
 let mapUrlToApp: typeof import('./index').mapUrlToApp;
+let verifyRouteToken: typeof import('./index').verifyRouteToken;
 
 beforeAll(async () => {
   process.env.NEXT_PUBLIC_SUPABASE_URL ??= 'http://localhost:54321';
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??= 'test-publishable-key';
 
-  ({ mapUrlToApp } = await import('./index.js'));
+  ({ mapUrlToApp, verifyRouteToken } = await import('./index.js'));
 });
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.createClient.mockReturnValue({
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
+      refreshSession: vi.fn().mockResolvedValue({}),
+      setSession: vi.fn().mockResolvedValue({ error: null }),
+    },
+  });
+});
+
+function createMockRouter() {
+  return {
+    back: vi.fn(),
+    forward: vi.fn(),
+    prefetch: vi.fn(),
+    push: vi.fn(),
+    refresh: vi.fn(),
+    replace: vi.fn(),
+  };
+}
 
 describe('mapUrlToApp', () => {
   it('maps the CMS production URL to the cms app', () => {
@@ -36,5 +67,87 @@ describe('mapUrlToApp', () => {
 
   it('rejects hostname prefix lookalikes', () => {
     expect(mapUrlToApp('https://learn.tuturuuu.com.evil.test')).toBeNull();
+  });
+});
+
+describe('verifyRouteToken', () => {
+  it('redirects instead of hanging when token verification returns a non-JSON error', async () => {
+    const router = createMockRouter();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response('Internal Server Error', {
+          status: 500,
+        })
+      )
+    );
+
+    await verifyRouteToken({
+      router,
+      searchParams: new URLSearchParams('nextUrl=%2F&token=dummy'),
+      token: 'dummy',
+    });
+
+    expect(router.push).toHaveBeenCalledWith('/');
+    expect(router.refresh).toHaveBeenCalled();
+  });
+
+  it('stores the returned session before redirecting to the requested route', async () => {
+    const setSession = vi.fn().mockResolvedValue({ error: null });
+    const router = createMockRouter();
+    mocks.createClient.mockReturnValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
+        refreshSession: vi.fn().mockResolvedValue({}),
+        setSession,
+      },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        Response.json({
+          session: {
+            access_token: 'access-token',
+            refresh_token: 'refresh-token',
+          },
+          userId: 'user-1',
+          valid: true,
+        })
+      )
+    );
+
+    await verifyRouteToken({
+      router,
+      searchParams: new URLSearchParams('nextUrl=%2Fpersonal'),
+      token: 'token-1',
+    });
+
+    expect(setSession).toHaveBeenCalledWith({
+      access_token: 'access-token',
+      refresh_token: 'refresh-token',
+    });
+    expect(router.push).toHaveBeenCalledWith('/personal');
+    expect(router.refresh).toHaveBeenCalled();
+  });
+
+  it('redirects when token verification returns no user id', async () => {
+    const router = createMockRouter();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        Response.json({
+          valid: true,
+        })
+      )
+    );
+
+    await verifyRouteToken({
+      router,
+      searchParams: new URLSearchParams('nextUrl=%2Fpersonal'),
+      token: 'token-1',
+    });
+
+    expect(router.push).toHaveBeenCalledWith('/');
+    expect(router.refresh).toHaveBeenCalled();
   });
 });
