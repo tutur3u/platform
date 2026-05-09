@@ -401,26 +401,33 @@ class _YearStepper extends StatelessWidget {
           icon: const Icon(Icons.chevron_left),
         ),
         Expanded(
-          child: GestureDetector(
-            onTap: onYearTap,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  label ?? '$year',
-                  style: theme.typography.small.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onYearTap,
+              borderRadius: BorderRadius.circular(10),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      label ?? '$year',
+                      style: theme.typography.small.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (onYearTap != null) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.expand_more,
+                        size: 18,
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ],
+                  ],
                 ),
-                if (onYearTap != null) ...[
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.expand_more,
-                    size: 18,
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
         ),
@@ -528,7 +535,14 @@ class _MonthCell extends StatelessWidget {
     this.monthDate,
     this.label,
     this.localeTag,
-  });
+  }) : assert(
+         label != null || (monthDate != null && localeTag != null),
+         '_MonthCell requires either label or both monthDate and localeTag',
+       ),
+       assert(
+         label == null || monthDate == null,
+         '_MonthCell label and monthDate cannot both be provided',
+       );
 
   final DateTime? monthDate;
   final String? label;

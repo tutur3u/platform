@@ -77,6 +77,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
   }
 
   Future<void> _pickMonth(BuildContext context) async {
+    final firstDayOfWeek = firstDayOfWeekForContext(context);
     final picked = await showAdaptiveSheet<DateTime>(
       context: context,
       useRootNavigator: true,
@@ -86,7 +87,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
           _selectedMonth.year,
           _selectedMonth.month,
         ),
-        firstDayOfWeek: firstDayOfWeekForContext(context),
+        firstDayOfWeek: firstDayOfWeek,
       ),
     );
     if (!mounted || picked == null) {
