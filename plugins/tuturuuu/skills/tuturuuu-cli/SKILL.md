@@ -211,6 +211,11 @@ Keep analytics/read helpers alongside transactions when backed by finance APIs:
 For multi-value finance query params, prefer explicit repeated query params over
 comma-joined values when the backing route expects arrays.
 
+Finance list output should be paginated consistently. Prefer `--page` and
+`--page-size` for humans, keep `--limit` and `--offset` aliases for scripts, and
+render the same `Page X/Y | N total` footer used by task lists whenever the
+response includes a count.
+
 ## Verification
 
 For CLI changes, run focused checks first:

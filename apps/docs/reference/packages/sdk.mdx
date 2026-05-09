@@ -228,11 +228,14 @@ Use `ttr tasks close [task-id]` to stamp `closed_at`; pass `--list
 Finance commands use the selected workspace and the same authenticated internal
 APIs as the web app. Use `--workspace` or `--ws` to target a different
 workspace, and use `--json-payload` when a script needs to send fields that do
-not have dedicated flags yet.
+not have dedicated flags yet. Finance list output is paginated by default; use
+`--page`/`--page-size` or `--limit`/`--offset` to move through larger result
+sets.
 
 ```bash
 # Wallet CRUD.
 ttr finance wallets
+ttr finance wallets --page 2 --page-size 10
 ttr finance wallets get <wallet-id>
 ttr finance wallets create "Cash" --currency VND --balance 0 --type STANDARD
 ttr finance wallets update <wallet-id> --name "Operating Cash"
@@ -240,6 +243,7 @@ ttr finance wallets delete <wallet-id>
 
 # Transaction CRUD and reporting helpers.
 ttr finance transactions --page-size 10
+ttr finance transactions --limit 25 --offset 50
 ttr finance transactions get <transaction-id>
 ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09
 ttr finance transactions update <transaction-id> --category <category-id>

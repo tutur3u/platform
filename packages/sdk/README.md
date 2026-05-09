@@ -171,14 +171,18 @@ Finance commands cover workspace wallets, transactions, categories, budgets,
 and recurring transactions through the same authenticated internal APIs as the
 web app. Use `--workspace` or `--ws` to target a specific workspace, and
 `--json-payload` to pass explicit create/update fields for scripted workflows.
+Finance list output is paginated by default; use `--page`/`--page-size` or
+`--limit`/`--offset` to move through larger result sets.
 
 Common finance examples:
 
 ```bash
 ttr finance wallets
+ttr finance wallets --page 2 --page-size 10
 ttr finance wallets create "Cash" --currency VND --balance 0 --type STANDARD
 ttr finance wallets update <wallet-id> --name "Operating Cash"
 ttr finance transactions --page-size 10
+ttr finance transactions --limit 25 --offset 50
 ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09
 ttr finance transactions update <transaction-id> --category <category-id>
 ttr finance transactions export --wallets <wallet-id> --start 2026-05-01 --end 2026-05-31

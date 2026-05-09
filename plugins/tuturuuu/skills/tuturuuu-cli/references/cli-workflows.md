@@ -230,6 +230,7 @@ transaction workflows:
 
 ```bash
 ttr finance wallets
+ttr finance wallets --page 2 --page-size 10
 ttr finance wallets get <wallet-id>
 ttr finance wallets create "Cash" --currency VND --balance 0 --type STANDARD
 ttr finance wallets update <wallet-id> --name "Operating Cash"
@@ -238,6 +239,7 @@ ttr finance wallets delete <wallet-id>
 
 ```bash
 ttr finance transactions --page-size 10
+ttr finance transactions --limit 25 --offset 50
 ttr finance transactions get <transaction-id>
 ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09
 ttr finance transactions update <transaction-id> --category <category-id>
