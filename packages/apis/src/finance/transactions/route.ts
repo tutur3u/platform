@@ -85,11 +85,19 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  let resolvedWsId: string;
+
+  try {
+    resolvedWsId = await normalizeWorkspaceId(wsId, supabase);
+  } catch {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   // Use the RPC function with pagination parameters to fetch transactions
   const { data, error } = await supabase.rpc(
     'get_wallet_transactions_with_permissions',
     {
-      p_ws_id: wsId,
+      p_ws_id: resolvedWsId,
       p_user_id: user.id,
       p_transaction_ids: undefined,
       p_limit: itemsPerPage,
@@ -241,7 +249,10 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });
   }
 
-  const defaultWalletId = await getWorkspaceConfig(wsId, 'default_wallet_id');
+  const defaultWalletId = await getWorkspaceConfig(
+    resolvedWsId,
+    'default_wallet_id'
+  );
 
   if (
     !canUseRequestedFinanceWalletOnCreate({

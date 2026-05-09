@@ -113,7 +113,11 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
     mocks.getPermissions(...args),
   getWorkspaceConfig: (...args: Parameters<typeof mocks.getWorkspaceConfig>) =>
     mocks.getWorkspaceConfig(...args),
-  normalizeWorkspaceId: vi.fn((id: string) => Promise.resolve(id)),
+  normalizeWorkspaceId: vi.fn((id: string) =>
+    Promise.resolve(
+      id === 'personal' ? '00000000-0000-0000-0000-000000000000' : id
+    )
+  ),
   verifyWorkspaceMembershipType: vi.fn(() =>
     Promise.resolve({ ok: true, membershipType: 'MEMBER' as const })
   ),
@@ -281,6 +285,29 @@ describe('transactions route', () => {
         p_include_count: true,
         p_limit: 5,
         p_offset: 5,
+      })
+    );
+  });
+
+  it('normalizes personal workspace aliases before fetching transactions', async () => {
+    const { GET } = await import('./route.js');
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/workspaces/personal/transactions?page=1&itemsPerPage=5'
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'personal',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.transactionRpc).toHaveBeenCalledWith(
+      'get_wallet_transactions_with_permissions',
+      expect.objectContaining({
+        p_ws_id: '00000000-0000-0000-0000-000000000000',
       })
     );
   });
@@ -453,6 +480,35 @@ describe('transactions route', () => {
         creator_id: null,
         platform_creator_id: 'user-1',
       })
+    );
+  });
+
+  it('uses the normalized workspace id for personal workspace create config checks', async () => {
+    const { POST } = await import('./route.js');
+
+    const response = await POST(
+      new Request('http://localhost/api/workspaces/personal/transactions', {
+        method: 'POST',
+        body: JSON.stringify({
+          amount: 150,
+          origin_wallet_id: '3c9a5c7f-4f0d-4f15-9477-cbf1c7bc7445',
+          taken_at: '2026-03-30T08:00:00.000Z',
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        params: Promise.resolve({
+          wsId: 'personal',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.getWorkspaceConfig).toHaveBeenCalledWith(
+      '00000000-0000-0000-0000-000000000000',
+      'default_wallet_id'
     );
   });
 
