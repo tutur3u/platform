@@ -1,5 +1,5 @@
 import type { User as PrimitiveUser } from './primitives/User';
-import type { Database, Tables } from './supabase';
+import type { Database, Json, Tables } from './supabase';
 import type { JSONContent } from './tiptap';
 
 export type { Database } from './supabase';
@@ -684,6 +684,140 @@ export type ExternalProjectSummary = {
     publishEvents: ExternalProjectPublishEvent[];
   };
   workspaceId: string;
+};
+
+export type ExternalProjectSyncFieldType =
+  | 'boolean'
+  | 'date'
+  | 'datetime'
+  | 'json'
+  | 'markdown'
+  | 'number'
+  | 'string'
+  | 'string-array';
+
+export type ExternalProjectSyncField = {
+  defaultValue?: Json;
+  description?: string | null;
+  key: string;
+  label?: string | null;
+  options?: string[];
+  required?: boolean;
+  type: ExternalProjectSyncFieldType;
+};
+
+export type ExternalProjectSyncCollectionSchema = {
+  assetTypes?: string[];
+  blockTypes?: string[];
+  collection_type: string;
+  config?: Record<string, unknown>;
+  description?: string | null;
+  metadataFields?: ExternalProjectSyncField[];
+  profileFields?: ExternalProjectSyncField[];
+  slug: string;
+  title: string;
+};
+
+export type ExternalProjectSyncSchema = {
+  collections: ExternalProjectSyncCollectionSchema[];
+  metadataFields?: ExternalProjectSyncField[];
+  profileFields?: ExternalProjectSyncField[];
+};
+
+export type ExternalProjectSyncBlock = {
+  blockType: string;
+  content?: Record<string, unknown>;
+  id?: string;
+  sortOrder?: number;
+  stableSourceId?: string | null;
+  title?: string | null;
+};
+
+export type ExternalProjectSyncAsset = {
+  altText?: string | null;
+  assetType: string;
+  blockStableSourceId?: string | null;
+  id?: string;
+  metadata?: Record<string, unknown>;
+  sortOrder?: number;
+  sourceUrl?: string | null;
+  stableSourceId?: string | null;
+  storagePath?: string | null;
+};
+
+export type ExternalProjectSyncEntryStatus = ExternalProjectEntryStatus;
+
+export type ExternalProjectSyncEntry = {
+  assets?: ExternalProjectSyncAsset[];
+  blocks?: ExternalProjectSyncBlock[];
+  collectionSlug: string;
+  delete?: boolean;
+  id?: string;
+  metadata?: Record<string, unknown>;
+  profileData?: Record<string, unknown>;
+  publishedAt?: string | null;
+  scheduledFor?: string | null;
+  slug: string;
+  stableSourceId?: string | null;
+  status?: ExternalProjectSyncEntryStatus;
+  subtitle?: string | null;
+  summary?: string | null;
+  title: string;
+};
+
+export type ExternalProjectSyncContent = {
+  entries: ExternalProjectSyncEntry[];
+};
+
+export type ExternalProjectSyncManifest = {
+  adapter: ExternalProjectAdapterKind;
+  canonicalProjectId?: string | null;
+  content: ExternalProjectSyncContent;
+  schema: ExternalProjectSyncSchema;
+  version: 1;
+};
+
+export type ExternalProjectSyncSnapshot = ExternalProjectSyncManifest & {
+  canonicalProjectId: string | null;
+  generatedAt: string;
+  workspaceId: string;
+};
+
+export type ExternalProjectSyncEntity =
+  | 'asset'
+  | 'block'
+  | 'collection'
+  | 'entry'
+  | 'schema';
+
+export type ExternalProjectSyncAction =
+  | 'archive'
+  | 'create'
+  | 'delete'
+  | 'noop'
+  | 'update';
+
+export type ExternalProjectSyncOperation = {
+  action: ExternalProjectSyncAction;
+  after?: Record<string, unknown> | null;
+  before?: Record<string, unknown> | null;
+  destructive: boolean;
+  entity: ExternalProjectSyncEntity;
+  manifestKey: string;
+  platformId?: string | null;
+  reason: string;
+};
+
+export type ExternalProjectSyncDiff = {
+  hasDestructiveOperations: boolean;
+  operations: ExternalProjectSyncOperation[];
+  summary: Record<ExternalProjectSyncAction, number>;
+};
+
+export type ExternalProjectSyncApplyResult = {
+  applied: true;
+  diff: ExternalProjectSyncDiff;
+  snapshot: ExternalProjectSyncSnapshot;
 };
 
 export type ExternalProjectBulkUpdateAction =

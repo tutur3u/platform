@@ -1,0 +1,115 @@
+import type { ExternalProjectSyncManifest } from '@tuturuuu/types';
+import { z } from 'zod';
+
+const syncFieldSchema = z
+  .object({
+    defaultValue: z.unknown().optional(),
+    description: z.string().nullable().optional(),
+    key: z.string().min(1).max(120),
+    label: z.string().nullable().optional(),
+    options: z.array(z.string()).optional(),
+    required: z.boolean().optional(),
+    type: z.enum([
+      'boolean',
+      'date',
+      'datetime',
+      'json',
+      'markdown',
+      'number',
+      'string',
+      'string-array',
+    ]),
+  })
+  .passthrough();
+
+const collectionSchema = z
+  .object({
+    assetTypes: z.array(z.string().min(1).max(120)).optional(),
+    blockTypes: z.array(z.string().min(1).max(120)).optional(),
+    collection_type: z.string().min(1).max(120),
+    config: z.record(z.string(), z.unknown()).optional(),
+    description: z.string().max(500).nullable().optional(),
+    metadataFields: z.array(syncFieldSchema).optional(),
+    profileFields: z.array(syncFieldSchema).optional(),
+    slug: z.string().min(1).max(120),
+    title: z.string().min(1).max(160),
+  })
+  .passthrough();
+
+const blockSchema = z
+  .object({
+    blockType: z.string().min(1).max(120),
+    content: z.record(z.string(), z.unknown()).optional(),
+    sortOrder: z.number().int().min(0).optional(),
+    stableSourceId: z.string().max(300).nullable().optional(),
+    title: z.string().max(160).nullable().optional(),
+  })
+  .passthrough();
+
+const assetSchema = z
+  .object({
+    altText: z.string().max(500).nullable().optional(),
+    assetType: z.string().min(1).max(120),
+    blockStableSourceId: z.string().max(300).nullable().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+    sortOrder: z.number().int().min(0).optional(),
+    sourceUrl: z.string().url().nullable().optional(),
+    stableSourceId: z.string().max(300).nullable().optional(),
+    storagePath: z.string().max(1024).nullable().optional(),
+  })
+  .passthrough();
+
+export const syncManifestSchema = z
+  .object({
+    adapter: z.enum(['junly', 'yoola', 'theguyser', 'exocorpse']),
+    canonicalProjectId: z.string().nullable().optional(),
+    content: z.object({
+      entries: z.array(
+        z
+          .object({
+            assets: z.array(assetSchema).optional(),
+            blocks: z.array(blockSchema).optional(),
+            collectionSlug: z.string().min(1).max(120),
+            delete: z.boolean().optional(),
+            metadata: z.record(z.string(), z.unknown()).optional(),
+            profileData: z.record(z.string(), z.unknown()).optional(),
+            scheduledFor: z.string().datetime().nullable().optional(),
+            slug: z.string().min(1).max(120),
+            stableSourceId: z.string().max(300).nullable().optional(),
+            status: z
+              .enum(['draft', 'scheduled', 'published', 'archived'])
+              .optional(),
+            subtitle: z.string().max(200).nullable().optional(),
+            summary: z.string().max(1000).nullable().optional(),
+            title: z.string().min(1).max(160),
+          })
+          .passthrough()
+      ),
+    }),
+    schema: z
+      .object({
+        collections: z.array(collectionSchema),
+        metadataFields: z.array(syncFieldSchema).optional(),
+        profileFields: z.array(syncFieldSchema).optional(),
+      })
+      .passthrough(),
+    version: z.literal(1),
+  })
+  .passthrough();
+
+export const syncManifestRequestSchema = z.object({
+  force: z.boolean().optional(),
+  manifest: syncManifestSchema,
+});
+
+export function parseSyncManifestRequest(value: unknown): {
+  force?: boolean;
+  manifest: ExternalProjectSyncManifest;
+} {
+  const parsed = syncManifestRequestSchema.parse(value);
+
+  return {
+    force: parsed.force,
+    manifest: parsed.manifest as ExternalProjectSyncManifest,
+  };
+}

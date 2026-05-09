@@ -210,6 +210,125 @@ describe('EpmClient', () => {
     expect(mockFetch.mock.calls[2]?.[1]?.method).toBe('DELETE');
   });
 
+  it('loads external project sync snapshots with bearer auth', async () => {
+    mockFetch.mockResolvedValueOnce(
+      createMockResponse({
+        adapter: 'yoola',
+        canonicalProjectId: 'yoola-main',
+        content: {
+          entries: [],
+        },
+        generatedAt: '2026-05-09T00:00:00.000Z',
+        schema: {
+          collections: [],
+        },
+        version: 1,
+        workspaceId: 'ws_123',
+      })
+    );
+
+    const client = new EpmClient({
+      apiKey: 'ttr_test_key',
+      baseUrl: 'https://example.com/api/v1',
+      fetch: mockFetch,
+    });
+
+    const snapshot = await client.sync.getSnapshot('ws_123');
+    const requestOptions = mockFetch.mock.calls[0]?.[1];
+    const headers = requestOptions?.headers as Headers;
+
+    expect(snapshot.version).toBe(1);
+    expect(mockFetch.mock.calls[0]?.[0]).toBe(
+      'https://example.com/api/v1/workspaces/ws_123/external-projects/sync/snapshot'
+    );
+    expect(headers.get('Authorization')).toBe('Bearer ttr_test_key');
+  });
+
+  it('posts external project sync diff and apply payloads', async () => {
+    const manifest = {
+      adapter: 'yoola',
+      content: {
+        entries: [],
+      },
+      schema: {
+        collections: [
+          {
+            collection_type: 'artworks',
+            slug: 'artworks',
+            title: 'Artworks',
+          },
+        ],
+      },
+      version: 1,
+    } as const;
+
+    mockFetch
+      .mockResolvedValueOnce(
+        createMockResponse({
+          hasDestructiveOperations: false,
+          operations: [],
+          summary: {
+            archive: 0,
+            create: 0,
+            delete: 0,
+            noop: 1,
+            update: 0,
+          },
+        })
+      )
+      .mockResolvedValueOnce(
+        createMockResponse({
+          applied: true,
+          diff: {
+            hasDestructiveOperations: false,
+            operations: [],
+            summary: {
+              archive: 0,
+              create: 0,
+              delete: 0,
+              noop: 1,
+              update: 0,
+            },
+          },
+          snapshot: {
+            adapter: 'yoola',
+            canonicalProjectId: 'yoola-main',
+            content: {
+              entries: [],
+            },
+            generatedAt: '2026-05-09T00:00:00.000Z',
+            schema: manifest.schema,
+            version: 1,
+            workspaceId: 'ws_123',
+          },
+        })
+      );
+
+    const client = new EpmClient({
+      apiKey: 'ttr_test_key',
+      baseUrl: 'https://example.com/api/v1',
+      fetch: mockFetch,
+    });
+
+    await client.sync.diff('ws_123', manifest);
+    await client.sync.apply('ws_123', manifest, { force: true });
+
+    expect(mockFetch.mock.calls[0]?.[0]).toBe(
+      'https://example.com/api/v1/workspaces/ws_123/external-projects/sync/diff'
+    );
+    expect(mockFetch.mock.calls[0]?.[1]?.method).toBe('POST');
+    expect(mockFetch.mock.calls[0]?.[1]?.body).toBe(
+      JSON.stringify({ manifest })
+    );
+    expect(mockFetch.mock.calls[1]?.[0]).toBe(
+      'https://example.com/api/v1/workspaces/ws_123/external-projects/sync/apply'
+    );
+    expect(mockFetch.mock.calls[1]?.[1]?.method).toBe('POST');
+    expect(mockFetch.mock.calls[1]?.[1]?.body).toBe(
+      JSON.stringify({ force: true, manifest })
+    );
+  });
+
   it('uploads asset files through signed upload URLs', async () => {
     mockFetch
       .mockResolvedValueOnce(

@@ -25,6 +25,10 @@ import type {
   ExternalProjectLoadingData,
   ExternalProjectStudioData,
   ExternalProjectSummary,
+  ExternalProjectSyncApplyResult,
+  ExternalProjectSyncDiff,
+  ExternalProjectSyncManifest,
+  ExternalProjectSyncSnapshot,
   WorkspaceExternalProjectBinding,
   YoolaExternalProjectLoadingData,
   YoolaExternalProjectSectionLoadingItem,
@@ -275,12 +279,31 @@ export class EpmClient {
   protected readonly baseUrl: string;
   protected readonly fetchImpl: typeof fetch;
   protected readonly timeout: number;
+  public readonly sync: {
+    apply: (
+      workspaceId: string,
+      manifest: ExternalProjectSyncManifest,
+      options?: { force?: boolean }
+    ) => Promise<ExternalProjectSyncApplyResult>;
+    diff: (
+      workspaceId: string,
+      manifest: ExternalProjectSyncManifest
+    ) => Promise<ExternalProjectSyncDiff>;
+    getSnapshot: (workspaceId: string) => Promise<ExternalProjectSyncSnapshot>;
+  };
 
   constructor(config: EpmClientConfig = {}) {
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://tuturuuu.com/api/v1';
     this.fetchImpl = config.fetch || globalThis.fetch;
     this.timeout = config.timeout || 30000;
+    this.sync = {
+      apply: (workspaceId, manifest, options = {}) =>
+        this.applySyncManifest(workspaceId, manifest, options),
+      diff: (workspaceId, manifest) =>
+        this.diffSyncManifest(workspaceId, manifest),
+      getSnapshot: (workspaceId) => this.getSyncSnapshot(workspaceId),
+    };
   }
 
   private requireApiKey() {
@@ -393,6 +416,51 @@ export class EpmClient {
     return this.request(
       `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/summary`,
       {
+        requiresAuth: true,
+      }
+    );
+  }
+
+  async getSyncSnapshot(
+    workspaceId: string
+  ): Promise<ExternalProjectSyncSnapshot> {
+    return this.request(
+      `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/sync/snapshot`,
+      {
+        requiresAuth: true,
+      }
+    );
+  }
+
+  async diffSyncManifest(
+    workspaceId: string,
+    manifest: ExternalProjectSyncManifest
+  ): Promise<ExternalProjectSyncDiff> {
+    return this.request(
+      `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/sync/diff`,
+      {
+        body: JSON.stringify({ manifest }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        requiresAuth: true,
+      }
+    );
+  }
+
+  async applySyncManifest(
+    workspaceId: string,
+    manifest: ExternalProjectSyncManifest,
+    options: { force?: boolean } = {}
+  ): Promise<ExternalProjectSyncApplyResult> {
+    return this.request(
+      `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/sync/apply`,
+      {
+        body: JSON.stringify({
+          force: options.force === true,
+          manifest,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
         requiresAuth: true,
       }
     );
