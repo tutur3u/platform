@@ -76,6 +76,7 @@ export default function EditableReportPreview({
   selectedManagerName,
   onChangeManagerAction,
   canCheckUserAttendance,
+  canCreateReports = false,
   canUpdateReports = false,
   canApproveReports = false,
   canDeleteReports = false,
@@ -103,6 +104,7 @@ export default function EditableReportPreview({
   selectedManagerName?: string;
   onChangeManagerAction?: (name?: string) => void;
   canCheckUserAttendance?: boolean;
+  canCreateReports?: boolean;
   canApproveReports?: boolean;
   canUpdateReports?: boolean;
   canDeleteReports?: boolean;
@@ -329,6 +331,10 @@ export default function EditableReportPreview({
     archived_until: report.user_archived_until,
   });
   const isArchivedUser = userArchiveState !== 'active';
+  const canSubmitReport = isNew ? canCreateReports : canUpdateReports;
+  const readOnlyMessage = isNew
+    ? t('ws-reports.create_permission_required')
+    : t('ws-reports.update_permission_required');
   const archivedUntilText =
     userArchiveState === 'temporary-archived' && report.user_archived_until
       ? dateTime(new Date(report.user_archived_until), {
@@ -543,8 +549,9 @@ export default function EditableReportPreview({
                     selectedManagerName ?? report.creator_name
                   }
                   onChangeManager={(name) => onChangeManagerAction?.(name)}
-                  canUpdate={canUpdateReports}
+                  canSubmit={canSubmitReport}
                   canDelete={canDeleteReports}
+                  readOnlyMessage={readOnlyMessage}
                   isSubmitting={
                     createMutation.isPending || updateMutation.isPending
                   }

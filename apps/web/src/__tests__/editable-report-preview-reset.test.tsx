@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 type LatestApprovedLog = {
@@ -11,6 +11,11 @@ type LatestApprovedLog = {
 } | null;
 
 let latestApprovedLogState: LatestApprovedLog = null;
+
+const mutationMocks = vi.hoisted(() => ({
+  createMutate: vi.fn(),
+  updateMutate: vi.fn(),
+}));
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -48,8 +53,8 @@ vi.mock(
   '@/app/[locale]/(dashboard)/[wsId]/users/reports/[reportId]/hooks/use-report-mutations',
   () => ({
     useReportMutations: () => ({
-      createMutation: { mutate: vi.fn(), isPending: false },
-      updateMutation: { mutate: vi.fn(), isPending: false },
+      createMutation: { mutate: mutationMocks.createMutate, isPending: false },
+      updateMutation: { mutate: mutationMocks.updateMutate, isPending: false },
       deleteMutation: { mutate: vi.fn(), isPending: false },
       updateScoresMutation: { mutateAsync: vi.fn(), isPending: false },
       approveMutation: { mutate: vi.fn(), isPending: false },
@@ -124,6 +129,7 @@ import EditableReportPreview from '@/app/[locale]/(dashboard)/[wsId]/users/repor
 
 describe('EditableReportPreview form reset behavior', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     latestApprovedLogState = {
       title: 'Approved title',
       content: 'Approved content',
@@ -180,5 +186,78 @@ describe('EditableReportPreview form reset behavior', () => {
     expect(screen.getByLabelText('user-report-data-table.title')).toHaveValue(
       'Typed by user'
     );
+  });
+
+  it('lets create-only members create a new report', async () => {
+    render(
+      <EditableReportPreview
+        wsId="ws-1"
+        report={{
+          user_id: 'user-1',
+          user_name: 'Test User',
+          group_id: 'group-1',
+          group_name: 'Test Group',
+          creator_name: 'Manager',
+          title: '',
+          content: '',
+          feedback: '',
+          scores: [],
+        }}
+        configs={[]}
+        isNew
+        canCreateReports
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText('user-report-data-table.title'), {
+      target: { value: 'May report' },
+    });
+    fireEvent.change(screen.getByLabelText('user-report-data-table.content'), {
+      target: { value: 'Progress notes' },
+    });
+
+    const createButton = screen.getByRole('button', { name: 'common.create' });
+    expect(createButton).not.toBeDisabled();
+
+    fireEvent.submit(createButton.closest('form')!);
+
+    await waitFor(() => {
+      expect(mutationMocks.createMutate).toHaveBeenCalledWith({
+        title: 'May report',
+        content: 'Progress notes',
+        feedback: '',
+      });
+    });
+    expect(mutationMocks.updateMutate).not.toHaveBeenCalled();
+  });
+
+  it('keeps existing reports read-only without update permission', () => {
+    render(
+      <EditableReportPreview
+        wsId="ws-1"
+        report={{
+          id: 'report-1',
+          user_id: 'user-1',
+          user_name: 'Test User',
+          group_id: 'group-1',
+          group_name: 'Test Group',
+          creator_name: 'Manager',
+          title: 'Current title',
+          content: 'Current content',
+          feedback: '',
+          report_approval_status: 'PENDING',
+          scores: [],
+        }}
+        configs={[]}
+        isNew={false}
+      />
+    );
+
+    expect(
+      screen.getByLabelText('user-report-data-table.title')
+    ).toBeDisabled();
+    expect(
+      screen.getByText('ws-reports.update_permission_required')
+    ).toBeInTheDocument();
   });
 });

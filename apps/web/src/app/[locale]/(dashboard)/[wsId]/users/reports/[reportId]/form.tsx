@@ -1,16 +1,14 @@
-import { Loader2 } from '@tuturuuu/icons';
+import { Loader2, Lock } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { AutosizeTextarea } from '@tuturuuu/ui/custom/autosize-textarea';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import type { UseFormReturn } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Select,
@@ -21,12 +19,12 @@ import {
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
-import type * as z from 'zod';
 import {
   MAX_MONTHLY_REPORT_TEXT_LENGTH,
   MAX_MONTHLY_REPORT_TITLE_LENGTH,
 } from '@/features/reports/report-limits';
-import type { UserReportFormSchema } from './editable-report-preview';
+import { CharacterCount } from './character-count';
+import type { UserReportFormProps } from './form-types';
 
 export default function UserReportForm({
   isNew,
@@ -37,37 +35,14 @@ export default function UserReportForm({
   managerOptions,
   selectedManagerName,
   onChangeManager,
-  canUpdate = true,
+  canSubmit = true,
   canDelete = false,
   isSubmitting = false,
   showHeading = true,
-}: {
-  isNew: boolean;
-  form: UseFormReturn<z.infer<typeof UserReportFormSchema>>;
-  submitLabel: string;
-
-  onSubmit?: (formData: z.infer<typeof UserReportFormSchema>) => void;
-  onDelete?: () => void;
-  managerOptions?: Array<{ value: string; label: string }>;
-  selectedManagerName?: string;
-  onChangeManager?: (name?: string) => void;
-  canUpdate?: boolean;
-  canDelete?: boolean;
-  isSubmitting?: boolean;
-  showHeading?: boolean;
-}) {
+  readOnlyMessage,
+}: UserReportFormProps) {
   const t = useTranslations();
-  const commonT = useTranslations('common');
-
-  const renderCharacterCount = (
-    value: string | undefined,
-    maxLength: number
-  ) => (
-    <FormDescription className="text-right text-xs">
-      {(value?.length ?? 0).toLocaleString()}/{maxLength.toLocaleString()}{' '}
-      {commonT('characters')}
-    </FormDescription>
-  );
+  const fieldsDisabled = !canSubmit || isSubmitting;
 
   return (
     <div className="grid h-fit gap-2 rounded-lg border p-4">
@@ -98,6 +73,7 @@ export default function UserReportForm({
               <FormControl>
                 <Select
                   value={selectedManagerName ?? ''}
+                  disabled={fieldsDisabled}
                   onValueChange={(val) => onChangeManager?.(val || undefined)}
                 >
                   <SelectTrigger>
@@ -124,15 +100,16 @@ export default function UserReportForm({
                 <FormLabel>{t('user-report-data-table.title')}</FormLabel>
                 <FormControl>
                   <Input
+                    disabled={fieldsDisabled}
                     maxLength={MAX_MONTHLY_REPORT_TITLE_LENGTH}
                     placeholder={t('user-report-data-table.title')}
                     {...field}
                   />
                 </FormControl>
-                {renderCharacterCount(
-                  field.value,
-                  MAX_MONTHLY_REPORT_TITLE_LENGTH
-                )}
+                <CharacterCount
+                  maxLength={MAX_MONTHLY_REPORT_TITLE_LENGTH}
+                  value={field.value}
+                />
                 <FormMessage />
               </FormItem>
             )}
@@ -146,15 +123,16 @@ export default function UserReportForm({
                 <FormLabel>{t('user-report-data-table.content')}</FormLabel>
                 <FormControl>
                   <AutosizeTextarea
+                    disabled={fieldsDisabled}
                     maxLength={MAX_MONTHLY_REPORT_TEXT_LENGTH}
                     placeholder={t('user-report-data-table.content')}
                     {...field}
                   />
                 </FormControl>
-                {renderCharacterCount(
-                  field.value,
-                  MAX_MONTHLY_REPORT_TEXT_LENGTH
-                )}
+                <CharacterCount
+                  maxLength={MAX_MONTHLY_REPORT_TEXT_LENGTH}
+                  value={field.value}
+                />
                 <FormMessage />
               </FormItem>
             )}
@@ -168,15 +146,16 @@ export default function UserReportForm({
                 <FormLabel>{t('user-report-data-table.feedback')}</FormLabel>
                 <FormControl>
                   <AutosizeTextarea
+                    disabled={fieldsDisabled}
                     maxLength={MAX_MONTHLY_REPORT_TEXT_LENGTH}
                     placeholder={t('user-report-data-table.feedback')}
                     {...field}
                   />
                 </FormControl>
-                {renderCharacterCount(
-                  field.value,
-                  MAX_MONTHLY_REPORT_TEXT_LENGTH
-                )}
+                <CharacterCount
+                  maxLength={MAX_MONTHLY_REPORT_TEXT_LENGTH}
+                  value={field.value}
+                />
                 <FormMessage />
               </FormItem>
             )}
@@ -184,11 +163,18 @@ export default function UserReportForm({
 
           <Separator />
 
+          {!canSubmit && readOnlyMessage ? (
+            <div className="flex items-start gap-2 rounded-lg border border-dynamic-yellow/30 bg-dynamic-yellow/10 px-3 py-2 text-dynamic-yellow text-sm">
+              <Lock className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{readOnlyMessage}</span>
+            </div>
+          ) : null}
+
           <div className="flex gap-2">
             <Button
               type="submit"
               className="w-full"
-              disabled={!form.formState.isDirty || !canUpdate || isSubmitting}
+              disabled={!form.formState.isDirty || !canSubmit || isSubmitting}
             >
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {submitLabel}

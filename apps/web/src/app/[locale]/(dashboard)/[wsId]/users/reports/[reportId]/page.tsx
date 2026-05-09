@@ -4,6 +4,7 @@ import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
@@ -45,6 +46,25 @@ export default async function WorkspaceUserDetailsPage({
   const locale = await getLocale();
   const { wsId, reportId } = await params;
   const { groupId, userId } = await searchParams;
+  const permissions = await getPermissions({ wsId });
+
+  if (!permissions?.containsPermission('view_user_groups_reports')) {
+    notFound();
+  }
+
+  const canCheckUserAttendance = permissions.containsPermission(
+    'check_user_attendance'
+  );
+  const canApproveReports = permissions.containsPermission('approve_reports');
+  const canCreateReports = permissions.containsPermission(
+    'create_user_groups_reports'
+  );
+  const canUpdateReports = permissions.containsPermission(
+    'update_user_groups_reports'
+  );
+  const canDeleteReports = permissions.containsPermission(
+    'delete_user_groups_reports'
+  );
 
   const report =
     reportId === 'new'
@@ -186,6 +206,11 @@ export default async function WorkspaceUserDetailsPage({
           }}
           configs={configs}
           isNew={reportId === 'new'}
+          canCheckUserAttendance={canCheckUserAttendance}
+          canApproveReports={canApproveReports}
+          canCreateReports={canCreateReports}
+          canUpdateReports={canUpdateReports}
+          canDeleteReports={canDeleteReports}
         />
       )}
     </div>

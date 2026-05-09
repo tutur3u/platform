@@ -542,6 +542,7 @@ export default function GroupReportsClient({
           configs={configsData}
           isNew={reportId === 'new'}
           canApproveReports={canApproveReports}
+          canCreateReports={canCreateReports}
           canUpdateReports={canUpdateReports}
           canDeleteReports={canDeleteReports}
           groupId={groupId}
