@@ -1,4 +1,4 @@
 interface:
   display_name: "Tuturuuu CLI"
-  short_description: "Install, use, and document the Tuturuuu ttr CLI"
-  default_prompt: "Install the Tuturuuu CLI, verify login, and show scoped task help."
+  short_description: "Install, use, and document the Tuturuuu SDK and ttr CLI"
+  default_prompt: "Add an SDK-backed ttr command and verify its scoped help."

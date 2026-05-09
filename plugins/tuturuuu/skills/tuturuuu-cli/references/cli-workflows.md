@@ -44,6 +44,9 @@ relevant surface before running a mutation:
 ```bash
 ttr --help
 ttr upgrade --help
+ttr finance --help
+ttr finance wallets --help
+ttr finance transactions --help
 ttr workspaces --help
 ttr tasks --help
 ttr tasks create --help
@@ -67,6 +70,9 @@ ttr upgrade
 ttr -v
 ttr whoami
 ttr whoami --json
+ttr finance wallets
+ttr finance transactions --page-size 10
+ttr finance budgets status
 ttr workspaces
 ttr workspaces --json --no-update-check
 ttr workspaces use
@@ -120,6 +126,18 @@ has been selected.
 
 Interactive picker rows use one-based indexes and tier/status badges before the
 name, such as `[FREE] Tuturuuu` or `[PRO] Personal`.
+
+## SDK Client Surfaces
+
+The CLI should call the SDK user-client surfaces in `packages/sdk/src/platform.ts`
+and adjacent `platform-*.ts` modules. Keep command handlers focused on parsing,
+payload construction, rendering, and config/session concerns. Put authenticated
+API details in SDK client helpers or `packages/internal-api/src/*` helpers.
+
+When a new command group becomes substantial, split focused modules under
+`packages/sdk/src/cli/` before the command file grows too large. Keep public
+exports in `packages/sdk/src/index.ts` aligned with new SDK clients and payload
+types.
 
 ## Monorepo Behavior
 
@@ -203,4 +221,38 @@ Move with a picker, or move directly:
 ttr tasks move
 ttr tasks move <task-id> --list <list-id>
 ttr tasks move <task-id> --target-board <board-id> --list <list-id>
+```
+
+## Finance CRUD Examples
+
+Use `ttr finance` for wallet, transaction, category, budget, and recurring
+transaction workflows:
+
+```bash
+ttr finance wallets
+ttr finance wallets get <wallet-id>
+ttr finance wallets create "Cash" --currency VND --balance 0 --type STANDARD
+ttr finance wallets update <wallet-id> --name "Operating Cash"
+ttr finance wallets delete <wallet-id>
+```
+
+```bash
+ttr finance transactions --page-size 10
+ttr finance transactions get <transaction-id>
+ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09
+ttr finance transactions update <transaction-id> --category <category-id>
+ttr finance transactions delete <transaction-id>
+ttr finance transactions export --wallets <wallet-id> --start 2026-05-01 --end 2026-05-31
+ttr finance transactions stats --start 2026-05-01 --end 2026-05-31
+```
+
+```bash
+ttr finance categories
+ttr finance categories create "Travel" --expense --color blue
+ttr finance budgets
+ttr finance budgets status
+ttr finance budgets create "Marketing" --amount 1000000 --period monthly --start-date 2026-05-01
+ttr finance recurring
+ttr finance recurring upcoming --days-ahead 30
+ttr finance recurring create "Rent" --amount 5000000 --wallet <wallet-id> --frequency monthly --start-date 2026-05-01
 ```

@@ -1,19 +1,19 @@
 ---
 name: tuturuuu-cli
-description: Tuturuuu CLI workflow guidance. Use when installing, verifying, publishing, debugging, or using the `ttr` or `tuturuuu` CLI for browser login, copy-token login, workspace discovery, task listing, task mutation, compact task output, or autonomous agent workflows.
+description: Tuturuuu SDK and CLI workflow guidance. Use when installing, verifying, publishing, debugging, or using the `ttr` or `tuturuuu` CLI, SDK clients, browser login, copy-token login, workspace discovery, task listing, finance CRUD, task mutation, compact output, or autonomous agent workflows.
 ---
 
 # Tuturuuu CLI
 
 ## Core Workflow
 
-Use this skill when a task involves the native Tuturuuu CLI package published as
-`tuturuuu` and invoked primarily as `ttr`.
+Use this skill when a task involves the native Tuturuuu SDK and CLI package
+published as `tuturuuu` and invoked primarily as `ttr`.
 
 Before changing CLI code, inspect the owning surfaces:
 
 - `packages/sdk/src/cli/*` for command parsing, login, config, rendering, and update checks.
-- `packages/sdk/src/platform.ts` for authenticated user-client helpers.
+- `packages/sdk/src/platform.ts` and `packages/sdk/src/platform-*.ts` for authenticated user-client helpers.
 - `packages/internal-api/src/*` for shared route helpers used by the CLI.
 - `apps/web/src/app/api/cli/auth/*` for browser login and token exchange.
 - `apps/docs/reference/packages/sdk.mdx` and `packages/sdk/README.md` for durable usage documentation.
@@ -56,6 +56,9 @@ or checking npm for updates. Keep these forms equivalent where possible:
 ```bash
 ttr --help
 ttr upgrade --help
+ttr finance --help
+ttr finance wallets --help
+ttr finance transactions --help
 ttr tasks --help
 ttr tasks create --help
 ttr tasks done --help
@@ -183,12 +186,38 @@ Use `ttr tasks --json --no-update-check` for agent-readable task discovery. It
 keeps stdout parseable and avoids update-check chatter while the agent decides
 which tasks to read or mutate.
 
+## Finance CRUD
+
+Finance commands belong under `ttr finance` and should use the SDK user client
+surface instead of duplicating route logic in command handlers. Keep CLI parsing,
+payload construction, rendering, and authenticated request helpers separated
+when the command group grows.
+
+Support full CRUD for finance resources:
+
+- `ttr finance wallets list|get|create|update|delete`
+- `ttr finance transactions list|get|create|update|delete`
+- `ttr finance categories list|get|create|update|delete`
+- `ttr finance budgets list|status|create|update|delete`
+- `ttr finance recurring list|upcoming|create|update|delete`
+
+Keep analytics/read helpers alongside transactions when backed by finance APIs:
+
+- `ttr finance transactions export`
+- `ttr finance transactions stats`
+- `ttr finance transactions category-breakdown`
+- `ttr finance transactions spending-trends`
+
+For multi-value finance query params, prefer explicit repeated query params over
+comma-joined values when the backing route expects arrays.
+
 ## Verification
 
 For CLI changes, run focused checks first:
 
 ```bash
 bun --cwd packages/sdk test src/cli/commands.test.ts
+bun --cwd packages/sdk test src/platform.test.ts
 bun --cwd packages/sdk test src/cli/auth.test.ts src/cli/browser.test.ts src/cli/package.test.ts
 bun --cwd packages/sdk type-check
 ```
@@ -198,6 +227,9 @@ If task helper queries changed, also run:
 ```bash
 bun --cwd packages/internal-api test src/tasks.test.ts
 ```
+
+If finance helper queries changed, run the focused SDK command and platform
+tests. Add or run narrower internal-api finance tests when they exist.
 
 If browser login pages changed, also run the focused web auth test:
 
