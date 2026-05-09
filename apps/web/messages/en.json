@@ -4650,6 +4650,55 @@
     "experimental_feature": "Experimental feature",
     "experimental_notice": "This is an experimental feature that is still under heavy development. It may not work as expected and may change in the future."
   },
+  "external-apps-settings": {
+    "actions": {
+      "create": "Create app",
+      "rotate_secret": "Rotate secret",
+      "save": "Save"
+    },
+    "description": "Register external app origins and issue one-time app secrets for centralized Tuturuuu login and API coordination.",
+    "fields": {
+      "app_id": "App ID",
+      "display_name": "Display name",
+      "enabled": "Enabled",
+      "issue_secret": "Issue secret now",
+      "origins": "Allowed origins",
+      "scopes": "Allowed API scopes"
+    },
+    "messages": {
+      "rotate_error": "Secret rotation failed",
+      "rotate_success": "Secret rotated",
+      "save_error": "External app save failed",
+      "save_success": "External app saved"
+    },
+    "new_app": {
+      "title": "New external app"
+    },
+    "registered": {
+      "empty": "No external apps registered yet.",
+      "title": "Registered apps"
+    },
+    "secret": {
+      "copy": "Copy",
+      "copy_success": "Secret copied",
+      "description": "Store this secret for {appId}. It is shown once and only the hash is stored in Tuturuuu.",
+      "dismiss": "Dismiss",
+      "title": "One-time app secret",
+      "value_label": "Generated app secret"
+    },
+    "status": {
+      "disabled": "Disabled",
+      "enabled": "Enabled"
+    },
+    "summary": {
+      "last_secret": "Last secret",
+      "no_secret": "Not issued",
+      "origins": "Origins",
+      "scopes": "Scopes",
+      "secret_suffix": "Ends in {suffix}"
+    },
+    "title": "External Apps"
+  },
   "external-projects": {
     "epm": {
       "activity_feed_title": "Activity feed",
@@ -6195,6 +6244,7 @@
     "email_blacklist": "Email Blacklist",
     "email_templates": "Email Templates",
     "entity_creation_limits": "Entity Creation Limits",
+    "external_apps": "External Apps",
     "features": "Features",
     "infrastructure": "Infrastructure",
     "integrations": "Integrations",

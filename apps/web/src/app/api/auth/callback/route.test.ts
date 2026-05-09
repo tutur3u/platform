@@ -4,20 +4,7 @@ import { GET } from './route';
 
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
-  mapUrlToApp: vi.fn(),
 }));
-
-vi.mock('@tuturuuu/auth/cross-app', async () => {
-  const actual = await vi.importActual<
-    typeof import('@tuturuuu/auth/cross-app')
-  >('@tuturuuu/auth/cross-app');
-
-  return {
-    ...actual,
-    mapUrlToApp: (...args: Parameters<typeof mocks.mapUrlToApp>) =>
-      mocks.mapUrlToApp(...args),
-  };
-});
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: (...args: Parameters<typeof mocks.createClient>) =>
@@ -32,7 +19,6 @@ describe('auth callback route', () => {
         exchangeCodeForSession: vi.fn().mockResolvedValue(undefined),
       },
     });
-    mocks.mapUrlToApp.mockReturnValue(null);
   });
 
   it('flattens same-origin nested returnUrl redirects', async () => {
@@ -51,9 +37,7 @@ describe('auth callback route', () => {
   });
 
   it('routes trusted external app returnUrl values through login confirmation', async () => {
-    mocks.mapUrlToApp.mockReturnValue('mail');
-
-    const externalReturnUrl = encodeURIComponent('https://mail.tuturuuu.com');
+    const externalReturnUrl = encodeURIComponent('https://cms.tuturuuu.com');
     const response = await GET(
       new NextRequest(
         `http://localhost/api/auth/callback?returnUrl=${externalReturnUrl}`
@@ -61,7 +45,7 @@ describe('auth callback route', () => {
     );
 
     expect(response.headers.get('location')).toBe(
-      'http://localhost/login?returnUrl=https%3A%2F%2Fmail.tuturuuu.com'
+      'http://localhost/login?returnUrl=https%3A%2F%2Fcms.tuturuuu.com'
     );
   });
 });

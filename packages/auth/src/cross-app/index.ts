@@ -2,7 +2,7 @@ import {
   createClient,
   type TypedSupabaseClient,
 } from '@tuturuuu/supabase/next/client';
-import { APP_DOMAIN_MAP } from '@tuturuuu/utils/internal-domains';
+import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
 import type { useRouter } from 'next/navigation';
 
 export * from './navigation';
@@ -185,7 +185,7 @@ export function mapUrlToApp(url: string): string | null {
     return null;
   }
 
-  const appIdentifier = APP_DOMAIN_MAP.find(
+  const appIdentifier = getAppDomainMap().find(
     (domain) => new URL(domain.url).origin === parsedUrl.origin
   )?.name;
 

@@ -53,6 +53,7 @@
                   "platform/architecture/api-routes",
                   "platform/architecture/trpc",
                   "platform/architecture/authentication",
+                  "platform/architecture/app-coordination",
                   "platform/architecture/sepay-integration",
                   "platform/architecture/authorization",
                   "platform/architecture/workspaces-permissions",
