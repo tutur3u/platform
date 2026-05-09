@@ -12,49 +12,13 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { generateObject } from 'ai';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
+import {
+  COURSE_GENERATION_PROMPT,
+  CourseGenerationSchema,
+  GenerateCourseRequestSchema,
+} from './schema';
 
-const ModuleGenerationSchema = z.object({
-  modules: z
-    .array(
-      z.object({
-        name: z
-          .string()
-          .describe('The main title of the module derived from the document.'),
-        content: z
-          .string()
-          .describe(
-            'The detailed learning content or lesson formatted in markdown.'
-          ),
-        extra_content: z
-          .string()
-          .describe('Key takeaways, glossary, or supplementary information.')
-          .optional(),
-        quiz_questions: z
-          .array(
-            z.object({
-              question: z.string(),
-              options: z.array(z.string()),
-              correct_answer: z.string(),
-            })
-          )
-          .describe('Suggested quiz questions based on the document.')
-          .optional(),
-      })
-    )
-    .min(1)
-    .describe(
-      'A list of course modules extracted from the document. Large documents should be broken down into multiple modules.'
-    ),
-});
-
-const GenerateCourseRequestSchema = z.object({
-  fileName: z.string().max(255).optional(),
-  groupId: z.string().uuid(),
-  maxCharacters: z.number().int().positive().max(1_000_000).optional(),
-  storagePath: z.string().min(1).max(1024),
-  wsId: z.string().min(1),
-});
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function isGroupStoragePath(
   storagePath: string,
@@ -67,11 +31,13 @@ function isGroupStoragePath(
   );
 }
 
+// ─── Route Handler ───────────────────────────────────────────────────────────
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient(request);
 
-    // 1. Authenticate user
+    // 1. Authenticate
     const {
       data: { user },
       error: userError,
@@ -80,7 +46,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Parse request payload
+    // 2. Parse & validate request body
     let rawBody: unknown;
     try {
       rawBody = await request.json();
@@ -92,7 +58,6 @@ export async function POST(request: Request) {
     }
 
     const parsedBody = GenerateCourseRequestSchema.safeParse(rawBody);
-
     if (!parsedBody.success) {
       return NextResponse.json(
         { error: 'Invalid request body', issues: parsedBody.error.issues },
@@ -115,6 +80,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Normalize path to always include workspace prefix (markitdown executor requires it)
+    const normalizedStoragePath = sanitizedStoragePath.startsWith(
+      `${normalizedWsId}/`
+    )
+      ? sanitizedStoragePath
+      : `${normalizedWsId}/${sanitizedStoragePath}`;
+
+    // 3. Permission check
     const permissions = await getPermissions({ wsId: normalizedWsId, request });
     if (
       !permissions?.containsPermission('view_user_groups') ||
@@ -124,9 +97,11 @@ export async function POST(request: Request) {
     }
 
     const sbAdmin = await createAdminClient();
+
+    // 4. Verify group exists in workspace
     const { data: group, error: groupError } = await sbAdmin
       .from('workspace_user_groups')
-      .select('id')
+      .select('id, ws_id')
       .eq('ws_id', normalizedWsId)
       .eq('id', groupId)
       .maybeSingle();
@@ -137,7 +112,6 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-
     if (!group) {
       return NextResponse.json(
         { error: 'User group not found' },
@@ -145,10 +119,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Extract text from PDF using MarkItDown tool
+    // 5. Extract text from document via MarkItDown
     const markitdownResult = await executeConvertFileToMarkdown(
       {
-        storagePath: sanitizedStoragePath,
+        storagePath: normalizedStoragePath,
         fileName,
         maxCharacters: maxCharacters || 120_000,
       },
@@ -169,16 +143,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const markdownText = markitdownResult.markdown;
-
+    // 6. Generate structured course via AI SDK
     const { object } = await generateObject({
       model: google('gemini-2.0-flash'),
-      schema: ModuleGenerationSchema,
-      system:
-        'You are an expert educator. Your task is to analyze documents and extract structured, engaging learning modules from them.',
-      prompt: `Please create structured course modules based on the following document text. Extract the main lessons, key takeaways, and suggest a few quiz questions to test the learner's knowledge. Break down large documents into multiple logical modules.\n\nDocument Content:\n${markdownText}`,
+      schema: CourseGenerationSchema,
+      system: COURSE_GENERATION_PROMPT,
+      prompt: `Analyze the following document and create structured course modules with quizzes and flashcards.\n\nDocument Content:\n${markitdownResult.markdown}`,
     });
 
+    // 7. Resolve or create module group
     const { data: existingModuleGroup, error: moduleGroupError } = await sbAdmin
       .from('workspace_course_module_groups')
       .select('id')
@@ -200,34 +173,32 @@ export async function POST(request: Request) {
 
     let moduleGroupId = existingModuleGroup?.id;
     if (!moduleGroupId) {
-      const moduleGroupPayload: TablesInsert<'workspace_course_module_groups'> =
-        {
-          group_id: groupId,
-          sort_key: 0,
-          title: 'Generated modules',
-        };
+      const payload: TablesInsert<'workspace_course_module_groups'> = {
+        group_id: groupId,
+        sort_key: 0,
+        title: 'Generated modules',
+      };
 
-      const { data: createdModuleGroup, error: createModuleGroupError } =
-        await sbAdmin
-          .from('workspace_course_module_groups')
-          .insert(moduleGroupPayload)
-          .select('id')
-          .single();
+      const { data: created, error: createError } = await sbAdmin
+        .from('workspace_course_module_groups')
+        .insert(payload)
+        .select('id')
+        .single();
 
-      if (createModuleGroupError) {
+      if (createError) {
         return NextResponse.json(
           {
-            error: 'Failed to create a target module group.',
-            message: createModuleGroupError.message,
+            error: 'Failed to create module group.',
+            message: createError.message,
           },
           { status: 500 }
         );
       }
-
-      moduleGroupId = createdModuleGroup.id;
+      moduleGroupId = created.id;
     }
 
-    const { data: maxSortKeyModule, error: maxSortKeyError } = await sbAdmin
+    // 8. Determine starting sort_key
+    const { data: maxSortKeyRow, error: maxSortKeyError } = await sbAdmin
       .from('workspace_course_modules')
       .select('sort_key')
       .eq('group_id', groupId)
@@ -237,63 +208,139 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (maxSortKeyError) {
-      console.error(
-        'Failed to fetch existing course modules:',
-        maxSortKeyError
-      );
       return NextResponse.json(
         {
-          error: 'Failed to persist generated modules.',
+          error: 'Failed to determine module ordering.',
           message: maxSortKeyError.message,
         },
         { status: 500 }
       );
     }
 
-    const startingSortKey = (maxSortKeyModule?.sort_key ?? -1) + 1;
+    const startingSortKey = (maxSortKeyRow?.sort_key ?? -1) + 1;
 
-    const insertPayload: TablesInsert<'workspace_course_modules'>[] =
-      object.modules.map((module, index) => ({
-        content: module.content,
-        extra_content: {
-          quiz_questions: module.quiz_questions ?? [],
-          text: module.extra_content ?? null,
-        },
+    // 9. Insert modules
+    const moduleInsertPayload: TablesInsert<'workspace_course_modules'>[] =
+      object.modules.map((mod, index) => ({
+        content: mod.content,
+        extra_content: mod.extra_content ? { text: mod.extra_content } : null,
         group_id: groupId,
         module_group_id: moduleGroupId,
-        name: module.name,
+        name: mod.name,
         sort_key: startingSortKey + index,
+        youtube_links: mod.youtube_links ?? null,
       }));
 
-    const { data: createdModules, error } = await sbAdmin
+    const { data: createdModules, error: insertError } = await sbAdmin
       .from('workspace_course_modules')
-      .insert(insertPayload)
-      .select('*');
+      .insert(moduleInsertPayload)
+      .select('id, name, sort_key');
 
-    if (error) {
-      console.error('Failed to insert AI generated modules:', error);
+    if (insertError) {
       return NextResponse.json(
         {
           data: object,
           error: 'Failed to save generated modules',
-          message: error.message,
+          message: insertError.message,
         },
         { status: 500 }
       );
     }
 
-    // 6. Return the generated module data
+    // 10. Insert quizzes, quiz options, flashcards per module
+    const quizResults: Array<{ moduleId: string; quizCount: number }> = [];
+    const flashcardResults: Array<{
+      moduleId: string;
+      flashcardCount: number;
+    }> = [];
+
+    for (let i = 0; i < createdModules.length; i++) {
+      const dbModule = createdModules[i]!;
+      const generatedModule = object.modules[i]!;
+
+      // Insert quizzes
+      if (generatedModule.quizzes?.length) {
+        let quizCount = 0;
+        for (const quiz of generatedModule.quizzes) {
+          const { data: createdQuiz, error: quizError } = await sbAdmin
+            .from('workspace_quizzes')
+            .insert({
+              question: quiz.question,
+              score: quiz.score,
+              ws_id: normalizedWsId,
+            })
+            .select('id')
+            .single();
+
+          if (quizError || !createdQuiz) continue;
+
+          await sbAdmin.from('course_module_quizzes').insert({
+            module_id: dbModule.id,
+            quiz_id: createdQuiz.id,
+          });
+
+          if (quiz.quiz_options.length) {
+            await sbAdmin.from('quiz_options').insert(
+              quiz.quiz_options.map((opt) => ({
+                quiz_id: createdQuiz.id,
+                value: opt.value,
+                is_correct: opt.is_correct,
+                explanation: opt.explanation ?? null,
+              }))
+            );
+          }
+
+          quizCount++;
+        }
+        quizResults.push({ moduleId: dbModule.id, quizCount });
+      }
+
+      // Insert flashcards
+      if (generatedModule.flashcards?.length) {
+        let flashcardCount = 0;
+        for (const card of generatedModule.flashcards) {
+          const { data: createdCard, error: cardError } = await sbAdmin
+            .from('workspace_flashcards')
+            .insert({
+              front: card.front,
+              back: card.back,
+              ws_id: normalizedWsId,
+            })
+            .select('id')
+            .single();
+
+          if (cardError || !createdCard) continue;
+
+          await sbAdmin.from('course_module_flashcards').insert({
+            module_id: dbModule.id,
+            flashcard_id: createdCard.id,
+          });
+
+          flashcardCount++;
+        }
+        flashcardResults.push({ moduleId: dbModule.id, flashcardCount });
+      }
+    }
+
+    // 11. Return result
     return NextResponse.json({
-      data: object,
       createdModules,
+      quizResults,
+      flashcardResults,
       metadata: {
         title: markitdownResult.title,
         creditsCharged: markitdownResult.creditsCharged,
         truncated: markitdownResult.truncated,
+        totalModules: createdModules.length,
+        totalQuizzes: quizResults.reduce((s, r) => s + r.quizCount, 0),
+        totalFlashcards: flashcardResults.reduce(
+          (s, r) => s + r.flashcardCount,
+          0
+        ),
       },
     });
   } catch (error) {
-    console.error('Failed to generate course module:', error);
+    console.error('Failed to generate course:', error);
     return NextResponse.json(
       {
         error: 'Internal Server Error',
