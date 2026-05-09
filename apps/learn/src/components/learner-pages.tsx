@@ -1,6 +1,7 @@
 'use client';
 
 export { AssignmentsPage } from './learner-pages/assignments-page';
+export { CourseDetailPage } from './learner-pages/course-detail-page';
 export { CoursesPage } from './learner-pages/courses-page';
 export { HomePage } from './learner-pages/home-page';
 export { MarksPage } from './learner-pages/marks-page';

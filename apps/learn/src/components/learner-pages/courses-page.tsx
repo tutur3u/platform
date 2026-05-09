@@ -13,6 +13,7 @@ import { type CourseListItem, listCourses } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
   BrutalCard,
@@ -41,7 +42,12 @@ export function CoursesPage({ wsId }: { wsId: string }) {
     >
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {courses.data?.courses.map((course, index) => (
-          <CanvasCourseCard course={course} index={index} key={course.id} />
+          <CanvasCourseCard
+            course={course}
+            index={index}
+            key={course.id}
+            wsId={wsId}
+          />
         ))}
       </div>
       {!courses.data?.courses.length ? (
@@ -54,9 +60,11 @@ export function CoursesPage({ wsId }: { wsId: string }) {
 function CanvasCourseCard({
   course,
   index,
+  wsId,
 }: {
   course: CourseListItem;
   index: number;
+  wsId: string;
 }) {
   const t = useTranslations();
   const theme = courseThemes[index % courseThemes.length] ?? courseThemes[0];
@@ -158,16 +166,16 @@ function CanvasCourseCard({
 
       {/* Canvas-style footer action */}
       <div className="mt-auto border-border border-t-2 px-5 py-3">
-        <button
+        <Link
+          href={`/${wsId}/courses/${course.id}`}
           className="group/btn flex w-full items-center gap-2 font-bold text-sm transition hover:text-primary"
-          type="button"
         >
           <Play className="h-4 w-4" />
           <span>
             {isComplete ? t('common.continue') : t('home.continueCourse')}
           </span>
           <ChevronRight className="ml-auto h-4 w-4 transition group-hover/btn:translate-x-0.5" />
-        </button>
+        </Link>
       </div>
     </BrutalCard>
   );
