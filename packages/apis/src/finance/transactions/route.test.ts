@@ -4,12 +4,13 @@ const mocks = vi.hoisted(() => {
   const getPermissions = vi.fn();
   const getWorkspaceConfig = vi.fn();
   const getUser = vi.fn();
-  const linkedUserSingle = vi.fn();
+  const linkedUserMaybeSingle = vi.fn();
   const walletMaybeSingle = vi.fn();
   const transactionInsert = vi.fn();
   const transactionSingle = vi.fn();
   const tagInsert = vi.fn();
   const transactionRpc = vi.fn();
+  const adminRpc = vi.fn();
   const transactionTagsIn = vi.fn();
 
   const sessionSupabase = {
@@ -22,7 +23,7 @@ const mocks = vi.hoisted(() => {
           select: vi.fn(() => ({
             eq: vi.fn(() => ({
               eq: vi.fn(() => ({
-                single: linkedUserSingle,
+                maybeSingle: linkedUserMaybeSingle,
               })),
             })),
           })),
@@ -77,7 +78,7 @@ const mocks = vi.hoisted(() => {
 
       throw new Error(`Unexpected admin table: ${table}`);
     }),
-    rpc: vi.fn(),
+    rpc: adminRpc,
   };
 
   transactionInsert.mockImplementation(() => ({
@@ -88,9 +89,10 @@ const mocks = vi.hoisted(() => {
 
   return {
     adminSupabase,
+    adminRpc,
     getPermissions,
     getWorkspaceConfig,
-    linkedUserSingle,
+    linkedUserMaybeSingle,
     sessionSupabase,
     tagInsert,
     transactionInsert,
@@ -139,7 +141,7 @@ describe('transactions route', () => {
         },
       },
     });
-    mocks.linkedUserSingle.mockResolvedValue({
+    mocks.linkedUserMaybeSingle.mockResolvedValue({
       data: {
         virtual_user_id: 'virtual-user-1',
       },
@@ -162,6 +164,10 @@ describe('transactions route', () => {
     });
     mocks.transactionRpc.mockResolvedValue({
       data: [],
+      error: null,
+    });
+    mocks.adminRpc.mockResolvedValue({
+      data: 'virtual-user-1',
       error: null,
     });
     mocks.transactionTagsIn.mockResolvedValue({
@@ -316,6 +322,7 @@ describe('transactions route', () => {
     );
     expect(mocks.transactionInsert).toHaveBeenCalledWith(
       expect.objectContaining({
+        creator_id: 'virtual-user-1',
         platform_creator_id: 'user-1',
         taken_at: '2026-03-30T08:00:00.000Z',
       })
@@ -357,6 +364,95 @@ describe('transactions route', () => {
     });
     expect(mocks.adminSupabase.from).not.toHaveBeenCalledWith(
       'wallet_transactions'
+    );
+  });
+
+  it('repairs a missing linked workspace user before inserting the legacy creator id', async () => {
+    const { POST } = await import('./route.js');
+
+    mocks.linkedUserMaybeSingle
+      .mockResolvedValueOnce({
+        data: null,
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: {
+          virtual_user_id: 'repaired-virtual-user-1',
+        },
+        error: null,
+      });
+
+    const response = await POST(
+      new Request('http://localhost/api/workspaces/ws-1/transactions', {
+        method: 'POST',
+        body: JSON.stringify({
+          amount: 150,
+          origin_wallet_id: '3c9a5c7f-4f0d-4f15-9477-cbf1c7bc7445',
+          taken_at: '2026-03-30T08:00:00.000Z',
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.adminRpc).toHaveBeenCalledWith('ensure_workspace_user_link', {
+      target_user_id: 'user-1',
+      target_ws_id: '00000000-0000-0000-0000-000000000000',
+    });
+    expect(mocks.transactionInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        creator_id: 'repaired-virtual-user-1',
+        platform_creator_id: 'user-1',
+      })
+    );
+  });
+
+  it('creates transactions with platform creator when linked workspace user repair fails', async () => {
+    const { POST } = await import('./route.js');
+
+    mocks.linkedUserMaybeSingle.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    mocks.adminRpc.mockResolvedValue({
+      data: null,
+      error: {
+        message: 'repair failed',
+      },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/workspaces/ws-1/transactions', {
+        method: 'POST',
+        body: JSON.stringify({
+          amount: 150,
+          origin_wallet_id: '3c9a5c7f-4f0d-4f15-9477-cbf1c7bc7445',
+          taken_at: '2026-03-30T08:00:00.000Z',
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.transactionInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        creator_id: null,
+        platform_creator_id: 'user-1',
+      })
     );
   });
 

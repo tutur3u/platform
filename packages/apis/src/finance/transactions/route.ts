@@ -8,7 +8,6 @@ import {
   getPermissions,
   getWorkspaceConfig,
   normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -191,61 +190,6 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const defaultWalletId = await getWorkspaceConfig(wsId, 'default_wallet_id');
-
-  // Get the virtual_user_id for this workspace
-  let { data: wsUser } = await supabase
-    .from('workspace_user_linked_users')
-    .select('virtual_user_id')
-    .eq('platform_user_id', user.id)
-    .eq('ws_id', resolvedWsId)
-    .single();
-
-  // If not found, try to auto-repair the link
-  if (!wsUser?.virtual_user_id) {
-    // Check if user is a workspace member first
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: resolvedWsId,
-      userId: user.id,
-      supabase,
-    });
-
-    if (!membership.ok) {
-      return NextResponse.json(
-        { message: 'User is not a member of this workspace' },
-        { status: 403 }
-      );
-    }
-
-    // Try to repair the link using admin client
-    try {
-      const sbAdmin = await createAdminClient();
-      await sbAdmin.rpc('ensure_workspace_user_link', {
-        target_user_id: user.id,
-        target_ws_id: resolvedWsId,
-      });
-
-      // Fetch the newly created link
-      const { data: repairedUser } = await supabase
-        .from('workspace_user_linked_users')
-        .select('virtual_user_id')
-        .eq('platform_user_id', user.id)
-        .eq('ws_id', resolvedWsId)
-        .single();
-
-      wsUser = repairedUser;
-    } catch (repairError) {
-      console.error('Failed to auto-repair workspace user link:', repairError);
-    }
-  }
-
-  if (!wsUser?.virtual_user_id) {
-    return NextResponse.json(
-      { message: 'User not found in workspace' },
-      { status: 403 }
-    );
-  }
-
   const parsed = TransactionSchema.safeParse(await req.json());
 
   if (!parsed.success) {
@@ -297,6 +241,8 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });
   }
 
+  const defaultWalletId = await getWorkspaceConfig(wsId, 'default_wallet_id');
+
   if (
     !canUseRequestedFinanceWalletOnCreate({
       permissions,
@@ -313,6 +259,40 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
+  let { data: wsUser } = await supabase
+    .from('workspace_user_linked_users')
+    .select('virtual_user_id')
+    .eq('platform_user_id', user.id)
+    .eq('ws_id', resolvedWsId)
+    .maybeSingle();
+
+  if (!wsUser?.virtual_user_id) {
+    try {
+      const { data: repairedVirtualUserId, error: repairError } =
+        await sbAdmin.rpc('ensure_workspace_user_link', {
+          target_user_id: user.id,
+          target_ws_id: resolvedWsId,
+        });
+
+      if (!repairError) {
+        const { data: repairedUser } = await supabase
+          .from('workspace_user_linked_users')
+          .select('virtual_user_id')
+          .eq('platform_user_id', user.id)
+          .eq('ws_id', resolvedWsId)
+          .maybeSingle();
+
+        wsUser =
+          repairedUser ??
+          (typeof repairedVirtualUserId === 'string'
+            ? { virtual_user_id: repairedVirtualUserId }
+            : null);
+      }
+    } catch {
+      wsUser = null;
+    }
+  }
+
   const { data: transaction, error } = await sbAdmin
     .from('wallet_transactions')
     .insert({
@@ -322,7 +302,7 @@ export async function POST(req: Request, { params }: Params) {
       category_id: data.category_id || null,
       taken_at: takenAt,
       report_opt_in: data.report_opt_in || false,
-      creator_id: wsUser.virtual_user_id,
+      creator_id: wsUser?.virtual_user_id ?? null,
       platform_creator_id: user.id,
       is_amount_confidential: data.is_amount_confidential || false,
       is_description_confidential: data.is_description_confidential || false,
