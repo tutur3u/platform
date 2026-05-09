@@ -480,10 +480,16 @@ function extractYoutubeId(url: string): string | undefined {
     if (parsed.hostname === 'youtu.be') {
       return parsed.pathname.slice(1) || undefined;
     }
-    if (
-      parsed.hostname.includes('youtube.com') ||
-      parsed.hostname.includes('youtube-nocookie.com')
-    ) {
+    const hostname = parsed.hostname;
+    const isYoutube =
+      hostname === 'youtube.com' ||
+      hostname === 'www.youtube.com' ||
+      hostname === 'm.youtube.com';
+    const isYoutubeNoCookie =
+      hostname === 'youtube-nocookie.com' ||
+      hostname === 'www.youtube-nocookie.com';
+
+    if (isYoutube || isYoutubeNoCookie) {
       const v = parsed.searchParams.get('v');
       if (v) return v;
       const pathMatch = parsed.pathname.match(/\/(embed|v|shorts)\/([^/?]+)/);
