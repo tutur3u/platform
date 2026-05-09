@@ -11,6 +11,7 @@ import {
 } from '@/lib/infrastructure/log-drain';
 
 const returnUrlSchema = z.object({
+  generateToken: z.boolean().optional().default(true),
   returnUrl: z.string().min(1).max(MAX_URL_LENGTH),
 });
 
@@ -41,12 +42,22 @@ async function resolveTargetApp(returnUrl: string) {
   const configuredTarget = mapConfiguredUrlToApp(returnUrl);
 
   if (configuredTarget) {
-    return configuredTarget;
+    return {
+      appName: configuredTarget,
+      targetApp: configuredTarget,
+    };
   }
 
-  return (
-    (await getExternalAppByReturnUrl(decodeReturnUrl(returnUrl)))?.id ?? null
+  const externalApp = await getExternalAppByReturnUrl(
+    decodeReturnUrl(returnUrl)
   );
+
+  return externalApp
+    ? {
+        appName: externalApp.displayName,
+        targetApp: externalApp.id,
+      }
+    : null;
 }
 
 async function createCrossAppReturn(request: NextRequest) {
@@ -58,10 +69,17 @@ async function createCrossAppReturn(request: NextRequest) {
   }
 
   const decodedReturnUrl = decodeReturnUrl(parsed.data.returnUrl);
-  const targetApp = await resolveTargetApp(decodedReturnUrl);
+  const target = await resolveTargetApp(decodedReturnUrl);
 
-  if (!targetApp) {
+  if (!target) {
     return NextResponse.json({ error: 'Invalid returnUrl' }, { status: 400 });
+  }
+
+  if (!parsed.data.generateToken) {
+    return NextResponse.json({
+      appName: target.appName,
+      targetApp: target.targetApp,
+    });
   }
 
   const supabase = (await createClient(request)) as TypedSupabaseClient;
@@ -78,14 +96,14 @@ async function createCrossAppReturn(request: NextRequest) {
     p_expiry_seconds: 300,
     p_origin_app: 'web',
     p_session_data: user.email ? { email: user.email } : null,
-    p_target_app: targetApp,
+    p_target_app: target.targetApp,
     p_user_id: user.id,
   });
 
   if (error || !data) {
     serverLogger.warn('Failed to generate cross-app return token', {
       error: error?.message,
-      targetApp,
+      targetApp: target.targetApp,
     });
 
     return NextResponse.json(
@@ -97,11 +115,12 @@ async function createCrossAppReturn(request: NextRequest) {
   const nextUrl = new URL(decodedReturnUrl);
   nextUrl.searchParams.set('token', data as string);
   nextUrl.searchParams.set('originApp', 'web');
-  nextUrl.searchParams.set('targetApp', targetApp);
+  nextUrl.searchParams.set('targetApp', target.targetApp);
 
   return NextResponse.json({
+    appName: target.appName,
     returnUrl: nextUrl.toString(),
-    targetApp,
+    targetApp: target.targetApp,
   });
 }
 

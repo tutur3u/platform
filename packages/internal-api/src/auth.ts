@@ -153,7 +153,17 @@ export interface CreateCrossAppReturnUrlPayload {
 }
 
 export interface CreateCrossAppReturnUrlResponse {
+  appName?: string | null;
   returnUrl: string;
+  targetApp: string;
+}
+
+export interface ResolveCrossAppReturnUrlPayload {
+  returnUrl: string;
+}
+
+export interface ResolveCrossAppReturnUrlResponse {
+  appName?: string | null;
   targetApp: string;
 }
 
@@ -355,4 +365,23 @@ export async function createCrossAppReturnUrlWithInternalApi(
     method: 'POST',
   });
   return parseAuthResponse<CreateCrossAppReturnUrlResponse>(response);
+}
+
+export async function resolveCrossAppReturnUrlWithInternalApi(
+  payload: ResolveCrossAppReturnUrlPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.fetch('/api/v1/auth/cross-app-return', {
+    body: JSON.stringify({
+      ...payload,
+      generateToken: false,
+    }),
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
+  });
+  return parseAuthResponse<ResolveCrossAppReturnUrlResponse>(response);
 }

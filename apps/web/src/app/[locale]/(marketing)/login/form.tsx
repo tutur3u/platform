@@ -18,6 +18,7 @@ import {
   getOtpSettings,
   pollMfaMobileApprovalChallengeWithInternalApi,
   type QrLoginSessionPayload,
+  resolveCrossAppReturnUrlWithInternalApi,
   sendOtpWithInternalApi,
   verifyOtpWithInternalApi,
 } from '@tuturuuu/internal-api/auth';
@@ -188,14 +189,33 @@ export default function LoginForm() {
     isInitialized: accountSwitcherInitialized,
     switchAccount,
   } = useAccountSwitcher();
-  const returnApp = useMemo(() => {
-    const returnUrl = searchParams.get('returnUrl');
+  const returnUrl = searchParams.get('returnUrl');
+  const staticReturnApp = useMemo(() => {
     if (!returnUrl) return null;
     return returnUrl.startsWith('/') ? 'web' : mapUrlToApp(returnUrl);
-  }, [searchParams]);
+  }, [returnUrl]);
+  const shouldResolveReturnApp = Boolean(
+    returnUrl && !returnUrl.startsWith('/') && !staticReturnApp
+  );
+  const {
+    data: resolvedReturnApp,
+    isLoading: isResolvingConfiguredReturnApp,
+    refetch: refetchResolvedReturnApp,
+  } = useQuery({
+    enabled: shouldResolveReturnApp,
+    queryFn: () =>
+      resolveCrossAppReturnUrlWithInternalApi({ returnUrl: returnUrl ?? '' }),
+    queryKey: ['auth', 'cross-app-return', returnUrl],
+    retry: false,
+    staleTime: 60_000,
+  });
+  const returnApp = staticReturnApp ?? resolvedReturnApp?.targetApp ?? null;
+  const isResolvingReturnApp =
+    shouldResolveReturnApp && isResolvingConfiguredReturnApp;
   const isInternalAppReturn =
     returnApp !== null && returnApp !== 'web' && returnApp !== 'platform';
-  const returnAppName = getReturnAppName(returnApp);
+  const returnAppName =
+    resolvedReturnApp?.appName ?? getReturnAppName(returnApp);
 
   const processEmailInput = useCallback((value: string): string => {
     const trimmedValue = value.trim();
@@ -431,6 +451,34 @@ export default function LoginForm() {
     );
   }, [supabase.auth.mfa]);
 
+  const prepareReturnAppConfirmation = useCallback(async () => {
+    const returnUrl = searchParams.get('returnUrl');
+
+    if (!returnUrl || returnUrl.startsWith('/')) {
+      return false;
+    }
+
+    const resolvedReturnApp =
+      returnApp ?? (await refetchResolvedReturnApp()).data?.targetApp ?? null;
+
+    if (!resolvedReturnApp || ['platform', 'web'].includes(resolvedReturnApp)) {
+      return false;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return false;
+    }
+
+    setUser(user);
+    setReadyForAuth(true);
+    setLoading(false);
+    return true;
+  }, [refetchResolvedReturnApp, returnApp, searchParams, supabase.auth]);
+
   const processNextUrl = useCallback(async () => {
     const returnUrl = searchParams.get('returnUrl');
     const multiAccount = searchParams.get('multiAccount');
@@ -501,11 +549,17 @@ export default function LoginForm() {
           refreshError
         );
       },
-      processNextUrl,
+      processNextUrl: async () => {
+        if (await prepareReturnAppConfirmation()) {
+          return;
+        }
+
+        await processNextUrl();
+      },
       refreshSession: () => supabase.auth.refreshSession(),
       resetTotp: () => totpForm.reset({ totp: '' }),
     });
-  }, [processNextUrl, supabase.auth, totpForm]);
+  }, [prepareReturnAppConfirmation, processNextUrl, supabase.auth, totpForm]);
 
   const completePrimarySignIn = useCallback(
     async (source: 'otp' | 'password' | 'qr') => {
@@ -520,13 +574,7 @@ export default function LoginForm() {
       const multiAccount = searchParams.get('multiAccount');
       const returnUrl = searchParams.get('returnUrl');
 
-      if (returnUrl && isInternalAppReturn) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        setUser(user);
-        setReadyForAuth(true);
-        setLoading(false);
+      if (await prepareReturnAppConfirmation()) {
         return;
       }
 
@@ -551,12 +599,11 @@ export default function LoginForm() {
       window.location.reload();
     },
     [
-      isInternalAppReturn,
       needsMFA,
+      prepareReturnAppConfirmation,
       processNextUrl,
       router,
       searchParams,
-      supabase.auth,
     ]
   );
 
@@ -1039,6 +1086,10 @@ export default function LoginForm() {
 
   useEffect(() => {
     const processUrl = async () => {
+      if (isResolvingReturnApp) {
+        return;
+      }
+
       const multiAccount = searchParams.get('multiAccount');
 
       if (multiAccount === 'true') {
@@ -1072,6 +1123,7 @@ export default function LoginForm() {
   }, [
     initialized,
     isInternalAppReturn,
+    isResolvingReturnApp,
     processNextUrl,
     requiresMFA,
     searchParams,
