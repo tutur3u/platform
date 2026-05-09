@@ -49,6 +49,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as z from 'zod';
 import { DEV_MODE } from '@/constants/common';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
+import { useCurrentUserProfile } from '@/hooks/use-current-user-profile';
 import {
   AUTH_OAUTH_PROVIDERS,
   type AuthOAuthProvider,
@@ -109,6 +110,36 @@ function getReturnAppName(returnApp: string | null) {
   if (returnApp === 'nova') return 'Nova';
   if (returnApp === 'cms') return 'CMS';
   return returnApp ?? 'the app';
+}
+
+function getUserMetadataString(user: SupabaseUser, keys: string[]) {
+  for (const key of keys) {
+    const value = user.user_metadata?.[key];
+
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+
+  return null;
+}
+
+function getUserDisplayName(user: SupabaseUser) {
+  return getUserMetadataString(user, [
+    'display_name',
+    'full_name',
+    'name',
+    'preferred_username',
+  ]);
+}
+
+function getUserAvatarUrl(user: SupabaseUser) {
+  return getUserMetadataString(user, [
+    'avatar_url',
+    'picture',
+    'photo_url',
+    'image_url',
+  ]);
 }
 
 function SocialLogoMask({ src, alt }: { src: string; alt: string }) {
@@ -256,6 +287,9 @@ export default function LoginForm() {
   const autoOAuthProviderRef = useRef<AuthOAuthProvider | null>(null);
   const oauthErrorToastKeyRef = useRef<string | null>(null);
   const captchaRefPassword = useRef<TurnstileInstance>(null);
+  const currentUserProfileQuery = useCurrentUserProfile({
+    enabled: Boolean(user && isInternalAppReturn && !requiresMFA),
+  });
   const otpSettingsQuery = useQuery({
     queryFn: () => getOtpSettings({ client: 'web' }),
     queryKey: ['auth', 'otp-settings', 'web'],
@@ -1123,13 +1157,25 @@ export default function LoginForm() {
   }
 
   if (user && !requiresMFA && isInternalAppReturn) {
+    const currentUserProfile = currentUserProfileQuery.data;
+
     return (
       <InternalAppAccountConfirmation
         accounts={accounts}
         activeAccountId={activeAccountId}
         appName={returnAppName}
         confirming={confirmingReturn}
-        currentEmail={user.email ?? t('login.unknown_account')}
+        currentAvatarUrl={
+          currentUserProfile?.avatar_url ?? getUserAvatarUrl(user)
+        }
+        currentDisplayName={
+          currentUserProfile?.display_name ??
+          currentUserProfile?.full_name ??
+          getUserDisplayName(user)
+        }
+        currentEmail={
+          currentUserProfile?.email ?? user.email ?? t('login.unknown_account')
+        }
         currentUserId={user.id}
         isAccountSwitcherReady={accountSwitcherInitialized}
         onContinue={() => void continueToInternalApp()}
