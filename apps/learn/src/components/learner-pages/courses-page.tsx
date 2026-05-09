@@ -21,12 +21,10 @@ import {
   EmptyState,
   LoadingState,
   Section,
-  usePageMotion,
 } from './shared';
 
 export function CoursesPage({ wsId }: { wsId: string }) {
   const t = useTranslations();
-  const scopeRef = usePageMotion();
   const courses = useQuery({
     queryFn: () => listCourses(wsId),
     queryKey: ['courses', wsId],
@@ -37,7 +35,6 @@ export function CoursesPage({ wsId }: { wsId: string }) {
   return (
     <Section
       description={t('courses.mapDescription')}
-      refValue={scopeRef}
       title={t('courses.title')}
     >
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">

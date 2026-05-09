@@ -6,17 +6,15 @@ import {
   BookText,
   ChevronLeft,
   ChevronRight,
-  FileQuestion,
   Layers,
   Youtube,
-  Zap,
 } from '@tuturuuu/icons';
 import {
   getSharedCourseContent,
   type SharedCourseContentResponse,
 } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
-import { cn } from '@tuturuuu/utils/format';
+
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -24,7 +22,6 @@ import {
   BrutalCard,
   EmptyState,
   LoadingState,
-  usePageMotion,
 } from './shared';
 
 type CourseModule = SharedCourseContentResponse['modules'][number];
@@ -37,7 +34,6 @@ export function CourseDetailPage({
   courseId: string;
 }) {
   const t = useTranslations();
-  const scopeRef = usePageMotion();
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
 
   const course = useQuery({
@@ -77,12 +73,11 @@ export function CourseDetailPage({
 
   // Course overview with module list
   return (
-    <div className="space-y-6" ref={scopeRef}>
+    <div className="space-y-6">
       {/* Back navigation */}
       <Link
         href={`/${wsId}/courses`}
         className="inline-flex items-center gap-2 border-2 border-border bg-background px-3 py-1.5 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
-        data-learn-reveal
       >
         <ChevronLeft className="h-4 w-4" />
         {t('common.back')}
@@ -90,7 +85,7 @@ export function CourseDetailPage({
 
       <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
         {/* Left sidebar - Course info */}
-        <aside className="space-y-4" data-learn-reveal>
+        <aside className="space-y-4">
           {/* Course card */}
           <BrutalCard className="p-5">
             <Badge className="mb-3 border-2 border-border bg-dynamic-yellow/15 font-bold text-foreground shadow-[2px_2px_0_var(--border)]">
@@ -134,7 +129,7 @@ export function CourseDetailPage({
         </aside>
 
         {/* Main content - Module list */}
-        <div className="space-y-5" data-learn-reveal>
+        <div className="space-y-5">
           <div>
             <p className="font-bold text-muted-foreground text-xs uppercase tracking-widest">
               Modules
@@ -150,7 +145,7 @@ export function CourseDetailPage({
           {/* Module rows */}
           <div className="space-y-3">
             {modules.map((module, index) => (
-              <BrutalCard key={module.id} className="p-0" reveal>
+              <BrutalCard key={module.id} className="p-0">
                 <button
                   type="button"
                   onClick={() => setSelectedModuleId(module.id)}
@@ -224,7 +219,7 @@ function ModuleDetailView({
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm" data-learn-reveal>
+      <div className="flex items-center gap-2 text-sm">
         <button
           type="button"
           onClick={onBack}
@@ -240,7 +235,7 @@ function ModuleDetailView({
       </div>
 
       {/* Module header card */}
-      <BrutalCard className="p-6" reveal>
+      <BrutalCard className="p-6">
         <Badge className="mb-3 border-2 border-border bg-dynamic-cyan/15 font-bold text-foreground shadow-[2px_2px_0_var(--border)]">
           <Layers className="mr-1.5 h-3 w-3" />
           Module {moduleIndex + 1} of {totalModules}
@@ -260,7 +255,7 @@ function ModuleDetailView({
         {/* Main content */}
         <div className="space-y-5">
           {/* Module content */}
-          {module.content && hasContent(module.content) && (
+          {hasContent(module.content) && (
             <ContentCard
               icon={<BookOpen className="h-4 w-4" />}
               title="Module Content"
@@ -284,7 +279,7 @@ function ModuleDetailView({
           )}
 
           {/* Extra content */}
-          {module.extra_content && hasContent(module.extra_content) && (
+          {hasContent(module.extra_content) && (
             <ContentCard
               icon={<BookText className="h-4 w-4" />}
               title="Extra Reading"
@@ -302,7 +297,7 @@ function ModuleDetailView({
         </div>
 
         {/* Sidebar */}
-        <aside className="space-y-4" data-learn-reveal>
+        <aside className="space-y-4">
           {/* Module status */}
           <BrutalCard className="p-4">
             <p className="font-bold text-[10px] text-muted-foreground uppercase tracking-widest">
@@ -375,7 +370,7 @@ function ContentCard({
   children: React.ReactNode;
 }) {
   return (
-    <BrutalCard className="p-5" reveal>
+    <BrutalCard className="p-5">
       <div className="mb-4 flex items-center gap-2 font-bold text-sm">
         <span className="text-muted-foreground">{icon}</span>
         <span>{title}</span>
