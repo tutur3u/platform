@@ -866,8 +866,9 @@ function renderFinance(data: unknown, resource?: string) {
   const record = asRecord(data);
   if (Array.isArray(data) || Array.isArray(record.data)) {
     renderTable(financeRows(data, resource));
-    if (typeof record.count === 'number') {
-      process.stdout.write(`${color.dim(`${record.count} total`)}\n`);
+    const paginationText = getPaginationText(record);
+    if (paginationText) {
+      process.stdout.write(`${color.dim(paginationText)}\n`);
     }
     return;
   }
@@ -896,7 +897,7 @@ function getTaskRows(tasks: unknown[]) {
   });
 }
 
-function getTaskPaginationText(record: RenderableRecord) {
+function getPaginationText(record: RenderableRecord) {
   const pagination = asRecord(record.pagination);
   const total =
     typeof pagination.total === 'number'
@@ -918,7 +919,7 @@ function getTaskPaginationText(record: RenderableRecord) {
 }
 
 function renderTaskPagination(record: RenderableRecord) {
-  const paginationText = getTaskPaginationText(record);
+  const paginationText = getPaginationText(record);
   if (paginationText) {
     process.stdout.write(`${color.dim(paginationText)}\n`);
   }

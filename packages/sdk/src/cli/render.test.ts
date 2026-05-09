@@ -249,6 +249,34 @@ describe('CLI rendering', () => {
     expect(output).toContain('Page 1/3 | 11 total');
   });
 
+  it('renders finance pagination totals for table output', () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    render(
+      {
+        data: [
+          {
+            amount: -150,
+            description: 'Lunch',
+            id: 'transaction-1',
+            taken_at: '2026-05-09T00:00:00.000Z',
+          },
+        ],
+        pagination: {
+          page: 2,
+          pageCount: 5,
+          total: 42,
+        },
+      },
+      { financeResource: 'transactions', group: 'finance' }
+    );
+
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(output).toContain('Page 2/5 | 42 total');
+  });
+
   it('renders configured colors in task list rows', () => {
     const write = vi
       .spyOn(process.stdout, 'write')

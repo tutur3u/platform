@@ -48,6 +48,10 @@ export type {
   WalletPayload,
 } from './platform-finance';
 export { FinanceClient } from './platform-finance';
+export type {
+  FinancePaginatedResponse,
+  FinancePaginationSummary,
+} from './platform-finance-pagination';
 export {
   getEpmDeliveryQueryKey,
   getEpmDeliveryQueryOptions,

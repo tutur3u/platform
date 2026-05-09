@@ -8,6 +8,7 @@ import type {
   WalletPayload,
 } from '../platform-finance';
 import { type FlagValue, getFlag, parseCsv } from './args';
+import { getFinancePagination } from './finance-pagination';
 
 export function parseFinanceNumber(value?: string) {
   if (value === undefined) return undefined;
@@ -248,24 +249,24 @@ export function getRecurringPayload(
 export function getTransactionListQuery(
   flags: Record<string, FlagValue>
 ): ListTransactionsQuery {
+  const pagination = getFinancePagination(flags);
+
   return {
-    page: pickFinanceString(flags, 'page'),
-    itemsPerPage: pickFinanceString(
-      flags,
-      'items-per-page',
-      'page-size',
-      'limit'
-    ),
+    includeCount: true,
+    page: pagination.page,
+    itemsPerPage: pagination.pageSize,
   };
 }
 
 export function getExportQuery(
   flags: Record<string, FlagValue>
 ): TransactionExportQuery {
+  const pagination = getFinancePagination(flags);
+
   return {
     q: pickFinanceString(flags, 'q'),
-    page: pickFinanceString(flags, 'page'),
-    pageSize: pickFinanceString(flags, 'page-size', 'limit'),
+    page: String(pagination.page),
+    pageSize: String(pagination.pageSize),
     userIds: parseCsv(pickFinanceString(flags, 'users')),
     categoryIds: parseCsv(
       pickFinanceString(flags, 'categories', 'category-ids')

@@ -179,4 +179,41 @@ describe('TuturuuuUserClient', () => {
       'Bearer access-token'
     );
   });
+
+  it('adds pagination metadata to finance transaction exports', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        count: 12,
+        data: [{ id: 'transaction-1' }],
+      })
+    );
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    const response = await client.finance.listTransactionExportRows('ws-1', {
+      page: '2',
+      pageSize: '5',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/workspaces/ws-1/transactions/export?page=2&pageSize=5',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(response.pagination).toEqual({
+      hasNextPage: true,
+      hasPreviousPage: true,
+      limit: 5,
+      offset: 5,
+      page: 2,
+      pageCount: 3,
+      pageSize: 5,
+      total: 12,
+    });
+  });
 });

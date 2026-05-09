@@ -1,4 +1,5 @@
 import type { FinanceCommandInput } from './finance';
+import { paginateFinanceArray } from './finance-pagination';
 import {
   getFinancePositionalName,
   getRecurringPayload,
@@ -20,11 +21,17 @@ export async function handleRecurring(
   const id = positionals[3];
 
   if (action === 'list') {
-    render(await client.finance.listRecurringTransactions(workspaceId), {
-      financeResource: 'recurring',
-      group: 'finance',
-      json,
-    });
+    render(
+      paginateFinanceArray(
+        await client.finance.listRecurringTransactions(workspaceId),
+        flags
+      ),
+      {
+        financeResource: 'recurring',
+        group: 'finance',
+        json,
+      }
+    );
     return;
   }
 

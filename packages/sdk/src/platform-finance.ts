@@ -4,6 +4,10 @@ import {
   type InternalApiQuery,
 } from '@tuturuuu/internal-api/client';
 import type { TuturuuuUserClient } from './platform';
+import {
+  type FinancePaginatedResponse,
+  withFinancePagination,
+} from './platform-finance-pagination';
 
 export interface FinanceBudgetUpsertPayload {
   name: string;
@@ -64,6 +68,7 @@ export interface RecurringTransactionPayload {
 }
 
 export type ListTransactionsQuery = {
+  includeCount?: boolean | string;
   page?: string | number;
   itemsPerPage?: string | number;
 };
@@ -305,11 +310,16 @@ export class FinanceClient {
   ) {
     return this.api<{ data: unknown[]; count: number }>(
       `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/export${buildTransactionExportQuery(query)}`
+    ).then((payload) =>
+      withFinancePagination(payload, {
+        page: query.page,
+        pageSize: query.pageSize,
+      })
     );
   }
 
   listTransactions(workspaceId: string, query: ListTransactionsQuery = {}) {
-    return this.api<unknown[]>(
+    return this.api<unknown[] | FinancePaginatedResponse>(
       `/api/workspaces/${encodePathSegment(workspaceId)}/transactions`,
       { query: normalizeFinanceQuery(query) }
     );
