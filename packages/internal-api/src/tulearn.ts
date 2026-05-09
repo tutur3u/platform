@@ -331,3 +331,60 @@ export async function updateTulearnProfile(
     cache: 'no-store',
   });
 }
+
+export interface SharedCourseContentResponse {
+  group: {
+    name: string | null;
+    description: string | null;
+  };
+  modules: Array<{
+    id: string;
+    name: string | null;
+    content: unknown;
+    extra_content: unknown;
+    youtube_links: string[] | null;
+    group_id: string;
+    created_at: string;
+    is_public: boolean;
+    is_published: boolean;
+    sort_key: number | null;
+    flashcards: number;
+    quizzes: number;
+    quizSets: number;
+  }>;
+}
+
+export async function getSharedCourseContent(
+  courseId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<SharedCourseContentResponse>(
+    `/api/v1/course?courseId=${encodePathSegment(courseId)}`,
+    { cache: 'no-store' }
+  );
+}
+
+export interface CourseListItem {
+  id: string;
+  name: string | null;
+  description: string | null;
+  totalModules: number;
+  completedModules: number;
+  progress: number;
+}
+
+export interface CourseListResponse {
+  courses: CourseListItem[];
+}
+
+export async function listCourses(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CourseListResponse>(
+    `/api/v1/course?wsId=${encodePathSegment(wsId)}`,
+    { cache: 'no-store' }
+  );
+}
