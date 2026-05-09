@@ -4352,6 +4352,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerHistoryEndOfList => 'You reached the end of the list';
 
   @override
+  String get timerHistoryPickerYearTitle => 'Year';
+
+  @override
+  String get timerHistoryPickerCurrent => 'Current';
+
+  @override
   String get timerToday => 'Today';
 
   @override

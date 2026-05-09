@@ -4328,6 +4328,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerHistoryEndOfList => 'Bạn đã xem hết danh sách';
 
   @override
+  String get timerHistoryPickerYearTitle => 'Năm';
+
+  @override
+  String get timerHistoryPickerCurrent => 'Hiện tại';
+
+  @override
   String get timerToday => 'Hôm nay';
 
   @override
