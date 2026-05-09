@@ -323,10 +323,7 @@ async function handleCourseDetail(courseId: string, userId: string) {
 
   const quizSetCount = new Map<string, number>();
   for (const row of quizSetsRes.data ?? []) {
-    quizSetCount.set(
-      row.module_id,
-      (quizSetCount.get(row.module_id) ?? 0) + 1
-    );
+    quizSetCount.set(row.module_id, (quizSetCount.get(row.module_id) ?? 0) + 1);
   }
 
   return NextResponse.json({

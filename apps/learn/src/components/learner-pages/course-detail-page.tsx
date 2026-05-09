@@ -18,11 +18,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import {
-  BrutalCard,
-  EmptyState,
-  LoadingState,
-} from './shared';
+import { BrutalCard, EmptyState, LoadingState } from './shared';
 
 type CourseModule = SharedCourseContentResponse['modules'][number];
 
@@ -46,9 +42,7 @@ export function CourseDetailPage({
 
   const { group, modules } = course.data;
   const selectedModule = modules.find((m) => m.id === selectedModuleId) ?? null;
-  const selectedIndex = selectedModule
-    ? modules.indexOf(selectedModule)
-    : -1;
+  const selectedIndex = selectedModule ? modules.indexOf(selectedModule) : -1;
   const previousModule = selectedIndex > 0 ? modules[selectedIndex - 1] : null;
   const nextModule =
     selectedIndex >= 0 && selectedIndex < modules.length - 1
@@ -116,7 +110,7 @@ export function CourseDetailPage({
                   onClick={() => setSelectedModuleId(module.id)}
                   className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm transition hover:bg-muted/60"
                 >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center border border-border bg-muted text-[10px] font-bold">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center border border-border bg-muted font-bold text-[10px]">
                     {index + 1}
                   </span>
                   <span className="truncate">
@@ -183,15 +177,12 @@ export function CourseDetailPage({
             ))}
           </div>
 
-          {!modules.length ? (
-            <EmptyState label={t('courses.empty')} />
-          ) : null}
+          {!modules.length ? <EmptyState label={t('courses.empty')} /> : null}
         </div>
       </div>
     </div>
   );
 }
-
 
 // ─── Module Detail View ──────────────────────────────────────────────────────
 
@@ -266,10 +257,7 @@ function ModuleDetailView({
 
           {/* YouTube videos */}
           {(module.youtube_links ?? []).length > 0 && (
-            <ContentCard
-              icon={<Youtube className="h-4 w-4" />}
-              title="Videos"
-            >
+            <ContentCard icon={<Youtube className="h-4 w-4" />} title="Videos">
               <div className="grid gap-3">
                 {(module.youtube_links ?? []).map((link) => (
                   <YoutubeCard key={link} url={link} />
@@ -396,8 +384,7 @@ function hasContent(content: unknown): boolean {
   }
   const doc = content as TipTapNode;
   return (doc.content ?? []).some(
-    (node) =>
-      node.type !== 'paragraph' || (node.content?.length ?? 0) > 0
+    (node) => node.type !== 'paragraph' || (node.content?.length ?? 0) > 0
   );
 }
 
@@ -465,7 +452,7 @@ function RenderNode({ node }: { node: TipTapNode }) {
       return <li>{children}</li>;
     case 'blockquote':
       return (
-        <blockquote className="mb-3 border-l-4 border-border pl-4 text-muted-foreground italic">
+        <blockquote className="mb-3 border-border border-l-4 pl-4 text-muted-foreground italic">
           {children}
         </blockquote>
       );
@@ -499,9 +486,7 @@ function extractYoutubeId(url: string): string | undefined {
     ) {
       const v = parsed.searchParams.get('v');
       if (v) return v;
-      const pathMatch = parsed.pathname.match(
-        /\/(embed|v|shorts)\/([^/?]+)/
-      );
+      const pathMatch = parsed.pathname.match(/\/(embed|v|shorts)\/([^/?]+)/);
       if (pathMatch?.[2]) return pathMatch[2];
     }
   } catch {

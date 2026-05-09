@@ -1,10 +1,10 @@
-import type { SharedCourseGroup, SharedCourseModule } from '@tuturuuu/types';
-import { headers } from 'next/headers';
 import {
+  createInternalApiClient,
   getConfiguredInternalApiBaseUrl,
   withForwardedInternalApiAuth,
-  createInternalApiClient,
 } from '@tuturuuu/internal-api';
+import type { SharedCourseGroup, SharedCourseModule } from '@tuturuuu/types';
+import { headers } from 'next/headers';
 import { validate as validateUuid } from 'uuid';
 
 interface SharedCourseContent {
@@ -43,9 +43,7 @@ export async function loadSharedCourseContent(
   }
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to load shared course content: ${response.status}`
-    );
+    throw new Error(`Failed to load shared course content: ${response.status}`);
   }
 
   return (await response.json()) as SharedCourseContent;

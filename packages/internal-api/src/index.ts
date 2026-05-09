@@ -371,9 +371,9 @@ export {
 } from './time-tracking';
 export {
   type CompleteTulearnAssignmentPayload,
-  completeTulearnAssignment,
   type CourseListItem,
   type CourseListResponse,
+  completeTulearnAssignment,
   getSharedCourseContent,
   getTulearnBootstrap,
   getTulearnCourse,
