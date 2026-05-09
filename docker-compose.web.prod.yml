@@ -7,7 +7,9 @@ x-web-service: &web-service
       - web_env
   env_file:
     - path: apps/web/.env.local
-      required: true
+      required: false
+    - path: .env.local
+      required: false
   environment: &web-environment
     - CRON_SECRET
     - DISCORD_APP_DEPLOYMENT_URL
@@ -98,6 +100,23 @@ services:
     volumes:
       - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
+  cloudflared:
+    profiles: ["cloudflared"]
+    command:
+      [
+        "tunnel",
+        "--no-autoupdate",
+        "run",
+        "--token",
+        "${CLOUDFLARED_TOKEN:-}",
+      ]
+    depends_on:
+      web-proxy:
+        condition: service_healthy
+    image: cloudflare/cloudflared:latest
+    init: true
+    restart: unless-stopped
+
   markitdown:
     build:
       context: apps/discord
@@ -136,7 +155,9 @@ services:
       context: apps/pronunciation-assessor
     env_file:
       - path: apps/web/.env.local
-        required: true
+        required: false
+      - path: .env.local
+        required: false
     environment:
       - PORT=8010
       - PRONUNCIATION_ASSESSOR_DEFAULT_MODEL=${PRONUNCIATION_ASSESSOR_DEFAULT_MODEL:-local-whisper-large-v3-turbo}
@@ -187,9 +208,13 @@ services:
       dockerfile: apps/web/docker/blue-green-watcher.Dockerfile
     env_file:
       - path: apps/web/.env.local
-        required: true
+        required: false
+      - path: .env.local
+        required: false
     environment:
+      - CLOUDFLARED_TOKEN
       - DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://buildkit:1234
+      - DOCKER_WEB_WITH_CLOUDFLARED
       - GITHUB_TOKEN
       - PLATFORM_HOST_WORKSPACE_DIR=${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
       - PLATFORM_LOG_DRAIN_DATABASE_URL=postgres://platform_log_drain:platform_log_drain@log-drain-postgres:5432/platform_log_drain
@@ -277,7 +302,7 @@ services:
 
 secrets:
   web_env:
-    file: apps/web/.env.local
+    file: ${DOCKER_WEB_ENV_FILE:-apps/web/.env.local}
 
 volumes:
   platform-buildkit-state:

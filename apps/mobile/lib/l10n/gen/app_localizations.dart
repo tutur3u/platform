@@ -8299,6 +8299,18 @@ abstract class AppLocalizations {
   /// **'You reached the end of the list'**
   String get timerHistoryEndOfList;
 
+  /// No description provided for @timerHistoryPickerYearTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get timerHistoryPickerYearTitle;
+
+  /// No description provided for @timerHistoryPickerCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get timerHistoryPickerCurrent;
+
   /// No description provided for @timerToday.
   ///
   /// In en, this message translates to:

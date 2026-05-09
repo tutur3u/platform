@@ -77,6 +77,7 @@ const {
 } = require('./watch-blue-green-deploy.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
+const CLOUDFLARED_SERVICE = 'cloudflared';
 
 async function getCurrentGitCommitMetadata({
   env,
@@ -123,6 +124,7 @@ function parseArgs(argv) {
   let withSupabase = false;
   let resetSupabase = false;
   let withRedis = true;
+  let withCloudflared = false;
   let buildMemory = null;
   let buildCpus = null;
   let buildMaxParallelism = null;
@@ -144,6 +146,11 @@ function parseArgs(argv) {
 
     if (arg === '--without-redis') {
       withRedis = false;
+      continue;
+    }
+
+    if (arg === '--with-cloudflared') {
+      withCloudflared = true;
       continue;
     }
 
@@ -243,6 +250,10 @@ function parseArgs(argv) {
     composeArgs.push(arg);
   }
 
+  if (withCloudflared && !hasComposeProfile(composeGlobalArgs, 'cloudflared')) {
+    composeGlobalArgs.push('--profile', 'cloudflared');
+  }
+
   if (withRedis && !hasComposeProfile(composeGlobalArgs, 'redis')) {
     composeGlobalArgs.push('--profile', 'redis');
   }
@@ -267,11 +278,28 @@ function usesBlueGreenStrategy(parsed) {
   return parsed.mode === 'prod' && parsed.strategy === 'blue-green';
 }
 
+function isTruthyEnv(value) {
+  return /^(1|true|yes)$/iu.test(String(value ?? '').trim());
+}
+
+function ensureCloudflaredProfileFromEnv(parsed, env) {
+  if (
+    !hasComposeProfile(parsed.composeGlobalArgs, 'cloudflared') &&
+    isTruthyEnv(env.DOCKER_WEB_WITH_CLOUDFLARED)
+  ) {
+    parsed.composeGlobalArgs.push('--profile', 'cloudflared');
+  }
+}
+
 function getInPlaceProdServices(parsed) {
   const services = ['web'];
 
   if (hasComposeProfile(parsed.composeGlobalArgs, 'redis')) {
     services.push('redis', 'serverless-redis-http');
+  }
+
+  if (hasComposeProfile(parsed.composeGlobalArgs, 'cloudflared')) {
+    services.push(CLOUDFLARED_SERVICE);
   }
 
   return services;
@@ -284,7 +312,12 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     options.startWatcherContainer ?? startBlueGreenWatcherContainer;
   const composeFile = getComposeFile(parsed.mode);
   const env = options.env ?? process.env;
+  ensureCloudflaredProfileFromEnv(parsed, env);
   const withRedis = hasComposeProfile(parsed.composeGlobalArgs, 'redis');
+  const withCloudflared = hasComposeProfile(
+    parsed.composeGlobalArgs,
+    'cloudflared'
+  );
 
   await runChecked('docker', ['compose', 'version'], {
     env,
@@ -296,9 +329,10 @@ async function runDockerWebWorkflow(parsed, options = {}) {
   if (parsed.action === 'down') {
     const composeEnv = getComposeEnvironment({
       baseEnv: env,
-      envFilePath: options.envFilePath ?? WEB_ENV_FILE,
+      envFilePath: options.envFilePath,
       fsImpl,
       rootDir: options.rootDir,
+      withCloudflared,
       withRedis,
     });
 
@@ -328,16 +362,17 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     return;
   }
 
-  ensureWebEnvFile(fsImpl, options.envFilePath ?? WEB_ENV_FILE);
+  ensureWebEnvFile(fsImpl, options.envFilePath, options.rootDir ?? ROOT_DIR);
   ensureProductionRedisToken(parsed, env, hasComposeProfile, {
     fsImpl,
     rootDir: options.rootDir,
   });
   let composeEnv = getComposeEnvironment({
     baseEnv: env,
-    envFilePath: options.envFilePath ?? WEB_ENV_FILE,
+    envFilePath: options.envFilePath,
     fsImpl,
     rootDir: options.rootDir,
+    withCloudflared,
     withRedis,
   });
   composeEnv = await ensureBuildkitBuilder(
@@ -356,7 +391,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       runCommand: run,
     }
   );
-  ensureRequiredComposeEnvironment(composeEnv, { withRedis });
+  ensureRequiredComposeEnvironment(composeEnv, { withCloudflared, withRedis });
 
   if (parsed.withSupabase) {
     await runChecked('bun', ['sb:start'], {
@@ -418,7 +453,12 @@ async function runDockerWebWorkflow(parsed, options = {}) {
 
       if (env[WATCHER_CONTAINER_ENV] !== '1') {
         await startWatcherContainer(['--resume-if-running'], {
-          env,
+          env: withCloudflared
+            ? {
+                ...env,
+                DOCKER_WEB_WITH_CLOUDFLARED: '1',
+              }
+            : env,
           envFilePath: options.envFilePath,
           fsImpl,
           rootDir: options.rootDir,
@@ -510,6 +550,7 @@ module.exports = {
   BLUE_GREEN_RUNTIME_DIR,
   BLUE_GREEN_STATE_FILE,
   BLUE_GREEN_SUPPORT_SERVICES,
+  CLOUDFLARED_SERVICE,
   COMPOSE_FILE,
   DOCKER_HOST_ALIAS,
   DOCKER_MARKITDOWN_ENDPOINT_URL,
@@ -524,6 +565,7 @@ module.exports = {
   ensureBuildkitBuilder,
   ensureBlueGreenRuntime,
   ensureProductionRedisToken,
+  ensureRequiredComposeEnvironment,
   ensureWebEnvFile,
   getBlueGreenPaths,
   getBlueGreenProdServices,

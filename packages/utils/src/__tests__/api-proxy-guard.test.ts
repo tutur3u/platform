@@ -159,6 +159,38 @@ describe('guardApiProxyRequest', () => {
     expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
   });
 
+  it('fails open when the configured Redis rate limiter is unreachable', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv(
+      'UPSTASH_REDIS_REST_URL',
+      'https://resolved-kingfish-21146.upstash.io'
+    );
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockRejectedValueOnce(new TypeError('fetch failed'));
+    mocks.validateEmoji.mockResolvedValue(null);
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/test', 'GET'),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response).toBeNull();
+    expect(mocks.limit).toHaveBeenCalledTimes(1);
+
+    await guardApiProxyRequest(makeRequest('/api/test', 'GET'), {
+      prefixBase: 'proxy:test:api',
+    });
+
+    expect(mocks.limit).toHaveBeenCalledTimes(1);
+  });
+
   it('rate limits anonymous users/me reads', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
