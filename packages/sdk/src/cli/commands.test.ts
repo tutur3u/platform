@@ -4,6 +4,7 @@ import {
   getTaskClosePayload,
   getTaskDonePayload,
   getTaskUpdatePayload,
+  listTasksForCli,
   runCli,
 } from './commands';
 
@@ -203,6 +204,495 @@ describe('CLI commands', () => {
       completed: false,
       completed_at: null,
       list_id: 'closed-list-1',
+    });
+  });
+
+  it('includes assigned external workspace tasks for the personal task list', async () => {
+    const tasksList = vi
+      .fn()
+      .mockResolvedValueOnce({
+        tasks: [
+          {
+            id: 'personal-task',
+            name: 'Personal task',
+            priority: 'normal',
+            task_lists: { status: 'active' },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        tasks: [
+          {
+            board_name: 'Engineering',
+            id: 'external-task',
+            name: 'Assigned external task',
+            priority: 'normal',
+            task_lists: { status: 'active' },
+          },
+        ],
+      });
+    const client = {
+      tasks: {
+        list: tasksList,
+      },
+      workspaces: {
+        list: vi.fn().mockResolvedValue([
+          {
+            id: 'personal-ws',
+            name: 'Personal',
+            personal: true,
+          },
+          {
+            id: 'team-ws',
+            name: 'Tuturuuu',
+            personal: false,
+          },
+        ]),
+      },
+    };
+
+    const { response } = await listTasksForCli(
+      client as any,
+      {
+        baseUrl: 'https://tuturuuu.com',
+        currentWorkspaceId: 'personal-ws',
+        session: {
+          accessToken: 'token',
+          refreshToken: 'refresh',
+        },
+      },
+      'personal-ws',
+      {}
+    );
+
+    expect(tasksList).toHaveBeenNthCalledWith(
+      1,
+      'personal-ws',
+      expect.objectContaining({
+        completed: 'exclude',
+        closed: 'exclude',
+        externalIncludeDocuments: false,
+        externalIncludeDoneClosed: false,
+        forTimeTracking: true,
+        includeArchivedBoards: false,
+        includeCount: true,
+        limit: 50,
+        listStatuses: ['not_started', 'active'],
+        offset: 0,
+      })
+    );
+    expect(tasksList).toHaveBeenNthCalledWith(
+      2,
+      'team-ws',
+      expect.objectContaining({
+        assignedToMe: true,
+        completed: 'exclude',
+        closed: 'exclude',
+        externalIncludeDocuments: false,
+        externalIncludeDoneClosed: false,
+        forTimeTracking: true,
+        includeArchivedBoards: false,
+        includeCount: true,
+        limit: 50,
+        listStatuses: ['not_started', 'active'],
+        offset: 0,
+      })
+    );
+    expect(response.tasks).toEqual([
+      expect.objectContaining({
+        id: 'personal-task',
+        workspace_name: 'Personal',
+      }),
+      expect.objectContaining({
+        id: 'external-task',
+        source_workspace_name: 'Tuturuuu',
+        workspace_name: 'Tuturuuu',
+      }),
+    ]);
+    expect(response.pagination).toEqual(
+      expect.objectContaining({
+        page: 1,
+        pageCount: 1,
+        pageSize: 50,
+        total: 2,
+      })
+    );
+  });
+
+  it('defaults bare task lists to the personal workspace even when another workspace is selected', async () => {
+    const tasksList = vi
+      .fn()
+      .mockResolvedValueOnce({
+        count: 1,
+        tasks: [
+          {
+            id: 'personal-task',
+            name: 'Personal task',
+            priority: 'normal',
+            task_lists: { status: 'active' },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        count: 1,
+        tasks: [
+          {
+            board_name: 'Engineering',
+            id: 'assigned-task',
+            name: 'Assigned task',
+            priority: 'normal',
+            task_lists: { status: 'active' },
+          },
+        ],
+      });
+    const client = {
+      tasks: {
+        list: tasksList,
+      },
+      workspaces: {
+        list: vi.fn().mockResolvedValue([
+          {
+            id: 'team-ws',
+            name: 'Tuturuuu',
+            personal: false,
+          },
+          {
+            id: 'personal-ws',
+            name: 'Personal',
+            personal: true,
+          },
+        ]),
+      },
+    };
+
+    const { response, workspaceName } = await listTasksForCli(
+      client as any,
+      {
+        baseUrl: 'https://tuturuuu.com',
+        currentWorkspaceId: 'team-ws',
+        session: {
+          accessToken: 'token',
+          refreshToken: 'refresh',
+        },
+      },
+      'team-ws',
+      {}
+    );
+
+    expect(tasksList).toHaveBeenNthCalledWith(
+      1,
+      'personal-ws',
+      expect.objectContaining({
+        listStatuses: ['not_started', 'active'],
+      })
+    );
+    expect(tasksList).toHaveBeenNthCalledWith(
+      2,
+      'team-ws',
+      expect.objectContaining({
+        assignedToMe: true,
+      })
+    );
+    expect(workspaceName).toBe('Personal');
+    expect(response.tasks.map((task) => task.id)).toEqual([
+      'personal-task',
+      'assigned-task',
+    ]);
+  });
+
+  it('filters document review done and closed list tasks from default output', async () => {
+    const tasksList = vi
+      .fn()
+      .mockResolvedValueOnce({
+        tasks: [
+          {
+            id: 'active-task',
+            name: 'Active task',
+            task_lists: { status: 'active' },
+          },
+          {
+            id: 'review-task',
+            name: 'Review task',
+            task_lists: { status: 'review' },
+          },
+          {
+            id: 'document-task',
+            name: 'Document task',
+            task_lists: { status: 'documents' },
+          },
+          {
+            id: 'done-task',
+            name: 'Done task',
+            task_lists: { status: 'done' },
+          },
+          {
+            id: 'closed-task',
+            name: 'Closed task',
+            task_lists: { status: 'closed' },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ tasks: [] });
+    const client = {
+      tasks: {
+        list: tasksList,
+      },
+      workspaces: {
+        list: vi.fn().mockResolvedValue([
+          {
+            id: 'personal-ws',
+            name: 'Personal',
+            personal: true,
+          },
+          {
+            id: 'team-ws',
+            name: 'Tuturuuu',
+            personal: false,
+          },
+        ]),
+      },
+    };
+
+    const { response } = await listTasksForCli(
+      client as any,
+      {
+        baseUrl: 'https://tuturuuu.com',
+        currentWorkspaceId: 'personal-ws',
+        session: {
+          accessToken: 'token',
+          refreshToken: 'refresh',
+        },
+      },
+      'personal-ws',
+      {}
+    );
+
+    expect(tasksList).toHaveBeenNthCalledWith(
+      1,
+      'personal-ws',
+      expect.objectContaining({
+        listStatuses: ['not_started', 'active'],
+      })
+    );
+    expect(response.tasks.map((task) => task.id)).toEqual(['active-task']);
+    expect(response.pagination).toEqual(
+      expect.objectContaining({
+        page: 1,
+        pageCount: 1,
+        total: 1,
+      })
+    );
+  });
+
+  it('includes review list tasks when requested', async () => {
+    const tasksList = vi.fn().mockResolvedValueOnce({
+      tasks: [
+        {
+          id: 'active-task',
+          name: 'Active task',
+          task_lists: { status: 'active' },
+        },
+        {
+          id: 'review-task',
+          name: 'Review task',
+          task_lists: { status: 'review' },
+        },
+      ],
+    });
+    const client = {
+      tasks: {
+        list: tasksList,
+      },
+      workspaces: {
+        list: vi.fn().mockResolvedValue([
+          {
+            id: 'team-ws',
+            name: 'Tuturuuu',
+            personal: false,
+          },
+        ]),
+      },
+    };
+
+    const { response } = await listTasksForCli(
+      client as any,
+      {
+        baseUrl: 'https://tuturuuu.com',
+        currentWorkspaceId: 'team-ws',
+        session: {
+          accessToken: 'token',
+          refreshToken: 'refresh',
+        },
+      },
+      'team-ws',
+      { 'include-review': true }
+    );
+
+    expect(tasksList).toHaveBeenCalledWith(
+      'team-ws',
+      expect.objectContaining({
+        forTimeTracking: false,
+        listStatuses: ['not_started', 'active', 'review'],
+        limit: 50,
+        offset: 0,
+      })
+    );
+    expect(response.tasks.map((task) => task.id)).toEqual([
+      'active-task',
+      'review-task',
+    ]);
+  });
+
+  it('includes archived board tasks when requested', async () => {
+    const tasksList = vi.fn().mockResolvedValueOnce({
+      tasks: [
+        {
+          id: 'archived-board-task',
+          name: 'Archived board task',
+          task_lists: { status: 'active' },
+        },
+      ],
+    });
+    const client = {
+      tasks: {
+        list: tasksList,
+      },
+      workspaces: {
+        list: vi.fn().mockResolvedValue([
+          {
+            id: 'team-ws',
+            name: 'Tuturuuu',
+            personal: false,
+          },
+        ]),
+      },
+    };
+
+    const { response } = await listTasksForCli(
+      client as any,
+      {
+        baseUrl: 'https://tuturuuu.com',
+        currentWorkspaceId: 'team-ws',
+        session: {
+          accessToken: 'token',
+          refreshToken: 'refresh',
+        },
+      },
+      'team-ws',
+      { 'include-archived': true }
+    );
+
+    expect(tasksList).toHaveBeenCalledWith(
+      'team-ws',
+      expect.objectContaining({
+        includeArchivedBoards: true,
+      })
+    );
+    expect(response.tasks.map((task) => task.id)).toEqual([
+      'archived-board-task',
+    ]);
+  });
+
+  it('paginates the combined personal and assigned external task output', async () => {
+    const tasksList = vi
+      .fn()
+      .mockResolvedValueOnce({
+        tasks: [
+          {
+            id: 'personal-critical',
+            name: 'Personal critical',
+            priority: 'critical',
+            task_lists: { status: 'active' },
+          },
+          {
+            id: 'personal-low',
+            name: 'Personal low',
+            priority: 'low',
+            task_lists: { status: 'active' },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        tasks: [
+          {
+            id: 'external-high',
+            name: 'External high',
+            priority: 'high',
+            task_lists: { status: 'active' },
+          },
+          {
+            id: 'external-normal',
+            name: 'External normal',
+            priority: 'normal',
+            task_lists: { status: 'active' },
+          },
+        ],
+      });
+    const client = {
+      tasks: {
+        list: tasksList,
+      },
+      workspaces: {
+        list: vi.fn().mockResolvedValue([
+          {
+            id: 'personal-ws',
+            name: 'Personal',
+            personal: true,
+          },
+          {
+            id: 'team-ws',
+            name: 'Tuturuuu',
+            personal: false,
+          },
+        ]),
+      },
+    };
+
+    const { response } = await listTasksForCli(
+      client as any,
+      {
+        baseUrl: 'https://tuturuuu.com',
+        currentWorkspaceId: 'personal-ws',
+        session: {
+          accessToken: 'token',
+          refreshToken: 'refresh',
+        },
+      },
+      'personal-ws',
+      { page: '2', 'page-size': '2' }
+    );
+
+    expect(tasksList).toHaveBeenNthCalledWith(
+      1,
+      'personal-ws',
+      expect.objectContaining({
+        includeCount: true,
+        limit: 4,
+        offset: 0,
+      })
+    );
+    expect(tasksList).toHaveBeenNthCalledWith(
+      2,
+      'team-ws',
+      expect.objectContaining({
+        assignedToMe: true,
+        includeCount: true,
+        limit: 4,
+        offset: 0,
+      })
+    );
+    expect(response.tasks.map((task) => task.id)).toEqual([
+      'external-normal',
+      'personal-low',
+    ]);
+    expect(response.pagination).toEqual({
+      hasNextPage: false,
+      hasPreviousPage: true,
+      offset: 2,
+      page: 2,
+      pageCount: 2,
+      pageSize: 2,
+      total: 4,
     });
   });
 });

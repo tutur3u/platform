@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { TuturuuuUserClient } from './platform';
 
-describe('TuturuuuUserClient session refresh', () => {
+describe('TuturuuuUserClient', () => {
   it('refreshes before requests when the CLI access token is near expiry', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-05-03T00:00:00.000Z'));
@@ -115,5 +115,35 @@ describe('TuturuuuUserClient session refresh', () => {
     ]);
 
     vi.useRealTimers();
+  });
+
+  it('passes task-list status filters through task list requests', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ count: 0, tasks: [] }));
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await client.tasks.list('ws-1', {
+      includeArchivedBoards: true,
+      includeCount: true,
+      limit: 5,
+      listStatuses: ['not_started', 'active'],
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/tasks?listStatuses=not_started%2Cactive&limit=5&includeArchivedBoards=true&includeCount=true',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    const requestInit = fetchMock.mock.calls[0]?.[1];
+    expect(new Headers(requestInit?.headers).get('authorization')).toBe(
+      'Bearer access-token'
+    );
   });
 });

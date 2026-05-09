@@ -5,6 +5,11 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
 import {
+  isTaskBoardCompletedStatus,
+  isTaskBoardResolvedStatus,
+  isTaskBoardTerminalStatus,
+} from '@tuturuuu/utils/task-list-status';
+import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -254,16 +259,21 @@ export async function POST(
     const sourceListStatus = currentTask.task_lists.status;
     const targetListStatus = targetList.status;
     const currentlyArchived = !!currentTask.closed_at;
-    const isSourceCompletionList =
-      sourceListStatus === 'done' || sourceListStatus === 'closed';
-    const isTargetCompletionList =
-      targetListStatus === 'done' || targetListStatus === 'closed';
+    const isSourceResolvedList = isTaskBoardResolvedStatus(sourceListStatus);
+    const isTargetResolvedList = isTaskBoardResolvedStatus(targetListStatus);
+    const isSourceCompletedList = isTaskBoardCompletedStatus(sourceListStatus);
+    const isTargetCompletedList = isTaskBoardCompletedStatus(targetListStatus);
+    const isSourceTerminalList = isTaskBoardTerminalStatus(sourceListStatus);
+    const isTargetTerminalList = isTaskBoardTerminalStatus(targetListStatus);
     const completionTimestamp = new Date().toISOString();
 
     let closedAt: string | null;
-    if (isTargetCompletionList) {
+    if (!isSourceTerminalList && isTargetTerminalList) {
       closedAt = completionTimestamp;
-    } else if (isSourceCompletionList) {
+    } else if (
+      targetListStatus === 'review' ||
+      (isSourceTerminalList && !isTargetTerminalList)
+    ) {
       closedAt = null;
     } else {
       closedAt = currentlyArchived ? currentTask.closed_at : null;
@@ -272,15 +282,25 @@ export async function POST(
     let completed: boolean | null;
     let completedAt: string | null;
 
-    if (isTargetCompletionList) {
+    if (targetListStatus === 'review') {
+      completed = false;
+      completedAt = null;
+    } else if (!isSourceResolvedList && isTargetResolvedList) {
       completed = true;
-      completedAt = completionTimestamp;
-    } else if (isSourceCompletionList) {
+      completedAt = isTargetCompletedList
+        ? completionTimestamp
+        : currentTask.completed_at;
+    } else if (isSourceResolvedList && !isTargetResolvedList) {
       completed = false;
       completedAt = null;
     } else {
-      completed = currentTask.completed;
-      completedAt = currentTask.completed_at;
+      completed = isTargetResolvedList ? true : currentTask.completed;
+      completedAt =
+        isTargetCompletedList &&
+        !isSourceCompletedList &&
+        !currentTask.completed_at
+          ? completionTimestamp
+          : currentTask.completed_at;
     }
 
     const updatePayload: Database['public']['Tables']['tasks']['Update'] = {

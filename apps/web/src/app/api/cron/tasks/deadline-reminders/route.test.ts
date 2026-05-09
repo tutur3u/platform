@@ -37,6 +37,15 @@ describe('shouldSkipDeadlineReminderTask', () => {
     ).toBe(true);
   });
 
+  it('skips tasks in review lists', () => {
+    expect(
+      shouldSkipDeadlineReminderTask({
+        ...baseTask,
+        task_lists: { status: 'review' },
+      })
+    ).toBe(true);
+  });
+
   it('skips tasks in closed lists', () => {
     expect(
       shouldSkipDeadlineReminderTask({

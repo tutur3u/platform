@@ -4,6 +4,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { cn } from '@tuturuuu/utils/format';
+import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
@@ -33,8 +34,8 @@ export const TaskCardDates = memo(function TaskCardDates({
   const endDate = task.end_date ? new Date(task.end_date) : null;
   const taskIsOverdue = isOverdue(endDate);
 
-  // Hide dates when task is in done/closed list
-  if (taskList?.status === 'done' || taskList?.status === 'closed') {
+  // Hide dates when the list itself represents resolved work.
+  if (isTaskBoardResolvedStatus(taskList?.status)) {
     return null;
   }
 

@@ -266,7 +266,7 @@ describe('withSessionAuth', () => {
 
     expect(mockCheckRateLimit).toHaveBeenCalledWith(
       expect.stringContaining('mutate'),
-      expect.objectContaining({ maxRequests: 20 })
+      expect.objectContaining({ maxRequests: 60 })
     );
   });
 

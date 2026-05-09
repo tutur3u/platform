@@ -23,6 +23,7 @@ const statusOrder: TaskBoardStatus[] = [
   'documents',
   'not_started',
   'active',
+  'review',
   'done',
   'closed',
 ];
@@ -70,6 +71,7 @@ export function TaskListPickerPanel({
     (): Record<TaskBoardStatus, string> => ({
       not_started: t('common.list_name_to_do'),
       active: t('common.list_name_in_progress'),
+      review: t('common.list_name_review'),
       done: t('common.list_name_done'),
       closed: t('common.list_name_closed'),
       documents: t('common.documents'),
@@ -81,6 +83,7 @@ export function TaskListPickerPanel({
     () => ({
       toDo: statusLabels.not_started,
       inProgress: statusLabels.active,
+      review: statusLabels.review,
       done: statusLabels.done,
       closed: statusLabels.closed,
       documents: statusLabels.documents,

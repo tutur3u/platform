@@ -9,6 +9,7 @@ import {
   updateWorkspaceTask,
 } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
+import { isTaskBoardCompletedStatus } from '../task-list-status';
 
 import {
   getBrowserApiOptions,
@@ -35,10 +36,10 @@ function buildTaskArchivedStatusUpdates(
     closed_at?: string | null;
   } = {};
 
-  if (listStatus === 'done') {
+  if (isTaskBoardCompletedStatus(listStatus)) {
     if (task.completed !== true || !task.completed_at || task.closed_at) {
       updates.completed = true;
-      updates.completed_at = new Date().toISOString();
+      updates.completed_at = task.completed_at ?? new Date().toISOString();
       updates.closed_at = null;
     }
   } else if (listStatus === 'closed') {

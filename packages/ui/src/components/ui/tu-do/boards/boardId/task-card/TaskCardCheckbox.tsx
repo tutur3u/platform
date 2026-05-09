@@ -3,6 +3,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { cn } from '@tuturuuu/utils/format';
+import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import { memo } from 'react';
 import { getListColorClasses } from '../../../utils/taskColorUtils';
 import { isOverdue } from '../../../utils/taskDateUtils';
@@ -21,6 +22,7 @@ export const TaskCardCheckbox = memo(function TaskCardCheckbox({
   onToggle,
 }: TaskCardCheckboxProps) {
   const taskIsOverdue = isOverdue(task.end_date);
+  const isInResolvedList = isTaskBoardResolvedStatus(taskList?.status);
 
   return (
     <Checkbox
@@ -32,6 +34,7 @@ export const TaskCardCheckbox = memo(function TaskCardCheckbox({
         getListColorClasses(taskList?.color as SupportedColor),
         taskIsOverdue &&
           !task.closed_at &&
+          !isInResolvedList &&
           'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
       )}
       disabled={isLoading}

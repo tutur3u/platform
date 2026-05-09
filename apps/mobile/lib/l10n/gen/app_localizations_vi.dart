@@ -2453,6 +2453,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailStatusActive => 'Đang thực hiện';
 
   @override
+  String get taskBoardDetailStatusReview => 'Chờ duyệt';
+
+  @override
   String get taskBoardDetailStatusDone => 'Hoàn thành';
 
   @override
@@ -4323,6 +4326,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get timerHistoryEndOfList => 'Bạn đã xem hết danh sách';
+
+  @override
+  String get timerHistoryPickerYearTitle => 'Năm';
+
+  @override
+  String get timerHistoryPickerCurrent => 'Hiện tại';
 
   @override
   String get timerToday => 'Hôm nay';

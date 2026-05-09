@@ -1,11 +1,95 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  type QueryClient,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   getWorkspaceTaskRelationships,
   updateWorkspaceTask,
 } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import {
+  isTaskBoardCompletedStatus,
+  isTaskBoardResolvedStatus,
+  isTaskBoardTerminalStatus,
+} from '../task-list-status';
 import { transformTaskRecord } from './transformers';
+
+type ReorderTaskCacheInput = {
+  taskId: string;
+  newListId: string;
+  newSortKey: number;
+  targetListStatus?: TaskList['status'] | null;
+  localMutationAt?: number;
+};
+
+type LocallyMutatedTask = Task & { _localMutationAt: number };
+
+export function mergeOptimisticReorderedTaskIntoCache(
+  tasks: Task[] | undefined,
+  {
+    taskId,
+    newListId,
+    newSortKey,
+    targetListStatus,
+    localMutationAt = Date.now(),
+  }: ReorderTaskCacheInput
+) {
+  if (!tasks) return tasks;
+
+  const targetIsCompleted = isTaskBoardCompletedStatus(targetListStatus);
+  const targetIsTerminal = isTaskBoardTerminalStatus(targetListStatus);
+  const mutationTimestamp = new Date(localMutationAt).toISOString();
+
+  return tasks.map((task) => {
+    if (task.id !== taskId) return task;
+
+    return {
+      ...task,
+      list_id: newListId,
+      sort_key: newSortKey,
+      completed: targetIsCompleted,
+      completed_at: targetIsCompleted
+        ? (task.completed_at ?? mutationTimestamp)
+        : null,
+      closed_at: targetIsTerminal
+        ? (task.closed_at ?? mutationTimestamp)
+        : null,
+      _localMutationAt: localMutationAt,
+    } as LocallyMutatedTask;
+  });
+}
+
+export function mergeServerReorderedTaskIntoCache(
+  tasks: Task[] | undefined,
+  updatedTask: Task,
+  localMutationAt = Date.now()
+) {
+  if (!tasks) return tasks;
+
+  return tasks.map((task) => {
+    if (task.id !== updatedTask.id) return task;
+
+    return {
+      ...task,
+      ...updatedTask,
+      _localMutationAt: localMutationAt,
+    } as LocallyMutatedTask;
+  });
+}
+
+function setReorderedTaskCache(
+  queryClient: QueryClient,
+  boardId: string,
+  updater: (tasks: Task[] | undefined) => Task[] | undefined
+) {
+  queryClient.setQueryData(['tasks', boardId], updater);
+
+  if (queryClient.getQueryData<Task[]>(['tasks-full', boardId])) {
+    queryClient.setQueryData(['tasks-full', boardId], updater);
+  }
+}
 
 // Reorder task within the same list or move to a different list with specific position
 export async function reorderTask(
@@ -47,21 +131,25 @@ export function useReorderTask(boardId: string, wsId: string) {
       return reorderTask(wsId, taskId, newListId, newSortKey);
     },
     onMutate: async ({ taskId, newListId, newSortKey }) => {
-      console.log('🎭 onMutate triggered - optimistic update for reorder');
-
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
       // Snapshot the previous value
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      const previousTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        boardId,
+      ]);
+      const previousFullTasks = queryClient.getQueryData<Task[]>([
+        'tasks-full',
+        boardId,
+      ]);
 
       // Check if moving to a done or closed list
       const targetList = queryClient.getQueryData(['task_lists', boardId]) as
         | TaskList[]
         | undefined;
       const list = targetList?.find((l) => l.id === newListId);
-      const isCompletionList =
-        list?.status === 'done' || list?.status === 'closed';
+      const isCompletionList = isTaskBoardResolvedStatus(list?.status);
 
       // If moving to completion list, start fetching blocked task IDs asynchronously
       // Don't await here to avoid blocking the optimistic update
@@ -86,58 +174,34 @@ export function useReorderTask(boardId: string, wsId: string) {
       }
 
       // Optimistically update the task immediately (not blocked by the fetch above)
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((task) => {
-            if (task.id === taskId) {
-              const shouldArchive =
-                list?.status === 'done' || list?.status === 'closed';
-
-              return {
-                ...task,
-                list_id: newListId,
-                sort_key: newSortKey,
-                closed_at: shouldArchive ? new Date().toISOString() : null,
-              };
-            }
-            return task;
-          });
-        }
+      setReorderedTaskCache(queryClient, boardId, (old) =>
+        mergeOptimisticReorderedTaskIntoCache(old, {
+          taskId,
+          newListId,
+          newSortKey,
+          targetListStatus: list?.status,
+        })
       );
 
-      return { previousTasks, blockedTaskIdsPromise };
+      return { previousTasks, previousFullTasks, blockedTaskIdsPromise };
     },
     onError: (err, _, context) => {
-      console.log('❌ onError triggered - rollback optimistic update');
       if (context?.previousTasks) {
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
+      if (context?.previousFullTasks) {
+        queryClient.setQueryData(
+          ['tasks-full', boardId],
+          context.previousFullTasks
+        );
       }
 
       console.error('Failed to reorder task:', err);
     },
     onSuccess: async (updatedTask, variables, context) => {
-      console.log(
-        '✅ onSuccess triggered - updating cache with server response'
-      );
-
       // Update the cache with the server response
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((task) => {
-            if (task.id !== updatedTask.id) {
-              return task;
-            }
-
-            return {
-              ...task,
-              ...updatedTask,
-            };
-          });
-        }
+      setReorderedTaskCache(queryClient, boardId, (old) =>
+        mergeServerReorderedTaskIntoCache(old, updatedTask)
       );
 
       // If task was moved to done/closed list (has completed_at or closed_at set),

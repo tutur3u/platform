@@ -1068,8 +1068,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     final targetStatus = TaskBoardList.normalizeSupportedStatus(
       targetList?.status,
     );
-    final targetCompletesWork =
-        targetStatus == 'done' || targetStatus == 'closed';
+    final targetCompletesWork = targetStatus == 'done';
     final completionTimestamp = DateTime.now();
 
     return TaskBoardTask(

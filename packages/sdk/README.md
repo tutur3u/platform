@@ -133,13 +133,23 @@ ttr tasks --json --no-update-check
 Task commands cover workspaces, boards, lists, tasks, labels, projects,
 relationships, moves, and bulk task updates. Read-oriented groups list by
 default, so `ttr tasks` and `ttr workspaces` are equivalent to their explicit
-`list` forms. `ttr tasks` shows open tasks by default by excluding rows with
-`completed_at` or `closed_at`; use `--all`, `--done`, `--closed`,
-`--include-done`, or `--include-closed` to adjust that filter. Add `--compact`
-to task lists when an agent only needs the task title, task list name, and
-workspace name. Task lists are ordered by priority and due date, with prettier
-due dates and configured task-list colors in table output. Use `--json` on read
-commands when another agent or script needs machine-readable output. `tasks
+`list` forms. Unscoped `ttr tasks` starts from the personal workspace and lists
+personal tasks plus open tasks assigned to the user in other accessible
+workspaces; selecting a board/list or passing `--workspace` scopes the result
+back to that context. `ttr tasks` shows open tasks by default by excluding rows with
+`completed_at` or `closed_at` and by limiting task-list statuses to
+`not_started` and `active`. That default hides tasks in `documents`, `review`,
+`done`, and `closed` lists, and tasks from archived boards; use `--all`,
+`--include-archived`, `--documents`, `--review`, `--done`, `--closed`,
+`--include-documents`, `--include-review`, `--include-done`, or
+`--include-closed` to adjust that filter. Results are paginated at 50 tasks by
+default; use `--page`/`--page-size` or `--limit`/`--offset` to page through
+larger task sets. Human-readable task lists show a footer with the total task
+count and current page/max page. Add `--compact` to task lists when an agent
+only needs the task title, task list name, and per-task workspace name. Task
+lists are ordered by priority and due date, with prettier due dates and
+configured task-list colors in table output. Use `--json` on read commands when
+another agent or script needs machine-readable output. `tasks
 create`, `boards create`, and `lists create` accept a quoted positional name as
 a shorthand for `--name`. Task CRUD accepts either the task UUID or the board
 identifier shown in the UI, such as `VHP-12`; prefixed identifiers resolve

@@ -165,6 +165,90 @@ describe('CLI rendering', () => {
     expect(output).toContain('■ Done');
   });
 
+  it('shows per-task workspace names for mixed workspace task rows', () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    render(
+      {
+        tasks: [
+          {
+            board_name: 'Tasks',
+            id: 'task-1',
+            list_name: 'Upcoming',
+            name: 'Personal task',
+            workspace_name: 'Personal',
+          },
+          {
+            board_name: 'Engineering',
+            id: 'task-2',
+            list_name: 'In Progress',
+            name: 'Assigned external task',
+            source_workspace_name: 'Tuturuuu',
+          },
+        ],
+      },
+      { group: 'tasks' }
+    );
+
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(output).toContain('Personal / Tasks');
+    expect(output).toContain('Tuturuuu / Engineering');
+  });
+
+  it('renders task pagination totals for table output', () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    render(
+      {
+        pagination: {
+          page: 2,
+          pageCount: 4,
+          total: 19,
+        },
+        tasks: [
+          {
+            id: 'task-1',
+            name: 'Paginated task',
+          },
+        ],
+      },
+      { group: 'tasks' }
+    );
+
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(output).toContain('Page 2/4 | 19 total');
+  });
+
+  it('renders task pagination totals in compact output', () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    render(
+      {
+        pagination: {
+          page: 1,
+          pageCount: 3,
+          total: 11,
+        },
+        tasks: [
+          {
+            id: 'task-1',
+            name: 'Compact paginated task',
+          },
+        ],
+      },
+      { compact: true, group: 'tasks' }
+    );
+
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(output).toContain('Page 1/3 | 11 total');
+  });
+
   it('renders configured colors in task list rows', () => {
     const write = vi
       .spyOn(process.stdout, 'write')

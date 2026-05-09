@@ -7,9 +7,18 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
+import {
+  isTaskBoardCompletedStatus,
+  isTaskBoardResolvedStatus,
+  isTaskBoardTerminalStatus,
+} from '@tuturuuu/utils/task-list-status';
 import { addDays } from 'date-fns';
 import { useCallback } from 'react';
 import { useBoardBroadcast } from '../components/ui/tu-do/shared/board-broadcast-context';
+import {
+  isPersonalExternalTask,
+  moveExternalTaskToPersonalList,
+} from './task-actions-personal-external';
 
 interface UseTaskActionsProps {
   task?: Task; // Made optional to handle loading states
@@ -54,6 +63,7 @@ export function useTaskActions({
   const broadcast = useBoardBroadcast();
 
   const getWorkspaceId = useCallback(async () => {
+    const sourceWorkspaceId = task?.source_workspace_id ?? undefined;
     const taskWorkspaceId =
       (task as Task & { ws_id?: string })?.ws_id ??
       (
@@ -62,6 +72,7 @@ export function useTaskActions({
         }
       )?.task_lists?.workspace_boards?.ws_id;
     const resolvedWorkspaceId =
+      sourceWorkspaceId ??
       taskWorkspaceId ??
       (boardId
         ? await resolveTaskProjectWorkspaceId({ boardId }).catch(() => null)
@@ -176,6 +187,38 @@ export function useTaskActions({
 
     // Store previous state for rollback
     const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+
+    if (
+      isPersonalExternalTask(task) &&
+      newClosedState &&
+      targetCompletionList &&
+      targetCompletionList.id !== task.list_id
+    ) {
+      try {
+        await moveExternalTaskToPersonalList({
+          boardId,
+          markLocallyMutatedTask,
+          queryClient,
+          task,
+          targetList: targetCompletionList,
+          sourceStatus:
+            targetCompletionList.status === 'closed' ? 'closed' : 'done',
+          placementPosition: 'top',
+        });
+
+        toast.success('Task completed', {
+          description: `Task marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'} and moved to ${targetCompletionList.name}`,
+        });
+      } catch (error) {
+        console.error('Failed to complete external task:', error);
+        toast.error('Error', {
+          description: 'Failed to complete task. Please try again.',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
 
     if (
       newClosedState &&
@@ -333,6 +376,24 @@ export function useTaskActions({
     const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
 
     try {
+      if (isPersonalExternalTask(task) && !shouldBulkMove) {
+        await moveExternalTaskToPersonalList({
+          boardId,
+          markLocallyMutatedTask,
+          queryClient,
+          task,
+          targetList: targetCompletionList,
+          sourceStatus:
+            targetCompletionList.status === 'closed' ? 'closed' : 'done',
+          placementPosition: 'top',
+        });
+
+        toast.success('Task completed', {
+          description: `Task marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'} and moved to ${targetCompletionList.name}`,
+        });
+        return;
+      }
+
       // Optimistic update: move tasks to completion list and set closed_at/completed_at
       queryClient.setQueryData(
         ['tasks', boardId],
@@ -457,6 +518,23 @@ export function useTaskActions({
     const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
 
     try {
+      if (isPersonalExternalTask(task) && !shouldBulkMove) {
+        await moveExternalTaskToPersonalList({
+          boardId,
+          markLocallyMutatedTask,
+          queryClient,
+          task,
+          targetList: targetClosedList,
+          sourceStatus: 'closed',
+          placementPosition: 'top',
+        });
+
+        toast.success('Success', {
+          description: 'Task marked as closed',
+        });
+        return;
+      }
+
       // Optimistic update: move tasks to closed list and set closed_at
       queryClient.setQueryData(
         ['tasks', boardId],
@@ -836,13 +914,55 @@ export function useTaskActions({
         boardId,
       ]);
 
-      // Determine if target list is a completion list
+      // Determine if target list represents resolved workflow state
       const targetList = availableLists.find(
         (list) => list.id === targetListId
       );
-      const isCompletionList =
-        targetList?.status === 'done' || targetList?.status === 'closed';
+      const isCompletionList = isTaskBoardResolvedStatus(targetList?.status);
+      const isTargetCompletedList = isTaskBoardCompletedStatus(
+        targetList?.status
+      );
+      const isTargetTerminalList = isTaskBoardTerminalStatus(
+        targetList?.status
+      );
       const now = new Date().toISOString();
+
+      if (isPersonalExternalTask(task) && !shouldBulkMove && targetList) {
+        try {
+          const externalMoveOptions: {
+            sourceStatus?: 'done' | 'closed';
+            placementPosition: 'top' | 'end';
+          } = {
+            placementPosition: isCompletionList ? 'top' : 'end',
+          };
+
+          if (targetList.status === 'done' || targetList.status === 'closed') {
+            externalMoveOptions.sourceStatus = targetList.status;
+          }
+
+          await moveExternalTaskToPersonalList({
+            boardId,
+            markLocallyMutatedTask,
+            queryClient,
+            task,
+            targetList,
+            ...externalMoveOptions,
+          });
+
+          toast.success('Success', {
+            description: `Task moved to ${targetList.name || 'selected list'}`,
+          });
+        } catch (error) {
+          console.error('Failed to move external task:', error);
+          toast.error('Error', {
+            description: 'Failed to move task. Please try again.',
+          });
+        } finally {
+          setIsLoading(false);
+          setMenuOpen(false);
+        }
+        return;
+      }
 
       try {
         // Optimistic update: move tasks to target list
@@ -852,29 +972,28 @@ export function useTaskActions({
             if (!old) return old;
             return old.map((t) => {
               if (tasksToMove.includes(t.id)) {
-                // Determine the current list status
                 const currentList = availableLists.find(
                   (list) => list.id === t.list_id
                 );
-                const wasInCompletionList =
-                  currentList?.status === 'done' ||
-                  currentList?.status === 'closed';
+                const wasInCompletionList = isTaskBoardResolvedStatus(
+                  currentList?.status
+                );
+                const isMovingToReview = targetList?.status === 'review';
 
                 return markLocallyMutatedTask({
                   ...t,
                   list_id: targetListId,
-                  // Set closed_at based on target list status
-                  closed_at: isCompletionList
-                    ? now
-                    : wasInCompletionList
+                  completed: isTargetCompletedList,
+                  closed_at: isTargetTerminalList
+                    ? (t.closed_at ?? now)
+                    : wasInCompletionList || isMovingToReview
                       ? null
                       : t.closed_at,
-                  completed_at:
-                    targetList?.status === 'done'
-                      ? now
-                      : wasInCompletionList
-                        ? null
-                        : t.completed_at,
+                  completed_at: isTargetCompletedList
+                    ? (t.completed_at ?? now)
+                    : wasInCompletionList || isMovingToReview
+                      ? null
+                      : t.completed_at,
                 } as Task);
               }
               return t;

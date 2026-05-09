@@ -17,6 +17,10 @@ import {
   getPersonalExternalStagingListId,
 } from '@tuturuuu/utils/task-helper';
 import {
+  isTaskBoardCompletedStatus,
+  isTaskBoardResolvedStatus,
+} from '@tuturuuu/utils/task-list-status';
+import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -156,6 +160,7 @@ type ExternalTaskSortBy =
 type ExternalSourceStatus =
   | 'not_started'
   | 'active'
+  | 'review'
   | 'documents'
   | 'done'
   | 'closed';
@@ -165,11 +170,22 @@ const ACTIVE_EXTERNAL_SOURCE_STATUSES: ExternalSourceStatus[] = [
   'not_started',
   'active',
 ];
-const DOCUMENT_EXTERNAL_SOURCE_STATUS: ExternalSourceStatus = 'documents';
-const TERMINAL_EXTERNAL_SOURCE_STATUSES: ExternalSourceStatus[] = [
+const RESOLVED_EXTERNAL_SOURCE_STATUSES: ExternalSourceStatus[] = [
+  'review',
   'done',
   'closed',
 ];
+const DOCUMENT_EXTERNAL_SOURCE_STATUS: ExternalSourceStatus = 'documents';
+const TASK_LIST_STATUSES = new Set<ExternalSourceStatus>([
+  ...ACTIVE_EXTERNAL_SOURCE_STATUSES,
+  ...RESOLVED_EXTERNAL_SOURCE_STATUSES,
+  DOCUMENT_EXTERNAL_SOURCE_STATUS,
+]);
+
+type PersonalTaskBoardExternalCountRow = {
+  list_id: string | null;
+  task_count: number | null;
+};
 
 function parseExternalTaskSortBy(value: string | null): ExternalTaskSortBy {
   switch (value) {
@@ -181,6 +197,44 @@ function parseExternalTaskSortBy(value: string | null): ExternalTaskSortBy {
     default:
       return DEFAULT_EXTERNAL_TASK_SORT_BY;
   }
+}
+
+function parseTaskListStatuses(value: string | null): ExternalSourceStatus[] {
+  if (!value) return [];
+
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry): entry is ExternalSourceStatus =>
+      TASK_LIST_STATUSES.has(entry as ExternalSourceStatus)
+    );
+}
+
+function matchesExternalLaneFilters(
+  task: TaskRecord,
+  includeDocuments: boolean,
+  includeDoneClosed: boolean
+) {
+  const sourceStatus = getTaskSourceLocation(task).list?.status;
+  const taskStatusFields = task as TaskRecord & {
+    completed_at?: string | null;
+    closed_at?: string | null;
+  };
+
+  if (!includeDocuments && sourceStatus === DOCUMENT_EXTERNAL_SOURCE_STATUS) {
+    return false;
+  }
+
+  if (
+    !includeDoneClosed &&
+    (taskStatusFields.completed_at ||
+      taskStatusFields.closed_at ||
+      isTaskBoardResolvedStatus(sourceStatus))
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 function getTaskSourceLocation(task: TaskRecord) {
@@ -249,6 +303,57 @@ function filterAccessibleExternalRecords(
       accessibleWorkspaceIds.has(sourceWsId)
     );
   });
+}
+
+async function loadPersonalTaskBoardExternalCounts(
+  supabase: TypedSupabaseClient,
+  personalBoardId: string,
+  options: {
+    includeDocuments: boolean;
+    includeDoneClosed: boolean;
+  }
+) {
+  const { data, error } = await supabase.rpc(
+    'get_personal_task_board_external_counts',
+    {
+      p_personal_board_id: personalBoardId,
+      p_include_documents: options.includeDocuments,
+      p_include_done_closed: options.includeDoneClosed,
+    }
+  );
+
+  if (error) {
+    throw new Error('PERSONAL_EXTERNAL_COUNTS_QUERY_FAILED');
+  }
+
+  return new Map(
+    ((data ?? []) as PersonalTaskBoardExternalCountRow[])
+      .filter((row) => row.list_id)
+      .map((row) => [row.list_id as string, row.task_count ?? 0] as const)
+  );
+}
+
+function resolvePersonalExternalTaskCount(
+  countsByListId: Map<string, number> | null,
+  personalBoardId: string | null,
+  listId: string | null,
+  virtualStagingBoardId: string | null
+) {
+  if (!countsByListId || !personalBoardId) {
+    return null;
+  }
+
+  if (virtualStagingBoardId) {
+    return (
+      countsByListId.get(getPersonalExternalStagingListId(personalBoardId)) ?? 0
+    );
+  }
+
+  if (listId) {
+    return countsByListId.get(listId) ?? 0;
+  }
+
+  return [...countsByListId.values()].reduce((sum, value) => sum + value, 0);
 }
 
 function applyPersonalExternalTask(
@@ -370,6 +475,11 @@ export async function GET(
     const assignedToMe = url.searchParams.get('assignedToMe') === 'true';
     const completedMode = url.searchParams.get('completed');
     const closedMode = url.searchParams.get('closed');
+    const listStatuses = parseTaskListStatuses(
+      url.searchParams.get('listStatuses')
+    );
+    const includeArchivedBoards =
+      url.searchParams.get('includeArchivedBoards') === 'true';
     const externalIncludeDocuments =
       url.searchParams.get('externalIncludeDocuments') === 'true';
     const externalIncludeDoneClosed =
@@ -400,6 +510,32 @@ export async function GET(
     }
 
     const isPersonalWorkspace = workspaceRow?.personal === true;
+    const personalExternalCountBoardId = virtualStagingBoardId ?? boardId;
+    let personalExternalTaskCountByListId: Map<string, number> | null = null;
+
+    if (
+      includeCount &&
+      isPersonalWorkspace &&
+      !forTimeTracking &&
+      personalExternalCountBoardId
+    ) {
+      try {
+        personalExternalTaskCountByListId =
+          await loadPersonalTaskBoardExternalCounts(
+            supabase,
+            personalExternalCountBoardId,
+            {
+              includeDocuments: externalIncludeDocuments,
+              includeDoneClosed: externalIncludeDoneClosed,
+            }
+          );
+      } catch {
+        return NextResponse.json(
+          { error: 'Failed to load personal external task counts' },
+          { status: 500 }
+        );
+      }
+    }
 
     const timeTrackingSelect = `
         id,
@@ -604,10 +740,16 @@ export async function GET(
       query = query.not('deleted_at', 'is', null) as typeof query;
     }
 
+    if (!includeArchivedBoards) {
+      query = query.is('task_lists.workspace_boards.archived_at', null);
+    }
+
     if (forTimeTracking) {
       query = query
         .is('closed_at', null)
         .in('task_lists.status', ['not_started', 'active']);
+    } else if (listStatuses.length > 0) {
+      query = query.in('task_lists.status', listStatuses);
     }
 
     if (completedMode === 'exclude') {
@@ -680,6 +822,14 @@ export async function GET(
       (boardId || listId || virtualStagingBoardId)
     ) {
       const targetPersonalBoardId = virtualStagingBoardId ?? boardId;
+      const personalExternalTaskCountOverride =
+        resolvePersonalExternalTaskCount(
+          personalExternalTaskCountByListId,
+          targetPersonalBoardId,
+          listId,
+          virtualStagingBoardId
+        );
+      externalTaskCount = personalExternalTaskCountOverride ?? 0;
       let placements: PersonalTaskPlacementRow[] = [];
 
       let placementQuery = targetPersonalBoardId
@@ -722,7 +872,9 @@ export async function GET(
 
         placements =
           (placementResult.data as PersonalTaskPlacementRow[] | null) ?? [];
-        externalTaskCount += placementResult.count ?? placements.length;
+        if (personalExternalTaskCountOverride === null) {
+          externalTaskCount += placementResult.count ?? placements.length;
+        }
       }
 
       const placedTaskIds = placements.map((placement) => placement.task_id);
@@ -796,7 +948,17 @@ export async function GET(
             placedRecords,
             accessibleWorkspaceIds,
             normalizedWorkspaceId
-          ).map((record) => [record.id, record] as const)
+          )
+            .filter(
+              (record) =>
+                !virtualStagingBoardId ||
+                matchesExternalLaneFilters(
+                  record,
+                  externalIncludeDocuments,
+                  externalIncludeDoneClosed
+                )
+            )
+            .map((record) => [record.id, record] as const)
         );
 
         externalTasks.push(
@@ -825,13 +987,17 @@ export async function GET(
           .is('task_lists.workspace_boards.archived_at', null);
 
         const defaultExternalSourceStatuses: ExternalSourceStatus[] = [
-          ...ACTIVE_EXTERNAL_SOURCE_STATUSES,
-          ...(externalIncludeDocuments
-            ? [DOCUMENT_EXTERNAL_SOURCE_STATUS]
-            : []),
-          ...(externalIncludeDoneClosed
-            ? [...TERMINAL_EXTERNAL_SOURCE_STATUSES]
-            : []),
+          ...(listStatuses.length > 0
+            ? listStatuses
+            : [
+                ...ACTIVE_EXTERNAL_SOURCE_STATUSES,
+                ...(externalIncludeDocuments
+                  ? [DOCUMENT_EXTERNAL_SOURCE_STATUS]
+                  : []),
+                ...(externalIncludeDoneClosed
+                  ? [...RESOLVED_EXTERNAL_SOURCE_STATUSES]
+                  : []),
+              ]),
         ];
 
         defaultExternalQuery = defaultExternalQuery.in(
@@ -964,11 +1130,15 @@ export async function GET(
           );
 
         externalTasks.push(...defaultExternalTasks);
-        externalTaskCount +=
-          defaultExternalResult.count ?? defaultExternalTasks.length;
+        if (personalExternalTaskCountOverride === null) {
+          externalTaskCount +=
+            defaultExternalResult.count ?? defaultExternalTasks.length;
+        }
       }
 
-      externalTaskCount = externalTasks.length;
+      if (personalExternalTaskCountOverride === null) {
+        externalTaskCount = externalTasks.length;
+      }
       if (virtualStagingBoardId) {
         externalTasks = externalTasks.slice(offset, offset + limit);
       }
@@ -1275,10 +1445,9 @@ export async function POST(
 
     const sort_key = calculateTopSortKey(firstTask?.sort_key ?? null);
     const now = new Date().toISOString();
-    const isDoneList = listRow.status === 'done';
+    const isCompletedList = isTaskBoardCompletedStatus(listRow.status);
     const isClosedList = listRow.status === 'closed';
-    const shouldArchive = isDoneList || isClosedList;
-    const completionTimestamp = isDoneList ? now : null;
+    const completionTimestamp = isCompletedList ? now : null;
     const normalizedDescription = description?.trim() || null;
     const normalizedDescriptionYjsState =
       description_yjs_state === undefined
@@ -1295,9 +1464,9 @@ export async function POST(
       end_date: end_date ?? null,
       estimation_points: estimation_points ?? null,
       sort_key,
-      completed: isDoneList,
+      completed: isCompletedList,
       completed_at: completionTimestamp,
-      closed_at: shouldArchive ? now : null,
+      closed_at: isClosedList ? now : null,
     };
 
     const { data, error } = await sbAdmin

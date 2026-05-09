@@ -23,6 +23,7 @@ export function StatusDistribution({
     const counts = {
       not_started: 0,
       active: 0,
+      review: 0,
       done: 0,
       closed: 0,
     };
@@ -31,6 +32,8 @@ export function StatusDistribution({
       const status = task.listStatus || 'not_started';
       if (status === 'done' || task.closed_at) {
         counts.done += 1;
+      } else if (status === 'review') {
+        counts.review += 1;
       } else if (status === 'closed') {
         counts.closed += 1;
       } else if (status === 'active') {
@@ -60,6 +63,12 @@ export function StatusDistribution({
       label: 'Active',
       color: 'bg-blue-500',
       percentage: total > 0 ? (statusCounts.active / total) * 100 : 0,
+    },
+    {
+      key: 'review',
+      label: 'Review',
+      color: 'bg-orange-500',
+      percentage: total > 0 ? (statusCounts.review / total) * 100 : 0,
     },
     {
       key: 'done',

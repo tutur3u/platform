@@ -258,7 +258,7 @@ describe('BoardViews', () => {
     );
   });
 
-  it('pins a virtual external task list on personal boards without using it for create shortcuts', () => {
+  it('pins a collapsed virtual external task list on personal boards without assigned external tasks', () => {
     renderBoardViews({
       workspace: {
         ...mockWorkspace,
@@ -269,7 +269,7 @@ describe('BoardViews', () => {
     expect(kanbanBoardProps?.lists[0]).toEqual(
       expect.objectContaining({
         id: 'personal-external-staging:board-1',
-        is_external_collapsed: false,
+        is_external_collapsed: true,
         is_external_staging: true,
         name: 'external_tasks',
       })
@@ -284,6 +284,35 @@ describe('BoardViews', () => {
       mockLists,
       expect.objectContaining({
         labels: [],
+      })
+    );
+  });
+
+  it('expands the virtual external task list by default when assigned external tasks exist', () => {
+    renderBoardViews({
+      workspace: {
+        ...mockWorkspace,
+        personal: true,
+      },
+      tasks: [
+        ...mockTasks,
+        {
+          ...mockTasks[0]!,
+          id: 'external-task-1',
+          is_personal_external: true,
+          list_id: 'personal-external-staging:board-1',
+          name: 'Assigned external task',
+          source_workspace_id: 'team-ws',
+          source_workspace_name: 'Team',
+        } as Task,
+      ],
+    });
+
+    expect(kanbanBoardProps?.lists[0]).toEqual(
+      expect.objectContaining({
+        id: 'personal-external-staging:board-1',
+        is_external_collapsed: false,
+        is_external_staging: true,
       })
     );
   });

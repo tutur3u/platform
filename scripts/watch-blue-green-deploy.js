@@ -197,9 +197,13 @@ function parseArgs(argv) {
   };
 }
 
+function isTruthyEnv(value) {
+  return /^(1|true|yes)$/iu.test(String(value ?? '').trim());
+}
+
 function getWatcherComposeEnv({
   baseEnv = process.env,
-  envFilePath = WEB_ENV_FILE,
+  envFilePath,
   fsImpl = fs,
   rootDir = ROOT_DIR,
 } = {}) {
@@ -215,6 +219,7 @@ function getWatcherComposeEnv({
       envFilePath,
       fsImpl,
       rootDir: hostWorkspaceDir,
+      withCloudflared: isTruthyEnv(baseEnv.DOCKER_WEB_WITH_CLOUDFLARED),
       withRedis: true,
     }),
     [HOST_WORKSPACE_DIR_ENV]: hostWorkspaceDir,
@@ -257,7 +262,7 @@ async function startBlueGreenWatcherContainer(
   argv,
   {
     env = process.env,
-    envFilePath = WEB_ENV_FILE,
+    envFilePath,
     fsImpl = fs,
     rootDir = ROOT_DIR,
     runCommand: run = runCommand,
@@ -272,7 +277,8 @@ async function startBlueGreenWatcherContainer(
     stdio: 'ignore',
   });
 
-  ensureWebEnvFile(fsImpl, envFilePath);
+  const resolvedEnvFilePath = envFilePath ?? path.join(rootDir, '.env.local');
+  ensureWebEnvFile(fsImpl, resolvedEnvFilePath, rootDir);
   ensureProductionRedisToken(
     {
       composeGlobalArgs: ['--profile', 'redis'],
@@ -288,7 +294,7 @@ async function startBlueGreenWatcherContainer(
 
   const composeEnv = getWatcherComposeEnv({
     baseEnv: env,
-    envFilePath,
+    envFilePath: resolvedEnvFilePath,
     fsImpl,
     rootDir,
   });
@@ -5074,8 +5080,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
   const env = options.env ?? process.env;
   const fsImpl = options.fsImpl ?? fs;
   const rootDir = options.rootDir ?? ROOT_DIR;
-  const envFilePath =
-    options.envFilePath ?? path.join(rootDir, 'apps', 'web', '.env.local');
+  const envFilePath = options.envFilePath ?? path.join(rootDir, '.env.local');
   const paths = getWatchPaths(rootDir);
   const processImpl = options.processImpl ?? process;
   const run = createQuietRunCommand(options.runCommand ?? runCommand);

@@ -208,13 +208,19 @@ class _TaskCompletionToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.dynamicColors;
-    final isCompleted = _taskIsCompletedInBoard(task, list);
+    final normalizedStatus = TaskBoardList.normalizeSupportedStatus(
+      list.status,
+    );
+    final isChecked =
+        normalizedStatus == 'done' ||
+        normalizedStatus == 'closed' ||
+        task.closedAt != null;
 
     return Tooltip(
       message: _taskBoardListStatusLabel(context, targetStatus),
       child: Semantics(
         button: true,
-        checked: isCompleted,
+        checked: isChecked,
         child: InkResponse(
           onTap: enabled ? onPressed : null,
           radius: 22,
@@ -222,9 +228,9 @@ class _TaskCompletionToggle extends StatelessWidget {
             dimension: 21,
             child: Center(
               child: Icon(
-                isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                isChecked ? Icons.check_circle : Icons.radio_button_unchecked,
                 size: 19,
-                color: isCompleted
+                color: isChecked
                     ? colors.green
                     : listStyle.accent.withValues(alpha: enabled ? 0.82 : 0.42),
               ),

@@ -74,7 +74,7 @@ export const GET = withSessionAuth(
           p_user_id: user.id,
           p_ws_id: normalizedWsId,
           p_include_deleted: false,
-          p_list_statuses: ['not_started', 'active', 'done'],
+          p_list_statuses: ['not_started', 'active', 'review', 'done'],
           p_exclude_personally_completed: false,
           p_exclude_personally_unassigned: false,
           p_filter_ws_ids: filterWsIds.length > 0 ? filterWsIds : undefined,
@@ -266,9 +266,9 @@ export const GET = withSessionAuth(
       const totalActiveTasks =
         overdue.length + todayTasks.length + upcoming.length;
 
-      // Completed tasks: list-level done + personally hidden (completed/unassigned)
+      // Completed tasks: list-level review/done + personally hidden (completed/unassigned)
       const listDoneTasks = tasksWithRelations.filter(
-        (task) => task.list?.status === 'done'
+        (task) => task.list?.status === 'review' || task.list?.status === 'done'
       );
       const completedTasks = [...listDoneTasks, ...personallyHiddenTasks].sort(
         (a, b) => {

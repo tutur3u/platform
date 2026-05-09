@@ -105,16 +105,20 @@ export interface CurrentUserTaskDialogResponse {
 export interface ListWorkspaceTasksOptions {
   boardId?: string;
   listId?: string;
+  listStatuses?: string[];
   q?: string;
   identifier?: string;
   limit?: number;
   offset?: number;
+  assignedToMe?: boolean;
   completed?: 'exclude' | 'only';
   closed?: 'exclude' | 'only';
   externalIncludeDocuments?: boolean;
   externalIncludeDoneClosed?: boolean;
   externalSortBy?: ExternalTaskSortBy;
+  forTimeTracking?: boolean;
   includeRelationshipSummary?: boolean;
+  includeArchivedBoards?: boolean;
   includeDeleted?: boolean | 'only';
   includeCount?: boolean;
 }
@@ -129,6 +133,15 @@ export type ExternalTaskSortBy =
 export interface WorkspaceTasksResponse {
   tasks: WorkspaceTaskApiTask[];
   count?: number;
+  pagination?: {
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    offset: number;
+    page: number;
+    pageCount: number;
+    pageSize: number;
+    total: number;
+  };
 }
 
 export type WorkspaceTaskBoardListItem = Pick<
@@ -660,16 +673,20 @@ export async function listWorkspaceTasks(
       query: {
         boardId: options?.boardId,
         listId: options?.listId,
+        listStatuses: options?.listStatuses?.join(','),
         q: options?.q,
         identifier: options?.identifier,
         limit: options?.limit,
         offset: options?.offset,
+        assignedToMe: options?.assignedToMe,
         completed: options?.completed,
         closed: options?.closed,
         externalIncludeDocuments: options?.externalIncludeDocuments,
         externalIncludeDoneClosed: options?.externalIncludeDoneClosed,
         externalSortBy: options?.externalSortBy,
+        forTimeTracking: options?.forTimeTracking,
         includeRelationshipSummary: options?.includeRelationshipSummary,
+        includeArchivedBoards: options?.includeArchivedBoards,
         includeDeleted:
           options?.includeDeleted === 'only'
             ? 'only'

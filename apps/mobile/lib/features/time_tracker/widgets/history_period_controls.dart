@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
+import 'package:mobile/features/time_tracker/utils/first_day_of_week.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class HistoryPeriodControls extends StatelessWidget {
@@ -9,6 +10,7 @@ class HistoryPeriodControls extends StatelessWidget {
     required this.anchorDate,
     required this.onPrevious,
     required this.onNext,
+    this.onSelectPeriod,
     super.key,
   });
 
@@ -16,22 +18,22 @@ class HistoryPeriodControls extends StatelessWidget {
   final DateTime anchorDate;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
+  final VoidCallback? onSelectPeriod;
 
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final firstDayOfWeek = _weekdayFromMaterialLocalizations(
-      MaterialLocalizations.of(context).firstDayOfWeekIndex,
-    );
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
+    final firstDayOfWeek = firstDayOfWeekForContext(context);
     final period = _periodRange(viewMode, anchorDate, firstDayOfWeek);
     final periodLabel = switch (viewMode) {
-      HistoryViewMode.day => DateFormat.yMMMEd().format(period.start),
+      HistoryViewMode.day => DateFormat.yMMMEd(localeTag).format(period.start),
       HistoryViewMode.week => () {
-        final weekStartLabel = DateFormat.MMMd().format(period.start);
-        final weekEndLabel = DateFormat.MMMd().format(period.end);
+        final weekStartLabel = DateFormat.MMMd(localeTag).format(period.start);
+        final weekEndLabel = DateFormat.MMMd(localeTag).format(period.end);
         return '$weekStartLabel – $weekEndLabel';
       }(),
-      HistoryViewMode.month => DateFormat.yMMMM().format(period.start),
+      HistoryViewMode.month => DateFormat.yMMMM(localeTag).format(period.start),
     };
 
     return Column(
@@ -44,13 +46,41 @@ class HistoryPeriodControls extends StatelessWidget {
               icon: const Icon(Icons.chevron_left),
             ),
             Expanded(
-              child: Text(
-                periodLabel,
-                style: theme.typography.small.copyWith(
-                  fontWeight: FontWeight.w600,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onSelectPeriod,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 4,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            periodLabel,
+                            style: theme.typography.small.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (onSelectPeriod != null) ...[
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.expand_more,
+                            size: 18,
+                            color: theme.colorScheme.mutedForeground,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
             shad.IconButton.ghost(
@@ -87,18 +117,5 @@ class HistoryPeriodControls extends StatelessWidget {
         final end = DateTime(anchor.year, anchor.month + 1, 0);
         return (start: start, end: end);
     }
-  }
-
-  int _weekdayFromMaterialLocalizations(int firstDayOfWeekIndex) {
-    const weekdayByIndex = [
-      DateTime.sunday,
-      DateTime.monday,
-      DateTime.tuesday,
-      DateTime.wednesday,
-      DateTime.thursday,
-      DateTime.friday,
-      DateTime.saturday,
-    ];
-    return weekdayByIndex[firstDayOfWeekIndex % 7];
   }
 }

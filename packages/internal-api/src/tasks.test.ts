@@ -179,7 +179,10 @@ describe('workspace board internal-api helpers', () => {
       {
         completed: 'exclude',
         closed: 'exclude',
+        forTimeTracking: true,
+        includeArchivedBoards: true,
         limit: 50,
+        listStatuses: ['not_started', 'active'],
       },
       {
         baseUrl: 'https://internal.example.com',
@@ -188,7 +191,33 @@ describe('workspace board internal-api helpers', () => {
     );
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://internal.example.com/api/v1/workspaces/ws-1/tasks?limit=50&completed=exclude&closed=exclude',
+      'https://internal.example.com/api/v1/workspaces/ws-1/tasks?listStatuses=not_started%2Cactive&limit=50&completed=exclude&closed=exclude&forTimeTracking=true&includeArchivedBoards=true',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('lists workspace tasks assigned to the current user', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ tasks: [] }));
+
+    await listWorkspaceTasks(
+      'ws-1',
+      {
+        assignedToMe: true,
+        completed: 'exclude',
+        closed: 'exclude',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/tasks?assignedToMe=true&completed=exclude&closed=exclude',
       expect.objectContaining({
         cache: 'no-store',
       })

@@ -15,6 +15,8 @@ Learn follows the same platform-login pattern: the learner app keeps `/verify-to
 
 Teach and Learn both hide locale prefixes from public and protected URLs. Legacy locale-prefixed paths such as `/vi/dashboard` redirect to the unprefixed canonical path while preserving the selected locale in `NEXT_LOCALE`.
 
+Teach metadata and auth return URLs must resolve to absolute HTTP(S) app URLs. Prefer `TEACH_APP_URL` or `NEXT_PUBLIC_TEACH_APP_URL` for the Teach origin and `LEARN_APP_URL` or `NEXT_PUBLIC_LEARN_APP_URL` for Learn handoffs. A valid absolute `BASE_URL` can be used as a fallback for Teach, but non-URL environment values such as `development` are ignored so local development falls back to `http://localhost:7813`.
+
 ## Visual direction
 
 All non-`apps/web` education apps use the shared Neobrutalist design language from `apps/learn/DESIGN.md`: heavy foreground borders, offset shadows, paper-like surfaces, compact responsive grids, and theme-adaptive dynamic accents. Teach uses this language for public teacher orientation surfaces and protected dashboards.

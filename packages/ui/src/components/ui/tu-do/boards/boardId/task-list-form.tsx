@@ -1,8 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import { getDefaultTaskListColorForStatus } from '@tuturuuu/utils/task-list-status';
 import { useState } from 'react';
 
 interface Props {
@@ -35,7 +35,7 @@ export function TaskListForm({
         board_id: boardId,
         name: name.trim(),
         status: defaultStatus,
-        color: getDefaultColorForStatus(defaultStatus),
+        color: getDefaultTaskListColorForStatus(defaultStatus),
       })
       .select()
       .single();
@@ -48,23 +48,6 @@ export function TaskListForm({
     setName('');
     setIsAdding(false);
     onListCreated?.();
-  }
-
-  function getDefaultColorForStatus(status: TaskBoardStatus): SupportedColor {
-    switch (status) {
-      case 'not_started':
-        return 'GRAY';
-      case 'active':
-        return 'BLUE';
-      case 'done':
-        return 'GREEN';
-      case 'closed':
-        return 'PURPLE';
-      case 'documents':
-        return 'CYAN';
-      default:
-        return 'GRAY';
-    }
   }
 
   function handleCancel() {

@@ -20,14 +20,14 @@
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
-    "react": "^19.2.5",
-    "react-email": "^6.0.8"
+    "react": "^19.2.6",
+    "react-email": "^6.1.1"
   },
   "devDependencies": {
     "@react-email/preview-server": "^5.2.10",
     "@react-email/render": "^2.0.8",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.6.2",
     "@types/react": "^19.2.14",
     "vitest": "^4.1.5"
   },

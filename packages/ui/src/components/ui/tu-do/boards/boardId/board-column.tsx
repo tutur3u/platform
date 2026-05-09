@@ -417,8 +417,11 @@ export function BoardColumn({
     tasks,
   ]);
 
-  // Badge count: prefer totalCount from progressive loader when available
-  const badgeCount = listState?.totalCount ?? visibleTasks.length;
+  const badgeCount = listState
+    ? listState.hasMore
+      ? Math.max(listState.totalCount, visibleTasks.length)
+      : visibleTasks.length
+    : visibleTasks.length;
   const externalFilterCount =
     (externalIncludeDocuments ? 1 : 0) + (externalIncludeDoneClosed ? 1 : 0);
 
@@ -469,7 +472,7 @@ export function BoardColumn({
         ref={composedRef}
         style={style}
         className={cn(
-          'group flex h-full w-14 shrink-0 snap-start scroll-mr-[var(--kanban-snap-right-padding)] scroll-ml-[var(--kanban-snap-left-padding)] flex-col items-center rounded-xl border border-dynamic-cyan/45 border-dashed bg-dynamic-cyan/[0.035] transition-all duration-200',
+          'group flex h-full w-14 shrink-0 snap-start flex-col items-center rounded-xl border border-dynamic-cyan/45 border-dashed bg-dynamic-cyan/[0.035] transition-all duration-200',
           'touch-none select-none overflow-hidden hover:shadow-md'
         )}
       >
@@ -503,7 +506,7 @@ export function BoardColumn({
       ref={composedRef}
       style={style}
       className={cn(
-        'group flex h-full w-[var(--kanban-column-width)] shrink-0 snap-start scroll-mr-[var(--kanban-snap-right-padding)] scroll-ml-[var(--kanban-snap-left-padding)] flex-col rounded-xl transition-all duration-200 last:snap-end',
+        'group flex h-full w-[var(--kanban-column-width)] shrink-0 snap-start flex-col rounded-xl transition-all duration-200 last:snap-end',
         'touch-none select-none',
         colorClass,
         isDragging &&

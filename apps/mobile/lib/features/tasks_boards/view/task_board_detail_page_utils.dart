@@ -22,6 +22,7 @@ const List<String> _taskBoardListStatusOrder = <String>[
   'documents',
   'not_started',
   'active',
+  'review',
   'done',
   'closed',
 ];
@@ -63,6 +64,7 @@ List<TaskBoardList> _sortedListsByStatusOrder(List<TaskBoardList> lists) {
 
 const List<String> _taskBoardListModeStatusOrder = <String>[
   'active',
+  'review',
   'not_started',
   'documents',
   'done',
@@ -246,6 +248,7 @@ String _taskBoardListStatusLabel(BuildContext context, String? status) {
     'documents' => context.l10n.taskBoardDetailStatusDocuments,
     'not_started' => context.l10n.taskBoardDetailStatusNotStarted,
     'active' => context.l10n.taskBoardDetailStatusActive,
+    'review' => context.l10n.taskBoardDetailStatusReview,
     'done' => context.l10n.taskBoardDetailStatusDone,
     'closed' => context.l10n.taskBoardDetailStatusClosed,
     _ => context.l10n.taskBoardDetailStatusActive,
@@ -273,6 +276,7 @@ IconData _taskBoardListStatusIcon(String? status) {
     'documents' => Icons.description_outlined,
     'not_started' => Icons.radio_button_unchecked,
     'active' => Icons.circle,
+    'review' => Icons.rate_review_outlined,
     'done' => Icons.check_circle_outline,
     'closed' => Icons.cancel_outlined,
     _ => Icons.circle,
@@ -334,6 +338,11 @@ StatusBadgeColors _taskBoardListStatusBadgeColors(
       backgroundColor: palette.blue.withValues(alpha: 0.12),
       borderColor: palette.blue.withValues(alpha: 0.28),
       textColor: palette.blue,
+    ),
+    'review' => StatusBadgeColors(
+      backgroundColor: palette.orange.withValues(alpha: 0.12),
+      borderColor: palette.orange.withValues(alpha: 0.28),
+      textColor: palette.orange,
     ),
     'done' => StatusBadgeColors(
       backgroundColor: palette.green.withValues(alpha: 0.12),
@@ -608,7 +617,7 @@ bool _taskIsOverdue(TaskBoardTask task) {
 }
 
 bool _taskIsOverdueForList(TaskBoardTask task, TaskBoardList? list) {
-  if (_taskIsCompletedInBoard(task, list)) return false;
+  if (_taskListSuppressesDeadlines(list)) return false;
   return _taskIsOverdue(task);
 }
 
@@ -617,6 +626,9 @@ bool _taskIsCompletedInBoard(TaskBoardTask task, [TaskBoardList? list]) {
 }
 
 bool _taskListDone(TaskBoardList? list) => list?.completesWork ?? false;
+
+bool _taskListSuppressesDeadlines(TaskBoardList? list) =>
+    list?.suppressesDeadlines ?? false;
 
 bool _hasChips(
   String? estimationLabel,

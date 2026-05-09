@@ -565,6 +565,91 @@ describe('task bulk route', () => {
       })
     );
 
+    // active -> review should clear completion timestamps without closing the task
+    mocks.taskListMaybeSingle.mockResolvedValueOnce({
+      data: {
+        id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+        board_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        status: 'review',
+        deleted: false,
+        workspace_boards: {
+          ws_id: '00000000-0000-0000-0000-000000000000',
+        },
+      },
+      error: null,
+    });
+    mocks.tasksEq.mockResolvedValueOnce({
+      data: [
+        {
+          id: '44444444-4444-4444-8444-444444444444',
+          list_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+          completed: false,
+          completed_at: null,
+          closed_at: null,
+          task_lists: {
+            status: 'active',
+            board_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+            workspace_boards: {
+              ws_id: '00000000-0000-0000-0000-000000000000',
+            },
+          },
+        },
+      ],
+      error: null,
+    });
+    mocks.rpc.mockReset();
+    mocks.rpc.mockResolvedValueOnce({
+      data: [{ id: 'ok-review' }],
+      error: null,
+    });
+
+    const enteringReviewResponse = await POST(
+      asNextRequest(
+        new Request('http://localhost/api/v1/workspaces/ws-1/tasks/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskIds: ['44444444-4444-4444-8444-444444444444'],
+            operation: {
+              type: 'move_to_list',
+              listId: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+            },
+          }),
+        })
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(enteringReviewResponse.status).toBe(200);
+    await expect(enteringReviewResponse.json()).resolves.toEqual(
+      expect.objectContaining({
+        taskMetaById: {
+          '44444444-4444-4444-8444-444444444444': expect.objectContaining({
+            list_id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+            completed_at: null,
+            closed_at: null,
+          }),
+        },
+      })
+    );
+
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      1,
+      'update_task_fields_with_actor',
+      expect.objectContaining({
+        p_task_updates: expect.objectContaining({
+          list_id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+          completed: false,
+          completed_at: null,
+          closed_at: null,
+        }),
+      })
+    );
+
     // done -> active should clear completion timestamps
     mocks.taskListMaybeSingle.mockResolvedValueOnce({
       data: {

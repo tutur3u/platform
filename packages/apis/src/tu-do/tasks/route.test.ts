@@ -20,6 +20,7 @@ const UNPLACED_TASK_ID = '99999999-9999-4999-8999-999999999999';
 const mocks = vi.hoisted(() => {
   const adminQueues = new Map<string, QueryResult[]>();
   const memberQueues = new Map<string, QueryResult[]>();
+  const memberRpcQueues = new Map<string, QueryResult[]>();
   const adminQueries: { table: string; calls: [string, unknown[]][] }[] = [];
 
   function createQuery(table: string, result: QueryResult) {
@@ -88,6 +89,9 @@ const mocks = vi.hoisted(() => {
     from: vi.fn((table: string) =>
       createQuery(table, dequeue(memberQueues, table))
     ),
+    rpc: vi.fn((name: string) =>
+      Promise.resolve(dequeue(memberRpcQueues, name))
+    ),
   };
 
   return {
@@ -96,6 +100,7 @@ const mocks = vi.hoisted(() => {
     adminQueues,
     memberClient,
     memberQueues,
+    memberRpcQueues,
     normalizeWorkspaceId: vi.fn(),
     resolveAuthenticatedSessionUser: vi.fn(),
     verifyWorkspaceMembershipType: vi.fn(),
@@ -126,6 +131,10 @@ function queueResult(
   result: QueryResult
 ) {
   queues.set(table, [...(queues.get(table) ?? []), result]);
+}
+
+function queueRpcResult(name: string, result: QueryResult) {
+  queueResult(mocks.memberRpcQueues, name, result);
 }
 
 function externalTask(id: string) {
@@ -201,15 +210,79 @@ describe('workspace task route personal external loading', () => {
   beforeEach(() => {
     mocks.adminQueues.clear();
     mocks.memberQueues.clear();
+    mocks.memberRpcQueues.clear();
     mocks.adminQueries.length = 0;
     mocks.adminClient.from.mockClear();
     mocks.memberClient.from.mockClear();
+    mocks.memberClient.rpc.mockClear();
     mocks.normalizeWorkspaceId.mockResolvedValue(PERSONAL_WS_ID);
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       user: { id: USER_ID },
       authError: null,
     });
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
+  });
+
+  it('filters source tasks by requested task-list statuses', async () => {
+    queueResult(mocks.adminQueues, 'workspaces', {
+      data: { personal: false },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [],
+      error: null,
+      count: 0,
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/tasks?listStatuses=active,review&includeRelationshipSummary=false&includeCount=true'
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    const taskQuery = mocks.adminQueries.find(
+      (query) => query.table === 'tasks'
+    );
+    expect(taskQuery?.calls).toContainEqual([
+      'in',
+      ['task_lists.status', ['active', 'review']],
+    ]);
+    expect(taskQuery?.calls).toContainEqual([
+      'is',
+      ['task_lists.workspace_boards.archived_at', null],
+    ]);
+  });
+
+  it('includes archived board tasks when requested', async () => {
+    queueResult(mocks.adminQueues, 'workspaces', {
+      data: { personal: false },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [],
+      error: null,
+      count: 0,
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/tasks?includeArchivedBoards=true&includeRelationshipSummary=false&includeCount=true'
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    const taskQuery = mocks.adminQueries.find(
+      (query) => query.table === 'tasks'
+    );
+    expect(taskQuery?.calls).not.toContainEqual([
+      'is',
+      ['task_lists.workspace_boards.archived_at', null],
+    ]);
   });
 
   it('loads placed external tasks for a real personal list when boardId is present', async () => {
@@ -264,6 +337,59 @@ describe('workspace task route personal external loading', () => {
     );
   });
 
+  it('uses RPC-backed external counts for personal list totals', async () => {
+    queuePersonalWorkspace();
+    queueRpcResult('get_personal_task_board_external_counts', {
+      data: [{ list_id: PERSONAL_LIST_ID, task_count: 7 }],
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [],
+      error: null,
+      count: 2,
+    });
+    queueResult(mocks.adminQueues, 'task_user_overrides', {
+      data: [
+        {
+          task_id: PLACED_TASK_ID,
+          personal_board_id: PERSONAL_BOARD_ID,
+          personal_list_id: PERSONAL_LIST_ID,
+          personal_sort_key: 1_500_000,
+          personal_added_at: '2026-05-07T00:00:00.000Z',
+          personal_placed_at: '2026-05-07T01:00:00.000Z',
+        },
+      ],
+      error: null,
+      count: 1,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [externalTask(PLACED_TASK_ID)],
+      error: null,
+    });
+    queueSourceMembership();
+    queueEmptyPersonalMetadata();
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/personal/tasks?boardId=${PERSONAL_BOARD_ID}&listId=${PERSONAL_LIST_ID}&includeRelationshipSummary=false&includeCount=true`
+      ),
+      { params: Promise.resolve({ wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    expect(payload.count).toBe(9);
+    expect(mocks.memberClient.rpc).toHaveBeenCalledWith(
+      'get_personal_task_board_external_counts',
+      {
+        p_personal_board_id: PERSONAL_BOARD_ID,
+        p_include_documents: false,
+        p_include_done_closed: false,
+      }
+    );
+  });
+
   it('keeps placed external tasks out of the virtual external lane', async () => {
     queuePersonalWorkspace();
     queueResult(mocks.adminQueues, 'tasks', {
@@ -314,5 +440,48 @@ describe('workspace task route personal external loading', () => {
           )
         )
     ).toBe(true);
+  });
+
+  it('uses RPC-backed external counts for the virtual external lane', async () => {
+    const stagingListId = `personal-external-staging:${PERSONAL_BOARD_ID}`;
+
+    queuePersonalWorkspace();
+    queueRpcResult('get_personal_task_board_external_counts', {
+      data: [{ list_id: stagingListId, task_count: 2 }],
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [],
+      error: null,
+      count: 0,
+    });
+    queueResult(mocks.adminQueues, 'task_user_overrides', {
+      data: [],
+      error: null,
+      count: 0,
+    });
+    queueResult(mocks.adminQueues, 'task_user_overrides', {
+      data: [],
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [externalTask(PLACED_TASK_ID), externalTask(UNPLACED_TASK_ID)],
+      error: null,
+      count: 25,
+    });
+    queueSourceMembership();
+    queueEmptyPersonalMetadata();
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/personal/tasks?boardId=${PERSONAL_BOARD_ID}&listId=${stagingListId}&includeRelationshipSummary=false&includeCount=true`
+      ),
+      { params: Promise.resolve({ wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    expect(payload.count).toBe(2);
   });
 });

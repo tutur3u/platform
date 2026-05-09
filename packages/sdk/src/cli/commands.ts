@@ -1,4 +1,9 @@
 import { spawn } from 'node:child_process';
+import type {
+  ListWorkspaceTasksOptions,
+  WorkspaceTaskApiTask,
+  WorkspaceTasksResponse,
+} from '@tuturuuu/internal-api/tasks';
 import packageJson from '../../package.json';
 import { TuturuuuUserClient } from '../platform';
 import {
@@ -24,7 +29,12 @@ import {
   writeCliConfig,
 } from './config';
 import { getGlobalHelp, getHelpOutput } from './help';
-import { render, renderWhoami, sortTaskResponseForCli } from './render';
+import {
+  render,
+  renderWhoami,
+  sortTaskResponseForCli,
+  sortTasksForCli,
+} from './render';
 import {
   chooseBoard,
   chooseLabel,
@@ -36,7 +46,6 @@ import {
   type ListedLabel,
   type ListedList,
   type ListedProject,
-  resolveWorkspaceName,
   selectBoardId,
   selectListId,
   selectTaskId,
@@ -45,6 +54,39 @@ import { checkForCliUpdate, isCliUpdateCheckDisabled } from './update';
 
 const doneActions = new Set(['complete', 'completed', 'done', 'mark-done']);
 const closeActions = new Set(['archive', 'close', 'closed', 'mark-closed']);
+const DEFAULT_TASK_PAGE_SIZE = 50;
+const ACTIVE_TASK_LIST_STATUSES = ['not_started', 'active'] as const;
+const DOCUMENT_TASK_LIST_STATUSES = ['documents'] as const;
+const REVIEW_TASK_LIST_STATUSES = ['review'] as const;
+const DONE_TASK_LIST_STATUSES = ['review', 'done'] as const;
+const CLOSED_TASK_LIST_STATUSES = ['closed'] as const;
+
+type ListedWorkspace = Awaited<
+  ReturnType<TuturuuuUserClient['workspaces']['list']>
+>[number];
+type CliTask = WorkspaceTaskApiTask & {
+  workspace_id?: string | null;
+  workspace_name?: string | null;
+};
+
+interface TaskPaginationSummary {
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  offset: number;
+  page: number;
+  pageCount: number;
+  pageSize: number;
+  total: number;
+}
+
+type CliListWorkspaceTasksOptions = ListWorkspaceTasksOptions & {
+  includeArchivedBoards?: boolean;
+  listStatuses?: string[];
+};
+
+type CliWorkspaceTasksResponse = WorkspaceTasksResponse & {
+  pagination?: TaskPaginationSummary;
+};
 
 function upgradeCli() {
   process.stdout.write('Upgrading Tuturuuu CLI with Bun...\n');
@@ -89,6 +131,373 @@ function getBoardListStatus(
     return 'deleted';
   }
   return 'active';
+}
+
+function resolveWorkspace(workspaceId: string, workspaces: ListedWorkspace[]) {
+  return workspaces.find(
+    (entry) =>
+      entry.id === workspaceId ||
+      (workspaceId === 'personal' && entry.personal === true)
+  );
+}
+
+function hasTaskListScope(flags: Record<string, FlagValue>) {
+  return Boolean(
+    getFlag(flags, 'board') ||
+      getFlag(flags, 'board-id') ||
+      getFlag(flags, 'list') ||
+      getFlag(flags, 'list-id')
+  );
+}
+
+function hasWorkspaceScope(flags: Record<string, FlagValue>) {
+  return Boolean(getFlag(flags, 'workspace') || getFlag(flags, 'ws'));
+}
+
+function shouldUseDefaultPersonalTaskScope(flags: Record<string, FlagValue>) {
+  return !hasWorkspaceScope(flags) && !hasTaskListScope(flags);
+}
+
+function parsePositiveInteger(value: string | undefined) {
+  if (!value) return undefined;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function parseNonNegativeInteger(value: string | undefined) {
+  if (!value) return undefined;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+function getTaskPagination(flags: Record<string, FlagValue>) {
+  const limit =
+    parsePositiveInteger(getFlag(flags, 'limit')) ??
+    parsePositiveInteger(getFlag(flags, 'page-size')) ??
+    DEFAULT_TASK_PAGE_SIZE;
+  const page = parsePositiveInteger(getFlag(flags, 'page'));
+  const offset =
+    parseNonNegativeInteger(getFlag(flags, 'offset')) ??
+    (page ? (page - 1) * limit : 0);
+
+  return { limit, offset };
+}
+
+function hasExplicitTaskListStatusFlag(flags: Record<string, FlagValue>) {
+  return (
+    flags.all === true ||
+    flags.document === true ||
+    flags.documents === true ||
+    flags.review === true ||
+    flags.done === true ||
+    flags.completed === true ||
+    flags.closed === true ||
+    flags['include-documents'] === true ||
+    flags['include-review'] === true ||
+    flags['include-done'] === true ||
+    flags['include-closed'] === true
+  );
+}
+
+function getCliTaskListStatuses(flags: Record<string, FlagValue>) {
+  if (flags.all === true) return undefined;
+
+  if (flags.document === true || flags.documents === true) {
+    return [...DOCUMENT_TASK_LIST_STATUSES];
+  }
+
+  if (flags.review === true) {
+    return [...REVIEW_TASK_LIST_STATUSES];
+  }
+
+  if (flags.done === true || flags.completed === true) {
+    return [...DONE_TASK_LIST_STATUSES];
+  }
+
+  if (flags.closed === true) {
+    return [...CLOSED_TASK_LIST_STATUSES];
+  }
+
+  if (
+    (getFlag(flags, 'list') || getFlag(flags, 'list-id')) &&
+    !hasExplicitTaskListStatusFlag(flags)
+  ) {
+    return undefined;
+  }
+
+  const statuses = new Set<string>(ACTIVE_TASK_LIST_STATUSES);
+
+  if (flags['include-documents'] === true) {
+    for (const status of DOCUMENT_TASK_LIST_STATUSES) statuses.add(status);
+  }
+
+  if (flags['include-review'] === true) {
+    for (const status of REVIEW_TASK_LIST_STATUSES) statuses.add(status);
+  }
+
+  if (flags['include-done'] === true) {
+    for (const status of DONE_TASK_LIST_STATUSES) statuses.add(status);
+  }
+
+  if (flags['include-closed'] === true) {
+    for (const status of CLOSED_TASK_LIST_STATUSES) statuses.add(status);
+  }
+
+  return [...statuses];
+}
+
+function getCliTaskStateFilters(
+  flags: Record<string, FlagValue>
+): Pick<ListWorkspaceTasksOptions, 'closed' | 'completed'> {
+  if (
+    flags.document === true ||
+    flags.documents === true ||
+    flags.review === true ||
+    flags.done === true ||
+    flags.completed === true ||
+    flags.closed === true
+  ) {
+    return {};
+  }
+
+  return getTaskStateFilters(flags);
+}
+
+function getCliTaskListOptions(
+  flags: Record<string, FlagValue>
+): CliListWorkspaceTasksOptions {
+  const pagination = getTaskPagination(flags);
+  const listStatuses = getCliTaskListStatuses(flags);
+  const activeStatusesOnly =
+    listStatuses?.length === ACTIVE_TASK_LIST_STATUSES.length &&
+    ACTIVE_TASK_LIST_STATUSES.every((status) => listStatuses.includes(status));
+  const includesDocuments = listStatuses?.includes('documents') ?? false;
+  const resolvedStatuses: readonly string[] = [
+    ...REVIEW_TASK_LIST_STATUSES,
+    ...DONE_TASK_LIST_STATUSES,
+    ...CLOSED_TASK_LIST_STATUSES,
+  ];
+  const includesResolved =
+    listStatuses?.some((status) => resolvedStatuses.includes(status)) ?? false;
+
+  return {
+    boardId: getFlag(flags, 'board') || getFlag(flags, 'board-id'),
+    ...getCliTaskStateFilters(flags),
+    externalIncludeDocuments: includesDocuments,
+    externalIncludeDoneClosed: includesResolved,
+    forTimeTracking:
+      activeStatusesOnly &&
+      !(getFlag(flags, 'list') || getFlag(flags, 'list-id')),
+    includeArchivedBoards:
+      flags.all === true || flags['include-archived'] === true,
+    includeCount: true,
+    includeDeleted: flags.deleted === true,
+    limit: pagination.limit,
+    listId: getFlag(flags, 'list') || getFlag(flags, 'list-id'),
+    listStatuses,
+    offset: pagination.offset,
+    q: getFlag(flags, 'q'),
+  };
+}
+
+function getTaskListStatus(task: WorkspaceTaskApiTask) {
+  const taskWithRelations = task as WorkspaceTaskApiTask & {
+    task_lists?: { status?: string | null } | null;
+  };
+
+  return (
+    task.source_list_status ?? taskWithRelations.task_lists?.status ?? null
+  );
+}
+
+function filterTasksByListStatuses(
+  tasks: WorkspaceTaskApiTask[],
+  statuses: string[] | undefined
+) {
+  if (!statuses) return tasks;
+  const allowedStatuses = new Set(statuses);
+  return tasks.filter((task) => {
+    const status = getTaskListStatus(task);
+    return status ? allowedStatuses.has(status) : true;
+  });
+}
+
+function getTaskPaginationSummary({
+  limit,
+  offset,
+  total,
+}: {
+  limit: number;
+  offset: number;
+  total: number;
+}): TaskPaginationSummary {
+  const pageSize = Math.max(1, limit);
+  const page = Math.floor(Math.max(0, offset) / pageSize) + 1;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+
+  return {
+    hasNextPage: offset + pageSize < total,
+    hasPreviousPage: offset > 0,
+    offset,
+    page,
+    pageCount,
+    pageSize,
+    total,
+  };
+}
+
+function withTaskPagination(
+  response: WorkspaceTasksResponse,
+  tasks: WorkspaceTaskApiTask[],
+  total: number,
+  limit: number,
+  offset: number
+): WorkspaceTasksResponse & { pagination: TaskPaginationSummary } {
+  return {
+    ...response,
+    count: total,
+    pagination: getTaskPaginationSummary({ limit, offset, total }),
+    tasks,
+  };
+}
+
+function annotateTaskWorkspace(
+  task: WorkspaceTaskApiTask,
+  workspace: ListedWorkspace,
+  options: { source?: boolean } = {}
+): CliTask {
+  return {
+    ...task,
+    ...(options.source
+      ? {
+          source_workspace_id: task.source_workspace_id ?? workspace.id,
+          source_workspace_name: task.source_workspace_name ?? workspace.name,
+        }
+      : {}),
+    workspace_id: workspace.id,
+    workspace_name: workspace.name,
+  };
+}
+
+function shouldIncludeAssignedExternalTasks(
+  workspace: ListedWorkspace | undefined,
+  flags: Record<string, FlagValue>
+) {
+  if (!workspace?.personal) return false;
+  if (getFlag(flags, 'workspace') || getFlag(flags, 'ws')) return false;
+  return !hasTaskListScope(flags);
+}
+
+export async function listTasksForCli(
+  client: TuturuuuUserClient,
+  _config: CliConfig,
+  workspaceId: string,
+  flags: Record<string, FlagValue>
+): Promise<{ response: CliWorkspaceTasksResponse; workspaceName?: string }> {
+  const options = getCliTaskListOptions(flags);
+  const workspaces = await client.workspaces.list();
+  const requestedWorkspace = resolveWorkspace(workspaceId, workspaces);
+  const personalWorkspace = workspaces.find((workspace) => workspace.personal);
+  const currentWorkspace =
+    shouldUseDefaultPersonalTaskScope(flags) && personalWorkspace
+      ? personalWorkspace
+      : requestedWorkspace;
+  const effectiveWorkspaceId = currentWorkspace?.id ?? workspaceId;
+  const workspaceName = currentWorkspace?.name || workspaceId;
+  const fallbackWorkspace = {
+    id: effectiveWorkspaceId,
+    name: workspaceName,
+  } as ListedWorkspace;
+  const shouldIncludeExternalTasks = shouldIncludeAssignedExternalTasks(
+    currentWorkspace,
+    flags
+  );
+  const paginationLimit =
+    typeof options.limit === 'number' ? options.limit : DEFAULT_TASK_PAGE_SIZE;
+  const paginationOffset =
+    typeof options.offset === 'number' ? options.offset : 0;
+  const fetchWindowLimit = shouldIncludeExternalTasks
+    ? paginationLimit + paginationOffset
+    : paginationLimit;
+  const fetchOptions = shouldIncludeExternalTasks
+    ? { ...options, limit: fetchWindowLimit, offset: 0 }
+    : options;
+  const baseResponse = await client.tasks.list(
+    effectiveWorkspaceId,
+    fetchOptions
+  );
+  const listStatuses = getCliTaskListStatuses(flags);
+  const filteredBaseTasks = filterTasksByListStatuses(
+    baseResponse.tasks,
+    listStatuses
+  );
+
+  if (!shouldIncludeExternalTasks || !currentWorkspace) {
+    return {
+      response: {
+        ...withTaskPagination(
+          baseResponse,
+          filteredBaseTasks.map((task) =>
+            annotateTaskWorkspace(task, currentWorkspace ?? fallbackWorkspace)
+          ),
+          baseResponse.count ?? filteredBaseTasks.length,
+          paginationLimit,
+          paginationOffset
+        ),
+      },
+      workspaceName,
+    };
+  }
+
+  const baseTaskIds = new Set(filteredBaseTasks.map((task) => task.id));
+  const externalWorkspaces = workspaces.filter(
+    (workspace) => !workspace.personal && workspace.id !== currentWorkspace.id
+  );
+  const externalResponses = await Promise.all(
+    externalWorkspaces.map(async (workspace) => ({
+      workspace,
+      response: await client.tasks.list(workspace.id, {
+        ...fetchOptions,
+        assignedToMe: true,
+        boardId: undefined,
+        listId: undefined,
+      }),
+    }))
+  );
+  const externalTasks = externalResponses.flatMap(({ response, workspace }) =>
+    filterTasksByListStatuses(response.tasks, listStatuses)
+      .filter((task) => !baseTaskIds.has(task.id))
+      .map((task) => annotateTaskWorkspace(task, workspace, { source: true }))
+  );
+  const baseTasks = filteredBaseTasks.map((task) =>
+    annotateTaskWorkspace(task, currentWorkspace)
+  );
+  const combinedTasks = [...baseTasks, ...externalTasks];
+  const tasks = sortTasksForCli(combinedTasks).slice(
+    paginationOffset,
+    paginationOffset + paginationLimit
+  ) as WorkspaceTaskApiTask[];
+  const total =
+    typeof baseResponse.count === 'number' ||
+    externalResponses.some(({ response }) => typeof response.count === 'number')
+      ? (baseResponse.count ?? baseTasks.length) +
+        externalResponses.reduce(
+          (sum, { response }) =>
+            sum + (response.count ?? response.tasks.length),
+          0
+        )
+      : undefined;
+
+  return {
+    response: withTaskPagination(
+      baseResponse,
+      tasks,
+      total ?? combinedTasks.length,
+      paginationLimit,
+      paginationOffset
+    ),
+    workspaceName,
+  };
 }
 
 function getClient(config: CliConfig) {
@@ -655,24 +1064,12 @@ export async function runCli(argv = process.argv.slice(2)) {
 
   if (group === 'tasks') {
     if (action === 'list') {
-      const workspaceName =
-        flags.compact === true
-          ? resolveWorkspaceName(workspaceId, await client.workspaces.list())
-          : undefined;
-      const taskResponse = await client.tasks.list(workspaceId, {
-        boardId: getFlag(flags, 'board') || config.currentBoardId,
-        ...getTaskStateFilters(flags),
-        includeCount: flags.count === true,
-        includeDeleted: flags.deleted === true,
-        limit: getFlag(flags, 'limit')
-          ? Number(getFlag(flags, 'limit'))
-          : undefined,
-        listId: getFlag(flags, 'list') || config.currentListId,
-        offset: getFlag(flags, 'offset')
-          ? Number(getFlag(flags, 'offset'))
-          : undefined,
-        q: getFlag(flags, 'q'),
-      });
+      const { response: taskResponse, workspaceName } = await listTasksForCli(
+        client,
+        config,
+        workspaceId,
+        flags
+      );
       render(sortTaskResponseForCli(taskResponse), {
         compact: flags.compact === true,
         currentWorkspaceId: workspaceId,

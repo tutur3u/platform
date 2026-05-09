@@ -91,6 +91,8 @@ export function TaskDetailCard({
                   'font-medium text-xs',
                   clickedTask.status === 'done' &&
                     'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400',
+                  clickedTask.status === 'review' &&
+                    'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-900/20 dark:text-orange-400',
                   clickedTask.status === 'closed' &&
                     'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
                   clickedTask.status === 'active' &&
@@ -103,6 +105,11 @@ export function TaskDetailCard({
                   <span className="flex items-center gap-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-green-500"></span>
                     Done
+                  </span>
+                ) : clickedTask.status === 'review' ? (
+                  <span className="flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-orange-500"></span>
+                    Review
                   </span>
                 ) : clickedTask.status === 'closed' ? (
                   <span className="flex items-center gap-1">

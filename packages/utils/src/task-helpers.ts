@@ -124,6 +124,8 @@ export function getStatusColor(status: string): string {
     case 'done':
     case 'closed':
       return 'bg-green-500';
+    case 'review':
+      return 'bg-orange-500';
     case 'active':
       return 'bg-blue-500';
     default:
@@ -141,7 +143,7 @@ export function getStatusColor(status: string): string {
 export function filterTasks(
   tasks: Task[],
   boardId: string | null,
-  statusFilter: 'all' | 'not_started' | 'active' | 'done' | 'closed'
+  statusFilter: 'all' | 'not_started' | 'active' | 'review' | 'done' | 'closed'
 ): Task[] {
   let filtered = tasks;
 

@@ -6,6 +6,7 @@ import {
   CircleCheck,
   CircleDashed,
   CircleSlash,
+  ClipboardCheck,
   FileText,
   Plus,
 } from '@tuturuuu/icons';
@@ -34,6 +35,8 @@ const statusColors: Record<TaskBoardStatus, string> = {
     'border-dynamic-gray/40 bg-linear-to-br from-dynamic-gray/10 to-dynamic-gray/5',
   active:
     'border-dynamic-blue/40 bg-linear-to-br from-dynamic-blue/10 to-dynamic-blue/5',
+  review:
+    'border-dynamic-orange/40 bg-linear-to-br from-dynamic-orange/10 to-dynamic-orange/5',
   done: 'border-dynamic-green/40 bg-linear-to-br from-dynamic-green/10 to-dynamic-green/5',
   closed:
     'border-dynamic-purple/40 bg-linear-to-br from-dynamic-purple/10 to-dynamic-purple/5',
@@ -46,6 +49,8 @@ const statusHoverColors: Record<TaskBoardStatus, string> = {
     'hover:border-dynamic-gray/60 hover:shadow-lg hover:shadow-dynamic-gray/10',
   active:
     'hover:border-dynamic-blue/60 hover:shadow-lg hover:shadow-dynamic-blue/10',
+  review:
+    'hover:border-dynamic-orange/60 hover:shadow-lg hover:shadow-dynamic-orange/10',
   done: 'hover:border-dynamic-green/60 hover:shadow-lg hover:shadow-dynamic-green/10',
   closed:
     'hover:border-dynamic-purple/60 hover:shadow-lg hover:shadow-dynamic-purple/10',
@@ -56,6 +61,7 @@ const statusHoverColors: Record<TaskBoardStatus, string> = {
 const statusBadgeColors: Record<TaskBoardStatus, string> = {
   not_started: 'bg-dynamic-gray/20 text-dynamic-gray border-dynamic-gray/30',
   active: 'bg-dynamic-blue/20 text-dynamic-blue border-dynamic-blue/30',
+  review: 'bg-dynamic-orange/20 text-dynamic-orange border-dynamic-orange/30',
   done: 'bg-dynamic-green/20 text-dynamic-green border-dynamic-green/30',
   closed: 'bg-dynamic-purple/20 text-dynamic-purple border-dynamic-purple/30',
   documents: 'bg-dynamic-cyan/20 text-dynamic-cyan border-dynamic-cyan/30',
@@ -64,6 +70,7 @@ const statusBadgeColors: Record<TaskBoardStatus, string> = {
 const statusLabels: Record<TaskBoardStatus, string> = {
   not_started: 'Not Started',
   active: 'Active',
+  review: 'Review',
   done: 'Done',
   closed: 'Closed',
   documents: 'Documents',
@@ -72,6 +79,7 @@ const statusLabels: Record<TaskBoardStatus, string> = {
 export const statusIcons = {
   not_started: <CircleDashed className="h-4 w-4" />,
   active: <Circle className="h-4 w-4" />,
+  review: <ClipboardCheck className="h-4 w-4" />,
   done: <CircleCheck className="h-4 w-4" />,
   closed: <CircleSlash className="h-4 w-4" />,
   documents: <FileText className="h-4 w-4" />,
@@ -80,6 +88,7 @@ export const statusIcons = {
 const statusDescriptions: Record<TaskBoardStatus, string> = {
   not_started: 'Ideas and planned work',
   active: 'Work in progress',
+  review: 'Completed work awaiting review',
   done: 'Completed work',
   closed: 'Archived or cancelled',
   documents: 'Reference materials and documentation',
@@ -122,6 +131,7 @@ export function StatusSection({
         isOver && 'scale-[1.02] ring-2 ring-offset-2',
         isOver && status === 'not_started' && 'ring-dynamic-gray/50',
         isOver && status === 'active' && 'ring-dynamic-blue/50',
+        isOver && status === 'review' && 'ring-dynamic-orange/50',
         isOver && status === 'done' && 'ring-dynamic-green/50',
         isOver && status === 'closed' && 'ring-dynamic-purple/50'
       )}
@@ -135,6 +145,7 @@ export function StatusSection({
               status === 'not_started' &&
                 'bg-dynamic-gray/20 text-dynamic-gray',
               status === 'active' && 'bg-dynamic-blue/20 text-dynamic-blue',
+              status === 'review' && 'bg-dynamic-orange/20 text-dynamic-orange',
               status === 'done' && 'bg-dynamic-green/20 text-dynamic-green',
               status === 'closed' && 'bg-dynamic-purple/20 text-dynamic-purple'
             )}
@@ -188,6 +199,8 @@ export function StatusSection({
                 status === 'not_started' &&
                   'bg-dynamic-gray/20 text-dynamic-gray',
                 status === 'active' && 'bg-dynamic-blue/20 text-dynamic-blue',
+                status === 'review' &&
+                  'bg-dynamic-orange/20 text-dynamic-orange',
                 status === 'done' && 'bg-dynamic-green/20 text-dynamic-green',
                 status === 'closed' &&
                   'bg-dynamic-purple/20 text-dynamic-purple'
@@ -202,6 +215,8 @@ export function StatusSection({
               {status === 'not_started' &&
                 'Add lists to organize new ideas and planned work'}
               {status === 'active' && 'Add lists to track work in progress'}
+              {status === 'review' &&
+                'Add lists for work waiting on review or walkthrough'}
               {status === 'done' && 'Add lists to celebrate completed work'}
               {status === 'closed' &&
                 'Add a list for archived or cancelled work'}

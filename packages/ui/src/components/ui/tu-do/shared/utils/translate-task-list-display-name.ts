@@ -1,6 +1,7 @@
 export interface TaskListLabels {
   toDo: string;
   inProgress: string;
+  review?: string;
   done: string;
   closed: string;
   documents: string;
@@ -18,6 +19,7 @@ export function translateTaskListNameForDisplay(
   const translations: Record<string, string> = {
     todo: labels.toDo,
     inprogress: labels.inProgress,
+    review: labels.review ?? 'Review',
     done: labels.done,
     closed: labels.closed,
     documents: labels.documents,

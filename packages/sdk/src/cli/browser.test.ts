@@ -9,10 +9,20 @@ describe('browser opener command selection', () => {
     });
   });
 
-  it('uses cmd start on Windows', () => {
+  it('uses rundll32 on Windows', () => {
     expect(getOpenBrowserCommand('win32', 'https://tuturuuu.com')).toEqual({
-      command: 'cmd',
-      args: ['/c', 'start', '', 'https://tuturuuu.com'],
+      command: 'rundll32',
+      args: ['url.dll,FileProtocolHandler', 'https://tuturuuu.com'],
+    });
+  });
+
+  it('keeps Windows CLI callback URLs in one shell-free argument', () => {
+    const loginUrl =
+      'https://tuturuuu.com/api/cli/auth/start?state=abc&redirect_uri=http%3A%2F%2F127.0.0.1%3A51735%2Fcallback';
+
+    expect(getOpenBrowserCommand('win32', loginUrl)).toEqual({
+      command: 'rundll32',
+      args: ['url.dll,FileProtocolHandler', loginUrl],
     });
   });
 

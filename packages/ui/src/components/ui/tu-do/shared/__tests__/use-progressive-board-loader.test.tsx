@@ -70,6 +70,7 @@ describe('useProgressiveBoardLoader', () => {
       listId: 'list-1',
       limit: 50,
       offset: 0,
+      includeCount: true,
     });
     expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
       {
@@ -77,6 +78,46 @@ describe('useProgressiveBoardLoader', () => {
         completed_at: '2026-03-19T01:00:00.000Z',
       },
     ]);
+  });
+
+  it('uses exact response counts instead of page-size estimates', async () => {
+    const task: Task = {
+      id: 'task-1',
+      display_number: 1,
+      name: 'Visible task',
+      list_id: 'list-1',
+      created_at: '2026-03-19T00:00:00.000Z',
+    };
+
+    vi.mocked(listWorkspaceTasks).mockResolvedValueOnce({
+      tasks: [task],
+      count: 21,
+    });
+
+    const { result } = renderHook(
+      () => useProgressiveBoardLoader('ws-1', 'board-1'),
+      { wrapper }
+    );
+
+    let pageResult:
+      | { tasks: Task[]; totalCount: number; hasMore: boolean }
+      | undefined;
+
+    await act(async () => {
+      pageResult = await result.current.loadListPage('list-1', 0);
+    });
+
+    expect(pageResult).toEqual({
+      tasks: [task],
+      totalCount: 21,
+      hasMore: true,
+    });
+    expect(result.current.pagination['list-1']).toEqual(
+      expect.objectContaining({
+        totalCount: 21,
+        hasMore: true,
+      })
+    );
   });
 
   it('forwards external lane options and preserves them for revalidation', async () => {
@@ -115,6 +156,7 @@ describe('useProgressiveBoardLoader', () => {
       listId: 'personal-external-staging:board-1',
       limit: 50,
       offset: 0,
+      includeCount: true,
       externalIncludeDocuments: true,
       externalIncludeDoneClosed: true,
       externalSortBy: 'due-asc',
@@ -133,6 +175,7 @@ describe('useProgressiveBoardLoader', () => {
       listId: 'personal-external-staging:board-1',
       limit: 50,
       offset: 0,
+      includeCount: true,
       externalIncludeDocuments: true,
       externalIncludeDoneClosed: true,
       externalSortBy: 'due-asc',
@@ -293,6 +336,45 @@ describe('useProgressiveBoardLoader', () => {
     expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
       {
         ...locallyMovedTask,
+        _localMutationAt: expect.any(Number),
+      },
+    ]);
+  });
+
+  it('does not overwrite a fresh local reorder when a stale response has the old sort key', async () => {
+    const locallyReorderedTask = {
+      id: 'task-1',
+      display_number: 1,
+      name: 'Task',
+      list_id: 'todo-list',
+      sort_key: 2_000_000,
+      created_at: '2026-03-19T00:00:00.000Z',
+      _localMutationAt: Date.now(),
+    } as Task;
+
+    queryClient.setQueryData(['tasks', 'board-1'], [locallyReorderedTask]);
+
+    vi.mocked(listWorkspaceTasks).mockResolvedValueOnce({
+      tasks: [
+        {
+          ...locallyReorderedTask,
+          sort_key: 1_000_000,
+        },
+      ],
+    });
+
+    const { result } = renderHook(
+      () => useProgressiveBoardLoader('ws-1', 'board-1'),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.loadListPage('todo-list', 0);
+    });
+
+    expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
+      {
+        ...locallyReorderedTask,
         _localMutationAt: expect.any(Number),
       },
     ]);

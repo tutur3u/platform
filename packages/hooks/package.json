@@ -15,12 +15,12 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.100.9",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.6.2",
     "@types/react": "^19.2.14",
     "@vitejs/plugin-react": "^6.0.1",
     "typescript": "^6.0.3"

@@ -61,6 +61,8 @@ Keep Learn learner files under 400 LOC and individual components under 200 LOC. 
 
 Language switching is handled inside Learn with `next-intl`, but locale prefixes are hidden from URLs. Legacy locale-prefixed paths such as `/vi/dashboard` are canonicalized back to `/dashboard` while preserving the selected locale in `NEXT_LOCALE`. Keep English and Vietnamese strings in `apps/learn/messages/en.json` and `apps/learn/messages/vi.json`, then run `bun i18n:sort`.
 
+Learn metadata and auth return URLs must resolve to absolute HTTP(S) app URLs. Prefer `LEARN_APP_URL` or `NEXT_PUBLIC_LEARN_APP_URL` for the app origin; legacy `TULEARN_APP_URL` values are still accepted. A valid absolute `BASE_URL` can be used as a fallback, but non-URL environment values such as `development` are ignored so local development falls back to `http://localhost:7812`.
+
 ## Verification
 
 After changing Learn schema, API, or UI code, run:

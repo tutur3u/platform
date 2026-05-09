@@ -13,7 +13,7 @@ import { TaskDetailCard } from './TaskDetailCard';
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';
   selectedBoard: string | null;
-  statusFilter: 'all' | 'not_started' | 'active' | 'done' | 'closed';
+  statusFilter: 'all' | 'not_started' | 'active' | 'review' | 'done' | 'closed';
 }
 
 interface GanttChartProps {

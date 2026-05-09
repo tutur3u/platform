@@ -341,6 +341,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     () => ({
       toDo: t('common.list_name_to_do'),
       inProgress: t('common.list_name_in_progress'),
+      review: t('common.list_name_review'),
       done: t('common.list_name_done'),
       closed: t('common.list_name_closed'),
       documents: t('common.documents'),

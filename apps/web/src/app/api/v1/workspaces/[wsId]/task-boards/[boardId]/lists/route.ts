@@ -6,7 +6,7 @@ import { supportedColorSchema } from './schema';
 const createListSchema = z.object({
   name: z.string().trim().min(1).max(255),
   status: z
-    .enum(['not_started', 'active', 'done', 'closed', 'documents'])
+    .enum(['not_started', 'active', 'review', 'done', 'closed', 'documents'])
     .optional()
     .default('not_started'),
   color: supportedColorSchema.optional(),

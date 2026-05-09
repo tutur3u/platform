@@ -5,6 +5,7 @@ import {
   CircleCheck,
   CircleDashed,
   CircleX,
+  ClipboardCheck,
   FileText,
 } from '@tuturuuu/icons';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -63,6 +64,10 @@ const statusConfig = {
     icon: Circle,
     color: 'text-dynamic-blue',
   },
+  review: {
+    icon: ClipboardCheck,
+    color: 'text-dynamic-orange',
+  },
   done: {
     icon: CircleCheck,
     color: 'text-dynamic-green',
@@ -81,6 +86,7 @@ const statuses: TaskBoardStatus[] = [
   'documents',
   'not_started',
   'active',
+  'review',
   'done',
   'closed',
 ];
@@ -126,6 +132,7 @@ export function EditListDialog({
         pink: t('pink'),
         purple: t('purple'),
         red: t('red'),
+        review: t('list_name_review'),
         saveChanges: t('save_changes'),
         saving: t('saving'),
         statusCategory: t('status_category'),
@@ -168,6 +175,7 @@ function EditListDialogForm({
     pink: string;
     purple: string;
     red: string;
+    review: string;
     saveChanges: string;
     saving: string;
     statusCategory: string;
@@ -201,6 +209,7 @@ function EditListDialogForm({
   const statusLabels: Record<TaskBoardStatus, string> = {
     not_started: labels.backlog,
     active: labels.active,
+    review: labels.review,
     done: labels.done,
     closed: labels.closed,
     documents: labels.documents,

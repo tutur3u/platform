@@ -25,7 +25,13 @@ interface Params {
 
 // Priority is an enum: 'low' | 'normal' | 'high' | 'critical'
 type TaskPriority = 'low' | 'normal' | 'high' | 'critical' | null;
-type ListStatus = 'active' | 'closed' | 'documents' | 'done' | 'not_started';
+type ListStatus =
+  | 'active'
+  | 'closed'
+  | 'documents'
+  | 'done'
+  | 'not_started'
+  | 'review';
 type EstimationType = 'exponential' | 'fibonacci' | 'linear' | 't-shirt';
 
 const VALID_ESTIMATION_TYPES: EstimationType[] = [
@@ -74,6 +80,7 @@ const VALID_LIST_STATUSES: ListStatus[] = [
   'documents',
   'done',
   'not_started',
+  'review',
 ];
 
 function isValidListStatus(status: string): status is ListStatus {

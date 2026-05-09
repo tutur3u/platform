@@ -2,9 +2,28 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { moveWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { isTaskBoardCompletedStatus } from '../task-list-status';
 
 import { getBrowserApiOptions } from './shared';
 import { moveTask } from './task-operations';
+
+function applyOptimisticMoveToList(
+  task: Task,
+  newListId: string,
+  list?: TaskList
+): Task {
+  const now = new Date().toISOString();
+  const targetIsCompleted = isTaskBoardCompletedStatus(list?.status);
+  const targetIsClosed = list?.status === 'closed';
+
+  return {
+    ...task,
+    list_id: newListId,
+    completed: targetIsCompleted,
+    completed_at: targetIsCompleted ? (task.completed_at ?? now) : null,
+    closed_at: targetIsClosed ? (task.closed_at ?? now) : null,
+  } as Task;
+}
 
 export function useMoveTask(boardId: string, wsId?: string) {
   const queryClient = useQueryClient();
@@ -46,14 +65,7 @@ export function useMoveTask(boardId: string, wsId?: string) {
                 boardId,
               ]) as TaskList[] | undefined;
               const list = targetList?.find((l) => l.id === newListId);
-              const shouldArchive =
-                list?.status === 'done' || list?.status === 'closed';
-
-              return {
-                ...task,
-                list_id: newListId,
-                closed_at: shouldArchive ? new Date().toISOString() : null,
-              };
+              return applyOptimisticMoveToList(task, newListId, list);
             }
             return task;
           });
@@ -153,14 +165,12 @@ export function useMoveTaskToBoard(currentBoardId: string, wsId?: string) {
               targetBoardId,
             ]) as TaskList[] | undefined;
             const list = targetList?.find((l) => l.id === newListId);
-            const shouldArchive =
-              list?.status === 'done' || list?.status === 'closed';
 
-            const updatedTask = {
-              ...taskToMove,
-              list_id: newListId,
-              closed_at: shouldArchive ? new Date().toISOString() : null,
-            };
+            const updatedTask = applyOptimisticMoveToList(
+              taskToMove,
+              newListId,
+              list
+            );
 
             return [...old, updatedTask];
           }
@@ -177,14 +187,7 @@ export function useMoveTaskToBoard(currentBoardId: string, wsId?: string) {
                   currentBoardId,
                 ]) as TaskList[] | undefined;
                 const list = targetList?.find((l) => l.id === newListId);
-                const shouldArchive =
-                  list?.status === 'done' || list?.status === 'closed';
-
-                return {
-                  ...task,
-                  list_id: newListId,
-                  closed_at: shouldArchive ? new Date().toISOString() : null,
-                };
+                return applyOptimisticMoveToList(task, newListId, list);
               }
               return task;
             });

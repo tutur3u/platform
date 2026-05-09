@@ -5,10 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
+import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
+import 'package:mobile/features/time_tracker/utils/first_day_of_week.dart';
+import 'package:mobile/features/time_tracker/widgets/history_period_selector_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -72,6 +76,29 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
     unawaited(context.push(targetUri.toString()));
   }
 
+  Future<void> _pickMonth(BuildContext context) async {
+    final firstDayOfWeek = firstDayOfWeekForContext(context);
+    final picked = await showAdaptiveSheet<DateTime>(
+      context: context,
+      useRootNavigator: true,
+      builder: (_) => HistoryPeriodSelectorSheet(
+        viewMode: HistoryViewMode.month,
+        initialAnchorDate: DateTime(
+          _selectedMonth.year,
+          _selectedMonth.month,
+        ),
+        firstDayOfWeek: firstDayOfWeek,
+      ),
+    );
+    if (!mounted || picked == null) {
+      return;
+    }
+
+    setState(() {
+      _selectedMonth = DateTime(picked.year, picked.month);
+    });
+  }
+
   String _modeLabel(AppLocalizations l10n, _HeatmapViewMode mode) {
     switch (mode) {
       case _HeatmapViewMode.original:
@@ -90,7 +117,6 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
     unawaited(
       showModalBottomSheet<void>(
         context: context,
-        useSafeArea: true,
         backgroundColor: Colors.transparent,
         builder: (sheetContext) => _ViewModeSheet(
           currentMode: _viewMode,
@@ -241,6 +267,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
                   _selectedMonth.month + 1,
                 ),
               ),
+              onPickMonth: () => unawaited(_pickMonth(context)),
             ),
           ],
         );
@@ -264,6 +291,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
               _selectedMonth.month + 1,
             ),
           ),
+          onPickMonth: () => unawaited(_pickMonth(context)),
         );
       case _HeatmapViewMode.compactCards:
         return _CompactCardsView(

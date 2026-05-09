@@ -293,7 +293,21 @@ function getTaskListColor(task: unknown) {
 
 function getTaskBoardName(task: unknown) {
   const record = asRecord(task);
-  return asString(record.board_name, asString(record.board_id, 'No board'));
+  const boardName = asString(
+    record.board_name,
+    asString(record.board_id, 'No board')
+  );
+  const workspaceName = getTaskWorkspaceName(task);
+
+  return workspaceName ? `${workspaceName} / ${boardName}` : boardName;
+}
+
+function getTaskWorkspaceName(task: unknown, fallback = '') {
+  const record = asRecord(task);
+  return asString(
+    record.source_workspace_name,
+    asString(record.workspace_name, fallback)
+  );
 }
 
 function getTaskStatus(task: unknown) {
@@ -762,6 +776,34 @@ function getTaskRows(tasks: unknown[]) {
   });
 }
 
+function getTaskPaginationText(record: RenderableRecord) {
+  const pagination = asRecord(record.pagination);
+  const total =
+    typeof pagination.total === 'number'
+      ? pagination.total
+      : typeof record.count === 'number'
+        ? record.count
+        : undefined;
+
+  if (typeof total !== 'number') return null;
+
+  const page = pagination.page;
+  const pageCount = pagination.pageCount;
+
+  if (typeof page === 'number' && typeof pageCount === 'number') {
+    return `Page ${page}/${pageCount} | ${total} total`;
+  }
+
+  return `${total} total`;
+}
+
+function renderTaskPagination(record: RenderableRecord) {
+  const paginationText = getTaskPaginationText(record);
+  if (paginationText) {
+    process.stdout.write(`${color.dim(paginationText)}\n`);
+  }
+}
+
 function renderTasks(data: unknown, options: RenderOptions) {
   const record = asRecord(data);
   const task = record.task;
@@ -777,7 +819,10 @@ function renderTasks(data: unknown, options: RenderOptions) {
       sortTasksForCli(tasks).map((task) => ({
         Title: asString(asRecord(task).name, 'Untitled task'),
         List: getTaskListName(task),
-        Workspace: options.workspaceName || options.currentWorkspaceId || '',
+        Workspace: getTaskWorkspaceName(
+          task,
+          options.workspaceName || options.currentWorkspaceId || ''
+        ),
         __ListColor: getTaskListColor(task),
       })),
       {
@@ -789,15 +834,12 @@ function renderTasks(data: unknown, options: RenderOptions) {
         },
       }
     );
+    renderTaskPagination(record);
     return;
   }
 
   renderTable(getTaskRows(tasks), { styleCell: styleTaskCell });
-
-  const count = record.count;
-  if (typeof count === 'number') {
-    process.stdout.write(`${color.dim(`${count} total`)}\n`);
-  }
+  renderTaskPagination(record);
 }
 
 export function renderWhoami(data: unknown, json = false) {

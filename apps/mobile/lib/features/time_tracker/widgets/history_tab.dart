@@ -13,8 +13,10 @@ import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
+import 'package:mobile/features/time_tracker/utils/first_day_of_week.dart';
 import 'package:mobile/features/time_tracker/widgets/edit_session_dialog.dart';
 import 'package:mobile/features/time_tracker/widgets/history_period_controls.dart';
+import 'package:mobile/features/time_tracker/widgets/history_period_selector_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/history_stats_accordion.dart';
 import 'package:mobile/features/time_tracker/widgets/session_detail_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/session_tile.dart';
@@ -53,7 +55,7 @@ class _HistoryTabState extends State<HistoryTab> {
     final threshold = _scrollController.position.maxScrollExtent - 220;
     if (_scrollController.position.pixels < threshold) return;
 
-    final firstDayOfWeek = _firstDayOfWeek(context);
+    final firstDayOfWeek = firstDayOfWeekForContext(context);
     final wsId =
         context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
     final userId = _currentUserId();
@@ -82,7 +84,7 @@ class _HistoryTabState extends State<HistoryTab> {
         };
 
         final grouped = _groupByDay(sessions, l10n);
-        final firstDayOfWeek = _firstDayOfWeek(context);
+        final firstDayOfWeek = firstDayOfWeekForContext(context);
 
         return Stack(
           children: [
@@ -178,6 +180,16 @@ class _HistoryTabState extends State<HistoryTab> {
                             cubit.goToNextPeriod(
                               wsId,
                               _currentUserId(),
+                              firstDayOfWeek: firstDayOfWeek,
+                            ),
+                          );
+                        },
+                        onSelectPeriod: () {
+                          unawaited(
+                            _pickHistoryPeriod(
+                              context,
+                              state: state,
+                              wsId: wsId,
                               firstDayOfWeek: firstDayOfWeek,
                             ),
                           );
@@ -492,20 +504,41 @@ class _HistoryTabState extends State<HistoryTab> {
     return supabase.auth.currentUser?.id ?? '';
   }
 
-  int _firstDayOfWeek(BuildContext context) {
-    const weekdayByIndex = [
-      DateTime.sunday,
-      DateTime.monday,
-      DateTime.tuesday,
-      DateTime.wednesday,
-      DateTime.thursday,
-      DateTime.friday,
-      DateTime.saturday,
-    ];
-    final firstDayOfWeekIndex = MaterialLocalizations.of(
-      context,
-    ).firstDayOfWeekIndex;
-    return weekdayByIndex[firstDayOfWeekIndex % 7];
+  Future<void> _pickHistoryPeriod(
+    BuildContext context, {
+    required TimeTrackerState state,
+    required String wsId,
+    required int firstDayOfWeek,
+  }) async {
+    final anchorDate = state.historyAnchorDate ?? DateTime.now();
+    final picked = await showAdaptiveSheet<DateTime>(
+      context: context,
+      useRootNavigator: true,
+      builder: (_) => HistoryPeriodSelectorSheet(
+        viewMode: state.historyViewMode,
+        initialAnchorDate: DateTime(
+          anchorDate.year,
+          anchorDate.month,
+          anchorDate.day,
+        ),
+        firstDayOfWeek: firstDayOfWeek,
+      ),
+    );
+    if (!mounted) return;
+    if (picked == null || wsId.isEmpty) return;
+
+    final nextAnchor = switch (state.historyViewMode) {
+      HistoryViewMode.day => DateTime(picked.year, picked.month, picked.day),
+      HistoryViewMode.week => DateTime(picked.year, picked.month, picked.day),
+      HistoryViewMode.month => DateTime(picked.year, picked.month),
+    };
+    final cubit = this.context.read<TimeTrackerCubit>()
+      ..setHistoryContext(anchorDate: nextAnchor);
+    await cubit.loadHistoryInitial(
+      wsId,
+      _currentUserId(),
+      firstDayOfWeek: firstDayOfWeek,
+    );
   }
 }
 

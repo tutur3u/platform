@@ -7,6 +7,7 @@ export type TaskBoardStatus =
   | 'documents'
   | 'not_started'
   | 'active'
+  | 'review'
   | 'done'
   | 'closed';
 

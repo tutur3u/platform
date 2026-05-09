@@ -6,6 +6,11 @@ import {
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import {
+  isTaskBoardCompletedStatus,
+  isTaskBoardResolvedStatus,
+  isTaskBoardTerminalStatus,
+} from '@tuturuuu/utils/task-list-status';
+import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -825,17 +830,33 @@ export async function PUT(
     }
 
     if (!shouldUpdateCompletion && listChanged && effectiveTargetStatus) {
-      const isTargetCompletion =
-        effectiveTargetStatus === 'done' || effectiveTargetStatus === 'closed';
-      const isSourceCompletion =
-        sourceListStatus === 'done' || sourceListStatus === 'closed';
+      const isTargetResolved = isTaskBoardResolvedStatus(effectiveTargetStatus);
+      const isSourceResolved = isTaskBoardResolvedStatus(sourceListStatus);
+      const isTargetCompleted = isTaskBoardCompletedStatus(
+        effectiveTargetStatus
+      );
+      const isSourceCompleted = isTaskBoardCompletedStatus(sourceListStatus);
+      const isTargetTerminal = isTaskBoardTerminalStatus(effectiveTargetStatus);
+      const isSourceTerminal = isTaskBoardTerminalStatus(sourceListStatus);
 
-      if (isTargetCompletion) {
+      if (effectiveTargetStatus === 'review') {
+        nextClosedAt = null;
+        nextCompletedAt = null;
+        nextCompleted = false;
+      } else if (isTargetResolved) {
         const timestamp = new Date().toISOString();
-        nextClosedAt = timestamp;
-        nextCompletedAt = effectiveTargetStatus === 'done' ? timestamp : null;
-        nextCompleted = effectiveTargetStatus === 'done';
-      } else if (isSourceCompletion) {
+        if (!isSourceTerminal && isTargetTerminal) {
+          nextClosedAt = timestamp;
+        } else if (isSourceTerminal && !isTargetTerminal) {
+          nextClosedAt = null;
+        }
+        nextCompletedAt = isTargetCompleted
+          ? (task.completed_at ?? timestamp)
+          : isSourceCompleted
+            ? task.completed_at
+            : null;
+        nextCompleted = true;
+      } else if (isSourceResolved) {
         nextClosedAt = null;
         nextCompletedAt = null;
         nextCompleted = false;

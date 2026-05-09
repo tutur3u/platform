@@ -14,6 +14,31 @@ const PAGE_SIZE = 50;
 const LOCAL_MUTATION_MARKER_TTL_MS = 30_000;
 const REVALIDATE_LIST_CONCURRENCY = 2;
 
+function hasFreshLocalMutation(task: Task) {
+  const localTask = task as Task & { _localMutationAt?: number };
+  const localMutationAt = localTask._localMutationAt;
+
+  return (
+    typeof localMutationAt === 'number' &&
+    Date.now() - localMutationAt < LOCAL_MUTATION_MARKER_TTL_MS
+  );
+}
+
+function hasLocallyProtectedMoveDifference(task: Task, incomingTask: Task) {
+  const current = task as Task & { completed?: boolean | null };
+  const incoming = incomingTask as Task & { completed?: boolean | null };
+
+  return (
+    current.list_id !== incoming.list_id ||
+    current.sort_key !== incoming.sort_key ||
+    current.personal_list_id !== incoming.personal_list_id ||
+    current.personal_sort_key !== incoming.personal_sort_key ||
+    current.completed !== incoming.completed ||
+    current.completed_at !== incoming.completed_at ||
+    current.closed_at !== incoming.closed_at
+  );
+}
+
 /**
  * Manages per-list pagination state and merges results into the shared
  * ['tasks', boardId] TanStack Query cache. Each list loads independently;
@@ -66,11 +91,19 @@ export function useProgressiveBoardLoader(
           listId,
           limit: PAGE_SIZE,
           offset: page * PAGE_SIZE,
+          includeCount: true,
           ...options,
         });
         const tasks = payload.tasks ?? [];
-        const hasMore = tasks.length === PAGE_SIZE;
-        const totalCount = page * PAGE_SIZE + tasks.length + (hasMore ? 1 : 0);
+        const loadedThrough = page * PAGE_SIZE + tasks.length;
+        const totalCount =
+          typeof payload.count === 'number'
+            ? Math.max(payload.count, loadedThrough)
+            : loadedThrough + (tasks.length === PAGE_SIZE ? 1 : 0);
+        const hasMore =
+          typeof payload.count === 'number'
+            ? loadedThrough < payload.count
+            : tasks.length === PAGE_SIZE;
         const result = {
           tasks,
           hasMore,
@@ -93,19 +126,13 @@ export function useProgressiveBoardLoader(
               incomingById.delete(task.id);
 
               // Guard against stale in-flight list responses overriding a task
-              // that was moved locally while the server response is catching up.
-              if (task.list_id !== incomingTask.list_id) {
-                const localTask = task as Task & {
-                  _localMutationAt?: number;
-                };
-                const localMutationAt = localTask._localMutationAt;
-                const hasFreshLocalMutation =
-                  typeof localMutationAt === 'number' &&
-                  Date.now() - localMutationAt < LOCAL_MUTATION_MARKER_TTL_MS;
-
-                if (hasFreshLocalMutation) {
-                  return task;
-                }
+              // that was moved or reordered locally while the server response
+              // is catching up.
+              if (
+                hasFreshLocalMutation(task) &&
+                hasLocallyProtectedMoveDifference(task, incomingTask)
+              ) {
+                return task;
               }
 
               const taskWithoutLocalMutationAt = {
@@ -177,6 +204,7 @@ export function useProgressiveBoardLoader(
             listId,
             limit: PAGE_SIZE,
             offset: page * PAGE_SIZE,
+            includeCount: true,
             ...listOptionsRef.current[listId],
           })
         )
@@ -185,9 +213,20 @@ export function useProgressiveBoardLoader(
       const mergedListTasks = pageResults.flatMap(
         (result) => result.tasks ?? []
       );
+      const lastPageTasks = pageResults[pageResults.length - 1]?.tasks ?? [];
+      const exactCount = pageResults.find(
+        (result) => typeof result.count === 'number'
+      )?.count;
+      const loadedThrough = targetPage * PAGE_SIZE + lastPageTasks.length;
+      const totalCount =
+        typeof exactCount === 'number'
+          ? Math.max(exactCount, loadedThrough)
+          : mergedListTasks.length +
+            (lastPageTasks.length === PAGE_SIZE ? 1 : 0);
       const hasMore =
-        (pageResults[pageResults.length - 1]?.tasks?.length ?? 0) === PAGE_SIZE;
-      const totalCount = mergedListTasks.length + (hasMore ? 1 : 0);
+        typeof exactCount === 'number'
+          ? loadedThrough < exactCount
+          : lastPageTasks.length === PAGE_SIZE;
 
       queryClient.setQueryData(
         ['tasks', boardId],
@@ -199,23 +238,14 @@ export function useProgressiveBoardLoader(
 
           const merged: Task[] = [];
 
-          const hasFreshLocalMutation = (task: Task) => {
-            const localTask = task as Task & { _localMutationAt?: number };
-            const localMutationAt = localTask._localMutationAt;
-            return (
-              typeof localMutationAt === 'number' &&
-              Date.now() - localMutationAt < LOCAL_MUTATION_MARKER_TTL_MS
-            );
-          };
-
           for (const task of existing) {
             const incomingTask = incomingById.get(task.id);
             if (incomingTask) {
               incomingById.delete(task.id);
 
               if (
-                task.list_id !== incomingTask.list_id &&
-                hasFreshLocalMutation(task)
+                hasFreshLocalMutation(task) &&
+                hasLocallyProtectedMoveDifference(task, incomingTask)
               ) {
                 merged.push(task);
                 continue;

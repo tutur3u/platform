@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { DEV_MODE, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
@@ -84,8 +85,7 @@ export function shouldSkipDeadlineReminderTask(
   return (
     Boolean(task.completed_at) ||
     Boolean(task.closed_at) ||
-    listStatus === 'done' ||
-    listStatus === 'closed'
+    isTaskBoardResolvedStatus(listStatus)
   );
 }
 

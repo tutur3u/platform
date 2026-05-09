@@ -3,6 +3,7 @@ import {
   CircleCheck,
   CircleDashed,
   CircleX,
+  ClipboardCheck,
   FileText,
   ListTodo,
 } from '@tuturuuu/icons';
@@ -36,6 +37,7 @@ export const taskListStatusIcon: Record<
 > = {
   not_started: CircleDashed,
   active: Circle,
+  review: ClipboardCheck,
   done: CircleCheck,
   closed: CircleX,
   documents: FileText,
@@ -45,6 +47,7 @@ export const taskListStatusIcon: Record<
 export const taskListStatusToneClass: Record<TaskBoardStatus, string> = {
   not_started: 'text-dynamic-gray',
   active: 'text-dynamic-blue',
+  review: 'text-dynamic-orange',
   done: 'text-dynamic-green',
   closed: 'text-dynamic-purple',
   documents: 'text-dynamic-cyan',

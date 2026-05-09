@@ -196,6 +196,34 @@ export function mapUrlToApp(url: string): string | null {
   return appIdentifier || null;
 }
 
+async function readVerificationError(response: Response): Promise<string> {
+  const contentType = response.headers.get('content-type') ?? '';
+
+  if (contentType.includes('application/json')) {
+    const body = (await response.json().catch(() => null)) as {
+      error?: unknown;
+    } | null;
+
+    if (typeof body?.error === 'string') {
+      return body.error;
+    }
+  }
+
+  const text = await response.text().catch(() => '');
+
+  return (
+    text ||
+    `Token verification failed with status ${response.status.toString()}`
+  );
+}
+
+function redirectAfterVerificationFailure(
+  router: ReturnType<typeof useRouter>
+) {
+  router.push('/');
+  router.refresh();
+}
+
 export const verifyRouteToken = async ({
   searchParams,
   token,
@@ -205,43 +233,47 @@ export const verifyRouteToken = async ({
   token: string | null;
   router: ReturnType<typeof useRouter>;
 }) => {
-  const supabase = createClient();
+  try {
+    const supabase = createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!token) {
-    const nextUrl = searchParams.get('nextUrl');
-    router.push(nextUrl || '/');
-    router.refresh();
-    return;
-  }
+    if (!token) {
+      const nextUrl = searchParams.get('nextUrl');
+      router.push(nextUrl || '/');
+      router.refresh();
+      return;
+    }
 
-  // Always verify the token when present — it represents fresh auth from web
-  // and should override any existing (potentially stale aal1) session
-  let userId = user?.id;
+    // Always verify the token when present — it represents fresh auth from web
+    // and should override any existing (potentially stale aal1) session
+    let userId = user?.id;
 
-  const res = await fetch('/api/auth/verify-app-token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ token }),
-  });
+    const res = await fetch('/api/auth/verify-app-token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
+    });
 
-  if (!res.ok) {
+    if (!res.ok) {
+      console.error('Error verifying token:', await readVerificationError(res));
+      redirectAfterVerificationFailure(router);
+      return;
+    }
+
     const data = await res.json();
-    console.error('Error verifying token:', data.error);
-    router.push('/');
-    router.refresh();
-    return;
-  }
+    userId = data.userId;
 
-  const data = await res.json();
-  userId = data.userId;
+    if (!userId) {
+      console.error('Error verifying token: missing user id');
+      redirectAfterVerificationFailure(router);
+      return;
+    }
 
-  if (userId) {
     // The server creates an independent session for this satellite app via
     // generateLink + verifyOtp. The tokens are returned in the response body
     // (no Set-Cookie headers) so the browser client stores them in its own
@@ -270,5 +302,8 @@ export const verifyRouteToken = async ({
     const nextUrl = searchParams.get('nextUrl');
     router.push(nextUrl || '/');
     router.refresh();
+  } catch (error) {
+    console.error('[cross-app] Unexpected token verification error:', error);
+    redirectAfterVerificationFailure(router);
   }
 };

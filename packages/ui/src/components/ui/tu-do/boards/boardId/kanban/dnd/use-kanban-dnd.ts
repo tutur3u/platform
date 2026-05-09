@@ -6,7 +6,7 @@ import type {
   DragStartEvent,
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import {
   removeCurrentUserTaskPersonalPlacement,
   upsertCurrentUserTaskPersonalPlacement,
@@ -69,6 +69,39 @@ function getNeighborTaskIds(tasks: Task[], taskId: string) {
     previousTaskId: tasks[taskIndex - 1]?.id ?? null,
     nextTaskId: tasks[taskIndex + 1]?.id ?? null,
   };
+}
+
+export function mergeTaskIntoBoardTaskCache(
+  currentTasks: Task[] | undefined,
+  nextTask: Task
+) {
+  const existingTasks = currentTasks ?? [];
+  let found = false;
+
+  const mergedTasks = existingTasks.map((task) => {
+    if (task.id !== nextTask.id) return task;
+    found = true;
+    return { ...task, ...nextTask } as Task;
+  });
+
+  return found ? mergedTasks : [...mergedTasks, nextTask];
+}
+
+function setBoardTaskCache(
+  queryClient: QueryClient,
+  boardId: string,
+  nextTask: Task
+) {
+  queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) =>
+    mergeTaskIntoBoardTaskCache(old, nextTask)
+  );
+
+  if (queryClient.getQueryData<Task[]>(['tasks-full', boardId])) {
+    queryClient.setQueryData(
+      ['tasks-full', boardId],
+      (old: Task[] | undefined) => mergeTaskIntoBoardTaskCache(old, nextTask)
+    );
+  }
 }
 
 export function mergePersonalPlacementMutationTask(
@@ -168,12 +201,12 @@ export function useKanbanDnd({
         'tasks',
         boardId,
       ]);
+      const previousFullTasks = queryClient.getQueryData<Task[]>([
+        'tasks-full',
+        boardId,
+      ]);
 
-      queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) =>
-        old?.map((candidate) =>
-          candidate.id === task.id ? nextTask : candidate
-        )
-      );
+      setBoardTaskCache(queryClient, boardId, nextTask);
 
       setOptimisticUpdateInProgress((prev) => new Set(prev).add(task.id));
 
@@ -199,18 +232,15 @@ export function useKanbanDnd({
           isStagingTarget
         );
 
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) =>
-            old?.map((candidate) =>
-              candidate.id === task.id ? savedTask : candidate
-            )
-        );
+        setBoardTaskCache(queryClient, boardId, savedTask);
 
         return savedTask;
       } catch (error) {
         if (previousTasks) {
           queryClient.setQueryData(['tasks', boardId], previousTasks);
+        }
+        if (previousFullTasks) {
+          queryClient.setQueryData(['tasks-full', boardId], previousFullTasks);
         }
         throw error;
       } finally {

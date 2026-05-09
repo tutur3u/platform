@@ -52,8 +52,8 @@ List<TaskBoardTask> sortTaskBoardListViewTasksForList(
 
   final sorted = List<TaskBoardTask>.from(tasks)
     ..sort((a, b) {
-      final aTimestamp = status == 'done' ? a.completedAt : a.closedAt;
-      final bTimestamp = status == 'done' ? b.completedAt : b.closedAt;
+      final aTimestamp = status == 'closed' ? a.closedAt : a.completedAt;
+      final bTimestamp = status == 'closed' ? b.closedAt : b.completedAt;
       return _taskBoardListViewDateValue(
         bTimestamp,
       ).compareTo(_taskBoardListViewDateValue(aTimestamp));

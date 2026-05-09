@@ -1,10 +1,15 @@
 import {
+  type QueryClient,
   useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  createRealtimeClient,
+  type RealtimeChannel,
+  type SupabaseClient,
+} from '@tuturuuu/supabase/next/realtime-browser';
 import { useEffect } from 'react';
 
 export type NotificationType =
@@ -76,6 +81,111 @@ interface UseNotificationsOptions {
   unreadOnly?: boolean;
   readOnly?: boolean;
   type?: NotificationType;
+}
+
+interface NotificationSubscriptionEntry {
+  channel: RealtimeChannel;
+  queryClientRefs: Map<QueryClient, number>;
+  subscriberCount: number;
+  supabase: SupabaseClient;
+}
+
+const notificationSubscriptionRegistry = new Map<
+  string,
+  NotificationSubscriptionEntry
+>();
+
+function invalidateNotificationQueries(
+  queryClientRefs: Map<QueryClient, number>
+) {
+  for (const queryClient of queryClientRefs.keys()) {
+    queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    queryClient.invalidateQueries({
+      queryKey: ['notifications', 'unread-count'],
+    });
+  }
+}
+
+function addNotificationQueryClientRef(
+  entry: NotificationSubscriptionEntry,
+  queryClient: QueryClient
+) {
+  entry.subscriberCount += 1;
+  entry.queryClientRefs.set(
+    queryClient,
+    (entry.queryClientRefs.get(queryClient) ?? 0) + 1
+  );
+}
+
+function releaseNotificationQueryClientRef(
+  entry: NotificationSubscriptionEntry,
+  queryClient: QueryClient
+) {
+  entry.subscriberCount -= 1;
+
+  const currentRefCount = entry.queryClientRefs.get(queryClient) ?? 0;
+
+  if (currentRefCount <= 1) {
+    entry.queryClientRefs.delete(queryClient);
+  } else {
+    entry.queryClientRefs.set(queryClient, currentRefCount - 1);
+  }
+}
+
+function createNotificationSubscriptionEntry(
+  userId: string,
+  queryClient: QueryClient
+) {
+  const queryClientRefs = new Map<QueryClient, number>([[queryClient, 1]]);
+  const supabase = createRealtimeClient();
+  const invalidateQueries = () =>
+    invalidateNotificationQueries(queryClientRefs);
+
+  const channel = supabase
+    .channel(`notifications-${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`,
+      },
+      invalidateQueries
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload) => {
+        const newRecord = payload.new as Notification;
+        if (newRecord?.data?.action_taken) {
+          invalidateQueries();
+        }
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`,
+      },
+      invalidateQueries
+    )
+    .subscribe();
+
+  return {
+    channel,
+    queryClientRefs,
+    subscriberCount: 1,
+    supabase,
+  } satisfies NotificationSubscriptionEntry;
 }
 
 export function dedupeNotifications(
@@ -558,65 +668,37 @@ export function useNotificationSubscription(
   userId: string
 ) {
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
   useEffect(() => {
     if (!userId) return;
 
-    const channel = supabase
-      .channel(`notifications-${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['notifications'] });
-          queryClient.invalidateQueries({
-            queryKey: ['notifications', 'unread-count'],
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          const newRecord = payload.new as Notification;
-          if (newRecord?.data?.action_taken) {
-            queryClient.invalidateQueries({ queryKey: ['notifications'] });
-            queryClient.invalidateQueries({
-              queryKey: ['notifications', 'unread-count'],
-            });
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['notifications'] });
-          queryClient.invalidateQueries({
-            queryKey: ['notifications', 'unread-count'],
-          });
-        }
-      )
-      .subscribe();
+    const registryKey = userId;
+    let entry = notificationSubscriptionRegistry.get(registryKey);
+
+    if (entry) {
+      addNotificationQueryClientRef(entry, queryClient);
+    } else {
+      entry = createNotificationSubscriptionEntry(userId, queryClient);
+      notificationSubscriptionRegistry.set(registryKey, entry);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (!entry) return;
+
+      releaseNotificationQueryClientRef(entry, queryClient);
+
+      if (entry.subscriberCount <= 0) {
+        notificationSubscriptionRegistry.delete(registryKey);
+        entry.supabase.removeChannel(entry.channel);
+      }
     };
-  }, [userId, supabase, queryClient]);
+  }, [userId, queryClient]);
+}
+
+export function __resetNotificationSubscriptionRegistryForTests() {
+  for (const entry of notificationSubscriptionRegistry.values()) {
+    entry.supabase.removeChannel(entry.channel);
+  }
+
+  notificationSubscriptionRegistry.clear();
 }

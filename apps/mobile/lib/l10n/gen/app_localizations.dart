@@ -4771,6 +4771,12 @@ abstract class AppLocalizations {
   /// **'Active'**
   String get taskBoardDetailStatusActive;
 
+  /// No description provided for @taskBoardDetailStatusReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get taskBoardDetailStatusReview;
+
   /// No description provided for @taskBoardDetailStatusDone.
   ///
   /// In en, this message translates to:
@@ -8292,6 +8298,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You reached the end of the list'**
   String get timerHistoryEndOfList;
+
+  /// No description provided for @timerHistoryPickerYearTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get timerHistoryPickerYearTitle;
+
+  /// No description provided for @timerHistoryPickerCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get timerHistoryPickerCurrent;
 
   /// No description provided for @timerToday.
   ///

@@ -220,6 +220,20 @@ in mobile Settings. The web settings dialog exposes the same preference for the
 Boards page, keeping the board picker available for users who prefer the
 previous flow.
 
+#### Task list status semantics
+
+Task list `status` is a workflow category, not the list display name. The
+`review` status sits between `active` and `done`: moving a task into a review
+list resolves the task for deadline/reminder filtering, but it must not set
+`completed`, `completed_at`, or `closed_at`. Review tasks should keep the same
+unchecked checkbox and non-completed visual treatment used by active tasks.
+
+Review lists are for walkthrough or acceptance queues. Task cards in `review`,
+`done`, or `closed` lists should not show due-date or overdue treatment because
+those tasks are already resolved for deadline purposes. Mobile list mode still
+shows `review` lists by default; only `documents`, `done`, and `closed` are
+hidden when no explicit list or status filter is selected.
+
 #### Mobile board caching
 
 The mobile task-board flow restores workspace boards, board metadata, and per-list
@@ -242,6 +256,21 @@ Task create/update API routes silently drop assignee ids that no longer belong
 to the workspace. This lets stale task assignments be cleaned up during the next
 save instead of blocking unrelated edits such as description updates.
 
+#### Timeline board view
+
+The task board Timeline is task-first: `TimelineBoard` keeps its public props
+stable for board and project views, while the internal model renders one
+scheduled task per readable row grouped by task list. Task titles and source
+metadata belong in the sticky left column; timeline bars should communicate the
+date range only, so narrow zoom levels never hide task names behind clipped bar
+labels.
+
+Keep drag, resize, schedule-from-unscheduled, edit, delete, and context-menu
+actions routed through the same board mutation path used by the other views.
+The row model must preserve personal and external task metadata and keep
+unknown-list tasks grouped under the virtual unknown-list section instead of
+dropping them from the schedule.
+
 #### Personal external tasks
 
 Personal task boards can reference tasks from other workspaces without cloning
@@ -250,11 +279,15 @@ appear by default in a virtual `External tasks` lane on each personal board.
 
 The virtual lane is presentation-only: it has no `task_lists` row, no list
 actions, no create-task form, no list reordering, and can be collapsed per board
-when the user wants to focus on planned lists.
+when the user wants to focus on planned lists. Personal boards default the lane
+to collapsed when the board has no assigned external task references; once
+assigned external tasks exist, the lane opens by default unless the user has
+saved an explicit collapsed or expanded preference for that board.
 
 By default the external lane shows only open source tasks from normal task
-lists. Source tasks in `documents`, `done`, or `closed` lists are filtered out
-unless the lane-level compact filters explicitly include them. Lane sorting is
+lists. Source tasks in `documents`, `review`, `done`, or `closed` lists are
+filtered out unless the lane-level compact filters explicitly include resolved
+tasks. Lane sorting is
 also local to the external lane, so changing it does not reorder the user's real
 personal lists.
 
@@ -282,6 +315,24 @@ Optimistic personal-placement moves must keep a fresh `_localMutationAt` marker
 after the placement API response is merged. Loaded-list revalidation may still
 return a pre-move page briefly, and the marker prevents that stale response from
 evicting the placed external task until the server view catches up.
+Optimistic placement writes should upsert the task into both the progressive
+board task cache and any full-board cache that is already mounted, because stale
+list reloads can briefly remove the card before the destination list refetches.
+The card renderer should hide only the active pre-drop drag source; once a
+placement mutation is optimistic, the real destination card must stay visible
+even if the sortable layer still reports that task id as dragging.
+Native task reorders and external personal-placement moves should both stamp a
+fresh `_localMutationAt` marker on optimistic writes and on the server-confirmed
+cache merge. Progressive list loading treats that marker as authority for
+movement fields such as `list_id`, `sort_key`, `personal_list_id`, and
+`personal_sort_key`, which prevents stale list pages from flashing a card back
+to its previous position while the mutation response is still settling.
+
+Personal-board list badges must use exact `includeCount` responses, not a
+page-size estimate from progressive loading. External reference counts should be
+resolved through `get_personal_task_board_external_counts` so placed external
+tasks, default external-lane tasks, source-workspace access, and external-lane
+filters stay aligned with the records the board can actually show.
 
 - `personal_board_id` points to the destination personal board after an
   external task is planned there.
@@ -299,9 +350,17 @@ evicting the placed external task until the server view catches up.
 Source task fields, including `tasks.list_id`, `task_labels`, and
 `task_project_tasks`, must not be changed when a task appears in the external
 lane, is planned into a personal list, is moved within the personal board, or
-returns to the external lane. Routes that read personal board tasks should keep
-filtering inaccessible source tasks out instead of surfacing stale placements to
-users who no longer have source-workspace access.
+returns to the external lane unless the personal move changes the task's
+workflow status. Routes that read personal board tasks should keep filtering
+inaccessible source tasks out instead of surfacing stale placements to users who
+no longer have source-workspace access.
+
+When a placed external task moves to a personal list with a different workflow
+status, the source task must also move to the first matching list on its original
+board. `done` and `closed` targets require the matching terminal source list.
+Non-terminal targets first try the same source status, then fall back to
+`active` and `not_started` lists so tasks moved out of source `done` or `closed`
+queues do not keep completed or closed card state.
 
 ```sql
 CREATE TABLE workspace_boards (
