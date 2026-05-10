@@ -14,6 +14,7 @@ const {
   CONTAINER_SELF_RESTART_EXIT_CODE,
   DEFAULT_DEPLOY_COMMAND,
   DEFAULT_GIT_FAILURE_BACKOFF_MS,
+  DEFAULT_STALE_GIT_INDEX_LOCK_MS,
   DEFAULT_INTERVAL_MS,
   DISPLAY_DEPLOYMENTS,
   HOST_WORKSPACE_DIR_ENV,
@@ -40,6 +41,7 @@ const {
   getFailedDeploymentCountForCommit,
   getWatcherComposeEnv,
   getWatchPaths,
+  isGitIndexLockError,
   isRecoverableGitCommandError,
   isProcessAlive,
   listDirtyWorktreePaths,
@@ -58,6 +60,7 @@ const {
   runDeployWatchIteration,
   runDeployWatchLoop,
   runWatcherCommand,
+  removeStaleGitIndexLock,
   startBlueGreenWatcherContainer,
   streamBlueGreenWatcherLogs,
   main,
@@ -283,6 +286,84 @@ test('isRecoverableGitCommandError only retries wrapped git command failures', (
     ),
     false
   );
+});
+
+test('isGitIndexLockError detects git index.lock failures', () => {
+  assert.equal(
+    isGitIndexLockError(
+      new Error(
+        "Command failed (1): git pull --ff-only origin main\nerror: Unable to create '/workspace/.git/index.lock': File exists.\nAnother git process seems to be running in this repository."
+      )
+    ),
+    true
+  );
+  assert.equal(
+    isGitIndexLockError(new Error('Command failed (1): git fetch origin main')),
+    false
+  );
+});
+
+test('removeStaleGitIndexLock removes only stale lock files', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-index-lock-'));
+  const gitDir = path.join(tempDir, '.git');
+  const lockPath = path.join(gitDir, 'index.lock');
+  const logs = [];
+
+  try {
+    fs.mkdirSync(gitDir, { recursive: true });
+
+    const lockError = new Error(
+      `Command failed (1): git pull --ff-only origin main\nerror: Unable to create '${lockPath}': File exists.\nAnother git process seems to be running in this repository.`
+    );
+
+    fs.writeFileSync(lockPath, '', 'utf8');
+    const staleNow = Date.now();
+    const staleMtime = new Date(
+      staleNow - DEFAULT_STALE_GIT_INDEX_LOCK_MS - 1_000
+    );
+    fs.utimesSync(lockPath, staleMtime, staleMtime);
+
+    assert.equal(
+      removeStaleGitIndexLock({
+        error: lockError,
+        fsImpl: fs,
+        log: {
+          warn(message) {
+            logs.push(message);
+          },
+        },
+        now: () => staleNow,
+        rootDir: tempDir,
+      }),
+      true
+    );
+    assert.equal(fs.existsSync(lockPath), false);
+    assert.match(logs.at(-1), /Removed stale git index lock/);
+
+    fs.writeFileSync(lockPath, '', 'utf8');
+    const freshNow = Date.now();
+    const freshMtime = new Date(freshNow - 15_000);
+    fs.utimesSync(lockPath, freshMtime, freshMtime);
+
+    assert.equal(
+      removeStaleGitIndexLock({
+        error: lockError,
+        fsImpl: fs,
+        log: {
+          warn(message) {
+            logs.push(message);
+          },
+        },
+        now: () => freshNow,
+        rootDir: tempDir,
+      }),
+      false
+    );
+    assert.equal(fs.existsSync(lockPath), true);
+    assert.match(logs.at(-1), /Leaving it in place/);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('buildDashboardView shows blue/green runtime and the top 3 prioritized deployments', () => {

@@ -713,6 +713,10 @@ Dashboard details:
 - Recoverable Git poll failures stay visible in the dashboard as a retrying
   watcher state instead of terminating the process, and the next-check timer
   reflects the active backoff delay.
+- If `git pull --ff-only` fails only because `.git/index.lock` already exists,
+  the watcher now inspects the lock age and removes it automatically only when
+  it is stale (older than 2 minutes). Fresh lock files are left in place so
+  active Git operations are not interrupted.
 - Build/deploy failures also stay inside the watcher loop. The watcher records
   failed attempts in deployment history, clears stale pending handoff files
   after recovery failures, and stops retrying the same commit after the third

@@ -84,6 +84,7 @@ const {
 const DEFAULT_INTERVAL_MS = 1_000;
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
 const DEFAULT_GIT_FAILURE_BACKOFF_MS = 60_000;
+const DEFAULT_STALE_GIT_INDEX_LOCK_MS = 2 * 60_000;
 const DEFAULT_STANDBY_REFRESH_AFTER_MS = 15 * 60_000;
 const DEFAULT_LOCK_CONFLICT_ACTION = 'fail';
 const MAX_GIT_FAILURE_BACKOFF_MS = 15 * 60_000;
@@ -2229,6 +2230,55 @@ function isRecoverableGitCommandError(error) {
   return /Command failed \(\d+\): git\b/.test(message);
 }
 
+function isGitIndexLockError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    /(?:^|\n)error:\s+Unable to create ['"].*?\.git\/index\.lock['"]:\s+File exists\./u.test(
+      message
+    ) ||
+    /Another git process seems to be running in this repository/iu.test(message)
+  );
+}
+
+function removeStaleGitIndexLock({
+  error,
+  fsImpl = fs,
+  lockTtlMs = DEFAULT_STALE_GIT_INDEX_LOCK_MS,
+  log = console,
+  now = () => Date.now(),
+  rootDir = ROOT_DIR,
+} = {}) {
+  if (!isGitIndexLockError(error)) {
+    return false;
+  }
+
+  const lockFilePath = path.join(rootDir, '.git', 'index.lock');
+  let lockStat;
+  try {
+    lockStat = fsImpl.statSync(lockFilePath);
+  } catch {
+    return false;
+  }
+
+  const ageMs = Math.max(0, now() - lockStat.mtimeMs);
+  if (!Number.isFinite(ageMs) || ageMs < lockTtlMs) {
+    log.warn?.(
+      `Detected git index.lock at ${lockFilePath}, but it is only ${Math.floor(
+        ageMs / 1000
+      )}s old. Leaving it in place.`
+    );
+    return false;
+  }
+
+  fsImpl.rmSync(lockFilePath, { force: true });
+  log.warn?.(
+    `Removed stale git index lock at ${lockFilePath} (${Math.floor(
+      ageMs / 1000
+    )}s old).`
+  );
+  return true;
+}
+
 function getGitFailureBackoffMs(
   failureCount,
   {
@@ -2332,16 +2382,46 @@ async function isAncestor(
 
 async function pullTrackedBranch(
   target,
-  { env, runCommand: run = runCommand } = {}
+  {
+    env,
+    fsImpl = fs,
+    log = console,
+    now = () => Date.now(),
+    rootDir = ROOT_DIR,
+    runCommand: run = runCommand,
+  } = {}
 ) {
-  await runChecked(
-    'git',
-    ['pull', '--ff-only', target.remote, target.upstreamBranch],
-    {
-      env,
-      runCommand: run,
+  try {
+    await runChecked(
+      'git',
+      ['pull', '--ff-only', target.remote, target.upstreamBranch],
+      {
+        env,
+        runCommand: run,
+      }
+    );
+    return;
+  } catch (error) {
+    const recovered = removeStaleGitIndexLock({
+      error,
+      fsImpl,
+      log,
+      now,
+      rootDir,
+    });
+    if (!recovered) {
+      throw error;
     }
-  );
+
+    await runChecked(
+      'git',
+      ['pull', '--ff-only', target.remote, target.upstreamBranch],
+      {
+        env,
+        runCommand: run,
+      }
+    );
+  }
 }
 
 async function checkoutRevision(
@@ -5170,7 +5250,14 @@ async function runDeployWatchIteration(
     }
 
     if (await isAncestor(localHead, upstreamHead, { env, runCommand: run })) {
-      await pullTrackedBranch(target, { env, runCommand: run });
+      await pullTrackedBranch(target, {
+        env,
+        fsImpl,
+        log,
+        now,
+        rootDir,
+        runCommand: run,
+      });
 
       const updatedHead = await getRevision('HEAD', { env, runCommand: run });
 
@@ -6219,6 +6306,7 @@ module.exports = {
   CONTAINER_SELF_RESTART_EXIT_CODE,
   DEFAULT_DEPLOY_COMMAND,
   DEFAULT_GIT_FAILURE_BACKOFF_MS,
+  DEFAULT_STALE_GIT_INDEX_LOCK_MS,
   DEFAULT_INTERVAL_MS,
   DISPLAY_DEPLOYMENTS,
   MAX_GIT_FAILURE_BACKOFF_MS,
@@ -6276,6 +6364,7 @@ module.exports = {
   listDirtyWorktreePaths,
   hasWatchedScriptChanges,
   isRecoverableGitCommandError,
+  isGitIndexLockError,
   isAncestor,
   isProcessAlive,
   listChangedFilesBetweenRevisions,
@@ -6304,6 +6393,7 @@ module.exports = {
   runDeployWatchIteration,
   runDeployWatchLoop,
   runWatcherCommand,
+  removeStaleGitIndexLock,
   sleep,
   spawnReplacementWatcher,
   startBlueGreenWatcherContainer,
